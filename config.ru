@@ -4,8 +4,6 @@
 
 require "sorbet-runtime"
 require_relative "lib/mayu"
-require_relative "lib/mayu/server2"
+require_relative "lib/mayu/server"
 
-use Mayu::Server2
-
-run lambda { |env| [404, [], []] }
+run Mayu::Server

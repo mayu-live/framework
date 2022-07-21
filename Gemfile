@@ -2,18 +2,22 @@
 
 source "https://rubygems.org"
 
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'vendor', 'patches'))
+
 gem "pry"
 
+gem "rake"
 gem "rux"
 gem "crass"
 gem "falcon"
-gem "sinatra"
-gem "sinatra-contrib"
 
 group :development do
+  gem 'guard', require: false
+  gem 'guard-falcon'
   gem 'sorbet', require: false
   gem 'tapioca', require: false
 end
 
 gem "sorbet-runtime"
 gem "rack-test"
+gem "async-http"
