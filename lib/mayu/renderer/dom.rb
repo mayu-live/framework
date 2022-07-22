@@ -202,6 +202,9 @@ module Mayu
         def to_s = "<!-- mayu-id: #{id}. #{@data} -->"
       end
 
+      sig {returns(Element)}
+      attr_reader :root
+
       sig {void}
       def initialize
         @id_counter = T.let(0, Integer)
