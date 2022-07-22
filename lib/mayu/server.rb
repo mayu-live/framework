@@ -1,3 +1,4 @@
+# typed: false
 require 'sinatra/base'
 require 'sinatra/cookies'
 require 'securerandom'

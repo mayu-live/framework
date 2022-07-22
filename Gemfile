@@ -10,5 +10,10 @@ gem "falcon"
 gem "sinatra"
 gem "sinatra-contrib"
 
-gem "sorbet", :group => :development
+group :development do
+  gem 'sorbet', require: false
+  gem 'tapioca', require: false
+end
+
 gem "sorbet-runtime"
+gem "rack-test"
