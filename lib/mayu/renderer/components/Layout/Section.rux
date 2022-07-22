@@ -1,0 +1,5 @@
+render do
+  <section class={styles.section}>
+    {props[:children]}
+  </section>
+end

@@ -1,0 +1,15 @@
+TAGLINES = [
+  "ReactJS, but for the server, and Ruby",
+  "Interactive server side rendered apps",
+  "No APIs required!",
+  <a href="https://en.wiktionary.org/wiki/mayu#Quechua">
+    It means river in Quechua!
+  </a>,
+]
+
+render do
+  <header class={styles.header}>
+    <h1>mayu</h1>
+    <p class="tagline">{TAGLINES.sample}</p>
+  </header>
+end

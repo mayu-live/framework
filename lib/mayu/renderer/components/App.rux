@@ -1,0 +1,22 @@
+Layout = import("./Layout")
+Welcome = import("./Welcome")
+Counter = import("./Counter")
+List = import("./List")
+Section = import("./Layout/Section")
+
+render do
+  <Layout>
+    <Section>
+      <h3>Welcome to my app</h3>
+      <Welcome name="Luke Skywalker" />
+    </Section>
+    <Section>
+      <h3>Counter</h3>
+      <Counter />
+    </Section>
+    <Section>
+      <h3>Random numbers</h3>
+      <List />
+    </Section>
+  </Layout>
+end

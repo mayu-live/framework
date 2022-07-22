@@ -1,0 +1,17 @@
+initial_state do
+  { count: 0 }
+end
+
+handler :handle_click do |x, prev|
+  update do |state|
+    { count: prev.next }
+  end
+end
+
+render do
+  <div>
+    <button on-click={bind(:handle_click, state[:count])}>
+      Click me! {state[:count]}
+    </button>
+  </div>
+end

@@ -1,5 +1,8 @@
 # typed: strict
 
+require_relative "modules"
+require_relative "dom"
+
 module Mayu
   module Renderer
     class VDOM
@@ -28,6 +31,25 @@ module Mayu
           @next_state = T.let({}, State)
         end
 
+        MODULES = T.let(nil, T.nilable(Modules))
+        MODULE_PATH = T.let(nil, T.nilable(String))
+
+        sig {params(path: String).returns(T.class_of(Component))}
+        def self.import(path)
+          const_get(:MODULES).load_component(path, const_get(:MODULE_PATH))
+        end
+
+        sig {params(block: T.proc.returns(Descriptor::Children)).void}
+        def self.render(&block) = define_method(:render, &block)
+        sig {params(block: T.proc.returns(State)).void}
+        def self.initial_state(&block) = define_method(:initial_state, &block)
+        sig {params(foo: Symbol, block: T.proc.returns(State)).void}
+        def self.handler(foo, &block) = nil
+
+        sig {void}
+        def handler(name, &args)
+        end
+
         sig {params(klass: T.class_of(Class)).returns(T::Boolean)}
         def self.component_class?(klass)
           !!(klass.is_a?(Class) && klass < self)
@@ -37,6 +59,11 @@ module Mayu
 
         sig {returns(T.nilable(Descriptor::Children))}
         def render = nil
+
+        sig {returns(String)}
+        def inspect
+          "<#Component #{self.class.const_get(:MODULE_PATH)}>"
+        end
 
         # Lifecycle methods
 
@@ -53,8 +80,8 @@ module Mayu
       class Descriptor
         extend T::Sig
 
-        Children = T.type_alias { T::Array[ChildType] }
-        ChildType = T.type_alias { T.nilable(Descriptor) }
+        Children = T.type_alias { T.any(ChildType, T::Array[ChildType]) }
+        ChildType = T.type_alias { T.nilable(T.any(Descriptor, String, NilClass)) }
 
         TEXT = :TEXT
         COMMENT = :COMMENT
@@ -67,7 +94,7 @@ module Mayu
         attr_reader :key
 
         sig {params(type: ElementType, props: Props, children: Descriptor::Children).void}
-        def initialize(type, props, children = [])
+        def initialize(type, props = {}, children = [])
           @type = type
           @props = T.let(props.merge(
             children: Array(children).map { |child|
@@ -139,7 +166,17 @@ module Mayu
         def same?(descriptor)
           descriptor.type == type && descriptor.key == key
         end
+
+        sig {params(level: Integer).returns(String)}
+        def inspect_tree(level = 0)
+          type = descriptor.type
+
+          "<#{type.to_s}>#{children.compact.map { _1.inspect_tree(level.succ) }.join}</#{type.to_s}>"
+        end
       end
+
+      sig {returns(DOM)}
+      attr_reader :dom
 
       sig {params(descriptor: Descriptor).void}
       def initialize(descriptor)
@@ -150,6 +187,11 @@ module Mayu
       sig {params(descriptor: Descriptor).void}
       def render(descriptor)
         @root = patch_vnode(@root, descriptor)
+      end
+
+      sig {returns(String)}
+      def inspect_tree
+        @root && @root.inspect_tree || ""
       end
 
       private

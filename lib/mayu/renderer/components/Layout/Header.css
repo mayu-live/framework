@@ -1,0 +1,14 @@
+.header {
+  background: #7a5c29;
+  color: #fff;
+  text-align: center;
+  padding: 1em;
+}
+
+.title {
+  font-size: 2em;
+}
+
+.tagline {
+  font-size: 1.2em;
+}

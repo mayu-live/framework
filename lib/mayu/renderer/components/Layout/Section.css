@@ -1,0 +1,5 @@
+.section {
+  margin: auto;
+  padding: 1em;
+  max-width: var(--page-max-width);
+}

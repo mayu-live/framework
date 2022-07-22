@@ -1,0 +1,12 @@
+render do
+  numbers = (1..10).to_a.shuffle.first(5)
+
+  items = numbers.map do |i|
+    <li key={i}>{i.to_s}</li>
+  end
+
+  <div>
+    <p>numbers: {numbers.inspect}</p>
+    <ul>{items}</ul>
+  </div>
+end

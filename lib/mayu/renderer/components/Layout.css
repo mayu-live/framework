@@ -1,0 +1,24 @@
+.html {
+  background: #000;
+  margin: 0;
+  padding: 0;
+
+  --page-max-width: 900px;
+}
+
+.html *,
+.html *::before,
+.html *::after {
+  box-sizing: border-box;
+}
+
+.body {
+  background: #000;
+  margin: 0;
+  padding: 0;
+}
+
+.main {
+  background: #fff;
+  color: #000;
+}
