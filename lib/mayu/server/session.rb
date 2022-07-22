@@ -13,6 +13,11 @@ class Mayu::Server::Session
     @id = T.let(SecureRandom.uuid, String)
   end
 
+  sig {returns(String)}
+  def render
+    ""
+  end
+
   sig {params(handler_id: String, payload: T.untyped).void}
   def handle_event(handler_id, payload = {})
     puts "#{handler_id} #{payload.inspect}"

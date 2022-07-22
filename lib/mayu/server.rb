@@ -5,8 +5,8 @@ require 'securerandom'
 
 require_relative "server/session"
 
-class Mayu::Server
-  SESSIONS = T.let([], T::Array[Mayu::Server::Session])
+class Mayu::Server < Sinatra::Application
+  SESSIONS = []
 
   helpers Sinatra::Cookies
 
