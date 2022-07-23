@@ -3,7 +3,7 @@
 require_relative "component"
 require_relative "descriptor"
 require_relative "dom"
-require_relative "../renderer/dom"
+require_relative "vnode"
 
 module Mayu
   module VDOM
@@ -16,8 +16,9 @@ module Mayu
       def initialize(descriptor)
         @id_counter = T.let(0, Integer)
         @dom = T.let(DOM.new, DOM)
-        @root = T.let(VNode.new(self, descriptor, @dom.root), T.nilable(VNode))
         @update_queue = T.let([], T::Array[VNode])
+        @root = T.let(nil, T.nilable(VNode))
+        render(descriptor)
       end
 
       sig {params(vnode: VNode).void}
@@ -66,7 +67,9 @@ module Mayu
               descriptors = component.render
             else
               vnode.descriptor = descriptor
-              vnode.children = vnode.children.map { _1 && patch_vnode(_1, _1.descriptor) }
+              vnode.children = Array(vnode.children).flatten.compact.map do
+                patch_vnode(_1, _1.descriptor)
+              end
               return vnode
             end
           else

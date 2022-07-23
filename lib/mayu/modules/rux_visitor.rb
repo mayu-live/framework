@@ -1,10 +1,10 @@
-# typed: true
+# typed: struct
 
 require 'cgi'
 require 'rux'
 
 module Mayu
-  module Renderer
+  module Modules
     class RuxVisitor < Rux::Visitor
       def visit_list(node)
         node.children.map { |child| visit(child) }.join
@@ -30,9 +30,9 @@ module Mayu
           end
 
           if node.name.start_with?(/[A-Z]/)
-            result << "Mayu::Renderer.h(#{node.name}"
+            result << "Mayu::VDOM.h(#{node.name}"
           else
-            result << "Mayu::Renderer.h(#{node.name.to_sym.inspect}"
+            result << "Mayu::VDOM.h(#{node.name.to_sym.inspect}"
           end
 
           #unless node.attrs.empty?

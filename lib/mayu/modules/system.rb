@@ -1,14 +1,11 @@
 # typed: strict
 
-require_relative "rux_visitor"
-require_relative "component_builder"
-require_relative "css_module"
 require_relative "component_module"
-require_relative "vdom"
+require_relative "css_module"
 
 module Mayu
-  module Renderer
-    class Modules
+  module Modules
+    class System
       extend T::Sig
 
       ModuleType = T.type_alias { T.any(ComponentModule, CSSModule) }

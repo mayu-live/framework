@@ -2,7 +2,7 @@
 
 require_relative "component"
 require_relative "descriptor"
-require_relative "../renderer/dom"
+require_relative "dom"
 
 module Mayu
   module VDOM
@@ -43,20 +43,12 @@ module Mayu
 
       sig {returns(T.nilable(Component::Wrapper))}
       def init_component
-        return @component if @component
-
-        type = descriptor.type
-
-        if type.is_a?(Class) && type < Component
-          @component = Component::Wrapper.new(self, type, props)
-        else
-          nil
-        end
+        @component ||= Component.wrap(self, type, props)
       end
 
       sig {void}
       def enqueue_update!
-        @vtree.enqueue_update(self)
+        @vtree.enqueue_update!(self)
       end
 
       sig {params(descriptor: Descriptor).returns(T::Boolean)}
