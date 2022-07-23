@@ -199,10 +199,14 @@ module Mayu
         def did_mount = nil
         sig {void}
         def will_unmount = nil
+
         sig {params(next_props: Props, next_state: State).returns(T::Boolean)}
-        def should_update?(next_props, next_state) = true
+        def should_update?(next_props, next_state)
+          props != next_props || state != next_state
+        end
+
         sig {params(prev_props: Props, prev_state: State).void}
-        def did_update?(prev_props, prev_state) = nil
+        def did_update(prev_props, prev_state) = nil
       end
 
       class HTMLComponent < Component
@@ -239,6 +243,7 @@ module Mayu
         sig {params(vdom: VDOM, descriptor: Descriptor, dom: T.nilable(DOM::Node)).void}
         def initialize(vdom, descriptor, dom = nil)
           @dom = dom
+          @id = T.let(vdom.next_id!, Integer)
           @vdom = vdom
           @descriptor = descriptor
           @children = T.let([], Children)
@@ -288,6 +293,7 @@ module Mayu
           }
 
           formatted_props.unshift(%< data-mayu-key="#{descriptor.key.to_s}">) if descriptor.key
+          formatted_props.unshift(%< data-mayu-id="#{@id.to_s}">)
 
           cleaned_children = Array(children).flatten.compact
 
@@ -308,8 +314,12 @@ module Mayu
       sig {returns(DOM)}
       attr_reader :dom
 
+      sig {returns(Integer)}
+      def next_id! = @id_counter += 1
+
       sig {params(descriptor: Descriptor).void}
       def initialize(descriptor)
+        @id_counter = T.let(0, Integer)
         @dom = T.let(DOM.new, DOM)
         @root = T.let(VNode.new(self, descriptor, @dom.root), T.nilable(VNode))
       end
@@ -369,13 +379,6 @@ module Mayu
         if vnode.same?(descriptor)
           component = vnode.component
 
-          if descriptor.type.to_s == "App::Counter"
-            raise "No component instantiated" unless component
-            p [:object_id, component.object_id]
-            p [:should_update?, component.should_update?(descriptor.props, component.next_state)]
-            p [:dirty?, component.dirty?]
-          end
-
           if component
             if component.should_update?(descriptor.props, component.next_state) || component.dirty?
               component.props = descriptor.props
@@ -383,6 +386,7 @@ module Mayu
               descriptors = component.__render
             else
               vnode.descriptor = descriptor
+              vnode.children = vnode.children.map { _1 && patch_vnode(_1, _1.descriptor) }
               return vnode
             end
           else
