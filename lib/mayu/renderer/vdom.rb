@@ -1,5 +1,6 @@
 # typed: strict
 
+require "cgi"
 require_relative "modules"
 require_relative "dom"
 
@@ -27,6 +28,12 @@ module Mayu
         def call(data)
           @component.send(:"handle_#{@name}")
         end
+
+        sig {returns(String)}
+        def to_s
+          id = Digest::SHA256.hexdigest([@component.object_id, @name, @args].map(&:inspect).join(":"))
+          "Mayu.handler('#{id}')"
+        end
       end
 
       class Descriptor
@@ -51,7 +58,7 @@ module Mayu
         def initialize(type, props = {}, children = [])
           @type = type
           @props = T.let(props.merge(
-            children: Array(children).map { |child|
+            children: Array(children).flatten.compact.map { |child|
               if child.is_a?(Descriptor)
                 child
               else
@@ -84,10 +91,8 @@ module Mayu
             type: VDOM::ElementType,
             props: VDOM::Props,
             children: T.nilable(VDOM::Descriptor::ComponentChildren),
-            blk: T.nilable(T.proc.returns(VDOM::Descriptor::ComponentChildren))
-          ).returns(
-              VDOM::Descriptor
-            )
+            blk: T.nilable(T.proc.returns(VDOM::Descriptor::ComponentChildren)),
+          ).returns(VDOM::Descriptor)
         end
         def h(type, props = {}, children = [], &blk)
           if blk
@@ -140,7 +145,7 @@ module Mayu
           define_method(:"handle_#{name}", &block)
         end
 
-        sig {params(name: Symbol, args: T::Array[T.untyped]).returns(HandlerRef)}
+        sig {params(name: Symbol, args: T.nilable(T::Array[T.untyped])).returns(HandlerRef)}
         def handler(name, *args)
           HandlerRef.new(self, name, args)
         end
@@ -240,7 +245,7 @@ module Mayu
           type = descriptor.type
 
           if type == Descriptor::TEXT
-            return indent + "text" + descriptor.text
+            return indent + descriptor.text
           end
 
           if component && exclude_components
@@ -249,8 +254,18 @@ module Mayu
             }.join("\n")
           end
 
+          formatted_props = props.reject { _1 == :children }.map { |key, value|
+            %{ #{key.to_s.gsub(/[^\w]/, "")}="#{CGI.escape_html(value.to_s)}"}
+          }.join
+
+          cleaned_children = Array(children).flatten.compact
+
+          if cleaned_children.empty?
+            return indent + "<#{type.to_s}#{formatted_props} />"
+          end
+
           [
-            indent + "<#{type.to_s}>",
+            indent + "<#{type.to_s}#{formatted_props}>",
             *Array(children).flatten.compact.map {
               _1.inspect_tree(level.succ, exclude_components:)
             },

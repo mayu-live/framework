@@ -31,7 +31,7 @@ module Mayu
         klass.const_set(:MODULE_PATH, path)
         css = load_css(File.join(@root, path))
         klass.const_set(:CSS, css)
-        klass.class_eval(transpiled)
+        klass.class_eval(transpiled, path, 0)
         klass
       end
 
