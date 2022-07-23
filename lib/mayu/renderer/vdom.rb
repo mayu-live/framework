@@ -197,7 +197,7 @@ module Mayu
         Children = T.type_alias { T::Array[T.nilable(VNode)] }
 
         sig {returns(Descriptor)}
-        attr_reader :descriptor
+        attr_accessor :descriptor
         sig {returns(ElementType)}
         def type = descriptor.type
         sig {returns(Props)}
@@ -348,11 +348,13 @@ module Mayu
             descriptors = descriptor.props[:children]
           end
 
+          vnode.descriptor = descriptor
           vnode.children = diff_children(vnode, descriptors)
 
           vnode
         else
           descriptors = descriptor.props[:children]
+          vnode.descriptor = descriptor
           vnode.children = diff_children(vnode, descriptors)
           vnode
         end
@@ -381,6 +383,130 @@ module Mayu
         vnode.dom = node
       end
 
+      class ChildDiffer
+        extend T::Sig
+
+        sig {returns(VNode::Children)}
+        attr_reader :result
+
+        sig {params(vnode: VNode, descriptors: Descriptor::Children).void}
+        def initialize(vnode, descriptors)
+          @vnode = vnode
+          @descriptors = T.let(Array(descriptors).flatten.compact, T::Array[Descriptor::ChildType])
+          @result = T.let([], VNode::Children)
+
+          @keymap = T.let(nil, T.nilable(KeyIndexMap))
+          @children_range = T.let(0...@vnode.children.length, T::Range[Integer])
+          @descriptor_range = T.let(0...@descriptors.length, T::Range[Integer])
+        end
+
+        sig {void}
+        def run
+          loop do
+            break unless start_vnode = get_start_vnode
+            break unless end_vnode = get_end_vnode
+            break unless start_descriptor = get_start_descriptor
+            break unless end_descriptor = get_end_descriptor
+
+            if start_vnode.same?(start_descriptor)
+              @result.push(patch_vnode(start_vnode, start_descriptor))
+              @children_range = update_range(@children_range, 1, 0)
+              @descriptor_range = update_range(@descriptor_range, 1, 0)
+              next
+            end
+
+            if end_vnode.same?(end_descriptor)
+              @result.push(patch_vnode(end_vnode, end_descriptor))
+              @children_range = update_range(@children_range, 0, -1)
+              @descriptor_range = update_range(@descriptor_range, 0, -1)
+            end
+
+            if start_vnode.same?(end_descriptor)
+              @result.push(patch_vnode(start_vnode, end_descriptor))
+              @children_range = update_range(@children_range, 1, 0)
+              @descriptor_range = update_range(@descriptor_range, 0, -1)
+              next
+            end
+
+            if end_vnode.same?(start_descriptor)
+              @result.push(patch_vnode(end_vnode, start_descriptor))
+              @children_range = update_range(@children_range, 0, -1)
+              @descriptor_range = update_range(@descriptor_range, 1, 0)
+              next
+            end
+
+            if index = keymap[start_descriptor.key]
+            end
+          end
+        end
+
+        private
+
+        sig {returns(KeyIndexMap)}
+        def keymap
+          return @keymap if @keymap
+          @keymap = build_key_index_map(@vnode.children, @children_range.begin, @children_range.end)
+        end
+
+        sig {params(children: VNode::Children, start_index: Integer, end_index: Integer).returns(KeyIndexMap)}
+        def build_key_index_map(children, start_index, end_index)
+          keymap = {}
+
+          start_index.upto(end_index) do |i|
+            key = children[i]&.key
+            keymap[key] = i if key
+          end
+
+          keymap
+        end
+
+        sig {params(vnode: VNode, descriptor: Descriptor).returns(VNode)}
+        def patch_vnode(vnode, descriptor)
+          vnode
+        end
+
+        sig {returns(T.nilable(VNode))}
+        def get_start_vnode
+          vnode = @vnode.children[@children_range.begin]
+          return vnode if vnode
+          return nil unless @children_range.count > 1
+          @children_range = update_range(@children_range, 1, 0)
+          get_start_vnode
+        end
+
+        sig {returns(T.nilable(VNode))}
+        def get_end_vnode
+          vnode = @vnode.children[@children_range.end]
+          return vnode if vnode
+          return nil unless @children_range.count > 1
+          @children_range = update_range(@children_range, 0, -1)
+          get_start_vnode
+        end
+
+        sig {returns(T.nilable(Descriptor))}
+        def get_start_descriptor
+          descriptor = @descriptors[@descriptor_range.begin]
+          return descriptor if descriptor
+          return nil unless @descriptor_range.count > 1
+          @descriptor_range = update_range(@descriptor_range, 1, 0)
+          get_start_descriptor
+        end
+
+        sig {returns(T.nilable(Descriptor))}
+        def get_end_descriptor
+          descriptor = @descriptors[@descriptor_range.end]
+          return descriptor if descriptor
+          return nil unless @descriptor_range.count > 1
+          @descriptor_range = update_range(@descriptor_range, 0, -1)
+          get_start_descriptor
+        end
+
+        sig {params(range: T::Range[Integer], add_begin: Integer, add_end: Integer).returns(T::Range[Integer])}
+        def update_range(range, add_begin, add_end)
+          (range.begin + add_begin)..(range.end + add_end)
+        end
+      end
+
       sig {params(vnode: VNode, descriptors: Descriptor::Children).returns(VNode::Children)}
       def diff_children(vnode, descriptors)
         descriptors = Array(descriptors).flatten.compact
@@ -392,112 +518,105 @@ module Mayu
         # Before
         old_start_index = 0
         # New front
-        new_start_index = 0
+        start_descriptor_index = 0
         # Old queen
-        old_end_index = old_children.length - 1
+        old_end_index = old_children.length
         # New post
-        new_end_index = descriptors.length - 1
-        # Old nodes
-        old_start_vnode = T.let(old_children[old_start_index], T.nilable(VNode))
-        # Old back node
-        old_end_vnode = T.let(old_children[old_end_index], T.nilable(VNode))
-        # New front node
-        new_start_vnode = descriptors[new_start_index]
-        # New back node
-        new_end_vnode = descriptors[new_end_index]
+        end_descriptor_index = descriptors.length
         # In the above four cases, it is the structure used in hit processing
         keymap = T.let(nil, T.nilable(KeyIndexMap))
         # Loop through processing nodes
-        p [old_start_index, old_end_index, new_start_index, new_end_index]
-        while old_start_index <= old_end_index && new_start_index <= new_end_index
+        while old_start_index <= old_end_index && start_descriptor_index <= end_descriptor_index
           # The first is not to judge the first four hits , But to skip what has been added undefined Things marked
-          unless old_start_vnode
-            old_start_vnode = T.cast(old_children[old_start_index += 1], NilClass)
+          unless old_start_vnode = old_children[old_start_index]
+            old_start_vnode = old_children[old_start_index += 1]
             next
           end
 
-          unless old_end_vnode
-            old_end_vnode = T.cast(old_children[old_end_index -= 1], NilClass)
+          unless old_end_vnode = old_children[old_end_index]
+            old_end_vnode = old_children[old_end_index -= 1]
             next
           end
 
-          unless new_start_vnode
-            new_start_vnode = T.cast(descriptors[new_start_index += 1], NilClass)
+          unless start_descriptor = descriptors[start_descriptor_index]
+            start_descriptor = descriptors[start_descriptor_index += 1]
             next
           end
 
-          unless new_end_vnode
-            new_end_vnode = T.cast(descriptors[new_end_index -= 1], NilClass)
+          unless end_descriptor = descriptors[end_descriptor_index]
+            end_descriptor = descriptors[end_descriptor_index -= 1]
             next
           end
 
           case
-          when old_start_vnode.same?(new_start_vnode)
+          when old_start_vnode.same?(start_descriptor)
             # New and old
-            result[new_start_index] = patch_vnode(old_start_vnode, new_start_vnode)
+            result[start_descriptor_index] = patch_vnode(old_start_vnode, start_descriptor)
             old_start_vnode = old_children[old_start_index += 1]
-            if x = descriptors[new_start_index += 1]
-              new_start_vnode = x
+            if x = descriptors[start_descriptor_index += 1]
+              start_descriptor = x
             end
-          when old_end_vnode.same?(new_end_vnode)
+          when old_end_vnode.same?(end_descriptor)
             # New post and old post hit
-            result[new_end_index] = patch_vnode(old_end_vnode, new_end_vnode)
-            old_end_vnode = T.cast(old_children[old_end_index -= 1], VNode)
-            new_end_vnode = T.cast(descriptors[new_end_index -= 1], Descriptor)
-          when old_start_vnode.same?(new_end_vnode)
+            result[end_descriptor_index] = patch_vnode(old_end_vnode, end_descriptor)
+            old_end_vnode = old_children[old_end_index -= 1]
+            end_descriptor = descriptors[end_descriptor_index -= 1]
+          when old_start_vnode.same?(end_descriptor)
             # New and old hits
-            result[new_end_index] = patch_vnode(old_start_vnode, new_end_vnode)
+            result[end_descriptor_index] = patch_vnode(old_start_vnode, end_descriptor)
             # parent_dom.insert_before(
             #   T.cast(old_start_vnode.dom, DOM::Node),
             #   old_end_vnode.dom&.next_sibling
             # )
-            old_start_vnode = T.cast(old_children[old_start_index += 1], VNode)
-            new_end_vnode = T.cast(descriptors[new_end_index -= 1], Descriptor)
-          when old_end_vnode.same?(new_start_vnode)
+            old_start_vnode = old_children[old_start_index += 1]
+            end_descriptor = descriptors[end_descriptor_index -= 1]
+          when old_end_vnode.same?(start_descriptor)
             # New before and old after hit
-            result[new_start_index] = patch_vnode(old_end_vnode, new_start_vnode)
+            result[start_descriptor_index] = patch_vnode(old_end_vnode, start_descriptor)
             # When the new front and old back hit , At this time, we need to move the node . Move the node pointed by the new node to the front of the old node
             # parent_dom.insert_before(
             #   T.cast(old_end_vnode.dom, DOM::Node),
             #   old_start_vnode.dom
             # )
-            old_end_vnode = T.cast(old_children[old_end_index -= 1], VNode)
-            new_start_vnode = T.cast(descriptors[new_start_index += 1], Descriptor)
+            old_end_vnode = old_children[old_end_index -= 1]
+            start_descriptor = descriptors[start_descriptor_index += 1]
           else
             # None of the four hits hit
             # Make keymap A mapping object , So you don't have to traverse the old object every time .
             keymap ||= build_key_index_map(old_children, old_start_index, old_end_index)
             # Look for the current （new_start_idx） This is in the keymap The position number of the map in
-            index = keymap[new_start_vnode.key]
+            index = keymap[start_descriptor.key]
 
             unless index
               # Judge , If idxInOld yes undefined Indicates that it is a brand new item
-              # Added items （ Namely new_start_vnode the ) It's not really DOM node
-              new_child_vnode = VNode.new(self, new_start_vnode)
-              result[old_start_index] = new_child_vnode
+              # Added items （ Namely start_descriptor the ) It's not really DOM node
+              new_child_vnode = init_vnode(start_descriptor)
+              p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
+            result.insert(old_start_index, new_child_vnode)
               # parent_dom.insert_before(create_dom_node(new_child_vnode), old_start_vnode.dom)
             else
               # If not undefined, Not a new item , But to move
               element_to_move = old_children[index]
-              result[new_start_index] = patch_vnode(element_to_move, new_start_vnode)
+              result[start_descriptor_index] = patch_vnode(element_to_move, start_descriptor)
               # Set this to undefined, It means that I have finished this
               # old_children[index] = nil
               # Move , call insert_before It can also be mobile .
               # parent_dom.insert_before(T.cast(element_to_move&.dom, DOM::Node), old_start_vnode.dom)
             end
             # The pointer moves down , Just move the new head
-            new_start_vnode = T.cast(descriptors[new_start_index += 1], Descriptor)
+            start_descriptor = descriptors[start_descriptor_index += 1]
           end
         end
         # Go ahead and see if there's any left . The cycle is over start It's better than old Small
-        if new_start_index <= new_end_index
+        if start_descriptor_index <= end_descriptor_index
           # Traverse the new descriptors, Add to the old ones that haven't been processed
-          new_start_index.upto(new_end_index) do |i|
+          start_descriptor_index.upto(end_descriptor_index) do |i|
             new_child = descriptors[i]
             old_child = old_children[old_start_index]
             next unless new_child
-            new_child_vnode = VNode.new(self, new_child)
-            result[i] = new_child_vnode
+            new_child_vnode = init_vnode(new_child)
+            p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
+            result.push(new_child_vnode)
             # parent_dom.insert_before(create_dom_node(new_child_vnode), old_child&.dom)
           end
         elsif (old_start_index <= old_end_index)
