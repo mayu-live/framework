@@ -67,7 +67,10 @@ module Mayu
         def text? = @type == TEXT
         sig {returns(T::Boolean)}
         def comment? = @type == COMMENT
-
+        sig {returns(T::Boolean)}
+        def element? = @type.is_a?(Symbol)
+        sig {returns(T::Boolean)}
+        def component? = Component.component_class?(@type)
 
         sig {returns(String)}
         def text = @props[:text_content].to_s
@@ -147,7 +150,7 @@ module Mayu
           props[:children]
         end
 
-        sig {params(klass: T.class_of(Class)).returns(T::Boolean)}
+        sig {params(klass: T.untyped).returns(T::Boolean)}
         def self.component_class?(klass)
           !!(klass.is_a?(Class) && klass < self)
         end
@@ -231,23 +234,25 @@ module Mayu
           descriptor.type == type && descriptor.key == key
         end
 
-        sig {params(level: Integer).returns(String)}
-        def inspect_tree(level = 0)
+        sig {params(level: Integer, exclude_components: T::Boolean).returns(String)}
+        def inspect_tree(level = 0, exclude_components: false)
           indent = "  " * level
           type = descriptor.type
 
           if type == Descriptor::TEXT
-            return indent + descriptor.text
+            return indent + "text" + descriptor.text
           end
 
-          if component
-            return Array(children).flatten.compact.map { _1.inspect_tree(level) }.join("\n")
+          if component && exclude_components
+            return Array(children).flatten.compact.map {
+              _1.inspect_tree(level, exclude_components:)
+            }.join("\n")
           end
 
           [
             indent + "<#{type.to_s}>",
             *Array(children).flatten.compact.map {
-              _1.inspect_tree(level.succ)
+              _1.inspect_tree(level.succ, exclude_components:)
             },
             indent + "</#{type.to_s}>"
           ].join("\n")
@@ -268,9 +273,9 @@ module Mayu
         @root = patch_vnode(@root, descriptor)
       end
 
-      sig {returns(String)}
-      def inspect_tree
-        @root && @root.inspect_tree || ""
+      sig {params(exclude_components: T::Boolean).returns(String)}
+      def inspect_tree(exclude_components: false)
+        @root&.inspect_tree(exclude_components:).to_s
       end
 
       private
@@ -291,7 +296,9 @@ module Mayu
           child_descriptors = descriptor.props[:children]
         end
 
-        vnode.children = Array(child_descriptors).compact.map { |child| init_vnode(child) }
+        vnode.children = Array(child_descriptors).compact.map {
+          init_vnode(_1)
+        }
 
         vnode
       end
@@ -522,14 +529,6 @@ module Mayu
           @node0 = node0
           @patches = T.let([], T::Array[VPatch])
         end
-      end
-
-      def diff(a, b)
-        patch = VPatchSet.new()
-      end
-
-      sig {}
-      def walk(a, b, patch, index)
       end
     end
   end

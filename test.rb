@@ -23,4 +23,4 @@ vdom = Mayu::Renderer::VDOM.new(root)
 puts vdom.inspect_tree
 puts vdom.dom.root
 vdom.render(root)
-puts vdom.inspect_tree
+puts vdom.inspect_tree(exclude_components: true)
