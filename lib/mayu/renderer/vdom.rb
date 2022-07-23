@@ -66,7 +66,11 @@ module Mayu
         sig {returns(T::Boolean)}
         def text? = @type == TEXT
         sig {returns(T::Boolean)}
-        def text? = @type == COMMENT
+        def comment? = @type == COMMENT
+
+
+        sig {returns(String)}
+        def text = @props[:text_content].to_s
       end
 
       module DescriptorHelper
@@ -136,6 +140,11 @@ module Mayu
         sig {params(name: Symbol, args: T::Array[T.untyped]).returns(HandlerRef)}
         def handler(name, *args)
           HandlerRef.new(self, name, args)
+        end
+
+        sig {returns(VDOM::Descriptor::Children)}
+        def children
+          props[:children]
         end
 
         sig {params(klass: T.class_of(Class)).returns(T::Boolean)}
@@ -224,9 +233,24 @@ module Mayu
 
         sig {params(level: Integer).returns(String)}
         def inspect_tree(level = 0)
+          indent = "  " * level
           type = descriptor.type
 
-          "<#{type.to_s}>#{children.compact.map { _1.inspect_tree(level.succ) }.join}</#{type.to_s}>"
+          if type == Descriptor::TEXT
+            return indent + descriptor.text
+          end
+
+          if component
+            return Array(children).flatten.compact.map { _1.inspect_tree(level) }.join("\n")
+          end
+
+          [
+            indent + "<#{type.to_s}>",
+            *Array(children).flatten.compact.map {
+              _1.inspect_tree(level.succ)
+            },
+            indent + "</#{type.to_s}>"
+          ].join("\n")
         end
       end
 
@@ -267,7 +291,7 @@ module Mayu
           child_descriptors = descriptor.props[:children]
         end
 
-        vnode.children = child_descriptors.map { |child| init_vnode(child) }
+        vnode.children = Array(child_descriptors).compact.map { |child| init_vnode(child) }
 
         vnode
       end

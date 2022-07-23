@@ -2,10 +2,10 @@
 
 require "bundler"
 require "sorbet-runtime"
-require_relative "vdom"
-require_relative "modules"
-require_relative "component_builder"
-require_relative "../renderer"
+require_relative "lib/mayu/renderer"
+require_relative "lib/mayu/renderer/vdom"
+require_relative "lib/mayu/renderer/modules"
+require_relative "lib/mayu/renderer/component_builder"
 
 class MyComponent < Mayu::Renderer::VDOM::Component
   render do
@@ -15,7 +15,7 @@ class MyComponent < Mayu::Renderer::VDOM::Component
   end
 end
 
-modules = Mayu::Renderer::Modules.new(File.join(File.dirname(__FILE__), "components"))
+modules = Mayu::Renderer::Modules.new(File.join(File.dirname(__FILE__), "example", "app"))
 App = T.let(modules.load_component('App'), T.class_of(Mayu::Renderer::VDOM::Component))
 
 root = Mayu::Renderer.h(App)
