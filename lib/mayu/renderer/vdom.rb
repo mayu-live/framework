@@ -128,7 +128,9 @@ module Mayu
 
         sig {params(path: String).returns(T.class_of(Component))}
         def self.import(path)
-          const_get(:MODULES).load_component(path, const_get(:MODULE_PATH))
+          const_get(:MODULES)
+            .load_component(path, const_get(:MODULE_PATH))
+            .klass
         end
 
         sig {returns(CSSModule::IdentProxy)}
@@ -311,16 +313,16 @@ module Mayu
           child_descriptors = descriptor.props[:children]
         end
 
-        vnode.children = Array(child_descriptors).compact.map {
-          init_vnode(_1)
-        }
+        vnode.children = diff_children(
+          vnode,
+          Array(child_descriptors).flatten.compact
+        )
 
         vnode
       end
 
       sig {params(vnode: T.nilable(VNode), descriptor: T.nilable(Descriptor)).returns(T.nilable(VNode))}
       def patch_vnode(vnode, descriptor)
-        p "hej"
         unless descriptor
           return nil
         end
@@ -346,19 +348,12 @@ module Mayu
             descriptors = descriptor.props[:children]
           end
 
-          if vnode.children.empty?
-            new_children = Array(descriptors).compact.map { init_vnode(_1) }
-          else
-            new_children = diff_children(vnode, descriptors)
-          end
-
-          vnode.children = new_children
+          vnode.children = diff_children(vnode, descriptors)
 
           vnode
         else
-          p "hej2"
-          p vnode
-          p vnode
+          descriptors = descriptor.props[:children]
+          vnode.children = diff_children(vnode, descriptors)
           vnode
         end
       end
@@ -388,8 +383,8 @@ module Mayu
 
       sig {params(vnode: VNode, descriptors: Descriptor::Children).returns(VNode::Children)}
       def diff_children(vnode, descriptors)
-        descriptors = Array(descriptors)
-        parent_dom = T.cast(vnode.dom, DOM::Node)
+        descriptors = Array(descriptors).flatten.compact
+        #parent_dom = T.cast(vnode.dom, DOM::Node)
 
         result = T.let(Array.new(descriptors.length), VNode::Children)
 
@@ -440,8 +435,10 @@ module Mayu
           when old_start_vnode.same?(new_start_vnode)
             # New and old
             result[new_start_index] = patch_vnode(old_start_vnode, new_start_vnode)
-            old_start_vnode = T.cast(old_children[old_start_index += 1], VNode)
-            new_start_vnode = T.cast(descriptors[new_start_index += 1], Descriptor)
+            old_start_vnode = old_children[old_start_index += 1]
+            if x = descriptors[new_start_index += 1]
+              new_start_vnode = x
+            end
           when old_end_vnode.same?(new_end_vnode)
             # New post and old post hit
             result[new_end_index] = patch_vnode(old_end_vnode, new_end_vnode)
@@ -450,20 +447,20 @@ module Mayu
           when old_start_vnode.same?(new_end_vnode)
             # New and old hits
             result[new_end_index] = patch_vnode(old_start_vnode, new_end_vnode)
-            parent_dom.insert_before(
-              T.cast(old_start_vnode.dom, DOM::Node),
-              old_end_vnode.dom&.next_sibling
-            )
+            # parent_dom.insert_before(
+            #   T.cast(old_start_vnode.dom, DOM::Node),
+            #   old_end_vnode.dom&.next_sibling
+            # )
             old_start_vnode = T.cast(old_children[old_start_index += 1], VNode)
             new_end_vnode = T.cast(descriptors[new_end_index -= 1], Descriptor)
           when old_end_vnode.same?(new_start_vnode)
             # New before and old after hit
             result[new_start_index] = patch_vnode(old_end_vnode, new_start_vnode)
             # When the new front and old back hit , At this time, we need to move the node . Move the node pointed by the new node to the front of the old node
-            parent_dom.insert_before(
-              T.cast(old_end_vnode.dom, DOM::Node),
-              old_start_vnode.dom
-            )
+            # parent_dom.insert_before(
+            #   T.cast(old_end_vnode.dom, DOM::Node),
+            #   old_start_vnode.dom
+            # )
             old_end_vnode = T.cast(old_children[old_end_index -= 1], VNode)
             new_start_vnode = T.cast(descriptors[new_start_index += 1], Descriptor)
           else
@@ -478,7 +475,7 @@ module Mayu
               # Added items （ Namely new_start_vnode the ) It's not really DOM node
               new_child_vnode = VNode.new(self, new_start_vnode)
               result[old_start_index] = new_child_vnode
-              parent_dom.insert_before(create_dom_node(new_child_vnode), old_start_vnode.dom)
+              # parent_dom.insert_before(create_dom_node(new_child_vnode), old_start_vnode.dom)
             else
               # If not undefined, Not a new item , But to move
               element_to_move = old_children[index]
@@ -486,7 +483,7 @@ module Mayu
               # Set this to undefined, It means that I have finished this
               # old_children[index] = nil
               # Move , call insert_before It can also be mobile .
-              parent_dom.insert_before(T.cast(element_to_move&.dom, DOM::Node), old_start_vnode.dom)
+              # parent_dom.insert_before(T.cast(element_to_move&.dom, DOM::Node), old_start_vnode.dom)
             end
             # The pointer moves down , Just move the new head
             new_start_vnode = T.cast(descriptors[new_start_index += 1], Descriptor)
@@ -499,17 +496,16 @@ module Mayu
             new_child = descriptors[i]
             old_child = old_children[old_start_index]
             next unless new_child
-            next unless old_child
             new_child_vnode = VNode.new(self, new_child)
             result[i] = new_child_vnode
-            parent_dom.insert_before(create_dom_node(new_child_vnode), old_child.dom)
+            # parent_dom.insert_before(create_dom_node(new_child_vnode), old_child&.dom)
           end
         elsif (old_start_index <= old_end_index)
           # Batch deletion oldStart and oldEnd Items between pointers
           old_start_index.upto(old_end_index) do |i|
             old_child = old_children[i]
             next unless old_child
-            parent_dom.remove_child(T.cast(old_child.dom, DOM::Node))
+            # parent_dom.remove_child(T.cast(old_child.dom, DOM::Node))
           end
         end
 

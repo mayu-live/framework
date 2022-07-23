@@ -18,6 +18,7 @@ things still haven't been implemented yet.
 * Module system inspired by JavaScript.
 * Hot module replacement in development mode.
 * Image scaling, compression.
+* Source maps for rux files.
 * Designed to be hosted on services like fly.io
   where you can deploy apps to different regions
   for lower latency.
@@ -40,6 +41,21 @@ my_app
 ```
 
 In your `app/`-directory, you place all your application files.
+
+## Requests
+
+```
+├── __mayu
+│   ├── assets
+│   │   ├── App-[hash].css
+│   │   └── Logo-version-[hash].png
+│   ├── events/:session_id
+│   ├── handler/:session_id/:handler_id
+│   └── live.js
+└── * # catch-all route
+```
+
+All unmatched requests with the HTTP `Accept` header set to `text/html` will render the app.
 
 ## Implementation notes
 

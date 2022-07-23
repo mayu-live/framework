@@ -3,6 +3,7 @@
 require_relative "rux_visitor"
 require_relative "component_builder"
 require_relative "css_module"
+require_relative "component_module"
 require_relative "vdom"
 
 module Mayu
@@ -10,41 +11,42 @@ module Mayu
     class Modules
       extend T::Sig
 
+      ModuleType = T.type_alias { T.any(ComponentModule, CSSModule) }
+
+      sig {returns(String)}
+      attr_reader :root
+
       sig {params(root: String).void}
       def initialize(root)
         @root = root
+        @modules = T.let({}, T::Hash[String, ModuleType])
       end
 
-      sig {params(path: String, source_path: String).returns(T.class_of(VDOM::Component))}
+      sig {params(path: String, source_path: String).returns(ComponentModule)}
       def load_component(path, source_path = "/")
-        path = resolve_path(path, source_path)
-        source = File.read(File.join(@root, path))
-        transpiled = Rux.to_ruby(source, visitor: RuxVisitor.new)
+        resolved_path = resolve_path(path, source_path)
 
-        klass = T.cast(Class.new(VDOM::Component), T.class_of(VDOM::Component))
-        klass.class_eval do
-          define_method :inspect do
-            "hello"
-          end
-        end
-        klass.const_set(:MODULES, self)
-        klass.const_set(:MODULE_PATH, path)
-        css = load_css(File.join(@root, path))
-        klass.const_set(:CSS, css)
-        klass.class_eval(transpiled, path, 0)
-        klass
+        @modules[resolved_path] = ComponentModule.new(
+          self,
+          resolved_path,
+          File.read(File.join(@root, resolved_path))
+        )
       end
 
       sig {params(path: String, source_path: String).returns(String)}
       def resolve_path(path, source_path = "/")
-        File
-          .expand_path(path, File.dirname(source_path))
-          .sub(/(.rux)?$/, ".rux")
+        full_path = File.expand_path(path, File.dirname(source_path))
+
+        if File.file?(File.join(@root, full_path))
+          full_path
+        else
+          full_path.sub(/(.rux)?$/, ".rux")
+        end
       end
 
       sig {params(path: String).returns(T.any(CSSModule, CSSModule::NoModule))}
       def load_css(path)
-        CSSModule.load(path.sub(/\.rux$/, ".css"))
+        CSSModule.load(File.join(@root, resolve_path(path.sub(/\.rux$/, ".css"))))
       end
     end
   end
