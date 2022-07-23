@@ -121,6 +121,8 @@ module Mayu
           @props = props
           @state = T.let({}, State)
           @next_state = T.let({}, State)
+          @dirty = T.let(true, T::Boolean)
+          @is_rendering = T.let(false, T::Boolean)
         end
 
         MODULES = T.let(nil, T.nilable(Modules))
@@ -143,14 +145,19 @@ module Mayu
         sig {params(block: T.proc.returns(State)).void}
         def self.initial_state(&block) = define_method(:initial_state, &block)
         sig {params(name: Symbol, block: T.proc.returns(State)).void}
-        def self.handler(name, &block)
-          define_method(:"handle_#{name}", &block)
-        end
+        def self.handler(name, &block) = define_method(:"handle_#{name}", &block)
+        sig {params(block: T.proc.params(arg0: Props, arg1: State).returns(T::Boolean)).void}
+        def self.should_update?(&block) = define_method(:"should_update?", &block)
 
         sig {params(name: Symbol, args: T.nilable(T::Array[T.untyped])).returns(HandlerRef)}
         def handler(name, *args)
           HandlerRef.new(self, name, args)
         end
+
+        sig {returns(T::Boolean)}
+        def dirty? = @dirty
+        sig {returns(TrueClass)}
+        def dirty! = @dirty = true
 
         sig {returns(VDOM::Descriptor::Children)}
         def children
@@ -163,6 +170,20 @@ module Mayu
         end
 
         # Render
+
+        sig {returns(T.nilable(Descriptor::Children))}
+        def __render
+          if @is_rendering
+            raise RuntimeError, "Double render error"
+          end
+
+          begin
+            render
+          ensure
+            @is_rendering = false
+            @dirty = false
+          end
+        end
 
         sig {returns(T.nilable(Descriptor::Children))}
         def render = nil
@@ -233,6 +254,8 @@ module Mayu
 
           if type.is_a?(Class) && type < Component
             @component = type.new(self, props)
+          else
+            nil
           end
         end
 
@@ -257,17 +280,23 @@ module Mayu
           end
 
           formatted_props = props.reject { _1 == :children }.map { |key, value|
-            %{ #{key.to_s.gsub(/[^\w]/, "")}="#{CGI.escape_html(value.to_s)}"}
-          }.join
+            format(
+              ' %<key>s="%<value>s"',
+              key: key.to_s.sub(/^on_/, "on").tr("_", "-"),
+              value: CGI.escape(value.to_s),
+            )
+          }
+
+          formatted_props.unshift(%< data-mayu-key="#{descriptor.key.to_s}">) if descriptor.key
 
           cleaned_children = Array(children).flatten.compact
 
           if cleaned_children.empty?
-            return indent + "<#{type.to_s}#{formatted_props} />"
+            return indent + "<#{type.to_s}#{formatted_props.join} />"
           end
 
           [
-            indent + "<#{type.to_s}#{formatted_props}>",
+            indent + "<#{type.to_s}#{formatted_props.join}>",
             *Array(children).flatten.compact.map {
               _1.inspect_tree(level.succ, exclude_components:)
             },
@@ -308,7 +337,7 @@ module Mayu
 
         if component = vnode.init_component
           component.props = descriptor.props
-          child_descriptors = component.render
+          child_descriptors = component.__render
         else
           child_descriptors = descriptor.props[:children]
         end
@@ -340,10 +369,22 @@ module Mayu
         if vnode.same?(descriptor)
           component = vnode.component
 
-          if component && component.should_update?(descriptor.props, component.next_state)
-            component.props = descriptor.props
-            component.state = component.next_state
-            descriptors = component.render
+          if descriptor.type.to_s == "App::Counter"
+            raise "No component instantiated" unless component
+            p [:object_id, component.object_id]
+            p [:should_update?, component.should_update?(descriptor.props, component.next_state)]
+            p [:dirty?, component.dirty?]
+          end
+
+          if component
+            if component.should_update?(descriptor.props, component.next_state) || component.dirty?
+              component.props = descriptor.props
+              component.state = component.next_state
+              descriptors = component.__render
+            else
+              vnode.descriptor = descriptor
+              return vnode
+            end
           else
             descriptors = descriptor.props[:children]
           end
@@ -381,130 +422,6 @@ module Mayu
         end
 
         vnode.dom = node
-      end
-
-      class ChildDiffer
-        extend T::Sig
-
-        sig {returns(VNode::Children)}
-        attr_reader :result
-
-        sig {params(vnode: VNode, descriptors: Descriptor::Children).void}
-        def initialize(vnode, descriptors)
-          @vnode = vnode
-          @descriptors = T.let(Array(descriptors).flatten.compact, T::Array[Descriptor::ChildType])
-          @result = T.let([], VNode::Children)
-
-          @keymap = T.let(nil, T.nilable(KeyIndexMap))
-          @children_range = T.let(0...@vnode.children.length, T::Range[Integer])
-          @descriptor_range = T.let(0...@descriptors.length, T::Range[Integer])
-        end
-
-        sig {void}
-        def run
-          loop do
-            break unless start_vnode = get_start_vnode
-            break unless end_vnode = get_end_vnode
-            break unless start_descriptor = get_start_descriptor
-            break unless end_descriptor = get_end_descriptor
-
-            if start_vnode.same?(start_descriptor)
-              @result.push(patch_vnode(start_vnode, start_descriptor))
-              @children_range = update_range(@children_range, 1, 0)
-              @descriptor_range = update_range(@descriptor_range, 1, 0)
-              next
-            end
-
-            if end_vnode.same?(end_descriptor)
-              @result.push(patch_vnode(end_vnode, end_descriptor))
-              @children_range = update_range(@children_range, 0, -1)
-              @descriptor_range = update_range(@descriptor_range, 0, -1)
-            end
-
-            if start_vnode.same?(end_descriptor)
-              @result.push(patch_vnode(start_vnode, end_descriptor))
-              @children_range = update_range(@children_range, 1, 0)
-              @descriptor_range = update_range(@descriptor_range, 0, -1)
-              next
-            end
-
-            if end_vnode.same?(start_descriptor)
-              @result.push(patch_vnode(end_vnode, start_descriptor))
-              @children_range = update_range(@children_range, 0, -1)
-              @descriptor_range = update_range(@descriptor_range, 1, 0)
-              next
-            end
-
-            if index = keymap[start_descriptor.key]
-            end
-          end
-        end
-
-        private
-
-        sig {returns(KeyIndexMap)}
-        def keymap
-          return @keymap if @keymap
-          @keymap = build_key_index_map(@vnode.children, @children_range.begin, @children_range.end)
-        end
-
-        sig {params(children: VNode::Children, start_index: Integer, end_index: Integer).returns(KeyIndexMap)}
-        def build_key_index_map(children, start_index, end_index)
-          keymap = {}
-
-          start_index.upto(end_index) do |i|
-            key = children[i]&.key
-            keymap[key] = i if key
-          end
-
-          keymap
-        end
-
-        sig {params(vnode: VNode, descriptor: Descriptor).returns(VNode)}
-        def patch_vnode(vnode, descriptor)
-          vnode
-        end
-
-        sig {returns(T.nilable(VNode))}
-        def get_start_vnode
-          vnode = @vnode.children[@children_range.begin]
-          return vnode if vnode
-          return nil unless @children_range.count > 1
-          @children_range = update_range(@children_range, 1, 0)
-          get_start_vnode
-        end
-
-        sig {returns(T.nilable(VNode))}
-        def get_end_vnode
-          vnode = @vnode.children[@children_range.end]
-          return vnode if vnode
-          return nil unless @children_range.count > 1
-          @children_range = update_range(@children_range, 0, -1)
-          get_start_vnode
-        end
-
-        sig {returns(T.nilable(Descriptor))}
-        def get_start_descriptor
-          descriptor = @descriptors[@descriptor_range.begin]
-          return descriptor if descriptor
-          return nil unless @descriptor_range.count > 1
-          @descriptor_range = update_range(@descriptor_range, 1, 0)
-          get_start_descriptor
-        end
-
-        sig {returns(T.nilable(Descriptor))}
-        def get_end_descriptor
-          descriptor = @descriptors[@descriptor_range.end]
-          return descriptor if descriptor
-          return nil unless @descriptor_range.count > 1
-          @descriptor_range = update_range(@descriptor_range, 0, -1)
-          get_start_descriptor
-        end
-
-        sig {params(range: T::Range[Integer], add_begin: Integer, add_end: Integer).returns(T::Range[Integer])}
-        def update_range(range, add_begin, add_end)
-          (range.begin + add_begin)..(range.end + add_end)
-        end
       end
 
       sig {params(vnode: VNode, descriptors: Descriptor::Children).returns(VNode::Children)}
@@ -592,7 +509,7 @@ module Mayu
               # Added items （ Namely start_descriptor the ) It's not really DOM node
               new_child_vnode = init_vnode(start_descriptor)
               p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
-            result.insert(old_start_index, new_child_vnode)
+              result.insert(start_descriptor_index, new_child_vnode)
               # parent_dom.insert_before(create_dom_node(new_child_vnode), old_start_vnode.dom)
             else
               # If not undefined, Not a new item , But to move

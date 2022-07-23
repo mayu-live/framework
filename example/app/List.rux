@@ -1,3 +1,9 @@
+should_update? do |next_props, next_state|
+p [props != next_props, props, next_props]
+p [state != next_state, state, next_state]
+  props != next_props || state != next_state
+end
+
 render do
   numbers = (1..10).to_a.shuffle.first(5)
 
