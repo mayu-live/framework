@@ -26,17 +26,23 @@ module Mayu
       attr_accessor :children
       sig {returns(DOM::Node)}
       attr_accessor :dom
+      sig {returns(Integer)}
+      attr_accessor :parent_id
 
       sig {returns(T.nilable(Component::Wrapper))}
       attr_reader :component
 
+      sig {returns(T::Boolean)}
+      def dom? = type.is_a?(Symbol)
+
       sig {returns(T.nilable(DOM::Node))}
       attr_reader :dom
 
-      sig {params(vtree: VTree, descriptor: Descriptor, dom: T.nilable(DOM::Node)).void}
-      def initialize(vtree, descriptor, dom = nil)
+      sig {params(vtree: VTree, parent_id: Integer, descriptor: Descriptor, dom: T.nilable(DOM::Node)).void}
+      def initialize(vtree, parent_id, descriptor, dom = nil)
         @dom = dom
         @id = T.let(vtree.next_id!, Integer)
+        @parent_id = parent_id
         @vtree = vtree
         @descriptor = descriptor
         @children = T.let([], Children)
@@ -77,6 +83,22 @@ module Mayu
         else
           [@id, children.map(&:id_tree).compact]
         end
+      end
+
+      sig {params(result: T::Hash[String, String]).returns(T::Hash[String, String])}
+      def stylesheets(result = {})
+        type = descriptor.type
+
+        if Component.component_class?(type)
+          css = T.cast(component.class, T.class_of(Component::Base)).stylesheets
+          result[css.path] ||= css.to_s
+        end
+
+        children.each do |child|
+          result.merge!(child.stylesheets(result)) if child
+        end
+
+        result
       end
 
       sig {params(level: Integer, exclude_components: T::Boolean).returns(String)}

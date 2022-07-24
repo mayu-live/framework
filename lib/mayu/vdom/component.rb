@@ -56,12 +56,15 @@ module Mayu
         sig {returns(TrueClass)}
         def dirty! = @dirty = true
 
+        sig {returns(Base)}
+        attr_reader :instance
+
         sig {params(vnode: VNode, klass: T.class_of(Base), props: Props).void}
         def initialize(vnode, klass, props)
           @vnode = vnode
           @props = T.let(props, Props)
-          @state = T.let(klass.get_initial_state(props), State)
-          @next_state = T.let({}.merge(@state), State)
+          @state = T.let(klass.get_initial_state(props).freeze, State)
+          @next_state = T.let(@state.clone, State)
           @instance = T.let(klass.new(self), Base)
           @dirty = T.let(true, T::Boolean)
         end
@@ -186,8 +189,11 @@ module Mayu
         sig {override.params(prev_props: Props, prev_state: State).void}
         def did_update(prev_props, prev_state) = nil
 
+        sig {returns(Modules::CSSModule)}
+        def self.stylesheets = const_get(:CSS)
+
         sig {returns(Modules::CSSModule::IdentProxy)}
-        def self.styles = const_get(:CSS).proxy
+        def self.styles = stylesheets.proxy
 
         sig {returns(Modules::CSSModule::IdentProxy)}
         def styles = self.class.styles

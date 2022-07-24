@@ -31,6 +31,19 @@ module Mayu
       @vtree = T.let(VDOM::VTree.new(@root), VDOM::VTree)
       @html = T.let("", String)
 
+      Async do
+        loop do
+          message = @vtree.on_update.wait
+
+          case message
+          in :patch_set, payload
+            respond(:patch_set, payload)
+          else
+            puts "\e[31mUnknown event: #{message.inspect}\e[0m"
+          end
+        end
+      end
+
       rerender!
     end
 
@@ -50,7 +63,6 @@ module Mayu
             rerender!
           in :handle_event, handler_id, payload
             @vtree.handle_event(handler_id, payload)
-            rerender!
           else
             puts "Invalid message: #{message.inspect}"
           end

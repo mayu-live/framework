@@ -17,21 +17,29 @@ module Mayu
         @patches = T.let([], T::Array[T::Hash[Symbol, String]])
       end
 
-      sig {params(parent_node: VNode, new_node: VNode, reference_node: T.nilable(VNode)).void}
-      def insert_before(parent_node, new_node, reference_node = nil)
-        @patches.push(make_patch(:insert_before, {
-          parent_id: parent_node.id,
-          reference_id: reference_node&.id,
+      sig {returns(T::Boolean)}
+      def empty? = @patches.empty?
+
+      sig {params(parent_id: Integer, new_node: VNode, reference_id: T.nilable(Integer)).void}
+      def insert_before(parent_id, new_node, reference_id = nil)
+        add_patch(:insert_before, {
+          parent_id:,
+          reference_id:,
           html: new_node.inspect_tree,
           ids: new_node.id_tree,
-        }))
+        })
       end
 
-      sig {params(parent_node: VNode, child_node: VNode).void}
-      def remove_child(parent_node, child_node)
+      sig {params(id: Integer).void}
+      def remove_node(id)
+        add_patch(:remove_node, { id: })
+      end
+
+      sig {params(parent_id: Integer, child_id: Integer).void}
+      def remove_child(parent_id, child_id)
         add_patch(:remove_child, {
-          parent_id: parent_node.id,
-          child_id: child_node.id,
+          parent_id:,
+          child_id:,
         })
       end
 
@@ -58,11 +66,11 @@ module Mayu
 
       private
 
-      sig {params(type: Symbol, payload: T.untyped).void}
-      def add_patch(type, payload) = @patches.push(make_patch(type, payload))
-
-      sig {params(type: Symbol, payload: T.untyped).returns(Patch)}
-      def make_patch(type, payload) = { type:, payload: }
+      sig {params(type: Symbol, payload: T::Hash[Symbol, T.untyped]).void}
+      def add_patch(type, payload)
+        patch = { type: }.merge(payload)
+        @patches.push(patch)
+      end
     end
   end
 end

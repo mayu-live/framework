@@ -4,6 +4,9 @@ require_relative "component"
 require_relative "descriptor"
 require_relative "dom"
 require_relative "vnode"
+require_relative "patch_set"
+require_relative "../event_emitter"
+require "async/queue"
 
 module Mayu
   module VDOM
@@ -12,14 +15,47 @@ module Mayu
 
       KeyIndexMap = T.type_alias { T::Hash[T.untyped, Integer] }
 
+      sig {returns(Async::Condition)}
+      attr_reader :on_update
+
       sig {params(descriptor: Descriptor).void}
       def initialize(descriptor)
         @id_counter = T.let(0, Integer)
         @dom = T.let(DOM.new, DOM)
-        @update_queue = T.let([], T::Array[VNode])
+        @update_queue = T.let(Async::Queue.new, Async::Queue)
         @root = T.let(nil, T.nilable(VNode))
         @handlers = T.let({}, T::Hash[String, Component::HandlerRef])
+        @on_update = T.let(Async::Condition.new, Async::Condition)
+        @patch_sets = T.let([], T::Array[PatchSet])
+        @current_patch_set = T.let(PatchSet.new, PatchSet)
         render(descriptor)
+
+        @update_task = T.let(Async do |task|
+          loop do
+            @update_queue.size.times do
+              vnode = @update_queue.dequeue
+
+              puts "\e[33mupdatging #{vnode.id}\e[0m"
+
+              if vnode.component&.dirty?
+                puts "Rendering"
+
+                render_vnode(vnode)
+              end
+            end
+
+            commit!
+
+            task.sleep 0.05
+          end
+        rescue => e
+          puts e
+        end, Async::Task)
+      end
+
+      sig {params(descriptor: Descriptor).void}
+      def render(descriptor)
+        @root = patch_vnode(0, @root, descriptor)
       end
 
       sig {returns(T.untyped)}
@@ -27,14 +63,34 @@ module Mayu
         @root&.id_tree
       end
 
-      sig {params(vnode: VNode).void}
-      def enqueue_update!(vnode)
-        @update_queue.push(vnode)
+      sig {returns(T::Hash[String, String])}
+      def stylesheets
+        @root&.stylesheets || {}
       end
 
-      sig {params(descriptor: Descriptor).void}
-      def render(descriptor)
-        @root = patch_vnode(@root, descriptor)
+      sig {params(vnode: VNode).void}
+      def enqueue_update!(vnode)
+        component = vnode.component
+        return unless component
+        return if component.dirty?
+
+        puts "\e[33mEnqueueing\e[0m"
+
+        component.dirty!
+        @update_queue.enqueue(vnode)
+      end
+
+      sig {void}
+      def commit!
+        return if @current_patch_set.empty?
+
+        @current_patch_set, patch_set = PatchSet.new, @current_patch_set
+        id = @patch_sets.size
+        @patch_sets.push(patch_set)
+        @on_update.signal([
+          :patch_set,
+          { id:, patch_set: patch_set.to_json }
+        ])
       end
 
       sig {params(exclude_components: T::Boolean).returns(String)}
@@ -50,86 +106,128 @@ module Mayu
       end
 
       sig {returns(Integer)}
-      def next_id! = @id_counter += 1
+      def next_id!
+        @id_counter += 1
+      end
 
       private
 
-      sig {params(vnode: T.nilable(VNode), descriptor: T.nilable(Descriptor)).returns(T.nilable(VNode))}
-      def patch_vnode(vnode, descriptor)
+      sig {params(vnode: VNode).void}
+      def render_vnode(vnode)
+        # TODO: This doesn't work! Why? Idk.
+        vnode.component&.dirty!
+
+        patch_vnode(
+          vnode.parent_id,
+          vnode,
+          vnode.descriptor,
+          patch: true
+        )
+      end
+
+      sig do
+        params(
+          parent_id: Integer,
+          vnode: T.nilable(VNode),
+          descriptor: T.nilable(Descriptor),
+          patch: T::Boolean,
+        ).returns(T.nilable(VNode))
+      end
+      def patch_vnode(parent_id, vnode, descriptor, patch: true)
+        p [:patch_vnode, vnode&.id, vnode&.type, patch, vnode&.descriptor&.text, descriptor&.text]
+
         unless descriptor
-          destroy_vnode(vnode) if vnode
+          destroy_vnode(vnode, patch:) if vnode
           return nil
         end
 
         unless vnode
-          return init_vnode(descriptor)
+          return init_vnode(parent_id, descriptor, patch:)
         end
 
         if descriptor.text?
           unless vnode.descriptor.text?
-            return init_vnode(descriptor)
+            return init_vnode(parent_id, descriptor, patch:)
           end
         end
 
         if vnode.same?(descriptor)
           component = vnode.component
+          p [:is_same]
 
           if component
+            p [:name, component.instance.class.name]
+            p [:dirty?, component.dirty?]
             if component.should_update?(descriptor.props, component.next_state) || component.dirty?
-              component.props = descriptor.props
-              component.state = component.next_state
+              component.props = descriptor.props.clone
+              component.state = component.next_state.clone
               descriptors = component.render
+              p [:rerendering]
             else
               vnode.descriptor = descriptor
 
               vnode.children = Array(vnode.children).flatten.compact.map do
-                patch_vnode(_1, _1.descriptor)
+                patch_vnode(parent_id, _1, _1.descriptor, patch:)
               end
 
               return vnode
             end
           else
             descriptors = descriptor.props[:children]
+            parent_id = vnode.id
             update_handlers(vnode.props, descriptor.props)
           end
 
           vnode.descriptor = descriptor
-          vnode.children = diff_children(vnode, descriptors)
+          vnode.children = diff_children(parent_id, vnode, descriptors, patch:)
 
           vnode
         else
-          descriptors = descriptor.props[:children]
-          vnode.descriptor = descriptor
-          vnode.children = diff_children(vnode, descriptors)
-          vnode
+          p [:got_here, vnode.descriptor.type, descriptor.type]
+          destroy_vnode(vnode, patch:)
+          init_vnode(parent_id, descriptor, patch:)
         end
       end
 
-      sig {params(descriptor: Descriptor).returns(VNode)}
-      def init_vnode(descriptor)
-        vnode = VNode.new(self, descriptor)
+      sig {params(parent_id: Integer, descriptor: Descriptor, patch: T::Boolean).returns(VNode)}
+      def init_vnode(parent_id, descriptor, patch: true)
+        vnode = VNode.new(self, parent_id, descriptor)
 
         if component = vnode.init_component
           component.props = descriptor.props
           child_descriptors = component.render
         else
+          parent_id = vnode.id
           child_descriptors = descriptor.props[:children]
         end
 
         update_handlers({}, vnode.props)
 
         vnode.children = diff_children(
+          parent_id,
           vnode,
-          Array(child_descriptors).flatten.compact
+          Array(child_descriptors).flatten.compact,
+          patch:,
         )
 
         vnode
       end
 
-      sig {params(vnode: VNode).void}
-      def destroy_vnode(vnode)
+      sig {params(vnode: VNode, patch: T::Boolean).void}
+      def destroy_vnode(vnode, patch: true)
+        if patch
+          puts "REMOVE"
+         puts
+          puts vnode.inspect_tree(exclude_components: true)
+          puts
+          @current_patch_set.remove_node(vnode.id)
+        end
+
         update_handlers(vnode.props, {})
-        vnode.children.flatten.compact.each { destroy_vnode(vnode) }
+
+        vnode.children.flatten.compact.each do |child|
+          destroy_vnode(child, patch: false)
+        end
       end
 
       sig {params(old_props: Component::Props, new_props: Component::Props).void}
@@ -148,8 +246,15 @@ module Mayu
         end
       end
 
-      sig {params(vnode: VNode, descriptors: Descriptor::Children).returns(VNode::Children)}
-      def diff_children(vnode, descriptors)
+      sig do
+        params(
+          parent_id: Integer,
+          vnode: VNode,
+          descriptors: Descriptor::Children,
+          patch: T::Boolean,
+        ).returns(VNode::Children)
+      end
+      def diff_children(parent_id, vnode, descriptors, patch: true)
         descriptors = Array(descriptors).flatten.compact
         #parent_dom = T.cast(vnode.dom, DOM::Node)
 
@@ -192,19 +297,20 @@ module Mayu
           case
           when old_start_vnode.same?(start_descriptor)
             # New and old
-            result[start_descriptor_index] = patch_vnode(old_start_vnode, start_descriptor)
+            result[start_descriptor_index] = patch_vnode(parent_id, old_start_vnode, start_descriptor)
             old_start_vnode = old_children[old_start_index += 1]
             if x = descriptors[start_descriptor_index += 1]
               start_descriptor = x
             end
           when old_end_vnode.same?(end_descriptor)
             # New post and old post hit
-            result[end_descriptor_index] = patch_vnode(old_end_vnode, end_descriptor)
+            result[end_descriptor_index] = patch_vnode(parent_id, old_end_vnode, end_descriptor)
             old_end_vnode = old_children[old_end_index -= 1]
             end_descriptor = descriptors[end_descriptor_index -= 1]
           when old_start_vnode.same?(end_descriptor)
             # New and old hits
-            result[end_descriptor_index] = patch_vnode(old_start_vnode, end_descriptor)
+            result[end_descriptor_index] = patch_vnode(parent_id, old_start_vnode, end_descriptor)
+            @current_patch_set.insert_before(parent_id, old_start_vnode, old_end_vnode.id)
             # parent_dom.insert_before(
             #   T.cast(old_start_vnode.dom, DOM::Node),
             #   old_end_vnode.dom&.next_sibling
@@ -213,12 +319,13 @@ module Mayu
             end_descriptor = descriptors[end_descriptor_index -= 1]
           when old_end_vnode.same?(start_descriptor)
             # New before and old after hit
-            result[start_descriptor_index] = patch_vnode(old_end_vnode, start_descriptor)
+            result[start_descriptor_index] = patch_vnode(parent_id, old_end_vnode, start_descriptor)
             # When the new front and old back hit , At this time, we need to move the node . Move the node pointed by the new node to the front of the old node
             # parent_dom.insert_before(
             #   T.cast(old_end_vnode.dom, DOM::Node),
             #   old_start_vnode.dom
             # )
+            @current_patch_set.insert_before(parent_id, old_end_vnode, old_start_vnode.id)
             old_end_vnode = old_children[old_end_index -= 1]
             start_descriptor = descriptors[start_descriptor_index += 1]
           else
@@ -231,18 +338,22 @@ module Mayu
             unless index
               # Judge , If idxInOld yes undefined Indicates that it is a brand new item
               # Added items （ Namely start_descriptor the ) It's not really DOM node
-              new_child_vnode = init_vnode(start_descriptor)
+              new_child_vnode = init_vnode(parent_id, start_descriptor)
               p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
               result.insert(start_descriptor_index, new_child_vnode)
               # parent_dom.insert_before(create_dom_node(new_child_vnode), old_start_vnode.dom)
+              @current_patch_set.insert_before(parent_id, new_child_vnode, old_start_vnode.id)
             else
               # If not undefined, Not a new item , But to move
               element_to_move = old_children[index]
-              result[start_descriptor_index] = patch_vnode(element_to_move, start_descriptor)
-              # Set this to undefined, It means that I have finished this
-              # old_children[index] = nil
-              # Move , call insert_before It can also be mobile .
-              # parent_dom.insert_before(T.cast(element_to_move&.dom, DOM::Node), old_start_vnode.dom)
+              if new_vnode = patch_vnode(parent_id, element_to_move, start_descriptor)
+                result[start_descriptor_index] = new_vnode
+                # Set this to undefined, It means that I have finished this
+                # old_children[index] = nil
+                # Move , call insert_before It can also be mobile .
+                # parent_dom.insert_before(T.cast(element_to_move&.dom, DOM::Node), old_start_vnode.dom)
+                @current_patch_set.insert_before(parent_id, new_vnode)
+              end
             end
             # The pointer moves down , Just move the new head
             start_descriptor = descriptors[start_descriptor_index += 1]
@@ -255,17 +366,18 @@ module Mayu
             new_child = descriptors[i]
             old_child = old_children[old_start_index]
             next unless new_child
-            new_child_vnode = init_vnode(new_child)
-            p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
+            new_child_vnode = init_vnode(parent_id, new_child)
+            # p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
             result.push(new_child_vnode)
             # parent_dom.insert_before(create_dom_node(new_child_vnode), old_child&.dom)
+            @current_patch_set.insert_before(parent_id, new_child_vnode, old_child&.id)
           end
         elsif (old_start_index <= old_end_index)
           # Batch deletion oldStart and oldEnd Items between pointers
           old_start_index.upto(old_end_index) do |i|
             old_child = old_children[i]
-            next unless old_child
             # parent_dom.remove_child(T.cast(old_child.dom, DOM::Node))
+            destroy_vnode(old_child, patch:) if old_child
           end
         end
 

@@ -67,6 +67,8 @@ module Mayu
             case message
             in :html, payload
               @connections.broadcast(:html, payload)
+            in :patch_set, payload
+              @connections.broadcast(:patch_set, payload)
             in :close
               @connections.close_all!
               running = T.let(false, T::Boolean)

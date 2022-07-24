@@ -4,14 +4,27 @@ end
 
 handler :increment do |x, prev|
   update do |state|
-    { count: prev.next }
+    { count: state[:count].next }
   end
 end
 
+should_update? do |next_props, next_state|
+  p [:props, props, next_props]
+  p [:state, state, next_state]
+  true
+end
+
 render do
+  count = state[:count]
+
   <div>
     <button on-click={handler(:increment, state[:count])}>
-      Click me! {state[:count].inspect}
+      Click me!
+      {if (state[:count] % 2).zero?
+        <span>{count}</span>
+      else
+        <strong>{count}</strong>
+      end}
     </button>
   </div>
 end
