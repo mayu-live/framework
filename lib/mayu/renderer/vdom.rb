@@ -13,8 +13,88 @@ module Mayu
       State = T.type_alias { T::Hash[String, T.untyped] }
       KeyIndexMap = T.type_alias { T::Hash[T.untyped, Integer] }
 
+      class HandlerRef
+        extend T::Sig
+
+        sig {params(component: Component, name: Symbol, args: T::Array[T.untyped]).void}
+        def initialize(component, name, args = [])
+          @component = component
+          @name = name
+          @args = args
+        end
+
+        sig {params(data: T.untyped).void}
+        def call(data)
+          @component.send(:"handle_#{@name}")
+        end
+      end
+
+      class Descriptor
+        extend T::Sig
+
+        Children = T.type_alias { T.any(ChildType, T::Array[ChildType]) }
+        ChildType = T.type_alias { T.nilable(Descriptor) }
+        ComponentChildren = T.type_alias { T.any(ComponentChildType, T::Array[ComponentChildType]) }
+        ComponentChildType = T.type_alias { T.nilable(T.any(Descriptor, T::Boolean, String, Numeric)) }
+
+        TEXT = :TEXT
+        COMMENT = :COMMENT
+
+        sig {returns(ElementType)}
+        attr_reader :type
+        sig {returns(Props)}
+        attr_reader :props
+        sig {returns(T.untyped)}
+        attr_reader :key
+
+        sig {params(type: ElementType, props: Props, children: Descriptor::ComponentChildren).void}
+        def initialize(type, props = {}, children = [])
+          @type = type
+          @props = T.let(props.merge(
+            children: Array(children).map { |child|
+              if child.is_a?(Descriptor)
+                child
+              else
+                self.class.new(TEXT, { text_content: child })
+              end
+            }
+          ), Props)
+
+          @key = T.let(@props.delete(:key), T.untyped)
+        end
+
+        sig {returns(T::Boolean)}
+        def text? = @type == TEXT
+        sig {returns(T::Boolean)}
+        def text? = @type == COMMENT
+      end
+
+      module DescriptorHelper
+        extend T::Sig
+
+        sig do
+          params(
+            type: VDOM::ElementType,
+            props: VDOM::Props,
+            children: T.nilable(VDOM::Descriptor::ComponentChildren),
+            blk: T.nilable(T.proc.returns(VDOM::Descriptor::ComponentChildren))
+          ).returns(
+              VDOM::Descriptor
+            )
+        end
+        def h(type, props = {}, children = [], &blk)
+          if blk
+            VDOM::Descriptor.new(type, props, blk.call)
+          else
+            VDOM::Descriptor.new(type, props, children)
+          end
+        end
+      end
+
       class Component
         extend T::Sig
+        extend DescriptorHelper
+        include DescriptorHelper
 
         sig {returns(Props)}
         attr_accessor :props
@@ -39,15 +119,23 @@ module Mayu
           const_get(:MODULES).load_component(path, const_get(:MODULE_PATH))
         end
 
-        sig {params(block: T.proc.returns(Descriptor::Children)).void}
+        sig {returns(CSSModule::IdentProxy)}
+        def styles
+          self.class.const_get(:CSS).proxy
+        end
+
+        sig {params(block: T.proc.returns(VDOM::Descriptor::Children)).void}
         def self.render(&block) = define_method(:render, &block)
         sig {params(block: T.proc.returns(State)).void}
         def self.initial_state(&block) = define_method(:initial_state, &block)
-        sig {params(foo: Symbol, block: T.proc.returns(State)).void}
-        def self.handler(foo, &block) = nil
+        sig {params(name: Symbol, block: T.proc.returns(State)).void}
+        def self.handler(name, &block)
+          define_method(:"handle_#{name}", &block)
+        end
 
-        sig {void}
-        def handler(name, &args)
+        sig {params(name: Symbol, args: T::Array[T.untyped]).returns(HandlerRef)}
+        def handler(name, *args)
+          HandlerRef.new(self, name, args)
         end
 
         sig {params(klass: T.class_of(Class)).returns(T::Boolean)}
@@ -77,44 +165,11 @@ module Mayu
         def did_update?(prev_props, prev_state) = nil
       end
 
-      class Descriptor
-        extend T::Sig
-
-        Children = T.type_alias { T.any(ChildType, T::Array[ChildType]) }
-        ChildType = T.type_alias { T.nilable(T.any(Descriptor, String, NilClass)) }
-
-        TEXT = :TEXT
-        COMMENT = :COMMENT
-
-        sig {returns(ElementType)}
-        attr_reader :type
-        sig {returns(Props)}
-        attr_reader :props
-        sig {returns(T.untyped)}
-        attr_reader :key
-
-        sig {params(type: ElementType, props: Props, children: Descriptor::Children).void}
-        def initialize(type, props = {}, children = [])
-          @type = type
-          @props = T.let(props.merge(
-            children: Array(children).map { |child|
-              if child.is_a?(Descriptor)
-                child
-              else
-                self.class.new(TEXT, {
-                  text_content: child,
-                })
-              end
-            }
-          ), Props)
-
-          @key = T.let(@props.delete(:key), T.untyped)
+      class HTMLComponent < Component
+        render do
+          h(:html, {}, [
+          ])
         end
-
-        sig {returns(T::Boolean)}
-        def text? = @type == TEXT
-        sig {returns(T::Boolean)}
-        def text? = @type == COMMENT
       end
 
       class VNode
@@ -151,9 +206,9 @@ module Mayu
           init_component
         end
 
-        sig {void}
+        sig {returns(T.nilable(Component))}
         def init_component
-          return if @component
+          return @component if @component
 
           type = descriptor.type
 
@@ -201,21 +256,36 @@ module Mayu
         patch_vnode(vnode, descriptor)
       end
 
+      sig {params(descriptor: Descriptor).returns(VNode)}
+      def init_vnode(descriptor)
+        vnode = VNode.new(self, descriptor)
+
+        if component = vnode.init_component
+          component.props = descriptor.props
+          child_descriptors = component.render
+        else
+          child_descriptors = descriptor.props[:children]
+        end
+
+        vnode.children = child_descriptors.map { |child| init_vnode(child) }
+
+        vnode
+      end
+
       sig {params(vnode: T.nilable(VNode), descriptor: T.nilable(Descriptor)).returns(T.nilable(VNode))}
       def patch_vnode(vnode, descriptor)
+        p "hej"
         unless descriptor
           return nil
         end
 
-        if vnode&.descriptor == descriptor
-          return vnode
+        unless vnode
+          return init_vnode(descriptor)
         end
-
-        vnode ||= vnode = VNode.new(self, descriptor)
 
         if descriptor.text?
           unless vnode.descriptor.text?
-            return VNode.new(self, descriptor)
+            return init_vnode(descriptor)
           end
         end
 
@@ -230,10 +300,20 @@ module Mayu
             descriptors = descriptor.props[:children]
           end
 
-          vnode.children = diff_children(vnode, descriptors)
+          if vnode.children.empty?
+            new_children = Array(descriptors).compact.map { init_vnode(_1) }
+          else
+            new_children = diff_children(vnode, descriptors)
+          end
+
+          vnode.children = new_children
 
           vnode
         else
+          p "hej2"
+          p vnode
+          p vnode
+          vnode
         end
       end
 
@@ -262,6 +342,7 @@ module Mayu
 
       sig {params(vnode: VNode, descriptors: Descriptor::Children).returns(VNode::Children)}
       def diff_children(vnode, descriptors)
+        descriptors = Array(descriptors)
         parent_dom = T.cast(vnode.dom, DOM::Node)
 
         result = T.let(Array.new(descriptors.length), VNode::Children)
@@ -286,7 +367,8 @@ module Mayu
         # In the above four cases, it is the structure used in hit processing
         keymap = T.let(nil, T.nilable(KeyIndexMap))
         # Loop through processing nodes
-        while (old_start_index <= old_end_index && new_start_index <= new_end_index) do
+        p [old_start_index, old_end_index, new_start_index, new_end_index]
+        while old_start_index <= old_end_index && new_start_index <= new_end_index
           # The first is not to judge the first four hits , But to skip what has been added undefined Things marked
           unless old_start_vnode
             old_start_vnode = T.cast(old_children[old_start_index += 1], NilClass)
@@ -398,6 +480,32 @@ module Mayu
         end
 
         keymap
+      end
+
+      class VPatchSet
+        class VPatch
+        end
+
+        extend T::Sig
+
+        sig {returns(VNode)}
+        attr_reader :node0
+        sig {returns(T::Array[VPatch])}
+        attr_reader :patches
+
+        sig {params(node0: VNode).void}
+        def initialize(node0)
+          @node0 = node0
+          @patches = T.let([], T::Array[VPatch])
+        end
+      end
+
+      def diff(a, b)
+        patch = VPatchSet.new()
+      end
+
+      sig {}
+      def walk(a, b, patch, index)
       end
     end
   end

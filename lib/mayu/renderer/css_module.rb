@@ -4,17 +4,23 @@ require "digest/sha2"
 require "crass"
 
 class CSSModule
-  class NoModule
-    class NoModuleProxy < BasicObject
-      def initialize(no_module)
-        @no_module = no_module
-      end
+  class IdentProxy < BasicObject
+    def is_a?(klass)
+      ::Object.instance_method(:is_a?).bind(self).call(klass)
+    end
+  end
 
-      def method_missing(*args)
-        ::Kernel.raise "No CSS module loaded, please put your CSS in #{@no_module.path}"
-      end
+  class NoModuleProxy < IdentProxy
+    def initialize(no_module)
+      @no_module = no_module
     end
 
+    def method_missing(*args)
+      ::Kernel.raise "No CSS module loaded, please put your CSS in #{@no_module.path}"
+    end
+  end
+
+  class NoModule
     attr_reader :path
 
     def initialize(path)
@@ -30,12 +36,12 @@ class CSSModule
     end
   end
 
-  class IdentProxy < BasicObject
+  class ClassnameProxy < IdentProxy
     def initialize(mod)
       @mod = mod
     end
 
-    def method_missing(ident)
+    def method_missing(ident, *args)
       @mod.get_ident(ident)
     end
   end
@@ -69,7 +75,7 @@ class CSSModule
   end
 
   def proxy
-    @proxy ||= IdentProxy.new(self)
+    @proxy ||= ClassnameProxy.new(self)
   end
 
   def to_s

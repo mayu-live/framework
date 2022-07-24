@@ -213,7 +213,7 @@ module Mayu
       ComponentType = T.type_alias { T.any(T.class_of(FunctionComponent), T.class_of(ClassComponent)) }
 =end
 
-      class VNode < T::Struct
+      class VNodeasd < T::Struct
         extend T::Sig
         extend T::Generic
 
@@ -228,7 +228,7 @@ module Mayu
         prop :component, T.nilable(ClassComponent)
         prop :original, Integer, default: 0
 
-        sig {returns(VNode)}
+        sig {returns(self)}
         def copy
           self.class.new(
             vdom:,

@@ -8,9 +8,10 @@ require_relative "component_builder"
 require_relative "../renderer"
 
 class MyComponent < Mayu::Renderer::VDOM::Component
-  sig {returns(Mayu::Renderer::VDOM::Descriptor::Children)}
-  def render
-    Mayu::Renderer.h(:span, {}, ["hej"])
+  render do
+    h(:span) do
+      "hej"
+    end
   end
 end
 
