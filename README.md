@@ -24,7 +24,7 @@ things still haven't been implemented yet.
   for lower latency.
 * Mayu means river in Quechua.
 
-## Structure
+## App structure
 
 A Mayu-app is structured like this:
 
@@ -57,11 +57,13 @@ In your `app/`-directory, you place all your application files.
 
 All unmatched requests with the HTTP `Accept` header set to `text/html` will render the app.
 
-## Implementation notes
+## Some ideas
 
 ### Module system
 
 Maybe base imports/exports on [digital-fabric/modulation](https://github.com/digital-fabric/modulation).
+
+Or maybe not. Maybe better if all .rux files only export one component.
 
 ### Images
 

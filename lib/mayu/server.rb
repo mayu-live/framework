@@ -17,16 +17,16 @@ module Mayu
 
     sig {params(env: Types::TRackHeaders).returns(Types::TRackReturn)}
     def self.call(env)
-      EnvInspector.new.inspect_env(env)
-
-      case env["PATH_INFO"].to_s.split("/")
-      in ['', '__mayu', 'live.js']
+      case split_path(env["PATH_INFO"].to_s)
+      in ['__mayu', 'live.js']
         send_file(
           File.join(JS_ROOT, 'live.js'),
           'application/javascript'
         )
-      in ['', '__mayu', 'live', session_id]
+      in ['__mayu', 'events', session_id]
         Session.connect(session_id)
+      # in ['__mayu', 'handler', session_id, handler_id]
+      #   Session.handle(session_id)
       else
         Session.init
       end
@@ -41,6 +41,13 @@ module Mayu
       ]
     rescue
       NOT_FOUND_RESPONSE
+    end
+
+    sig {params(path: String).returns(T::Array[String])}
+    def self.split_path(path)
+      path
+        .sub(/^\//, '')
+        .split("/")
     end
   end
 end

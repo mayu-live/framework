@@ -56,6 +56,11 @@ module Mayu
         descriptor.type == type && descriptor.key == key
       end
 
+      VOID_ELEMENTS = T.let(
+        %w(area base br col command embed hr img input keygen link meta param source track wbr).freeze,
+        T::Array[String]
+      )
+
       sig {params(level: Integer, exclude_components: T::Boolean).returns(String)}
       def inspect_tree(level = 0, exclude_components: false)
         indent = "  " * level
@@ -75,7 +80,7 @@ module Mayu
           format(
             ' %<key>s="%<value>s"',
             key: key.to_s.sub(/^on_/, "on").tr("_", "-"),
-            value: CGI.escape(value.to_s),
+            value: CGI.escape_html(value.to_s),
           )
         }
 
@@ -84,13 +89,17 @@ module Mayu
 
         cleaned_children = Array(children).flatten.compact
 
+        if VOID_ELEMENTS.include?(type.to_s)
+          return indent + "<#{type.to_s}#{formatted_props.join}>"
+        end
+
         if cleaned_children.empty?
-          return indent + "<#{type.to_s}#{formatted_props.join} />"
+          return indent + "<#{type.to_s}#{formatted_props.join}></#{type.to_s}>"
         end
 
         [
           indent + "<#{type.to_s}#{formatted_props.join}>",
-          *Array(children).flatten.compact.map {
+          *cleaned_children.map {
             _1.inspect_tree(level.succ, exclude_components:)
           },
           indent + "</#{type.to_s}>"
