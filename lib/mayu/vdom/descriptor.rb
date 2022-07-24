@@ -38,11 +38,12 @@ module Mayu
           when child.is_a?(Descriptor)
             child
           when type == :title
-            self.class.new(TEXT, { text_content: child })
+            self.class.new(TEXT, { text_content: child.to_s })
           else
             [
+              # Comment nodes are to split text nodes in the DOM.
               Descriptor.new(COMMENT),
-              self.class.new(TEXT, { text_content: child })
+              self.class.new(TEXT, { text_content: child.to_s })
             ]
           end
         }.flatten
