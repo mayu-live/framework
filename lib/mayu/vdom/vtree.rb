@@ -21,6 +21,11 @@ module Mayu
         render(descriptor)
       end
 
+      sig {returns(T.untyped)}
+      def id_tree
+        @root&.id_tree
+      end
+
       sig {params(vnode: VNode).void}
       def enqueue_update!(vnode)
         @update_queue.push(vnode)

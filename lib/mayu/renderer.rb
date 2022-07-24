@@ -48,6 +48,8 @@ module Mayu
           case message
           in :render
             rerender!
+          in :handle_event, payload
+            raise "Handle event: #{payload}"
           else
             puts "Invalid message: #{message.inspect}"
           end
@@ -66,6 +68,9 @@ module Mayu
     def send(*args) = @in.enqueue(args)
     sig {returns(T.untyped)}
     def take = @out.dequeue
+
+    sig {returns(T.untyped)}
+    def id_tree = @vtree.id_tree
 
     private
 

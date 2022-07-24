@@ -7,13 +7,27 @@ class NodeTreeNode {
   children: NodeTreeNode[];
   element: ChildNode;
 
-  constructor(node: IdTreeNode, element: ChildNode) {
+  constructor(node: IdTreeNode, element: ChildNode, parent?: ChildNode) {
     if (!node) {
-      throw new Error(`There is no tree node at ${element}`);
+      console.error(
+        "There is no tree node for element",
+        element,
+        "with parent",
+        parent
+      );
+      console.log(Array.from(parent?.childNodes || []))
+      throw new Error("Tree node not found for element");
     }
 
     if (!element) {
-      throw new Error(`There is no element for node ${JSON.stringify(node)}`);
+      console.error(
+        "There is no element for node",
+        node,
+        "with parent",
+        parent
+      );
+      console.log(Array.from(parent?.childNodes || []))
+      throw new Error("Element not found for node");
     }
 
     this.element = element;
@@ -36,7 +50,7 @@ class NodeTreeNode {
         return false;
       });
       this.children = node[1].map(
-        (child, i) => new NodeTreeNode(child, childNodes[i])
+        (child, i) => new NodeTreeNode(child, childNodes[i], element)
       );
     }
   }
@@ -93,7 +107,7 @@ class Mayu {
     this._applyPatches = this._applyPatches.bind(this);
     this.nodeTree = new NodeTree(idTreeRoot);
 
-    this.connection = new EventSource(`/__mayu/live/${this.sessionId}`);
+    this.connection = new EventSource(`/__mayu/events/${this.sessionId}`);
 
     this.connection.onerror = (e) => {
       console.log(e);
@@ -104,14 +118,14 @@ class Mayu {
     // this.connection.addEventListener("patch_set", this._applyPatches);
   }
 
-  handle(e: Event, callbackId: string) {
+  handle(e: Event, handlerId: string) {
     e.preventDefault();
 
     const payload = {
       type: e.type,
     };
 
-    fetch(`/__mayu/callback/${this.sessionId}/${callbackId}`, {
+    fetch(`/__mayu/handler/${this.sessionId}/${handlerId}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",

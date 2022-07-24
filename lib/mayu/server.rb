@@ -17,18 +17,21 @@ module Mayu
 
     sig {params(env: Types::TRackHeaders).returns(Types::TRackReturn)}
     def self.call(env)
-      case split_path(env["PATH_INFO"].to_s)
-      in ['__mayu', 'live.js']
+      case route_split(env)
+      in :GET, ['__mayu', 'live.js']
         send_file(
           File.join(JS_ROOT, 'live.js'),
           'application/javascript'
         )
-      in ['__mayu', 'events', session_id]
+      in :GET, ['__mayu', 'events', session_id]
         Session.connect(session_id)
-      # in ['__mayu', 'handler', session_id, handler_id]
-      #   Session.handle(session_id)
-      else
+      in :POST, ['__mayu', 'handler', session_id, handler_id]
+      body = JSON.parse(T.cast(env["rack.input"], Falcon::Adapters::Input).read)
+        Session.handle_event(session_id, handler_id)
+      in :GET, _any
         Session.init
+      else
+        [404, {}, []]
       end
     end
 
@@ -41,6 +44,14 @@ module Mayu
       ]
     rescue
       NOT_FOUND_RESPONSE
+    end
+
+    sig {params(env: Types::TRackHeaders).returns([Symbol, T::Array[String]])}
+    def self.route_split(env)
+      [
+        env["REQUEST_METHOD"].to_s.to_sym,
+        split_path(env["PATH_INFO"].to_s),
+      ]
     end
 
     sig {params(path: String).returns(T::Array[String])}

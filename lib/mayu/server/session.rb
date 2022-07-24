@@ -87,22 +87,53 @@ module Mayu
       def self.init
         session = new
         SESSIONS[session.id] = session
+        p "initialized session"
+        p SESSIONS.keys
         session.rack_response
       end
 
       sig {returns(Types::TRackReturn)}
       def rack_response
+        html = @renderer.html
+        id_tree = @renderer.id_tree
+
+        script = <<~EOF
+        <script type="module">
+          import Mayu from '/__mayu/live.js'
+          window.Mayu = new Mayu('#{@id}', #{JSON.generate(id_tree)})
+        </script>
+        EOF
+
         [
           200,
           {'content-type' => 'text/html; charset=utf-8'},
-          [@renderer.html.prepend("<!DOCTYPE html>\n")]
+          [
+            html
+              .prepend("<!DOCTYPE html>\n")
+              .sub(/.*\K<\/body>/) { "#{script}#{_1}" }
+          ]
         ]
       end
 
       sig {params(session_id: String).returns(Types::TRackReturn)}
       def self.connect(session_id)
-        session = SESSIONS.fetch(session_id)
+        session = SESSIONS.fetch(session_id) {
+          raise KeyError, "Session not found: #{session_id}, has: #{SESSIONS.keys.inspect}"
+        }
         session.connect
+      end
+
+      sig do
+        params(
+          session_id: String,
+          handler_id: String,
+          payload: T.untyped,
+        ).returns(Types::TRackReturn)
+      end
+      def self.handle_event(session_id, handler_id, payload = {})
+        session = SESSIONS.fetch(session_id)
+        session.handle_event(session_id, handler_id)
+        [200, {}, ["ok"]]
       end
 
       sig {returns(Types::TRackReturn)}
@@ -115,9 +146,10 @@ module Mayu
         @renderer.stop
       end
 
-      sig {params(handler_id: String, payload: T.untyped).void}
+      sig {params(handler_id: String, payload: T.untyped).returns(T::Boolean)}
       def handle_event(handler_id, payload = {})
-        puts "#{handler_id} #{payload.inspect}"
+        @renderer.send(:handle_event, handler_id, payload)
+        true
       end
     end
   end

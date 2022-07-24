@@ -1,6 +1,7 @@
 # typed: strict
 
 require_relative "types"
+require_relative "monkeypatches"
 
 module Mayu
   module Server

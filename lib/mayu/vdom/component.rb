@@ -212,7 +212,7 @@ module Mayu
       sig {returns(String)}
       def to_s
         id = Digest::SHA256.hexdigest([@component.object_id, @name, @args].map(&:inspect).join(":"))
-        "Mayu.handler('#{id}')"
+        "Mayu.handle(event, '#{id}')"
       end
     end
   end

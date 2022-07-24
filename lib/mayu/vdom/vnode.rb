@@ -61,17 +61,33 @@ module Mayu
         T::Array[String]
       )
 
+      sig {returns(T.untyped)}
+      def id_tree
+        children = Array(self.children).flatten.compact
+
+        if component
+          return children.first&.id_tree
+        end
+
+        if children.empty?
+          @id
+        else
+          [@id, children.map(&:id_tree).compact]
+        end
+      end
+
       sig {params(level: Integer, exclude_components: T::Boolean).returns(String)}
       def inspect_tree(level = 0, exclude_components: false)
-        indent = "  " * level
         type = descriptor.type
 
         if type == Descriptor::TEXT
-          return indent + descriptor.text
+          return "<mayu-text data-mayu-id=\"#{@id}\">#{descriptor.text}</mayu-text>"
         end
 
+        cleaned_children = Array(children).flatten.compact
+
         if component && exclude_components
-          return Array(children).flatten.compact.map {
+          return cleaned_children.map {
             _1.inspect_tree(level, exclude_components:)
           }.join("\n")
         end
@@ -87,23 +103,17 @@ module Mayu
         formatted_props.unshift(%< data-mayu-key="#{descriptor.key.to_s}">) if descriptor.key
         formatted_props.unshift(%< data-mayu-id="#{@id.to_s}">)
 
-        cleaned_children = Array(children).flatten.compact
-
         if VOID_ELEMENTS.include?(type.to_s)
-          return indent + "<#{type.to_s}#{formatted_props.join}>"
-        end
-
-        if cleaned_children.empty?
-          return indent + "<#{type.to_s}#{formatted_props.join}></#{type.to_s}>"
+          return "<#{type.to_s}#{formatted_props.join}>"
         end
 
         [
-          indent + "<#{type.to_s}#{formatted_props.join}>",
+          "<#{type.to_s}#{formatted_props.join}>",
           *cleaned_children.map {
             _1.inspect_tree(level.succ, exclude_components:)
           },
-          indent + "</#{type.to_s}>"
-        ].join("\n")
+          "</#{type.to_s}>"
+        ].join
       end
     end
   end
