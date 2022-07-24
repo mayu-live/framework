@@ -21,3 +21,4 @@ end
 gem "sorbet-runtime"
 gem "rack-test"
 gem "async-http"
+gem "minitest"
