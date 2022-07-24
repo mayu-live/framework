@@ -105,7 +105,9 @@ module Mayu
           raise
         end
 
+        sig {void}
         def enqueue_update!
+          @vnode.enqueue_update!
         end
       end
 
