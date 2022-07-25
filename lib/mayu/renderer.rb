@@ -48,8 +48,9 @@ module Mayu
           case message
           in :render
             rerender!
-          in :handle_event, payload
-            raise "Handle event: #{payload}"
+          in :handle_event, handler_id, payload
+            @vtree.handle_event(handler_id, payload)
+            rerender!
           else
             puts "Invalid message: #{message.inspect}"
           end

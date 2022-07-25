@@ -1,5 +1,6 @@
 # typed: strict
 
+require "async/queue"
 require_relative "types"
 require_relative "monkeypatches"
 
@@ -21,29 +22,32 @@ module Mayu
         @id = T.let(SecureRandom.uuid, String)
         @session_id = session_id
         @body = T.let(Async::HTTP::Body::Writable.new, Async::HTTP::Body::Writable)
+        @queue = T.let(Async::Queue.new, Async::Queue)
 
-        @ractor = T.let(Ractor.new(@body) do |body|
-          running = true
-
-          until body.closed?
-            body.write(Ractor.receive)
+        @task = T.let(Async do
+          loop do
+            @body.write(@queue.dequeue.to_s)
           end
-        end, Ractor)
+        end, Async::Task)
       end
 
       sig {params(event: Symbol, payload: T.untyped).void}
       def send_event(event, payload = {})
         data = "event: #{event}\ndata: #{JSON.generate(payload)}\n\n"
-        @ractor.send(data)
+        puts data
+        @queue.enqueue(data)
       end
 
       sig {returns(Types::TRackReturn)}
       def rack_response
-        [200, {'content-type' => 'text/event-stream; charset=utf-8'}, [@body]]
+        [200, {'content-type' => 'text/event-stream; charset=utf-8'}, @body]
       end
 
       sig {void}
-      def close = @body.close
+      def close
+        @body.close
+        @task.stop
+      end
 
       sig {returns(T::Boolean)}
       def closed? = @body.closed?

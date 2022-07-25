@@ -1,7 +1,7 @@
 Header = import("./Layout/Header")
 Footer = import("./Layout/Footer")
 
-initial_state do
+initial_state do |props|
   { title: "My page" }
 end
 

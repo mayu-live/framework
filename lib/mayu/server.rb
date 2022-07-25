@@ -19,20 +19,22 @@ module Mayu
     def self.call(env)
       case route_split(env)
       in :GET, ['__mayu', 'live.js']
-        send_file(
+        return send_file(
           File.join(JS_ROOT, 'live.js'),
           'application/javascript'
         )
       in :GET, ['__mayu', 'events', session_id]
-        Session.connect(session_id)
+        return Session.connect(session_id)
       in :POST, ['__mayu', 'handler', session_id, handler_id]
-      body = JSON.parse(T.cast(env["rack.input"], Falcon::Adapters::Input).read)
-        Session.handle_event(session_id, handler_id)
-      in :GET, _any
-        Session.init
-      else
-        [404, {}, []]
+        body = JSON.parse(T.cast(env["rack.input"], Falcon::Adapters::Input).read)
+        return Session.handle_event(session_id, handler_id)
+      in :GET, path
+        if env["HTTP_ACCEPT"].to_s.split(",").include?("text/html")
+          return Session.init
+        end
       end
+
+        [404, {}, []]
     end
 
     sig {params(path: String, content_type: String).returns(Types::TRackReturn)}

@@ -38,6 +38,9 @@ module Mayu
         def broadcast(event, payload = {})
           @connections.keep_if do |_id, conn|
             conn.send_event(event, payload)
+          rescue => e
+            puts "hello"
+            p e
           end
         end
       end
@@ -135,7 +138,7 @@ module Mayu
       end
       def self.handle_event(session_id, handler_id, payload = {})
         session = SESSIONS.fetch(session_id)
-        session.handle_event(session_id, handler_id)
+        session.handle_event(handler_id, payload)
         [200, {}, ["ok"]]
       end
 

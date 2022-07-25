@@ -18,6 +18,7 @@ module Mayu
         @dom = T.let(DOM.new, DOM)
         @update_queue = T.let([], T::Array[VNode])
         @root = T.let(nil, T.nilable(VNode))
+        @handlers = T.let({}, T::Hash[String, Component::HandlerRef])
         render(descriptor)
       end
 
@@ -41,6 +42,13 @@ module Mayu
         @root&.inspect_tree(exclude_components:).to_s
       end
 
+      sig {params(handler_id: String, payload: T.untyped).void}
+      def handle_event(handler_id, payload = {})
+        @handlers.fetch(handler_id) {
+          raise KeyError, "Handler not found: #{handler_id}"
+        }.call(payload)
+      end
+
       sig {returns(Integer)}
       def next_id! = @id_counter += 1
 
@@ -49,6 +57,7 @@ module Mayu
       sig {params(vnode: T.nilable(VNode), descriptor: T.nilable(Descriptor)).returns(T.nilable(VNode))}
       def patch_vnode(vnode, descriptor)
         unless descriptor
+          destroy_vnode(vnode)
           return nil
         end
 
@@ -79,6 +88,7 @@ module Mayu
             end
           else
             descriptors = descriptor.props[:children]
+            update_handlers(vnode.props, descriptor.props)
           end
 
           vnode.descriptor = descriptor
@@ -104,12 +114,36 @@ module Mayu
           child_descriptors = descriptor.props[:children]
         end
 
+        update_handlers({}, vnode.props)
+
         vnode.children = diff_children(
           vnode,
           Array(child_descriptors).flatten.compact
         )
 
         vnode
+      end
+
+      sig {params(vnode: VNode).void}
+      def destroy_vnode(vnode)
+        update_handlers(vnode.props, {})
+        vnode.children.flatten.compact.each { destroy_vnode(vnode) }
+      end
+
+      sig {params(old_props: Component::Props, new_props: Component::Props).void}
+      def update_handlers(old_props, new_props)
+        old_handlers = old_props.keys.select { _1.start_with?("on_") }
+        new_handlers = new_props.keys.select { _1.start_with?("on_") }
+
+        removed_handlers = old_handlers - new_handlers
+
+        old_props.values_at(*T.unsafe(removed_handlers)).each do |handler|
+          @handlers[handler.id] = handler
+        end
+
+        new_props.values_at(*T.unsafe(new_handlers)).each do |handler|
+          @handlers[handler.id] = handler
+        end
       end
 
       sig {params(vnode: VNode, descriptors: Descriptor::Children).returns(VNode::Children)}

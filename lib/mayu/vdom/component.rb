@@ -59,9 +59,9 @@ module Mayu
         sig {params(vnode: VNode, klass: T.class_of(Base), props: Props).void}
         def initialize(vnode, klass, props)
           @vnode = vnode
-          @state = T.let({}, State)
-          @next_state = T.let({}, State)
           @props = T.let(props, Props)
+          @state = T.let(klass.get_initial_state(props), State)
+          @next_state = T.let(@state.dup, State)
           @instance = T.let(klass.new(self), Base)
           @dirty = T.let(true, T::Boolean)
         end
@@ -92,14 +92,14 @@ module Mayu
           wrap_errors { @instance.did_update(prev_props, prev_state) }
         end
 
-        sig {params(update: T.nilable(State), blk: T.nilable(T.proc.params(arg0: State).returns(State))).void}
-        def update_state(update = nil, &blk)
+        sig {params(stuff: T.nilable(State), blk: T.nilable(T.proc.params(arg0: State).returns(State))).void}
+        def update(stuff = nil, &blk)
           if blk
-            update = blk.call(state)
+            stuff = blk.call(state)
           end
 
-          if update
-            @next_state.merge!(update)
+          if stuff
+            @next_state.merge!(stuff)
 
             enqueue_update!
           end
@@ -151,12 +151,15 @@ module Mayu
           @wrapper = T.let(wrapper, Wrapper)
         end
 
+        sig {params(props: Props).returns(State)}
+        def self.get_initial_state(props) = {}
+
         sig {params(blk: T.proc.returns(T.nilable(Descriptor::Children))).void}
         def self.render(&blk) = define_method(:render, &blk)
         sig {params(blk: T.proc.params(arg0: Props).returns(State)).void}
-        def self.initial_state(&blk) = define_method(:initial_state, &blk)
+        def self.initial_state(&blk) = define_singleton_method(:get_initial_state, &blk)
         sig {params(name: Symbol, blk: T.proc.returns(State)).void}
-        def self.handler(name, &blk) = define_method(:"#{name}_name", &blk)
+        def self.handler(name, &blk) = define_method(:"handle_#{name}", &blk)
         sig {params(blk: T.proc.params(new_props: Props, new_state: State).returns(T::Boolean)).void}
         def self.should_update?(&blk) = define_method(:should_update?, &blk)
 
@@ -182,7 +185,12 @@ module Mayu
         sig {returns(Descriptor::Children)}
         def children = props[:children]
 
-        sig {params(name: Symbol, args: T.nilable(T::Array[T.untyped])).returns(HandlerRef)}
+        sig {params(stuff: T.nilable(State), blk: T.nilable(T.proc.params(arg0: State).returns(State))).void}
+        def update(stuff = nil, &blk)
+          @wrapper.update(stuff, &blk)
+        end
+
+        sig {params(name: Symbol, args: T.untyped).returns(HandlerRef)}
         def handler(name, *args)
           HandlerRef.new(self, name, args)
         end
@@ -196,22 +204,32 @@ module Mayu
       class HandlerRef
         extend T::Sig
 
+        sig {returns(String)}
+        attr_reader :id
+
         sig {params(component: Component::Base, name: Symbol, args: T::Array[T.untyped]).void}
         def initialize(component, name, args = [])
           @component = component
           @name = name
           @args = args
+          @id = T.let(
+            Digest::SHA256.hexdigest([
+              @component.object_id,
+              @name,
+              @args,
+            ].map(&:inspect).join(":")),
+            String
+          )
         end
 
-        sig {params(data: T.untyped).void}
-        def call(data)
-          @component.send(:"handle_#{@name}")
+        sig {params(payload: T.untyped).void}
+        def call(payload)
+          T.unsafe(@component.method(:"handle_#{@name}")).call(payload, *@args)
         end
 
         sig {returns(String)}
         def to_s
-          id = Digest::SHA256.hexdigest([@component.object_id, @name, @args].map(&:inspect).join(":"))
-          "Mayu.handle(event, '#{id}')"
+          "Mayu.handle(event,'#{@id}')"
         end
       end
 

@@ -1,4 +1,4 @@
-initial_state do
+initial_state do |props|
   { count: 0 }
 end
 
@@ -11,7 +11,7 @@ end
 render do
   <div>
     <button on-click={handler(:increment, state[:count])}>
-      Click me! {state[:count]}
+      Click me! {state[:count].inspect}
     </button>
   </div>
 end

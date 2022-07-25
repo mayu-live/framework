@@ -9,7 +9,7 @@ module Mayu
         [
           Integer,
           TRackHeaders,
-          T::Array[T.any(String, Async::HTTP::Body::Writable)],
+          T.any(T::Array[String], Async::HTTP::Body::Writable),
         ]
       }
 
