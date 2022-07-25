@@ -41,6 +41,10 @@ class NodeTreeNode {
       console.log(node[0], element);
       const childNodes = Array.from(element.childNodes).filter((node) => {
         if (node.nodeType == node.TEXT_NODE) return true;
+        if (node.nodeType == node.COMMENT_NODE) {
+          console.log(node)
+          return true
+        }
         if (node.nodeType == node.ELEMENT_NODE) {
           if ((node as HTMLElement).dataset.mayuId !== undefined) {
             return true;

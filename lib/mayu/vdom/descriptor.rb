@@ -16,6 +16,12 @@ module Mayu
       TEXT = :TEXT
       COMMENT = :COMMENT
 
+      sig {params(children: ComponentChildren).returns(ComponentChildren)}
+      def self.separate_texts_with_comments(children)
+        Array(children).flatten.compact.map { |child|
+        }
+      end
+
       sig {returns(ElementType)}
       attr_reader :type
       sig {returns(Component::Props)}
@@ -23,18 +29,32 @@ module Mayu
       sig {returns(T.untyped)}
       attr_reader :key
 
-      sig {params(type: ElementType, props: Component::Props, children: Descriptor::ComponentChildren).void}
+      sig {params(type: ElementType, props: Component::Props, children: ComponentChildren).void}
       def initialize(type, props = {}, children = [])
         @type = T.let(convert_special_type(type), ElementType)
-        @props = T.let(props.merge(
-          children: Array(children).flatten.compact.map { |child|
-            if child.is_a?(Descriptor)
-              child
-            else
+
+        children = Array(children).flatten.compact.map { |child|
+          case
+          when child.is_a?(Descriptor)
+            child
+          when type == :title
+            self.class.new(TEXT, { text_content: child })
+          else
+            [
+              Descriptor.new(COMMENT),
               self.class.new(TEXT, { text_content: child })
-            end
-          }
-        ), Component::Props)
+            ]
+          end
+        }.flatten
+
+        # children = children.map.with_index { |child, i|
+        #   if i > 0 && children[i - 1]&.text? && child.text?
+        #   else
+        #     child
+        #   end
+        # }.flatten
+
+        @props = T.let(props.merge(children:), Component::Props)
 
         @key = T.let(@props.delete(:key), T.untyped)
       end
@@ -55,7 +75,7 @@ module Mayu
 
       sig {params(type: ElementType).returns(ElementType)}
       def convert_special_type(type)
-        # This allows us to inject some special tags
+        # This allows us to inject some special markup
         case type
         when :head then Component::Hax::HeadComponent
         when :body then Component::Hax::BodyComponent

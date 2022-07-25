@@ -11,6 +11,9 @@ module Mayu
 
       Children = T.type_alias { T::Array[T.nilable(VNode)] }
 
+      sig {returns(Integer)}
+      attr_reader :id
+
       sig {returns(Descriptor)}
       attr_accessor :descriptor
       sig {returns(Descriptor::ElementType)}
@@ -80,8 +83,11 @@ module Mayu
       def inspect_tree(level = 0, exclude_components: false)
         type = descriptor.type
 
-        if type == Descriptor::TEXT
-          return "<mayu-text data-mayu-id=\"#{@id}\">#{descriptor.text}</mayu-text>"
+        case type
+        when Descriptor::TEXT
+          return descriptor.text
+        when Descriptor::COMMENT
+          return "<!--mayu-id=#{@id}-->"
         end
 
         cleaned_children = Array(children).flatten.compact

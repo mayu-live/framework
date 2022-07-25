@@ -81,9 +81,11 @@ module Mayu
               descriptors = component.render
             else
               vnode.descriptor = descriptor
+
               vnode.children = Array(vnode.children).flatten.compact.map do
                 patch_vnode(_1, _1.descriptor)
               end
+
               return vnode
             end
           else
