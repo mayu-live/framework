@@ -28,6 +28,8 @@ module Mayu
           loop do
             @body.write(@queue.dequeue.to_s)
           end
+        rescue => e
+          puts e.message
         end, Async::Task)
       end
 

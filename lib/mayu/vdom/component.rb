@@ -61,14 +61,14 @@ module Mayu
           @vnode = vnode
           @props = T.let(props, Props)
           @state = T.let(klass.get_initial_state(props), State)
-          @next_state = T.let(@state.dup, State)
+          @next_state = T.let({}.merge(@state), State)
           @instance = T.let(klass.new(self), Base)
           @dirty = T.let(true, T::Boolean)
         end
 
-        sig {override.params(new_props: Props, new_state: State).returns(T::Boolean)}
-        def should_update?(new_props, new_state)
-          wrap_errors { @instance.should_update?(new_props, new_state) }
+        sig {override.params(next_props: Props, next_state: State).returns(T::Boolean)}
+        def should_update?(next_props, next_state)
+          wrap_errors { @instance.should_update?(next_props, next_state) }
         end
 
         sig {override.returns(T.nilable(Descriptor::Children))}
@@ -98,8 +98,10 @@ module Mayu
             stuff = blk.call(state)
           end
 
+          puts "Merging stuff, #{stuff.inspect}"
+
           if stuff
-            @next_state.merge!(stuff)
+            @next_state = @next_state.merge(stuff)
 
             enqueue_update!
           end
@@ -160,17 +162,25 @@ module Mayu
         def self.initial_state(&blk) = define_singleton_method(:get_initial_state, &blk)
         sig {params(name: Symbol, blk: T.proc.returns(State)).void}
         def self.handler(name, &blk) = define_method(:"handle_#{name}", &blk)
-        sig {params(blk: T.proc.params(new_props: Props, new_state: State).returns(T::Boolean)).void}
+        sig {params(blk: T.proc.params(next_props: Props, next_state: State).returns(T::Boolean)).void}
         def self.should_update?(&blk) = define_method(:should_update?, &blk)
 
         sig {override.void}
         def did_mount = nil
         sig {override.void}
         def will_unmount = nil
-        sig {override.params(new_props: Props, new_state: State).returns(T::Boolean)}
-        def should_update?(new_props, new_state)
-          props != new_props || state != new_state
+        sig {override.params(next_props: Props, next_state: State).returns(T::Boolean)}
+        def should_update?(next_props, next_state)
+          case
+          when props != next_props
+            true
+          when state != next_state
+            true
+          else
+            false
+          end
         end
+
         sig {override.returns(T.nilable(Descriptor::Children))}
         def render = nil
         sig {override.params(prev_props: Props, prev_state: State).void}

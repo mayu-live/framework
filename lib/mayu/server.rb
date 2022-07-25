@@ -34,7 +34,7 @@ module Mayu
         end
       end
 
-        [404, {}, []]
+      [404, {"content-type" => "text/plain"}, ["not found"]]
     end
 
     sig {params(path: String, content_type: String).returns(Types::TRackReturn)}

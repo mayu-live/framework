@@ -57,7 +57,7 @@ module Mayu
       sig {params(vnode: T.nilable(VNode), descriptor: T.nilable(Descriptor)).returns(T.nilable(VNode))}
       def patch_vnode(vnode, descriptor)
         unless descriptor
-          destroy_vnode(vnode)
+          destroy_vnode(vnode) if vnode
           return nil
         end
 
