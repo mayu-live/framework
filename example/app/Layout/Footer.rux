@@ -1,17 +1,13 @@
-render do
-  github_link = (
-    <a class={styles.link} href="https://github.com/mayu-live">
-      GitHub
-    </a>
-  )
+GithubLink = (
+  <a class={styles.link} href="https://github.com/mayu-live">
+    GitHub
+  </a>
+)
 
+render do
   <footer class={styles.footer}>
     <p class={styles.p}>
-      MIT Licensed
-      {" | "}
-      Copyright &copy; 2022 aalin
-      {" | "}
-      {github_link}
+      {GithubLink}
     </p>
   </footer>
 end
