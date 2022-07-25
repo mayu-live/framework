@@ -97,8 +97,11 @@ module Mayu
         html = @renderer.html
         id_tree = @renderer.id_tree
 
+        script_id = "mayu-init-#{SecureRandom.alphanumeric(16)}"
+
         script = <<~EOF
-        <script type="module">
+        <script type='module' id='#{script_id}'>
+          document.getElementById('#{script_id}')?.remove()
           import Mayu from '/__mayu/live.js'
           window.Mayu = new Mayu('#{@id}', #{JSON.generate(id_tree)})
         </script>

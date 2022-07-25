@@ -25,7 +25,7 @@ module Mayu
 
       sig {params(type: ElementType, props: Component::Props, children: Descriptor::ComponentChildren).void}
       def initialize(type, props = {}, children = [])
-        @type = type
+        @type = T.let(convert_special_type(type), ElementType)
         @props = T.let(props.merge(
           children: Array(children).flatten.compact.map { |child|
             if child.is_a?(Descriptor)
@@ -50,6 +50,21 @@ module Mayu
 
       sig {returns(String)}
       def text = @props[:text_content].to_s
+
+      private
+
+      sig {params(type: ElementType).returns(ElementType)}
+      def convert_special_type(type)
+        # This allows us to inject some special tags
+        case type
+        when :head then Component::Hax::HeadComponent
+        when :body then Component::Hax::BodyComponent
+        when :__mayu_head then :head
+        when :__mayu_body then :body
+        else
+          type
+        end
+      end
     end
   end
 end

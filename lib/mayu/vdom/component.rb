@@ -192,27 +192,50 @@ module Mayu
       def self.component_class?(klass)
         !!(klass.is_a?(Class) && klass < Base)
       end
-    end
 
-    class HandlerRef
-      extend T::Sig
+      class HandlerRef
+        extend T::Sig
 
-      sig {params(component: Component::Base, name: Symbol, args: T::Array[T.untyped]).void}
-      def initialize(component, name, args = [])
-        @component = component
-        @name = name
-        @args = args
+        sig {params(component: Component::Base, name: Symbol, args: T::Array[T.untyped]).void}
+        def initialize(component, name, args = [])
+          @component = component
+          @name = name
+          @args = args
+        end
+
+        sig {params(data: T.untyped).void}
+        def call(data)
+          @component.send(:"handle_#{@name}")
+        end
+
+        sig {returns(String)}
+        def to_s
+          id = Digest::SHA256.hexdigest([@component.object_id, @name, @args].map(&:inspect).join(":"))
+          "Mayu.handle(event, '#{id}')"
+        end
       end
 
-      sig {params(data: T.untyped).void}
-      def call(data)
-        @component.send(:"handle_#{@name}")
-      end
+      module Hax
+        class HeadComponent < Component::Base
+          sig {override.returns(T.nilable(Descriptor::Children))}
+          def render
+            h(:__mayu_head, **props) do
+              [
+                children,
+                h(:link, rel: "stylesheet", href: "/foo.css")
+              ].flatten.compact
+            end
+          end
+        end
 
-      sig {returns(String)}
-      def to_s
-        id = Digest::SHA256.hexdigest([@component.object_id, @name, @args].map(&:inspect).join(":"))
-        "Mayu.handle(event, '#{id}')"
+        class BodyComponent < Component::Base
+          sig {override.returns(T.nilable(Descriptor::Children))}
+          def render
+            h(:__mayu_body, **props) do
+              children
+            end
+          end
+        end
       end
     end
   end

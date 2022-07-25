@@ -92,27 +92,34 @@ module Mayu
           }.join("\n")
         end
 
-        formatted_props = props.reject { _1 == :children }.map { |key, value|
-          format(
-            ' %<key>s="%<value>s"',
-            key: key.to_s.sub(/^on_/, "on").tr("_", "-"),
-            value: CGI.escape_html(value.to_s),
-          )
-        }
+        formatted_props = props
+          .reject { _1 == :children || _1 == :dangerously_set_inner_html }
+          .map { |key, value|
+            format(
+              ' %<key>s="%<value>s"',
+              key: key.to_s.sub(/^on_/, "on").tr("_", "-"),
+              value: CGI.escape_html(value.to_s),
+            )
+          }
 
         formatted_props.unshift(%< data-mayu-key="#{descriptor.key.to_s}">) if descriptor.key
         formatted_props.unshift(%< data-mayu-id="#{@id.to_s}">)
 
         if VOID_ELEMENTS.include?(type.to_s)
-          return "<#{type.to_s}#{formatted_props.join}>"
+          return "<#{type}#{formatted_props.join}>"
+        end
+
+        if props[:dangerously_set_inner_html].is_a?(Hash)
+          dangerously_set_inner_html = props[:dangerously_set_inner_html].fetch(:__html)
+          return "<#{type}#{formatted_props.join}>#{dangerously_set_inner_html}</#{type}>"
         end
 
         [
-          "<#{type.to_s}#{formatted_props.join}>",
+          "<#{type}#{formatted_props.join}>",
           *cleaned_children.map {
             _1.inspect_tree(level.succ, exclude_components:)
           },
-          "</#{type.to_s}>"
+          "</#{type}>"
         ].join
       end
     end
