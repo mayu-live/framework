@@ -79,9 +79,12 @@ module Mayu
         end
 
         if children.empty?
-          @id
+          { i: @id }
         else
-          [@id, children.map(&:id_tree).compact]
+          {
+            i: @id,
+            c: children.map(&:id_tree).compact
+          }
         end
       end
 

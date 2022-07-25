@@ -1,141 +1,181 @@
-type IdTreeNodeWithChildren = [number, IdTreeNode[]];
-type IdTreeNodeWithoutChildren = number;
-type IdTreeNode = IdTreeNodeWithChildren | IdTreeNodeWithoutChildren;
+type IdNode = { i: number; c?: [IdNode] };
+type CacheEntry = { node: Node; childIds: number[] };
 
-class NodeTreeNode {
-  id: number;
-  children: NodeTreeNode[];
-  element: ChildNode;
+function createSilentLogger() {
+  const noop = (..._args: any[]) => {}
 
-  constructor(node: IdTreeNode, element: ChildNode, parent?: ChildNode) {
-    if (!node) {
-      console.error(
-        "There is no tree node for element",
-        element,
-        "with parent",
-        parent
-      );
-      console.log(Array.from(parent?.childNodes || []));
-      throw new Error("Tree node not found for element");
-    }
-
-    if (!element) {
-      console.error(
-        "There is no element for node",
-        node,
-        "with parent",
-        parent
-      );
-      console.log(Array.from(parent?.childNodes || []));
-      throw new Error("Element not found for node");
-    }
-
-    this.element = element;
-
-    if (typeof node === "number") {
-      this.id = node;
-      console.log(node, element);
-      this.children = [];
-    } else {
-      this.id = node[0];
-      console.log(node[0], element);
-      const childNodes = Array.from(element.childNodes).filter((node) => {
-        if (node.nodeType == node.TEXT_NODE) return true;
-        if (node.nodeType == node.COMMENT_NODE) {
-          console.log(node);
-          return true;
-        }
-        if (node.nodeType == node.ELEMENT_NODE) {
-          if ((node as HTMLElement).dataset.mayuId !== undefined) {
-            return true;
-          }
-        }
-
-        return false;
-      });
-      this.children = node[1].map(
-        (child, i) => new NodeTreeNode(child, childNodes[i], element)
-      );
-    }
-  }
-
-  remove(nodeId: number) {
-    if (nodeId === undefined) return
-    let found = false;
-    // console.log(
-    //   "trying to remove", nodeId
-    // )
-
-    this.children = this.children.filter((child) => {
-      // console.log(child.id, nodeId)
-      if (child.id !== nodeId) return true;
-
-      console.error("removing", child.id, "from", this.id);
-      this.element.removeChild(child.element);
-
-      found = true;
-
-      return false;
-    });
-
-    if (found) return;
-
-    this.children.forEach((child) => child.remove(nodeId));
-  }
-
-  insertBefore(parentId: number, referenceId: number, html: string, ids: any) {
-    let found = false;
-
-    if (parentId === this.id) {
-      found = true;
-
-      const referenceIndex = this.children.findIndex(
-        (child) => child.id === referenceId
-      );
-
-      const children = Array.from((new DOMParser()).parseFromString(html, 'text/html').body.childNodes)
-
-      if (referenceIndex >= 0) {
-        for (let child of children.reverse()) {
-          this.element.insertBefore(child, this.children[referenceIndex].element)
-          this.children.splice(
-            referenceIndex,
-            0,
-            new NodeTreeNode(ids, this.element.childNodes[referenceIndex - 1])
-          )
-        }
-      } else {
-        for (let child of children) {
-          this.children.push(new NodeTreeNode(ids, this.element.appendChild(child)))
-        }
-      }
-    }
-
-    if (found) return;
-
-    this.children.forEach((child) =>
-      child.insertBefore(parentId, referenceId, html, ids)
-    );
+  return {
+    info: noop,
+    log: noop,
+    warn: noop,
+    group: noop,
+    groupEnd: noop,
   }
 }
 
-class NodeTree {
-  root: NodeTreeNode;
+function createLogger() {
+  return {
+    info: console.info.bind(console),
+    log: console.log.bind(console),
+    error: console.error.bind(console),
+    warn: console.warn.bind(console),
+    group: console.group.bind(console),
+    groupEnd: console.groupEnd.bind(console),
+  }
+}
 
-  constructor(idTreeRoot: IdTreeNode) {
-    this.root = new NodeTreeNode(idTreeRoot, document.documentElement);
-    console.log(this.root);
+const logger = createSilentLogger()
+
+class NodeTree {
+  #cache = new Map<number, CacheEntry>();
+
+  constructor(root: IdNode) {
+    logger.log(root)
+    this.updateCache(document.documentElement, root);
+
+    (window as any).mayuCache = this.#cache
   }
 
-  insertBefore(parentId: number, referenceId: number, html: string, ids: any) {
-    this.remove(ids[0]);
-    this.root.insertBefore(parentId, referenceId, html, ids);
+  insertBefore(
+    parentId: number,
+    referenceId: number,
+    html: string,
+    ids: IdNode[]
+  ) {
+
+    logger.group(`Trying to insert html into`, parentId)
+    const parentEntry = this.#getEntry(parentId)
+
+    const referenceEntry = this.#cache.get(referenceId);
+    const body = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html").body
+    logger.log({body})
+    const children = Array.from(body.childNodes).reverse();
+
+    const idsArray = [ids].flat();
+    parentEntry.childIds = parentEntry.childIds.concat(
+      idsArray.map(({ i }) => i)
+    );
+
+    logger.log({children, html})
+
+    idsArray.forEach((idTreeNode, i) => {
+      this.remove(idTreeNode.i)
+
+      const node = children[i]
+      const ref = referenceEntry ? referenceEntry.node : null
+      logger.log({ parent: parentEntry.node, node, ref })
+      const insertedNode = parentEntry.node.insertBefore(node, ref);
+      this.updateCache(insertedNode, idTreeNode);
+    });
+
+    logger.groupEnd()
+  }
+
+  #getEntry(id: number) {
+    const entry = this.#cache.get(id);
+
+    if (!entry) {
+      logger.error("Could not find", id, "in cache!");
+      logger.error(Array.from(this.#cache.keys()))
+      throw new Error(`Could not find ${id} in cache!`);
+    }
+
+    return entry;
   }
 
   remove(nodeId: number) {
-    if (!nodeId) return
-    console.log('Trying to remove', nodeId)
-    this.root.remove(nodeId);
+    logger.info("Trying to remove", nodeId);
+
+    try {
+      const entry = this.#getEntry(nodeId);
+      const parentNode = entry.node.parentNode;
+
+      if (parentNode) {
+        const parentId = parentNode.__mayu.id;
+        const parentEntry = this.#cache.get(parentId);
+
+        parentNode.removeChild(entry.node);
+
+        if (parentEntry) {
+          parentEntry.childIds = parentEntry.childIds.filter(
+            (id) => id !== nodeId
+          );
+        }
+      } else {
+        logger.warn(`Node`, entry.node, "has no parent??");
+      }
+
+      this.#removeRecursiveFromCache(nodeId);
+    } catch (e) {
+      logger.warn(e)
+    }
+  }
+
+  #removeRecursiveFromCache(id: number) {
+    const entry = this.#cache.get(id);
+
+    if (!entry) return;
+
+    logger.group('Removing from cache', id)
+
+    this.#cache.delete(id);
+
+    entry.childIds.forEach((childId) => {
+      this.#removeRecursiveFromCache(childId);
+    });
+
+    logger.groupEnd()
+  }
+
+  isAcceptableNode(node: Node) {
+    if (node.nodeType == node.TEXT_NODE) return true
+    if (node.nodeType == node.COMMENT_NODE) return true
+    if (node.nodeType == node.ELEMENT_NODE) {
+      const dataset = (node as HTMLElement).dataset;
+      if (typeof dataset.mayuId === 'string') return true
+    }
+
+    return false
+  }
+
+  updateCache(node: Node, idTreeNode: IdNode) {
+    const childIds = (idTreeNode.c || []).map((child) => child.i);
+    this.#cache.set(idTreeNode.i, { node, childIds });
+    node.__mayu = { id: idTreeNode.i };
+
+    logger.group('Add to cache', idTreeNode.i, 'type', node.nodeName)
+
+    // logger.log('Updating cache for', node, 'with id', idTreeNode.i)
+
+    let i = 0;
+    const c = idTreeNode.c || []
+
+    node.childNodes.forEach((childNode) => {
+      if (!this.isAcceptableNode(childNode)) {
+        logger.warn(`Not acceptable:`, childNode)
+        return
+      }
+
+      const childIdNode = c[i++];
+
+      if (!childIdNode) {
+        logger.error(
+          `No childIdNode at index`,
+          i,
+          "on node",
+          node,
+          "with parent id",
+          idTreeNode.i,
+          "and child node",
+          childNode,
+        );
+        return;
+      }
+
+      this.updateCache(childNode, childIdNode);
+    });
+
+    logger.groupEnd()
   }
 }
 
@@ -160,7 +200,7 @@ class Mayu {
   readonly connection: EventSource;
   readonly nodeTree: NodeTree;
 
-  constructor(sessionId: string, idTreeRoot: IdTreeNode) {
+  constructor(sessionId: string, idTreeRoot: IdNode) {
     this.sessionId = sessionId;
     this._updateHTML = this._updateHTML.bind(this);
     this._applyPatches = this._applyPatches.bind(this);
@@ -169,8 +209,8 @@ class Mayu {
     this.connection = new EventSource(`/__mayu/events/${this.sessionId}`);
 
     this.connection.onerror = (e) => {
-      console.log(e);
-      console.error("Connection error.");
+      logger.log(e);
+      logger.error("Connection error.");
     };
 
     // this.connection.addEventListener("html", this._updateHTML);
@@ -201,9 +241,10 @@ class Mayu {
   }
 
   _applyPatches({ data }: MessageEvent) {
+    logger.info('APPLYING PATCHES')
     const { patch_set: patches } = JSON.parse(data) as { patch_set: Patch[] };
 
-    for (const patch of patches) {
+    for (const patch of patches.reverse()) {
       switch (patch.type) {
         case "insert_before": {
           this.nodeTree.insertBefore(

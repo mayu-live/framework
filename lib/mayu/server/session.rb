@@ -105,10 +105,10 @@ module Mayu
         script_id = "mayu-init-#{SecureRandom.alphanumeric(16)}"
 
         script = <<~EOF
-        <script type='module' id='#{script_id}'>
-          document.getElementById('#{script_id}')?.remove()
+        <script type="module" id="#{script_id}">
+          document.getElementById("#{script_id}")?.remove()
           import Mayu from '/__mayu/live.js'
-          window.Mayu = new Mayu('#{@id}', #{JSON.generate(id_tree)})
+          window.Mayu = new Mayu("#{@id}", #{JSON.generate(id_tree)})
         </script>
         EOF
 
@@ -118,7 +118,7 @@ module Mayu
           [
             html
               .prepend("<!DOCTYPE html>\n")
-              .sub(/.*\K<\/body>/) { "#{script}#{_1}" }
+              .sub(/.*\K<\/body>/) { "#{script.strip}#{_1}" }
           ]
         ]
       end
