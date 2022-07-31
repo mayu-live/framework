@@ -1,3 +1,3 @@
 interface Node {
-  __mayu: { id: number }
+  __mayu: { id: number };
 }

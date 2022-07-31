@@ -7,12 +7,12 @@ module Mayu
     class DeepFreezer
       extend T::Sig
       extend T::Generic
-      Elem = type_member {{upper: Object}}
+      Elem = type_member { { upper: Object } }
 
-      sig {params(obj: Elem).void}
+      sig { params(obj: Elem).void }
       def initialize(obj) = @obj = obj
 
-      sig {returns(Elem)}
+      sig { returns(Elem) }
       def deep_freeze
         case @obj
         when Hash
@@ -34,12 +34,12 @@ module Mayu
     class DeepDuper
       extend T::Sig
       extend T::Generic
-      Elem = type_member {{upper: Object}}
+      Elem = type_member { { upper: Object } }
 
-      sig {params(obj: Elem).void}
+      sig { params(obj: Elem).void }
       def initialize(obj) = @obj = obj
 
-      sig {returns(Elem)}
+      sig { returns(Elem) }
       def deep_dup
         case @obj
         when Hash

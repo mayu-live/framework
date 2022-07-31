@@ -8,4 +8,4 @@ Minitest::TestTask.create(:test) do |t|
   t.test_globs = ["lib/**/*.test.rb"]
 end
 
-task :default => :test
+task default: :test

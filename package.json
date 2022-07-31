@@ -1,0 +1,26 @@
+{
+  "name": "@mayu-live/main",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Main package.json for mayu",
+  "scripts": {
+    "prettier": "prettier --write '**/*'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mayu-live/prototype.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mayu-live/prototype/issues"
+  },
+  "homepage": "https://github.com/mayu-live/prototype#readme",
+  "workspaces": [
+    "lib/mayu/client"
+  ],
+  "devDependencies": {
+    "@prettier/plugin-ruby": "^3.1.2",
+    "prettier": "^2.7.1"
+  }
+}

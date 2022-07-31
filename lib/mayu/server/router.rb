@@ -8,7 +8,7 @@ module Mayu
       extend T::Sig
       Types = Mayu::Server::Types
 
-      sig {params(app: Types::TRackApp).void}
+      sig { params(app: Types::TRackApp).void }
       def initialize(app)
         @app = app
       end

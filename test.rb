@@ -9,15 +9,18 @@ require_relative "lib/mayu/renderer/modules"
 require_relative "lib/mayu/renderer/component_builder"
 
 class MyComponent < Mayu::Renderer::VDOM::Component
-  render do
-    h(:span) do
-      "hej"
-    end
-  end
+  render { h(:span) { "hej" } }
 end
 
-modules = Mayu::Renderer::Modules.new(File.join(File.dirname(__FILE__), "example", "app"))
-App = T.let(modules.load_component('App').klass, T.class_of(Mayu::Renderer::VDOM::Component))
+modules =
+  Mayu::Renderer::Modules.new(
+    File.join(File.dirname(__FILE__), "example", "app")
+  )
+App =
+  T.let(
+    modules.load_component("App").klass,
+    T.class_of(Mayu::Renderer::VDOM::Component)
+  )
 
 root = Mayu::Renderer.h(App)
 vdom = Mayu::Renderer::VDOM.new(root)

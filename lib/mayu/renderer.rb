@@ -9,23 +9,22 @@ module Mayu
   class Renderer
     extend T::Sig
 
-    sig {returns(String)}
+    sig { returns(String) }
     attr_reader :html
 
-    sig {void}
+    sig { void }
     def initialize
       @in = T.let(Async::Queue.new, Async::Queue)
       @out = T.let(Async::Queue.new, Async::Queue)
       @task = T.let(nil, T.nilable(Async::Task))
 
-      modules = Mayu::Modules::System.new(
-        File.join(Dir.pwd, "example", "app")
-      )
+      modules = Mayu::Modules::System.new(File.join(Dir.pwd, "example", "app"))
 
-      app = T.let(
-        modules.load_component('App').klass,
-        T.class_of(Mayu::VDOM::Component::Base)
-      )
+      app =
+        T.let(
+          modules.load_component("App").klass,
+          T.class_of(Mayu::VDOM::Component::Base)
+        )
 
       @root = T.let(VDOM.h(app), VDOM::Descriptor)
       @vtree = T.let(VDOM::VTree.new(@root), VDOM::VTree)
@@ -36,7 +35,7 @@ module Mayu
           message = @vtree.on_update.wait
 
           case message
-          in :patch_set, payload
+          in [:patch_set, payload]
             respond(:patch_set, payload)
           else
             puts "\e[31mUnknown event: #{message.inspect}\e[0m"
@@ -47,50 +46,51 @@ module Mayu
       rerender!
     end
 
-    sig {returns(T::Boolean)}
+    sig { returns(T::Boolean) }
     def running? = @task&.running?
 
-    sig {void}
+    sig { void }
     def start
       return if @task
 
-      @task = Async do
-        loop do
-          message = @in.dequeue
+      @task =
+        Async do
+          loop do
+            message = @in.dequeue
 
-          case message
-          in :render
-            rerender!
-          in :handle_event, handler_id, payload
-            @vtree.handle_event(handler_id, payload)
-          else
-            puts "Invalid message: #{message.inspect}"
+            case message
+            in :render
+              rerender!
+            in [:handle_event, handler_id, payload]
+              @vtree.handle_event(handler_id, payload)
+            else
+              puts "Invalid message: #{message.inspect}"
+            end
           end
         end
-      end
     end
 
-    sig {void}
+    sig { void }
     def stop
       respond(:close)
       @task&.stop
       @task = nil
     end
 
-    sig {params(args: T.untyped).void}
+    sig { params(args: T.untyped).void }
     def send(*args) = @in.enqueue(args)
-    sig {returns(T.untyped)}
+    sig { returns(T.untyped) }
     def take = @out.dequeue
 
-    sig {returns(T.untyped)}
+    sig { returns(T.untyped) }
     def id_tree = @vtree.id_tree
 
     private
 
-    sig {params(args: T.untyped).void}
+    sig { params(args: T.untyped).void }
     def respond(*args) = @out.enqueue(args)
 
-    sig {void}
+    sig { void }
     def rerender!
       @vtree.render(@root)
       html = @vtree.inspect_tree(exclude_components: true)

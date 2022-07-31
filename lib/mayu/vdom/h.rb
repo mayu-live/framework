@@ -10,7 +10,7 @@ module Mayu
           type: Descriptor::ElementType,
           props: Component::Props,
           children: T.nilable(Descriptor::ComponentChildren),
-          blk: T.nilable(T.proc.returns(Descriptor::ComponentChildren)),
+          blk: T.nilable(T.proc.returns(Descriptor::ComponentChildren))
         ).returns(Descriptor)
       end
       def h(type, props = {}, children = [], &blk)

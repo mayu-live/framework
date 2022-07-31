@@ -1,7 +1,7 @@
 # typed: struct
 
-require 'cgi'
-require 'rux'
+require "cgi"
+require "rux"
 
 module Mayu
   module Modules
@@ -19,15 +19,19 @@ module Mayu
       end
 
       def visit_tag(node)
-        ''.tap do |result|
-          block_arg = if (as = node.attrs['as'])
-            visit(as)
-          end
+        "".tap do |result|
+          block_arg =
+            if (as = node.attrs["as"])
+              visit(as)
+            end
 
-          at = node.attrs.each_with_object([]) do |(k, v), ret|
-            next if k == 'as'
-            ret << Rux::Utils.attr_to_hash_elem(k, visit(v))
-          end
+          at =
+            node
+              .attrs
+              .each_with_object([]) do |(k, v), ret|
+                next if k == "as"
+                ret << Rux::Utils.attr_to_hash_elem(k, visit(v))
+              end
 
           if node.name.start_with?(/[A-Z]/)
             result << "Mayu::VDOM.h(#{node.name}"
@@ -36,12 +40,13 @@ module Mayu
           end
 
           #unless node.attrs.empty?
-          result << ", { #{at.join(', ')} }"
+          result << ", { #{at.join(", ")} }"
           #end
 
-          children = node.children.reject { |child|
-            child.is_a?(Rux::AST::TextNode) && child.text.match(/\A\s*\Z/)
-          }
+          children =
+            node.children.reject do |child|
+              child.is_a?(Rux::AST::TextNode) && child.text.match(/\A\s*\Z/)
+            end
 
           if children.size > 0
             result << ", ["
@@ -49,7 +54,7 @@ module Mayu
             result << "]"
           end
 
-          result << ')'
+          result << ")"
         end
       end
 

@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'vendor', 'patches'))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
 
 gem "pry"
 
@@ -12,10 +12,11 @@ gem "crass"
 gem "falcon"
 
 group :development do
-  gem 'guard', require: false
-  gem 'guard-falcon'
-  gem 'sorbet', require: false
-  gem 'tapioca', require: false
+  gem "guard", require: false
+  gem "guard-falcon"
+  gem "sorbet", require: false
+  gem "tapioca", require: false
+  gem "prettier", require: false
 end
 
 gem "sorbet-runtime"

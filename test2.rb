@@ -11,23 +11,20 @@ require_relative "lib/mayu/modules/system"
 class MyComponent < Mayu::VDOM::Component::Base
   extend T::Sig
 
-  sig {override.returns(T.nilable(Mayu::VDOM::Descriptor::Children))}
+  sig { override.returns(T.nilable(Mayu::VDOM::Descriptor::Children)) }
   def render
-    h(:span) do
-      "hej"
-    end
+    h(:span) { "hej" }
   end
 end
 
-modules = Mayu::Modules::System.new(
-  File.join(File.dirname(__FILE__), "example", "app")
-)
+modules =
+  Mayu::Modules::System.new(File.join(File.dirname(__FILE__), "example", "app"))
 
-
-App = T.let(
-  modules.load_component('App').klass,
-  T.class_of(Mayu::VDOM::Component::Base)
-)
+App =
+  T.let(
+    modules.load_component("App").klass,
+    T.class_of(Mayu::VDOM::Component::Base)
+  )
 
 root = Mayu::VDOM.h(App)
 vtree = Mayu::VDOM::VTree.new(root)

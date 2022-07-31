@@ -13,28 +13,28 @@ module Mayu
       class Connections
         extend T::Sig
 
-        sig {void}
+        sig { void }
         def initialize
           @connections = T.let({}, T::Hash[String, Connection])
         end
 
-        sig {params(connection: Connection).returns(Connection)}
+        sig { params(connection: Connection).returns(Connection) }
         def add(connection)
           @connections[connection.id] = connection
         end
 
-        sig {params(connection_id: String).void}
+        sig { params(connection_id: String).void }
         def delete(connection_id)
           @connections.delete(connection_id)
         end
 
-        sig {void}
+        sig { void }
         def close_all!
           @connections.each_value(&:close)
           @connections.clear
         end
 
-        sig {params(event: Symbol, payload: T.untyped).void}
+        sig { params(event: Symbol, payload: T.untyped).void }
         def broadcast(event, payload = {})
           @connections.keep_if do |_id, conn|
             conn.send_event(event, payload)
@@ -45,10 +45,10 @@ module Mayu
         end
       end
 
-      sig {returns(String)}
+      sig { returns(String) }
       attr_reader :id
 
-      sig {void}
+      sig { void }
       def initialize
         @id = T.let(SecureRandom.uuid, String)
 
@@ -65,9 +65,9 @@ module Mayu
             p [:message, message]
 
             case message
-            in :html, payload
+            in [:html, payload]
               @connections.broadcast(:html, payload)
-            in :patch_set, payload
+            in [:patch_set, payload]
               @connections.broadcast(:patch_set, payload)
             in :close
               @connections.close_all!
@@ -81,14 +81,14 @@ module Mayu
         puts "done initializing"
       end
 
-      sig {returns(String)}
+      sig { returns(String) }
       def render
         ""
       end
 
       SESSIONS = T.let({}, T::Hash[String, self])
 
-      sig {returns(Types::TRackReturn)}
+      sig { returns(Types::TRackReturn) }
       def self.init
         session = new
         SESSIONS[session.id] = session
@@ -97,7 +97,7 @@ module Mayu
         session.rack_response
       end
 
-      sig {returns(Types::TRackReturn)}
+      sig { returns(Types::TRackReturn) }
       def rack_response
         html = @renderer.html
         id_tree = @renderer.id_tree
@@ -114,20 +114,22 @@ module Mayu
 
         [
           200,
-          {'content-type' => 'text/html; charset=utf-8'},
+          { "content-type" => "text/html; charset=utf-8" },
           [
             html
               .prepend("<!DOCTYPE html>\n")
-              .sub(/.*\K<\/body>/) { "#{script.strip}#{_1}" }
+              .sub(%r{.*\K</body>}) { "#{script.strip}#{_1}" }
           ]
         ]
       end
 
-      sig {params(session_id: String).returns(Types::TRackReturn)}
+      sig { params(session_id: String).returns(Types::TRackReturn) }
       def self.connect(session_id)
-        session = SESSIONS.fetch(session_id) {
-          raise KeyError, "Session not found: #{session_id}, has: #{SESSIONS.keys.inspect}"
-        }
+        session =
+          SESSIONS.fetch(session_id) do
+            raise KeyError,
+                  "Session not found: #{session_id}, has: #{SESSIONS.keys.inspect}"
+          end
         session.connect
       end
 
@@ -135,7 +137,7 @@ module Mayu
         params(
           session_id: String,
           handler_id: String,
-          payload: T.untyped,
+          payload: T.untyped
         ).returns(Types::TRackReturn)
       end
       def self.handle_event(session_id, handler_id, payload = {})
@@ -144,17 +146,17 @@ module Mayu
         [200, {}, ["ok"]]
       end
 
-      sig {returns(Types::TRackReturn)}
+      sig { returns(Types::TRackReturn) }
       def connect
         @connections.add(Connection.new(@id)).rack_response
       end
 
-      sig {void}
+      sig { void }
       def close
         @renderer.stop
       end
 
-      sig {params(handler_id: String, payload: T.untyped).returns(T::Boolean)}
+      sig { params(handler_id: String, payload: T.untyped).returns(T::Boolean) }
       def handle_event(handler_id, payload = {})
         @renderer.send(:handle_event, handler_id, payload)
         true

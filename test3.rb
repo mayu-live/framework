@@ -12,32 +12,24 @@ require_relative "lib/mayu/modules/system"
 class MyComponent < Mayu::VDOM::Component::Base
   extend T::Sig
 
-  initial_state do |props|
-    { count: 0 }
-  end
+  initial_state { |props| { count: 0 } }
 
-  should_update? do |next_props, next_state|
-    true
-  end
+  should_update? { |next_props, next_state| true }
 
   handler :rerender do |event|
-    update do |state|
-      { count: state[:count] + 1 }
-    end
+    update { |state| { count: state[:count] + 1 } }
   end
 
   render do
     numbers = (1..10).to_a.shuffle.first(5)
 
-    items = numbers.map do |i|
-      h(:li, key: i) { i.to_s }
-    end
+    items = numbers.map { |i| h(:li, key: i) { i.to_s } }
 
     h(:div) do
       [
         h(:button, on_click: handler(:rerender)) { "Rerender" },
         h(:p) { "numbers: #{numbers.inspect}" },
-        h(:ul) { items },
+        h(:ul) { items }
       ]
     end
   end

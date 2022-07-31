@@ -10,16 +10,16 @@ module Mayu
 
       ModuleType = T.type_alias { T.any(ComponentModule, CSSModule) }
 
-      sig {returns(String)}
+      sig { returns(String) }
       attr_reader :root
 
-      sig {params(root: String).void}
+      sig { params(root: String).void }
       def initialize(root)
         @root = root
         @modules = T.let({}, T::Hash[String, ModuleType])
       end
 
-      sig {params(path: String, source_path: String).returns(ComponentModule)}
+      sig { params(path: String, source_path: String).returns(ComponentModule) }
       def load_component(path, source_path = "/")
         resolved_path = resolve_path(path, source_path)
 
@@ -30,7 +30,7 @@ module Mayu
         )
       end
 
-      sig {params(path: String, source_path: String).returns(String)}
+      sig { params(path: String, source_path: String).returns(String) }
       def resolve_path(path, source_path = "/")
         full_path = File.expand_path(path, File.dirname(source_path))
 
@@ -41,9 +41,13 @@ module Mayu
         end
       end
 
-      sig {params(path: String).returns(T.any(CSSModule, CSSModule::NoModule))}
+      sig do
+        params(path: String).returns(T.any(CSSModule, CSSModule::NoModule))
+      end
       def load_css(path)
-        CSSModule.load(File.join(@root, resolve_path(path.sub(/\.rux$/, ".css"))))
+        CSSModule.load(
+          File.join(@root, resolve_path(path.sub(/\.rux$/, ".css")))
+        )
       end
     end
   end

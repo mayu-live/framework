@@ -17,10 +17,10 @@
 #
 require "bundler"
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'vendor', 'patches'))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
 p $LOAD_PATH
 
-require 'guard/falcon'
+require "guard/falcon"
 
 guard :falcon do
 end

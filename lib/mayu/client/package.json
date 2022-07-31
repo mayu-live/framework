@@ -1,8 +1,16 @@
 {
-  "name": "mayu-client",
-  "version": "1.0.0",
+  "name": "@mayu-live/client",
+  "version": "0.0.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mayu-live/prototype.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mayu-live/prototype/issues"
+  },
+  "homepage": "https://github.com/mayu-live/prototype#readme",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "watch": "esbuild src/*.ts --sourcemap=inline --outdir=dist --watch",
     "build": "esbuild src/*.ts --sourcemap=inline --outdir=dist",

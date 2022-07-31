@@ -2,7 +2,7 @@ type IdNode = { i: number; c?: [IdNode] };
 type CacheEntry = { node: Node; childIds: number[] };
 
 function createSilentLogger() {
-  const noop = (..._args: any[]) => {}
+  const noop = (..._args: any[]) => {};
 
   return {
     info: noop,
@@ -11,7 +11,7 @@ function createSilentLogger() {
     error: noop,
     group: noop,
     groupEnd: noop,
-  }
+  };
 }
 
 function createLogger() {
@@ -22,51 +22,51 @@ function createLogger() {
     warn: console.warn.bind(console),
     group: console.group.bind(console),
     groupEnd: console.groupEnd.bind(console),
-  }
+  };
 }
 
-const logger = console //createSilentLogger()
+const logger = console; //createSilentLogger()
 
 class NodeTree {
   #cache = new Map<number, CacheEntry>();
 
   constructor(root: IdNode) {
-    logger.log(root)
+    logger.log(root);
     this.updateCache(document.documentElement, root);
 
-    (window as any).mayuCache = this.#cache
+    (window as any).mayuCache = this.#cache;
   }
 
   updateText(id: number, text: string) {
-    const node = this.#getEntry(id).node
+    const node = this.#getEntry(id).node;
 
     if (node.nodeType !== node.TEXT_NODE) {
-      console.error(node)
-      throw new Error("Trying to update text on a non text node")
+      console.error(node);
+      throw new Error("Trying to update text on a non text node");
     }
 
-    node.textContent = text
+    node.textContent = text;
   }
 
   setAttribute(id: number, name: string, value: string) {
     const node = this.#getEntry(id).node as Element;
 
-    console.log("Trying to set attribute", name, value)
+    console.log("Trying to set attribute", name, value);
 
     if (node instanceof HTMLInputElement) {
-      if (name === 'value') {
-        node.value = value
-        return
+      if (name === "value") {
+        node.value = value;
+        return;
       }
     }
 
-    if (name === 'initial_value') {
-      name = 'value'
+    if (name === "initial_value") {
+      name = "value";
     } else {
-      name = name.replaceAll(/_/g, '')
+      name = name.replaceAll(/_/g, "");
     }
 
-    node.setAttribute(name, value)
+    node.setAttribute(name, value);
   }
 
   insertBefore(
@@ -75,12 +75,15 @@ class NodeTree {
     html: string,
     ids: IdNode[]
   ) {
-    logger.group(`Trying to insert html into`, parentId)
-    const parentEntry = this.#getEntry(parentId)
+    logger.group(`Trying to insert html into`, parentId);
+    const parentEntry = this.#getEntry(parentId);
 
     const referenceEntry = this.#cache.get(referenceId);
-    const body = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html").body
-    logger.log({body})
+    const body = new DOMParser().parseFromString(
+      `<body>${html}</body>`,
+      "text/html"
+    ).body;
+    logger.log({ body });
     const children = Array.from(body.childNodes).reverse();
 
     const idsArray = [ids].flat();
@@ -88,19 +91,19 @@ class NodeTree {
       idsArray.map(({ i }) => i)
     );
 
-    logger.log({children, html})
+    logger.log({ children, html });
 
     idsArray.forEach((idTreeNode, i) => {
-      this.remove(idTreeNode.i)
+      this.remove(idTreeNode.i);
 
-      const node = children[i]
-      const ref = referenceEntry ? referenceEntry.node : null
-      logger.log({ parent: parentEntry.node, node, ref })
+      const node = children[i];
+      const ref = referenceEntry ? referenceEntry.node : null;
+      logger.log({ parent: parentEntry.node, node, ref });
       const insertedNode = parentEntry.node.insertBefore(node, ref);
       this.updateCache(insertedNode, idTreeNode);
     });
 
-    logger.groupEnd()
+    logger.groupEnd();
   }
 
   #getEntry(id: number) {
@@ -108,7 +111,7 @@ class NodeTree {
 
     if (!entry) {
       logger.error("Could not find", id, "in cache!");
-      logger.error(Array.from(this.#cache.keys()))
+      logger.error(Array.from(this.#cache.keys()));
       throw new Error(`Could not find ${id} in cache!`);
     }
 
@@ -139,7 +142,7 @@ class NodeTree {
 
       this.#removeRecursiveFromCache(nodeId);
     } catch (e) {
-      logger.warn(e)
+      logger.warn(e);
     }
   }
 
@@ -148,7 +151,7 @@ class NodeTree {
 
     if (!entry) return;
 
-    logger.group('Removing from cache', id)
+    logger.group("Removing from cache", id);
 
     this.#cache.delete(id);
 
@@ -156,18 +159,18 @@ class NodeTree {
       this.#removeRecursiveFromCache(childId);
     });
 
-    logger.groupEnd()
+    logger.groupEnd();
   }
 
   isAcceptableNode(node: Node) {
-    if (node.nodeType == node.TEXT_NODE) return true
-    if (node.nodeType == node.COMMENT_NODE) return true
+    if (node.nodeType == node.TEXT_NODE) return true;
+    if (node.nodeType == node.COMMENT_NODE) return true;
     if (node.nodeType == node.ELEMENT_NODE) {
       const dataset = (node as HTMLElement).dataset;
-      if (typeof dataset.mayuId === 'string') return true
+      if (typeof dataset.mayuId === "string") return true;
     }
 
-    return false
+    return false;
   }
 
   updateCache(node: Node, idTreeNode: IdNode) {
@@ -175,17 +178,17 @@ class NodeTree {
     this.#cache.set(idTreeNode.i, { node, childIds });
     node.__mayu = { id: idTreeNode.i };
 
-    logger.group('Add to cache', idTreeNode.i, 'type', node.nodeName)
+    logger.group("Add to cache", idTreeNode.i, "type", node.nodeName);
 
     // logger.log('Updating cache for', node, 'with id', idTreeNode.i)
 
     let i = 0;
-    const c = idTreeNode.c || []
+    const c = idTreeNode.c || [];
 
     node.childNodes.forEach((childNode) => {
       if (!this.isAcceptableNode(childNode)) {
-        logger.warn(`Not acceptable:`, childNode)
-        return
+        logger.warn(`Not acceptable:`, childNode);
+        return;
       }
 
       const childIdNode = c[i++];
@@ -199,7 +202,7 @@ class NodeTree {
           "with parent id",
           idTreeNode.i,
           "and child node",
-          childNode,
+          childNode
         );
         return;
       }
@@ -207,7 +210,7 @@ class NodeTree {
       this.updateCache(childNode, childIdNode);
     });
 
-    logger.groupEnd()
+    logger.groupEnd();
   }
 }
 
@@ -225,15 +228,24 @@ type InsertBeforePatch = {
   ids: any;
 };
 type RemovePatch = { type: "remove_node"; id: number };
-type UpdateTextPatch = { type: "update_text"; id: number, text: string };
-type SetAttributePatch = { type: "set_attribute"; id: number, name: string, value: string };
-type Patch = InsertBeforePatch | RemovePatch | UpdateTextPatch | SetAttributePatch;
+type UpdateTextPatch = { type: "update_text"; id: number; text: string };
+type SetAttributePatch = {
+  type: "set_attribute";
+  id: number;
+  name: string;
+  value: string;
+};
+type Patch =
+  | InsertBeforePatch
+  | RemovePatch
+  | UpdateTextPatch
+  | SetAttributePatch;
 
 class Mayu {
   readonly sessionId: string;
   readonly connection: EventSource;
   readonly nodeTree: NodeTree;
-  readonly queue = <MessageEvent[]>[]
+  readonly queue = <MessageEvent[]>[];
 
   constructor(sessionId: string, idTreeRoot: IdNode) {
     this.sessionId = sessionId;
@@ -250,7 +262,7 @@ class Mayu {
 
     // this.connection.addEventListener("html", this._updateHTML);
     this.connection.addEventListener("patch_set", (e) => {
-      this._applyPatches(e)
+      this._applyPatches(e);
     });
   }
 
@@ -279,7 +291,7 @@ class Mayu {
   }
 
   _applyPatches({ data }: MessageEvent) {
-    logger.info('APPLYING PATCHES')
+    logger.info("APPLYING PATCHES");
     const { patch_set: patches } = JSON.parse(data) as { patch_set: Patch[] };
 
     for (const patch of patches.reverse()) {
@@ -298,12 +310,12 @@ class Mayu {
           break;
         }
         case "update_text": {
-          this.nodeTree.updateText(patch.id, patch.text)
-          break
+          this.nodeTree.updateText(patch.id, patch.text);
+          break;
         }
         case "set_attribute": {
-          this.nodeTree.setAttribute(patch.id, patch.name, patch.value)
-          break
+          this.nodeTree.setAttribute(patch.id, patch.name, patch.value);
+          break;
         }
       }
     }

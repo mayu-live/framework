@@ -6,23 +6,23 @@ Here comes a description of what this is, and what it aims to be.
 The project is very early on in development so it's likely that most
 things still haven't been implemented yet.
 
-* Ruby based Virtual DOM diffing inspired by React JS.
-* JSX-inspired syntax.
-* Server side rendering.
-* DOM-updates are streamed from the server.
-* No API required, callbacks just work.
-* No JavaScript required.
-* CSS-modules — no scoping issues.
-* Async updates - no blocking.
-* XState-compatible state machines and immutable data structures.
-* Module system inspired by JavaScript.
-* Hot module replacement in development mode.
-* Image scaling, compression.
-* Source maps for rux files.
-* Designed to be hosted on services like fly.io
+- Ruby based Virtual DOM diffing inspired by React JS.
+- JSX-inspired syntax.
+- Server side rendering.
+- DOM-updates are streamed from the server.
+- No API required, callbacks just work.
+- No JavaScript required.
+- CSS-modules — no scoping issues.
+- Async updates - no blocking.
+- XState-compatible state machines and immutable data structures.
+- Module system inspired by JavaScript.
+- Hot module replacement in development mode.
+- Image scaling, compression.
+- Source maps for rux files.
+- Designed to be hosted on services like fly.io
   where you can deploy apps to different regions
   for lower latency.
-* Mayu means river in Quechua.
+- Mayu means river in Quechua.
 
 ## App structure
 
@@ -98,7 +98,7 @@ class ImageDescriptor
     sig {returns(String)}
     def to_s() = url
   end
-  
+
   prop :blur_data_url, String
   prop :content_type, String
   prop :sources, T::Array[ImageSource]
