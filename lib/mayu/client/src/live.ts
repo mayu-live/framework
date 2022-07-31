@@ -48,6 +48,14 @@ class NodeTree {
     node.textContent = text
   }
 
+  setAttribute(id: number, name: string, value: string) {
+    const node = this.#getEntry(id).node as Element;
+
+    console.log("Trying to set attribute", name, value)
+
+    node.setAttribute(name, value)
+  }
+
   insertBefore(
     parentId: number,
     referenceId: number,
@@ -205,7 +213,8 @@ type InsertBeforePatch = {
 };
 type RemovePatch = { type: "remove_node"; id: number };
 type UpdateTextPatch = { type: "update_text"; id: number, text: string };
-type Patch = InsertBeforePatch | RemovePatch | UpdateTextPatch;
+type SetAttributePatch = { type: "set_attribute"; id: number, name: string, value: string };
+type Patch = InsertBeforePatch | RemovePatch | UpdateTextPatch | SetAttributePatch;
 
 class Mayu {
   readonly sessionId: string;
@@ -234,6 +243,7 @@ class Mayu {
 
     const payload = {
       type: e.type,
+      value: (e.target as any).value,
     };
 
     fetch(`/__mayu/handler/${this.sessionId}/${handlerId}`, {
@@ -241,7 +251,7 @@ class Mayu {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ payload }),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -273,6 +283,11 @@ class Mayu {
         }
         case "update_text": {
           this.nodeTree.updateText(patch.id, patch.text)
+          break
+        }
+        case "set_attribute": {
+          this.nodeTree.setAttribute(patch.id, patch.name, patch.value)
+          break
         }
       }
     }

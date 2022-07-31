@@ -191,6 +191,9 @@ module Mayu
             descriptors = descriptor.props[:children]
             parent_id = vnode.id
             update_handlers(vnode.props, descriptor.props)
+            if patch
+              update_attributes(vnode.id, vnode.props, descriptor.props)
+            end
           end
 
           vnode.descriptor = descriptor
@@ -253,11 +256,26 @@ module Mayu
         removed_handlers = old_handlers - new_handlers
 
         old_props.values_at(*T.unsafe(removed_handlers)).each do |handler|
-          @handlers[handler.id] = handler
+          @handlers.delete(handler.id)
         end
 
         new_props.values_at(*T.unsafe(new_handlers)).each do |handler|
           @handlers[handler.id] = handler
+        end
+      end
+
+      sig {params(vnode_id: Integer, old_props: Component::Props, new_props: Component::Props).void}
+      def update_attributes(vnode_id, old_props, new_props)
+        removed = old_props.keys - new_props.keys - [:children]
+
+        new_props.each do |attr, value|
+          next if attr == :children
+          next if value == old_props[attr]
+          @current_patch_set.set_attribute(vnode_id, attr.to_s, value.to_s)
+        end
+
+        removed.each do |attr|
+          @current_patch_set.remove_attribute(vnode_id, attr.to_s)
         end
       end
 

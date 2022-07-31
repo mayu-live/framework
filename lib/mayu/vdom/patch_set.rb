@@ -25,6 +25,16 @@ module Mayu
         add_patch(:update_text, { id:, text: })
       end
 
+      sig {params(id: Integer, name: String, value: String).void}
+      def set_attribute(id, name, value)
+        add_patch(:set_attribute, { id:, name:, value: })
+      end
+
+      sig {params(id: Integer, name: String).void}
+      def remove_attribute(id, name)
+        add_patch(:remove_attribute, { id:, name: })
+      end
+
       sig {params(parent_id: Integer, new_node: VNode, reference_id: T.nilable(Integer)).void}
       def insert_before(parent_id, new_node, reference_id = nil)
         add_patch(:insert_before, {

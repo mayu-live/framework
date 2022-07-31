@@ -59,26 +59,40 @@ end
 
 handler(:next) do |x|
   update do |state|
-    { index: state[:index].succ }
+    { index: state[:index].succ % QUOTES.size }
   end
 end
 
 handler(:prev) do |x|
   update do |state|
-    { index: state[:index].pred }
+    { index: state[:index].pred % QUOTES.size }
+  end
+end
+
+handler :change do |e|
+  update do |state|
+    { index: e["value"].to_i % QUOTES.size }
   end
 end
 
 render do
   index = state[:index]
-  quote = QUOTES[index % QUOTES.size]
+  quote = QUOTES[index]
 
-  <div>
+  <div style={"background: hsl(#{index * 10}deg, 50%, 50%);"}>
+    <div>
+      <button on-click={handler(:prev)}>Prev</button>
+      <input
+        type="number"
+        value={index}
+        on-change={handler(:change)}
+        on-input={handler(:change)}
+      />
+      <button on-click={handler(:next)}>Next</button>
+    </div>
     <figure>
       <blockquote>{quote[:quote]}</blockquote>
       <figcaption>{quote[:author]}</figcaption>
     </figure>
-    <button on-click={handler(:prev)}>Prev</button>
-    <button on-click={handler(:next)}>Next</button>
   </div>
 end

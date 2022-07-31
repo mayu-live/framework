@@ -27,7 +27,7 @@ module Mayu
         return Session.connect(session_id)
       in :POST, ['__mayu', 'handler', session_id, handler_id]
         body = JSON.parse(T.cast(env["rack.input"], Falcon::Adapters::Input).read)
-        return Session.handle_event(session_id, handler_id)
+        return Session.handle_event(session_id, handler_id, body)
       in :GET, path
         if env["HTTP_ACCEPT"].to_s.split(",").include?("text/html")
           return Session.init
