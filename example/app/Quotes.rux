@@ -85,11 +85,17 @@ render do
       <input
         type="number"
         value={index}
-        on-change={handler(:change)}
         on-input={handler(:change)}
       />
       <button on-click={handler(:next)}>Next</button>
     </div>
+    <input
+      type="range"
+      min="0"
+      max={QUOTES.size - 1}
+      value={index}
+      on-input={handler(:change)}
+    />
     <figure>
       <blockquote>{quote[:quote]}</blockquote>
       <figcaption>{quote[:author]}</figcaption>

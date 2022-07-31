@@ -53,6 +53,19 @@ class NodeTree {
 
     console.log("Trying to set attribute", name, value)
 
+    if (node instanceof HTMLInputElement) {
+      if (name === 'value') {
+        node.value = value
+        return
+      }
+    }
+
+    if (name === 'initial_value') {
+      name = 'value'
+    } else {
+      name = name.replaceAll(/_/g, '')
+    }
+
     node.setAttribute(name, value)
   }
 
@@ -220,6 +233,7 @@ class Mayu {
   readonly sessionId: string;
   readonly connection: EventSource;
   readonly nodeTree: NodeTree;
+  readonly queue = <MessageEvent[]>[]
 
   constructor(sessionId: string, idTreeRoot: IdNode) {
     this.sessionId = sessionId;
@@ -235,7 +249,9 @@ class Mayu {
     };
 
     // this.connection.addEventListener("html", this._updateHTML);
-    this.connection.addEventListener("patch_set", this._applyPatches);
+    this.connection.addEventListener("patch_set", (e) => {
+      this._applyPatches(e)
+    });
   }
 
   handle(e: Event, handlerId: string) {

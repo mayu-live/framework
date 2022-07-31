@@ -128,7 +128,7 @@ module Mayu
           .map { |key, value|
             format(
               ' %<key>s="%<value>s"',
-              key: key.to_s.sub(/^on_/, "on").tr("_", "-"),
+              key: key.to_s.sub(/^on_/, "on").sub(/\Ainitial_value\Z/, "value").tr("_", "-"),
               value: CGI.escape_html(value.to_s),
             )
           }
