@@ -240,7 +240,8 @@ module Mayu
 
         sig {params(payload: T.untyped).void}
         def call(payload)
-          T.unsafe(@component.method(:"handle_#{@name}")).call(payload, *@args)
+          method = @component.method(:"handle_#{@name}")
+          method.call(*[payload, @args.first(method.arity)])
         end
 
         sig {returns(String)}
