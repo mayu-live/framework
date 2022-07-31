@@ -8,6 +8,7 @@ function createSilentLogger() {
     info: noop,
     log: noop,
     warn: noop,
+    error: noop,
     group: noop,
     groupEnd: noop,
   }
@@ -24,7 +25,7 @@ function createLogger() {
   }
 }
 
-const logger = createSilentLogger()
+const logger = console //createSilentLogger()
 
 class NodeTree {
   #cache = new Map<number, CacheEntry>();
@@ -36,13 +37,23 @@ class NodeTree {
     (window as any).mayuCache = this.#cache
   }
 
+  updateText(id: number, text: string) {
+    const node = this.#getEntry(id).node
+
+    if (node.nodeType !== node.TEXT_NODE) {
+      console.error(node)
+      throw new Error("Trying to update text on a non text node")
+    }
+
+    node.textContent = text
+  }
+
   insertBefore(
     parentId: number,
     referenceId: number,
     html: string,
     ids: IdNode[]
   ) {
-
     logger.group(`Trying to insert html into`, parentId)
     const parentEntry = this.#getEntry(parentId)
 
@@ -193,7 +204,8 @@ type InsertBeforePatch = {
   ids: any;
 };
 type RemovePatch = { type: "remove_node"; id: number };
-type Patch = InsertBeforePatch | RemovePatch;
+type UpdateTextPatch = { type: "update_text"; id: number, text: string };
+type Patch = InsertBeforePatch | RemovePatch | UpdateTextPatch;
 
 class Mayu {
   readonly sessionId: string;
@@ -258,6 +270,9 @@ class Mayu {
         case "remove_node": {
           this.nodeTree.remove(patch.id);
           break;
+        }
+        case "update_text": {
+          this.nodeTree.updateText(patch.id, patch.text)
         }
       }
     }

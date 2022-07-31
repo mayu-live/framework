@@ -147,7 +147,18 @@ module Mayu
 
         if descriptor.text?
           unless vnode.descriptor.text?
+            destroy_vnode(vnode, patch:)
             return init_vnode(parent_id, descriptor, patch:)
+          end
+
+          unless descriptor.text == vnode.descriptor.text
+            vnode.descriptor = descriptor
+
+            if patch
+              @current_patch_set.update_text(vnode.id, descriptor.text)
+            end
+
+            return vnode
           end
         end
 

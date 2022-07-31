@@ -20,6 +20,11 @@ module Mayu
       sig {returns(T::Boolean)}
       def empty? = @patches.empty?
 
+      sig {params(id: Integer, text: String).void}
+      def update_text(id, text)
+        add_patch(:update_text, { id:, text: })
+      end
+
       sig {params(parent_id: Integer, new_node: VNode, reference_id: T.nilable(Integer)).void}
       def insert_before(parent_id, new_node, reference_id = nil)
         add_patch(:insert_before, {

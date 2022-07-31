@@ -18,13 +18,8 @@ render do
   count = state[:count]
 
   <div>
-    <button on-click={handler(:increment, state[:count])}>
-      Click me!
-      {if (state[:count] % 2).zero?
-        <span>{count}</span>
-      else
-        <strong>{count}</strong>
-      end}
+    <button on-click={handler(:increment, count)}>
+      Click me! {count}
     </button>
   </div>
 end

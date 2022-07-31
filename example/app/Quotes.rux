@@ -73,17 +73,9 @@ render do
   index = state[:index]
   quote = QUOTES[index % QUOTES.size]
 
-  p(quote)
-
   <div>
     <figure>
-      <blockquote>
-      {if (index % 2).zero?
-        <p>{quote[:quote]}</p>
-      else
-        <span>{quote[:quote]}</span>
-      end}
-      </blockquote>
+      <blockquote>{quote[:quote]}</blockquote>
       <figcaption>{quote[:author]}</figcaption>
     </figure>
     <button on-click={handler(:prev)}>Prev</button>
