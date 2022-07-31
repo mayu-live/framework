@@ -162,6 +162,10 @@ module Mayu
           end
         end
 
+        if descriptor.comment? && vnode.descriptor.comment?
+          return vnode
+        end
+
         if vnode.same?(descriptor)
           component = vnode.component
           p [:is_same]
