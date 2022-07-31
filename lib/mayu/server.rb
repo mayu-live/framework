@@ -29,12 +29,10 @@ module Mayu
         body = JSON.parse(T.cast(env["rack.input"], Falcon::Adapters::Input).read)
         return Session.handle_event(session_id, handler_id, body)
       in :GET, path
-        if env["HTTP_ACCEPT"].to_s.split(",").include?("text/html")
-          return Session.init
-        end
+        return Session.init
       end
 
-      [404, {"content-type" => "text/plain"}, ["not found"]]
+      [404, {"content-type" => "text/plain"}, ["not found, #{route_split(env)}, #{env["HTTP_ACCEPT"].inspect}"]]
     end
 
     sig {params(path: String, content_type: String).returns(Types::TRackReturn)}

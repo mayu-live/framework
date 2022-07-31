@@ -1,0 +1,4 @@
+Dockerfile
+vendor/bundle
+lib/mayu/client/node_modules
+.git
