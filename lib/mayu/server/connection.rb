@@ -17,8 +17,8 @@ module Mayu
       sig { returns(String) }
       attr_reader :id
 
-      sig { params(session_id: String).void }
-      def initialize(session_id)
+      sig { params(session_id: String, task: Async::Task).void }
+      def initialize(session_id, task: Async::Task.current)
         @id = T.let(SecureRandom.uuid, String)
         @session_id = session_id
         @body =
@@ -27,10 +27,12 @@ module Mayu
 
         @task =
           T.let(
-            Async do
+            task.async do
               loop { @body.write(@queue.dequeue.to_s) }
             rescue => e
               puts e.message
+              close
+              raise
             end,
             Async::Task
           )
@@ -39,7 +41,7 @@ module Mayu
       sig { params(event: Symbol, payload: T.untyped).void }
       def send_event(event, payload = {})
         data = "event: #{event}\ndata: #{JSON.generate(payload)}\n\n"
-        puts data
+        puts payload.inspect
         @queue.enqueue(data)
       end
 

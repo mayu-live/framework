@@ -6,7 +6,9 @@ initial_state do |props|
 end
 
 did_mount do
-  async do
+  async do |task|
+    task.reactor.print_hierarchy
+
     loop do
       puts "hello #{state.inspect}"
       update do |state|

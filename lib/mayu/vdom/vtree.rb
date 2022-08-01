@@ -19,8 +19,8 @@ module Mayu
       sig { returns(Async::Condition) }
       attr_reader :on_update
 
-      sig { params(descriptor: Descriptor, task: Async::Task).void }
-      def initialize(descriptor, task: Async::Task.new)
+      sig { params(descriptor: Descriptor, task: Async::Barrier).void }
+      def initialize(descriptor, task: Async::Task.current)
         @id_counter = T.let(0, VNode::Id)
         @dom = T.let(DOM.new, DOM)
         @update_queue = T.let(Async::Queue.new, Async::Queue)
@@ -29,11 +29,10 @@ module Mayu
         @on_update = T.let(Async::Condition.new, Async::Condition)
         @patch_sets = T.let([], T::Array[PatchSet])
         @current_patch_set = T.let(PatchSet.new, PatchSet)
-        render(descriptor)
 
         @update_task =
           T.let(
-            task.async do |task|
+            task.async(annotation: "VTree updater") do |task|
               loop do
                 @update_queue.size.times do
                   vnode = @update_queue.dequeue
@@ -52,6 +51,8 @@ module Mayu
             end,
             Async::Task
           )
+
+        render(descriptor)
       end
 
       sig { void }
@@ -220,7 +221,7 @@ module Mayu
       def init_vnode(parent_id, descriptor, patch: true)
         vnode = VNode.new(self, parent_id, descriptor)
 
-        if component = vnode.init_component
+        if component = vnode.init_component(task: @update_task)
           component.props = descriptor.props
           child_descriptors = component.render
         else

@@ -12,11 +12,11 @@ module Mayu
     sig { returns(String) }
     attr_reader :html
 
-    sig { void }
-    def initialize
+    sig { params(parent: T.any(Async::Task, Async::Barrier)).void }
+    def initialize(parent: Async::Task.current)
       @in = T.let(Async::Queue.new, Async::Queue)
       @out = T.let(Async::Queue.new, Async::Queue)
-      @task = T.let(nil, T.nilable(Async::Task))
+      @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
 
       modules = Mayu::Modules::System.new(File.join(Dir.pwd, "example", "app"))
 
@@ -27,10 +27,10 @@ module Mayu
         )
 
       @root = T.let(VDOM.h(app), VDOM::Descriptor)
-      @vtree = T.let(VDOM::VTree.new(@root), VDOM::VTree)
+      @vtree = T.let(VDOM::VTree.new(@root, task: @barrier), VDOM::VTree)
       @html = T.let("", String)
 
-      Async do
+      @barrier.async(annotation: "Renderer patch sets") do
         loop do
           message = @vtree.on_update.wait
 
@@ -43,38 +43,31 @@ module Mayu
         end
       end
 
+      @barrier.async(annotation: "Renderer event handlers") do
+        loop do
+          message = @in.dequeue
+
+          case message
+          in :render
+            rerender!
+          in [:handle_event, handler_id, payload]
+            @vtree.handle_event(handler_id, payload)
+          else
+            puts "Invalid message: #{message.inspect}"
+          end
+        end
+      end
+
       rerender!
     end
 
     sig { returns(T::Boolean) }
-    def running? = @task&.running?
-
-    sig { void }
-    def start
-      return if @task
-
-      @task =
-        Async do
-          loop do
-            message = @in.dequeue
-
-            case message
-            in :render
-              rerender!
-            in [:handle_event, handler_id, payload]
-              @vtree.handle_event(handler_id, payload)
-            else
-              puts "Invalid message: #{message.inspect}"
-            end
-          end
-        end
-    end
+    def running? = @barrier.empty?
 
     sig { void }
     def stop
       respond(:close)
-      @task&.stop
-      @task = nil
+      @barrier.stop
     end
 
     sig { params(args: T.untyped).void }

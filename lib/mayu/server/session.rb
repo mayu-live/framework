@@ -48,15 +48,34 @@ module Mayu
       sig { returns(String) }
       attr_reader :id
 
-      sig { void }
-      def initialize
+      sig { params(task: Async::Task).void }
+      def initialize(task: Async::Task.current)
         @id = T.let(SecureRandom.uuid, String)
-
         @connections = T.let(Connections.new, Connections)
-        @renderer = T.let(Renderer.new, Renderer)
-        @renderer.start
+        @disconnected_at = T.let(Time.now, T.nilable(Time))
 
-        Async do |task|
+        @task = T.let(
+          task.async(annotation: "Session #{@id}") do |subtask|
+            loop do
+              if @disconnected_at
+                diff = Time.now - @disconnected_at
+
+                if diff > 10
+                  puts "Stopping everything"
+                  subtask.stop
+                  break
+                end
+              end
+
+              sleep 1
+            end
+          end,
+          Async::Task
+        )
+
+        @renderer = T.let(Renderer.new(parent: @task), Renderer)
+
+        @task.async(annotation: "Broadcaster") do |task|
           running = T.let(true, T::Boolean)
 
           while @renderer.running?

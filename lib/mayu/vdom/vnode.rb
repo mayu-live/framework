@@ -44,10 +44,11 @@ module Mayu
           vtree: VTree,
           parent_id: Id,
           descriptor: Descriptor,
-          dom: T.nilable(DOM::Node)
+          dom: T.nilable(DOM::Node),
+          task: Async::Task,
         ).void
       end
-      def initialize(vtree, parent_id, descriptor, dom = nil)
+      def initialize(vtree, parent_id, descriptor, dom = nil, task: Async::Task.current)
         @dom = dom
         @id = T.let(vtree.next_id!, Id)
         @parent_id = parent_id
@@ -55,12 +56,11 @@ module Mayu
         @descriptor = descriptor
         @children = T.let([], Children)
         @component = T.let(nil, T.nilable(Component::Wrapper))
-        init_component
       end
 
-      sig { returns(T.nilable(Component::Wrapper)) }
-      def init_component
-        @component ||= Component.wrap(self, type, props)
+      sig { params(task: Async::Task).returns(T.nilable(Component::Wrapper)) }
+      def init_component(task: Async::Task.current)
+        @component ||= Component.wrap(self, type, props, task:)
       end
 
       sig { void }

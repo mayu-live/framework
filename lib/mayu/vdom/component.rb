@@ -13,13 +13,13 @@ module Mayu
       State = T.type_alias { T::Hash[String, T.untyped] }
 
       sig do
-        params(vnode: VNode, type: T.untyped, props: Props).returns(
+        params(vnode: VNode, type: T.untyped, props: Props, task: Async::Task).returns(
           T.nilable(Wrapper)
         )
       end
-      def self.wrap(vnode, type, props)
+      def self.wrap(vnode, type, props, task: Async::Task.current)
         if type.is_a?(Class) && type < Component::Base
-          Wrapper.new(vnode, type, props)
+          Wrapper.new(vnode, type, props, task:)
         else
           nil
         end
