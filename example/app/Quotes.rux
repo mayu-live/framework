@@ -79,7 +79,7 @@ render do
   index = state[:index]
   quote = QUOTES[index]
 
-  <div style={"background: hsl(#{index * 10}deg, 50%, 50%);"}>
+  <div style={{ background: "hsl(#{index * 10}deg, 50%, 50%)" }}>
     <div>
       <button on-click={handler(:prev)}>Prev</button>
       <input

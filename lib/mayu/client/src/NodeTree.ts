@@ -22,9 +22,11 @@ type MovePatch = {
   after?: number;
 };
 
-type AddTextPatch = { type: "text", id: number, text: string }
-type AppendTextPatch = { type: "text", id: number, append: string }
-type TextPatch = AddTextPatch | AppendTextPatch
+type StylePatch = { type: "css"; id: number; attr: string; value?: string };
+
+type AddTextPatch = { type: "text"; id: number; text: string };
+type AppendTextPatch = { type: "text"; id: number; append: string };
+type TextPatch = AddTextPatch | AppendTextPatch;
 
 type AttributePatch = {
   type: "attr";
@@ -38,7 +40,8 @@ export type Patch =
   | MovePatch
   | RemovePatch
   | TextPatch
-  | AttributePatch;
+  | AttributePatch
+  | StylePatch;
 
 class NodeTree {
   #cache = new Map<number, CacheEntry>();
@@ -49,30 +52,39 @@ class NodeTree {
 
   apply(patches: Patch[]) {
     for (const patch of patches) {
-      this.applyPatch(patch)
+      this.applyPatch(patch);
     }
   }
 
   applyPatch(patch: Patch) {
     switch (patch.type) {
       case "insert": {
-        this.insert(patch)
-        return
+        this.insert(patch);
+        return;
       }
       case "move": {
-        this.move(patch)
+        this.move(patch);
         break;
       }
       case "remove": {
         this.remove(patch.id);
         break;
       }
+      case "css": {
+        const element = this.#getEntry(patch.id).node as HTMLElement;
+
+        if (patch.value) {
+          element.style.setProperty(patch.attr, patch.value);
+        } else {
+          element.style.removeProperty(patch.attr);
+        }
+      }
       case "text": {
-        if ('text' in patch) {
+        if ("text" in patch) {
           this.updateText(patch.id, patch.text);
         }
 
-        if ('append' in patch) {
+        if ("append" in patch) {
           this.appendText(patch.id, patch.append);
         }
         break;
@@ -86,7 +98,7 @@ class NodeTree {
         break;
       }
       default: {
-        logger.error('Unknown patch', patch)
+        logger.error("Unknown patch", patch);
       }
     }
   }
@@ -134,37 +146,33 @@ class NodeTree {
 
   removeAttribute(id: number, name: string) {
     const node = this.#getEntry(id).node as Element;
-    node.removeAttribute(name)
+    node.removeAttribute(name);
   }
 
-  insert({parent, before, after, ids, html}: InsertPatch) {
+  insert({ parent, before, after, ids, html }: InsertPatch) {
     logger.group(`Trying to insert html into`, parent);
 
     const parentEntry = this.#getEntry(parent);
-    const referenceId = before || after
+    const referenceId = before || after;
     const referenceEntry = referenceId && this.#cache.get(referenceId);
 
-    const body = new DOMParser().parseFromString(
-      `${html}`,
-      "text/html"
-    ).body;
+    const body = new DOMParser().parseFromString(`${html}`, "text/html").body;
 
-    logger.log(`BODY TO INSERT`, body.innerHTML)
+    logger.log(`BODY TO INSERT`, body.innerHTML);
 
     const children = Array.from(body.childNodes).reverse();
 
     const idsArray = [ids].flat();
 
     idsArray.forEach((idTreeNode, i) => {
-      parentEntry.childIds.add(idTreeNode.i)
+      parentEntry.childIds.add(idTreeNode.i);
       const entry = this.#cache.get(idTreeNode.i);
       const node = entry?.node || children[i];
-      const ref =
-        referenceEntry
-          ? after
+      const ref = referenceEntry
+        ? after
           ? referenceEntry.node.nextSibling
           : referenceEntry.node
-          : null;
+        : null;
 
       const insertedNode = parentEntry.node.insertBefore(node, ref);
 
@@ -217,24 +225,22 @@ class NodeTree {
     }
   }
 
-  move({id, parent, before, after}: MovePatch) {
+  move({ id, parent, before, after }: MovePatch) {
     const entry = this.#getEntry(id);
     const parentEntry = this.#getEntry(parent);
-    const refId = before || after
+    const refId = before || after;
     const refEntry = refId && this.#cache.get(refId);
 
-    const ref =
-      refEntry
-        ? after
-        ? refEntry.node
-        : refEntry.node
-        : null;
+    const ref = refEntry ? (after ? refEntry.node : refEntry.node) : null;
 
-
-
-    logger.log('Moving', entry.node.textContent, before ? 'before' : after ? 'after' : 'last', (ref?.textContent || parentEntry.node.__MAYU_ID))
-    logger.log({before, after})
-    logger.log(ref?.textContent)
+    logger.log(
+      "Moving",
+      entry.node.textContent,
+      before ? "before" : after ? "after" : "last",
+      ref?.textContent || parentEntry.node.__MAYU_ID
+    );
+    logger.log({ before, after });
+    logger.log(ref?.textContent);
 
     parentEntry.node.insertBefore(entry.node, ref);
   }
@@ -275,8 +281,8 @@ class NodeTree {
 
   updateCache(node: Node, idTreeNode: IdNode) {
     if (!node) {
-      logger.error(idTreeNode)
-      throw new Error('No node found for idTreeNode')
+      logger.error(idTreeNode);
+      throw new Error("No node found for idTreeNode");
     }
     const childIds = new Set((idTreeNode.ch || []).map((child) => child.id));
 

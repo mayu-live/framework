@@ -33,17 +33,9 @@ module Mayu
       def dom? = type.is_a?(Symbol)
 
       sig do
-        params(
-          vtree: VTree,
-          descriptor: Descriptor,
-          task: Async::Task
-        ).void
+        params(vtree: VTree, descriptor: Descriptor, task: Async::Task).void
       end
-      def initialize(
-        vtree,
-        descriptor,
-        task: Async::Task.current
-      )
+      def initialize(vtree, descriptor, task: Async::Task.current)
         @id = T.let(vtree.next_id!, Id)
         @vtree = vtree
         @descriptor = descriptor
@@ -95,11 +87,7 @@ module Mayu
 
         return children.first&.id_tree if component
 
-        if children.empty?
-          { id: }
-        else
-          { id:, ch: children.map(&:id_tree) }
-        end
+        children.empty? ? { id: } : { id:, ch: children.map(&:id_tree) }
       end
 
       sig do
@@ -147,6 +135,16 @@ module Mayu
           props
             .reject { _1 == :children || _1 == :dangerously_set_inner_html }
             .map do |key, value|
+              if key == :style && value.is_a?(Hash)
+                next(
+                  format(
+                    ' %<key>s="%<value>s"',
+                    key:,
+                    value: CSSAttributes.new(**value).to_s
+                  )
+                )
+              end
+
               format(
                 ' %<key>s="%<value>s"',
                 key:

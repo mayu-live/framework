@@ -1,11 +1,10 @@
 # typed: strict
 
-require "pry"
 require_relative "component"
 require_relative "descriptor"
 require_relative "dom"
 require_relative "vnode"
-require_relative "patch_set"
+require_relative "css_attributes"
 require_relative "../event_emitter"
 require "async/queue"
 
@@ -54,131 +53,6 @@ module Mayu
 
         sig{returns(T::Array[Integer])}
         def to_a = @indexes
-      end
-
-      class UpdateContext
-        extend T::Sig
-
-        sig { returns(T::Array[T.untyped]) }
-        attr_reader :patches
-
-        sig { void }
-        def initialize
-          @patches = T.let([], T::Array[T.untyped])
-          @parents = T.let([], T::Array[VNode])
-          @dom_parents = T.let([], T::Array[VNode])
-        end
-
-        sig { returns(T.nilable(VNode)) }
-        def parent = @parents.last
-
-        sig { returns(T.nilable(VNode)) }
-        def dom_parent = @dom_parents.last
-
-        sig { params(vnode: VNode, blk: T.proc.void).void }
-        def enter(vnode, &blk)
-          dom_parent = vnode.descriptor.element?
-          @parents.push(vnode)
-          @dom_parents.push(vnode) if dom_parent
-          yield
-        ensure
-          @dom_parents.pop if dom_parent
-          @parents.pop
-        end
-
-        sig do
-          params(
-            vnode: VNode,
-            before: T.nilable(VNode),
-            after: T.nilable(VNode)
-          ).void
-        end
-        def insert(vnode, before: nil, after: nil)
-          # p caller.grep(/markup/).first(5)
-          html = vnode.inspect_tree(exclude_components: true)
-          ids = vnode.id_tree
-
-          if before
-            add_patch(
-              :insert,
-              id: vnode.id,
-              parent: dom_parent&.id,
-              before: before.id,
-              html:,
-              ids:
-            )
-          elsif after
-            add_patch(
-              :insert,
-              id: vnode.id,
-              parent: dom_parent&.id,
-              after: after.id,
-              html:,
-              ids:
-            )
-          else
-            add_patch(:insert, id: vnode.id, parent: dom_parent&.id, html:, ids:)
-          end
-        end
-
-        sig do
-          params(
-            vnode: VNode,
-            before: T.nilable(VNode),
-            after: T.nilable(VNode)
-          ).void
-        end
-        def move(vnode, before: nil, after: nil)
-          if before
-            add_patch(
-              :move,
-              id: vnode.id,
-              parent: dom_parent&.id,
-              before: before.id
-            )
-          elsif after
-            add_patch(:move, id: vnode.id, parent: dom_parent&.id, after: after.id)
-          else
-            add_patch(:move, id: vnode.id, parent: dom_parent&.id)
-          end
-        end
-
-        sig { params(vnode: VNode, text: String, append: T::Boolean).void }
-        def text(vnode, text, append: false)
-          if append
-            add_patch(:text, id: vnode.id, append: text)
-          else
-            add_patch(:text, id: vnode.id, text:)
-          end
-        end
-
-        sig { params(vnode: VNode).void }
-        def remove(vnode)
-          add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
-        end
-
-        sig { params(vnode: VNode).void }
-        def remove(vnode)
-          add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
-        end
-
-        sig { params(vnode: VNode, name: String, value: String).void }
-        def set_attribute(vnode, name, value)
-          add_patch(:attr, id: vnode.id, name:, value:)
-        end
-
-        sig { params(vnode: VNode, name: String).void }
-        def remove_attribute(vnode, name)
-          add_patch(:attr, id: vnode.id, name:)
-        end
-
-        private
-
-        sig { params(type: Symbol, args: T.untyped).void }
-        def add_patch(type, **args)
-          puts "\e[33m#{type}:\e[0m #{args.inspect}"
-          @patches.push(args.merge(type:))
-        end
       end
 
       Id = T.type_alias { Integer }
@@ -654,7 +528,18 @@ module Mayu
 
         new_props.each do |attr, value|
           next if attr == :children
+          old_value = old_props[attr]
           next if value == old_props[attr]
+
+          if attr == :style && old_value.is_a?(Hash) && value.is_a?(Hash)
+            CSSAttributes.new(**old_value).patch(
+              ctx,
+              vnode,
+              CSSAttributes.new(**value)
+            )
+            next
+          end
+
           ctx.set_attribute(vnode, attr.to_s, value.to_s)
         end
 
@@ -666,7 +551,7 @@ module Mayu
       sig {params(str1: String, str2: String).returns(T.nilable(String))}
       def append_part(str1, str2)
         return nil if str1.strip.empty? || str1.length >= str2.length
-        return nil unless str2.slice(0..str1.length) == str1
+        return nil unless str2.slice(0...str1.length) == str1
         str2.slice(str1.length..-1)
       end
     end
