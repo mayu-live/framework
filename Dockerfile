@@ -35,7 +35,7 @@ RUN bundle install && rm -rf vendor/bundle/ruby/*/cache
 
 COPY . .
 
-RUN cd lib/mayu/client && npm install && npm run build && rm -r node_modules
+RUN cd lib/mayu/client && npm install && npm run build:production && rm -r node_modules
 
 #######################################################
 
