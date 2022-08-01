@@ -7,7 +7,19 @@ module Mayu
     class Descriptor
       extend T::Sig
 
-      ElementType = T.type_alias { T.any(Symbol, T.class_of(Component::Base)) }
+      LambdaComponent =
+        T.type_alias do
+          T.proc.params(kwargs: Component::Props).returns(T.nilable(Descriptor))
+        end
+
+      ElementType = T.type_alias {
+        T.any(
+          Symbol,
+          T.class_of(Component::Base),
+          LambdaComponent
+        )
+      }
+
       Children = T.type_alias { T.any(ChildType, T::Array[ChildType]) }
       ChildType = T.type_alias { T.nilable(Descriptor) }
       ComponentChildren =
@@ -19,6 +31,11 @@ module Mayu
 
       TEXT = :TEXT
       COMMENT = :COMMENT
+
+      sig {returns(Descriptor)}
+      def self.comment
+        Descriptor.new(:COMMENT)
+      end
 
       sig { params(children: ComponentChildren).returns(ComponentChildren) }
       def self.separate_texts_with_comments(children)
@@ -82,9 +99,26 @@ module Mayu
       def element? = @type.is_a?(Symbol)
       sig { returns(T::Boolean) }
       def component? = Component.component_class?(@type)
+      sig { returns(T::Array[Descriptor]) }
+      def children = props[:children]
+      sig { returns(T::Boolean) }
+      def children? = children.any?
 
       sig { returns(String) }
       def text = @props[:text_content].to_s
+
+      sig { params(other: Descriptor).returns(T::Boolean) }
+      def same?(other)
+        if key == other.key && type == other.type
+          if type == :input
+            props[:type] == props[:type]
+          else
+            true
+          end
+        else
+          false
+        end
+      end
 
       private
 

@@ -1,5 +1,4 @@
-// import logger from "./logger";
-const logger = console
+import logger from "./logger.js";
 
 export type IdNode = { id: number; ch?: [IdNode] };
 type CacheEntry = { node: Node; childIds: Set<number> };
@@ -123,7 +122,7 @@ class NodeTree {
       "text/html"
     ).body;
 
-    console.log(`BODY TO INSERT`, body.innerHTML)
+    logger.log(`BODY TO INSERT`, body.innerHTML)
 
     const children = Array.from(body.childNodes).reverse();
 
@@ -208,9 +207,9 @@ class NodeTree {
 
 
 
-        console.log('Moving', entry.node.textContent, before ? 'before' : after ? 'after' : 'last', (ref?.textContent || parentEntry.node.__mayu.id))
-    console.log({before, after})
-    console.log(ref?.textContent)
+    logger.log('Moving', entry.node.textContent, before ? 'before' : after ? 'after' : 'last', (ref?.textContent || parentEntry.node.__mayu.id))
+    logger.log({before, after})
+    logger.log(ref?.textContent)
 
     parentEntry.node.insertBefore(entry.node, ref);
   }
@@ -251,7 +250,7 @@ class NodeTree {
 
   updateCache(node: Node, idTreeNode: IdNode) {
     if (!node) {
-      console.error(idTreeNode)
+      logger.error(idTreeNode)
       throw new Error('No node found for idTreeNode')
     }
     const childIds = new Set((idTreeNode.ch || []).map((child) => child.id));

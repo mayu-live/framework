@@ -37,7 +37,7 @@ module Mayu
         def should_update?(props, state)
         end
 
-        sig { abstract.returns(T.nilable(Descriptor::Children)) }
+        sig { abstract.returns(T.nilable(Descriptor)) }
         def render
         end
 
@@ -99,7 +99,7 @@ module Mayu
           wrap_errors { @instance.should_update?(next_props, next_state) }
         end
 
-        sig { override.returns(T.nilable(Descriptor::Children)) }
+        sig { override.returns(T.nilable(Descriptor)) }
         def render
           wrap_errors { @instance.render }
         ensure
@@ -244,7 +244,7 @@ module Mayu
           end
         end
 
-        sig { override.returns(T.nilable(Descriptor::Children)) }
+        sig { override.returns(T.nilable(Descriptor)) }
         def render = nil
         sig { override.params(prev_props: Props, prev_state: State).void }
         def did_update(prev_props, prev_state) = nil
@@ -333,7 +333,7 @@ module Mayu
 
       module Hax
         class HeadComponent < Component::Base
-          sig { override.returns(T.nilable(Descriptor::Children)) }
+          sig { override.returns(T.nilable(Descriptor)) }
           def render
             h(:__mayu_head, **props) do
               [
@@ -345,7 +345,7 @@ module Mayu
         end
 
         class BodyComponent < Component::Base
-          sig { override.returns(T.nilable(Descriptor::Children)) }
+          sig { override.returns(T.nilable(Descriptor)) }
           def render
             h(:__mayu_body, **props) { children }
           end

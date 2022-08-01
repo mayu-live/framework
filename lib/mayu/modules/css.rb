@@ -20,6 +20,16 @@ module Mayu
       end
 
       class Base
+        extend T::Sig
+
+        sig{ returns(String) }
+        attr_reader :path
+
+        sig{ params(path: String).void }
+        def initialize(path)
+          @path = path
+        end
+
         def proxy
         end
       end
@@ -64,8 +74,6 @@ module Mayu
         def inspect
           "#<CSSModule path=#{@path} idents=#{@class_names.keys.inspect}>"
         end
-
-        attr_reader :path
 
         def initialize(path, src)
           @path = path

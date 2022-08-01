@@ -9,7 +9,7 @@ module Mayu
     class VNode
       extend T::Sig
 
-      Children = T.type_alias { T::Array[T.nilable(VNode)] }
+      Children = T.type_alias { T::Array[VNode] }
       Id = T.type_alias { Integer }
 
       sig { returns(Id) }
@@ -25,10 +25,6 @@ module Mayu
       def key = descriptor.key
       sig { returns(Children) }
       attr_accessor :children
-      sig { returns(DOM::Node) }
-      attr_accessor :dom
-      sig { returns(Id) }
-      attr_accessor :parent_id
 
       sig { returns(T.nilable(Component::Wrapper)) }
       attr_reader :component
@@ -36,28 +32,19 @@ module Mayu
       sig { returns(T::Boolean) }
       def dom? = type.is_a?(Symbol)
 
-      sig { returns(T.nilable(DOM::Node)) }
-      attr_reader :dom
-
       sig do
         params(
           vtree: VTree,
-          parent_id: Id,
           descriptor: Descriptor,
-          dom: T.nilable(DOM::Node),
           task: Async::Task
         ).void
       end
       def initialize(
         vtree,
-        parent_id,
         descriptor,
-        dom = nil,
         task: Async::Task.current
       )
-        @dom = dom
         @id = T.let(vtree.next_id!, Id)
-        @parent_id = parent_id
         @vtree = vtree
         @descriptor = descriptor
         @children = T.let([], Children)
@@ -109,9 +96,9 @@ module Mayu
         return children.first&.id_tree if component
 
         if children.empty?
-          { i: @id }
+          { id: }
         else
-          { i: @id, c: children.map(&:id_tree).compact }
+          { id:, ch: children.map(&:id_tree).compact }
         end
       end
 

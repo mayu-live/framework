@@ -35,8 +35,8 @@ module Mayu
           message = @vtree.on_update.wait
 
           case message
-          in [:patch_set, payload]
-            respond(:patch_set, payload)
+          in :patch, { id:, patches: }
+            respond(:patch_set, id:, patches:)
           else
             puts "\e[31mUnknown event: #{message.inspect}\e[0m"
           end

@@ -17,7 +17,7 @@ Table = import("./Table")
 
 initial_state do |props|
   {
-    time: nil,
+    time: Time.now.strftime('%H:%M:%S.%3N'),
     playing: true,
   }
 end
@@ -46,7 +46,7 @@ end
 
 render do
   <div>
-    <h4>Current time {state[:time]}</h4>
+    <h4>Current time <span>{state[:time]}</span></h4>
     <button on-click={handler(:toggle)}>
       {state[:playing] ? "Stop" : "Play"}
     </button>
