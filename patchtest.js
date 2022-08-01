@@ -20,6 +20,7 @@ console.log(initialPatchSet)
 const initial = initialPatchSet.patches[0];
 
 document.body.innerHTML = initial.html
+console.log(document.body.innerHTML)
 const nodeTree = new NodeTree(initial.ids, document.body.firstElementChild)
 
 expectEqual(document.body.innerHTML, initialPatchSet.output)

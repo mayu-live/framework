@@ -250,6 +250,10 @@ class NodeTree {
   }
 
   updateCache(node: Node, idTreeNode: IdNode) {
+    if (!node) {
+      console.error(idTreeNode)
+      throw new Error('No node found for idTreeNode')
+    }
     const childIds = new Set((idTreeNode.ch || []).map((child) => child.id));
 
     this.#removeRecursiveFromCache(idTreeNode.id);
