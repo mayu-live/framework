@@ -74,19 +74,12 @@ render do
     <button on-click={handler(:toggle)}>{state[:playing] ? "Stop" : "Play"}</button>
     <input
       type="range"
-      on-input={handler(:set_speed)}
+      on-change={handler(:set_speed)}
       value={state[:speed]}
       min={MIN}
       max={MAX}
       step="0.05"
     />
     <output>{state[:speed]}</output>
-    <div>
-      <Table
-        cols={state[:cols]}
-        rows={state[:rows]}
-        speed={state[:speed]}
-      />
-    </div>
   </div>
 end

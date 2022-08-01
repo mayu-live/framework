@@ -5,6 +5,7 @@ Quotes = import("./Quotes")
 List = import("./List")
 Section = import("./Layout/Section")
 AsyncRender = import("./AsyncRender")
+Form = import("./Form")
 
 render do
   <Layout>
@@ -16,6 +17,9 @@ render do
     <Section>
       <h3>Quotes</h3>
       <Quotes />
+    </Section>
+    <Section>
+      <Form />
     </Section>
     <Section>
       <h3>Counter</h3>

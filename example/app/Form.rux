@@ -1,0 +1,29 @@
+initial_state do |props|
+  {
+    name: "",
+  }
+end
+
+handler :set_value do |e, key|
+  update(key => e["value"].to_s)
+end
+
+render do
+  <fieldset>
+    <legend>Name reverser</legend>
+    <p>See your name backwards in real time</p>
+    <label for="reverse-name">Enter name</label>
+    <br />
+    <input
+      id="reverse-name"
+      type="text"
+      on-input={handler(:set_value, :name)}
+    />
+    <br />
+    {if state[:name].empty?
+      <p>Enter your name!!</p>
+    else
+      <p>Your name reversed is: <strong>{state[:name]}</strong></p>
+    end}
+  </fieldset>
+end
