@@ -306,7 +306,6 @@ class Mayu {
           break;
         }
         case "remove_node": {
-          this.nodeTree.remove(patch.id);
           break;
         }
         case "update_text": {
@@ -317,6 +316,12 @@ class Mayu {
           this.nodeTree.setAttribute(patch.id, patch.name, patch.value);
           break;
         }
+      }
+    }
+
+    for (const patch of patches.reverse()) {
+      if (patch.type === "remove_node") {
+        this.nodeTree.remove(patch.id);
       }
     }
   }

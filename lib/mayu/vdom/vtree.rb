@@ -18,8 +18,8 @@ module Mayu
       sig { returns(Async::Condition) }
       attr_reader :on_update
 
-      sig { params(descriptor: Descriptor).void }
-      def initialize(descriptor)
+      sig { params(descriptor: Descriptor, task: Async::Task).void }
+      def initialize(descriptor, task: Async::Task.new)
         @id_counter = T.let(0, Integer)
         @dom = T.let(DOM.new, DOM)
         @update_queue = T.let(Async::Queue.new, Async::Queue)
@@ -32,7 +32,7 @@ module Mayu
 
         @update_task =
           T.let(
-            Async do |task|
+            task.async do |task|
               loop do
                 @update_queue.size.times do
                   vnode = @update_queue.dequeue
@@ -56,6 +56,9 @@ module Mayu
             Async::Task
           )
       end
+
+      sig {void}
+      def stop! = @update_task.stop
 
       sig { params(descriptor: Descriptor).void }
       def render(descriptor)
@@ -132,15 +135,6 @@ module Mayu
         ).returns(T.nilable(VNode))
       end
       def patch_vnode(parent_id, vnode, descriptor, patch: true)
-        p [
-            :patch_vnode,
-            vnode&.id,
-            vnode&.type,
-            patch,
-            vnode&.descriptor&.text,
-            descriptor&.text
-          ]
-
         unless descriptor
           destroy_vnode(vnode, patch:) if vnode
           return nil
@@ -167,11 +161,8 @@ module Mayu
 
         if vnode.same?(descriptor)
           component = vnode.component
-          p [:is_same]
 
           if component
-            p [:name, component.instance.class.name]
-            p [:dirty?, component.dirty?]
             if component.should_update?(
                  descriptor.props,
                  component.next_state
@@ -179,7 +170,6 @@ module Mayu
               component.props = descriptor.props.clone
               component.state = component.next_state.clone
               descriptors = component.render
-              p [:rerendering]
             else
               vnode.descriptor = descriptor
 
@@ -202,7 +192,6 @@ module Mayu
 
           vnode
         else
-          p [:got_here, vnode.descriptor.type, descriptor.type]
           destroy_vnode(vnode, patch:)
           init_vnode(parent_id, descriptor, patch:)
         end
@@ -242,10 +231,6 @@ module Mayu
       sig { params(vnode: VNode, patch: T::Boolean).void }
       def destroy_vnode(vnode, patch: true)
         if patch
-          puts "REMOVE"
-          puts
-          puts vnode.inspect_tree(exclude_components: true)
-          puts
           @current_patch_set.remove_node(vnode.id)
         end
 
@@ -414,9 +399,6 @@ module Mayu
               # Judge , If idxInOld yes undefined Indicates that it is a brand new item
               # Added items （ Namely start_descriptor the ) It's not really DOM node
               new_child_vnode = init_vnode(parent_id, start_descriptor)
-              if new_child_vnode.descriptor.text?
-                p new_child_vnode.descriptor.text
-              end
               result.insert(start_descriptor_index, new_child_vnode)
               # parent_dom.insert_before(create_dom_node(new_child_vnode), old_start_vnode.dom)
               @current_patch_set.insert_before(

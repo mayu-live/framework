@@ -205,6 +205,8 @@ module Mayu
             .returns(T::Boolean)
         end
         def should_update?(next_props, next_state)
+          p [props, next_props]
+          p [state, next_state]
           case
           when props != next_props
             true
@@ -282,7 +284,7 @@ module Mayu
         sig { params(payload: T.untyped).void }
         def call(payload)
           method = @component.method(:"handle_#{@name}")
-          method.call(*[payload, @args.first(method.arity)])
+          T.unsafe(method).call(payload, *@args.first(method.arity.pred))
         end
 
         sig { returns(String) }

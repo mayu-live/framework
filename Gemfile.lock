@@ -110,6 +110,7 @@ GEM
       sorbet-runtime (>= 0.5.9204)
       unparser
     rbs (2.6.0)
+    rexml (3.2.5)
     rux (1.0.3)
       parser (~> 3.0)
       unparser (~> 0.6)
@@ -177,6 +178,7 @@ DEPENDENCIES
   pry
   rack-test
   rake
+  rexml
   rux
   sorbet
   sorbet-runtime

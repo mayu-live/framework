@@ -14,7 +14,16 @@ class MyComponent < Mayu::VDOM::Component::Base
 
   initial_state { |props| { count: 0 } }
 
-  should_update? { |next_props, next_state| true }
+  should_update? { |next_props, next_state|
+    return true
+    unless props == next_props
+      return true
+    end
+    unless state == next_state
+      return true
+    end
+    false
+  }
 
   handler :rerender do |event|
     update { |state| { count: state[:count] + 1 } }
@@ -35,15 +44,28 @@ class MyComponent < Mayu::VDOM::Component::Base
   end
 end
 
-Async do
+require "rexml/document"
+
+def format2(source)
+  doc = REXML::Document.new(source)
+  formatter = REXML::Formatters::Pretty.new
+  formatter.compact = true
+  formatter.write(doc, $stdout)
+end
+
+Async do |task|
   root = Mayu::VDOM.h(MyComponent)
-  vtree = Mayu::VDOM::VTree.new(root)
+  vtree = Mayu::VDOM::VTree.new(root, task:)
 
   puts vtree.inspect_tree
 
   #puts vtree.dom.root
   vtree.render(root)
-  puts vtree.inspect_tree(exclude_components: true)
+  format2(vtree.inspect_tree(exclude_components: true))
+  puts
+  puts "rerender"
   vtree.render(root)
-  puts vtree.inspect_tree(exclude_components: true)
+  format2(vtree.inspect_tree(exclude_components: true))
+
+  task.stop
 end

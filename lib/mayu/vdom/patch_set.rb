@@ -84,6 +84,8 @@ module Mayu
       sig { params(type: Symbol, payload: T::Hash[Symbol, T.untyped]).void }
       def add_patch(type, payload)
         patch = { type: }.merge(payload)
+        loc = caller.find { _1.include?("mayu/vdom/") && !_1.include?("patch_set.rb") }.to_s.sub("/Users/andreas/Projects/mayu2/lib/mayu/", "")
+        puts "\e[36m#{loc}\e[0m".ljust(80) + patch.inspect
         @patches.push(patch)
       end
     end
