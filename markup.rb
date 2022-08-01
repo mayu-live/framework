@@ -12,19 +12,6 @@ class Descriptor
   attr_reader :type
   attr_reader :props
 
-  def text
-    content = props[:text_content].to_s
-    if content.empty?
-      "&ZeroWidthSpace;"
-    else
-      CGI.escape_html(content)
-    end
-  end
-
-  def text? = @type == TEXT
-  def children = props[:children]
-  def children? = children.any?
-
   def initialize(type, props = {}, children = [])
     @type = type
     @props = props.merge(
@@ -40,9 +27,23 @@ class Descriptor
     @key = props.delete(:key)
   end
 
-  def init_component
+  def new_component
     if @type.is_a?(Class) && @type < Component
       @type.new(**props)
+    end
+  end
+
+  def text? = @type == TEXT
+  def comment? = @type == COMMENT
+  def children = props[:children]
+  def children? = children.any?
+
+  def text
+    content = props[:text_content].to_s
+    if content.empty?
+      "&ZeroWidthSpace;"
+    else
+      CGI.escape_html(content)
     end
   end
 
@@ -99,14 +100,17 @@ class VNode
   attr_accessor :component
   attr_accessor :children
 
-  def initialize(descriptor)
+	def id = object_id
+
+  def initialize(vdom, descriptor)
+		@vdom = vdom
     @descriptor = descriptor
     @component = nil
     @children = []
   end
 
-  def init_component
-    @component ||= @descriptor.init_component
+  def new_component
+    @component ||= @descriptor.new_component
   end
 
   def mount
@@ -118,10 +122,15 @@ class VNode
   end
 
   def to_s
+    return "<!--mayu-id-#{id}-->" if descriptor.comment?
     return descriptor.text if descriptor.text?
 
     type = descriptor.type
-    attrs = descriptor.props.except(:children).map { %{ #{_1}="#{_2}"} }.join
+    attrs = descriptor.props
+			.except(:children)
+			.merge(data_mayu_id: id)
+			.map { %{ #{_1}="#{_2}"} }
+			.join
 
     if type.is_a?(Symbol) && VOID_TAGS.include?(type.to_s)
       format("<%<type>s%<attrs>s>", type:, attrs:)
@@ -130,6 +139,16 @@ class VNode
       format("<%<type>s%<attrs>s>%<children>s</%<type>s>", type:, attrs:, children:)
     end
   end
+
+	def id_tree
+		if component
+			children.map(&:id_tree)
+		elsif children.empty?
+			id
+		else
+			[id, children.map(&:id_tree)]
+		end
+	end
 end
 
 class AsyncComponent < Component
@@ -186,257 +205,269 @@ class Markup
   end
 end
 
-def patch(vnode, descriptor)
-  unless vnode
-    return init_vnode(descriptor)
-  end
+class VDOM
+	def initialize
+		@root = nil
+	end
 
-  unless descriptor
-    return remove_vnode(vnode)
-  end
+	def render(descriptor)
+		@root = patch(@root, descriptor)
+	end
 
-  if vnode.descriptor.same?(descriptor)
-    patch_vnode(vnode, descriptor)
-  else
-    remove_vnode(vnode)
-    init_vnode(descriptor)
-  end
-end
+	private
 
-def patch_vnode(vnode, descriptor)
-  unless vnode.descriptor.same?(descriptor)
-    raise "Can not patch different types!"
-  end
+	def patch(vnode, descriptor)
+		unless vnode
+			return init_vnode(descriptor)
+		end
 
-  component = vnode.component
-  new_children = descriptor.children
+		unless descriptor
+			return remove_vnode(vnode)
+		end
 
-  if component
-    if component.should_update?(descriptor.props, component.next_state) # TODO: || component.dirty?
-      component.props = descriptor.props
-      component.state = component.next_state.clone
-      vnode.children = update_children(vnode.children.compact, Array(component.render).compact)
-      vnode.descriptor = descriptor
-      return vnode
-    else
-      return vnode
-    end
-  elsif vnode.descriptor == descriptor
-    puts "returning early"
-    return vnode
-  end
-
-  if descriptor.text?
-    unless vnode.descriptor.text == descriptor.text
-      set_text_content(vnode, descriptor.text)
-    end
-  else
-    if vnode.descriptor.children? && descriptor.children?
-      if vnode.descriptor.children != descriptor.children
-        vnode.children = update_children(vnode.children, new_children)
-      end
-    elsif descriptor.children?
-      check_duplicate_keys(descriptor.children)
-			puts "adding new children"
-
-      vnode.children = descriptor.children.map { init_vnode(_1) }
-    elsif vnode.descriptor.children?
-      vnode.descriptor.children.each { remove_vnode(_1) }
-			vnode.children = []
-    elsif vnode.descriptor.text?
-      set_text_content(vnode, "")
+		if vnode.descriptor.same?(descriptor)
+			patch_vnode(vnode, descriptor)
 		else
-			puts "got here"
-    end
-  end
+			remove_vnode(vnode)
+			init_vnode(descriptor)
+		end
+	end
 
-  vnode.descriptor = descriptor
+	def patch_vnode(vnode, descriptor)
+		unless vnode.descriptor.same?(descriptor)
+			raise "Can not patch different types!"
+		end
 
-  component&.did_update
+		component = vnode.component
+		new_children = descriptor.children
 
-  vnode
-end
+		if component
+			if component.should_update?(descriptor.props, component.next_state) # TODO: || component.dirty?
+				component.props = descriptor.props
+				component.state = component.next_state.clone
+				vnode.children = update_children(vnode.children.compact, Array(component.render).compact)
+				vnode.descriptor = descriptor
+				return vnode
+			else
+				return vnode
+			end
+		elsif vnode.descriptor == descriptor
+			puts "returning early"
+			return vnode
+		end
 
-def remove_vnodes(vnodes)
-  vnodes.each do |vnode|
-    puts "Removing vnode #{vnode}"
-  end
-end
+		if descriptor.text?
+			unless vnode.descriptor.text == descriptor.text
+				set_text_content(vnode, descriptor.text)
+			end
+		else
+			if vnode.descriptor.children? && descriptor.children?
+				if vnode.descriptor.children != descriptor.children
+					vnode.children = update_children(vnode.children, new_children)
+				end
+			elsif descriptor.children?
+				check_duplicate_keys(descriptor.children)
+				puts "adding new children"
 
-def set_text_content(vnode, content)
-  puts "update_text(#{vnode.object_id}, #{content.inspect})"
-end
+				vnode.children = descriptor.children.map { init_vnode(_1) }
+			elsif vnode.descriptor.children?
+				vnode.descriptor.children.each { remove_vnode(_1) }
+				vnode.children = []
+			elsif vnode.descriptor.text?
+				set_text_content(vnode, "")
+			else
+				puts "got here"
+			end
+		end
 
-def init_vnode(descriptor)
-  vnode = VNode.new(descriptor)
-  component = vnode.init_component
+		vnode.descriptor = descriptor
 
-  children = descriptor.children
+		component&.did_update
 
-  children =
-    if component
-      Array(component.render).compact
-    else
-      descriptor.children
-    end
+		vnode
+	end
 
-  vnode.children = children.map { init_vnode(_1) }
+	def remove_vnodes(vnodes)
+		vnodes.each do |vnode|
+			remove_vnode(vnode)
+			add_patch(:remove, vnode.id)
+		end
+	end
 
-  vnode
-end
+	def add_patch(type, *args)
+		puts "patch(#{type.inspect}, #{args.map(&:inspect).join(", ")})"
+	end
 
-def remove_vnode(vnode)
-  puts "Removing #{vnode.descriptor.type}"
-  vnode.children.map { _1.unmount }
-  vnode.unmount
-  nil
-end
+	def set_text_content(vnode, content)
+		puts "update_text(#{vnode.id}, #{content.inspect})"
+	end
 
-class RangeIterator
-  include Enumerable
+	def init_vnode(descriptor, nested: false)
+		vnode = VNode.new(self, descriptor)
+		component = vnode.new_component
 
-  attr_reader :start_idx
-  attr_reader :end_idx
+		children = descriptor.children
 
-  def initialize(array)
-    @array = array
-    @start_idx = 0
-    @end_idx = @array.length
-  end
+		children =
+			if component
+				Array(component.render).compact
+			else
+				descriptor.children
+			end
 
-  def [](index)
-    @array[index]
-  end
+		vnode.children = children.map { init_vnode(_1, nested: true) }
+		vnode.component&.mount
 
-  def each(&block)
-    @start_idx.upto(@end_idx) do |i|
-      yield @array[i] if @array[i]
-    end
-  end
+		vnode
+	end
 
-  def length = @end_idx - @start_idx
-  def done? = @start_idx > @end_idx
-  def start = @array[@start_idx]
-  def end = @array[@end_idx]
-  def next_start = @start_idx += 1
-  def next_end = @end_idx -= 1
-end
+	def remove_vnode(vnode)
+		puts "Removing #{vnode.descriptor.type}"
+		vnode.children.map { remove_vnode(_1) }
+		vnode.unmount
+		nil
+	end
 
-def check_duplicate_keys(descriptors)
-  keys = descriptors.map(&:key).compact
-  duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }
-  duplicates.each do |key|
-    "Duplicate keys detected: '#{key}'. This may cause an update error."
-  end
-end
+	class RangeIterator
+		include Enumerable
 
-def update_children(vnodes, descriptors)
-	initial_descriptors_length = descriptors.compact.length
-  vnodes = RangeIterator.new(vnodes)
-  descriptors = RangeIterator.new(descriptors)
-  children = Array.new(descriptors.length)
+		attr_reader :start_idx
+		attr_reader :end_idx
 
-  moved_indexes = []
+		def initialize(array)
+			@array = array
+			@start_idx = 0
+			@end_idx = @array.length
+		end
 
-  check_duplicate_keys(descriptors)
+		def [](index)
+			@array[index]
+		end
 
-  keymap = nil
+		def each(&block)
+			@start_idx.upto(@end_idx) do |i|
+				yield @array[i] if @array[i]
+			end
+		end
 
-  until vnodes.done? || descriptors.done?
-    # p [vnodes.start_idx, vnodes.end_idx]
-    # p [descriptors.start_idx, descriptors.end_idx]
-    vnodes.next_start and next unless vnodes.start
-    vnodes.next_end and next unless vnodes.end
-    descriptors.next_start and next unless descriptors.start
-    descriptors.next_end and next unless descriptors.end
+		def length = @end_idx - @start_idx
+		def done? = @start_idx > @end_idx
+		def start = @array[@start_idx]
+		def end = @array[@end_idx]
+		def next_start = @start_idx += 1
+		def next_end = @end_idx -= 1
+	end
 
-    if vnodes.start.descriptor.same?(descriptors.start)
-      puts "Keep #{vnodes.start} at #{descriptors.start_idx}"
-      children[descriptors.start_idx] = patch_vnode(vnodes.start, descriptors.start)
-      vnodes.next_start
-      descriptors.next_start
-      next
-    end
+	def check_duplicate_keys(descriptors)
+		keys = descriptors.map(&:key).compact
+		duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }
+		duplicates.each do |key|
+			"Duplicate keys detected: '#{key}'. This may cause an update error."
+		end
+	end
 
-    if vnodes.end.descriptor.same?(descriptors.end)
-      puts "Keep #{vnodes.end} at #{descriptors.end_idx}"
-      children[descriptors.end_idx] = patch_vnode(vnodes.end, descriptors.end)
-      vnodes.next_end
-      descriptors.next_end
-      next
-    end
+	def update_children(vnodes, descriptors)
+		initial_descriptors_length = descriptors.compact.length
+		vnodes = RangeIterator.new(vnodes)
+		descriptors = RangeIterator.new(descriptors)
+		children = Array.new(descriptors.length)
 
-    if vnodes.start.descriptor.same?(descriptors.end)
-      puts "Move #{vnodes.start} to #{descriptors.end_idx}"
-      children[descriptors.end_idx] = patch_vnode(vnodes.start, descriptors.end)
-      vnodes.next_start
-      descriptors.next_end
-      next
-    end
+		moved_indexes = []
 
-    if vnodes.end.descriptor.same?(descriptors.start)
-      puts "Move #{vnodes.end} to #{descriptors.start_idx}"
-      children[descriptors.start_idx] = patch_vnode(vnodes.end, descriptors.start)
-      vnodes.next_end
-      descriptors.next_start
-      next
-    end
+		check_duplicate_keys(descriptors)
 
-    keymap = build_key_index_map(vnodes, vnodes.start_idx, vnodes.end_idx)
+		keymap = nil
 
-    if index = keymap[descriptors.start.key]
-      vnode_to_move = vnodes[index]
-      moved_indexes.push(index)
+		until vnodes.done? || descriptors.done?
+			# p [vnodes.start_idx, vnodes.end_idx]
+			# p [descriptors.start_idx, descriptors.end_idx]
+			vnodes.next_start and next unless vnodes.start
+			vnodes.next_end and next unless vnodes.end
+			descriptors.next_start and next unless descriptors.start
+			descriptors.next_end and next unless descriptors.end
 
-      puts "Move #{vnode_to_move} to #{descriptors.start_idx}"
-      children[descriptors.start_idx] = patch_vnode(vnode_to_move, descriptors.start)
+			if vnodes.start.descriptor.same?(descriptors.start)
+				children[descriptors.start_idx] = patch_vnode(vnodes.start, descriptors.start)
+				vnodes.next_start
+				descriptors.next_start
+				next
+			end
 
-      descriptors.next_start
-      next
-    end
+			if vnodes.end.descriptor.same?(descriptors.end)
+				children[descriptors.end_idx] = patch_vnode(vnodes.end, descriptors.end)
+				vnodes.next_end
+				descriptors.next_end
+				next
+			end
 
-    puts "Insert #{descriptors.start} at #{descriptors.start_idx}"
-    children[descriptors.start_idx] = init_vnode(descriptors.start)
+			if vnodes.start.descriptor.same?(descriptors.end)
+				children[descriptors.end_idx] = patch_vnode(vnodes.start, descriptors.end)
+				add_patch(:move, vnodes.start.id, after: vnodes.end.id)
+				vnodes.next_start
+				descriptors.next_end
+				next
+			end
 
-    descriptors.next_start
-  end
+			if vnodes.end.descriptor.same?(descriptors.start)
+				children[descriptors.start_idx] = patch_vnode(vnodes.end, descriptors.start)
+				add_patch(:move, vnodes.end.id, before: vnodes.start.id)
+				vnodes.next_end
+				descriptors.next_start
+				next
+			end
 
-  if vnodes.start_idx > vnodes.end_idx
-    ref_elm = descriptors[descriptors.end_idx + 1]&.key
+			keymap = build_key_index_map(vnodes, vnodes.start_idx, vnodes.end_idx)
 
-    descriptors.start_idx.upto(descriptors.end_idx.pred).each do |i|
-      vnode = init_vnode(descriptors[i])
+			if index = keymap[descriptors.start.key]
+				vnode_to_move = vnodes[index]
+				moved_indexes.push(index)
 
-      if ref_elm
-        children[descriptors.length + 1 + i] = vnode
-        puts "Insert #{descriptors[i]} before #{ref_elm.inspect}"
-      else
-        children[i] = vnode
-        puts "Append #{descriptors[i]}"
-      end
-    end
-  elsif descriptors.start_idx > descriptors.end_idx
-    vnodes.start_idx.upto(vnodes.end_idx).each do |i|
-      next if moved_indexes.include?(i)
-      vnode = vnodes[i]
-      puts "Remove #{vnodes[i]}"
-    end
-  else
-    puts "Nothing to either add or remove"
-  end
+				children[descriptors.start_idx] = patch_vnode(vnode_to_move, descriptors.start)
+				add_patch(:move, vnode_to_move.id, before: vnodes.start.id)
 
-  children.compact
-end
+				descriptors.next_start
+				next
+			end
 
-def build_key_index_map(children, start_index, end_index)
-  keymap = {}
+			p "same key but different element. treat as new element"
+			vnode = init_vnode(descriptors.start)
+			children[descriptors.start_idx] = vnode
+			add_patch(:insert, vnode.id, before: vnodes.start.id, ids: vnode.id_tree, html: vnode.to_s)
 
-  start_index.upto(end_index) do |i|
-    key = children[i].descriptor&.key
-    keymap[key] = i if key
-  end
+			descriptors.next_start
+		end
 
-  keymap
+		if vnodes.start_idx > vnodes.end_idx
+			ref_elm = descriptors[descriptors.end_idx + 1]
+
+			descriptors.start_idx.upto(descriptors.end_idx).each do |i|
+				vnode = init_vnode(descriptors[i])
+
+				add_patch(:insert, vnode.id, before: ref_elm&.id, ids: vnode.id_tree, html: vnode.to_s)
+			end
+		elsif descriptors.start_idx > descriptors.end_idx
+			vnodes.start_idx.upto(vnodes.end_idx).each do |i|
+				next if moved_indexes.include?(i)
+				vnode = vnodes[i]
+				add_patch(:remove, vnodes[i].id)
+			end
+		else
+			puts "Nothing to either add or remove"
+		end
+
+		children.compact
+	end
+
+	def build_key_index_map(children, start_index, end_index)
+		keymap = {}
+
+		start_index.upto(end_index) do |i|
+			key = children[i].descriptor&.key
+			keymap[key] = i if key
+		end
+
+		keymap
+	end
 end
 
 class AppComponent < Component
@@ -469,11 +500,14 @@ end
 
 app = Descriptor.new(AppComponent)
 
-tree = patch(nil, app)
-puts "patching"
-tree = patch(tree, app)
-puts "patching"
-tree = patch(tree, app)
+vdom = VDOM.new
+tree = vdom.render(app)
+puts tree
+tree = vdom.render(app)
+puts tree
+tree = vdom.render(app)
+puts tree
+tree = vdom.render(app)
 puts tree
 
 # d1 = Descriptor.new(:TEXT, { text_content: "hello" })
