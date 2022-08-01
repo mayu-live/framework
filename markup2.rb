@@ -95,7 +95,7 @@ module VDOM2
       ).void
     end
     def insert(vnode, before: nil, after: nil)
-      p caller.first(5)
+      # p caller.grep(/markup/).first(5)
       html = vnode.to_s
       ids = vnode.id_tree
 
@@ -173,6 +173,7 @@ module VDOM2
     def initialize
       @root = T.let(nil, T.nilable(VNode))
       @patchsets = T.let([], T::Array[T.untyped])
+      @id_counter = T.let("a", String)
     end
 
     sig do
@@ -183,6 +184,13 @@ module VDOM2
       @root = patch(ctx, @root, descriptor)
       @patchsets.push(ctx.patches)
       @root
+    end
+
+    sig { returns(String) }
+    def next_id!
+      @id_counter.tap do
+        @id_counter = @id_counter.succ
+      end
     end
 
     private
@@ -434,23 +442,33 @@ module VDOM2
         if index = keymap[start_descriptor.key]
           vnode_to_move = vnodes[index]
           raise unless vnode_to_move
-          moved_indexes.push(index)
 
-          children[descriptors.start_idx] = patch_vnode(
-            ctx,
-            vnode_to_move,
-            start_descriptor
-          )
-          ctx.move(vnode_to_move, before: start_vnode)
+          if vnode_to_move.descriptor.same?(start_descriptor)
+            moved_indexes.push(index)
+
+            children[descriptors.start_idx] = patch_vnode(
+              ctx,
+              vnode_to_move,
+              start_descriptor
+            )
+            ctx.move(vnode_to_move, before: start_vnode)
+          else
+            vnode = init_vnode(ctx, start_descriptor)
+            children[descriptors.start_idx] = vnode
+            ctx.insert(vnode, before: start_vnode)
+            remove_vnode(ctx, vnode_to_move)
+          end
 
           descriptors.next_start
           next
         end
 
         # We found a new child
+        # https://github.com/vuejs/vue/blob/fc16281cf5bd1506e8cfe62eee1ef02dac82bad5/src/core/vdom/patch.ts#L501
 
         vnode = init_vnode(ctx, start_descriptor)
         children[descriptors.start_idx] = vnode
+        puts "\e[32m#{start_vnode.inspect}\e[0m"
         ctx.insert(vnode, before: start_vnode)
 
         descriptors.next_start
@@ -533,11 +551,12 @@ module VDOM2
     sig { returns(T::Array[VNode]) }
     attr_accessor :children
 
-    sig { returns(Integer) }
-    def id = object_id
+    sig { returns(String) }
+    attr_reader :id
 
     sig { params(vtree: VTree, descriptor: Descriptor).void }
     def initialize(vtree, descriptor)
+      @id = T.let(vtree.next_id!, String)
       @vtree = vtree
       @descriptor = descriptor
       @component = T.let(nil, T.nilable(Component))
@@ -572,6 +591,11 @@ module VDOM2
       json.merge!(props: props) unless props.empty?
       json.merge!(children: children.map(&:to_json)) unless children.empty?
       json
+    end
+
+    sig { returns(String) }
+    def inspect
+      "#<#{self.class.name} id=#{id} type=#{descriptor.type.inspect} children=#{children.length}>"
     end
 
     sig { returns(String) }
@@ -791,7 +815,7 @@ module VDOM2
       ).returns(VDOM2::Descriptor)
     end
     def h(type, *args, **props, &block)
-      Descriptor.new(type, props, args.concat(Array(block&.call).compact))
+      Descriptor.new(type, props, args.concat([block&.call].flatten.compact))
     end
   end
 end
@@ -806,9 +830,9 @@ def print_xml(source)
   puts io.read.gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
 end
 
-include VDOM2::H
-
 class MyApp < VDOM2::Component
+  include VDOM2::H
+
   sig { returns(T.nilable(VDOM2::Descriptor)) }
   def render
     h(:div) do
@@ -824,28 +848,107 @@ class MyApp < VDOM2::Component
   end
 end
 
+extend VDOM2::H
+
 vtree = VDOM2::VTree.new
+outputs = []
 
 print_xml(vtree.render(h(MyApp,
   items: [
+    { id: 0, title: "Item 0" },
     { id: 1, title: "Item 1" },
     { id: 2, title: "Item 2" },
     { id: 3, title: "Item 3" },
     { id: 4, title: "Item 4" },
     { id: 5, title: "Item 5" },
+    { id: 6, title: "Item 6" },
+    { id: 7, title: "Item 7" },
+    { id: 8, title: "Item 8" },
+    { id: 9, title: "Item 9" },
+    { id: 10, title: "Item 10" },
+    { id: 11, title: "Item 11" },
+    { id: 12, title: "Item 12" },
+    { id: 13, title: "Item 13" },
+    { id: 14, title: "Item 14" },
+    { id: 15, title: "Item 15" },
+    { id: 16, title: "Item 16" },
+    { id: 17, title: "Item 17" },
+    { id: 18, title: "Item 18" },
+    { id: 19, title: "Item 19" },
   ]
-)).to_s)
+)).to_s.tap { outputs << _1 })
 
 print_xml(vtree.render(h(MyApp,
   items: [
-    { id: 1, title: "Item 1" },
+    { id: 18, title: "Item 18" },
+    { id: 14, title: "Item 14" },
+    { id: 7, title: "Item 7" },
+    { id: 8, title: "Item 8" },
+    { id: 11, title: "Item 11" },
+    { id: 19, title: "Item 19" },
+    { id: 6, title: "Item 6" },
+    { id: 10, title: "Item 10" },
     { id: 5, title: "Item 5" },
-    { id: 2, title: "Item 2" },
+    { id: 12, title: "Item 12" },
+    { id: 17, title: "Item 17" },
+    { id: 9, title: "Item 9" },
+    { id: 13, title: "Item 13" },
     { id: 4, title: "Item 4" },
+    { id: 16, title: "Item 16" },
+    { id: 15, title: "Item 15" },
   ]
-)).to_s)
+)).to_s.tap { outputs << _1 })
+
+print_xml(vtree.render(h(MyApp,
+  items: [
+    { id: 11, title: "Item 11" },
+    { id: 12, title: "Item 12" },
+    { id: 3, title: "Item 3" },
+    { id: 14, title: "Item 14" },
+    { id: 0, title: "Item 0" },
+    { id: 15, title: "Item 15" },
+    { id: 18, title: "Item 18" },
+    { id: 10, title: "Item 10" },
+    { id: 4, title: "Item 4" },
+    { id: 7, title: "Item 7" },
+    { id: 9, title: "Item 9" },
+    { id: 17, title: "Item 17" },
+    { id: 8, title: "Item 8" },
+    { id: 13, title: "Item 13" },
+    { id: 19, title: "Item 19" },
+  ]
+)).to_s.tap { outputs << _1 })
+
+print_xml(vtree.render(h(MyApp,
+  items: [
+    { id: 3, title: "Item 3" },
+    { id: 13, title: "Item 13" },
+    { id: 18, title: "Item 18" },
+    { id: 9, title: "Item 9" },
+    { id: 15, title: "Item 15" },
+    { id: 7, title: "Item 7" },
+    { id: 17, title: "Item 17" },
+    { id: 4, title: "Item 4" },
+    { id: 19, title: "Item 19" },
+    { id: 11, title: "Item 11" },
+    { id: 8, title: "Item 8" },
+    { id: 0, title: "Item 0" },
+    { id: 10, title: "Item 10" },
+    { id: 14, title: "Item 14" },
+    { id: 12, title: "Item 12" },
+    { id: 1, title: "Item 1" },
+    { id: 2, title: "Item 2" },
+    { id: 6, title: "Item 6" },
+    { id: 16, title: "Item 16" },
+    { id: 5, title: "Item 5" },
+  ]
+)).to_s.tap { outputs << _1 })
 
 File.write(
   "patches.json",
-  JSON.pretty_generate(vtree.patchsets)
+  JSON.pretty_generate(
+    vtree.patchsets.zip(outputs).map do |patches, output|
+      { patches:, output: }
+    end
+  )
 )
