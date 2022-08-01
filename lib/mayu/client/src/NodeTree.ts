@@ -20,6 +20,7 @@ type MovePatch = {
   parent: number;
   id: number;
   before?: number;
+  after?: number;
 };
 
 type TextPatch = { type: "text"; id: number; text: string };
@@ -58,7 +59,7 @@ class NodeTree {
         return
       }
       case "move": {
-        this.move(patch.parent, patch.id, patch.before);
+        this.move(patch)
         break;
       }
       case "remove": {
@@ -147,6 +148,8 @@ class NodeTree {
 
       this.updateCache(insertedNode, idTreeNode);
     });
+
+    logger.groupEnd();
   }
 
   #getEntry(id: number) {
@@ -190,15 +193,26 @@ class NodeTree {
     }
   }
 
-  move(parentId: number, nodeId: number, refId?: number) {
-    const parentEntry = this.#getEntry(parentId);
-    const entry = this.#getEntry(nodeId);
-    const refEntry = this.#cache.get(refId || 0);
+  move({id, parent, before, after}: MovePatch) {
+    const entry = this.#getEntry(id);
+    const parentEntry = this.#getEntry(parent);
+    const refId = before || after
+    const refEntry = refId && this.#cache.get(refId);
 
-    // logger.log('inserting', nodeId, "in", parentId)
+    const ref =
+      refEntry
+        ? after
+        ? refEntry.node
+        : refEntry.node
+        : null;
 
-    parentEntry.childIds.add(nodeId);
-    parentEntry.node.insertBefore(entry.node, refEntry?.node || null);
+
+
+        console.log('Moving', entry.node.textContent, before ? 'before' : after ? 'after' : 'last', (ref?.textContent || parentEntry.node.__mayu.id))
+    console.log({before, after})
+    console.log(ref?.textContent)
+
+    parentEntry.node.insertBefore(entry.node, ref);
   }
 
   #removeRecursiveFromCache(id: number, includeParent = false) {

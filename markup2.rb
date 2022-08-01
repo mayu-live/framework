@@ -14,6 +14,50 @@ VOID_TAGS =
   T.let(JSON.parse(File.read("html-tags-void.json")), T::Array[String])
 
 module VDOM2
+  class Indexes
+    extend T::Sig
+
+    sig{params(indexes: T::Array[Integer]).void}
+    def initialize(indexes = [])
+      @indexes = indexes
+    end
+
+    sig{params(id: Integer).void}
+    def append(id)
+      @indexes.delete(id)
+      @indexes.push(id)
+      p @indexes
+    end
+
+    sig{params(id: Integer).returns(T.nilable(Integer))}
+    def index(id) = @indexes.index(id)
+
+    sig{params(id: Integer, before: T.nilable(Integer)).void}
+    def insert_before(id, before)
+      @indexes.delete(id)
+      index = before && @indexes.index(before)
+      if index
+        @indexes.insert(index, id)
+      else
+        @indexes.push(id)
+      end
+      p @indexes
+    end
+
+    sig{params(id: Integer).returns(T.nilable(Integer))}
+    def next_sibling(id)
+      if index = @indexes.index(id)
+        @indexes[index.succ]
+      end
+    end
+
+    sig{params(id: Integer).void}
+    def remove(id) = @indexes.delete(id)
+
+    sig{returns(T::Array[Integer])}
+    def to_a = @indexes
+  end
+
   class RangeIterator
     extend T::Sig
     extend T::Generic
@@ -30,7 +74,7 @@ module VDOM2
     def initialize(array)
       @array = array
       @start_idx = T.let(0, Integer)
-      @end_idx = T.let(@array.length, Integer)
+      @end_idx = T.let(@array.length.pred, Integer)
     end
 
     sig { params(index: Integer).returns(T.nilable(Elem)) }
@@ -166,6 +210,8 @@ module VDOM2
   class VTree
     extend T::Sig
 
+    Id = T.type_alias { Integer }
+
     sig {returns(T::Array[T.untyped])}
     attr_reader :patchsets
 
@@ -173,7 +219,7 @@ module VDOM2
     def initialize
       @root = T.let(nil, T.nilable(VNode))
       @patchsets = T.let([], T::Array[T.untyped])
-      @id_counter = T.let("a", String)
+      @id_counter = T.let(0, Id)
     end
 
     sig do
@@ -186,7 +232,7 @@ module VDOM2
       @root
     end
 
-    sig { returns(String) }
+    sig { returns(Id) }
     def next_id!
       @id_counter.tap do
         @id_counter = @id_counter.succ
@@ -371,6 +417,9 @@ module VDOM2
     end
     def update_children(ctx, vnodes, descriptors)
       check_duplicate_keys(descriptors)
+
+      indexes = Indexes.new(vnodes.map(&:id))
+
       # descriptors = add_comments_between_texts(descriptors)
       initial_descriptors_length = descriptors.compact.length
       vnodes = RangeIterator[VNode].new(vnodes)
@@ -386,10 +435,8 @@ module VDOM2
         # p [descriptors.start_idx, descriptors.end_idx]
         vnodes.next_start and next unless start_vnode = vnodes.start
         vnodes.next_end and next unless end_vnode = vnodes.end
-        unless start_descriptor = descriptors.start
-          descriptors.next_start and next
-        end
-        descriptors.next_end and next unless end_descriptor = descriptors.end
+        start_descriptor = T.cast(descriptors.start, Descriptor)
+        end_descriptor = T.cast(descriptors.end, Descriptor)
 
         if start_vnode.descriptor.same?(start_descriptor)
           children[descriptors.start_idx] = patch_vnode(
@@ -414,11 +461,13 @@ module VDOM2
         end
 
         if start_vnode.descriptor.same?(end_descriptor)
+          puts "moving #{start_vnode.descriptor} #{end_descriptor}"
           children[descriptors.end_idx] = patch_vnode(
             ctx,
             start_vnode,
             end_descriptor
           )
+          indexes.insert_before(start_vnode.id, indexes.next_sibling(end_vnode.id))
           ctx.move(start_vnode, after: end_vnode)
           vnodes.next_start
           descriptors.next_end
@@ -426,11 +475,14 @@ module VDOM2
         end
 
         if end_vnode.descriptor.same?(start_descriptor)
+          puts "moving #{end_vnode.descriptor} #{start_descriptor}"
+          p [vnodes.start_idx, vnodes.end_idx]
           children[descriptors.start_idx] = patch_vnode(
             ctx,
             end_vnode,
             start_descriptor
           )
+          indexes.insert_before(end_vnode.id, start_vnode.id)
           ctx.move(end_vnode, before: start_vnode)
           vnodes.next_end
           descriptors.next_start
@@ -438,6 +490,15 @@ module VDOM2
         end
 
         keymap = build_key_index_map(vnodes, vnodes.start_idx, vnodes.end_idx)
+
+        # https://github.com/vuejs/vue/blob/fc16281cf5bd1506e8cfe62eee1ef02dac82bad5/src/core/vdom/patch.ts#L497
+
+        index =
+          if start_descriptor.key
+            keymap[start_descriptor.key]
+          else
+            vnodes.find_index { _1.descriptor.same?(start_descriptor) }
+          end
 
         if index = keymap[start_descriptor.key]
           vnode_to_move = vnodes[index]
@@ -451,11 +512,13 @@ module VDOM2
               vnode_to_move,
               start_descriptor
             )
+            indexes.insert_before(vnode_to_move.id, start_vnode.id)
             ctx.move(vnode_to_move, before: start_vnode)
           else
             vnode = init_vnode(ctx, start_descriptor)
             children[descriptors.start_idx] = vnode
             ctx.insert(vnode, before: start_vnode)
+            indexes.insert_before(vnode.id, start_vnode.id)
             remove_vnode(ctx, vnode_to_move)
           end
 
@@ -470,6 +533,7 @@ module VDOM2
         children[descriptors.start_idx] = vnode
         puts "\e[32m#{start_vnode.inspect}\e[0m"
         ctx.insert(vnode, before: start_vnode)
+        indexes.insert_before(vnode.id, start_vnode.id)
 
         descriptors.next_start
       end
@@ -484,6 +548,7 @@ module VDOM2
             descriptor = descriptors[i] or next
             vnode = init_vnode(ctx, descriptor)
             children.push(vnode)
+            indexes.append(vnode.id)
 
             ctx.insert(vnode) # before: ref_elm)
           end
@@ -495,12 +560,13 @@ module VDOM2
             next if moved_indexes.include?(i)
             vnode = vnodes[i] or raise
             ctx.remove(vnode)
+            indexes.append(vnode.id)
           end
       else
         puts "Nothing to either add or remove"
       end
 
-      children.compact
+      children.compact.sort_by { |child| indexes.index(child.id).to_i }
     end
 
     sig do
@@ -551,12 +617,12 @@ module VDOM2
     sig { returns(T::Array[VNode]) }
     attr_accessor :children
 
-    sig { returns(String) }
+    sig { returns(VTree::Id) }
     attr_reader :id
 
     sig { params(vtree: VTree, descriptor: Descriptor).void }
     def initialize(vtree, descriptor)
-      @id = T.let(vtree.next_id!, String)
+      @id = T.let(vtree.next_id!, VTree::Id)
       @vtree = vtree
       @descriptor = descriptor
       @component = T.let(nil, T.nilable(Component))
@@ -825,6 +891,7 @@ def print_xml(source)
   io = StringIO.new
   doc = REXML::Document.new(source)
   formatter = REXML::Formatters::Pretty.new
+  formatter.compact = true
   formatter.write(doc, io)
   io.rewind
   puts io.read.gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
@@ -835,15 +902,10 @@ class MyApp < VDOM2::Component
 
   sig { returns(T.nilable(VDOM2::Descriptor)) }
   def render
-    h(:div) do
-      [
-        h(:h1, "hello"),
-        h(:ul) do
-          props[:items].map do |item|
-            h(:li, key: item[:id]) { item[:title] }
-          end
-        end
-      ]
+    h(:ul) do
+      props[:items].map do |item|
+        h(:li, key: item[:id]) { item[:title] }
+      end
     end
   end
 end
@@ -862,84 +924,80 @@ print_xml(vtree.render(h(MyApp,
     { id: 4, title: "Item 4" },
     { id: 5, title: "Item 5" },
     { id: 6, title: "Item 6" },
-    { id: 7, title: "Item 7" },
-    { id: 8, title: "Item 8" },
-    { id: 9, title: "Item 9" },
-    { id: 10, title: "Item 10" },
-    { id: 11, title: "Item 11" },
-    { id: 12, title: "Item 12" },
-    { id: 13, title: "Item 13" },
-    { id: 14, title: "Item 14" },
-    { id: 15, title: "Item 15" },
-    { id: 16, title: "Item 16" },
-    { id: 17, title: "Item 17" },
-    { id: 18, title: "Item 18" },
-    { id: 19, title: "Item 19" },
   ]
 )).to_s.tap { outputs << _1 })
 
 print_xml(vtree.render(h(MyApp,
   items: [
-    { id: 18, title: "Item 18" },
-    { id: 14, title: "Item 14" },
-    { id: 7, title: "Item 7" },
-    { id: 8, title: "Item 8" },
-    { id: 11, title: "Item 11" },
-    { id: 19, title: "Item 19" },
-    { id: 6, title: "Item 6" },
-    { id: 10, title: "Item 10" },
+    { id: 0, title: "Item 0" },
+    { id: 1, title: "Item 1" },
+    { id: 2, title: "Item 2" },
+    { id: 3, title: "Item 3" },
+    { id: 4, title: "Item 4" },
     { id: 5, title: "Item 5" },
-    { id: 12, title: "Item 12" },
-    { id: 17, title: "Item 17" },
-    { id: 9, title: "Item 9" },
-    { id: 13, title: "Item 13" },
-    { id: 4, title: "Item 4" },
-    { id: 16, title: "Item 16" },
-    { id: 15, title: "Item 15" },
   ]
 )).to_s.tap { outputs << _1 })
 
 print_xml(vtree.render(h(MyApp,
   items: [
-    { id: 11, title: "Item 11" },
-    { id: 12, title: "Item 12" },
-    { id: 3, title: "Item 3" },
-    { id: 14, title: "Item 14" },
     { id: 0, title: "Item 0" },
-    { id: 15, title: "Item 15" },
-    { id: 18, title: "Item 18" },
-    { id: 10, title: "Item 10" },
+    { id: 1, title: "Item 1" },
+    { id: 3, title: "Item 3" },
     { id: 4, title: "Item 4" },
-    { id: 7, title: "Item 7" },
-    { id: 9, title: "Item 9" },
-    { id: 17, title: "Item 17" },
-    { id: 8, title: "Item 8" },
-    { id: 13, title: "Item 13" },
-    { id: 19, title: "Item 19" },
+    { id: 2, title: "Item 2" },
+    { id: 5, title: "Item 5" },
   ]
 )).to_s.tap { outputs << _1 })
 
 print_xml(vtree.render(h(MyApp,
   items: [
-    { id: 3, title: "Item 3" },
-    { id: 13, title: "Item 13" },
-    { id: 18, title: "Item 18" },
-    { id: 9, title: "Item 9" },
-    { id: 15, title: "Item 15" },
-    { id: 7, title: "Item 7" },
-    { id: 17, title: "Item 17" },
-    { id: 4, title: "Item 4" },
-    { id: 19, title: "Item 19" },
-    { id: 11, title: "Item 11" },
-    { id: 8, title: "Item 8" },
     { id: 0, title: "Item 0" },
-    { id: 10, title: "Item 10" },
-    { id: 14, title: "Item 14" },
-    { id: 12, title: "Item 12" },
+    { id: 1, title: "Item 1" },
+    { id: 2, title: "Item 2" },
+    { id: 3, title: "Item 3" },
+    { id: 4, title: "Item 4" },
+    { id: 5, title: "Item 5" },
+    { id: 6, title: "Item 6" },
+  ]
+)).to_s.tap { outputs << _1 })
+
+exit
+
+print_xml(vtree.render(h(MyApp,
+  items: [
     { id: 1, title: "Item 1" },
     { id: 2, title: "Item 2" },
     { id: 6, title: "Item 6" },
+    { id: 10, title: "Item 10" },
+    { id: 8, title: "Item 8" },
+    { id: 0, title: "Item 0" },
+    { id: 12, title: "Item 12" },
+    { id: 4, title: "Item 4" },
+    { id: 5, title: "Item 5" },
+  ]
+)).to_s.tap { outputs << _1 })
+
+print_xml(vtree.render(h(MyApp,
+  items: [
+    { id: 12, title: "Item 12" },
+    { id: 6, title: "Item 6" },
+    { id: 11, title: "Item 11" },
+    { id: 15, title: "Item 15" },
     { id: 16, title: "Item 16" },
+    { id: 19, title: "Item 19" },
+    { id: 8, title: "Item 8" },
+    { id: 10, title: "Item 10" },
+    { id: 0, title: "Item 0" },
+    { id: 4, title: "Item 4" },
+    { id: 13, title: "Item 13" },
+    { id: 14, title: "Item 14" },
+    { id: 2, title: "Item 2" },
+    { id: 1, title: "Item 1" },
+    { id: 18, title: "Item 18" },
+    { id: 3, title: "Item 3" },
+    { id: 7, title: "Item 7" },
+    { id: 9, title: "Item 9" },
+    { id: 17, title: "Item 17" },
     { id: 5, title: "Item 5" },
   ]
 )).to_s.tap { outputs << _1 })
