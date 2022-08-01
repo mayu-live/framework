@@ -8,7 +8,7 @@ module Mayu
     class System
       extend T::Sig
 
-      ModuleType = T.type_alias { T.any(ComponentModule, CSSModule) }
+      ModuleType = T.type_alias { T.any(ComponentModule, CSS::Base) }
 
       sig { returns(String) }
       attr_reader :root
@@ -42,10 +42,10 @@ module Mayu
       end
 
       sig do
-        params(path: String).returns(T.any(CSSModule, CSSModule::NoModule))
+        params(path: String).returns(CSS::Base)
       end
       def load_css(path)
-        CSSModule.load(
+        CSS.load(
           File.join(@root, resolve_path(path.sub(/\.rux$/, ".css")))
         )
       end

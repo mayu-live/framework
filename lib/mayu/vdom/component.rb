@@ -239,13 +239,15 @@ module Mayu
         sig { override.params(prev_props: Props, prev_state: State).void }
         def did_update(prev_props, prev_state) = nil
 
-        sig { returns(Modules::CSSModule) }
-        def self.stylesheets = const_get(:CSS)
+        sig { returns(Modules::CSS::Base) }
+        def self.stylesheets
+          const_get(:CSS) rescue Modules::CSS::NoModule.new("asd")
+        end
 
-        sig { returns(Modules::CSSModule::IdentProxy) }
+        sig { returns(Modules::CSS::IdentProxy) }
         def self.styles = stylesheets.proxy
 
-        sig { returns(Modules::CSSModule::IdentProxy) }
+        sig { returns(Modules::CSS::IdentProxy) }
         def styles = self.class.styles
 
         sig { returns(Descriptor::Children) }

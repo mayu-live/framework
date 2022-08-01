@@ -23,7 +23,7 @@ render do
     {if state[:name].empty?
       <p>Enter your name!!</p>
     else
-      <p>Your name reversed is: <strong>{state[:name]}</strong></p>
+      <p>Your name reversed is: <strong>{state[:name].reverse}</strong></p>
     end}
   </fieldset>
 end

@@ -182,15 +182,15 @@ class NodeTree {
     logger.groupEnd();
   }
 
-  isAcceptableNode(node: Node) {
-    if (node.nodeType == node.TEXT_NODE) return true;
-    if (node.nodeType == node.COMMENT_NODE) return true;
-    if (node.nodeType == node.ELEMENT_NODE) {
+  isIgnoredNode(node: Node) {
+    if (node.nodeType === node.TEXT_NODE) return false;
+    if (node.nodeType === node.COMMENT_NODE) return false;
+    if (node.nodeType === node.ELEMENT_NODE) {
       const dataset = (node as HTMLElement).dataset;
-      if (typeof dataset.mayuId === "string") return true;
+      if (typeof dataset.mayuId === "string") return false;
     }
 
-    return false;
+    return true;
   }
 
   updateCache(node: Node, idTreeNode: IdNode) {
@@ -209,8 +209,8 @@ class NodeTree {
     const c = idTreeNode.c || [];
 
     node.childNodes.forEach((childNode) => {
-      if (!this.isAcceptableNode(childNode)) {
-        logger.warn(`Not acceptable:`, childNode);
+      if (this.isIgnoredNode(childNode)) {
+        logger.warn(`Ignored:`, childNode);
         return;
       }
 

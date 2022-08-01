@@ -124,14 +124,21 @@ module Mayu
       def rack_response
         html = @renderer.html
         id_tree = @renderer.id_tree
+        stylesheets = @renderer.stylesheets
 
         script_id = "mayu-init-#{SecureRandom.alphanumeric(16)}"
 
+        style = <<~EOF
+        <style data-mayu-ignore="true">
+        #{stylesheets.values.join("\n")}
+        </style>
+        EOF
+
         script = <<~EOF
         <script type="module" id="#{script_id}">
-          document.getElementById("#{script_id}")?.remove()
-          import Mayu from '/__mayu/live.js'
-          window.Mayu = new Mayu("#{@id}", #{JSON.generate(id_tree)})
+        document.getElementById("#{script_id}")?.remove()
+        import Mayu from '/__mayu/live.js';
+        window.Mayu = new Mayu("#{@id}", #{JSON.generate(id_tree)});
         </script>
         EOF
 
@@ -141,7 +148,7 @@ module Mayu
           [
             html
               .prepend("<!DOCTYPE html>\n")
-              .sub(%r{.*\K</body>}) { "#{script.strip}#{_1}" }
+              .sub(%r{.*\K</body>}) { "#{style.strip}#{script.strip}#{_1}" }
           ]
         ]
       end

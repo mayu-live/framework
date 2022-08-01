@@ -80,6 +80,10 @@ module Mayu
     sig { returns(T.untyped) }
     def id_tree = @vtree.id_tree
 
+
+    sig { returns(T.untyped) }
+    def stylesheets = @vtree.stylesheets.dup
+
     private
 
     sig { params(args: T.untyped).void }

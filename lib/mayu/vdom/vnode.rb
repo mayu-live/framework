@@ -116,7 +116,7 @@ module Mayu
         type = descriptor.type
 
         if Component.component_class?(type)
-          css = T.cast(component.class, T.class_of(Component::Base)).stylesheets
+          css = T.cast(type, T.class_of(Component::Base)).stylesheets
           result[css.path] ||= css.to_s
         end
 
