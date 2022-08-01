@@ -37,11 +37,6 @@ module Mayu
         Descriptor.new(:COMMENT)
       end
 
-      sig { params(children: ComponentChildren).returns(ComponentChildren) }
-      def self.separate_texts_with_comments(children)
-        Array(children).flatten.compact.map { |child| }
-      end
-
       sig { returns(ElementType) }
       attr_reader :type
       sig { returns(Component::Props) }
@@ -69,15 +64,11 @@ module Mayu
                 child
               when type == :title
                 self.class.new(TEXT, { text_content: child.to_s })
-              else
-                [
-                  # Comment nodes are to split text nodes in the DOM.
-                  Descriptor.new(COMMENT),
-                  self.class.new(TEXT, { text_content: child.to_s })
-                ]
+              when !child.to_s.empty?
+                self.class.new(TEXT, { text_content: child.to_s })
               end
             end
-            .flatten
+            .compact
 
         # children = children.map.with_index { |child, i|
         #   if i > 0 && children[i - 1]&.text? && child.text?
@@ -105,7 +96,10 @@ module Mayu
       def children? = children.any?
 
       sig { returns(String) }
-      def text = @props[:text_content].to_s
+      def text
+        text = @props[:text_content].to_s
+        text.empty? ? "&ZeroWidthSpace;" : text
+      end
 
       sig { params(other: Descriptor).returns(T::Boolean) }
       def same?(other)

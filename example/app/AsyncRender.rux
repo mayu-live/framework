@@ -17,13 +17,16 @@ Table = import("./Table")
 
 initial_state do |props|
   {
-    time: Time.now.strftime('%H:%M:%S.%3N'),
+    time: nil,
     playing: true,
   }
 end
 
 did_mount do
   async do |task|
+    # TODO: Remove this when clients can ask for a specific version of patches
+    sleep 2
+
     loop do
       update do |state|
         {

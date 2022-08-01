@@ -98,7 +98,7 @@ module Mayu
         if children.empty?
           { id: }
         else
-          { id:, ch: children.map(&:id_tree).compact }
+          { id:, ch: children.map(&:id_tree) }
         end
       end
 
@@ -133,7 +133,7 @@ module Mayu
           return "<!--mayu-id=#{@id}-->"
         end
 
-        cleaned_children = Array(children).flatten.compact
+        cleaned_children = children
 
         if component && exclude_components
           return(
