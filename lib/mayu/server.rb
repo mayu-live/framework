@@ -8,6 +8,11 @@ require_relative "server/types"
 require_relative "server/connection"
 require_relative "server/session"
 
+ROBOTS_TXT = <<EOF
+User-agent: *
+Disallow: /
+EOF
+
 module Mayu
   module Server
     extend T::Sig
@@ -22,17 +27,19 @@ module Mayu
     sig { params(env: Types::TRackHeaders).returns(Types::TRackReturn) }
     def self.call(env)
       case route_split(env)
-      in [:GET, ["__mayu", "live.js"]]
+      in :GET, ["__mayu", "live.js"]
         return(
           send_file(File.join(JS_ROOT, "live.js"), "application/javascript")
         )
-      in [:GET, ["__mayu", "events", session_id]]
+      in :GET, ["__mayu", "events", session_id]
         return Session.connect(session_id)
-      in [:POST, ["__mayu", "handler", session_id, handler_id]]
+      in :POST, ["__mayu", "handler", session_id, handler_id]
         body =
           JSON.parse(T.cast(env["rack.input"], Falcon::Adapters::Input).read)
         return Session.handle_event(session_id, handler_id, body)
-      in [:GET, path]
+      in :GET, ['robots.txt']
+        return [ 200, { "content-type" => "text/plain" }, [ROBOTS_TXT] ]
+      in :GET, path
         return Session.init
       end
 
