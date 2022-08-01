@@ -461,29 +461,29 @@ module VDOM2
         end
 
         if start_vnode.descriptor.same?(end_descriptor)
-          puts "moving #{start_vnode.descriptor} #{end_descriptor}"
           children[descriptors.end_idx] = patch_vnode(
             ctx,
             start_vnode,
             end_descriptor
           )
-          indexes.insert_before(start_vnode.id, indexes.next_sibling(end_vnode.id))
           ctx.move(start_vnode, after: end_vnode)
+          puts "moving start #{start_vnode.inspect2} after end #{end_vnode.inspect2}"
+          indexes.insert_before(start_vnode.id, indexes.next_sibling(end_vnode.id))
           vnodes.next_start
           descriptors.next_end
           next
         end
 
         if end_vnode.descriptor.same?(start_descriptor)
-          puts "moving #{end_vnode.descriptor} #{start_descriptor}"
-          p [vnodes.start_idx, vnodes.end_idx]
           children[descriptors.start_idx] = patch_vnode(
             ctx,
             end_vnode,
             start_descriptor
           )
-          indexes.insert_before(end_vnode.id, start_vnode.id)
           ctx.move(end_vnode, before: start_vnode)
+          p [vnodes.end_idx, vnodes.start_idx]
+          puts "moving end #{end_vnode.inspect2} before start #{start_vnode.inspect2}"
+          indexes.insert_before(end_vnode.id, start_vnode.id)
           vnodes.next_end
           descriptors.next_start
           next
@@ -512,12 +512,14 @@ module VDOM2
               vnode_to_move,
               start_descriptor
             )
-            indexes.insert_before(vnode_to_move.id, start_vnode.id)
             ctx.move(vnode_to_move, before: start_vnode)
+            puts "moving vnode to move #{vnode_to_move.inspect2} before start #{start_vnode.inspect2}"
+            indexes.insert_before(vnode_to_move.id, start_vnode.id)
           else
             vnode = init_vnode(ctx, start_descriptor)
             children[descriptors.start_idx] = vnode
             ctx.insert(vnode, before: start_vnode)
+            puts "inserting vnode #{vnode.inspect2} before start #{start_vnode.inspect2}"
             indexes.insert_before(vnode.id, start_vnode.id)
             remove_vnode(ctx, vnode_to_move)
           end
@@ -531,15 +533,15 @@ module VDOM2
 
         vnode = init_vnode(ctx, start_descriptor)
         children[descriptors.start_idx] = vnode
-        puts "\e[32m#{start_vnode.inspect}\e[0m"
         ctx.insert(vnode, before: start_vnode)
+        puts "\e[32minserting #{vnode.inspect2} before #{start_vnode.inspect2}\e[0m"
         indexes.insert_before(vnode.id, start_vnode.id)
 
         descriptors.next_start
       end
 
       if vnodes.start_idx > vnodes.end_idx
-        ref_elm = descriptors[descriptors.end_idx + 1]
+        ref_elm = vnodes[descriptors.end_idx + 1]
 
         descriptors
           .start_idx
@@ -547,10 +549,16 @@ module VDOM2
           .each do |i|
             descriptor = descriptors[i] or next
             vnode = init_vnode(ctx, descriptor)
-            children.push(vnode)
-            indexes.append(vnode.id)
 
-            ctx.insert(vnode) # before: ref_elm)
+            if ref_elm
+              ctx.insert(vnode, before: ref_elm)
+              puts "\e[32minserting #{vnode.inspect2} before #{ref_elm.inspect2}\e[0m"
+              indexes.insert_before(vnode.id, ref_elm.id)
+            else
+              children.push(vnode)
+              puts "\e[32mappending #{vnode.inspect2}\e[0m"
+              indexes.append(vnode.id)
+            end
           end
       elsif descriptors.start_idx > descriptors.end_idx
         vnodes
@@ -665,8 +673,41 @@ module VDOM2
     end
 
     sig { returns(String) }
-    def to_s
-      return children.join if component
+    def inspect2
+      "\e[34;7m#{id}\e[0;7m #{text_content}\e[0m"
+    end
+
+    sig {params(level: Integer).returns(String)}
+    def to_s(level = 0)
+      return "" if descriptor.comment?
+
+      if descriptor.text?
+        return "  " * level + "\e[34m#{id}\e[0m #{descriptor.text}"
+      end
+      [
+        "  " * level + "\e[34m#{id}\e[0m #{descriptor.type}",
+        *children.map { _1.to_s(level.succ) }
+      ].compact.reject(&:empty?).join("\n")
+    end
+
+    sig {returns(String)}
+    def text_content
+      if descriptor.text?
+        content = descriptor.text
+
+        if content.empty?
+          return "&ZeroWidthSpace;"
+        else
+          return CGI.escape_html(content)
+        end
+      end
+
+      children.map(&:text_content).reject(&:empty?).join
+    end
+
+    sig { returns(String) }
+    def to_html
+      return children.map(&:to_html).join if component
       return "<!--mayu-id-#{id}-->" if descriptor.comment?
 
       if descriptor.text?
@@ -691,12 +732,11 @@ module VDOM2
       if type.is_a?(Symbol) && VOID_TAGS.include?(type.to_s)
         format("<%<type>s%<attrs>s>", type:, attrs:)
       else
-        children = @children.join
         format(
           "<%<type>s%<attrs>s>%<children>s</%<type>s>",
           type:,
           attrs:,
-          children:
+          children: @children.map(&:to_html).join
         )
       end
     end
@@ -912,10 +952,17 @@ end
 
 extend VDOM2::H
 
-vtree = VDOM2::VTree.new
-outputs = []
+@vtree = VDOM2::VTree.new
+@outputs = []
 
-print_xml(vtree.render(h(MyApp,
+def hax(**props)
+  root = T.must(@vtree.render(h(MyApp, **props)))
+  return unless root
+  @outputs << root.to_html
+  puts root
+end
+
+hax(
   items: [
     { id: 0, title: "Item 0" },
     { id: 1, title: "Item 1" },
@@ -925,9 +972,9 @@ print_xml(vtree.render(h(MyApp,
     { id: 5, title: "Item 5" },
     { id: 6, title: "Item 6" },
   ]
-)).to_s.tap { outputs << _1 })
+)
 
-print_xml(vtree.render(h(MyApp,
+hax(
   items: [
     { id: 0, title: "Item 0" },
     { id: 1, title: "Item 1" },
@@ -936,9 +983,9 @@ print_xml(vtree.render(h(MyApp,
     { id: 4, title: "Item 4" },
     { id: 5, title: "Item 5" },
   ]
-)).to_s.tap { outputs << _1 })
+)
 
-print_xml(vtree.render(h(MyApp,
+hax(
   items: [
     { id: 0, title: "Item 0" },
     { id: 1, title: "Item 1" },
@@ -947,9 +994,9 @@ print_xml(vtree.render(h(MyApp,
     { id: 2, title: "Item 2" },
     { id: 5, title: "Item 5" },
   ]
-)).to_s.tap { outputs << _1 })
+)
 
-print_xml(vtree.render(h(MyApp,
+hax(
   items: [
     { id: 0, title: "Item 0" },
     { id: 1, title: "Item 1" },
@@ -959,53 +1006,15 @@ print_xml(vtree.render(h(MyApp,
     { id: 5, title: "Item 5" },
     { id: 6, title: "Item 6" },
   ]
-)).to_s.tap { outputs << _1 })
+)
 
-exit
-
-print_xml(vtree.render(h(MyApp,
-  items: [
-    { id: 1, title: "Item 1" },
-    { id: 2, title: "Item 2" },
-    { id: 6, title: "Item 6" },
-    { id: 10, title: "Item 10" },
-    { id: 8, title: "Item 8" },
-    { id: 0, title: "Item 0" },
-    { id: 12, title: "Item 12" },
-    { id: 4, title: "Item 4" },
-    { id: 5, title: "Item 5" },
-  ]
-)).to_s.tap { outputs << _1 })
-
-print_xml(vtree.render(h(MyApp,
-  items: [
-    { id: 12, title: "Item 12" },
-    { id: 6, title: "Item 6" },
-    { id: 11, title: "Item 11" },
-    { id: 15, title: "Item 15" },
-    { id: 16, title: "Item 16" },
-    { id: 19, title: "Item 19" },
-    { id: 8, title: "Item 8" },
-    { id: 10, title: "Item 10" },
-    { id: 0, title: "Item 0" },
-    { id: 4, title: "Item 4" },
-    { id: 13, title: "Item 13" },
-    { id: 14, title: "Item 14" },
-    { id: 2, title: "Item 2" },
-    { id: 1, title: "Item 1" },
-    { id: 18, title: "Item 18" },
-    { id: 3, title: "Item 3" },
-    { id: 7, title: "Item 7" },
-    { id: 9, title: "Item 9" },
-    { id: 17, title: "Item 17" },
-    { id: 5, title: "Item 5" },
-  ]
-)).to_s.tap { outputs << _1 })
+sig {params(s: String).returns(String)}
+def striphtml(s) = s.gsub(/<.*?>/, "\n").gsub(/$+/, "\n")
 
 File.write(
   "patches.json",
   JSON.pretty_generate(
-    vtree.patchsets.zip(outputs).map do |patches, output|
+    @vtree.patchsets.zip(@outputs).map do |patches, output|
       { patches:, output: }
     end
   )
