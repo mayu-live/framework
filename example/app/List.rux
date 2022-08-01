@@ -22,7 +22,7 @@ render do
   numbers = state[:length].times.to_a.shuffle
 
   items = numbers.map do |i|
-    <li key={i}>{i.to_s}</li>
+    <li key={i} style={"background-color: hsl(#{i * 36.0}, 80%, 80%);"}>{i.to_s}</li>
   end
 
   <div>
@@ -35,7 +35,7 @@ render do
       min="1"
       max="10"
       value={state[:value]}
-      on-change={handler(:update_length)}
+      on-input={handler(:update_length)}
     />
     <ul>{items}</ul>
   </div>

@@ -9,9 +9,7 @@ handler :increment do |x, prev|
 end
 
 should_update? do |next_props, next_state|
-  p [:props, props, next_props]
-  p [:state, state, next_state]
-  true
+  super(next_props, next_state)
 end
 
 render do

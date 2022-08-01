@@ -28,6 +28,9 @@ module Mayu
           @connections.delete(connection_id)
         end
 
+        sig { returns(T::Boolean) }
+        def empty? = @connections.empty?
+
         sig { void }
         def close_all!
           @connections.each_value(&:close)
@@ -36,16 +39,17 @@ module Mayu
 
         sig { params(event: Symbol, payload: T.untyped).void }
         def broadcast(event, payload = {})
-          @connections.keep_if do |_id, conn|
+          @connections.keep_if do |id, conn|
+            next false if conn.closed?
             conn.send_event(event, payload)
           rescue => e
-            puts "hello"
-            p e
+            puts "\e[31mDELETING\e[0m"
+            delete(id)
           end
         end
       end
 
-      TIMEOUT_SECONDS = 120.0
+      TIMEOUT_SECONDS = 2.0
 
       sig { returns(String) }
       attr_reader :id
@@ -59,12 +63,12 @@ module Mayu
         @task = T.let(
           task.async(annotation: "Session #{@id}") do |subtask|
             loop do
-              if @disconnected_at
+              if @disconnected_at && @connections.empty?
                 diff = Time.now - @disconnected_at
 
                 if diff > TIMEOUT_SECONDS
                   puts "Stopping everything"
-                  subtask.stop
+                  task.stop
                   break
                 end
               end
@@ -171,7 +175,7 @@ module Mayu
 
       sig { returns(Types::TRackReturn) }
       def connect
-        @disconnected_at = nil
+        # @disconnected_at = nil
         @connections.add(Connection.new(@id)).rack_response
       end
 

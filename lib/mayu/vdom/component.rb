@@ -322,7 +322,7 @@ module Mayu
             h(:__mayu_head, **props) do
               [
                 children,
-                h(:link, rel: "stylesheet", href: "/foo.css")
+                #h(:link, rel: "stylesheet", href: "/foo.css")
               ].flatten.compact
             end
           end
