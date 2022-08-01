@@ -22,7 +22,9 @@ type MovePatch = {
   after?: number;
 };
 
-type TextPatch = { type: "text"; id: number; text: string };
+type AddTextPatch = { type: "text", id: number, text: string }
+type AppendTextPatch = { type: "text", id: number, append: string }
+type TextPatch = AddTextPatch | AppendTextPatch
 
 type AttributePatch = {
   type: "attr";
@@ -66,7 +68,13 @@ class NodeTree {
         break;
       }
       case "text": {
-        this.updateText(patch.id, patch.text);
+        if ('text' in patch) {
+          this.updateText(patch.id, patch.text);
+        }
+
+        if ('append' in patch) {
+          this.appendText(patch.id, patch.append);
+        }
         break;
       }
       case "attr": {
@@ -91,6 +99,16 @@ class NodeTree {
     }
 
     node.textContent = text;
+  }
+
+  appendText(id: number, text: string) {
+    const node = this.#getEntry(id).node;
+
+    if (node.nodeType !== node.TEXT_NODE) {
+      throw new Error("Trying to update text on a non text node");
+    }
+
+    node.textContent += text;
   }
 
   setAttribute(id: number, name: string, value: string) {
@@ -178,8 +196,6 @@ class NodeTree {
     try {
       const entry = this.#getEntry(nodeId);
       const parentNode = entry.node.parentNode;
-
-      // logger.warn("removing", entry.node);
 
       if (parentNode) {
         const parentId = parentNode.__MAYU_ID;

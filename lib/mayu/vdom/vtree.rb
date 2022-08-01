@@ -143,9 +143,13 @@ module Mayu
           end
         end
 
-        sig { params(vnode: VNode, text: String).void }
-        def text(vnode, text)
-          add_patch(:text, id: vnode.id, text:)
+        sig { params(vnode: VNode, text: String, append: T::Boolean).void }
+        def text(vnode, text, append: false)
+          if append
+            add_patch(:text, id: vnode.id, append: text)
+          else
+            add_patch(:text, id: vnode.id, text:)
+          end
         end
 
         sig { params(vnode: VNode).void }
@@ -357,8 +361,12 @@ module Mayu
 
         if descriptor.text?
           unless vnode.descriptor.text == descriptor.text
+            if append = append_part(vnode.descriptor.text, descriptor.text)
+              ctx.text(vnode, append, append: true)
+            else
+              ctx.text(vnode, descriptor.text)
+            end
             vnode.descriptor = descriptor
-            ctx.text(vnode, descriptor.text)
             return vnode
           end
         else
@@ -653,6 +661,20 @@ module Mayu
         removed.each do |attr|
           ctx.remove_attribute(vnode, attr.to_s)
         end
+      end
+
+      sig {params(str1: String, str2: String).returns(T.nilable(String))}
+      def append_part(str1, str2)
+        return nil if str1.strip.empty? || str1.length >= str2.length
+
+        equal_length = str1.chars
+          .zip(str2.chars.to_a.slice(0, str1.length) || [])
+          .take_while { |c1, c2| c1 == c2 }
+          .length
+
+        return nil if equal_length.zero?
+
+        str2.slice(equal_length..-1)
       end
     end
   end
