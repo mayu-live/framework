@@ -426,7 +426,7 @@ module Mayu
             end
         end
 
-        vnode.component&.did_mount
+        vnode.component&.mount
         update_handlers({}, vnode.props)
 
         vnode
@@ -438,10 +438,10 @@ module Mayu
         )
       end
       def remove_vnode(ctx, vnode, patch: true)
+        vnode.component&.unmount
         ctx.remove(vnode) if patch
         vnode.children.map { remove_vnode(ctx, _1, patch: false) }
         update_handlers(vnode.props, {})
-        vnode.component&.will_unmount
         nil
       end
 

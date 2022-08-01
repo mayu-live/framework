@@ -27,27 +27,8 @@ module Mayu
     sig { params(env: Types::TRackHeaders).returns(Types::TRackReturn) }
     def self.call(env)
       case route_split(env)
-      in :GET, ["__mayu", "live.js"]
-        return(
-          send_file(File.join(JS_ROOT, "live.js"), "application/javascript")
-        )
-      in :GET, ["__mayu", "logger.js"]
-        return(
-          send_file(File.join(JS_ROOT, "logger.js"), "application/javascript")
-        )
-      in :GET, ["__mayu", "NodeTree.js"]
-        return(
-          send_file(File.join(JS_ROOT, "NodeTree.js"), "application/javascript")
-        )
-      in :GET, ["__mayu", "Mayu.js"]
-        return(
-          send_file(File.join(JS_ROOT, "Mayu.js"), "application/javascript")
-        )
       in [:GET, ["__mayu", "events", session_id]]
         last_event_id = env["Last-Event-ID"]
-        p(last_event_id:)
-        p(last_event_id:)
-        p(last_event_id:)
         return Session.connect(session_id, last_event_id:)
       in [:POST, ["__mayu", "handler", session_id, handler_id]]
         body =
@@ -56,6 +37,7 @@ module Mayu
       in [:GET, ["robots.txt"]]
         return 200, { "content-type" => "text/plain" }, [ROBOTS_TXT]
       in [:GET, path]
+        p env
         return Session.init
       end
 

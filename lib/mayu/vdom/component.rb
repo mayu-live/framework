@@ -42,10 +42,10 @@ module Mayu
         end
 
         sig { abstract.void }
-        def did_mount
+        def mount
         end
         sig { abstract.void }
-        def will_unmount
+        def unmount
         end
 
         sig { abstract.params(prev_props: Props, prev_state: State).void }
@@ -107,12 +107,13 @@ module Mayu
         end
 
         sig { override.void }
-        def did_mount
-          wrap_errors { @instance.did_mount }
+        def mount
+          wrap_errors { async { @instance.mount } }
         end
+
         sig { override.void }
-        def will_unmount
-          wrap_errors { @instance.will_unmount }
+        def unmount
+          wrap_errors { @instance.unmount }
           @barrier.stop
         end
 
@@ -214,17 +215,17 @@ module Mayu
         def self.should_update?(&blk) = define_method(:should_update?, &blk)
 
         sig { params(blk: T.proc.void).void }
-        def self.did_mount(&blk) = define_method(:did_mount, &blk)
+        def self.mount(&blk) = define_method(:mount, &blk)
         sig { params(blk: T.proc.void).void }
-        def self.will_unmount(&blk) = define_method(:will_unmount, &blk)
+        def self.unmount(&blk) = define_method(:unmount, &blk)
 
         sig { params(blk: T.proc.void).void }
         def async(&blk) = @wrapper.async(&blk)
 
         sig { override.void }
-        def did_mount = nil
+        def mount = nil
         sig { override.void }
-        def will_unmount = nil
+        def unmount = nil
 
         sig do
           override

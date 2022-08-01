@@ -5,7 +5,7 @@ initial_state do |props|
   }
 end
 
-did_mount do
+mount do
   async do
     loop do
       update do |state|

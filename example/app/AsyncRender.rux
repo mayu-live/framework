@@ -22,23 +22,18 @@ initial_state do |props|
   }
 end
 
-did_mount do
-  async do |task|
-    # TODO: Remove this when clients can ask for a specific version of patches
-    sleep 2
+mount do
+  loop do
+    update do |state|
+      {
+        time: Time.now.strftime('%H:%M:%S'),
+      }
+    end if state[:playing]
 
-    loop do
-      update do |state|
-        {
-          time: Time.now.strftime('%H:%M:%S'),
-        }
-      end if state[:playing]
-
-      sleep 0.1
-    end
-  ensure
-    puts "UNMOUNTING"
+    sleep 0.1
   end
+ensure
+  puts "UNMOUNTING"
 end
 
 handler(:toggle) do |event|

@@ -9,23 +9,19 @@ initial_state do |props|
   { text: "" }
 end
 
-did_mount do
-  async do
-    index = 0
-    sleep 2
+mount do
+  index = 0
 
-    loop do
-      str = TAGLINES[index]
+  loop do
+    str = TAGLINES[index]
 
-      str.length.times do |i|
-        text = str.slice(0, i.succ)
-        update(text:)
-        sleep 1
-      end
-
-      index = index.succ % TAGLINES.length
-      sleep 2
+    str.length.times do |i|
+      update(text: str.slice(0, i.succ).to_s)
+      sleep 1
     end
+
+    index = index.succ % TAGLINES.length
+    sleep 2
   end
 end
 
