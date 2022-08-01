@@ -73,7 +73,9 @@ module Mayu
     sig { params(args: T.untyped).void }
     def send(*args) = @in.enqueue(args)
     sig { returns(T.untyped) }
-    def take = @out.dequeue
+    def take
+      @out.dequeue
+    end
 
     sig { returns(T.untyped) }
     def id_tree = @vtree.id_tree

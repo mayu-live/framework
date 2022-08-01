@@ -7,17 +7,14 @@ end
 
 did_mount do
   async do |task|
-    task.reactor.print_hierarchy
-
     loop do
-      puts "hello #{state.inspect}"
       update do |state|
         { time: Time.now.to_s }
       end if state[:playing]
 
       sleep 1
     end
-  rescue
+  ensure
     puts "UNMOUNTING"
   end
 end

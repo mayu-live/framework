@@ -45,6 +45,8 @@ module Mayu
         end
       end
 
+      TIMEOUT_SECONDS = 120.0
+
       sig { returns(String) }
       attr_reader :id
 
@@ -60,7 +62,7 @@ module Mayu
               if @disconnected_at
                 diff = Time.now - @disconnected_at
 
-                if diff > 10
+                if diff > TIMEOUT_SECONDS
                   puts "Stopping everything"
                   subtask.stop
                   break
@@ -78,7 +80,7 @@ module Mayu
         @task.async(annotation: "Broadcaster") do |task|
           running = T.let(true, T::Boolean)
 
-          while @renderer.running?
+          loop do
             p "hello"
             message = @renderer.take
             p [:message, message]
@@ -95,6 +97,8 @@ module Mayu
               puts "Unnhandled: #{message.inspect}"
             end
           end
+        ensure
+          puts "Stopping broadcaster"
         end
 
         puts "done initializing"
@@ -167,6 +171,7 @@ module Mayu
 
       sig { returns(Types::TRackReturn) }
       def connect
+        @disconnected_at = nil
         @connections.add(Connection.new(@id)).rack_response
       end
 

@@ -44,7 +44,7 @@ module Mayu
 
                 commit!
 
-                task.sleep 0.05
+                sleep 0.05
               end
             rescue => e
               puts e
