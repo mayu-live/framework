@@ -13,9 +13,9 @@
   "homepage": "https://github.com/mayu-live/prototype#readme",
   "description": "",
   "scripts": {
-    "watch": "npm run build -- --watch",
-    "build": "esbuild src/*.ts --sourcemap=inline --outdir=dist",
-    "build:production": "esbuild src/live.ts --outdir=dist/ --minify",
+    "dev": "npm run build -- --watch --sourcemap=inline",
+    "build": "esbuild src/*.ts --outdir=dist",
+    "build:production": "npm run build -- minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

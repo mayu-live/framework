@@ -39,8 +39,16 @@ module Mayu
         return(
           send_file(File.join(JS_ROOT, "NodeTree.js"), "application/javascript")
         )
+      in :GET, ["__mayu", "Mayu.js"]
+        return(
+          send_file(File.join(JS_ROOT, "Mayu.js"), "application/javascript")
+        )
       in [:GET, ["__mayu", "events", session_id]]
-        return Session.connect(session_id)
+        last_event_id = env["Last-Event-ID"]
+        p(last_event_id:)
+        p(last_event_id:)
+        p(last_event_id:)
+        return Session.connect(session_id, last_event_id:)
       in [:POST, ["__mayu", "handler", session_id, handler_id]]
         body =
           JSON.parse(T.cast(env["rack.input"], Falcon::Adapters::Input).read)

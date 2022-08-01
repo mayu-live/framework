@@ -13,14 +13,24 @@ module Mayu
       class Connections
         extend T::Sig
 
+        Event = T.type_alias { { id: String, event: Symbol, payload: T.untyped } }
+
         sig { void }
         def initialize
+          # Connections shouldn't have to be stored here...
+          # They can just subscribe to the notification thing.
+          # And to keep the session running, we could use something like this:
+          # https://github.com/socketry/async/blob/main/lib/async/barrier.rb
           @connections = T.let({}, T::Hash[String, Connection])
+          # TODO: events should not be stored for the entire session.
+          # Should probably be stored in redis with some timeout maybe.
+          @events = T.let([], T::Array[Event])
         end
 
-        sig { params(connection: Connection).returns(Connection) }
-        def add(connection)
+        sig { params(connection: Connection, last_event_id: T.nilable(String)).returns(Connection) }
+        def add(connection, last_event_id: nil)
           @connections[connection.id] = connection
+          send_missed_events(connection, last_event_id)
         end
 
         sig { params(connection_id: String).void }
@@ -39,12 +49,37 @@ module Mayu
 
         sig { params(event: Symbol, payload: T.untyped).void }
         def broadcast(event, payload = {})
-          @connections.keep_if do |id, conn|
+          id = SecureRandom.uuid
+          @events.push({ id:, event:, payload: })
+
+          @connections.keep_if do |connection_id, conn|
             next false if conn.closed?
-            conn.send_event(event, payload)
+            conn.send_event(id, event, payload)
           rescue => e
             puts "\e[31mDELETING\e[0m"
-            delete(id)
+            delete(connection_id)
+          end
+        end
+
+        private
+
+        sig { params(connection: Connection, last_event_id: T.nilable(String)).returns(Connection) }
+        def send_missed_events(connection, last_event_id)
+          get_events_since(last_event_id).each_with_index do |message, i|
+            connection.send_event(message[:id], message[:event], message[:payload])
+          end
+
+          connection
+        end
+
+        sig { params(last_event_id: T.nilable(String)).returns(T::Array[Event]) }
+        def get_events_since(last_event_id = nil)
+          if last_event_id
+            events = @events.drop_while { |message| message[:id] != last_event_id }
+            _last, *missed = events
+            events
+          else
+            @events
           end
         end
       end
@@ -91,8 +126,8 @@ module Mayu
             case message
             in [:html, payload]
               @connections.broadcast(:html, payload)
-            in [:patch_set, payload]
-              @connections.broadcast(:patch_set, payload)
+            in [:patch, payload]
+              @connections.broadcast(:patch, payload)
             in :close
               @connections.close_all!
               running = T.let(false, T::Boolean)
@@ -136,11 +171,7 @@ module Mayu
         EOF
 
         script = <<~EOF
-        <script type="module" id="#{script_id}">
-        document.getElementById("#{script_id}")?.remove()
-        import Mayu from '/__mayu/live.js';
-        window.Mayu = new Mayu("#{@id}", #{JSON.generate(id_tree)});
-        </script>
+        <script type="module" data-mayu-ignore="true" src="/__mayu/live.js?id=#{@id}"></script>
         EOF
 
         [
@@ -154,14 +185,14 @@ module Mayu
         ]
       end
 
-      sig { params(session_id: String).returns(Types::TRackReturn) }
-      def self.connect(session_id)
+      sig { params(session_id: String, last_event_id: T.nilable(String)).returns(Types::TRackReturn) }
+      def self.connect(session_id, last_event_id: nil)
         session =
           SESSIONS.fetch(session_id) do
             raise KeyError,
                   "Session not found: #{session_id}, has: #{SESSIONS.keys.inspect}"
           end
-        session.connect
+        session.connect(last_event_id:)
       end
 
       sig do
@@ -177,10 +208,10 @@ module Mayu
         [200, {}, ["ok"]]
       end
 
-      sig { returns(Types::TRackReturn) }
-      def connect
+      sig { params(last_event_id: T.nilable(String)).returns(Types::TRackReturn) }
+      def connect(last_event_id: nil)
         # @disconnected_at = nil
-        @connections.add(Connection.new(@id)).rack_response
+        @connections.add(Connection.new(@id), last_event_id:).rack_response
       end
 
       sig { void }

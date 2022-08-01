@@ -36,7 +36,7 @@ module Mayu
 
           case message
           in :patch, { id:, patches: }
-            respond(:patch_set, id:, patches:)
+            respond(:patch, id:, patches:)
           else
             puts "\e[31mUnknown event: #{message.inspect}\e[0m"
           end

@@ -182,7 +182,7 @@ class NodeTree {
       // logger.warn("removing", entry.node);
 
       if (parentNode) {
-        const parentId = parentNode.__mayu.id;
+        const parentId = parentNode.__MAYU_ID;
         const parentEntry = this.#cache.get(parentId);
 
         logger.log(`Removing child`, entry.node.textContent);
@@ -192,7 +192,7 @@ class NodeTree {
           parentEntry.childIds.delete(nodeId);
         }
       } else {
-        logger.warn(`Node`, entry.node.__mayu.id, "has no parent??");
+        logger.warn(`Node`, entry.node.__MAYU_ID, "has no parent??");
       }
 
       this.#removeRecursiveFromCache(nodeId, false);
@@ -216,7 +216,7 @@ class NodeTree {
 
 
 
-    logger.log('Moving', entry.node.textContent, before ? 'before' : after ? 'after' : 'last', (ref?.textContent || parentEntry.node.__mayu.id))
+    logger.log('Moving', entry.node.textContent, before ? 'before' : after ? 'after' : 'last', (ref?.textContent || parentEntry.node.__MAYU_ID))
     logger.log({before, after})
     logger.log(ref?.textContent)
 
@@ -231,7 +231,7 @@ class NodeTree {
     logger.group("Removing from cache", id);
 
     if (includeParent) {
-      const parentEntry = this.#cache.get(entry.node.parentNode!.__mayu.id);
+      const parentEntry = this.#cache.get(entry.node.parentNode!.__MAYU_ID);
       parentEntry?.childIds?.delete(id);
     }
 
