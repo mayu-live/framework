@@ -13,12 +13,16 @@ ITEMS = [
 MIN = 0.1
 MAX = 1.0
 
+Table = import("./Table")
+
 initial_state do |props|
   {
     time: nil,
     playing: true,
     speed: 1.0,
     index: 0,
+    cols: 10,
+    rows: 10,
   }
 end
 
@@ -51,6 +55,18 @@ handler(:set_speed) do |event|
   end
 end
 
+handler(:set_cols) do |event|
+  update do |state|
+    { cols: event["value"].to_i }
+  end
+end
+
+handler(:set_rows) do |event|
+  update do |state|
+    { rows: event["value"].to_i }
+  end
+end
+
 render do
   <div>
     <h4>async {state[:time]}</h4>
@@ -65,5 +81,12 @@ render do
       step="0.05"
     />
     <output>{state[:speed]}</output>
+    <div>
+      <Table
+        cols={state[:cols]}
+        rows={state[:rows]}
+        speed={state[:speed]}
+      />
+    </div>
   </div>
 end

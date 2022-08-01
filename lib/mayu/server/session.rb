@@ -85,9 +85,7 @@ module Mayu
           running = T.let(true, T::Boolean)
 
           loop do
-            p "hello"
             message = @renderer.take
-            p [:message, message]
 
             case message
             in [:html, payload]
@@ -119,8 +117,6 @@ module Mayu
       def self.init
         session = new
         SESSIONS[session.id] = session
-        p "initialized session"
-        p SESSIONS.keys
         session.rack_response
       end
 

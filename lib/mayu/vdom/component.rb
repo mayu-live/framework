@@ -222,8 +222,8 @@ module Mayu
             .returns(T::Boolean)
         end
         def should_update?(next_props, next_state)
-          p [props, next_props]
-          p [state, next_state]
+          # p [props, next_props]
+          # p [state, next_state]
           case
           when props != next_props
             true
