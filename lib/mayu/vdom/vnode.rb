@@ -18,6 +18,15 @@ module Mayu
       sig { returns(Id) }
       attr_accessor :dom_parent_id
 
+      sig { returns(Id) }
+      def dom_id
+        if component
+          children.first&.dom_id || -1
+        else
+          id
+        end
+      end
+
       sig { returns(Descriptor) }
       attr_accessor :descriptor
       sig { returns(Descriptor::ElementType) }
@@ -91,7 +100,7 @@ module Mayu
 
         return children.first&.id_tree if component
 
-        children.empty? ? { id: } : { id:, ch: children.map(&:id_tree) }
+        children.empty? ? { id:, type: type.to_s } : { id:, ch: children.map(&:id_tree), type: type.to_s }
       end
 
       sig do
@@ -125,7 +134,8 @@ module Mayu
 
         case type
         when Descriptor::TEXT
-          return descriptor.text
+          # return descriptor.text
+          return "(#{@id}):#{descriptor.text}"
         when Descriptor::COMMENT
           return "<!--mayu-id=#{@id}-->"
         end

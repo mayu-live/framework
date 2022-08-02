@@ -47,11 +47,11 @@ module Mayu
       end
       def insert(vnode, before: nil, after: nil)
         if before
-          puts "\e[32minsert\e[0m #{vnode.key} before #{before.key}"
+          puts "\e[32minsert\e[0m #{vnode.dom_id} before #{before.dom_id}"
         elsif after
-          puts "\e[32minsert\e[0m #{vnode.key} after #{after.key}"
+          puts "\e[32minsert\e[0m #{vnode.dom_id} after #{after.dom_id}"
         else
-          puts "\e[32minsert\e[0m #{vnode.key} last"
+          puts "\e[32minsert\e[0m #{vnode.dom_id} last"
         end
         # p caller.grep(/markup/).first(5)
         html = vnode.inspect_tree(exclude_components: true)
@@ -60,32 +60,32 @@ module Mayu
         if before
           add_patch(
             :insert,
-            id: vnode.id,
+            id: vnode.dom_id,
             parent: dom_parent_id,
-            before: before.id,
+            before: before.dom_id,
             html:,
             ids:
           )
         elsif after
           add_patch(
             :insert,
-            id: vnode.id,
+            id: vnode.dom_id,
             parent: dom_parent_id,
-            after: after.id,
+            after: after.dom_id,
             html:,
             ids:
           )
         else
-          add_patch(:insert, id: vnode.id, parent: dom_parent_id, html:, ids:)
+          add_patch(:insert, id: vnode.dom_id, parent: dom_parent_id, html:, ids:)
         end
       end
 
-      sig {params(args: T.untyped).void}
-      def puts(*args)
-        if @parents.last&.descriptor&.type == :ul
-          T.unsafe(Kernel)::puts(*args)
-        end
-      end
+      # sig {params(args: T.untyped).void}
+      # def puts(*args)
+      #   if @parents.last&.descriptor&.type == :ul
+      #     T.unsafe(Kernel)::puts(*args)
+      #   end
+      # end
 
       sig do
         params(
@@ -97,70 +97,80 @@ module Mayu
       def move(vnode, before: nil, after: nil)
         if before
       #    raise if vnode.key == 3 && before.key == 7
-          puts "\e[33mmove:\e[0m #{vnode.key} before #{before.key}"
+          puts "\e[33mmove:\e[0m #{vnode.dom_id} before #{before.key}"
         elsif after
-          puts "\e[33mmove:\e[0m #{vnode.key} after #{after.key}"
+          puts "\e[33mmove:\e[0m #{vnode.dom_id} after #{after.key}"
         else
-          puts "\e[33mmove:\e[0m #{vnode.key} last"
+          puts "\e[33mmove:\e[0m #{vnode.dom_id} last"
         end
+
+        p dom_parent_id: vnode.dom_parent_id, vnode_id: vnode.id, vnode_dom_id: vnode.dom_id, type: vnode.descriptor.type.to_s
+
         if before
           add_patch(
             :move,
-            id: vnode.id,
-            parent: dom_parent_id,
-            before: before.id
+            id: vnode.dom_id,
+            parent: vnode.dom_parent_id,
+            before: before.dom_id
           )
         elsif after
           add_patch(
             :move,
-            id: vnode.id,
-            parent: dom_parent_id,
-            after: after.id
+            id: vnode.dom_id,
+            parent: vnode.dom_parent_id,
+            after: after.dom_id
           )
         else
-          add_patch(:move, id: vnode.id, parent: dom_parent_id)
+          add_patch(:move, id: vnode.dom_id, parent: vnode.dom_parent_id)
         end
       end
 
       sig { params(vnode: VNode, attr: String, value: T.nilable(String)).void }
       def css(vnode, attr, value = nil)
         if value
-          add_patch(:css, id: vnode.id, attr:, value:)
+          add_patch(:css, id: vnode.dom_id, attr:, value:)
         else
-          add_patch(:css, id: vnode.id, attr:)
+          add_patch(:css, id: vnode.dom_id, attr:)
         end
       end
 
       sig { params(vnode: VNode, text: String, append: T::Boolean).void }
       def text(vnode, text, append: false)
         if append
-          add_patch(:text, id: vnode.id, append: text)
+          add_patch(:text, id: vnode.dom_id, append: text)
         else
-          add_patch(:text, id: vnode.id, text:)
+          add_patch(:text, id: vnode.dom_id, text:)
         end
       end
 
+
+
       sig { params(vnode: VNode).void }
       def remove(vnode)
+        if vnode.component
+          if child = vnode.children.first
+            return remove(child)
+          end
+        end
         puts "\e[31mremove\e[0m #{vnode.key}"
-        add_patch(:remove, id: vnode.id, parent: dom_parent_id)
+        add_patch(:remove, id: vnode.dom_id, parent: vnode.dom_parent_id)
       end
 
       sig { params(vnode: VNode, name: String, value: String).void }
       def set_attribute(vnode, name, value)
-        add_patch(:attr, id: vnode.id, name:, value:)
+        add_patch(:attr, id: vnode.dom_id, name:, value:)
       end
 
       sig { params(vnode: VNode, name: String).void }
       def remove_attribute(vnode, name)
-        add_patch(:attr, id: vnode.id, name:)
+        add_patch(:attr, id: vnode.dom_id, name:)
       end
 
       private
 
       sig { params(type: Symbol, args: T.untyped).void }
       def add_patch(type, **args)
-        # puts "\e[33m#{type}:\e[0m #{args.inspect}"
+        # puts "\e[35;5mXXXXXX \e[33m#{type}:\e[0m #{args.inspect}"
         @patches.push(args.merge(type:))
       end
     end

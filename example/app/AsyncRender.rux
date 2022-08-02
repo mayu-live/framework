@@ -30,7 +30,7 @@ mount do
       }
     end if state[:playing]
 
-    sleep 0.1
+    sleep 0.5
   end
 ensure
   puts "UNMOUNTING"
@@ -43,10 +43,5 @@ handler(:toggle) do |event|
 end
 
 render do
-  <div>
-    <h4>Current time <span>{state[:time]}</span></h4>
-    <button on-click={handler(:toggle)}>
-      {state[:playing] ? "Stop" : "Play"}
-    </button>
-  </div>
+  <div><h4>Current time <span>{state[:time]}</span></h4><button on-click={handler(:toggle)}>{state[:playing] ? "Stop" : "Play"}</button></div>
 end

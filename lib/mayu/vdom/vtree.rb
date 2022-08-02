@@ -344,7 +344,9 @@ module Mayu
       end
       def remove_vnode(ctx, vnode, patch: true)
         vnode.component&.unmount
-        ctx.remove(vnode) if patch
+        if patch #&& !vnode.component
+          ctx.remove(vnode)
+        end
         vnode.children.map { remove_vnode(ctx, _1, patch: false) }
         update_handlers(vnode.props, {})
         nil
@@ -376,30 +378,21 @@ module Mayu
 
         vnodes = vnodes.compact
         descriptors = descriptors.compact
+        old_ids = vnodes.map(&:id)
 
-        vnodes_by_key = vnodes.group_by(&:key)
         indexes = Indexes.new(vnodes.map(&:id))
 
         new_children =
           T.let(descriptors.map.with_index do |descriptor, i|
-            vnodes_with_same_key = vnodes_by_key[descriptor.key] || []
+            vnode = vnodes.find { _1.same?(descriptor) }
 
-            if vnodes_with_same_key
-              vnode =
-                vnodes_with_same_key.find { _1.descriptor.same?(descriptor) }
-
-              if vnode
-                vnodes_with_same_key.delete(vnode)
-                vnode = patch_vnode(ctx, vnode, descriptor)
-                next vnode
-              end
+            if vnode
+              vnodes.delete(vnode)
+              patch_vnode(ctx, vnode, descriptor)
+            else
+              init_vnode(ctx, descriptor)
             end
-
-            init_vnode(ctx, descriptor)
           end, T::Array[VNode])
-
-        vnodes_to_remove = vnodes_by_key.values.reduce([], &:+)
-        old_ids = vnodes.map(&:id)
 
         # This is very inefficient.
         # I tried to get the algorithm from snabbdom/vue to work,
@@ -407,17 +400,30 @@ module Mayu
         # I always got some weird ordering issues and it's tricky to debug.
         # Fun stuff for later though.
 
-        new_children.each_with_index do |vnode, index|
+        all_vnodes = vnodes + new_children
+
+        new_children.each_with_index do |vnode, expected_index|
+          new_indexes = Indexes.new(indexes.to_a - vnodes.map(&:id))
+          current_index = indexes.index(vnode.id)
+
+
+          before_id = indexes[expected_index]
+          before = before_id && all_vnodes.find do
+            _1.id == before_id
+          end
+
           if old_ids.include?(vnode.id)
-            ctx.move(vnode)
-            indexes.insert_after(vnode.id, nil)
+            unless current_index == expected_index
+              ctx.move(vnode, before:)
+              indexes.insert_before(vnode.id, before_id)
+            end
           else
-            ctx.insert(vnode)
-            indexes.insert_after(vnode.id, nil)
+            ctx.insert(vnode, before:)
+            indexes.insert_before(vnode.id, before_id)
           end
         end
 
-        vnodes_to_remove.each do |vnode|
+        vnodes.each do |vnode|
           remove_vnode(ctx, vnode)
         end
 

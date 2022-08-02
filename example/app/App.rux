@@ -8,27 +8,47 @@ AsyncRender = import("./AsyncRender")
 Form = import("./Form")
 Tabs = import("./Tabs")
 
+initial_state do |props|
+  { tab: 0 }
+end
+
+handler(:click) do |e, tab|
+  update(tab:)
+end
+
 render do
-  <Layout>
-    <Section>
+  sections = [
+    (<Section>
       <h3>Welcome to my app</h3>
       <Welcome name="Luke Skywalker" />
       <AsyncRender />
-    </Section>
-    <Section>
+    </Section>),
+    (<Section>
       <h3>Quotes</h3>
       <Quotes />
-    </Section>
-    <Section>
+    </Section>),
+    (<Section>
       <Form />
-    </Section>
-    <Section>
+    </Section>),
+    (<Section>
       <h3>Counter</h3>
       <Counter />
-    </Section>
-    <Section>
+    </Section>),
+    (<Section>
       <h3>Random numbers</h3>
       <List />
-    </Section>
+    </Section>),
+  ];
+
+  buttons = sections.length.times.map do |i|
+    <button key={i} on-click={handler(:click, i)}>Tab {i}</button>
+  end
+
+  <Layout>
+    <div key="foo"><AsyncRender /></div>
+    <div key="tabs">{buttons}</div>
+    <div style={{ border: "10px solid #f0f", margin: 10, padding: 10 }}>
+      {sections[state[:tab]]}
+    </div>
   </Layout>
 end

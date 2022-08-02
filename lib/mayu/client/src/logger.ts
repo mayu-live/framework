@@ -22,6 +22,6 @@ function createLogger() {
   };
 }
 
-const SILENT = true
+const SILENT = false
 
 export default SILENT ? createSilentLogger() : createLogger()

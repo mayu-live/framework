@@ -48,7 +48,6 @@ class NodeTree {
 
   constructor(root: IdNode, element = document.documentElement) {
     this.updateCache(element, root);
-    console.log(JSON.stringify(root, null, 2))
   }
 
   apply(patches: Patch[]) {
@@ -293,6 +292,10 @@ class NodeTree {
     node.__MAYU_ID = idTreeNode.id
 
     logger.group("Add to cache", idTreeNode.id, "type", node.nodeName, idTreeNode.type);
+
+    if (idTreeNode.id === 18) {
+      debugger
+    }
 
     // logger.log('Updating cache for', node, 'with id', idTreeNode.i)
 

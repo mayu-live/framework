@@ -10,7 +10,53 @@ require_relative "h"
 class TestVTree < Minitest::Test
   include Mayu::VDOM::H
 
-  def test_foo
+  class MyComponent < Mayu::VDOM::Component::Base
+    include Mayu::VDOM::H
+
+    def render
+      @lol ||= rand
+      h(:div) do [
+        h(:h1) { "Hej världen#{@lol}" },
+        h(:h2) { "Hello the world" },
+      ] end
+    end
+  end
+
+  def test_yolo
+    Async do |task|
+      vtree = Mayu::VDOM::VTree.new()
+
+      vtree.render(
+        h(:div) do [
+          h(:h1) { "Title" },
+          h(MyComponent),
+        ] end
+      )
+
+      vtree.to_html.tap do |html|
+        print_xml(html)
+      end
+
+      puts
+
+      vtree.render(
+        h(:div) do [
+          h(:h1) { "Title" },
+          h(MyComponent),
+          h(:div) { "foo" },
+          h(MyComponent),
+        ] end
+      )
+
+      vtree.to_html.tap do |html|
+        print_xml(html)
+      end
+    ensure
+      vtree&.stop!
+    end
+  end
+
+  def testx_foo
     Async do |task|
       vtree = Mayu::VDOM::VTree.new()
 
