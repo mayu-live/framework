@@ -14,9 +14,9 @@
   background: #14ccca;
   transition: all .1s;
   border: 1px solid #0001;
-  font-family: serif;
   padding: .5em;
-  font-size: 1em;
+  font-size: .9em;
+  font-family: monospace;
 }
 
 .button:hover {

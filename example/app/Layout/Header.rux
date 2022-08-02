@@ -1,10 +1,14 @@
 Tagline = import("./Tagline")
+Clock = import("./Clock")
 
 render do
   <header class={styles.header}>
     <div class={styles.inner}>
-      <h1>mayu</h1>
-      <Tagline />
+      <div class={styles.left}>
+        <h1>mayu live</h1>
+        <Tagline />
+      </div>
+      <Clock />
     </div>
   </header>
 end

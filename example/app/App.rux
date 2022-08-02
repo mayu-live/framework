@@ -17,16 +17,7 @@ handler(:click) do |e, tab|
 end
 
 render do
-  sections = [
-  ];
-
-  buttons = sections.length.times.map do |i|
-    <button key={i} on-click={handler(:click, i)}>Tab {i}</button>
-  end
-
   <Layout>
-    <div key="foo"><AsyncRender /></div>
-    <div key="tabs">{buttons}</div>
     <Tabs>
       <Section title="Main">
         <h3>Welcome to my app</h3>

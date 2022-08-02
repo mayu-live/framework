@@ -1,6 +1,6 @@
 GithubLink = (
   <a class={styles.link} href="https://github.com/mayu-live">
-    GitHub
+    github.com/mayu-live
   </a>
 )
 

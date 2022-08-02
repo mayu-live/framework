@@ -8,6 +8,12 @@
   max-width: var(--page-max-width);
   margin: 0 auto;
   padding: 0 1em;
+  display: flex;
+  align-items: center;
+}
+
+.left {
+  flex: 1;
 }
 
 .title {
@@ -16,4 +22,7 @@
 
 .tagline {
   font-size: 1.2em;
+}
+
+.clock {
 }

@@ -9,14 +9,12 @@
   padding: 1em;
 }
 
-.link::link,
-.link::visited {
-  color: #ccc;
-  text-decoration: none;
+.link:link,
+.link:visited {
+  color: #14ccca;
 }
 
-.link::active,
-.link::hover {
-  color: #fff;
-  text-decoration: underline;
+.link:active,
+.link:hover {
+  color: #14ccca;
 }
