@@ -39,8 +39,8 @@ module Mayu
         self.fetch(id, key) { return _1 }.connect(task:)
       end
 
-      def self.handle_callback(id, key, callback_id, payload, task: Async::Task.current)
-        self.fetch(id, key) { return _1 }.handle_callback(callback_id, payload, task:)
+      def self.handle_callback(id, key, callback_id, payload)
+        self.fetch(id, key) { return _1 }.handle_callback(callback_id, payload)
       end
 
       def self.cookie_name(id) = "mayu-session-#{id}"
@@ -200,11 +200,12 @@ module Mayu
     end
 
     class CallbackHandlerApp
-      MOUNT_PATH = "/__mayu/handler/"
+      MOUNT_PATH = "/__mayu/handler"
 
       def call(env)
         request = Rack::Request.new(env)
         session_id, handler_id = request.path_info.to_s.split("/", 3).last(2)
+        cookie_name = Session.cookie_name(session_id)
         session_key = request.cookies.fetch(cookie_name) do
           return [401, {}, ["Session cookie not set"]]
         end
@@ -214,6 +215,8 @@ module Mayu
         case Session.handle_callback(session_id, session_key, handler_id, payload)
         when :session_not_found
           [404, {}, ["Session not found"]]
+        else
+          [200, {}, ["ok"]]
         end
       end
     end
@@ -231,7 +234,7 @@ module Mayu
         response.set_cookie(
           session.cookie_name,
           {
-            path: "#{EventStreamApp::MOUNT_PATH}/#{session.id}",
+            path: "/__mayu/",
             secure: true,
             http_only: true,
             same_site: :strict,
@@ -256,13 +259,6 @@ module Mayu
     end
 
     App = Rack::Builder.new do
-      use Rack::Static,
-        Mayu::Server2.rack_static_options_for_js
-
-      use Rack::Static,
-        urls: [""],
-        root: PUBLIC_ROOT_DIR,
-        cascade: true
 
       map EventStreamApp::MOUNT_PATH do
         run EventStreamApp.new
@@ -271,6 +267,14 @@ module Mayu
       map CallbackHandlerApp::MOUNT_PATH do
         run CallbackHandlerApp.new
       end
+
+      use Rack::Static,
+        Mayu::Server2.rack_static_options_for_js
+
+      use Rack::Static,
+        urls: [""],
+        root: PUBLIC_ROOT_DIR,
+        cascade: true
 
       run InitSessionApp.new
     end

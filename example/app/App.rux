@@ -17,8 +17,10 @@ handler(:click) do |e, tab|
 end
 
 source = <<~EOF
+# app/Clock.mayu
+
 initial_state do |props|
-  { time: Time.now.strftime('%H:%M:%S') }
+  { time: Time.now }
 end
 
 mount do
@@ -26,9 +28,7 @@ mount do
 
   loop do
     puts "Updating clock"
-
-    update(time: Time.now.strftime('%H:%M:%S'))
-
+    update(time: Time.now)
     sleep 1
   end
 ensure
@@ -37,7 +37,7 @@ end
 
 render do
   <span class={styles.clock}>
-    {state[:time]}
+    {state[:time].strftime("%H:%M:%S")}
   </span>
 end
 EOF
