@@ -723,6 +723,11 @@ end
 tree = vdom.render(Descriptor.new(App, { numbers: [[2, 1], [4, 4], [3, 3], [1, 2]] })) do |patches|
   patch_sets.push(patches)
 end
+
+tree = vdom.render(Descriptor.new(App, { numbers: [] })) do |patches|
+  patch_sets.push(patches)
+end
+
 puts format2(tree.to_s)
 puts tree.to_s
 File.write("patches.json", JSON.pretty_generate(patch_sets))
