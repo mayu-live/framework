@@ -512,11 +512,13 @@ module VDOM2
 
       if old_start_idx > old_end_idx
         # TODO: something about ref elms from the new children
+        #  refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
+        ref_elm = vnodes[old_end_idx.succ]
         descriptors_to_add = new_ch.slice(new_start_idx..new_end_idx)
         descriptors_to_add.each do |descriptor|
           new_vnode = init_vnode(ctx, descriptor)
-          ctx.insert(new_vnode, before: nil)
-          indexes.insert_before(new_vnode.id, nil)
+          ctx.insert(new_vnode, before: ref_elm)
+          indexes.insert_before(new_vnode.id, ref_elm&.id)
           children.push(new_vnode)
         end if descriptors_to_add
       elsif new_start_idx > new_end_idx
@@ -904,6 +906,122 @@ class MyApp < VDOM2::Component
   end
 end
 
+extend VDOM2::H
+
+@vtree = VDOM2::VTree.new
+
+def render(desc)
+  root = T.must(@vtree.render(desc))
+
+  return unless root
+  @vtree.patchsets.last.each do |patch|
+    puts "#{patch[:type].to_s.ljust(10)} #{patch.except(:type).inspect}"
+  end
+  print_xml(root.to_html)
+  puts root
+end
+
+class Quotes < VDOM2::Component
+  include VDOM2::H
+
+  sig {returns(VDOM2::Descriptor)}
+  def render
+    h(:div) do
+      [
+        h(:h2, "Asd"),
+        h(:ul) do
+        [
+            h(:li, "xoo"),
+            h(:li, "xar"),
+            h(:li, "xaz"),
+          ]
+        end,
+      ]
+    end
+  end
+end
+
+class Asd < VDOM2::Component
+  include VDOM2::H
+
+  sig {returns(VDOM2::Descriptor)}
+  def render
+    h(:div) do
+      [
+        h(:h2, "Asd"),
+        h(:span, "lol"),
+      ]
+    end
+  end
+end
+
+render(
+  h(:div) do
+    [
+      h(:ul) do
+        [
+          h(:li, "foo"),
+          h(:li, "bar"),
+        ]
+      end,
+      h(:section) do
+        h(Quotes)
+      end
+    ]
+  end
+)
+
+render(
+  h(:div) do
+    [
+      h(:ul) do
+        [
+          h(:li, "foo"),
+          h(:li, "bar"),
+        ]
+      end,
+      h(:div) do
+        h(:h2, "haj")
+      end,
+      h(:div) do
+        h(:span, "hopp")
+      end,
+      h(:div) do
+        h(:span, "hkarg")
+      end,
+      h(:section) do
+        h(Asd)
+      end
+    ]
+  end
+)
+
+render(
+  h(:div) do
+    [
+      h(:ul) do
+        [
+          h(:li, "foo"),
+          h(:li, "bar"),
+        ]
+      end,
+      h(:div) do
+        h(:h2, "haj")
+      end,
+      h(:div) do
+        h(:span, "hopp")
+      end,
+      h(:section) do
+        h(Asd)
+      end,
+      h(:div) do
+        h(:span, "hkarg")
+      end,
+    ]
+  end
+)
+
+__END__
 extend VDOM2::H
 
 @vtree = VDOM2::VTree.new
