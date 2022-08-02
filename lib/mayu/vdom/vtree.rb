@@ -409,16 +409,14 @@ module Mayu
 
             old_children[index] = nil
 
-            if vnode_to_move
-              result[descriptor_start_index] = vnode_to_move
+            result[descriptor_start_index] = vnode_to_move
 
-              if patch
-                @current_patch_set.move_before(
-                  parent_id,
-                  vnode_to_move.id,
-                  start_vnode.id
-                )
-              end
+            if patch
+              @current_patch_set.move_before(
+                parent_id,
+                vnode_to_move.id,
+                start_vnode.id
+              )
             end
 
             descriptor_start_index += 1

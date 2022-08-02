@@ -173,10 +173,11 @@ class VNode
   def id_tree
     if component
       children.first&.id_tree
-    elsif children.empty?
-      id
     else
-      [id, children.map(&:id_tree).compact]
+      {
+        i: id,
+        c: children.map(&:id_tree).compact,
+      }
     end
   end
 end
@@ -327,6 +328,10 @@ class VDOM
       end
     end
 
+    def text(vnode, text)
+      add_patch(:text, id: vnode.id, text:)
+    end
+
     def remove(vnode)
       add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
     end
@@ -335,7 +340,7 @@ class VDOM
 
     def add_patch(type, **args)
       puts "\e[33m#{type}:\e[0m #{args.inspect}"
-      @patches.push([type, args])
+      @patches.push(args.merge(type:))
     end
   end
 
@@ -346,7 +351,7 @@ class VDOM
   def render(descriptor)
     ctx = UpdateContext.new
     @root = patch(ctx, @root, descriptor)
-    # ctx.patches.each { p _1 }
+    yield ctx.patches if block_given?
     @root
   end
 
@@ -381,33 +386,27 @@ class VDOM
 
     if component
       if component.should_update?(descriptor.props, component.next_state)
-        # TODO: || component.dirty?
+        vnode.descriptor = descriptor
         component.props = descriptor.props
         component.state = component.next_state.clone
+        descriptors = add_comments_between_texts(Array(component.render).compact)
 
         ctx.enter(vnode) do
-          vnode.children =
-            update_children(
-              ctx,
-              vnode.children.compact,
-              add_comments_between_texts(Array(component.render).compact)
-            )
+          vnode.children = update_children(ctx, vnode.children.compact, descriptors)
         end
-
-        vnode.descriptor = descriptor
-        return vnode
-      else
-        return vnode
       end
-    elsif vnode.descriptor == descriptor
-      puts "returning early"
+
+      return vnode
+    end
+
+    if vnode.descriptor == descriptor
       return vnode
     end
 
     if descriptor.text?
       unless vnode.descriptor.text == descriptor.text
         vnode.descriptor = descriptor
-        set_text_content(ctx, vnode, descriptor.text)
+        ctx.text(vnode, descriptor.text)
         return vnode
       end
     else
@@ -452,7 +451,7 @@ class VDOM
   end
 
   def set_text_content(ctx, vnode, content)
-    puts "update_text(#{vnode.id}, #{content.inspect})"
+    ctx.text(vnode.id, content.to_s)
   end
 
   def render_component(vnode)
@@ -491,9 +490,9 @@ class VDOM
 
   def check_duplicate_keys(descriptors)
     keys = descriptors.map(&:key).compact
-    duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }
+    duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }.uniq
     duplicates.each do |key|
-      "Duplicate keys detected: '#{key}'. This may cause an update error."
+      puts "\e[31mDuplicate keys detected: '#{key}'. This may cause an update error.\e[0m"
     end
   end
 
@@ -597,6 +596,7 @@ class VDOM
         .upto(descriptors.end_idx)
         .each do |i|
           vnode = init_vnode(ctx, descriptors[i])
+          children.push(vnode)
 
           ctx.insert(vnode)# before: ref_elm)
         end
@@ -698,7 +698,7 @@ end
 App =
   component do |numbers:, children:|
     puts "Returning #{numbers}"
-    ul { numbers.each { |i| li(key: i){ str "item #{i}" } } }
+    ul { numbers.each { |i, j| li(key: i){ str "item #{j}" } } }
   end
 
 require "rexml/document"
@@ -714,13 +714,18 @@ def format2(source)
   puts io.read.gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
 end
 
+patch_sets = []
 vdom = VDOM.new
-tree = vdom.render(Descriptor.new(App, { numbers: [1, 2, 3] }))
+tree = vdom.render(Descriptor.new(App, { numbers: [[1, 1], [2, 2], [3, 3]] })) do |patches|
+  patch_sets.push(patches)
+end
 # puts JSON.pretty_generate(tree.to_json)
-puts format2(tree.to_s)
-tree = vdom.render(Descriptor.new(App, { numbers: [3, 2, 1] }))
+tree = vdom.render(Descriptor.new(App, { numbers: [[2, 1], [4, 4], [3, 3], [1, 2]] })) do |patches|
+  patch_sets.push(patches)
+end
 puts format2(tree.to_s)
 puts tree.to_s
+File.write("patches.json", JSON.pretty_generate(patch_sets))
 
 # puts JSON.pretty_generate(tree.to_json)
 # d1 = Descriptor.new(:TEXT, { text_content: "hello" })
