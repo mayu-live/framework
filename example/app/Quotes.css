@@ -1,0 +1,11 @@
+.form {
+  display: flex;
+}
+
+.button {
+  flex: 1;
+}
+
+.range {
+  width: 100%;
+}

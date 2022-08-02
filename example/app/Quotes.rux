@@ -54,25 +54,30 @@ QUOTES = [
 ]
 
 initial_state do |props|
-  { index: 0 }
+  {
+    index: 0,
+    value: 0,
+  }
 end
 
 handler(:next) do |x|
-  update do |state|
-    { index: state[:index].succ % QUOTES.size }
-  end
+  index = state[:index].succ % QUOTES.size
+  update(index:, value: index)
 end
 
 handler(:prev) do |x|
-  update do |state|
-    { index: state[:index].pred % QUOTES.size }
-  end
+  index = state[:index].pred % QUOTES.size
+  update(index:, value: index)
 end
 
 handler :change do |e|
-  update do |state|
-    { index: e["value"].to_i % QUOTES.size }
-  end
+  index = e["value"].to_i % QUOTES.size
+  update(index:, value: index)
+end
+
+handler :input do |e|
+  index = e["value"].to_i % QUOTES.size
+  update(index:)
 end
 
 render do
@@ -81,21 +86,25 @@ render do
 
   <div style={{ background: "hsl(#{index * 10}deg, 50%, 50%)" }}>
     <div>
-      <button on-click={handler(:prev)}>Prev</button>
+      <div class={styles.form}>
+        <button class={styles.button} on-click={handler(:prev)}>Prev</button>
+        <input
+          type="number"
+          value={state[:value]}
+          on-change={handler(:change)}
+          on-input={handler(:input)}
+          class={styles.button}
+        />
+        <button class={styles.button} on-click={handler(:next)}>Next</button>
+      </div>
       <input
-        type="number"
+        type="range"
+        min="0"
+        max={QUOTES.size - 1}
         value={index}
         on-input={handler(:change)}
       />
-      <button on-click={handler(:next)}>Next</button>
     </div>
-    <input
-      type="range"
-      min="0"
-      max={QUOTES.size - 1}
-      value={index}
-      on-input={handler(:change)}
-    />
     <figure>
       <blockquote>{quote[:quote]}</blockquote>
       <figcaption>{quote[:author]}</figcaption>
