@@ -14,16 +14,12 @@ class MyComponent < Mayu::VDOM::Component::Base
 
   initial_state { |props| { count: 0 } }
 
-  should_update? { |next_props, next_state|
+  should_update? do |next_props, next_state|
     return true
-    unless props == next_props
-      return true
-    end
-    unless state == next_state
-      return true
-    end
+    return true unless props == next_props
+    return true unless state == next_state
     false
-  }
+  end
 
   handler :rerender do |event|
     update { |state| { count: state[:count] + 1 } }

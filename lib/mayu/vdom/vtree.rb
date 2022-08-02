@@ -37,9 +37,7 @@ module Mayu
                 @update_queue.size.times do
                   vnode = @update_queue.dequeue
 
-                  if vnode.component&.dirty?
-                    render_vnode(vnode)
-                  end
+                  render_vnode(vnode) if vnode.component&.dirty?
                 end
 
                 commit!
@@ -362,11 +360,13 @@ module Mayu
               end_descriptor,
               patch:
             )
-            @current_patch_set.move_before(
-              parent_id,
-              start_vnode.id,
-              old_children[vnode_start_index.succ]&.id
-            ) if patch
+            if patch
+              @current_patch_set.move_before(
+                parent_id,
+                start_vnode.id,
+                old_children[vnode_start_index.succ]&.id
+              )
+            end
             vnode_start_index += 1
             descriptor_end_index -= 1
             next
@@ -379,37 +379,46 @@ module Mayu
               start_descriptor,
               patch:
             )
-            @current_patch_set.move_before(
-              parent_id,
-              end_vnode.id,
-              start_vnode.id
-            ) if patch
+            if patch
+              @current_patch_set.move_before(
+                parent_id,
+                end_vnode.id,
+                start_vnode.id
+              )
+            end
             vnode_end_index -= 1
             descriptor_start_index += 1
             next
           end
 
           keymap ||=
-            build_key_index_map(old_children, vnode_start_index, vnode_end_index)
+            build_key_index_map(
+              old_children,
+              vnode_start_index,
+              vnode_end_index
+            )
 
           if index = keymap[start_descriptor.key]
-            vnode_to_move = patch_vnode(
-              parent_id,
-              old_children[index],
-              start_descriptor,
-              patch:
-            )
+            vnode_to_move =
+              patch_vnode(
+                parent_id,
+                old_children[index],
+                start_descriptor,
+                patch:
+              )
 
             old_children[index] = nil
 
             if vnode_to_move
               result[descriptor_start_index] = vnode_to_move
 
-              @current_patch_set.move_before(
-                parent_id,
-                vnode_to_move.id,
-                start_vnode.id
-              ) if patch
+              if patch
+                @current_patch_set.move_before(
+                  parent_id,
+                  vnode_to_move.id,
+                  start_vnode.id
+                )
+              end
             end
 
             descriptor_start_index += 1
@@ -420,11 +429,13 @@ module Mayu
           new_vnode = init_vnode(parent_id, start_descriptor, patch: false)
           result.insert(descriptor_start_index, new_vnode)
           # puts "Going to insert #{new_vnode.inspect_tree} "
-          @current_patch_set.insert_before(
-            parent_id,
-            new_vnode,
-            start_vnode.id
-          ) if patch
+          if patch
+            @current_patch_set.insert_before(
+              parent_id,
+              new_vnode,
+              start_vnode.id
+            )
+          end
 
           descriptor_start_index += 1
         end

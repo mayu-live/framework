@@ -128,13 +128,13 @@ class NodeTree {
       const entry = this.#getEntry(nodeId);
       const parentNode = entry.node.parentNode;
 
-      console.warn('removing', entry.node)
+      console.warn("removing", entry.node);
 
       if (parentNode) {
         const parentId = parentNode.__mayu.id;
         const parentEntry = this.#cache.get(parentId);
 
-        console.log(`Removing child`, entry.node.textContent)
+        console.log(`Removing child`, entry.node.textContent);
         parentNode.removeChild(entry.node);
 
         if (parentEntry) {

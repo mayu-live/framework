@@ -60,24 +60,25 @@ module Mayu
         @connections = T.let(Connections.new, Connections)
         @disconnected_at = T.let(Time.now, T.nilable(Time))
 
-        @task = T.let(
-          task.async(annotation: "Session #{@id}") do |subtask|
-            loop do
-              if @disconnected_at && @connections.empty?
-                diff = Time.now - @disconnected_at
+        @task =
+          T.let(
+            task.async(annotation: "Session #{@id}") do |subtask|
+              loop do
+                if @disconnected_at && @connections.empty?
+                  diff = Time.now - @disconnected_at
 
-                if diff > TIMEOUT_SECONDS
-                  puts "Stopping everything"
-                  task.stop
-                  break
+                  if diff > TIMEOUT_SECONDS
+                    puts "Stopping everything"
+                    task.stop
+                    break
+                  end
                 end
-              end
 
-              sleep 1
-            end
-          end,
-          Async::Task
-        )
+                sleep 1
+              end
+            end,
+            Async::Task
+          )
 
         @renderer = T.let(Renderer.new(parent: @task), Renderer)
 

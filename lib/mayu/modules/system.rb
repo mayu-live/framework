@@ -1,7 +1,7 @@
 # typed: strict
 
 require_relative "component_module"
-require_relative "css_module"
+require_relative "css"
 
 module Mayu
   module Modules
@@ -41,13 +41,9 @@ module Mayu
         end
       end
 
-      sig do
-        params(path: String).returns(CSS::Base)
-      end
+      sig { params(path: String).returns(CSS::Base) }
       def load_css(path)
-        CSS.load(
-          File.join(@root, resolve_path(path.sub(/\.rux$/, ".css")))
-        )
+        CSS.load(File.join(@root, resolve_path(path.sub(/\.rux$/, ".css"))))
       end
     end
   end

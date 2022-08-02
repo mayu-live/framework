@@ -1,7 +1,7 @@
 # typed: strict
 
 require_relative "h"
-require_relative "../modules/css_module"
+require_relative "../modules/css"
 require "async/barrier"
 
 module Mayu
@@ -13,9 +13,12 @@ module Mayu
       State = T.type_alias { T::Hash[String, T.untyped] }
 
       sig do
-        params(vnode: VNode, type: T.untyped, props: Props, task: Async::Task).returns(
-          T.nilable(Wrapper)
-        )
+        params(
+          vnode: VNode,
+          type: T.untyped,
+          props: Props,
+          task: Async::Task
+        ).returns(T.nilable(Wrapper))
       end
       def self.wrap(vnode, type, props, task: Async::Task.current)
         if type.is_a?(Class) && type < Component::Base
@@ -69,7 +72,14 @@ module Mayu
         sig { returns(Base) }
         attr_reader :instance
 
-        sig { params(vnode: VNode, klass: T.class_of(Base), props: Props, task: Async::Task).void }
+        sig do
+          params(
+            vnode: VNode,
+            klass: T.class_of(Base),
+            props: Props,
+            task: Async::Task
+          ).void
+        end
         def initialize(vnode, klass, props, task: Async::Task.current)
           @vnode = vnode
           @props = T.let(props, Props)
@@ -111,7 +121,7 @@ module Mayu
           wrap_errors { @instance.did_update(prev_props, prev_state) }
         end
 
-        sig {params(blk: T.proc.void).void}
+        sig { params(blk: T.proc.void).void }
         def async(&blk)
           @barrier.async(&blk)
         end
@@ -208,7 +218,7 @@ module Mayu
         sig { params(blk: T.proc.void).void }
         def self.will_unmount(&blk) = define_method(:will_unmount, &blk)
 
-        sig {params(blk: T.proc.void).void}
+        sig { params(blk: T.proc.void).void }
         def async(&blk) = @wrapper.async(&blk)
 
         sig { override.void }
@@ -241,7 +251,11 @@ module Mayu
 
         sig { returns(Modules::CSS::Base) }
         def self.stylesheets
-          const_get(:CSS) rescue Modules::CSS::NoModule.new("asd")
+          begin
+            const_get(:CSS)
+          rescue StandardError
+            Modules::CSS::NoModule.new("asd")
+          end
         end
 
         sig { returns(Modules::CSS::IdentProxy) }
@@ -311,7 +325,7 @@ module Mayu
           "Mayu.handle(event,'#{@id}')"
         end
 
-        sig {params(other:HandlerRef).returns(T::Boolean)}
+        sig { params(other: HandlerRef).returns(T::Boolean) }
         def ==(other)
           @id == other.id
         end
@@ -323,7 +337,7 @@ module Mayu
           def render
             h(:__mayu_head, **props) do
               [
-                children,
+                children
                 #h(:link, rel: "stylesheet", href: "/foo.css")
               ].flatten.compact
             end

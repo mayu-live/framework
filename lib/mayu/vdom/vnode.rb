@@ -45,10 +45,16 @@ module Mayu
           parent_id: Id,
           descriptor: Descriptor,
           dom: T.nilable(DOM::Node),
-          task: Async::Task,
+          task: Async::Task
         ).void
       end
-      def initialize(vtree, parent_id, descriptor, dom = nil, task: Async::Task.current)
+      def initialize(
+        vtree,
+        parent_id,
+        descriptor,
+        dom = nil,
+        task: Async::Task.current
+      )
         @dom = dom
         @id = T.let(vtree.next_id!, Id)
         @parent_id = parent_id
