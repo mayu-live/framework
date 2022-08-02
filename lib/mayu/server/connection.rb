@@ -41,7 +41,6 @@ module Mayu
       sig { params(id: String, event: Symbol, payload: T.untyped).void }
       def send_event(id, event, payload = {})
         data = "id: #{id}\nevent: #{event}\ndata: #{JSON.generate(payload)}\n\n"
-        puts payload.inspect
         @queue.enqueue(data)
       end
 

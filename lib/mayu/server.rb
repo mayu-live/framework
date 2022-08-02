@@ -37,7 +37,7 @@ module Mayu
       in [:GET, ["robots.txt"]]
         return 200, { "content-type" => "text/plain" }, [ROBOTS_TXT]
       in [:GET, path]
-        p env
+        # p env
         return Session.init
       end
 

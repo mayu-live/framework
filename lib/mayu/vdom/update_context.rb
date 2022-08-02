@@ -46,13 +46,13 @@ module Mayu
         ).void
       end
       def insert(vnode, before: nil, after: nil)
-        if before
-          puts "\e[32minsert\e[0m #{vnode.dom_id} before #{before.dom_id}"
-        elsif after
-          puts "\e[32minsert\e[0m #{vnode.dom_id} after #{after.dom_id}"
-        else
-          puts "\e[32minsert\e[0m #{vnode.dom_id} last"
-        end
+        # if before
+        #   puts "\e[32minsert\e[0m #{vnode.dom_id} before #{before.dom_id}"
+        # elsif after
+        #   puts "\e[32minsert\e[0m #{vnode.dom_id} after #{after.dom_id}"
+        # else
+        #   puts "\e[32minsert\e[0m #{vnode.dom_id} last"
+        # end
         # p caller.grep(/markup/).first(5)
         html = vnode.inspect_tree(exclude_components: true)
         ids = vnode.id_tree
@@ -95,16 +95,16 @@ module Mayu
         ).void
       end
       def move(vnode, before: nil, after: nil)
-        if before
-      #    raise if vnode.key == 3 && before.key == 7
-          puts "\e[33mmove:\e[0m #{vnode.dom_id} before #{before.key}"
-        elsif after
-          puts "\e[33mmove:\e[0m #{vnode.dom_id} after #{after.key}"
-        else
-          puts "\e[33mmove:\e[0m #{vnode.dom_id} last"
-        end
+      #   if before
+      # #    raise if vnode.key == 3 && before.key == 7
+      #     puts "\e[33mmove:\e[0m #{vnode.dom_id} before #{before.key}"
+      #   elsif after
+      #     puts "\e[33mmove:\e[0m #{vnode.dom_id} after #{after.key}"
+      #   else
+      #     puts "\e[33mmove:\e[0m #{vnode.dom_id} last"
+      #   end
 
-        p dom_parent_id: vnode.dom_parent_id, vnode_id: vnode.id, vnode_dom_id: vnode.dom_id, type: vnode.descriptor.type.to_s
+       #  p dom_parent_id: vnode.dom_parent_id, vnode_id: vnode.id, vnode_dom_id: vnode.dom_id, type: vnode.descriptor.type.to_s
 
         if before
           add_patch(
@@ -152,7 +152,7 @@ module Mayu
             return remove(child)
           end
         end
-        puts "\e[31mremove\e[0m #{vnode.key}"
+        # puts "\e[31mremove\e[0m #{vnode.key}"
         add_patch(:remove, id: vnode.dom_id, parent: vnode.dom_parent_id)
       end
 
