@@ -2,6 +2,7 @@
 
 require_relative "h"
 require_relative "../modules/css_module"
+require "async/barrier"
 
 module Mayu
   module VDOM
@@ -68,14 +69,15 @@ module Mayu
         sig { returns(Base) }
         attr_reader :instance
 
-        sig { params(vnode: VNode, klass: T.class_of(Base), props: Props).void }
-        def initialize(vnode, klass, props)
+        sig { params(vnode: VNode, klass: T.class_of(Base), props: Props, task: Async::Task).void }
+        def initialize(vnode, klass, props, task: Async::Task.current)
           @vnode = vnode
           @props = T.let(props, Props)
           @state = T.let(klass.get_initial_state(props).freeze, State)
           @next_state = T.let(@state.clone, State)
           @instance = T.let(klass.new(self), Base)
           @dirty = T.let(true, T::Boolean)
+          @barrier = T.let(Async::Barrier.new(parent: task), Async::Barrier)
         end
 
         sig do
@@ -101,11 +103,17 @@ module Mayu
         sig { override.void }
         def will_unmount
           wrap_errors { @instance.will_unmount }
+          @barrier.stop
         end
 
         sig { override.params(prev_props: Props, prev_state: State).void }
         def did_update(prev_props, prev_state)
           wrap_errors { @instance.did_update(prev_props, prev_state) }
+        end
+
+        sig {params(blk: T.proc.void).void}
+        def async(&blk)
+          @barrier.async(&blk)
         end
 
         sig do
@@ -117,7 +125,7 @@ module Mayu
         def update(stuff = nil, &blk)
           stuff = blk.call(state) if blk
 
-          puts "Merging stuff, #{stuff.inspect}"
+          # puts "Merging stuff, #{stuff.inspect}"
 
           if stuff
             @next_state = @next_state.merge(stuff)
@@ -195,10 +203,19 @@ module Mayu
         end
         def self.should_update?(&blk) = define_method(:should_update?, &blk)
 
+        sig { params(blk: T.proc.void).void }
+        def self.did_mount(&blk) = define_method(:did_mount, &blk)
+        sig { params(blk: T.proc.void).void }
+        def self.will_unmount(&blk) = define_method(:will_unmount, &blk)
+
+        sig {params(blk: T.proc.void).void}
+        def async(&blk) = @wrapper.async(&blk)
+
         sig { override.void }
         def did_mount = nil
         sig { override.void }
         def will_unmount = nil
+
         sig do
           override
             .params(next_props: Props, next_state: State)
@@ -284,7 +301,7 @@ module Mayu
         sig { params(payload: T.untyped).void }
         def call(payload)
           method = @component.method(:"handle_#{@name}")
-          T.unsafe(method).call(payload, *@args.first(method.arity.pred))
+          T.unsafe(method).call(*[payload, *@args].first(method.arity))
         end
 
         sig { returns(String) }

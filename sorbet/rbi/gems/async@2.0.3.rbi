@@ -10,6 +10,34 @@ module Async
   end
 end
 
+# A synchronization primitive, which allows one task to wait for a number of other tasks to complete. It can be used in conjunction with {Semaphore}.
+class Async::Barrier
+  # Initialize the barrier.
+  #
+  # @return [Barrier] a new instance of Barrier
+  def initialize(parent: T.unsafe(nil)); end
+
+  # Execute a child task and add it to the barrier.
+  def async(*arguments, parent: T.unsafe(nil), **options, &block); end
+
+  # Whether there are any tasks being held by the barrier.
+  #
+  # @return [Boolean]
+  def empty?; end
+
+  # The number of tasks currently held by the barrier.
+  def size; end
+
+  # Stop all tasks held by the barrier.
+  def stop; end
+
+  # All tasks which have been invoked into the barrier.
+  def tasks; end
+
+  # Wait for all tasks.
+  def wait; end
+end
+
 # A list of children tasks.
 class Async::Children < ::Async::List
   # @return [Children] a new instance of Children

@@ -38,11 +38,7 @@ module Mayu
                 @update_queue.size.times do
                   vnode = @update_queue.dequeue
 
-                  puts "\e[33mupdatging #{vnode.id}\e[0m"
-
                   if vnode.component&.dirty?
-                    puts "Rendering"
-
                     render_vnode(vnode)
                   end
                 end
@@ -82,7 +78,7 @@ module Mayu
         return unless component
         return if component.dirty?
 
-        puts "\e[33mEnqueueing\e[0m"
+        # puts "\e[33mEnqueueing\e[0m"
 
         component.dirty!
         @update_queue.enqueue(vnode)
@@ -242,11 +238,15 @@ module Mayu
             patch: false
           )
 
+        vnode.component&.did_mount
+
         vnode
       end
 
       sig { params(vnode: VNode, patch: T::Boolean).void }
       def destroy_vnode(vnode, patch: true)
+        vnode.component&.will_unmount
+
         @current_patch_set.remove_node(vnode.id) if patch
 
         update_handlers(vnode.props, {})
@@ -418,7 +418,7 @@ module Mayu
           # https://github.com/vuejs/vue/blob/main/src/core/vdom/patch.ts#L501
           new_vnode = init_vnode(parent_id, start_descriptor, patch: false)
           result.insert(descriptor_start_index, new_vnode)
-          puts "Going to insert #{new_vnode.inspect_tree} "
+          # puts "Going to insert #{new_vnode.inspect_tree} "
           @current_patch_set.insert_before(
             parent_id,
             new_vnode,
@@ -471,7 +471,7 @@ module Mayu
             next unless new_child
             new_child_vnode = init_vnode(parent_id, new_child, patch: false)
             # p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
-            puts "PUSHING THE NEW CHILD #{new_child_vnode.id}"
+            # puts "PUSHING THE NEW CHILD #{new_child_vnode.id}"
             result.push(new_child_vnode)
             # parent_dom.insert_before(create_dom_node(new_child_vnode), old_child&.dom)
             if patch
@@ -488,7 +488,7 @@ module Mayu
 
         old_children.compact.each do |child|
           next if new_ids.include?(child.id)
-          puts "Destroying #{child.inspect_tree.scan(/data-mayu-id="\d+"/).join(" ")}"
+          # puts "Destroying #{child.inspect_tree.scan(/data-mayu-id="\d+"/).join(" ")}"
           destroy_vnode(child, patch:)
         end
 

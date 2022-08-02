@@ -1,5 +1,5 @@
 initial_state do |props|
-  { count: 0 }
+  { count: 0, length: 5 }
 end
 
 should_update? do |next_props, next_state|
@@ -12,8 +12,14 @@ handler :rerender do |event|
   end
 end
 
+handler :update_length do |event|
+  update do |state|
+    { length: event["value"].to_i }
+  end
+end
+
 render do
-  numbers = (1..10).to_a.shuffle.first(5)
+  numbers = state[:length].times.to_a.shuffle
 
   items = numbers.map do |i|
     <li key={i}>{i.to_s}</li>
@@ -24,6 +30,13 @@ render do
       Rerender
     </button>
     <p>numbers: {numbers.inspect}</p>
+    <input
+      type="range"
+      min="1"
+      max="10"
+      value={state[:value]}
+      on-change={handler(:update_length)}
+    />
     <ul>{items}</ul>
   </div>
 end

@@ -4,12 +4,14 @@ Counter = import("./Counter")
 Quotes = import("./Quotes")
 List = import("./List")
 Section = import("./Layout/Section")
+AsyncRender = import("./AsyncRender")
 
 render do
   <Layout>
     <Section>
       <h3>Welcome to my app</h3>
       <Welcome name="Luke Skywalker" />
+      <AsyncRender />
     </Section>
     <Section>
       <h3>Quotes</h3>

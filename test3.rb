@@ -30,7 +30,7 @@ class MyComponent < Mayu::VDOM::Component::Base
   end
 
   render do
-    numbers = (1..10).to_a.shuffle.first(5)
+    numbers = (1..10).to_a.shuffle.first(5 + rand(3))
 
     items = numbers.map { |i| h(:li, key: i) { i.to_s } }
 

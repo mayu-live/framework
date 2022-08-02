@@ -1,0 +1,34 @@
+initial_state do |props|
+  {
+    time: nil,
+    playing: false
+  }
+end
+
+did_mount do
+  async do
+    loop do
+      puts "hello #{state.inspect}"
+      update do |state|
+        { time: Time.now.to_s }
+      end if state[:playing]
+
+      sleep 1
+    end
+  rescue
+    puts "UNMOUNTING"
+  end
+end
+
+handler(:toggle) do |event|
+  update do |state|
+    { playing: !state[:playing] }
+  end
+end
+
+render do
+  <div>
+    <h1>async {state[:time]}</h1>
+    <button on-click={handler(:toggle)}>{state[:playing] ? "Stop" : "Play"}</button>
+  </div>
+end
