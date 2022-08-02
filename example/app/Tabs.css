@@ -1,0 +1,34 @@
+.buttons {
+  list-style-type: none;
+  display: flex;
+  gap: 1em;
+  padding: 1em;
+  margin: 0 auto;
+  max-width: var(--page-max-width);
+}
+
+.button {
+  flex: 1;
+  cursor: pointer;
+  border-radius: 3px;
+  background: #14ccca;
+  transition: all .1s;
+  border: 1px solid #0001;
+  font-family: serif;
+  padding: .5em;
+  font-size: 1em;
+}
+
+.button:hover {
+  filter: brightness(110%);
+  transform: scale(105%);
+}
+
+.button:active {
+  filter: brightness(90%);
+  transform: scale(95%);
+}
+
+.selected {
+  background: #8ed565;
+}

@@ -18,26 +18,6 @@ end
 
 render do
   sections = [
-    (<Section>
-      <h3>Welcome to my app</h3>
-      <Welcome name="Luke Skywalker" />
-      <AsyncRender />
-    </Section>),
-    (<Section>
-      <h3>Quotes</h3>
-      <Quotes />
-    </Section>),
-    (<Section>
-      <Form />
-    </Section>),
-    (<Section>
-      <h3>Counter</h3>
-      <Counter />
-    </Section>),
-    (<Section>
-      <h3>Random numbers</h3>
-      <List />
-    </Section>),
   ];
 
   buttons = sections.length.times.map do |i|
@@ -47,8 +27,28 @@ render do
   <Layout>
     <div key="foo"><AsyncRender /></div>
     <div key="tabs">{buttons}</div>
-    <div style={{ border: "10px solid #f0f", margin: 10, padding: 10 }}>
-      {sections[state[:tab]]}
-    </div>
+    <Tabs>
+      <Section title="Main">
+        <h3>Welcome to my app</h3>
+        <Welcome name="Luke Skywalker" />
+        <AsyncRender />
+      </Section>
+      <Section title="Quotes">
+        <h3>Quotes</h3>
+        <Quotes />
+      </Section>
+      <Section title="Name reverser">
+        <h3>Name reverser</h3>
+        <Form />
+      </Section>
+      <Section title="Counter">
+        <h3>Counter</h3>
+        <Counter />
+      </Section>
+      <Section title="Random numbers">
+        <h3>Random numbers</h3>
+        <List />
+      </Section>
+    </Tabs>
   </Layout>
 end

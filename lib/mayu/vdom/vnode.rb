@@ -134,8 +134,8 @@ module Mayu
 
         case type
         when Descriptor::TEXT
-          # return descriptor.text
-          return "(#{@id}):#{descriptor.text}"
+          return descriptor.text
+          # return "(#{@id}):#{descriptor.text}"
         when Descriptor::COMMENT
           return "<!--mayu-id=#{@id}-->"
         end

@@ -7,19 +7,21 @@ handler(:select_tab) do |event, index|
 end
 
 render do
-  tabs = children.map.with_index do |_, i|
-    <li>
-      <button on-click={handler(:select_tab, i)}>
-        Tab #{i + 1}
-      </button>
-    </li>
+  tabs = children.map.with_index do |child, i|
+    class_name = [
+      styles.button,
+      i == state[:index] ? styles.selected : nil
+    ].compact.join(" ")
+
+    <button key={i} on-click={handler(:select_tab, i)} class={class_name}>
+      {child.props[:title] || "Tab #{i}"}
+    </button>
   end
 
   <div>
-    {state.inspect}
-    <ul>
+    <nav class={styles.buttons}>
       {tabs}
-    </ul>
+    </nav>
     <div>
       {children[state[:index]]}
     </div>

@@ -344,7 +344,7 @@ module Mayu
       end
       def remove_vnode(ctx, vnode, patch: true)
         vnode.component&.unmount
-        if patch #&& !vnode.component
+        if patch
           ctx.remove(vnode)
         end
         vnode.children.map { remove_vnode(ctx, _1, patch: false) }
