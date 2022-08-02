@@ -1,8 +1,13 @@
 .header {
-  background: #7a5c29;
-  color: #fff;
-  text-align: center;
+  background: #14ccca;
+  color: #e3fcfc;
   padding: 1em;
+}
+
+.inner {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 0 1em;
 }
 
 .title {

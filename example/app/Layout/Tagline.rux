@@ -1,0 +1,33 @@
+TAGLINES = [
+  "Kinda like ReactJS but server side Ruby",
+  "Interactive server side rendered apps",
+  "No APIs required!",
+  "No JavaScript required!",
+]
+
+initial_state do |props|
+  { text: "" }
+end
+
+did_mount do
+  async do
+    index = 0
+
+    loop do
+      str = TAGLINES[index]
+
+      str.length.times do |i|
+        text = str.slice(0, i.succ)
+        update(text:)
+        sleep 0.05
+      end
+
+      index = index.succ % TAGLINES.length
+      sleep 2
+    end
+  end
+end
+
+render do
+  <p class="tagline">{" " + state[:text]}</p>
+end

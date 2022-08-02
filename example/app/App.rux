@@ -6,6 +6,7 @@ List = import("./List")
 Section = import("./Layout/Section")
 AsyncRender = import("./AsyncRender")
 Form = import("./Form")
+Tabs = import("./Tabs")
 
 render do
   <Layout>

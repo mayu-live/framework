@@ -19,6 +19,10 @@ initial_state do |props|
   {
     time: nil,
     playing: true,
+    speed: 1.0,
+    index: 0,
+    cols: 10,
+    rows: 10,
   }
 end
 
@@ -28,10 +32,11 @@ did_mount do
       update do |state|
         {
           time: Time.now.strftime('%H:%M:%S.%3N'),
+          index: state[:index].succ % ITEMS.size
         }
       end if state[:playing]
 
-      sleep 0.1
+      sleep state[:speed]
     end
   ensure
     puts "UNMOUNTING"
@@ -44,11 +49,37 @@ handler(:toggle) do |event|
   end
 end
 
+handler(:set_speed) do |event|
+  update do |state|
+    { speed: [[event["value"].to_f, MIN].max, MAX].min }
+  end
+end
+
+handler(:set_cols) do |event|
+  update do |state|
+    { cols: event["value"].to_i }
+  end
+end
+
+handler(:set_rows) do |event|
+  update do |state|
+    { rows: event["value"].to_i }
+  end
+end
+
 render do
   <div>
-    <h4>Current time {state[:time]}</h4>
-    <button on-click={handler(:toggle)}>
-      {state[:playing] ? "Stop" : "Play"}
-    </button>
+    <h4>async {state[:time]}</h4>
+    <p>{ITEMS[state[:index]]}</p>
+    <button on-click={handler(:toggle)}>{state[:playing] ? "Stop" : "Play"}</button>
+    <input
+      type="range"
+      on-change={handler(:set_speed)}
+      value={state[:speed]}
+      min={MIN}
+      max={MAX}
+      step="0.05"
+    />
+    <output>{state[:speed]}</output>
   </div>
 end

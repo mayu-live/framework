@@ -2,4 +2,5 @@
   margin: auto;
   padding: 1em;
   max-width: var(--page-max-width);
+  border-bottom: 1px solid #ccc;
 }
