@@ -4,7 +4,6 @@ Counter = import("./Counter")
 Quotes = import("./Quotes")
 List = import("./List")
 Section = import("./Layout/Section")
-AsyncRender = import("./AsyncRender")
 Form = import("./Form")
 Tabs = import("./Tabs")
 FeatureList = import("./FeatureList")
@@ -52,7 +51,6 @@ render do
         <FeatureList />
         <h4>Write components like this:</h4>
         <pre style={{background: "#f0f0f0", padding: "1em"}}>{CGI.escape_html(source)}</pre>
-        <AsyncRender />
       </Section>
       <Section title="Quotes">
         <h3>Quotes</h3>

@@ -104,7 +104,11 @@ module Mayu
 
                   if diff > TIMEOUT_SECONDS
                     puts "Stopping everything"
-                    task.stop
+                    @renderer.stop
+                  puts "stopping task"
+                    subtask.stop
+                  @task.stop
+                  Async::Task.current.reactor.print_hierarchy
                     break
                   end
                 end
@@ -128,8 +132,9 @@ module Mayu
               @connections.broadcast(:html, payload)
             in [:patch, payload]
               @connections.broadcast(:patch, payload)
-            in :close
+            in [:close]
               @connections.close_all!
+              @renderer.stop
               running = T.let(false, T::Boolean)
             else
               puts "Unnhandled: #{message.inspect}"

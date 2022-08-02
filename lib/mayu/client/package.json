@@ -11,15 +11,12 @@
     "url": "https://github.com/mayu-live/prototype/issues"
   },
   "homepage": "https://github.com/mayu-live/prototype#readme",
-  "description": "",
   "scripts": {
     "dev": "npm run build -- --watch --sourcemap=inline",
     "build": "esbuild src/*.ts --outdir=dist",
     "build:production": "npm run build -- --minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@types/serviceworker": "^0.0.48",
     "esbuild": "^0.14.48",

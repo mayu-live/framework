@@ -66,8 +66,14 @@ module Mayu
 
     sig { void }
     def stop
+      p "stopping renderer"
       respond(:close)
+      p "stopping renderer"
+      p @barrier.tasks
+      @vtree.stop!
       @barrier.stop
+      p @barrier.tasks
+      p "stopped renderer"
     end
 
     sig { params(args: T.untyped).void }
