@@ -1,3 +1,5 @@
 .active {
   font-style: italic;
+  font-weight: bold;
+  color: #f09;
 }

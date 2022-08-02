@@ -28,9 +28,7 @@ mount do
   loop do
     puts "Updating clock"
 
-    update(
-      time: Time.now.strftime('%H:%M:%S')
-    )
+    update(time: Time.now.strftime('%H:%M:%S'))
 
     sleep 1
   end
