@@ -12,23 +12,29 @@ module Mayu
       def initialize
         @patches = T.let([], T::Array[T.untyped])
         @parents = T.let([], T::Array[VNode])
-        @dom_parents = T.let([], T::Array[VNode])
+        @dom_parent_ids = T.let([], T::Array[VNode::Id])
       end
 
       sig { returns(T.nilable(VNode)) }
       def parent = @parents.last
 
-      sig { returns(T.nilable(VNode)) }
-      def dom_parent = @dom_parents.last
+      sig { returns(VNode::Id) }
+      def dom_parent_id = @dom_parent_ids.last || 0
 
       sig { params(vnode: VNode, blk: T.proc.void).void }
       def enter(vnode, &blk)
-        dom_parent = vnode.descriptor.element?
+        dom_parent_id =
+          if vnode.descriptor.element?
+            vnode.id
+          else
+            vnode.dom_parent_id
+          end
+
         @parents.push(vnode)
-        @dom_parents.push(vnode) if dom_parent
+        @dom_parent_ids.push(dom_parent_id) if dom_parent_id
         yield
       ensure
-        @dom_parents.pop if dom_parent
+        @dom_parent_ids.pop if dom_parent_id
         @parents.pop
       end
 
@@ -55,7 +61,7 @@ module Mayu
           add_patch(
             :insert,
             id: vnode.id,
-            parent: dom_parent&.id,
+            parent: dom_parent_id,
             before: before.id,
             html:,
             ids:
@@ -64,13 +70,13 @@ module Mayu
           add_patch(
             :insert,
             id: vnode.id,
-            parent: dom_parent&.id,
+            parent: dom_parent_id,
             after: after.id,
             html:,
             ids:
           )
         else
-          add_patch(:insert, id: vnode.id, parent: dom_parent&.id, html:, ids:)
+          add_patch(:insert, id: vnode.id, parent: dom_parent_id, html:, ids:)
         end
       end
 
@@ -90,7 +96,7 @@ module Mayu
       end
       def move(vnode, before: nil, after: nil)
         if before
-          raise if vnode.key == 3 && before.key == 7
+      #    raise if vnode.key == 3 && before.key == 7
           puts "\e[33mmove:\e[0m #{vnode.key} before #{before.key}"
         elsif after
           puts "\e[33mmove:\e[0m #{vnode.key} after #{after.key}"
@@ -101,18 +107,18 @@ module Mayu
           add_patch(
             :move,
             id: vnode.id,
-            parent: dom_parent&.id,
+            parent: dom_parent_id,
             before: before.id
           )
         elsif after
           add_patch(
             :move,
             id: vnode.id,
-            parent: dom_parent&.id,
+            parent: dom_parent_id,
             after: after.id
           )
         else
-          add_patch(:move, id: vnode.id, parent: dom_parent&.id)
+          add_patch(:move, id: vnode.id, parent: dom_parent_id)
         end
       end
 
@@ -137,7 +143,7 @@ module Mayu
       sig { params(vnode: VNode).void }
       def remove(vnode)
         puts "\e[31mremove\e[0m #{vnode.key}"
-        add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
+        add_patch(:remove, id: vnode.id, parent: dom_parent_id)
       end
 
       sig { params(vnode: VNode, name: String, value: String).void }

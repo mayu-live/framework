@@ -15,6 +15,9 @@ module Mayu
       sig { returns(Id) }
       attr_reader :id
 
+      sig { returns(Id) }
+      attr_accessor :dom_parent_id
+
       sig { returns(Descriptor) }
       attr_accessor :descriptor
       sig { returns(Descriptor::ElementType) }
@@ -33,10 +36,11 @@ module Mayu
       def dom? = type.is_a?(Symbol)
 
       sig do
-        params(vtree: VTree, descriptor: Descriptor, task: Async::Task).void
+        params(vtree: VTree, dom_parent_id: Id, descriptor: Descriptor, task: Async::Task).void
       end
-      def initialize(vtree, descriptor, task: Async::Task.current)
+      def initialize(vtree, dom_parent_id, descriptor, task: Async::Task.current)
         @id = T.let(vtree.next_id!, Id)
+        @dom_parent_id = dom_parent_id
         @vtree = vtree
         @descriptor = descriptor
         @children = T.let([], Children)

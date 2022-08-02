@@ -15,10 +15,9 @@ class TestVTree < Minitest::Test
       vtree = Mayu::VDOM::VTree.new()
 
       number_lists = [
-        [4, 1, 3, 0, 2],
-        [5, 4, 6, 2, 3, 0, 1],
-        [1, 4, 0, 7, 6, 3, 5, 2],
-        [7, 4, 3, 5, 6, 2, 8, 0, 1],
+        [0, 2, 1, 6, 7, 8, 4, 3, 5],
+        [1, 7, 6, 5, 3, 0, 2, 4],
+        [1, 3,123,  0, 4, 2, 9, 32,455],
       ]
 
       number_lists.each do |numbers|

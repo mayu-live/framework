@@ -28,8 +28,19 @@ module Mayu
           @indexes.push(id)
         end
 
+        sig { params(index: Integer).returns(T.nilable(Integer)) }
+        def [](index) = @indexes[index]
+
         sig { params(id: Integer).returns(T.nilable(Integer)) }
         def index(id) = @indexes.index(id)
+        sig { params(id: Integer).returns(T.nilable(Integer)) }
+        def rindex(id) = @indexes.rindex(id)
+
+
+        sig { params(id: Integer, after: T.nilable(Integer)).void }
+        def insert_after(id, after)
+          insert_before(id, after && next_sibling(after))
+        end
 
         sig { params(id: Integer, before: T.nilable(Integer)).void }
         def insert_before(id, before)
@@ -94,9 +105,9 @@ module Mayu
           )
       end
 
-      sig {void}
+      sig { void }
       def stop! = @update_task.stop
-      sig {returns(T::Boolean)}
+      sig { returns(T::Boolean) }
       def running? = @update_task.running?
 
       sig { params(descriptor: Descriptor).returns(T.nilable(VNode)) }
@@ -301,7 +312,7 @@ module Mayu
         ).returns(VNode)
       end
       def init_vnode(ctx, descriptor, nested: false)
-        vnode = VNode.new(self, descriptor)
+        vnode = VNode.new(self, ctx.dom_parent_id, descriptor)
         component = vnode.init_component
 
         children =
@@ -363,142 +374,54 @@ module Mayu
       def update_children(ctx, vnodes, descriptors)
         check_duplicate_keys(descriptors)
 
-        old_ch = vnodes
-        new_ch = descriptors
-        old_start_idx = 0
-        new_start_idx = 0
-        old_end_idx = old_ch.length.pred
-        new_end_idx = new_ch.length.pred
+        vnodes = vnodes.compact
+        descriptors = descriptors.compact
 
+        vnodes_by_key = vnodes.group_by(&:key)
         indexes = Indexes.new(vnodes.map(&:id))
-        p indexes.to_a
-        moved_ids = Set.new
-        children = []
 
-        while old_start_idx <= old_end_idx && new_start_idx <= new_end_idx
-          old_start_idx += 1 and next unless old_start_vnode =
-            old_ch[old_start_idx]
-          old_end_idx -= 1 and next unless old_end_vnode = old_ch[old_end_idx]
-          new_start_vnode = T.must(new_ch[new_start_idx])
-          new_end_vnode = T.must(new_ch[new_end_idx])
+        new_children =
+          T.let(descriptors.map.with_index do |descriptor, i|
+            vnodes_with_same_key = vnodes_by_key[descriptor.key] || []
 
-          if new_start_vnode.type == :li
-            puts "Order:"
-            p indexes.to_a.map { |id|
-              old_ch.find { _1.id == id } || children.find { _1.id == id }
-            }.map(&:descriptor).map(&:key)
-            p [:old_idxes, old_start_idx, old_end_idx]
-          end
+            if vnodes_with_same_key
+              vnode =
+                vnodes_with_same_key.find { _1.descriptor.same?(descriptor) }
 
-          # puts "Children order:"
-          # p children.sort_by { indexes.index(_1.id) || Float::INFINITY }.map(&:key)
-
-          if same?(old_start_vnode, new_start_vnode)
-            patch_vnode(ctx, old_start_vnode, new_start_vnode)
-            children.push(old_start_vnode)
-            old_start_idx += 1
-            new_start_idx += 1
-            next
-          end
-
-          if same?(old_end_vnode, new_end_vnode)
-            patch_vnode(ctx, old_end_vnode, new_end_vnode)
-            children.push(old_end_vnode)
-            old_end_idx -= 1
-            new_end_idx -= 1
-            next
-          end
-
-          if same?(old_start_vnode, new_end_vnode)
-            patch_vnode(ctx, old_start_vnode, new_end_vnode)
-            ctx.move(old_start_vnode, after: old_end_vnode)
-            indexes.insert_before(
-              old_start_vnode.id,
-              indexes.next_sibling(old_end_vnode.id)
-            )
-            children.push(old_start_vnode)
-            old_start_idx += 1
-            new_end_idx -= 1
-            next
-          end
-
-          if same?(old_end_vnode, new_start_vnode)
-            patch_vnode(ctx, old_end_vnode, new_start_vnode)
-            ctx.move(old_end_vnode, before: old_start_vnode)
-            indexes.insert_before(old_end_vnode.id, old_start_vnode.id)
-            children.push(old_end_vnode)
-            old_end_idx -= 1
-            new_start_idx += 1
-            next
-          end
-
-          old_key_to_idx =
-            build_key_index_map(old_ch, old_start_idx, old_end_idx)
-
-          idx_in_old =
-            new_start_vnode.key && old_key_to_idx[new_start_vnode.key]
-          vnode_to_move = idx_in_old && old_ch[idx_in_old]
-
-          unless vnode_to_move
-            vnode = init_vnode(ctx, new_start_vnode)
-            ctx.insert(vnode, before: old_start_vnode)
-            indexes.insert_before(vnode.id, old_start_vnode.id)
-            children.push(vnode)
-            new_start_idx += 1
-            next
-          end
-
-          if same?(vnode_to_move, new_start_vnode)
-            moved_ids.add(vnode_to_move.id)
-            p [vnode_to_move, new_start_vnode]
-            p [old_start_vnode]
-            p [old_start_vnode]
-            vnode = patch_vnode(ctx, vnode_to_move, new_start_vnode)
-            ctx.move(vnode_to_move, before: old_start_vnode)
-            indexes.insert_before(vnode_to_move.id, old_start_vnode.id)
-            children.push(vnode_to_move)
-            new_start_idx += 1
-            next
-          end
-
-          puts "Same key but different element, treat as new element"
-          vnode = init_vnode(ctx, new_start_vnode)
-          ctx.insert(vnode, before: old_start_vnode)
-          indexes.insert_before(vnode.id, old_start_vnode.id)
-          children.push(vnode)
-
-          new_start_idx += 1
-        end
-
-        children.sort_by! do
-          indexes.index(_1.id) or raise "No index found for #{_1.inspect}"
-        end
-
-        if old_start_idx > old_end_idx
-          # TODO: something about ref elms from the new children
-          ref_vnode = children[new_end_idx]
-
-          descriptors_to_add = new_ch.slice(new_start_idx..new_end_idx)
-
-          descriptors_to_add.each do |descriptor|
-            p ref_vnode&.id
-            new_vnode = init_vnode(ctx, descriptor)
-            ctx.insert(new_vnode, before: ref_vnode)
-            indexes.insert_before(new_vnode.id, ref_vnode.id)
-            children.push(new_vnode)
-          end if descriptors_to_add
-        elsif new_start_idx > new_end_idx
-          vnodes_to_remove = old_ch.slice(old_start_idx..old_end_idx)
-          if vnodes_to_remove
-            vnodes_to_remove.each do |vnode|
-              remove_vnode(ctx, vnode) unless moved_ids.include?(vnode.id)
+              if vnode
+                vnodes_with_same_key.delete(vnode)
+                vnode = patch_vnode(ctx, vnode, descriptor)
+                next vnode
+              end
             end
+
+            init_vnode(ctx, descriptor)
+          end, T::Array[VNode])
+
+        vnodes_to_remove = vnodes_by_key.values.reduce([], &:+)
+        old_ids = vnodes.map(&:id)
+
+        # This is very inefficient.
+        # I tried to get the algorithm from snabbdom/vue to work,
+        # but it's not very easy to get right.
+        # I always got some weird ordering issues and it's tricky to debug.
+        # Fun stuff for later though.
+
+        new_children.each_with_index do |vnode, index|
+          if old_ids.include?(vnode.id)
+            ctx.move(vnode)
+            indexes.insert_after(vnode.id, nil)
+          else
+            ctx.insert(vnode)
+            indexes.insert_after(vnode.id, nil)
           end
         end
 
-        children.sort_by do
-          indexes.index(_1.id) or raise "No index found for #{_1.inspect}"
+        vnodes_to_remove.each do |vnode|
+          remove_vnode(ctx, vnode)
         end
+
+        new_children
       end
 
       sig do
