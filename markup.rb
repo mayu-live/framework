@@ -29,8 +29,8 @@ class Descriptor
     @key = props.delete(:key)
   end
 
-  def new_component
-    @type.new(**props) if @type.is_a?(Class) && @type < Component
+  def new_component(vnode)
+    @type.new(vnode, **props) if @type.is_a?(Class) && @type < Component
   end
 
   def self.comment = new(COMMENT)
@@ -75,7 +75,8 @@ class Component
   attr_accessor :state
   attr_accessor :next_state
 
-  def initialize(**props)
+  def initialize(vnode, **props)
+    @vnode = vnode
     @props = props
     @state = {}
     @next_state = {}
@@ -83,6 +84,10 @@ class Component
 
   def should_update?(next_props, next_state)
     !(props == next_props && state == next_state)
+  end
+
+  def enqueue_update!
+    @__vnode.enqueue_update!
   end
 
   def mount = nil
@@ -105,8 +110,8 @@ class VNode
     @children = []
   end
 
-  def new_component
-    @component ||= @descriptor.new_component
+  def init_component
+    @component ||= @descriptor.new_component(self)
   end
 
   def mount
@@ -174,18 +179,19 @@ class VNode
     if component
       children.first&.id_tree
     else
-      {
-        i: id,
-        c: children.map(&:id_tree).compact,
-      }
+      ch = children.map(&:id_tree).compact
+      ch.empty? ? { id: } : { id:, ch: }
     end
   end
 end
 
 class AsyncComponent < Component
-  def initialize(props)
-    super
-    @block = props[block]
+  def mount
+    @task = Async(&params[:block])
+  end
+
+  def unmount
+    @task.stop
   end
 
   def to_s
@@ -213,6 +219,12 @@ class Markup
   end
 
   def method_missing(sym, *args, **props, &block)
+    const = ::Kernel.const_get(sym) rescue nil
+
+    if const.is_a?(Class) && const < Component
+      return h(const, *args, **props, &block)
+    end
+
     super unless TAGS.include?(sym.to_s)
 
     h(sym, *args, **props, &block)
@@ -459,7 +471,7 @@ class VDOM
 
   def init_vnode(ctx, descriptor, nested: false)
     vnode = VNode.new(self, descriptor)
-    component = vnode.new_component
+    component = vnode.init_component
 
     children = descriptor.children
 
@@ -580,7 +592,8 @@ class VDOM
         next
       end
 
-      p "same key but different element. treat as new element"
+      # We found a new child
+
       vnode = init_vnode(ctx, descriptors.start)
       children[descriptors.start_idx] = vnode
       ctx.insert(vnode, before: vnodes.start)
@@ -639,7 +652,6 @@ class VDOM
         prev = curr if curr
 
         if prev2&.text? && curr&.text?
-          puts "got two texts"
           [comment, curr]
         else
           [curr]
@@ -651,7 +663,6 @@ end
 
 class AppComponent < Component
   def initialize(**props)
-    p props
     super
   end
 
@@ -684,7 +695,6 @@ def component(&block)
   Class.new(Component) do
     define_method(:should_update?) do |next_props, next_state|
       next_props != props
-      true
     end
 
     define_method(:render) do
@@ -695,10 +705,21 @@ def component(&block)
   end
 end
 
+class MyComponent < Component
+  def render
+    props[:children]
+  end
+end
+
 App =
   component do |numbers:, children:|
     puts "Returning #{numbers}"
-    ul { numbers.each { |i, j| li(key: i){ str "item #{j}" } } }
+    div do
+      ul { numbers.each { |i, j| li(key: i){ str "item #{j}" } } }
+      MyComponent do
+        span "hello"
+      end
+    end
   end
 
 require "rexml/document"
@@ -719,17 +740,18 @@ vdom = VDOM.new
 tree = vdom.render(Descriptor.new(App, { numbers: [[1, 1], [2, 2], [3, 3]] })) do |patches|
   patch_sets.push(patches)
 end
+puts format2(tree.to_s)
 # puts JSON.pretty_generate(tree.to_json)
 tree = vdom.render(Descriptor.new(App, { numbers: [[2, 1], [4, 4], [3, 3], [1, 2]] })) do |patches|
   patch_sets.push(patches)
 end
+puts format2(tree.to_s)
 
 tree = vdom.render(Descriptor.new(App, { numbers: [] })) do |patches|
   patch_sets.push(patches)
 end
 
 puts format2(tree.to_s)
-puts tree.to_s
 File.write("patches.json", JSON.pretty_generate(patch_sets))
 
 # puts JSON.pretty_generate(tree.to_json)

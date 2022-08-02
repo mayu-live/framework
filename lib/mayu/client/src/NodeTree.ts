@@ -1,13 +1,14 @@
 // import logger from "./logger";
 const logger = console
 
-export type IdNode = { i: number; c?: [IdNode] };
+export type IdNode = { id: number; ch?: [IdNode] };
 type CacheEntry = { node: Node; childIds: Set<number> };
 
-type InsertBeforePatch = {
+type InsertPatch = {
   type: "insert";
   parent: number;
-  before: number;
+  before?: number;
+  after?: number;
   html: string;
   ids: any;
 };
@@ -31,7 +32,7 @@ type SetAttributePatch = {
 };
 
 export type Patch =
-  | InsertBeforePatch
+  | InsertPatch
   | MovePatch
   | RemovePatch
   | TextPatch
@@ -53,12 +54,7 @@ class NodeTree {
   applyPatch(patch: Patch) {
     switch (patch.type) {
       case "insert": {
-        this.insertBefore(
-          patch.parent,
-          patch.before,
-          patch.html,
-          patch.ids
-        );
+        this.insert(patch)
         return
       }
       case "move": {
@@ -114,33 +110,35 @@ class NodeTree {
     node.setAttribute(name, value);
   }
 
-  insertBefore(
-    parentId: number,
-    referenceId: number,
-    html: string,
-    ids: IdNode[]
-  ) {
-    logger.group(`Trying to insert html into`, parentId);
-    const parentEntry = this.#getEntry(parentId);
+  insert({parent, before, after, ids, html}: InsertPatch) {
+    logger.group(`Trying to insert html into`, parent);
 
-    const referenceEntry = this.#cache.get(referenceId);
+    const parentEntry = this.#getEntry(parent);
+    const referenceId = before || after
+    const referenceEntry = referenceId && this.#cache.get(referenceId);
+
     const body = new DOMParser().parseFromString(
       `${html}`,
       "text/html"
     ).body;
+
+    console.log(`BODY TO INSERT`, body.innerHTML)
+
     const children = Array.from(body.childNodes).reverse();
 
     const idsArray = [ids].flat();
 
-    idsArray.forEach(({ i }) => parentEntry.childIds.add(i));
-
-    // logger.log({ children, html });
-
     idsArray.forEach((idTreeNode, i) => {
+      parentEntry.childIds.add(idTreeNode.i)
       const entry = this.#cache.get(idTreeNode.i);
       const node = entry?.node || children[i];
-      const ref = referenceEntry ? referenceEntry.node : null;
-      // logger.log({ parent: parentEntry.node, node, ref });
+      const ref =
+        referenceEntry
+          ? after
+          ? referenceEntry.node.nextSibling
+          : referenceEntry.node
+          : null;
+
       const insertedNode = parentEntry.node.insertBefore(node, ref);
 
       if (entry) {
@@ -149,8 +147,6 @@ class NodeTree {
 
       this.updateCache(insertedNode, idTreeNode);
     });
-
-    logger.groupEnd();
   }
 
   #getEntry(id: number) {
@@ -240,19 +236,19 @@ class NodeTree {
   }
 
   updateCache(node: Node, idTreeNode: IdNode) {
-    const childIds = new Set((idTreeNode.c || []).map((child) => child.i));
+    const childIds = new Set((idTreeNode.ch || []).map((child) => child.id));
 
-    this.#removeRecursiveFromCache(idTreeNode.i);
+    this.#removeRecursiveFromCache(idTreeNode.id);
 
-    this.#cache.set(idTreeNode.i, { node, childIds });
-    node.__mayu = { id: idTreeNode.i };
+    this.#cache.set(idTreeNode.id, { node, childIds });
+    node.__mayu = { id: idTreeNode.id };
 
-    logger.group("Add to cache", idTreeNode.i, "type", node.nodeName);
+    logger.group("Add to cache", idTreeNode.id, "type", node.nodeName);
 
     // logger.log('Updating cache for', node, 'with id', idTreeNode.i)
 
     let i = 0;
-    const c = idTreeNode.c || [];
+    const ch = idTreeNode.ch || [];
 
     node.childNodes.forEach((childNode) => {
       if (this.isIgnoredNode(childNode)) {
@@ -260,7 +256,7 @@ class NodeTree {
         return;
       }
 
-      const childIdNode = c[i++];
+      const childIdNode = ch[i++];
 
       if (!childIdNode) {
         logger.error(
@@ -269,7 +265,7 @@ class NodeTree {
           "on node",
           null,
           "with parent id",
-          idTreeNode.i,
+          idTreeNode.id,
           "and child node",
           null
         );

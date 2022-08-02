@@ -27,7 +27,8 @@ format(document.body.innerHTML)
 patchSets.forEach((patches, i) => {
   console.log(`\x1b[35mPATCH SET ${i}\x1b[0m`)
   patches.forEach((patch) => {
-    console.log('  \x1b[35mAPPLYING\x1b[0m', patch)
+  const {type, id, ...rest} = patch
+    console.log(`  \x1b[35mAPPLYING ${type} to ${id}\x1b[0m`, rest)
     nodeTree.applyPatch(patch)
   })
   format(document.body.innerHTML)
