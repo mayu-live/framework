@@ -7,6 +7,7 @@ Section = import("./Layout/Section")
 AsyncRender = import("./AsyncRender")
 Form = import("./Form")
 Tabs = import("./Tabs")
+FeatureList = import("./FeatureList")
 
 initial_state do |props|
   { tab: 0 }
@@ -16,12 +17,43 @@ handler(:click) do |e, tab|
   update(tab:)
 end
 
+source = <<~EOF
+initial_state do |props|
+  { time: Time.now.strftime('%H:%M:%S') }
+end
+
+mount do
+  puts "Mounting clock"
+
+  loop do
+    puts "Updating clock"
+
+    update(
+      time: Time.now.strftime('%H:%M:%S')
+    )
+
+    sleep 1
+  end
+ensure
+  puts "Unmounting clock"
+end
+
+render do
+  <span class={styles.clock}>
+    {state[:time]}
+  </span>
+end
+EOF
+
 render do
   <Layout>
     <Tabs>
       <Section title="Main">
-        <h3>Welcome to my app</h3>
-        <Welcome name="Luke Skywalker" />
+        <p>Mayu Live enables rich, real-time user experiences with server-rendered HTML.</p>
+        <h4>(upcoming) features:</h4>
+        <FeatureList />
+        <h4>Write components like this:</h4>
+        <pre style={{background: "#f0f0f0", padding: "1em"}}>{CGI.escape_html(source)}</pre>
         <AsyncRender />
       </Section>
       <Section title="Quotes">
