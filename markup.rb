@@ -117,6 +117,23 @@ class VNode
     @component&.unmount
   end
 
+  def to_json
+    return children.first&.to_json if component
+
+    json = {
+      id: id,
+      type: descriptor.type.to_s,
+    }
+
+    return "<--mayu-id=#{id}-->" if descriptor.comment?
+    return descriptor.text if descriptor.text?
+
+    props = descriptor.props.except(:children) if descriptor
+    json.merge!(props: props) unless props.empty?
+    json.merge!(children: children.map(&:to_json)) unless children.empty?
+    json
+  end
+
   def to_s
     return children.join if component
     return "<!--mayu-id-#{id}-->" if descriptor.comment?
@@ -214,6 +231,34 @@ class Markup
 end
 
 class VDOM
+  class RangeIterator
+    include Enumerable
+
+    attr_reader :start_idx
+    attr_reader :end_idx
+
+    def initialize(array)
+      @array = array
+      @start_idx = 0
+      @end_idx = @array.length
+    end
+
+    def [](index)
+      @array[index]
+    end
+
+    def each(&block)
+      @start_idx.upto(@end_idx) { |i| yield @array[i] if @array[i] }
+    end
+
+    def length = @end_idx - @start_idx
+    def done? = @start_idx > @end_idx
+    def start = @array[@start_idx]
+    def end = @array[@end_idx]
+    def next_start = @start_idx += 1
+    def next_end = @end_idx -= 1
+  end
+
   class UpdateContext
     attr_reader :patches
 
@@ -289,6 +334,7 @@ class VDOM
     private
 
     def add_patch(type, **args)
+      puts "\e[33m#{type}:\e[0m #{args.inspect}"
       @patches.push([type, args])
     end
   end
@@ -300,7 +346,7 @@ class VDOM
   def render(descriptor)
     ctx = UpdateContext.new
     @root = patch(ctx, @root, descriptor)
-    ctx.patches.each { p _1 }
+    # ctx.patches.each { p _1 }
     @root
   end
 
@@ -344,7 +390,7 @@ class VDOM
             update_children(
               ctx,
               vnode.children.compact,
-              Array(component.render).compact
+              add_comments_between_texts(Array(component.render).compact)
             )
         end
 
@@ -376,11 +422,15 @@ class VDOM
         puts "adding new children"
 
         ctx.enter(vnode) do
-          vnode.children = descriptor.children.map { init_vnode(ctx, _1) }
+          vnode.children = add_comments_between_texts(descriptor.children).map do
+            init_vnode(ctx, _1).tap do |child|
+              ctx.insert(child)
+            end
+          end
         end
-      elsif vnode.descriptor.children?
+      elsif vnode.children.length > 0
         ctx.enter(vnode) do
-          vnode.descriptor.children.each { remove_vnode(ctx, _1) }
+          vnode.children.each { remove_vnode(ctx, _1) }
         end
         vnode.children = []
       elsif vnode.descriptor.text?
@@ -415,10 +465,16 @@ class VDOM
     children = descriptor.children
 
     children =
-      (component ? Array(component.render).compact : descriptor.children)
+      if component
+        Array(component.render).compact
+      else
+        descriptor.children
+      end
 
     ctx.enter(vnode) do
-      vnode.children = children.map { init_vnode(ctx, _1, nested: true) }
+      vnode.children = add_comments_between_texts(children).map do
+        init_vnode(ctx, _1, nested: true)
+      end
     end
 
     vnode.component&.mount
@@ -433,34 +489,6 @@ class VDOM
     nil
   end
 
-  class RangeIterator
-    include Enumerable
-
-    attr_reader :start_idx
-    attr_reader :end_idx
-
-    def initialize(array)
-      @array = array
-      @start_idx = 0
-      @end_idx = @array.length
-    end
-
-    def [](index)
-      @array[index]
-    end
-
-    def each(&block)
-      @start_idx.upto(@end_idx) { |i| yield @array[i] if @array[i] }
-    end
-
-    def length = @end_idx - @start_idx
-    def done? = @start_idx > @end_idx
-    def start = @array[@start_idx]
-    def end = @array[@end_idx]
-    def next_start = @start_idx += 1
-    def next_end = @end_idx -= 1
-  end
-
   def check_duplicate_keys(descriptors)
     keys = descriptors.map(&:key).compact
     duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }
@@ -470,7 +498,7 @@ class VDOM
   end
 
   def update_children(ctx, vnodes, descriptors)
-    descriptors = add_comments_between_texts(descriptors)
+    # descriptors = add_comments_between_texts(descriptors)
     initial_descriptors_length = descriptors.compact.length
     vnodes = RangeIterator.new(vnodes)
     descriptors = RangeIterator.new(descriptors)
@@ -554,10 +582,6 @@ class VDOM
       end
 
       p "same key but different element. treat as new element"
-      p descriptors.start
-      p descriptors.end
-      p vnodes.start.descriptor
-      p vnodes.end.descriptor
       vnode = init_vnode(ctx, descriptors.start)
       children[descriptors.start_idx] = vnode
       ctx.insert(vnode, before: vnodes.start)
@@ -574,7 +598,7 @@ class VDOM
         .each do |i|
           vnode = init_vnode(ctx, descriptors[i])
 
-          ctx.insert(vnode) # before: ref_elm)
+          ctx.insert(vnode)# before: ref_elm)
         end
     elsif descriptors.start_idx > descriptors.end_idx
       vnodes
@@ -596,8 +620,9 @@ class VDOM
     keymap = {}
 
     start_index.upto(end_index) do |i|
-      key = children[i].descriptor&.key
-      keymap[key] = i if key
+      if key = children[i].descriptor&.key
+        keymap[key] = i
+      end
     end
 
     keymap
@@ -605,13 +630,20 @@ class VDOM
 
   def add_comments_between_texts(descriptors)
     comment = Descriptor.comment
+    prev = nil
 
     descriptors
       .map
       .with_index do |curr, i|
-        prev = descriptors[i.pred]
+        prev2 = prev
+        prev = curr if curr
 
-        prev&.text? && curr&.text? ? [comment, curr] : [curr]
+        if prev2&.text? && curr&.text?
+          puts "got two texts"
+          [comment, curr]
+        else
+          [curr]
+        end
       end
       .flatten
   end
@@ -664,29 +696,33 @@ def component(&block)
 end
 
 App =
-  component do
-    html do
-      head do
-        title "hello"
-        meta charset: "utf-8"
-      end
-
-      body do
-        div do
-          span "hello world", class: "hej"
-
-          ul { rand(5).times { |i| li "hello #{i}", key: i } }
-        end
-      end
-    end
+  component do |numbers:, children:|
+    puts "Returning #{numbers}"
+    ul { numbers.each { |i| li(key: i){ str "item #{i}" } } }
   end
 
-vdom = VDOM.new
-tree = vdom.render(Descriptor.new(App))
-puts tree
-tree = vdom.render(Descriptor.new(App))
-puts tree
+require "rexml/document"
+require "stringio"
 
+def format2(source)
+  io = StringIO.new
+  doc = REXML::Document.new(source)
+  formatter = REXML::Formatters::Pretty.new
+  # formatter.compact = true
+  formatter.write(doc, io)
+  io.rewind
+  puts io.read.gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
+end
+
+vdom = VDOM.new
+tree = vdom.render(Descriptor.new(App, { numbers: [1, 2, 3] }))
+# puts JSON.pretty_generate(tree.to_json)
+puts format2(tree.to_s)
+tree = vdom.render(Descriptor.new(App, { numbers: [3, 2, 1] }))
+puts format2(tree.to_s)
+puts tree.to_s
+
+# puts JSON.pretty_generate(tree.to_json)
 # d1 = Descriptor.new(:TEXT, { text_content: "hello" })
 # d2 = Descriptor.new(:TEXT, { text_content: "foobar" })
 # vnode = init_vnode(ctx, d1)
