@@ -48,7 +48,7 @@ class NodeTree {
 
   constructor(root: IdNode, element = document.documentElement) {
     this.updateCache(element, root);
-    console.log(JSON.stringify(root, null, 2))
+    //console.log(JSON.stringify(root, null, 2))
   }
 
   apply(patches: Patch[]) {

@@ -1,0 +1,7 @@
+render do
+  if props[:disabled]
+    <fieldset disabled="disabled">{props[:children]}</fieldset>
+  else
+    <fieldset>{props[:children]}</fieldset>
+  end
+end

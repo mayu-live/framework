@@ -1,0 +1,7 @@
+render do
+  if props[:disabled]
+    <form disabled="disabled">{props[:children]}</form>
+  else
+    <form on-submit={props[:on_submit]}>{props[:children]}</form>
+  end
+end
