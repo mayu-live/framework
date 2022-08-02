@@ -1,5 +1,5 @@
 type IdNode = { i: number; c?: [IdNode] };
-type CacheEntry = { node: Node; childIds: number[] };
+type CacheEntry = { node: Node; childIds: Set<number> };
 
 function createSilentLogger() {
   const noop = (..._args: any[]) => {};
@@ -87,19 +87,22 @@ class NodeTree {
     const children = Array.from(body.childNodes).reverse();
 
     const idsArray = [ids].flat();
-    parentEntry.childIds = parentEntry.childIds.concat(
-      idsArray.map(({ i }) => i)
-    );
+
+    idsArray.forEach(({ i }) => parentEntry.childIds.add(i));
 
     logger.log({ children, html });
 
     idsArray.forEach((idTreeNode, i) => {
-      this.remove(idTreeNode.i);
-
-      const node = children[i];
+      const entry = this.#cache.get(idTreeNode.i);
+      const node = entry?.node || children[i];
       const ref = referenceEntry ? referenceEntry.node : null;
       logger.log({ parent: parentEntry.node, node, ref });
       const insertedNode = parentEntry.node.insertBefore(node, ref);
+
+      if (entry) {
+        (entry.node as HTMLElement).outerHTML = (node as HTMLElement).outerHTML;
+      }
+
       this.updateCache(insertedNode, idTreeNode);
     });
 
@@ -125,39 +128,56 @@ class NodeTree {
       const entry = this.#getEntry(nodeId);
       const parentNode = entry.node.parentNode;
 
+      console.warn('removing', entry.node)
+
       if (parentNode) {
         const parentId = parentNode.__mayu.id;
         const parentEntry = this.#cache.get(parentId);
 
+        console.log(`Removing child`, entry.node.textContent)
         parentNode.removeChild(entry.node);
 
         if (parentEntry) {
-          parentEntry.childIds = parentEntry.childIds.filter(
-            (id) => id !== nodeId
-          );
+          parentEntry.childIds.delete(nodeId);
         }
       } else {
         logger.warn(`Node`, entry.node, "has no parent??");
       }
 
-      this.#removeRecursiveFromCache(nodeId);
+      this.#removeRecursiveFromCache(nodeId, false);
     } catch (e) {
       logger.warn(e);
     }
   }
 
-  #removeRecursiveFromCache(id: number) {
+  move(parentId: number, nodeId: number, refId?: number) {
+    const parentEntry = this.#getEntry(parentId);
+    const entry = this.#getEntry(nodeId);
+    const refEntry = this.#cache.get(refId || 0);
+
+    parentEntry.childIds.add(nodeId);
+    parentEntry.node.insertBefore(entry.node, refEntry?.node || null);
+  }
+
+  #removeRecursiveFromCache(id: number, includeParent = false) {
     const entry = this.#cache.get(id);
 
     if (!entry) return;
 
     logger.group("Removing from cache", id);
 
+    if (includeParent) {
+      const parentEntry = this.#cache.get(entry.node.parentNode!.__mayu.id);
+      parentEntry?.childIds?.delete(id);
+    }
+
     this.#cache.delete(id);
 
     entry.childIds.forEach((childId) => {
-      this.#removeRecursiveFromCache(childId);
+      this.#removeRecursiveFromCache(childId, false);
     });
+
+    entry.childIds.delete(id);
 
     logger.groupEnd();
   }
@@ -174,7 +194,10 @@ class NodeTree {
   }
 
   updateCache(node: Node, idTreeNode: IdNode) {
-    const childIds = (idTreeNode.c || []).map((child) => child.i);
+    const childIds = new Set((idTreeNode.c || []).map((child) => child.i));
+
+    this.#removeRecursiveFromCache(idTreeNode.i);
+
     this.#cache.set(idTreeNode.i, { node, childIds });
     node.__mayu = { id: idTreeNode.i };
 
@@ -221,13 +244,19 @@ if('serviceWorker' in navigator) {
 */
 
 type InsertBeforePatch = {
-  type: "insert_before";
+  type: "insert";
   parent_id: number;
-  reference_id: number;
+  before_id?: number;
   html: string;
   ids: any;
 };
-type RemovePatch = { type: "remove_node"; id: number };
+type RemovePatch = { type: "remove"; id: number };
+type MovePatch = {
+  type: "move";
+  parent_id: number;
+  id: number;
+  before_id?: number;
+};
 type UpdateTextPatch = { type: "update_text"; id: number; text: string };
 type SetAttributePatch = {
   type: "set_attribute";
@@ -237,6 +266,7 @@ type SetAttributePatch = {
 };
 type Patch =
   | InsertBeforePatch
+  | MovePatch
   | RemovePatch
   | UpdateTextPatch
   | SetAttributePatch;
@@ -294,18 +324,23 @@ class Mayu {
     logger.info("APPLYING PATCHES");
     const { patch_set: patches } = JSON.parse(data) as { patch_set: Patch[] };
 
-    for (const patch of patches.reverse()) {
+    for (const patch of patches) {
+      alert(JSON.stringify(patch));
       switch (patch.type) {
-        case "insert_before": {
+        case "insert": {
           this.nodeTree.insertBefore(
             patch.parent_id,
-            patch.reference_id,
+            patch.before_id,
             patch.html,
             patch.ids
           );
           break;
         }
-        case "remove_node": {
+        case "move": {
+          this.nodeTree.move(patch.parent_id, patch.id, patch.before_id);
+          break;
+        }
+        case "remove": {
           break;
         }
         case "update_text": {
@@ -319,8 +354,8 @@ class Mayu {
       }
     }
 
-    for (const patch of patches.reverse()) {
-      if (patch.type === "remove_node") {
+    for (const patch of patches) {
+      if (patch.type === "remove") {
         this.nodeTree.remove(patch.id);
       }
     }

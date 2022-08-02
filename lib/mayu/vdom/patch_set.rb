@@ -20,46 +20,58 @@ module Mayu
       sig { returns(T::Boolean) }
       def empty? = @patches.empty?
 
-      sig { params(id: Integer, text: String).void }
+      sig { params(id: VNode::Id, text: String).void }
       def update_text(id, text)
         add_patch(:update_text, { id:, text: })
       end
 
-      sig { params(id: Integer, name: String, value: String).void }
+      sig { params(id: VNode::Id, name: String, value: String).void }
       def set_attribute(id, name, value)
         add_patch(:set_attribute, { id:, name:, value: })
       end
 
-      sig { params(id: Integer, name: String).void }
+      sig { params(id: VNode::Id, name: String).void }
       def remove_attribute(id, name)
         add_patch(:remove_attribute, { id:, name: })
       end
 
       sig do
         params(
-          parent_id: Integer,
+          parent_id: VNode::Id,
           new_node: VNode,
-          reference_id: T.nilable(Integer)
+          before_id: T.nilable(VNode::Id)
         ).void
       end
-      def insert_before(parent_id, new_node, reference_id = nil)
+      def insert_before(parent_id, new_node, before_id = nil)
         add_patch(
-          :insert_before,
+          :insert,
           {
+            id: new_node.id,
             parent_id:,
-            reference_id:,
+            before_id:,
             html: new_node.inspect_tree,
             ids: new_node.id_tree
           }
         )
       end
 
-      sig { params(id: Integer).void }
-      def remove_node(id)
-        add_patch(:remove_node, { id: })
+      sig do
+        params(
+          parent_id: VNode::Id,
+          id: VNode::Id,
+          before_id: T.nilable(VNode::Id)
+        ).void
+      end
+      def move_node(parent_id, id, before_id)
+        add_patch(:move, { parent_id:, id:, before_id: })
       end
 
-      sig { params(parent_id: Integer, child_id: Integer).void }
+      sig { params(id: VNode::Id).void }
+      def remove_node(id)
+        add_patch(:remove, { id: })
+      end
+
+      sig { params(parent_id: VNode::Id, child_id: VNode::Id).void }
       def remove_child(parent_id, child_id)
         add_patch(:remove_child, { parent_id:, child_id: })
       end

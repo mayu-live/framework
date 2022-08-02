@@ -291,6 +291,11 @@ module Mayu
         def to_s
           "Mayu.handle(event,'#{@id}')"
         end
+
+        sig {params(other:HandlerRef).returns(T::Boolean)}
+        def ==(other)
+          @id == other.id
+        end
       end
 
       module Hax

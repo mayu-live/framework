@@ -1,5 +1,6 @@
 # typed: strict
 
+require "pry"
 require_relative "component"
 require_relative "descriptor"
 require_relative "dom"
@@ -20,7 +21,7 @@ module Mayu
 
       sig { params(descriptor: Descriptor, task: Async::Task).void }
       def initialize(descriptor, task: Async::Task.new)
-        @id_counter = T.let(0, Integer)
+        @id_counter = T.let(0, VNode::Id)
         @dom = T.let(DOM.new, DOM)
         @update_queue = T.let(Async::Queue.new, Async::Queue)
         @root = T.let(nil, T.nilable(VNode))
@@ -57,7 +58,7 @@ module Mayu
           )
       end
 
-      sig {void}
+      sig { void }
       def stop! = @update_task.stop
 
       sig { params(descriptor: Descriptor).void }
@@ -111,9 +112,9 @@ module Mayu
           .call(payload)
       end
 
-      sig { returns(Integer) }
+      sig { returns(VNode::Id) }
       def next_id!
-        @id_counter += 1
+        @id_counter = @id_counter.succ
       end
 
       private
@@ -128,7 +129,22 @@ module Mayu
 
       sig do
         params(
-          parent_id: Integer,
+          vnode: T.nilable(VNode),
+          descriptor: T.nilable(Descriptor)
+        ).returns(T.nilable(VNode))
+      end
+      def patch(vnode, descriptor)
+        unless descriptor
+          if vnode
+            # invoke_destroy_hook(vnode)
+            return
+          end
+        end
+      end
+
+      sig do
+        params(
+          parent_id: VNode::Id,
           vnode: T.nilable(VNode),
           descriptor: T.nilable(Descriptor),
           patch: T::Boolean
@@ -136,6 +152,7 @@ module Mayu
       end
       def patch_vnode(parent_id, vnode, descriptor, patch: true)
         unless descriptor
+          raise "Patching and descriptor is nil"
           destroy_vnode(vnode, patch:) if vnode
           return nil
         end
@@ -199,7 +216,7 @@ module Mayu
 
       sig do
         params(
-          parent_id: Integer,
+          parent_id: VNode::Id,
           descriptor: Descriptor,
           patch: T::Boolean
         ).returns(VNode)
@@ -222,7 +239,7 @@ module Mayu
             parent_id,
             vnode,
             Array(child_descriptors).flatten.compact,
-            patch:
+            patch: false
           )
 
         vnode
@@ -230,9 +247,7 @@ module Mayu
 
       sig { params(vnode: VNode, patch: T::Boolean).void }
       def destroy_vnode(vnode, patch: true)
-        if patch
-          @current_patch_set.remove_node(vnode.id)
-        end
+        @current_patch_set.remove_node(vnode.id) if patch
 
         update_handlers(vnode.props, {})
 
@@ -261,7 +276,7 @@ module Mayu
 
       sig do
         params(
-          vnode_id: Integer,
+          vnode_id: VNode::Id,
           old_props: Component::Props,
           new_props: Component::Props
         ).void
@@ -282,7 +297,7 @@ module Mayu
 
       sig do
         params(
-          parent_id: Integer,
+          parent_id: VNode::Id,
           vnode: VNode,
           descriptors: Descriptor::Children,
           patch: T::Boolean
@@ -295,20 +310,14 @@ module Mayu
         result = T.let(Array.new(descriptors.length), VNode::Children)
 
         old_children = vnode.children
-        # Before
         old_start_index = 0
-        # New front
         start_descriptor_index = 0
-        # Old queen
         old_end_index = old_children.length
-        # New post
         end_descriptor_index = descriptors.length
-        # In the above four cases, it is the structure used in hit processing
         keymap = T.let(nil, T.nilable(KeyIndexMap))
-        # Loop through processing nodes
+
         while old_start_index <= old_end_index &&
                 start_descriptor_index <= end_descriptor_index
-          # The first is not to judge the first four hits , But to skip what has been added undefined Things marked
           unless old_start_vnode = old_children[old_start_index]
             old_start_vnode = old_children[old_start_index += 1]
             next
@@ -335,18 +344,18 @@ module Mayu
             result[start_descriptor_index] = patch_vnode(
               parent_id,
               old_start_vnode,
-              start_descriptor
+              start_descriptor,
+              patch:
             )
             old_start_vnode = old_children[old_start_index += 1]
-            if x = descriptors[start_descriptor_index += 1]
-              start_descriptor = x
-            end
+            start_descriptor = descriptors[start_descriptor_index += 1]
           when old_end_vnode.same?(end_descriptor)
             # New post and old post hit
             result[end_descriptor_index] = patch_vnode(
               parent_id,
               old_end_vnode,
-              end_descriptor
+              end_descriptor,
+              patch:
             )
             old_end_vnode = old_children[old_end_index -= 1]
             end_descriptor = descriptors[end_descriptor_index -= 1]
@@ -355,13 +364,14 @@ module Mayu
             result[end_descriptor_index] = patch_vnode(
               parent_id,
               old_start_vnode,
-              end_descriptor
+              end_descriptor,
+              patch:
             )
-            @current_patch_set.insert_before(
+            @current_patch_set.move_node(
               parent_id,
-              old_start_vnode,
+              old_start_vnode.id,
               old_end_vnode.id
-            )
+            ) if patch
             # parent_dom.insert_before(
             #   T.cast(old_start_vnode.dom, DOM::Node),
             #   old_end_vnode.dom&.next_sibling
@@ -373,18 +383,19 @@ module Mayu
             result[start_descriptor_index] = patch_vnode(
               parent_id,
               old_end_vnode,
-              start_descriptor
+              start_descriptor,
+              patch:
             )
             # When the new front and old back hit , At this time, we need to move the node . Move the node pointed by the new node to the front of the old node
             # parent_dom.insert_before(
             #   T.cast(old_end_vnode.dom, DOM::Node),
             #   old_start_vnode.dom
             # )
-            @current_patch_set.insert_before(
+            @current_patch_set.move_node(
               parent_id,
-              old_end_vnode,
+              old_end_vnode.id,
               old_start_vnode.id
-            )
+            ) if patch
             old_end_vnode = old_children[old_end_index -= 1]
             start_descriptor = descriptors[start_descriptor_index += 1]
           else
@@ -396,33 +407,65 @@ module Mayu
             index = keymap[start_descriptor.key]
 
             unless index
-              # Judge , If idxInOld yes undefined Indicates that it is a brand new item
-              # Added items （ Namely start_descriptor the ) It's not really DOM node
-              new_child_vnode = init_vnode(parent_id, start_descriptor)
+              # https://github.com/vuejs/vue/blob/main/src/core/vdom/patch.ts#L501
+              new_child_vnode = init_vnode(parent_id, start_descriptor, patch: false)
               result.insert(start_descriptor_index, new_child_vnode)
-              # parent_dom.insert_before(create_dom_node(new_child_vnode), old_start_vnode.dom)
               @current_patch_set.insert_before(
                 parent_id,
                 new_child_vnode,
                 old_start_vnode.id
-              )
+              ) if patch
             else
-              # If not undefined, Not a new item , But to move
               element_to_move = old_children[index]
               if new_vnode =
-                   patch_vnode(parent_id, element_to_move, start_descriptor)
+                   patch_vnode(parent_id, element_to_move, start_descriptor, patch:)
                 result[start_descriptor_index] = new_vnode
                 # Set this to undefined, It means that I have finished this
                 # old_children[index] = nil
                 # Move , call insert_before It can also be mobile .
                 # parent_dom.insert_before(T.cast(element_to_move&.dom, DOM::Node), old_start_vnode.dom)
-                @current_patch_set.insert_before(parent_id, new_vnode)
+                @current_patch_set.move_node(parent_id, new_vnode.id, old_start_vnode.id) if patch
               end
             end
             # The pointer moves down , Just move the new head
             start_descriptor = descriptors[start_descriptor_index += 1]
           end
         end
+
+        # if old_start_index > old_end_index
+        #   #      refElm = descriptors newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
+        #   # addVnodes(
+        #   #   parentElm,
+        #   #   refElm,
+        #   #   newCh,
+        #   #   newStartIdx,
+        #   #   newEndIdx,
+        #   #   insertedVnodeQueue
+        #   # )
+        #   start_descriptor_index.upto(end_descriptor_index) do |i|
+        #     new_child = descriptors[i]
+        #     old_child = old_children[old_start_index]
+        #     next unless new_child
+        #     new_child_vnode = init_vnode(parent_id, new_child, patch: false)
+        #     # p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
+        #     result.push(new_child_vnode)
+        #     # parent_dom.insert_before(create_dom_node(new_child_vnode), old_child&.dom)
+        #     @current_patch_set.insert_before(
+        #       parent_id,
+        #       new_child_vnode,
+        #       old_child&.id
+        #     ) if patch
+        #   end
+        # elsif start_descriptor_index > end_descriptor_index
+        #   p old_children.map { _1 && _1.id }.slice(old_start_index..old_end_index)
+        #   old_start_index.upto(old_end_index) do |i|
+        #     if old_child = old_children[i]
+        #       puts "Destroying #{old_child.inspect_tree.scan(/data-mayu-id="\d+"/).join(" ")}"
+        #       destroy_vnode(old_child, patch:)
+        #     end
+        #   end
+        # end
+
         # Go ahead and see if there's any left . The cycle is over start It's better than old Small
         if start_descriptor_index <= end_descriptor_index
           # Traverse the new descriptors, Add to the old ones that haven't been processed
@@ -430,7 +473,7 @@ module Mayu
             new_child = descriptors[i]
             old_child = old_children[old_start_index]
             next unless new_child
-            new_child_vnode = init_vnode(parent_id, new_child)
+            new_child_vnode = init_vnode(parent_id, new_child, patch: false)
             # p new_child_vnode.descriptor.text if new_child_vnode.descriptor.text?
             result.push(new_child_vnode)
             # parent_dom.insert_before(create_dom_node(new_child_vnode), old_child&.dom)
@@ -438,15 +481,25 @@ module Mayu
               parent_id,
               new_child_vnode,
               old_child&.id
-            )
+            ) if patch
           end
-        elsif (old_start_index <= old_end_index)
-          # Batch deletion oldStart and oldEnd Items between pointers
-          old_start_index.upto(old_end_index) do |i|
-            old_child = old_children[i]
-            # parent_dom.remove_child(T.cast(old_child.dom, DOM::Node))
-            destroy_vnode(old_child, patch:) if old_child
-          end
+        # elsif (old_start_index <= old_end_index)
+        # elsif start_descriptor_index > end_descriptor_index
+        #   # Batch deletion oldStart and oldEnd Items between pointers
+        #   old_start_index.upto(old_end_index) do |i|
+        #     old_child = old_children[i]
+        #     # parent_dom.remove_child(T.cast(old_child.dom, DOM::Node))
+        #     destroy_vnode(old_child, patch:) if old_child
+        #   end
+        end
+
+
+        new_ids = result.compact.map(&:id)
+
+        old_children.compact.each do |child|
+          next if new_ids.include?(child.id)
+          puts "Destroying #{child.inspect_tree.scan(/data-mayu-id="\d+"/).join(" ")}"
+          destroy_vnode(child, patch:)
         end
 
         result

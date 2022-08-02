@@ -45,15 +45,20 @@ class MyComponent < Mayu::VDOM::Component::Base
 end
 
 require "rexml/document"
+require "stringio"
 
 def format2(source)
+  io = StringIO.new
   doc = REXML::Document.new(source)
   formatter = REXML::Formatters::Pretty.new
   formatter.compact = true
-  formatter.write(doc, $stdout)
+  formatter.write(doc, io)
+  io.rewind
+  puts io.read.gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[7m#{$~[2]}\e[0m" }
 end
 
 Async do |task|
+  Random.srand(ARGV.first.to_i)
   root = Mayu::VDOM.h(MyComponent)
   vtree = Mayu::VDOM::VTree.new(root, task:)
 

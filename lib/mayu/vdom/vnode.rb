@@ -10,8 +10,9 @@ module Mayu
       extend T::Sig
 
       Children = T.type_alias { T::Array[T.nilable(VNode)] }
+      Id = T.type_alias { Integer }
 
-      sig { returns(Integer) }
+      sig { returns(Id) }
       attr_reader :id
 
       sig { returns(Descriptor) }
@@ -26,7 +27,7 @@ module Mayu
       attr_accessor :children
       sig { returns(DOM::Node) }
       attr_accessor :dom
-      sig { returns(Integer) }
+      sig { returns(Id) }
       attr_accessor :parent_id
 
       sig { returns(T.nilable(Component::Wrapper)) }
@@ -41,14 +42,14 @@ module Mayu
       sig do
         params(
           vtree: VTree,
-          parent_id: Integer,
+          parent_id: Id,
           descriptor: Descriptor,
           dom: T.nilable(DOM::Node)
         ).void
       end
       def initialize(vtree, parent_id, descriptor, dom = nil)
         @dom = dom
-        @id = T.let(vtree.next_id!, Integer)
+        @id = T.let(vtree.next_id!, Id)
         @parent_id = parent_id
         @vtree = vtree
         @descriptor = descriptor
