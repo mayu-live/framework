@@ -62,8 +62,19 @@ module Mayu
           before_id: T.nilable(VNode::Id)
         ).void
       end
-      def move_node(parent_id, id, before_id)
+      def move_before(parent_id, id, before_id)
         add_patch(:move, { parent_id:, id:, before_id: })
+      end
+
+      sig do
+        params(
+          parent_id: VNode::Id,
+          id: VNode::Id,
+          after_id: T.nilable(VNode::Id)
+        ).void
+      end
+      def move_after(parent_id, id, after_id)
+        add_patch(:move, { parent_id:, id:, after_id: })
       end
 
       sig { params(id: VNode::Id).void }

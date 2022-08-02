@@ -325,7 +325,6 @@ class Mayu {
     const { patch_set: patches } = JSON.parse(data) as { patch_set: Patch[] };
 
     for (const patch of patches) {
-      alert(JSON.stringify(patch));
       switch (patch.type) {
         case "insert": {
           this.nodeTree.insertBefore(
