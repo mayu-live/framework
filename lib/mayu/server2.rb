@@ -1,5 +1,6 @@
 # typed: false
-#
+
+require_relative "renderer"
 
 module Mayu
   module Server2
@@ -9,8 +10,16 @@ module Mayu
           $__mayu__sessions__ ||= {}
         end
 
-        def fetch(id, &block)
-          __SESSIONS__.fetch(id, &block)
+        def fetch(id, key)
+          session = __SESSIONS__.fetch(id) do
+            return yield :session_not_found
+          end
+
+          unless session.key == key
+            return yield :invalid_session_key
+          end
+
+          session
         end
 
         def store(session)
@@ -27,12 +36,16 @@ module Mayu
       end
 
       def self.connect(id, key, task: Async::Task.current)
-        self.fetch(id) { return :session_not_found }.connect(key, task:)
+        self.fetch(id, key) { return _1 }.connect(task:)
+      end
+
+      def self.handle_callback(id, key, callback_id, payload, task: Async::Task.current)
+        self.fetch(id, key) { return _1 }.handle_callback(callback_id, payload, task:)
       end
 
       def self.cookie_name(id) = "mayu-session-#{id}"
 
-      DEFAULT_TIMEOUT_IN_SECONDS = 3
+      DEFAULT_TIMEOUT_IN_SECONDS = 10
 
       attr_reader :id
       attr_reader :key
@@ -49,13 +62,21 @@ module Mayu
         @task = task
         @timeout_task = nil
 
-        @task.async do
+        @renderer = Renderer.new(parent: @task)
+
+        @task.async do |subtask|
           loop do
-            push(:foo, Time.now.to_s)
-            sleep 1
+            case @renderer.take
+            in [:html, payload]
+              push(:html, payload)
+            in [:patch, payload]
+              push(:patch, payload)
+            in [:close]
+              subtask.stop
+            end
           end
         ensure
-          puts "Stopping the message sending task"
+          @task.stop
         end
 
         start_timeout
@@ -69,37 +90,53 @@ module Mayu
         @messages.enqueue(format_message(id, event, data))
       end
 
-      def connect(session_key, task: Async::Task.current)
-        return :bad_session_key unless @key == session_key
+      def initial_render
+        body = Async::HTTP::Body::Writable.new
+
+        @task.async do
+          html = @renderer.html
+          id_tree = @renderer.id_tree
+          stylesheets = @renderer.stylesheets
+
+          style = %{<style>#{stylesheets.values.join}</style>}
+          script = %{<script type="module" src="/__mayu/live.js?#{@id}"></script>}
+
+          body.write(
+            html
+              .prepend("<!DOCTYPE html>\n")
+              .sub(%r{.*\K</body>}) { "#{style}#{script}#{_1}" }
+          )
+        ensure
+          body.close
+        end
+
+        body
+      end
+
+      def connect(task: Async::Task.current)
         return :too_many_connections if @semaphore.blocking?
 
         body = Async::HTTP::Body::Writable.new
 
         @semaphore.async do
-          puts "\e[31mStarting connection\e[0m"
-
           @timeout_task&.stop
 
-          task
-            .async do
-              puts "Starting message pulling loop"
-              loop do
-                message = @messages.dequeue
-                puts "Got message"
-                puts message.inspect
-                body.write(message.to_s + "\n")
-              end
-            ensure
-              puts "\e[31mClosing connection\e[0m"
-              body.close
-              start_timeout
+          task.async do
+            loop do
+              message = @messages.dequeue
+              body.write(message.to_s.chomp + "\n\n")
             end
-            .wait
-
-          puts "dequiring"
+          ensure
+            body.close
+            start_timeout
+          end.wait
         end
 
         body
+      end
+
+      def handle_callback(callback_id, payload)
+        @renderer.handle_callback(callback_id, payload)
       end
 
       private
@@ -117,38 +154,37 @@ module Mayu
 
         @timeout_task =
           @task.async do |subtask|
-            puts "\e[33mStarting timeout\e[0m"
-
             @timeout_in_seconds.downto(0) do |i|
-              puts "\e[33mTimeout: #{i} seconds left\e[0m"
               subtask.sleep 1
             end
 
-            puts "\e[31mDeleting the session\e[0m"
-
             self.class.delete(id)
           ensure
-            puts "\e[33mClearing timeout\e[0m"
             @timeout_task = nil
           end
       end
     end
 
-    class EventApp
-      ENDPOINT_PATH = "/__mayu/events/"
+    class EventStreamApp
+      MOUNT_PATH = "/__mayu/events"
+
+      EVENT_STREAM_HEADERS = {
+        "content-type" => "text/event-stream",
+        "connection" => "keep-alive",
+        "cache-control" => "no-cache",
+        "x-accel-buffering" => "no",
+      }
 
       def call(env)
         request = Rack::Request.new(env)
-        session_id = env[Rack::PATH_INFO].to_s.slice(1, 36).to_s
+        session_id = request.path_info.to_s.split("/", 2).last
         cookie_name = Session.cookie_name(session_id)
 
         session_key = request.cookies.fetch(cookie_name) do
           return [401, {}, ["Session cookie not set"]]
         end
 
-        task = Async::Task.current
-
-        case Session.connect(session_id, session_key, task:)
+        case Session.connect(session_id, session_key)
         in :session_not_found
           [404, {}, ["Session not found"]]
         in :bad_session_key
@@ -163,18 +199,39 @@ module Mayu
       end
     end
 
-    class SessionApp
+    class CallbackHandlerApp
+      MOUNT_PATH = "/__mayu/handler/"
+
       def call(env)
+        request = Rack::Request.new(env)
+        session_id, handler_id = request.path_info.to_s.split("/", 3).last(2)
+        session_key = request.cookies.fetch(cookie_name) do
+          return [401, {}, ["Session cookie not set"]]
+        end
+
+        payload = JSON.parse(request.body.read)
+
+        case Session.handle_callback(session_id, session_key, handler_id, payload)
+        when :session_not_found
+          [404, {}, ["Session not found"]]
+        end
+      end
+    end
+
+    class InitSessionApp
+      def call(env)
+        if env[Rack::PATH_INFO] == "/favicon.ico"
+          return [404, { 'content-type' => 'text/plain' }, ['There is no favicon']]
+        end
+
         session = Session.init
 
-        response = Rack::Response.new("redirecting", 302)
-
-        path = "#{EventApp::ENDPOINT_PATH}#{session.id}"
+        response = Rack::Response.new(session.initial_render, 200, { 'content-type' => 'text/html; charset=utf-8' })
 
         response.set_cookie(
           session.cookie_name,
           {
-            path:,
+            path: "#{EventStreamApp::MOUNT_PATH}/#{session.id}",
             secure: true,
             http_only: true,
             same_site: :strict,
@@ -182,30 +239,40 @@ module Mayu
           }
         )
 
-        response.set_header("location", path)
-
         response.finish
       end
     end
 
-    def self.rack_static_options
-      root = File.join(File.dirname(__FILE__), "client", "dist")
+    JS_ROOT_DIR = File.join(File.dirname(__FILE__), "client", "dist")
+    PUBLIC_ROOT_DIR = File.join(File.dirname(__FILE__), "..", "..", "example", "public")
+
+    def self.rack_static_options_for_js
       urls =
-        Dir[File.join(root, '*.js')]
+        Dir[File.join(JS_ROOT_DIR, '*.js')]
           .map { File.basename(_1) }
           .map { ["/__mayu/#{_1}", _1] }
           .to_h
-      { root:, urls: }
+      { root: JS_ROOT_DIR, urls: }
     end
 
     App = Rack::Builder.new do
-      use Rack::Static, Mayu::Server2.rack_static_options
+      use Rack::Static,
+        Mayu::Server2.rack_static_options_for_js
 
-      map EventApp::ENDPOINT_PATH do
-        run EventApp.new
+      use Rack::Static,
+        urls: [""],
+        root: PUBLIC_ROOT_DIR,
+        cascade: true
+
+      map EventStreamApp::MOUNT_PATH do
+        run EventStreamApp.new
       end
 
-      run SessionApp.new
+      map CallbackHandlerApp::MOUNT_PATH do
+        run CallbackHandlerApp.new
+      end
+
+      run InitSessionApp.new
     end
   end
 end

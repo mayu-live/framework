@@ -50,6 +50,8 @@ module Mayu
           case message
           in :render
             rerender!
+          in [:handle_callback, callback_id, payload]
+            @vtree.handle_event(callback_id, payload)
           in [:handle_event, handler_id, payload]
             @vtree.handle_event(handler_id, payload)
           else
@@ -61,19 +63,19 @@ module Mayu
       rerender!
     end
 
+    sig { params(callback_id: String, payload: T.untyped).returns(T::Boolean) }
+    def handle_callback(callback_id, payload = {})
+      send(:handle_callback, callback_id, payload)
+      true
+    end
+
     sig { returns(T::Boolean) }
     def running? = @barrier.empty?
 
     sig { void }
     def stop
-      p "stopping renderer"
-      respond(:close)
-      p "stopping renderer"
-      p @barrier.tasks
       @vtree.stop!
       @barrier.stop
-      p @barrier.tasks
-      p "stopped renderer"
     end
 
     sig { params(args: T.untyped).void }
