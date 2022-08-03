@@ -1,0 +1,803 @@
+# typed: strict
+
+require "bundler"
+require "sorbet-runtime"
+require "rexml/document"
+require "stringio"
+require "json"
+require "cgi"
+
+extend T::Sig
+
+TAGS = T.let(JSON.parse(File.read("html-tags.json")), T::Array[String])
+VOID_TAGS =
+  T.let(JSON.parse(File.read("html-tags-void.json")), T::Array[String])
+
+module VDOM2
+  class RangeIterator
+    extend T::Sig
+    extend T::Generic
+    include Enumerable
+
+    Elem = type_member
+
+    sig { returns(Integer) }
+    attr_reader :start_idx
+    sig { returns(Integer) }
+    attr_reader :end_idx
+
+    sig { params(array: T::Array[Elem]).void }
+    def initialize(array)
+      @array = array
+      @start_idx = T.let(0, Integer)
+      @end_idx = T.let(@array.length, Integer)
+    end
+
+    sig { params(index: Integer).returns(T.nilable(Elem)) }
+    def [](index)
+      @array[index]
+    end
+
+    sig { override.params(block: T.proc.params(arg0: Elem).void).void }
+    def each(&block)
+      @start_idx.upto(@end_idx) { |i| x = @array[i] and yield x }
+    end
+
+    sig { returns(Integer) }
+    def length = @end_idx - @start_idx
+    sig { returns(T::Boolean) }
+    def done? = @start_idx > @end_idx
+    sig { returns(T.nilable(Elem)) }
+    def start = @array[@start_idx]
+    sig { returns(T.nilable(Elem)) }
+    def end = @array[@end_idx]
+    sig { void }
+    def next_start = @start_idx += 1
+    sig { void }
+    def next_end = @end_idx -= 1
+  end
+
+  class UpdateContext
+    extend T::Sig
+
+    sig { returns(T::Array[T.untyped]) }
+    attr_reader :patches
+
+    sig { void }
+    def initialize
+      @patches = T.let([], T::Array[T.untyped])
+      @parents = T.let([], T::Array[VNode])
+      @dom_parents = T.let([], T::Array[VNode])
+    end
+
+    sig { returns(T.nilable(VNode)) }
+    def parent = @parents.last
+
+    sig { returns(T.nilable(VNode)) }
+    def dom_parent = @dom_parents.last
+
+    sig { params(vnode: VNode, blk: T.proc.void).void }
+    def enter(vnode, &blk)
+      dom_parent = vnode.descriptor.element?
+      @parents.push(vnode)
+      @dom_parents.push(vnode) if dom_parent
+      yield
+    ensure
+      @dom_parents.pop if dom_parent
+      @parents.pop
+    end
+
+    sig do
+      params(
+        vnode: VNode,
+        before: T.nilable(VNode),
+        after: T.nilable(VNode)
+      ).void
+    end
+    def insert(vnode, before: nil, after: nil)
+      p caller.first(5)
+      html = vnode.to_s
+      ids = vnode.id_tree
+
+      if before
+        add_patch(
+          :insert,
+          id: vnode.id,
+          parent: dom_parent&.id,
+          before: before.id,
+          html:,
+          ids:
+        )
+      elsif after
+        add_patch(
+          :insert,
+          id: vnode.id,
+          parent: dom_parent&.id,
+          after: after.id,
+          html:,
+          ids:
+        )
+      else
+        add_patch(:insert, id: vnode.id, parent: dom_parent&.id, html:, ids:)
+      end
+    end
+
+    sig do
+      params(
+        vnode: VNode,
+        before: T.nilable(VNode),
+        after: T.nilable(VNode)
+      ).void
+    end
+    def move(vnode, before: nil, after: nil)
+      if before
+        add_patch(
+          :move,
+          id: vnode.id,
+          parent: dom_parent&.id,
+          before: before.id
+        )
+      elsif after
+        add_patch(:move, id: vnode.id, parent: dom_parent&.id, after: after.id)
+      else
+        add_patch(:move, id: vnode.id, parent: dom_parent&.id)
+      end
+    end
+
+    sig { params(vnode: VNode, text: String).void }
+    def text(vnode, text)
+      add_patch(:text, id: vnode.id, text:)
+    end
+
+    sig { params(vnode: VNode).void }
+    def remove(vnode)
+      add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
+    end
+
+    private
+
+    sig { params(type: Symbol, args: T.untyped).void }
+    def add_patch(type, **args)
+      puts "\e[33m#{type}:\e[0m #{args.inspect}"
+      @patches.push(args.merge(type:))
+    end
+  end
+
+  class VTree
+    extend T::Sig
+
+    sig { void }
+    def initialize
+      @root = T.let(nil, T.nilable(VNode))
+    end
+
+    sig do
+      params(
+        descriptor: Descriptor,
+        blk: T.nilable(T.proc.params(arg0: T.untyped).void)
+      ).returns(T.nilable(VNode))
+    end
+    def render(descriptor, &blk)
+      ctx = UpdateContext.new
+      @root = patch(ctx, @root, descriptor)
+      yield ctx.patches if block_given?
+      @root
+    end
+
+    private
+
+    sig do
+      params(
+        ctx: UpdateContext,
+        vnode: T.nilable(VNode),
+        descriptor: T.nilable(Descriptor)
+      ).returns(T.nilable(VNode))
+    end
+    def patch(ctx, vnode, descriptor)
+      unless vnode
+        return nil unless descriptor
+
+        vnode = init_vnode(ctx, descriptor)
+        ctx.insert(vnode)
+        return vnode
+      end
+
+      return remove_vnode(ctx, vnode) unless descriptor
+
+      if vnode.descriptor.same?(descriptor)
+        patch_vnode(ctx, vnode, descriptor)
+      else
+        remove_vnode(ctx, vnode)
+        vnode = init_vnode(ctx, descriptor)
+        ctx.insert(vnode)
+        return vnode
+      end
+    end
+
+    sig do
+      params(ctx: UpdateContext, vnode: VNode, descriptor: Descriptor).returns(
+        VNode
+      )
+    end
+    def patch_vnode(ctx, vnode, descriptor)
+      unless vnode.descriptor.same?(descriptor)
+        raise "Can not patch different types!"
+      end
+
+      component = vnode.component
+      new_children = descriptor.children
+
+      if component
+        if component.should_update?(descriptor.props, component.__next_state)
+          vnode.descriptor = descriptor
+          component.__props = descriptor.props
+          component.__state = component.__next_state.clone
+          descriptors =
+            add_comments_between_texts(Array(component.render).compact)
+
+          ctx.enter(vnode) do
+            vnode.children =
+              update_children(ctx, vnode.children.compact, descriptors)
+          end
+
+          component.did_update
+        end
+
+        return vnode
+      end
+
+      return vnode if vnode.descriptor == descriptor
+
+      if descriptor.text?
+        unless vnode.descriptor.text == descriptor.text
+          vnode.descriptor = descriptor
+          ctx.text(vnode, descriptor.text)
+          return vnode
+        end
+      else
+        if vnode.descriptor.children? && descriptor.children?
+          if vnode.descriptor.children != descriptor.children
+            ctx.enter(vnode) do
+              vnode.children =
+                update_children(ctx, vnode.children, new_children)
+            end
+          end
+        elsif descriptor.children?
+          check_duplicate_keys(descriptor.children)
+          puts "adding new children"
+
+          ctx.enter(vnode) do
+            vnode.children =
+              add_comments_between_texts(descriptor.children).map do
+                init_vnode(ctx, _1).tap { |child| ctx.insert(child) }
+              end
+          end
+        elsif vnode.children.length > 0
+          ctx.enter(vnode) { vnode.children.each { remove_vnode(ctx, _1) } }
+          vnode.children = []
+        elsif vnode.descriptor.text?
+          ctx.text(vnode, "")
+        else
+          puts "got here"
+        end
+      end
+
+      vnode.descriptor = descriptor
+
+      vnode
+    end
+
+    sig do
+      params(ctx: UpdateContext, vnodes: T::Array[VNode]).returns(NilClass)
+    end
+    def remove_vnodes(ctx, vnodes)
+      vnodes.each { |vnode| remove_vnode(ctx, vnode) }
+      nil
+    end
+
+    sig do
+      params(
+        ctx: UpdateContext,
+        descriptor: Descriptor,
+        nested: T::Boolean
+      ).returns(VNode)
+    end
+    def init_vnode(ctx, descriptor, nested: false)
+      vnode = VNode.new(self, descriptor)
+      component = vnode.init_component
+
+      children = descriptor.children
+
+      children =
+        (component ? Array(component.render).compact : descriptor.children)
+
+      ctx.enter(vnode) do
+        vnode.children =
+          add_comments_between_texts(children).map do
+            init_vnode(ctx, _1, nested: true)
+          end
+      end
+
+      vnode.component&.mount
+
+      vnode
+    end
+
+    sig do
+      params(ctx: UpdateContext, vnode: VNode, patch: T::Boolean).returns(
+        NilClass
+      )
+    end
+    def remove_vnode(ctx, vnode, patch: true)
+      ctx.remove(vnode) if patch
+      vnode.children.map { remove_vnode(ctx, _1, patch: false) }
+      vnode.unmount
+      nil
+    end
+
+    sig { params(descriptors: T::Array[Descriptor]).void }
+    def check_duplicate_keys(descriptors)
+      keys = descriptors.map(&:key).compact
+      duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }.uniq
+      duplicates.each do |key|
+        puts "\e[31mDuplicate keys detected: '#{key}'. This may cause an update error.\e[0m"
+      end
+    end
+
+    sig do
+      params(
+        ctx: UpdateContext,
+        vnodes: T::Array[VNode],
+        descriptors: T::Array[Descriptor]
+      ).returns(T::Array[VNode])
+    end
+    def update_children(ctx, vnodes, descriptors)
+      check_duplicate_keys(descriptors)
+      # descriptors = add_comments_between_texts(descriptors)
+      initial_descriptors_length = descriptors.compact.length
+      vnodes = RangeIterator[VNode].new(vnodes)
+      descriptors = RangeIterator[Descriptor].new(descriptors)
+      children = Array.new(descriptors.length)
+
+      moved_indexes = []
+
+      keymap = T.let(nil, T.nilable(T::Hash[Integer, T.untyped]))
+
+      until vnodes.done? || descriptors.done?
+        # p [vnodes.start_idx, vnodes.end_idx]
+        # p [descriptors.start_idx, descriptors.end_idx]
+        vnodes.next_start and next unless start_vnode = vnodes.start
+        vnodes.next_end and next unless end_vnode = vnodes.end
+        unless start_descriptor = descriptors.start
+          descriptors.next_start and next
+        end
+        descriptors.next_end and next unless end_descriptor = descriptors.end
+
+        if start_vnode.descriptor.same?(start_descriptor)
+          children[descriptors.start_idx] = patch_vnode(
+            ctx,
+            start_vnode,
+            start_descriptor
+          )
+          vnodes.next_start
+          descriptors.next_start
+          next
+        end
+
+        if end_vnode.descriptor.same?(end_descriptor)
+          children[descriptors.end_idx] = patch_vnode(
+            ctx,
+            end_vnode,
+            end_descriptor
+          )
+          vnodes.next_end
+          descriptors.next_end
+          next
+        end
+
+        if start_vnode.descriptor.same?(end_descriptor)
+          children[descriptors.end_idx] = patch_vnode(
+            ctx,
+            start_vnode,
+            end_descriptor
+          )
+          ctx.move(start_vnode, after: end_vnode)
+          vnodes.next_start
+          descriptors.next_end
+          next
+        end
+
+        if end_vnode.descriptor.same?(start_descriptor)
+          children[descriptors.start_idx] = patch_vnode(
+            ctx,
+            end_vnode,
+            start_descriptor
+          )
+          ctx.move(end_vnode, before: start_vnode)
+          vnodes.next_end
+          descriptors.next_start
+          next
+        end
+
+        keymap = build_key_index_map(vnodes, vnodes.start_idx, vnodes.end_idx)
+
+        if index = keymap[start_descriptor.key]
+          vnode_to_move = vnodes[index]
+          raise unless vnode_to_move
+          moved_indexes.push(index)
+
+          children[descriptors.start_idx] = patch_vnode(
+            ctx,
+            vnode_to_move,
+            start_descriptor
+          )
+          ctx.move(vnode_to_move, before: start_vnode)
+
+          descriptors.next_start
+          next
+        end
+
+        # We found a new child
+
+        vnode = init_vnode(ctx, start_descriptor)
+        children[descriptors.start_idx] = vnode
+        ctx.insert(vnode, before: start_vnode)
+
+        descriptors.next_start
+      end
+
+      if vnodes.start_idx > vnodes.end_idx
+        ref_elm = descriptors[descriptors.end_idx + 1]
+
+        descriptors
+          .start_idx
+          .upto(descriptors.end_idx)
+          .each do |i|
+            descriptor = descriptors[i] or next
+            vnode = init_vnode(ctx, descriptor)
+            children.push(vnode)
+
+            ctx.insert(vnode) # before: ref_elm)
+          end
+      elsif descriptors.start_idx > descriptors.end_idx
+        vnodes
+          .start_idx
+          .upto(vnodes.end_idx)
+          .each do |i|
+            next if moved_indexes.include?(i)
+            vnode = vnodes[i] or raise
+            ctx.remove(vnode)
+          end
+      else
+        puts "Nothing to either add or remove"
+      end
+
+      children.compact
+    end
+
+    sig do
+      params(
+        children: RangeIterator[VDOM2::VNode],
+        start_index: Integer,
+        end_index: Integer
+      ).returns(T::Hash[Integer, T.untyped])
+    end
+    def build_key_index_map(children, start_index, end_index)
+      keymap = {}
+
+      start_index.upto(end_index) do |i|
+        if key = children[i]&.descriptor&.key
+          keymap[key] = i
+        end
+      end
+
+      keymap
+    end
+
+    sig do
+      params(descriptors: T::Array[Descriptor]).returns(T::Array[Descriptor])
+    end
+    def add_comments_between_texts(descriptors)
+      comment = Descriptor.comment
+      prev = T.let(nil, T.nilable(Descriptor))
+
+      descriptors
+        .map
+        .with_index do |curr, i|
+          prev2 = prev
+          prev = curr if curr
+
+          prev2&.text? && curr.text? ? [comment, curr] : [curr]
+        end
+        .flatten
+    end
+  end
+
+  class VNode
+    extend T::Sig
+
+    sig { returns(Descriptor) }
+    attr_accessor :descriptor
+    sig { returns(T.nilable(Component)) }
+    attr_accessor :component
+    sig { returns(T::Array[VNode]) }
+    attr_accessor :children
+
+    sig { returns(Integer) }
+    def id = object_id
+
+    sig { params(vtree: VTree, descriptor: Descriptor).void }
+    def initialize(vtree, descriptor)
+      @vtree = vtree
+      @descriptor = descriptor
+      @component = T.let(nil, T.nilable(Component))
+      @children = T.let([], T::Array[VNode])
+    end
+
+    sig { returns(T.nilable(Component)) }
+    def init_component
+      @component ||= @descriptor.new_component(self)
+    end
+
+    sig { void }
+    def mount
+      @component&.mount
+    end
+
+    sig { void }
+    def unmount
+      @component&.unmount
+    end
+
+    sig { returns(T.untyped) }
+    def to_json
+      return children.first&.to_json if component
+
+      json = { id: id, type: descriptor.type.to_s }
+
+      return "<--mayu-id=#{id}-->" if descriptor.comment?
+      return descriptor.text if descriptor.text?
+
+      props = descriptor.props.except(:children) if descriptor
+      json.merge!(props: props) unless props.empty?
+      json.merge!(children: children.map(&:to_json)) unless children.empty?
+      json
+    end
+
+    sig { returns(String) }
+    def to_s
+      return children.join if component
+      return "<!--mayu-id-#{id}-->" if descriptor.comment?
+
+      if descriptor.text?
+        content = descriptor.text
+
+        if content.empty?
+          return "&ZeroWidthSpace;"
+        else
+          return CGI.escape_html(content)
+        end
+      end
+
+      type = descriptor.type
+      attrs =
+        descriptor
+          .props
+          .except(:children)
+          .merge(data_mayu_id: id)
+          .map { %{ #{_1.to_s.sub(/^on_/, "on").tr("_", "-")}="#{_2}"} }
+          .join
+
+      if type.is_a?(Symbol) && VOID_TAGS.include?(type.to_s)
+        format("<%<type>s%<attrs>s>", type:, attrs:)
+      else
+        children = @children.join
+        format(
+          "<%<type>s%<attrs>s>%<children>s</%<type>s>",
+          type:,
+          attrs:,
+          children:
+        )
+      end
+    end
+
+    sig { returns(T.untyped) }
+    def id_tree
+      if component
+        children.first&.id_tree
+      else
+        ch = children.map(&:id_tree).compact
+        ch.empty? ? { id: } : { id:, ch: }
+      end
+    end
+
+    sig { void }
+    def enqueue_update!
+    end
+  end
+
+  class Component
+    extend T::Sig
+
+    Props = T.type_alias { T::Hash[Symbol, T.untyped] }
+    State = T.type_alias { T::Hash[Symbol, T.untyped] }
+
+    sig { returns(Props) }
+    def props = @__props
+    sig { params(__props: Props).void }
+    attr_writer :__props
+    sig { params(__state: State).void }
+    attr_writer :__state
+
+    sig { returns(State) }
+    def state = @__state
+    sig { returns(State) }
+    def __next_state = @__next_state
+
+    sig { params(vnode: VNode, props: T.untyped).void }
+    def initialize(vnode, **props)
+      @__vnode = vnode
+      @__props = props
+      @__state = T.let({}.freeze, State)
+      @__next_state = T.let({}.freeze, State)
+    end
+
+    sig { params(next_props: Props, next_state: State).returns(T::Boolean) }
+    def should_update?(next_props, next_state)
+      !(props == next_props && state == next_state)
+    end
+
+    sig { void }
+    def enqueue_update! = @__vnode.enqueue_update!
+
+    sig { void }
+    def mount = nil
+    sig { void }
+    def unmount = nil
+    sig { void }
+    def did_update = nil
+    sig { returns(T.nilable(Descriptor)) }
+    def render = nil
+  end
+
+  class Descriptor
+    extend T::Sig
+
+    Type = T.type_alias { T.any(Symbol, T.class_of(Component)) }
+    Props = T.type_alias { T::Hash[Symbol, T.untyped] }
+
+    TEXT = :TEXT
+    COMMENT = :COMMENT
+
+    sig { returns(T.untyped) }
+    attr_reader :key
+    sig { returns(Type) }
+    attr_reader :type
+    sig { returns(Props) }
+    attr_reader :props
+
+    sig { params(type: Type, props: Props, children: T::Array[T.untyped]).void }
+    def initialize(type, props = {}, children = [])
+      @type = type
+      @props =
+        T.let(
+          props.merge(
+            children:
+              children.map do |child|
+                if child.is_a?(self.class)
+                  child
+                else
+                  raise child unless child.is_a?(String)
+                  Descriptor.new(TEXT, { text_content: child })
+                end
+              end
+          ),
+          Props
+        )
+      @key = T.let(props.delete(:key), T.untyped)
+    end
+
+    sig { params(vnode: VNode).returns(T.nilable(Component)) }
+    def new_component(vnode)
+      @type.new(vnode, **props) if @type.is_a?(Class) && @type < Component
+    end
+
+    sig { returns(Descriptor) }
+    def self.comment = new(COMMENT)
+
+    sig { returns(String) }
+    def text = props[:text_content].to_s
+    sig { returns(T::Boolean) }
+    def text? = @type == TEXT
+    sig { returns(T::Boolean) }
+    def comment? = @type == COMMENT
+    sig { returns(T::Boolean) }
+    def element? = @type.is_a?(Symbol) && !text? && !comment?
+    sig { returns(T::Array[Descriptor]) }
+    def children = props[:children]
+    sig { returns(T::Boolean) }
+    def children? = children.any?
+
+    sig { returns(String) }
+    def to_s
+      return text if text?
+
+      type = @type
+      attrs = @props.except(:children).map { %{ #{_1}="#{_2}"} }.join
+
+      if type.is_a?(Symbol) && VOID_TAGS.include?(type.to_s)
+        format("<%<type>s%<attrs>s>", type:, attrs:)
+      else
+        children = @props[:children].join
+        format(
+          "<%<type>s%<attrs>s>%<children>s</%<type>s>",
+          type:,
+          attrs:,
+          children:
+        )
+      end
+    end
+
+    sig { params(other: Descriptor).returns(T::Boolean) }
+    def same?(other)
+      if key == other.key && type == other.type
+        type == :input ? props[:type] == props[:type] : true
+      else
+        false
+      end
+    end
+  end
+end
+
+sig { params(source: String).void }
+def print_xml(source)
+  io = StringIO.new
+  doc = REXML::Document.new(source)
+  formatter = REXML::Formatters::Pretty.new
+  formatter.write(doc, io)
+  io.rewind
+  puts io.read.gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
+end
+
+class MyApp < VDOM2::Component
+  sig { returns(T.nilable(VDOM2::Descriptor)) }
+  def render
+    h(:div) { h(:h1, "hello") }
+  end
+
+  sig do
+    params(
+      type: VDOM2::Descriptor::Type,
+      args: T.untyped,
+      props: T::Hash[Symbol, T.untyped],
+      block:
+        T.nilable(
+          T.proc.returns(
+            T.nilable(T.any(VDOM2::Descriptor, T::Array[VDOM2::Descriptor]))
+          )
+        )
+    ).returns(VDOM2::Descriptor)
+  end
+  def h(type, *args, **props, &block)
+    VDOM2::Descriptor.new(type, props, args.concat(Array(block&.call).compact))
+  end
+end
+
+patch_sets = []
+vdom = VDOM2::VTree.new
+tree =
+  vdom.render(
+    VDOM2::Descriptor.new(MyApp, { numbers: [[1, 1], [2, 2], [3, 3]] })
+  ) { |patches| patch_sets.push(patches) }
+print_xml(tree.to_s)
+# puts JSON.pretty_generate(tree.to_json)
+tree =
+  vdom.render(
+    VDOM2::Descriptor.new(MyApp, { numbers: [[2, 1], [4, 4], [3, 3], [1, 2]] })
+  ) { |patches| patch_sets.push(patches) }
+print_xml(tree.to_s)
+
+tree =
+  vdom.render(VDOM2::Descriptor.new(MyApp, { numbers: [] })) do |patches|
+    patch_sets.push(patches)
+  end
