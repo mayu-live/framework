@@ -153,6 +153,21 @@ module Mayu
           add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
         end
 
+        sig { params(vnode: VNode).void }
+        def remove(vnode)
+          add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
+        end
+
+        sig { params(vnode: VNode, name: String, value: String).void }
+        def set_attribute(vnode, name, value)
+          add_patch(:attr, id: vnode.id, name:, value:)
+        end
+
+        sig { params(vnode: VNode, name: String).void }
+        def remove_attribute(vnode, name)
+          add_patch(:attr, id: vnode.id, name:)
+        end
+
         private
 
         sig { params(type: Symbol, args: T.untyped).void }
@@ -214,6 +229,15 @@ module Mayu
         @root
       end
 
+      sig { params(handler_id: String, payload: T.untyped).void }
+      def handle_event(handler_id, payload = {})
+        @handlers
+          .fetch(handler_id) do
+            raise KeyError, "Handler not found: #{handler_id}"
+          end
+          .call(payload)
+      end
+
       sig { params(exclude_components: T::Boolean).returns(String) }
       def inspect_tree(exclude_components: false)
         @root&.inspect_tree(exclude_components:).to_s
@@ -252,6 +276,7 @@ module Mayu
 
       sig { params(patches: T.untyped).void }
       def commit!(patches)
+        return if patches.empty?
         id = @patchsets.push(patches).length
         @on_update.signal([:patch, { id:, patches: }])
       end
@@ -364,6 +389,9 @@ module Mayu
           end
         end
 
+        update_handlers(vnode.props, descriptor.props)
+        update_attributes(ctx, vnode, vnode.props, descriptor.props)
+
         vnode.descriptor = descriptor
 
         vnode
@@ -399,6 +427,7 @@ module Mayu
         end
 
         vnode.component&.did_mount
+        update_handlers({}, vnode.props)
 
         vnode
       end
@@ -411,6 +440,7 @@ module Mayu
       def remove_vnode(ctx, vnode, patch: true)
         ctx.remove(vnode) if patch
         vnode.children.map { remove_vnode(ctx, _1, patch: false) }
+        update_handlers(vnode.props, {})
         vnode.component&.will_unmount
         nil
       end
@@ -581,6 +611,48 @@ module Mayu
             prev2&.text? && curr.text? ? [comment, curr] : [curr]
           end
           .flatten
+      end
+
+      sig do
+        params(old_props: Component::Props, new_props: Component::Props).void
+      end
+      def update_handlers(old_props, new_props)
+        old_handlers = old_props.keys.select { _1.start_with?("on_") }
+        new_handlers = new_props.keys.select { _1.start_with?("on_") }
+
+        # FIXME: If the same handler id is used somewhere else,
+        # it will be cleared too.
+        removed_handlers = old_handlers - new_handlers
+
+        old_props
+          .values_at(*T.unsafe(removed_handlers))
+          .each { |handler| @handlers.delete(handler.id) }
+
+        new_props
+          .values_at(*T.unsafe(new_handlers))
+          .each { |handler| @handlers[handler.id] = handler }
+      end
+
+      sig do
+        params(
+          ctx: UpdateContext,
+          vnode: VNode,
+          old_props: Component::Props,
+          new_props: Component::Props
+        ).void
+      end
+      def update_attributes(ctx, vnode, old_props, new_props)
+        removed = old_props.keys - new_props.keys - [:children]
+
+        new_props.each do |attr, value|
+          next if attr == :children
+          next if value == old_props[attr]
+          ctx.set_attribute(vnode, attr.to_s, value.to_s)
+        end
+
+        removed.each do |attr|
+          ctx.remove_attribute(vnode, attr.to_s)
+        end
       end
     end
   end

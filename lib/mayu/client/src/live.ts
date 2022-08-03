@@ -1,6 +1,6 @@
-import logger from './logger.js'
-import NodeTree from './NodeTree.js'
-import type { IdNode, Patch } from './NodeTree.js'
+import logger from "./logger.js";
+import NodeTree from "./NodeTree.js";
+import type { IdNode, Patch } from "./NodeTree.js";
 
 class Mayu {
   readonly sessionId: string;
@@ -22,7 +22,7 @@ class Mayu {
 
     // this.connection.addEventListener("html", this._updateHTML);
     this.connection.addEventListener("patch_set", (e) => {
-      logger.log('GOT PATCHES', e.data)
+      logger.log("GOT PATCHES", e.data);
       this.#applyPatches(e);
     });
   }
@@ -33,7 +33,11 @@ class Mayu {
     const payload = {
       type: e.type,
       value: (e.target as any).value,
-    };
+    } as Record<string, any>;
+
+    if (e.target instanceof HTMLFormElement) {
+      payload.formData = Object.fromEntries(new FormData(e.target).entries());
+    }
 
     fetch(`/__mayu/handler/${this.sessionId}/${handlerId}`, {
       method: "POST",
@@ -55,7 +59,7 @@ class Mayu {
     logger.info("APPLYING PATCHES");
     const { patches } = JSON.parse(data) as { patches: Patch[] };
 
-    this.nodeTree.apply(patches)
+    this.nodeTree.apply(patches);
   }
 }
 

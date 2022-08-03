@@ -24,11 +24,11 @@ type MovePatch = {
 
 type TextPatch = { type: "text"; id: number; text: string };
 
-type SetAttributePatch = {
-  type: "set_attribute";
+type AttributePatch = {
+  type: "attr";
   id: number;
   name: string;
-  value: string;
+  value?: string;
 };
 
 export type Patch =
@@ -36,7 +36,7 @@ export type Patch =
   | MovePatch
   | RemovePatch
   | TextPatch
-  | SetAttributePatch;
+  | AttributePatch;
 
 class NodeTree {
   #cache = new Map<number, CacheEntry>();
@@ -69,8 +69,12 @@ class NodeTree {
         this.updateText(patch.id, patch.text);
         break;
       }
-      case "set_attribute": {
-        this.setAttribute(patch.id, patch.name, patch.value);
+      case "attr": {
+        if (patch.value !== undefined) {
+          this.setAttribute(patch.id, patch.name, patch.value);
+        } else {
+          this.removeAttribute(patch.id, patch.name);
+        }
         break;
       }
       default: {
@@ -108,6 +112,11 @@ class NodeTree {
     }
 
     node.setAttribute(name, value);
+  }
+
+  removeAttribute(id: number, name: string) {
+    const node = this.#getEntry(id).node as Element;
+    node.removeAttribute(name)
   }
 
   insert({parent, before, after, ids, html}: InsertPatch) {

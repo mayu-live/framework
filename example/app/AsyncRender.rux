@@ -30,7 +30,7 @@ did_mount do
     loop do
       update do |state|
         {
-          time: Time.now.strftime('%H:%M:%S.%3N'),
+          time: Time.now.strftime('%H:%M:%S'),
         }
       end if state[:playing]
 

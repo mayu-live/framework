@@ -12,6 +12,7 @@ end
 did_mount do
   async do
     index = 0
+    sleep 2
 
     loop do
       str = TAGLINES[index]
@@ -19,7 +20,7 @@ did_mount do
       str.length.times do |i|
         text = str.slice(0, i.succ)
         update(text:)
-        sleep 0.05
+        sleep 1
       end
 
       index = index.succ % TAGLINES.length
@@ -29,5 +30,5 @@ did_mount do
 end
 
 render do
-  <p class="tagline">{" " + state[:text]}</p>
+  <p class="tagline">{state[:text]}</p>
 end
