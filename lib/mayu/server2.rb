@@ -67,8 +67,10 @@ module Mayu
         @task.async do |subtask|
           loop do
             case @renderer.take
-            in [:html, payload]
-              push(:html, payload)
+            in [:initial_render, payload]
+              push(:initial_render, payload)
+            in [:init, payload]
+              push(:init, payload)
             in [:patch, payload]
               push(:patch, payload)
             in [:close]
@@ -86,25 +88,38 @@ module Mayu
       def cookie_name = self.class.cookie_name(id)
 
       def push(event, data = {})
-        id = SecureRandom.uuid
-        @messages.enqueue(format_message(id, event, data))
+        @messages.enqueue([SecureRandom.uuid, event, data])
       end
 
       def initial_render
         body = Async::HTTP::Body::Writable.new
 
         @task.async do
-          html = @renderer.html
-          id_tree = @renderer.id_tree
-          stylesheets = @renderer.stylesheets
+          @messages.dequeue => [_id, :initial_render, patches]
 
-          style = %{<style>#{stylesheets.values.join}</style>}
+          rendered_html = ""
+          stylesheets = Set.new
+
+          patches.each do |patch|
+            case patch
+            in type: :insert, html:
+              rendered_html = html
+            in type: :stylesheet, path:
+              stylesheets.add(path)
+            end
+          end
+
+          style = stylesheets.map { |stylesheet|
+            %{<link rel="stylesheet" href="#{stylesheet}">}
+          }.join
+
           script = %{<script type="module" src="/__mayu/live.js?#{@id}"></script>}
 
           body.write(
-            html
+            rendered_html
               .prepend("<!DOCTYPE html>\n")
-              .sub(%r{.*\K</body>}) { "#{style}#{script}#{_1}" }
+              .sub(%r{</head>}) { "#{style}#{_1}" }
+              .sub(%r{.*\K</body>}) { "#{script}#{_1}" }
           )
         ensure
           body.close
@@ -123,8 +138,8 @@ module Mayu
 
           task.async do
             loop do
-              message = @messages.dequeue
-              body.write(message.to_s.chomp + "\n\n")
+              @messages.dequeue => id, event, data
+              body.write(format_message(id, event, data))
             end
           ensure
             body.close
@@ -142,7 +157,7 @@ module Mayu
       private
 
       def format_message(id, event, data)
-        <<~MSG
+        <<~MSG.strip + "\n\n"
           id: #{SecureRandom.uuid}
           event: #{event}
           data: #{JSON.generate(data)}
@@ -238,7 +253,7 @@ module Mayu
             secure: true,
             http_only: true,
             same_site: :strict,
-            value: session.key
+            value: session.key,
           }
         )
 

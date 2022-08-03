@@ -1,4 +1,4 @@
-#!/usr/bin/env falcon --verbose serve -c --threaded --count 4
+#!/usr/bin/env falcon --verbose serve -c --threaded --count 8
 # typed: false
 # frozen_string_literal: true
 

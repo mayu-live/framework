@@ -9,9 +9,6 @@ module Mayu
   class Renderer
     extend T::Sig
 
-    sig { returns(String) }
-    attr_reader :html
-
     sig { params(parent: T.any(Async::Task, Async::Barrier)).void }
     def initialize(parent: Async::Task.current)
       @in = T.let(Async::Queue.new, Async::Queue)
@@ -28,15 +25,20 @@ module Mayu
 
       @root = T.let(VDOM.h(app), VDOM::Descriptor)
       @vtree = T.let(VDOM::VTree.new(task: @barrier), VDOM::VTree)
-      @html = T.let("", String)
 
       @barrier.async(annotation: "Renderer patch sets") do
+        @vtree.on_update.wait => :patch, initial_patches
+        first_insert = initial_patches.find { _1[:type] == :insert }
+        respond(:initial_render, initial_patches)
+        respond(:init, first_insert[:ids])
+
         loop do
           message = @vtree.on_update.wait
 
           case message
-          in :patch, { id:, patches: }
-            respond(:patch, id:, patches:)
+          in :patch, patches
+
+            respond(:patch, patches)
           else
             puts "\e[31mUnknown event: #{message.inspect}\e[0m"
           end
@@ -96,12 +98,7 @@ module Mayu
     sig { params(args: T.untyped).void }
     def respond(*args) = @out.enqueue(args)
 
-    sig { void }
-    def rerender!
-      @vtree.render(@root)
-      html = @vtree.inspect_tree(exclude_components: true)
-      respond(:html, html)
-      @html = html
-    end
+    sig {void}
+    def rerender! = @vtree.render(@root)
   end
 end

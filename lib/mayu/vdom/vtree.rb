@@ -8,6 +8,7 @@ require_relative "vnode"
 require_relative "css_attributes"
 require_relative "update_context"
 require_relative "../event_emitter"
+require "pry"
 
 module Mayu
   module VDOM
@@ -80,6 +81,8 @@ module Mayu
         @patchsets = T.let([], T::Array[T.untyped])
         @update_queue = T.let(Async::Queue.new, Async::Queue)
         @on_update = T.let(Async::Condition.new, Async::Condition)
+
+        @sent_stylesheets = T.let(Set.new, T::Set[String])
 
         @update_task =
           T.let(
@@ -168,9 +171,7 @@ module Mayu
 
       sig { params(patches: T.untyped).void }
       def commit!(patches)
-        return if patches.empty?
-        id = @patchsets.push(patches).length
-        @on_update.signal([:patch, { id:, patches: }])
+        @on_update.signal([:patch, patches])
       end
 
       sig do
@@ -316,13 +317,11 @@ module Mayu
         component = vnode.init_component
 
         children =
-          (
-            if component
-              Array(component.render).compact
-            else
-              descriptor.props[:children]
-            end
-          )
+          if component
+            Array(component.render).compact
+          else
+            descriptor.props[:children]
+          end
 
         ctx.enter(vnode) do
           vnode.children =
@@ -333,6 +332,13 @@ module Mayu
 
         vnode.component&.mount
         update_handlers({}, vnode.props)
+
+        if ss = component&.stylesheet
+          unless @sent_stylesheets.include?(ss.path)
+            ctx.stylesheet(ss.path)
+            @sent_stylesheets.add(ss.path)
+          end
+        end
 
         vnode
       end

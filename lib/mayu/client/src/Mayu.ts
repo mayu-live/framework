@@ -1,6 +1,5 @@
 import logger from "./logger.js";
 import NodeTree from "./NodeTree.js";
-import type { Patch } from "./NodeTree.js";
 
 class Mayu {
   readonly sessionId: string;
@@ -9,7 +8,6 @@ class Mayu {
 
   constructor(sessionId: string) {
     this.sessionId = sessionId;
-    this._updateHTML = this._updateHTML.bind(this);
 
     this.connection = new EventSource(`/__mayu/events/${this.sessionId}`);
 
@@ -19,15 +17,13 @@ class Mayu {
     };
 
     this.connection.addEventListener(
-      "patch",
+      "init",
       (e) => {
-        const [firstPatch, ...rest] = JSON.parse(e.data).patches as Patch[]
-
-        const nodeTree = new NodeTree((firstPatch as any).ids);
-        nodeTree.apply(rest);
+        const ids = (JSON.parse(e.data) as any);
+        const nodeTree = new NodeTree(ids)
 
         this.connection.addEventListener("patch", (e) => {
-          nodeTree.apply(JSON.parse(e.data).patches);
+          nodeTree.apply(JSON.parse(e.data));
         });
       },
       { once: true }
@@ -53,13 +49,6 @@ class Mayu {
       },
       body: JSON.stringify(payload),
     });
-  }
-
-  _updateHTML({ data }: MessageEvent) {
-    const html = JSON.parse(data)
-      .replace(/^<html.*?>/, "")
-      .replace(/<\/html>$/, "");
-    document.documentElement.innerHTML = html;
   }
 }
 

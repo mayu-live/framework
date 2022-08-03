@@ -134,6 +134,11 @@ module Mayu
         end
       end
 
+      sig { params(path: String).void }
+      def stylesheet(path)
+        add_patch(:stylesheet, path:)
+      end
+
       sig { params(vnode: VNode, text: String, append: T::Boolean).void }
       def text(vnode, text, append: false)
         if append
@@ -142,8 +147,6 @@ module Mayu
           add_patch(:text, id: vnode.dom_id, text:)
         end
       end
-
-
 
       sig { params(vnode: VNode).void }
       def remove(vnode)

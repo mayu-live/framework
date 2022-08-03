@@ -57,6 +57,15 @@ module Mayu
         extend T::Sig
         include Interface
 
+        sig {returns(T.nilable(Modules::CSS::CSSModule))}
+        def stylesheet
+          if stylesheet = @instance.class.stylesheets
+            if stylesheet.is_a?(Modules::CSS::CSSModule)
+              stylesheet
+            end
+          end
+        end
+
         sig { returns(State) }
         attr_accessor :state
         sig { returns(State) }

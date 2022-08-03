@@ -90,19 +90,20 @@ render do
         <button class={styles.button} on-click={handler(:prev)}>Prev</button>
         <input
           type="number"
-          value={state[:value]}
+          value={state[:index]}
           on-change={handler(:change)}
-          on-input={handler(:input)}
           class={styles.button}
         />
         <button class={styles.button} on-click={handler(:next)}>Next</button>
       </div>
+      <p>{state.inspect}</p>
       <input
         type="range"
         min="0"
         max={QUOTES.size - 1}
-        value={index}
-        on-input={handler(:change)}
+        value={state[:value]}
+        on-input={handler(:input)}
+        on-change={handler(:change)}
       />
     </div>
     <figure>
