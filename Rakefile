@@ -1,6 +1,7 @@
 # typed: ignore
 
 require "minitest/test_task"
+require "sorbet-runtime"
 
 Minitest::TestTask.create(:test) do |t|
   t.libs << "lib"

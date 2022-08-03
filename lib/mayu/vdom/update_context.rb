@@ -40,6 +40,13 @@ module Mayu
         ).void
       end
       def insert(vnode, before: nil, after: nil)
+        if before
+          puts "\e[32minsert\e[0m #{vnode.key} before #{before.key}"
+        elsif after
+          puts "\e[32minsert\e[0m #{vnode.key} after #{after.key}"
+        else
+          puts "\e[32minsert\e[0m #{vnode.key} last"
+        end
         # p caller.grep(/markup/).first(5)
         html = vnode.inspect_tree(exclude_components: true)
         ids = vnode.id_tree
@@ -67,6 +74,13 @@ module Mayu
         end
       end
 
+      sig {params(args: T.untyped).void}
+      def puts(*args)
+        if @parents.last&.descriptor&.type == :ul
+          T.unsafe(Kernel)::puts(*args)
+        end
+      end
+
       sig do
         params(
           vnode: VNode,
@@ -75,6 +89,14 @@ module Mayu
         ).void
       end
       def move(vnode, before: nil, after: nil)
+        if before
+          raise if vnode.key == 3 && before.key == 7
+          puts "\e[33mmove:\e[0m #{vnode.key} before #{before.key}"
+        elsif after
+          puts "\e[33mmove:\e[0m #{vnode.key} after #{after.key}"
+        else
+          puts "\e[33mmove:\e[0m #{vnode.key} last"
+        end
         if before
           add_patch(
             :move,
@@ -114,11 +136,7 @@ module Mayu
 
       sig { params(vnode: VNode).void }
       def remove(vnode)
-        add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
-      end
-
-      sig { params(vnode: VNode).void }
-      def remove(vnode)
+        puts "\e[31mremove\e[0m #{vnode.key}"
         add_patch(:remove, id: vnode.id, parent: dom_parent&.id)
       end
 
@@ -136,7 +154,7 @@ module Mayu
 
       sig { params(type: Symbol, args: T.untyped).void }
       def add_patch(type, **args)
-        puts "\e[33m#{type}:\e[0m #{args.inspect}"
+        # puts "\e[33m#{type}:\e[0m #{args.inspect}"
         @patches.push(args.merge(type:))
       end
     end

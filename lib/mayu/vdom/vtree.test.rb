@@ -1,0 +1,68 @@
+# typed: true
+
+require "minitest/autorun"
+require "async"
+require "rexml/document"
+require "stringio"
+require_relative "vtree"
+require_relative "h"
+
+class TestVTree < Minitest::Test
+  include Mayu::VDOM::H
+
+  def test_foo
+    Async do |task|
+      vtree = Mayu::VDOM::VTree.new()
+
+      number_lists = [
+        [4, 1, 3, 0, 2],
+        [5, 4, 6, 2, 3, 0, 1],
+        [1, 4, 0, 7, 6, 3, 5, 2],
+        [7, 4, 3, 5, 6, 2, 8, 0, 1],
+      ]
+
+      number_lists.each do |numbers|
+        vtree.render(
+          h(:div) do [
+            h(:h1) { "Hej världen" },
+            h(:h2) { "Hello the world" },
+            h(:ul) do
+              numbers.map do |num|
+                h(:li, key: num) { num }
+              end
+            end
+          ] end
+        )
+
+        html = vtree.to_html
+        print_xml(html)
+        assert_equal(numbers, extract_numbers(html))
+      end
+    ensure
+      vtree&.stop!
+    end
+  end
+
+  private
+
+  def print_xml(source)
+    io = StringIO.new
+    doc = REXML::Document.new(source)
+    formatter = REXML::Formatters::Pretty.new
+    formatter.compact = true
+    formatter.write(doc, io)
+    io.rewind
+
+    puts io.read
+      .gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
+      .gsub(/(mayu-key='?)(\d+)/) { "#{$~[1]}\e[1;35m#{$~[2]}\e[0m" }
+      .gsub(/>(.*?)</) { ">\e[33m#{$~[1]}\e[0m<" }
+  end
+
+  def extract_numbers(source)
+     REXML::Document.new(source)
+      .get_elements("//li")
+      .map(&:text)
+      .map(&:to_i)
+  end
+end

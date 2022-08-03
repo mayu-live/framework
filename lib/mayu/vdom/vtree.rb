@@ -1,12 +1,13 @@
 # typed: strict
 
+require "async/queue"
 require_relative "component"
 require_relative "descriptor"
 require_relative "dom"
 require_relative "vnode"
 require_relative "css_attributes"
+require_relative "update_context"
 require_relative "../event_emitter"
-require "async/queue"
 
 module Mayu
   module VDOM
@@ -16,54 +17,50 @@ module Mayu
       class Indexes
         extend T::Sig
 
-        sig{params(indexes: T::Array[Integer]).void}
+        sig { params(indexes: T::Array[Integer]).void }
         def initialize(indexes = [])
           @indexes = indexes
         end
 
-        sig{params(id: Integer).void}
+        sig { params(id: Integer).void }
         def append(id)
           @indexes.delete(id)
           @indexes.push(id)
         end
 
-        sig{params(id: Integer).returns(T.nilable(Integer))}
+        sig { params(id: Integer).returns(T.nilable(Integer)) }
         def index(id) = @indexes.index(id)
 
-        sig{params(id: Integer, before: T.nilable(Integer)).void}
+        sig { params(id: Integer, before: T.nilable(Integer)).void }
         def insert_before(id, before)
           @indexes.delete(id)
           index = before && @indexes.index(before)
-          if index
-            @indexes.insert(index, id)
-          else
-            @indexes.push(id)
-          end
+          index ? @indexes.insert(index, id) : @indexes.push(id)
         end
 
-        sig{params(id: Integer).returns(T.nilable(Integer))}
+        sig { params(id: Integer).returns(T.nilable(Integer)) }
         def next_sibling(id)
           if index = @indexes.index(id)
             @indexes[index.succ]
           end
         end
 
-        sig{params(id: Integer).void}
+        sig { params(id: Integer).void }
         def remove(id) = @indexes.delete(id)
 
-        sig{returns(T::Array[Integer])}
+        sig { returns(T::Array[Integer]) }
         def to_a = @indexes
       end
 
       Id = T.type_alias { Integer }
 
-      sig {returns(T::Array[T.untyped])}
+      sig { returns(T::Array[T.untyped]) }
       attr_reader :patchsets
       sig { returns(Async::Condition) }
       attr_reader :on_update
 
-      sig { params(descriptor: Descriptor, task: Async::Barrier).void }
-      def initialize(descriptor, task: Async::Task.current)
+      sig { params(task: Async::Barrier).void }
+      def initialize(task: Async::Task.current)
         @root = T.let(nil, T.nilable(VNode))
         @id_counter = T.let(0, Id)
 
@@ -97,9 +94,12 @@ module Mayu
           )
       end
 
-      sig do
-        params(descriptor: Descriptor).returns(T.nilable(VNode))
-      end
+      sig {void}
+      def stop! = @update_task.stop
+      sig {returns(T::Boolean)}
+      def running? = @update_task.running?
+
+      sig { params(descriptor: Descriptor).returns(T.nilable(VNode)) }
       def render(descriptor)
         ctx = UpdateContext.new
         @root = patch(ctx, @root, descriptor)
@@ -114,6 +114,11 @@ module Mayu
             raise KeyError, "Handler not found: #{handler_id}"
           end
           .call(payload)
+      end
+
+      sig { returns(String) }
+      def to_html
+        @root&.inspect_tree(exclude_components: true).to_s
       end
 
       sig { params(exclude_components: T::Boolean).returns(String) }
@@ -145,9 +150,7 @@ module Mayu
 
       sig { returns(Id) }
       def next_id!
-        @id_counter.tap do
-          @id_counter = @id_counter.succ
-        end
+        @id_counter.tap { @id_counter = @id_counter.succ }
       end
 
       private
@@ -188,9 +191,11 @@ module Mayu
       end
 
       sig do
-        params(ctx: UpdateContext, vnode: VNode, descriptor: Descriptor).returns(
-          VNode
-        )
+        params(
+          ctx: UpdateContext,
+          vnode: VNode,
+          descriptor: Descriptor
+        ).returns(VNode)
       end
       def patch_vnode(ctx, vnode, descriptor)
         unless vnode.descriptor.same?(descriptor)
@@ -198,7 +203,8 @@ module Mayu
         end
 
         if component = vnode.component
-          if component.should_update?(descriptor.props, component.next_state) || component.dirty?
+          if component.should_update?(descriptor.props, component.next_state) ||
+               component.dirty?
             vnode.descriptor = descriptor
             prev_props, prev_state = component.props, component.state
             component.props = descriptor.props
@@ -225,7 +231,7 @@ module Mayu
 
           ctx.enter(vnode) do
             vnode.children =
-            update_children(ctx, vnode.children.compact, descriptors)
+              update_children(ctx, vnode.children.compact, descriptors)
           end
 
           return vnode
@@ -299,7 +305,13 @@ module Mayu
         component = vnode.init_component
 
         children =
-          (component ? Array(component.render).compact : descriptor.props[:children])
+          (
+            if component
+              Array(component.render).compact
+            else
+              descriptor.props[:children]
+            end
+          )
 
         ctx.enter(vnode) do
           vnode.children =
@@ -336,7 +348,7 @@ module Mayu
         end
       end
 
-      sig{params(vnode: VNode, descriptor: Descriptor).returns(T::Boolean)}
+      sig { params(vnode: VNode, descriptor: Descriptor).returns(T::Boolean) }
       def same?(vnode, descriptor)
         vnode.descriptor.same?(descriptor)
       end
@@ -359,14 +371,27 @@ module Mayu
         new_end_idx = new_ch.length.pred
 
         indexes = Indexes.new(vnodes.map(&:id))
+        p indexes.to_a
         moved_ids = Set.new
         children = []
 
         while old_start_idx <= old_end_idx && new_start_idx <= new_end_idx
-          old_start_idx += 1 and next unless old_start_vnode = old_ch[old_start_idx]
-          old_end_idx -= 1  and next unless old_end_vnode = old_ch[old_end_idx]
+          old_start_idx += 1 and next unless old_start_vnode =
+            old_ch[old_start_idx]
+          old_end_idx -= 1 and next unless old_end_vnode = old_ch[old_end_idx]
           new_start_vnode = T.must(new_ch[new_start_idx])
           new_end_vnode = T.must(new_ch[new_end_idx])
+
+          if new_start_vnode.type == :li
+            puts "Order:"
+            p indexes.to_a.map { |id|
+              old_ch.find { _1.id == id } || children.find { _1.id == id }
+            }.map(&:descriptor).map(&:key)
+            p [:old_idxes, old_start_idx, old_end_idx]
+          end
+
+          # puts "Children order:"
+          # p children.sort_by { indexes.index(_1.id) || Float::INFINITY }.map(&:key)
 
           if same?(old_start_vnode, new_start_vnode)
             patch_vnode(ctx, old_start_vnode, new_start_vnode)
@@ -387,7 +412,10 @@ module Mayu
           if same?(old_start_vnode, new_end_vnode)
             patch_vnode(ctx, old_start_vnode, new_end_vnode)
             ctx.move(old_start_vnode, after: old_end_vnode)
-            indexes.insert_before(old_start_vnode.id, indexes.next_sibling(old_end_vnode.id))
+            indexes.insert_before(
+              old_start_vnode.id,
+              indexes.next_sibling(old_end_vnode.id)
+            )
             children.push(old_start_vnode)
             old_start_idx += 1
             new_end_idx -= 1
@@ -404,9 +432,11 @@ module Mayu
             next
           end
 
-          old_key_to_idx = build_key_index_map(old_ch, old_start_idx, old_end_idx)
+          old_key_to_idx =
+            build_key_index_map(old_ch, old_start_idx, old_end_idx)
 
-          idx_in_old = new_start_vnode.key && old_key_to_idx[new_start_vnode.key]
+          idx_in_old =
+            new_start_vnode.key && old_key_to_idx[new_start_vnode.key]
           vnode_to_move = idx_in_old && old_ch[idx_in_old]
 
           unless vnode_to_move
@@ -420,6 +450,9 @@ module Mayu
 
           if same?(vnode_to_move, new_start_vnode)
             moved_ids.add(vnode_to_move.id)
+            p [vnode_to_move, new_start_vnode]
+            p [old_start_vnode]
+            p [old_start_vnode]
             vnode = patch_vnode(ctx, vnode_to_move, new_start_vnode)
             ctx.move(vnode_to_move, before: old_start_vnode)
             indexes.insert_before(vnode_to_move.id, old_start_vnode.id)
@@ -430,32 +463,42 @@ module Mayu
 
           puts "Same key but different element, treat as new element"
           vnode = init_vnode(ctx, new_start_vnode)
-          ctx.insert(vnode , before: old_start_vnode)
+          ctx.insert(vnode, before: old_start_vnode)
           indexes.insert_before(vnode.id, old_start_vnode.id)
           children.push(vnode)
 
           new_start_idx += 1
         end
 
+        children.sort_by! do
+          indexes.index(_1.id) or raise "No index found for #{_1.inspect}"
+        end
+
         if old_start_idx > old_end_idx
           # TODO: something about ref elms from the new children
+          ref_vnode = children[new_end_idx]
+
           descriptors_to_add = new_ch.slice(new_start_idx..new_end_idx)
+
           descriptors_to_add.each do |descriptor|
+            p ref_vnode&.id
             new_vnode = init_vnode(ctx, descriptor)
-            ctx.insert(new_vnode, before: nil)
-            indexes.insert_before(new_vnode.id, nil)
+            ctx.insert(new_vnode, before: ref_vnode)
+            indexes.insert_before(new_vnode.id, ref_vnode.id)
             children.push(new_vnode)
           end if descriptors_to_add
         elsif new_start_idx > new_end_idx
           vnodes_to_remove = old_ch.slice(old_start_idx..old_end_idx)
-          vnodes_to_remove.each do |vnode|
-            unless moved_ids.include?(vnode.id)
-              remove_vnode(ctx, vnode)
+          if vnodes_to_remove
+            vnodes_to_remove.each do |vnode|
+              remove_vnode(ctx, vnode) unless moved_ids.include?(vnode.id)
             end
-          end if vnodes_to_remove
+          end
         end
 
-        children.sort_by { indexes.index(_1.id) || Float::INFINITY }
+        children.sort_by do
+          indexes.index(_1.id) or raise "No index found for #{_1.inspect}"
+        end
       end
 
       sig do
@@ -543,12 +586,10 @@ module Mayu
           ctx.set_attribute(vnode, attr.to_s, value.to_s)
         end
 
-        removed.each do |attr|
-          ctx.remove_attribute(vnode, attr.to_s)
-        end
+        removed.each { |attr| ctx.remove_attribute(vnode, attr.to_s) }
       end
 
-      sig {params(str1: String, str2: String).returns(T.nilable(String))}
+      sig { params(str1: String, str2: String).returns(T.nilable(String)) }
       def append_part(str1, str2)
         return nil if str1.strip.empty? || str1.length >= str2.length
         return nil unless str2.slice(0...str1.length) == str1

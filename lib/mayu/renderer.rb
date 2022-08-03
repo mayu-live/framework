@@ -27,7 +27,7 @@ module Mayu
         )
 
       @root = T.let(VDOM.h(app), VDOM::Descriptor)
-      @vtree = T.let(VDOM::VTree.new(@root, task: @barrier), VDOM::VTree)
+      @vtree = T.let(VDOM::VTree.new(task: @barrier), VDOM::VTree)
       @html = T.let("", String)
 
       @barrier.async(annotation: "Renderer patch sets") do

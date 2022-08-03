@@ -1,5 +1,7 @@
 # typed: strict
 
+require "sorbet-runtime"
+
 module Mayu
   module VDOM
     module H

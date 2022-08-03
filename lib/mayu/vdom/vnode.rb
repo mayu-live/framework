@@ -108,6 +108,11 @@ module Mayu
         result
       end
 
+      sig {returns(String)}
+      def inspect
+        "<#VNode:#{id} type=#{descriptor.type} key=#{descriptor.key}>"
+      end
+
       sig do
         params(level: Integer, exclude_components: T::Boolean).returns(String)
       end
