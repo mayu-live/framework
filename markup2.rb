@@ -166,21 +166,22 @@ module VDOM2
   class VTree
     extend T::Sig
 
+    sig {returns(T::Array[T.untyped])}
+    attr_reader :patchsets
+
     sig { void }
     def initialize
       @root = T.let(nil, T.nilable(VNode))
+      @patchsets = T.let([], T::Array[T.untyped])
     end
 
     sig do
-      params(
-        descriptor: Descriptor,
-        blk: T.nilable(T.proc.params(arg0: T.untyped).void)
-      ).returns(T.nilable(VNode))
+      params(descriptor: Descriptor).returns(T.nilable(VNode))
     end
-    def render(descriptor, &blk)
+    def render(descriptor)
       ctx = UpdateContext.new
       @root = patch(ctx, @root, descriptor)
-      yield ctx.patches if block_given?
+      @patchsets.push(ctx.patches)
       @root
     end
 
@@ -224,10 +225,7 @@ module VDOM2
         raise "Can not patch different types!"
       end
 
-      component = vnode.component
-      new_children = descriptor.children
-
-      if component
+      if component = vnode.component
         if component.should_update?(descriptor.props, component.__next_state)
           vnode.descriptor = descriptor
           component.__props = descriptor.props
@@ -246,6 +244,18 @@ module VDOM2
         return vnode
       end
 
+      if descriptor.type.is_a?(Proc)
+        vnode.descriptor = descriptor
+        descriptors = descriptor.type.call(**descriptor.props)
+
+        ctx.enter(vnode) do
+          vnode.children =
+          update_children(ctx, vnode.children.compact, descriptors)
+        end
+
+        return vnode
+      end
+
       return vnode if vnode.descriptor == descriptor
 
       if descriptor.text?
@@ -259,7 +269,7 @@ module VDOM2
           if vnode.descriptor.children != descriptor.children
             ctx.enter(vnode) do
               vnode.children =
-                update_children(ctx, vnode.children, new_children)
+                update_children(ctx, vnode.children, descriptor.children)
             end
           end
         elsif descriptor.children?
@@ -663,7 +673,19 @@ module VDOM2
   class Descriptor
     extend T::Sig
 
-    Type = T.type_alias { T.any(Symbol, T.class_of(Component)) }
+    LambdaComponent =
+      T.type_alias do
+        T.proc.params(kwargs: Props).returns(T.nilable(Descriptor))
+      end
+
+    Type = T.type_alias {
+      T.any(
+        Symbol,
+        T.class_of(Component),
+        LambdaComponent
+      )
+    }
+
     Props = T.type_alias { T::Hash[Symbol, T.untyped] }
 
     TEXT = :TEXT
@@ -741,10 +763,35 @@ module VDOM2
     sig { params(other: Descriptor).returns(T::Boolean) }
     def same?(other)
       if key == other.key && type == other.type
-        type == :input ? props[:type] == props[:type] : true
+        if type == :input
+          props[:type] == props[:type]
+        else
+          true
+        end
       else
         false
       end
+    end
+  end
+
+  module H
+    extend T::Sig
+
+    sig do
+      params(
+        type: VDOM2::Descriptor::Type,
+        args: T.untyped,
+        props: T.untyped,
+        block:
+          T.nilable(
+            T.proc.returns(
+              T.nilable(T.any(VDOM2::Descriptor, T::Array[VDOM2::Descriptor]))
+            )
+          )
+      ).returns(VDOM2::Descriptor)
+    end
+    def h(type, *args, **props, &block)
+      Descriptor.new(type, props, args.concat(Array(block&.call).compact))
     end
   end
 end
@@ -759,45 +806,46 @@ def print_xml(source)
   puts io.read.gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
 end
 
+include VDOM2::H
+
 class MyApp < VDOM2::Component
   sig { returns(T.nilable(VDOM2::Descriptor)) }
   def render
-    h(:div) { h(:h1, "hello") }
-  end
-
-  sig do
-    params(
-      type: VDOM2::Descriptor::Type,
-      args: T.untyped,
-      props: T::Hash[Symbol, T.untyped],
-      block:
-        T.nilable(
-          T.proc.returns(
-            T.nilable(T.any(VDOM2::Descriptor, T::Array[VDOM2::Descriptor]))
-          )
-        )
-    ).returns(VDOM2::Descriptor)
-  end
-  def h(type, *args, **props, &block)
-    VDOM2::Descriptor.new(type, props, args.concat(Array(block&.call).compact))
+    h(:div) do
+      [
+        h(:h1, "hello"),
+        h(:ul) do
+          props[:items].map do |item|
+            h(:li, key: item[:id]) { item[:title] }
+          end
+        end
+      ]
+    end
   end
 end
 
-patch_sets = []
-vdom = VDOM2::VTree.new
-tree =
-  vdom.render(
-    VDOM2::Descriptor.new(MyApp, { numbers: [[1, 1], [2, 2], [3, 3]] })
-  ) { |patches| patch_sets.push(patches) }
-print_xml(tree.to_s)
-# puts JSON.pretty_generate(tree.to_json)
-tree =
-  vdom.render(
-    VDOM2::Descriptor.new(MyApp, { numbers: [[2, 1], [4, 4], [3, 3], [1, 2]] })
-  ) { |patches| patch_sets.push(patches) }
-print_xml(tree.to_s)
+vtree = VDOM2::VTree.new
 
-tree =
-  vdom.render(VDOM2::Descriptor.new(MyApp, { numbers: [] })) do |patches|
-    patch_sets.push(patches)
-  end
+print_xml(vtree.render(h(MyApp,
+  items: [
+    { id: 1, title: "Item 1" },
+    { id: 2, title: "Item 2" },
+    { id: 3, title: "Item 3" },
+    { id: 4, title: "Item 4" },
+    { id: 5, title: "Item 5" },
+  ]
+)).to_s)
+
+print_xml(vtree.render(h(MyApp,
+  items: [
+    { id: 1, title: "Item 1" },
+    { id: 5, title: "Item 5" },
+    { id: 2, title: "Item 2" },
+    { id: 4, title: "Item 4" },
+  ]
+)).to_s)
+
+File.write(
+  "patches.json",
+  JSON.pretty_generate(vtree.patchsets)
+)
