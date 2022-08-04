@@ -1,11 +1,29 @@
-.form {
+.controls {
   display: flex;
+}
+
+.figure {
+  padding: 1em;
+}
+
+.author {
+  text-align: right;
 }
 
 .button {
   flex: 1;
+  font-size: 2em;
+  font-family: monospace;
+}
+
+.number {
+  font-family: monospace;
+  font-size: 2em;
+  text-align: center;
 }
 
 .range {
   width: 100%;
 }
+
+.

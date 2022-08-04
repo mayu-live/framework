@@ -85,30 +85,28 @@ render do
   quote = QUOTES[index]
 
   <div style={{ background: "hsl(#{index * 10}deg, 50%, 50%)" }}>
-    <div>
-      <div class={styles.form}>
-        <button class={styles.button} on-click={handler(:prev)}>Prev</button>
-        <input
-          type="number"
-          value={state[:index]}
-          on-change={handler(:change)}
-          class={styles.button}
-        />
-        <button class={styles.button} on-click={handler(:next)}>Next</button>
-      </div>
-      <p>{state.inspect}</p>
-      <input
-        type="range"
-        min="0"
-        max={QUOTES.size - 1}
-        value={state[:value]}
-        on-input={handler(:input)}
-        on-change={handler(:change)}
-      />
-    </div>
-    <figure>
+    <figure class={styles.figure}>
       <blockquote>{quote[:quote]}</blockquote>
-      <figcaption>{quote[:author]}</figcaption>
+      <figcaption class={styles.author}>{quote[:author]}</figcaption>
     </figure>
+    <input
+      type="range"
+      min="0"
+      max={QUOTES.size - 1}
+      value={state[:value]}
+      on-input={handler(:input)}
+      on-change={handler(:change)}
+      class={styles.range}
+    />
+    <div class={styles.controls}>
+      <button class={styles.button} on-click={handler(:prev)}>Prev</button>
+      <input
+        type="number"
+        value={state[:index]}
+        on-change={handler(:change)}
+        class={styles.number}
+      />
+      <button class={styles.button} on-click={handler(:next)}>Next</button>
+    </div>
   </div>
 end

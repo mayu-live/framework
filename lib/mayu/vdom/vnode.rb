@@ -103,24 +103,6 @@ module Mayu
         children.empty? ? { id:, type: type.to_s } : { id:, ch: children.map(&:id_tree), type: type.to_s }
       end
 
-      sig do
-        params(result: T::Hash[String, String]).returns(T::Hash[String, String])
-      end
-      def stylesheets(result = {})
-        type = descriptor.type
-
-        if Component.component_class?(type)
-          css = T.cast(type, T.class_of(Component::Base)).stylesheets
-          result[css.path] ||= css.to_s
-        end
-
-        children.each do |child|
-          result.merge!(child.stylesheets(result)) if child
-        end
-
-        result
-      end
-
       sig {returns(String)}
       def inspect
         "<#VNode:#{id} type=#{descriptor.type} key=#{descriptor.key}>"

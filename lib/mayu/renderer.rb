@@ -28,21 +28,20 @@ module Mayu
 
       @barrier.async(annotation: "Renderer patch sets") do
         @vtree.on_update.wait => :patch, initial_patches
-        first_insert = initial_patches.find { _1[:type] == :insert }
+        initial_insert = initial_patches.find { _1[:type] == :insert }
 
-        unless first_insert
+        unless initial_insert
           raise "No insert patch in initial render!"
         end
 
         respond(:initial_render, initial_patches)
-        respond(:init, first_insert[:ids])
+        respond(:init, initial_insert[:ids])
 
         loop do
           message = @vtree.on_update.wait
 
           case message
           in :patch, patches
-
             respond(:patch, patches)
           else
             puts "\e[31mUnknown event: #{message.inspect}\e[0m"

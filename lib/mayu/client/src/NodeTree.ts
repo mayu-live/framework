@@ -23,6 +23,7 @@ type MovePatch = {
 };
 
 type StylePatch = { type: "css"; id: number; attr: string; value?: string };
+type StylesheetPatch = { type: "stylesheet"; paths: string[] };
 
 type AddTextPatch = { type: "text"; id: number; text: string };
 type AppendTextPatch = { type: "text"; id: number; append: string };
@@ -41,7 +42,8 @@ export type Patch =
   | RemovePatch
   | TextPatch
   | AttributePatch
-  | StylePatch;
+  | StylePatch
+  | StylesheetPatch;
 
 class NodeTree {
   #cache = new Map<number, CacheEntry>();
@@ -98,8 +100,25 @@ class NodeTree {
         }
         break;
       }
+      case "stylesheet": {
+        for (const href of patch.paths) {
+          // TODO: This should be possible in Chrome, but not yet in Firefox.
+          // const stylesheet = await import(path, { assert: { type: 'css' } });
+          // document.adoptedStyleSheets.push(stylesheet)
+          if (document.querySelector(`link[href="${href}"]`)) {
+            continue
+          }
+
+          const link = document.createElement('link')
+          link.setAttribute('rel', 'stylesheet')
+          link.setAttribute('href', href)
+          document.head.insertAdjacentElement('beforeend', link)
+        }
+
+        break;
+      }
       default: {
-        logger.error("Unknown patch", patch);
+        console.error("Unknown patch", patch);
       }
     }
   }

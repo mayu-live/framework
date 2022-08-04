@@ -104,8 +104,10 @@ module Mayu
             case patch
             in type: :insert, html:
               rendered_html = html
-            in type: :stylesheet, path:
-              stylesheets.add(path)
+            in type: :stylesheet, paths:
+              paths.each { stylesheets.add(_1) }
+          else
+            raise patch.inspect
             end
           end
 
@@ -169,7 +171,7 @@ module Mayu
 
         @timeout_task =
           @task.async do |subtask|
-            @timeout_in_seconds.downto(0) do |i|
+            @timeout_in_seconds.times do
               subtask.sleep 1
             end
 
@@ -177,6 +179,24 @@ module Mayu
           ensure
             @timeout_task = nil
           end
+      end
+    end
+
+    class AssetsApp
+      MOUNT_PATH = "/__mayu/assets"
+
+      def call(env)
+        asset =  Mayu::Assets::Manager.find(File.basename(env[Rack::PATH_INFO].to_s))
+
+        unless asset
+          return [404, {}, ['File not found']]
+        end
+
+        unless env["HTTP_ACCEPT"].to_s.split(",").include?(asset.content_type)
+          return [406, {}, ["Not acceptable, try requesting #{asset.content_type} instead"]]
+        end
+
+        [200, { "content-type" => asset.content_type }, [asset.content]]
       end
     end
 
@@ -238,7 +258,9 @@ module Mayu
 
     class InitSessionApp
       def call(env)
-        if env[Rack::PATH_INFO] == "/favicon.ico"
+        request = Rack::Request.new(env)
+
+        if request.path_info == "/favicon.ico"
           return [404, { 'content-type' => 'text/plain' }, ['There is no favicon']]
         end
 
@@ -289,6 +311,10 @@ module Mayu
 
       map CallbackHandlerApp::MOUNT_PATH do
         run CallbackHandlerApp.new
+      end
+
+      map AssetsApp::MOUNT_PATH do
+        run AssetsApp.new
       end
 
       use Rack::Static,

@@ -3,13 +3,16 @@
 require "base64"
 require "digest/sha2"
 require "crass"
+require_relative "../assets"
 
 module Mayu
   module Modules
     module CSS
       def self.load(path)
-        CSSModule.new(path, File.read(path))
-      rescue StandardError
+        mod = CSSModule.new(path, File.read(path))
+        Mayu::Assets::Manager.instance.add(path, "text/css", mod.to_s)
+        mod
+      rescue => e
         NoModule.new(path)
       end
 
@@ -81,7 +84,7 @@ module Mayu
 
           class_names = {}
           compositions = {}
-          tree = Crass.parse(src)
+          tree = Crass.parse(src, strict: true)
           tree = update_tree(tree, class_names, compositions)
 
           @class_names =
@@ -91,7 +94,7 @@ module Mayu
               end
               .to_h
 
-          @src = Crass::Parser.stringify(tree)
+          @src = Crass::Parser.stringify(tree).strip + "\n"
         end
 
         def proxy
@@ -147,6 +150,8 @@ module Mayu
             end
 
             if node[:children]
+              node[:children].delete_if { _1[:node] == :whitespace }
+
               return(
                 node.merge(
                   children:

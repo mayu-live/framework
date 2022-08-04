@@ -43,7 +43,7 @@ module Mayu
 
       sig { params(path: String).returns(CSS::Base) }
       def load_css(path)
-        CSS.load(File.join(@root, resolve_path(path.sub(/\.rux$/, ".css"))))
+        CSS.load(File.join(@root, resolve_path(path).sub(/\.rux$/, ".css")))
       end
     end
   end

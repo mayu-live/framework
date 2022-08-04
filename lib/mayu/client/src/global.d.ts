@@ -8,4 +8,8 @@ declare global {
   interface Window {
     Mayu: Mayu
   }
+
+  interface Document {
+    adoptedStyleSheets: any[];
+  }
 }

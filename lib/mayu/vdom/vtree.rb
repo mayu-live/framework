@@ -97,7 +97,7 @@ module Mayu
                   end
                 end
 
-                commit!(ctx.patches)
+                commit!(ctx)
 
                 sleep 0.05
               end
@@ -117,7 +117,7 @@ module Mayu
       def render(descriptor)
         ctx = UpdateContext.new
         @root = patch(ctx, @root, descriptor)
-        commit!(ctx.patches)
+        commit!(ctx)
         @root
       end
 
@@ -145,11 +145,6 @@ module Mayu
         @root&.id_tree
       end
 
-      sig { returns(T::Hash[String, String]) }
-      def stylesheets
-        @root&.stylesheets || {}
-      end
-
       sig { params(vnode: VNode).void }
       def enqueue_update!(vnode)
         component = vnode.component
@@ -169,9 +164,9 @@ module Mayu
 
       private
 
-      sig { params(patches: T.untyped).void }
-      def commit!(patches)
-        @on_update.signal([:patch, patches])
+      sig { params(ctx: UpdateContext).void }
+      def commit!(ctx)
+        @on_update.signal([:patch, ctx.patches + ctx.stylesheet_patch])
       end
 
       sig do
@@ -333,10 +328,10 @@ module Mayu
         vnode.component&.mount
         update_handlers({}, vnode.props)
 
-        if ss = component&.stylesheet
-          unless @sent_stylesheets.include?(ss.path)
-            ctx.stylesheet(ss.path)
-            @sent_stylesheets.add(ss.path)
+        if (stylesheet = component&.stylesheet).is_a?(Modules::CSS::CSSModule)
+          unless @sent_stylesheets.include?(stylesheet.path)
+            ctx.stylesheet(stylesheet.path)
+            @sent_stylesheets.add(stylesheet.path)
           end
         end
 

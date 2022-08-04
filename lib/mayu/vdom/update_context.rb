@@ -13,6 +13,16 @@ module Mayu
         @patches = T.let([], T::Array[T.untyped])
         @parents = T.let([], T::Array[VNode])
         @dom_parent_ids = T.let([], T::Array[VNode::Id])
+        @stylesheets = T.let(Set.new, T::Set[String])
+      end
+
+      sig {returns(T.untyped)}
+      def stylesheet_patch
+        return [] if @stylesheets.empty?
+
+        paths = Mayu::Assets::Manager.instance.public_filenames(@stylesheets.to_a).map { "/__mayu/assets/" + _1 }
+
+        [{ type: :stylesheet, paths: }]
       end
 
       sig { returns(T.nilable(VNode)) }
@@ -136,7 +146,7 @@ module Mayu
 
       sig { params(path: String).void }
       def stylesheet(path)
-        add_patch(:stylesheet, path:)
+        @stylesheets.add(path)
       end
 
       sig { params(vnode: VNode, text: String, append: T::Boolean).void }
