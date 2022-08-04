@@ -27,8 +27,8 @@ p {
 }
 </style>
 <dialog>
-<h1>Disconnected</h1>
-<p>It seems you have been disconnected.<p>
+<h1>Connection lost</h1>
+<p>Please check your internet connection.<p>
 <p><a href="javascript:document.location.reload()">Reload the page</a></p>
 </dialog>`;
 
