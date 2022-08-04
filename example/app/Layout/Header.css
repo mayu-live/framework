@@ -1,6 +1,7 @@
 .header {
-  background: #14ccca;
-  color: #e3fcfc;
+  background: var(--blue);
+  color: var(--white);
+  text-shadow: 2px 2px 7px #0009;
   padding: 1em;
 }
 
@@ -8,23 +9,15 @@
   max-width: var(--page-max-width);
   margin: 0 auto;
   padding: 0 1em;
-  display: flex;
-  align-items: center;
-}
-
-.left {
-  flex: 1;
 }
 
 .title {
   font-family: 'Shrikhand', cursive;
   font-size: 3em;
-  margin: 0;
+  line-height: 1em;
 }
 
 .tagline {
-  font-size: 1.2em;
-}
-
-.clock {
+  font-size: 0.9em;
+  white-space: nowrap;
 }

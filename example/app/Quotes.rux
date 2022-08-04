@@ -85,19 +85,6 @@ render do
   quote = QUOTES[index]
 
   <div style={{ background: "hsl(#{index * 10}deg, 50%, 50%)" }}>
-    <figure class={styles.figure}>
-      <blockquote>{quote[:quote]}</blockquote>
-      <figcaption class={styles.author}>{quote[:author]}</figcaption>
-    </figure>
-    <input
-      type="range"
-      min="0"
-      max={QUOTES.size - 1}
-      value={state[:value]}
-      on-input={handler(:input)}
-      on-change={handler(:change)}
-      class={styles.range}
-    />
     <div class={styles.controls}>
       <button class={styles.button} on-click={handler(:prev)}>Prev</button>
       <input
@@ -108,5 +95,18 @@ render do
       />
       <button class={styles.button} on-click={handler(:next)}>Next</button>
     </div>
+    <input
+      type="range"
+      min="0"
+      max={QUOTES.size - 1}
+      value={state[:value]}
+      on-input={handler(:input)}
+      on-change={handler(:change)}
+      class={styles.range}
+    />
+    <figure class={styles.figure}>
+      <blockquote>{quote[:quote]}</blockquote>
+      <figcaption class={styles.author}>{quote[:author]}</figcaption>
+    </figure>
   </div>
 end

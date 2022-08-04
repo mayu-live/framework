@@ -6,6 +6,8 @@
   padding: 0;
 
   --page-max-width: 900px;
+  --white: #e3fcfc;
+  --blue: #14ccca;
 }
 
 .html *,

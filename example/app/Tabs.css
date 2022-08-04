@@ -5,6 +5,7 @@
   padding: 1em;
   margin: 0 auto;
   max-width: var(--page-max-width);
+  flex-wrap: wrap;
 }
 
 .button {
@@ -20,13 +21,12 @@
 }
 
 .button:hover {
+  color: var(--white);
   filter: brightness(110%);
-  transform: scale(105%);
 }
 
 .button:active {
   filter: brightness(90%);
-  transform: scale(95%);
 }
 
 .selected {

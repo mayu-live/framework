@@ -26,5 +26,5 @@ mount do
 end
 
 render do
-  <p class="tagline">{state[:text]}</p>
+  <p class={props[:class]}>{state[:text]}</p>
 end

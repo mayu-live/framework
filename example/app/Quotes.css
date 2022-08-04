@@ -12,13 +12,14 @@
 
 .button {
   flex: 1;
-  font-size: 2em;
+  font-size: 1em;
   font-family: monospace;
 }
 
 .number {
+  flex: 0;
   font-family: monospace;
-  font-size: 2em;
+  font-size: 1em;
   text-align: center;
 }
 
