@@ -1,6 +1,6 @@
 require "json"
 
-attributes = JSON.parse(File.read('html-element-attributes.json'))
+attributes = JSON.parse(File.read("html-element-attributes.json"))
 global = attributes.delete("*")
 
 puts "module HTMLTags"

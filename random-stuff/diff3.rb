@@ -47,7 +47,7 @@ module Diff3
 
     while old_start_idx <= old_end_idx && new_start_idx <= new_end_idx
       old_start_idx += 1 and next unless old_start_vnode = old_ch[old_start_idx]
-      old_end_idx -= 1  and next unless old_end_vnode = old_ch[old_end_idx]
+      old_end_idx -= 1 and next unless old_end_vnode = old_ch[old_end_idx]
       new_start_vnode = new_ch[new_start_idx]
       new_end_vnode = new_ch[new_end_idx]
 
@@ -110,16 +110,20 @@ module Diff3
       #  refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
       ref_elm = old_ch[old_end_idx.succ]
       descriptors_to_add = new_ch.slice(new_start_idx..new_end_idx)
-      descriptors_to_add.each do |descriptor|
-        instructions.push([:insert, descriptor, before: ref_elm&.id])
-      end if descriptors_to_add
+      if descriptors_to_add
+        descriptors_to_add.each do |descriptor|
+          instructions.push([:insert, descriptor, before: ref_elm&.id])
+        end
+      end
     elsif new_start_idx > new_end_idx
       vnodes_to_remove = old_ch.slice(old_start_idx..old_end_idx)
-      vnodes_to_remove.each do |vnode|
-        # unless moved_ids.include?(vnode.id)
+      if vnodes_to_remove
+        vnodes_to_remove.each do |vnode|
+          # unless moved_ids.include?(vnode.id)
           instructions.push([:remove, vnode.id])
-        # end
-      end if vnodes_to_remove
+          # end
+        end
+      end
     end
 
     instructions
@@ -142,13 +146,13 @@ module Diff3
     patches.each do |patch|
       type, *rest = patch
       case patch
-      in :insert, descriptor, { before: }
+      in [:insert, descriptor, { before: }]
         index = children.map(&:id).index(before) || -1
         children.insert(index, init_vnode(descriptor))
-      in :patch, id, descriptor
+      in [:patch, id, descriptor]
         child = children.find { |child| child.id == id }
         child.descriptor = descriptor
-      in :remove, id
+      in [:remove, id]
         children.delete_if { |child| child.id == id }
       else
         p patch
@@ -165,24 +169,33 @@ end
 
 children = []
 
-children = Diff3.patch(children, Diff3.diff(children, [
-  h(:p, "p"),
-  h(:span, "span"),
-  h(:div, "div"),
-]) { |vnode, descriptor| vnode.descriptor.same?(descriptor) })
+children =
+  Diff3.patch(
+    children,
+    Diff3.diff(
+      children,
+      [h(:p, "p"), h(:span, "span"), h(:div, "div")]
+    ) { |vnode, descriptor| vnode.descriptor.same?(descriptor) }
+  )
 
 p children
 
-children = Diff3.patch(children, Diff3.diff(children, [
-  h(:p, "p"),
-  h(:span, "span"),
-]) { |vnode, descriptor| vnode.descriptor.same?(descriptor) })
+children =
+  Diff3.patch(
+    children,
+    Diff3.diff(children, [h(:p, "p"), h(:span, "span")]) do |vnode, descriptor|
+      vnode.descriptor.same?(descriptor)
+    end
+  )
 
 p children
 
-children = Diff3.patch(children, Diff3.diff(children, [
-  h(:p, "p"),
-  h(:xspan, "span"),
-]) { |vnode, descriptor| vnode.descriptor.same?(descriptor) })
+children =
+  Diff3.patch(
+    children,
+    Diff3.diff(children, [h(:p, "p"), h(:xspan, "span")]) do |vnode, descriptor|
+      vnode.descriptor.same?(descriptor)
+    end
+  )
 
 p children

@@ -112,9 +112,7 @@ module Mayu
             end
           end
 
-          if rendered_html.empty?
-            raise "Rendered html is empty"
-          end
+          raise "Rendered html is empty" if rendered_html.empty?
 
           style =
             stylesheets
@@ -272,11 +270,7 @@ module Mayu
 
         payload = JSON.parse(request.body.read)
 
-        Session.ping(
-          session_id,
-          session_key,
-          payload
-        )
+        Session.ping(session_id, session_key, payload)
       end
 
       [200, {}, ["ok"]]
@@ -287,14 +281,14 @@ module Mayu
 
       def call(env)
         request = Rack::Request.new(env)
-        location = request.params[:path] || '/'
+        location = request.params[:path] || "/"
         cookie_name = Session.cookie_name(session_id)
         session_key =
           request
             .cookies
             .fetch(cookie_name) { return 401, {}, ["Session cookie not set"] }
         Console.logger.info(self) { "Resuming not implemented yet!!" }
-        return [302, {'location' => location}, ['resuming not implemented']]
+        return 302, { "location" => location }, ["resuming not implemented"]
       end
     end
 
@@ -350,10 +344,11 @@ module Mayu
           return 406, {}, ["Not acceptable, try requesting HTML instead"]
         end
 
-        session = Session.init(
-          environment: @environment,
-          request_path: request.path_info,
-        )
+        session =
+          Session.init(
+            environment: @environment,
+            request_path: request.path_info
+          )
 
         response =
           Rack::Response.new(
@@ -361,7 +356,7 @@ module Mayu
             200,
             {
               "content-type" => "text/html; charset=utf-8",
-              "cache-control" => "no-store",
+              "cache-control" => "no-store"
             }
           )
 
@@ -391,7 +386,7 @@ module Mayu
           .map { File.basename(_1) }
           .map { ["/__mayu/#{_1}", _1] }
           .to_h
-            .merge('/__mayu.serviceWorker.js' => 'sw.js')
+          .merge("/__mayu.serviceWorker.js" => "sw.js")
       p urls
       { root: JS_ROOT_DIR, urls: }
     end

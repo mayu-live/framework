@@ -201,7 +201,8 @@ module Mayu
             data = ReducerBuilder.build(File.read(path), path)
             name = File.basename(path, ".*").capitalize.to_sym
 
-            Mayu::App.replace_module(name,
+            Mayu::App.replace_module(
+              name,
               Actions: data[:action_module],
               Selectors: data[:selector_module]
             )
@@ -213,9 +214,9 @@ module Mayu
 
                 data[:reducers]
                   .filter { _1 === action }
-                  .reduce(state || data[:initial_state]) do |state, (_, reducer)|
-                    reducer.call(state, action)
-                  end
+                  .reduce(
+                    state || data[:initial_state]
+                  ) { |state, (_, reducer)| reducer.call(state, action) }
               end
             ]
           end

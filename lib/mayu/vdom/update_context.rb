@@ -16,11 +16,15 @@ module Mayu
         @stylesheets = T.let(Set.new, T::Set[String])
       end
 
-      sig {returns(T.untyped)}
+      sig { returns(T.untyped) }
       def stylesheet_patch
         return [] if @stylesheets.empty?
 
-        paths = Mayu::Assets::Manager.instance.public_filenames(@stylesheets.to_a).map { "/__mayu/assets/" + _1 }
+        paths =
+          Mayu::Assets::Manager
+            .instance
+            .public_filenames(@stylesheets.to_a)
+            .map { "/__mayu/assets/" + _1 }
 
         [{ type: :stylesheet, paths: }]
       end
@@ -34,11 +38,7 @@ module Mayu
       sig { params(vnode: VNode, blk: T.proc.void).void }
       def enter(vnode, &blk)
         dom_parent_id =
-          if vnode.descriptor.element?
-            vnode.id
-          else
-            vnode.dom_parent_id
-          end
+          (vnode.descriptor.element? ? vnode.id : vnode.dom_parent_id)
 
         @parents.push(vnode)
         @dom_parent_ids.push(dom_parent_id) if dom_parent_id
@@ -86,7 +86,13 @@ module Mayu
             ids:
           )
         else
-          add_patch(:insert, id: vnode.dom_id, parent: dom_parent_id, html:, ids:)
+          add_patch(
+            :insert,
+            id: vnode.dom_id,
+            parent: dom_parent_id,
+            html:,
+            ids:
+          )
         end
       end
 
@@ -105,16 +111,16 @@ module Mayu
         ).void
       end
       def move(vnode, before: nil, after: nil)
-      #   if before
-      # #    raise if vnode.key == 3 && before.key == 7
-      #     puts "\e[33mmove:\e[0m #{vnode.dom_id} before #{before.key}"
-      #   elsif after
-      #     puts "\e[33mmove:\e[0m #{vnode.dom_id} after #{after.key}"
-      #   else
-      #     puts "\e[33mmove:\e[0m #{vnode.dom_id} last"
-      #   end
+        #   if before
+        # #    raise if vnode.key == 3 && before.key == 7
+        #     puts "\e[33mmove:\e[0m #{vnode.dom_id} before #{before.key}"
+        #   elsif after
+        #     puts "\e[33mmove:\e[0m #{vnode.dom_id} after #{after.key}"
+        #   else
+        #     puts "\e[33mmove:\e[0m #{vnode.dom_id} last"
+        #   end
 
-       #  p dom_parent_id: vnode.dom_parent_id, vnode_id: vnode.id, vnode_dom_id: vnode.dom_id, type: vnode.descriptor.type.to_s
+        #  p dom_parent_id: vnode.dom_parent_id, vnode_id: vnode.id, vnode_dom_id: vnode.dom_id, type: vnode.descriptor.type.to_s
 
         if before
           add_patch(

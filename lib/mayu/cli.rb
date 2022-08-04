@@ -5,9 +5,9 @@ require "sorbet-runtime"
 
 require "optparse"
 
-require 'async'
-require 'async/http/endpoint'
-require 'falcon'
+require "async"
+require "async/http/endpoint"
+require "falcon"
 
 require_relative "./server2"
 
@@ -20,7 +20,7 @@ module Mayu
       extend T::Helpers
       abstract!
 
-      sig {abstract.params(argv: T::Array[String]).void}
+      sig { abstract.params(argv: T::Array[String]).void }
       def self.call(argv)
       end
     end
@@ -28,7 +28,7 @@ module Mayu
     class HelpCommand < AbstractCommand
       extend T::Sig
 
-      sig {override.params(argv: T::Array[String]).void}
+      sig { override.params(argv: T::Array[String]).void }
       def self.call(argv)
         puts "help"
       end
@@ -43,49 +43,51 @@ module Mayu
         prop :verbose, T::Boolean, default: false
       end
 
-      sig {override.params(argv: T::Array[String]).void}
+      sig { override.params(argv: T::Array[String]).void }
       def self.call(argv)
         options = Options.new
 
-        opt_parser = OptionParser.new do |parser|
-          parser.banner = "Usage: example.rb [options]"
+        opt_parser =
+          OptionParser.new do |parser|
+            parser.banner = "Usage: example.rb [options]"
 
-          parser.on("-pPORT", "--port=PORT", "Set the port") do |port|
-            options.port = port.to_i
-          end
+            parser.on("-pPORT", "--port=PORT", "Set the port") do |port|
+              options.port = port.to_i
+            end
 
-          parser.on("-pHOST", "--host=HOST", "Set the host") do |host|
-            options.host = host
-          end
+            parser.on("-pHOST", "--host=HOST", "Set the host") do |host|
+              options.host = host
+            end
 
-          parser.on("-v", "--verbose", "Verbose logging") do |verbose|
-            options.verbose = true
-          end
+            parser.on("-v", "--verbose", "Verbose logging") do |verbose|
+              options.verbose = true
+            end
 
-          parser.on("-h", "--help", "Prints this help") do
-            puts parser
-            exit
+            parser.on("-h", "--help", "Prints this help") do
+              puts parser
+              exit
+            end
           end
-        end
 
         opt_parser.parse(argv)
 
         new(options).call
       end
 
-      sig {params(options: Options).void}
+      sig { params(options: Options).void }
       def initialize(options)
         @options = options
       end
 
-      sig {void}
+      sig { void }
       def call
         Async do
           url = "http://#{@options.host}:#{@options.port}"
 
-          endpoint = Async::HTTP::Endpoint
-            .parse(url)
-            .with(protocol: Async::HTTP::Protocol::HTTP2)
+          endpoint =
+            Async::HTTP::Endpoint.parse(url).with(
+              protocol: Async::HTTP::Protocol::HTTP2
+            )
 
           app = Falcon::Server.middleware(Mayu::Server2::App)
           server = Falcon::Server.new(app, endpoint)
@@ -97,21 +99,27 @@ module Mayu
       end
     end
 
-    COMMANDS = T.let({
-      "dev" => ServeCommand,
-      "start" => ServeCommand,
-      "help" => HelpCommand,
-    }, T::Hash[String, T.class_of(AbstractCommand)])
+    COMMANDS =
+      T.let(
+        {
+          "dev" => ServeCommand,
+          "start" => ServeCommand,
+          "help" => HelpCommand
+        },
+        T::Hash[String, T.class_of(AbstractCommand)]
+      )
 
-    sig {params(argv: T::Array[String]).void}
+    sig { params(argv: T::Array[String]).void }
     def self.call(argv)
       cmd, *args = argv
 
-      COMMANDS.fetch(cmd.to_s) {
-        puts "Invalid command: #{ARGV.first.inspect}"
-        puts "Try: #$0 [#{COMMANDS.keys.join("|")}]"
-        exit 1
-      }.call(args || [])
+      COMMANDS
+        .fetch(cmd.to_s) do
+          puts "Invalid command: #{ARGV.first.inspect}"
+          puts "Try: #{$0} [#{COMMANDS.keys.join("|")}]"
+          exit 1
+        end
+        .call(args || [])
     end
   end
 end

@@ -17,43 +17,39 @@ module VDOM2
   class Indexes
     extend T::Sig
 
-    sig{params(indexes: T::Array[Integer]).void}
+    sig { params(indexes: T::Array[Integer]).void }
     def initialize(indexes = [])
       @indexes = indexes
     end
 
-    sig{params(id: Integer).void}
+    sig { params(id: Integer).void }
     def append(id)
       @indexes.delete(id)
       @indexes.push(id)
     end
 
-    sig{params(id: Integer).returns(T.nilable(Integer))}
+    sig { params(id: Integer).returns(T.nilable(Integer)) }
     def index(id) = @indexes.index(id)
 
-    sig{params(id: Integer, before: T.nilable(Integer)).void}
+    sig { params(id: Integer, before: T.nilable(Integer)).void }
     def insert_before(id, before)
       @indexes.delete(id)
       index = before && @indexes.index(before)
-      if index
-        @indexes.insert(index, id)
-      else
-        @indexes.push(id)
-      end
+      index ? @indexes.insert(index, id) : @indexes.push(id)
       p @indexes
     end
 
-    sig{params(id: Integer).returns(T.nilable(Integer))}
+    sig { params(id: Integer).returns(T.nilable(Integer)) }
     def next_sibling(id)
       if index = @indexes.index(id)
         @indexes[index.succ]
       end
     end
 
-    sig{params(id: Integer).void}
+    sig { params(id: Integer).void }
     def remove(id) = @indexes.delete(id)
 
-    sig{returns(T::Array[Integer])}
+    sig { returns(T::Array[Integer]) }
     def to_a = @indexes
   end
 
@@ -211,7 +207,7 @@ module VDOM2
 
     Id = T.type_alias { Integer }
 
-    sig {returns(T::Array[T.untyped])}
+    sig { returns(T::Array[T.untyped]) }
     attr_reader :patchsets
 
     sig { void }
@@ -221,9 +217,7 @@ module VDOM2
       @id_counter = T.let(0, Id)
     end
 
-    sig do
-      params(descriptor: Descriptor).returns(T.nilable(VNode))
-    end
+    sig { params(descriptor: Descriptor).returns(T.nilable(VNode)) }
     def render(descriptor)
       ctx = UpdateContext.new
       @root = patch(ctx, @root, descriptor)
@@ -233,9 +227,7 @@ module VDOM2
 
     sig { returns(Id) }
     def next_id!
-      @id_counter.tap do
-        @id_counter = @id_counter.succ
-      end
+      @id_counter.tap { @id_counter = @id_counter.succ }
     end
 
     private
@@ -305,7 +297,7 @@ module VDOM2
 
         ctx.enter(vnode) do
           vnode.children =
-          update_children(ctx, vnode.children.compact, descriptors)
+            update_children(ctx, vnode.children.compact, descriptors)
         end
 
         return vnode
@@ -409,7 +401,7 @@ module VDOM2
       end
     end
 
-    sig{params(vnode: VNode, descriptor: Descriptor).returns(T::Boolean)}
+    sig { params(vnode: VNode, descriptor: Descriptor).returns(T::Boolean) }
     def same?(vnode, descriptor)
       vnode.descriptor.same?(descriptor)
     end
@@ -436,8 +428,9 @@ module VDOM2
       children = []
 
       while old_start_idx <= old_end_idx && new_start_idx <= new_end_idx
-        old_start_idx += 1 and next unless old_start_vnode = old_ch[old_start_idx]
-        old_end_idx -= 1  and next unless old_end_vnode = old_ch[old_end_idx]
+        old_start_idx += 1 and next unless old_start_vnode =
+          old_ch[old_start_idx]
+        old_end_idx -= 1 and next unless old_end_vnode = old_ch[old_end_idx]
         new_start_vnode = T.must(new_ch[new_start_idx])
         new_end_vnode = T.must(new_ch[new_end_idx])
 
@@ -460,7 +453,10 @@ module VDOM2
         if same?(old_start_vnode, new_end_vnode)
           patch_vnode(ctx, old_start_vnode, new_end_vnode)
           ctx.move(old_start_vnode, after: old_end_vnode)
-          indexes.insert_before(old_start_vnode.id, indexes.next_sibling(old_end_vnode.id))
+          indexes.insert_before(
+            old_start_vnode.id,
+            indexes.next_sibling(old_end_vnode.id)
+          )
           children.push(old_start_vnode)
           old_start_idx += 1
           new_end_idx -= 1
@@ -503,7 +499,7 @@ module VDOM2
 
         puts "Same key but different element, treat as new element"
         vnode = init_vnode(ctx, new_start_vnode)
-        ctx.insert(vnode , before: old_start_vnode)
+        ctx.insert(vnode, before: old_start_vnode)
         indexes.insert_before(vnode.id, old_start_vnode.id)
         children.push(vnode)
 
@@ -515,19 +511,21 @@ module VDOM2
         #  refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
         ref_elm = vnodes[old_end_idx.succ]
         descriptors_to_add = new_ch.slice(new_start_idx..new_end_idx)
-        descriptors_to_add.each do |descriptor|
-          new_vnode = init_vnode(ctx, descriptor)
-          ctx.insert(new_vnode, before: ref_elm)
-          indexes.insert_before(new_vnode.id, ref_elm&.id)
-          children.push(new_vnode)
-        end if descriptors_to_add
+        if descriptors_to_add
+          descriptors_to_add.each do |descriptor|
+            new_vnode = init_vnode(ctx, descriptor)
+            ctx.insert(new_vnode, before: ref_elm)
+            indexes.insert_before(new_vnode.id, ref_elm&.id)
+            children.push(new_vnode)
+          end
+        end
       elsif new_start_idx > new_end_idx
         vnodes_to_remove = old_ch.slice(old_start_idx..old_end_idx)
-        vnodes_to_remove.each do |vnode|
-          unless moved_ids.include?(vnode.id)
-            remove_vnode(ctx, vnode)
+        if vnodes_to_remove
+          vnodes_to_remove.each do |vnode|
+            remove_vnode(ctx, vnode) unless moved_ids.include?(vnode.id)
           end
-        end if vnodes_to_remove
+        end
       end
 
       children.sort_by { indexes.index(_1.id) || Float::INFINITY }
@@ -633,7 +631,7 @@ module VDOM2
       "\e[34;7m#{id}\e[0;7m #{text_content}\e[0m"
     end
 
-    sig {params(level: Integer).returns(String)}
+    sig { params(level: Integer).returns(String) }
     def to_s(level = 0)
       return "" if descriptor.comment?
 
@@ -646,7 +644,7 @@ module VDOM2
       ].compact.reject(&:empty?).join("\n")
     end
 
-    sig {returns(String)}
+    sig { returns(String) }
     def text_content
       if descriptor.text?
         content = descriptor.text
@@ -764,13 +762,8 @@ module VDOM2
         T.proc.params(kwargs: Props).returns(T.nilable(Descriptor))
       end
 
-    Type = T.type_alias {
-      T.any(
-        Symbol,
-        T.class_of(Component),
-        LambdaComponent
-      )
-    }
+    Type =
+      T.type_alias { T.any(Symbol, T.class_of(Component), LambdaComponent) }
 
     Props = T.type_alias { T::Hash[Symbol, T.untyped] }
 
@@ -849,11 +842,7 @@ module VDOM2
     sig { params(other: Descriptor).returns(T::Boolean) }
     def same?(other)
       if key == other.key && type == other.type
-        if type == :input
-          props[:type] == props[:type]
-        else
-          true
-        end
+        type == :input ? props[:type] == props[:type] : true
       else
         false
       end
@@ -924,19 +913,10 @@ end
 class Quotes < VDOM2::Component
   include VDOM2::H
 
-  sig {returns(VDOM2::Descriptor)}
+  sig { returns(VDOM2::Descriptor) }
   def render
     h(:div) do
-      [
-        h(:h2, "Asd"),
-        h(:ul) do
-        [
-            h(:li, "xoo"),
-            h(:li, "xar"),
-            h(:li, "xaz"),
-          ]
-        end,
-      ]
+      [h(:h2, "Asd"), h(:ul) { [h(:li, "xoo"), h(:li, "xar"), h(:li, "xaz")] }]
     end
   end
 end
@@ -944,29 +924,26 @@ end
 class Asd < VDOM2::Component
   include VDOM2::H
 
-  sig {returns(VDOM2::Descriptor)}
+  sig { returns(VDOM2::Descriptor) }
   def render
-    h(:div) do
-      [
-        h(:h2, "Asd"),
-        h(:span, "lol"),
-      ]
-    end
+    h(:div) { [h(:h2, "Asd"), h(:span, "lol")] }
   end
 end
 
 render(
   h(:div) do
+    [h(:ul) { [h(:li, "foo"), h(:li, "bar")] }, h(:section) { h(Quotes) }]
+  end
+)
+
+render(
+  h(:div) do
     [
-      h(:ul) do
-        [
-          h(:li, "foo"),
-          h(:li, "bar"),
-        ]
-      end,
-      h(:section) do
-        h(Quotes)
-      end
+      h(:ul) { [h(:li, "foo"), h(:li, "bar")] },
+      h(:div) { h(:h2, "haj") },
+      h(:div) { h(:span, "hopp") },
+      h(:div) { h(:span, "hkarg") },
+      h(:section) { h(Asd) }
     ]
   end
 )
@@ -974,49 +951,11 @@ render(
 render(
   h(:div) do
     [
-      h(:ul) do
-        [
-          h(:li, "foo"),
-          h(:li, "bar"),
-        ]
-      end,
-      h(:div) do
-        h(:h2, "haj")
-      end,
-      h(:div) do
-        h(:span, "hopp")
-      end,
-      h(:div) do
-        h(:span, "hkarg")
-      end,
-      h(:section) do
-        h(Asd)
-      end
-    ]
-  end
-)
-
-render(
-  h(:div) do
-    [
-      h(:ul) do
-        [
-          h(:li, "foo"),
-          h(:li, "bar"),
-        ]
-      end,
-      h(:div) do
-        h(:h2, "haj")
-      end,
-      h(:div) do
-        h(:span, "hopp")
-      end,
-      h(:section) do
-        h(Asd)
-      end,
-      h(:div) do
-        h(:span, "hkarg")
-      end,
+      h(:ul) { [h(:li, "foo"), h(:li, "bar")] },
+      h(:div) { h(:h2, "haj") },
+      h(:div) { h(:span, "hopp") },
+      h(:section) { h(Asd) },
+      h(:div) { h(:span, "hkarg") }
     ]
   end
 )

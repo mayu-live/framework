@@ -11,7 +11,13 @@ module Mayu
   class Renderer
     extend T::Sig
 
-    sig { params(environment: Environment, request_path: String, parent: T.any(Async::Task, Async::Barrier)).void }
+    sig do
+      params(
+        environment: Environment,
+        request_path: String,
+        parent: T.any(Async::Task, Async::Barrier)
+      ).void
+    end
     def initialize(environment:, request_path:, parent: Async::Task.current)
       @environment = environment
       @current_path = request_path
@@ -32,20 +38,14 @@ module Mayu
       @vtree = T.let(VDOM::VTree.new(store: store, task: @barrier), VDOM::VTree)
 
       if code_reloader = environment.modules.code_reloader
-        @barrier.async do
-          code_reloader.on_update do
-            navigate(@current_path)
-          end
-        end
+        @barrier.async { code_reloader.on_update { navigate(@current_path) } }
       end
 
       @barrier.async(annotation: "Renderer patch sets") do
-        @vtree.on_update.dequeue => :patch, initial_patches
+        @vtree.on_update.dequeue => [:patch, initial_patches]
         initial_insert = initial_patches.find { _1[:type] == :insert }
 
-        unless initial_insert
-          raise "No insert patch in initial render!"
-        end
+        raise "No insert patch in initial render!" unless initial_insert
 
         respond(:initial_render, initial_patches)
         respond(:init, initial_insert[:ids])
@@ -54,9 +54,9 @@ module Mayu
           message = @vtree.on_update.dequeue
 
           case message
-          in :patch, patches
+          in [:patch, patches]
             respond(:patch, patches)
-          in :navigate, href
+          in [:navigate, href]
             navigate(href)
             respond(:navigate, href)
           else
@@ -123,7 +123,7 @@ module Mayu
     sig { params(args: T.untyped).void }
     def respond(*args) = @out.enqueue(args)
 
-    sig {void}
+    sig { void }
     def rerender! = @vtree.render(@app)
   end
 end

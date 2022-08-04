@@ -1,9 +1,9 @@
 import logger from "./logger.js";
 import NodeTree from "./NodeTree.js";
 import PingTimer from "./PingTimer.js";
-import DisconnectedComponent from './DisconnectedComponent.js'
+import DisconnectedComponent from "./DisconnectedComponent.js";
 
-window.customElements.define('mayu-disconnected', DisconnectedComponent);
+window.customElements.define("mayu-disconnected", DisconnectedComponent);
 
 class PingView {
   div: HTMLDivElement;
@@ -50,17 +50,19 @@ class Mayu {
 
     this.connection = new EventSource(`/__mayu/events/${this.sessionId}`);
 
-    const disconnectedElement = document.createElement('mayu-disconnected');
+    const disconnectedElement = document.createElement("mayu-disconnected");
 
     this.connection.onopen = () => {
-      console.log('Connection opened')
-      document.body.querySelectorAll('mayu-disconnected').forEach((el) => el.remove())
-    }
+      console.log("Connection opened");
+      document.body
+        .querySelectorAll("mayu-disconnected")
+        .forEach((el) => el.remove());
+    };
 
     this.connection.onerror = (e) => {
       logger.log(e);
       logger.error("Connection error.");
-      document.body.appendChild(disconnectedElement)
+      document.body.appendChild(disconnectedElement);
     };
 
     this.connection.addEventListener(
@@ -77,16 +79,16 @@ class Mayu {
     );
 
     if (window.navigation) {
-      window.navigation.addEventListener('navigate', (e: NavigateEvent) => {
-        console.log(e)
+      window.navigation.addEventListener("navigate", (e: NavigateEvent) => {
+        console.log(e);
         // e.preventDefault()
       });
     }
 
     this.connection.addEventListener("navigate", (e) => {
-      const path = JSON.parse(e.data)
-      console.log('Navigating to', path)
-      history.pushState({}, '', path)
+      const path = JSON.parse(e.data);
+      console.log("Navigating to", path);
+      history.pushState({}, "", path);
     });
 
     // if ("serviceWorker" in navigator) {

@@ -33,23 +33,25 @@ p {
 </dialog>`;
 
 class DisconnectedComponent extends HTMLElement {
-  dialog?: HTMLDialogElement
+  dialog?: HTMLDialogElement;
 
   connectedCallback() {
     if (!this.shadowRoot) {
       this.attachShadow({ mode: "open" });
     }
 
-    this.shadowRoot!.appendChild(template.content.cloneNode(true)) as DocumentFragment
+    this.shadowRoot!.appendChild(
+      template.content.cloneNode(true)
+    ) as DocumentFragment;
 
-    this.dialog = this.shadowRoot!.querySelector('dialog') as HTMLDialogElement
+    this.dialog = this.shadowRoot!.querySelector("dialog") as HTMLDialogElement;
 
-    this.dialog?.showModal()
+    this.dialog?.showModal();
   }
 
   disconnectedCallback() {
-    this.dialog?.close()
+    this.dialog?.close();
   }
 }
 
-export default DisconnectedComponent
+export default DisconnectedComponent;

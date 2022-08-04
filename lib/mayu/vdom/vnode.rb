@@ -46,9 +46,19 @@ module Mayu
       def dom? = type.is_a?(Symbol)
 
       sig do
-        params(vtree: VTree, dom_parent_id: Id, descriptor: Descriptor, task: Async::Task).void
+        params(
+          vtree: VTree,
+          dom_parent_id: Id,
+          descriptor: Descriptor,
+          task: Async::Task
+        ).void
       end
-      def initialize(vtree, dom_parent_id, descriptor, task: Async::Task.current)
+      def initialize(
+        vtree,
+        dom_parent_id,
+        descriptor,
+        task: Async::Task.current
+      )
         @id = T.let(vtree.next_id!, Id)
         @dom_parent_id = dom_parent_id
         @vtree = vtree
@@ -110,10 +120,14 @@ module Mayu
 
         return children.first&.id_tree if component
 
-        children.empty? ? { id:, type: type.to_s } : { id:, ch: children.map(&:id_tree), type: type.to_s }
+        if children.empty?
+          { id:, type: type.to_s }
+        else
+          { id:, ch: children.map(&:id_tree), type: type.to_s }
+        end
       end
 
-      sig {returns(String)}
+      sig { returns(String) }
       def inspect
         "<#VNode:#{id} type=#{descriptor.type} key=#{descriptor.key}>"
       end

@@ -69,20 +69,18 @@ def update_children(old_ch, new_ch)
 
   if old_start_idx > old_end_idx
     # TODO: something about ref elms from the new children
-    new_ch.slice(new_start_idx..new_end_idx).each do |vnode|
-      insert(init_vnode(descriptor), before: nil)
-    end
+    new_ch
+      .slice(new_start_idx..new_end_idx)
+      .each { |vnode| insert(init_vnode(descriptor), before: nil) }
   elsif new_start_idx > new_end_idx
-    old_ch.slice(old_start_idx..old_end_idx).each do |vnode|
-      remove_vnode(vnode)
-    end
+    old_ch
+      .slice(old_start_idx..old_end_idx)
+      .each { |vnode| remove_vnode(vnode) }
   end
 end
 
 def create_key_to_old_idx(children, start_idx, end_idx)
-  start_idx.upto(end_idx).reduce({}) do |h, i|
-    h.merge[children[i].key] = i
-  end
+  start_idx.upto(end_idx).reduce({}) { |h, i| h.merge[children[i].key] = i }
 end
 
 def same?(a, b)
@@ -109,18 +107,18 @@ def move(vnode, before: nil, after: nil)
 end
 
 old_ch = [
-  {key:  1, name: "one"},
-  {key:  2, name: "two"},
-  {key:  3, name: "three"},
-  {key:  nil, name: "four"},
-  {key:  nil, name: "five"},
+  { key: 1, name: "one" },
+  { key: 2, name: "two" },
+  { key: 3, name: "three" },
+  { key: nil, name: "four" },
+  { key: nil, name: "five" }
 ]
 
 new_ch = [
-  {key:  2, name: "two"},
-  {key:  3, name: "three"},
-  {key:  nil, name: "four"},
-  {key:  1, name: "one"},
+  { key: 2, name: "two" },
+  { key: 3, name: "three" },
+  { key: nil, name: "four" },
+  { key: 1, name: "one" }
 ]
 
 update_children(old_ch, new_ch)

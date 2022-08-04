@@ -9,12 +9,13 @@ actions do
   AddItem = action(:AddItem)
   RemoveItem = action(:RemoveItem)
 
-  LoadItems = async(:LoadItems) do |store|
-    puts "Loading items"
-    sleep 1
-    puts "Loaded items"
-    rand(10).succ.times.map { "Loaded item #{_1.succ}" }
-  end
+  LoadItems =
+    async(:LoadItems) do |store|
+      puts "Loading items"
+      sleep 1
+      puts "Loaded items"
+      rand(10).succ.times.map { "Loaded item #{_1.succ}" }
+    end
 end
 
 reducer(AddItem) do |state, payload|

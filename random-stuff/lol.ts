@@ -75,4 +75,3 @@ function patchVnode(
     if (isDef((i = data.hook)) && isDef((i = i.postpatch))) i(oldVnode, vnode);
   }
 }
-

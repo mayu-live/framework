@@ -127,7 +127,7 @@ is working and not.
 
 #### Missing features
 
-* Contexts are highly prioritized.
+- Contexts are highly prioritized.
   It should be possible to provide any sort of data to child
   components at any level, and those child components that subscribe
   to those context changes should be updated...
@@ -135,7 +135,7 @@ is working and not.
   context in the VTree object, and add some sort of special hooks
   to some special Provider/Consumer objects so that the providers
   can update the consumers...
-* Child diffing algorithm is not very efficient.
+- Child diffing algorithm is not very efficient.
   It seems to work well for simple demos, but it
   generates too many move instructions.
   I tried to make an implementation based on the
@@ -144,7 +144,7 @@ is working and not.
   time and I just got tired of it and wrote an
   unoptimized implementation, that while inefficient,
   at least gets the order right.
-* Rendering should be paused while the user is disconnected
+- Rendering should be paused while the user is disconnected
   to prevent sending a bunch of irrelevant updates whenever
   they come online.
 
@@ -155,9 +155,9 @@ However, it seems like each handler can only run once at a time.
 
 #### Missing features
 
-* There needs to be a way to define inline stateless
+- There needs to be a way to define inline stateless
   components. Not exactly sure how it would look.
-* Prop type validation maybe?
+- Prop type validation maybe?
 
 ### Modules
 
@@ -166,10 +166,10 @@ Maybe I'm too inspired by the JS world.
 
 #### Missing features
 
-* The entire thing needs to be rethought.
-* The CSS for a component needs to be updated dynamically.
-* Hot module replacement that works with images and everything.
-* Some file watcher library would be good to use here to monitor
+- The entire thing needs to be rethought.
+- The CSS for a component needs to be updated dynamically.
+- Hot module replacement that works with images and everything.
+- Some file watcher library would be good to use here to monitor
   all changes... Could maybe even instantiate some sort of tree
   similar to the VDOM tree and perform different actions when
   things change in the file tree...
@@ -195,21 +195,17 @@ Currrently working on getting something similar to Redux working...
 #### `state/auth.rb`
 
 ```ruby
-CurrentUserSelector = create_selector do |state|
-  state.dig(:auth, :current_user)
-end
+CurrentUserSelector =
+  create_selector { |state| state.dig(:auth, :current_user) }
 
-LogIn = async_action(:log_in) do |store, username:, password:|
-  user = DB[:users].where(username:)
-  raise InvalidCredentials unless user
-  user
-end
+LogIn =
+  async_action(:log_in) do |store, username:, password:|
+    user = DB[:users].where(username:)
+    raise InvalidCredentials unless user
+    user
+  end
 
-initial_state(
-  logging_in: false,
-  current_user: nil,
-  error: nil,
-)
+initial_state(logging_in: false, current_user: nil, error: nil)
 
 match(LogIn.pending) do |state|
   state[:error] = nil
@@ -235,12 +231,9 @@ end
 #### `components/CurrentUser.mayu`
 
 ```ruby
-use_store do |props|
-  {
-    current_user: CurrentUserSelector,
-  }
-end
+use_store { |props| { current_user: CurrentUserSelector } }
 ```
+
 ```mayu
 render do
   if current_user = store[:current_user]
@@ -253,7 +246,7 @@ end
 
 #### Missing features
 
-* I have been looking a lot at [XState](https://xstate.js.org/) which
+- I have been looking a lot at [XState](https://xstate.js.org/) which
   looks great, but I have never used it. I could probably implement
   something like Redux myself, but XState seems pretty complex.
   I do believe however that statecharts would be perfect for
@@ -265,9 +258,9 @@ end
 
 #### Missing features
 
-* Not even images are handled or anything.
-* For production builds, it should be possible to scan through
- the `app/`-directory, and for all assets that are found, :
+- Not even images are handled or anything.
+- For production builds, it should be possible to scan through
+  the `app/`-directory, and for all assets that are found, :
 
 ### I18n
 
@@ -313,8 +306,8 @@ On the other hand it would yield a lot of files in each directory...
 
 #### Missing features
 
-* Nothing done.
-* Need to implement some sort of parser that can insert components
+- Nothing done.
+- Need to implement some sort of parser that can insert components
   where the tags are... I have done this before in javascript.
 
 ### Pages and routing
@@ -326,4 +319,3 @@ So you create a page by putting it in `app/my-page/page.mayu` and it will get
 the path `/my-page/`. A page is a component but if you do `import` it will
 look for components in the `components/` directory, so you can't import other
 pages. If you need to share functionality, put stuff in components.
-

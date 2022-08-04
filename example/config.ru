@@ -3,13 +3,10 @@
 # frozen_string_literal: true
 
 root = File.dirname(__FILE__)
-$LOAD_PATH.unshift(File.join(root, '..', 'lib'))
+$LOAD_PATH.unshift(File.join(root, "..", "lib"))
 
 require "mayu/server2"
 
 use Rack::CommonLogger
 
-run Mayu::Server2.build(
-  root:,
-  hot_reload: ENV["MAYU_ENV"] != "production",
-)
+run Mayu::Server2.build(root:, hot_reload: ENV["MAYU_ENV"] != "production")

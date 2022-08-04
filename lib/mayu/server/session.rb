@@ -13,7 +13,8 @@ module Mayu
       class Connections
         extend T::Sig
 
-        Event = T.type_alias { { id: String, event: Symbol, payload: T.untyped } }
+        Event =
+          T.type_alias { { id: String, event: Symbol, payload: T.untyped } }
 
         sig { void }
         def initialize
@@ -27,7 +28,12 @@ module Mayu
           @events = T.let([], T::Array[Event])
         end
 
-        sig { params(connection: Connection, last_event_id: T.nilable(String)).returns(Connection) }
+        sig do
+          params(
+            connection: Connection,
+            last_event_id: T.nilable(String)
+          ).returns(Connection)
+        end
         def add(connection, last_event_id: nil)
           @connections[connection.id] = connection
           send_missed_events(connection, last_event_id)
@@ -63,19 +69,31 @@ module Mayu
 
         private
 
-        sig { params(connection: Connection, last_event_id: T.nilable(String)).returns(Connection) }
+        sig do
+          params(
+            connection: Connection,
+            last_event_id: T.nilable(String)
+          ).returns(Connection)
+        end
         def send_missed_events(connection, last_event_id)
           get_events_since(last_event_id).each_with_index do |message, i|
-            connection.send_event(message[:id], message[:event], message[:payload])
+            connection.send_event(
+              message[:id],
+              message[:event],
+              message[:payload]
+            )
           end
 
           connection
         end
 
-        sig { params(last_event_id: T.nilable(String)).returns(T::Array[Event]) }
+        sig do
+          params(last_event_id: T.nilable(String)).returns(T::Array[Event])
+        end
         def get_events_since(last_event_id = nil)
           if last_event_id
-            events = @events.drop_while { |message| message[:id] != last_event_id }
+            events =
+              @events.drop_while { |message| message[:id] != last_event_id }
             _last, *missed = events
             events
           else
@@ -105,10 +123,10 @@ module Mayu
                   if diff > TIMEOUT_SECONDS
                     puts "Stopping everything"
                     @renderer.stop
-                  puts "stopping task"
+                    puts "stopping task"
                     subtask.stop
-                  @task.stop
-                  Async::Task.current.reactor.print_hierarchy
+                    @task.stop
+                    Async::Task.current.reactor.print_hierarchy
                     break
                   end
                 end
@@ -190,7 +208,11 @@ module Mayu
         ]
       end
 
-      sig { params(session_id: String, last_event_id: T.nilable(String)).returns(Types::TRackReturn) }
+      sig do
+        params(session_id: String, last_event_id: T.nilable(String)).returns(
+          Types::TRackReturn
+        )
+      end
       def self.connect(session_id, last_event_id: nil)
         session =
           SESSIONS.fetch(session_id) do
@@ -213,7 +235,9 @@ module Mayu
         [200, {}, ["ok"]]
       end
 
-      sig { params(last_event_id: T.nilable(String)).returns(Types::TRackReturn) }
+      sig do
+        params(last_event_id: T.nilable(String)).returns(Types::TRackReturn)
+      end
       def connect(last_event_id: nil)
         # @disconnected_at = nil
         @connections.add(Connection.new(@id), last_event_id:).rack_response

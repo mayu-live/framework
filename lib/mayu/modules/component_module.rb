@@ -11,7 +11,14 @@ module Mayu
       sig { returns(T.class_of(VDOM::Component::Base)) }
       attr_reader :klass
 
-      sig { params(system: Modules::System, path: String, full_path: String, source: String).void }
+      sig do
+        params(
+          system: Modules::System,
+          path: String,
+          full_path: String,
+          source: String
+        ).void
+      end
       def initialize(system, path, full_path, source)
         transpiled = Rux.to_ruby(source, visitor: RuxVisitor.new)
 

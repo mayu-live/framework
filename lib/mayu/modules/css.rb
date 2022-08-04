@@ -26,10 +26,10 @@ module Mayu
       class Base
         extend T::Sig
 
-        sig{ returns(String) }
+        sig { returns(String) }
         attr_reader :path
 
-        sig{ params(path: String).void }
+        sig { params(path: String).void }
         def initialize(path)
           @path = path
         end
@@ -81,7 +81,10 @@ module Mayu
 
         def initialize(path, src)
           @path = path
-          @hash = Digest::SHA256.digest(Digest::SHA256.digest(path) + Digest::SHA256.digest(src))
+          @hash =
+            Digest::SHA256.digest(
+              Digest::SHA256.digest(path) + Digest::SHA256.digest(src)
+            )
 
           class_names = {}
           compositions = {}

@@ -3,31 +3,25 @@
 extend T::Sig
 extend Mayu::State::ReducerDSL
 
-class InvalidCredentials < StandardError ; end
-
-selectors do
-  CurrentUser = selector do |state|
-    state.dig(:auth, :current_user)
-  end
+class InvalidCredentials < StandardError
 end
+
+selectors { CurrentUser = selector { |state| state.dig(:auth, :current_user) } }
 
 actions do
-  LogIn = async(:log_in) do |store, username:, password:|
-    sleep 1
+  LogIn =
+    async(:log_in) do |store, username:, password:|
+      sleep 1
 
-    if username == 'foo' && password == 'bar'
-      { username: 'foo' }
-    else
-      raise InvalidCredentials
+      if username == "foo" && password == "bar"
+        { username: "foo" }
+      else
+        raise InvalidCredentials
+      end
     end
-  end
 end
 
-initial_state(
-  logging_in: false,
-  current_user: nil,
-  error: nil,
-)
+initial_state(logging_in: false, current_user: nil, error: nil)
 
 reducer(LogIn.pending) do |state|
   state[:error] = nil

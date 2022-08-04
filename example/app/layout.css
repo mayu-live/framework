@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Shrikhand&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Shrikhand&display=swap");
 
 .html {
   background: #000;
@@ -27,14 +27,14 @@
   background: #000;
   margin: 0;
   padding: 0;
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
   font-size: 1.2em;
   display: grid;
   min-height: 100vh;
   grid-template:
     "header" min-content
     "main" auto
-    "footer" min-content
+    "footer" min-content;
 }
 
 .wrap {
@@ -62,7 +62,7 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  font-size: .9em;
+  font-size: 0.9em;
 }
 
 .menuItem {
@@ -75,9 +75,9 @@
 
 .menuLink {
   border-radius: 3px;
-  transition: all .1s;
-  padding: .5em;
-  font-size: .9em;
+  transition: all 0.1s;
+  padding: 0.5em;
+  font-size: 0.9em;
 }
 
 .menuLink:link,

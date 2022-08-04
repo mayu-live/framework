@@ -8,7 +8,8 @@ module Mayu
     LAYOUT_FILENAME = "layout.mayu"
     NOT_FOUND_FILENAME = "404.mayu"
 
-    class NotFoundError < StandardError ; end
+    class NotFoundError < StandardError
+    end
 
     class Route < T::Struct
       const :path, String
@@ -23,13 +24,21 @@ module Mayu
       const :template, String
     end
 
-    sig{params(root: String, routes: T::Array[Route], layouts: T::Array[String], path: T::Array[String], level: Integer).returns(T::Array[Route])}
-    def self.build_routes(root, routes: [], layouts:  [], path: [], level: 0)
+    sig do
+      params(
+        root: String,
+        routes: T::Array[Route],
+        layouts: T::Array[String],
+        path: T::Array[String],
+        level: Integer
+      ).returns(T::Array[Route])
+    end
+    def self.build_routes(root, routes: [], layouts: [], path: [], level: 0)
       dir = T.unsafe(File).join(root, *path)
       p [:build_routes, dir]
       return routes unless File.directory?(dir)
 
-      entries = Dir.entries(dir) - %w(. ..)
+      entries = Dir.entries(dir) - %w[. ..]
       p entries
 
       if layout = entries.delete(LAYOUT_FILENAME)
@@ -37,77 +46,89 @@ module Mayu
       end
 
       if page = entries.delete(PAGE_FILENAME)
-        routes.push(Route.new(
-          path: path.join('/'),
-          regexp: path_to_regexp(path.join('/')),
-          layouts:,
-          template: T.unsafe(File).join(*path, page)
-        ))
+        routes.push(
+          Route.new(
+            path: path.join("/"),
+            regexp: path_to_regexp(path.join("/")),
+            layouts:,
+            template: T.unsafe(File).join(*path, page)
+          )
+        )
       end
 
       entries.each do |entry|
-        build_routes(File.join(root),
+        build_routes(
+          File.join(root),
           routes:,
           layouts:,
           path: path + [entry],
-          level: level.succ,
+          level: level.succ
         )
       end
 
       if not_found = entries.delete(NOT_FOUND_FILENAME)
-        routes.push(Route.new({
-          path: path.join('/'),
-          regexp: path_to_regexp((path + ["[anything]"]).join('/')),
-          layouts:,
-          template: T.unsafe(File).join(*path, not_found)
-        }))
+        routes.push(
+          Route.new(
+            {
+              path: path.join("/"),
+              regexp: path_to_regexp((path + ["[anything]"]).join("/")),
+              layouts:,
+              template: T.unsafe(File).join(*path, not_found)
+            }
+          )
+        )
         p routes.last
       else
-        if level.zero?
-          Console.logger.warn(self) {
-            <<~EOF
+        Console.logger.warn(self) { <<~EOF } if level.zero?
             There is no #{NOT_FOUND_FILENAME} in the app root,
             you should probably create one.
             EOF
-          }
-        end
       end
 
       routes
     end
 
-    sig {params(routes: T::Array[Route], request_path: String).returns(RouteMatch)}
+    sig do
+      params(routes: T::Array[Route], request_path: String).returns(RouteMatch)
+    end
     def self.match_route(routes, request_path)
       routes.each do |route|
         match = route.regexp.match(request_path)
 
         next unless match
 
-        return RouteMatch.new(
-          template: route.template,
-          layouts: route.layouts,
-          params: match.named_captures
-            .transform_keys(&:to_sym)
-            .transform_values(&:to_s)
+        return(
+          RouteMatch.new(
+            template: route.template,
+            layouts: route.layouts,
+            params:
+              match
+                .named_captures
+                .transform_keys(&:to_sym)
+                .transform_values(&:to_s)
+          )
         )
       end
       p request_path
       p routes
 
       raise NotFoundError,
-        "Page not found, and no 404 page either. You should probably create one."
+            "Page not found, and no 404 page either. You should probably create one."
     end
 
-    sig {params(path: String).returns(Regexp)}
+    sig { params(path: String).returns(Regexp) }
     def self.path_to_regexp(path)
-      parts = path.split('/').map do |part|
-        if part.match(/\A\[(?<var>\w+)\]\Z/)
-          var = Regexp.escape($~[:var])
-          "(?<#{var}>[^/]+)"
-        else
-          Regexp.escape(part).to_s
-        end
-      end
+      parts =
+        path
+          .split("/")
+          .map do |part|
+            if part.match(/\A\[(?<var>\w+)\]\Z/)
+              var = Regexp.escape($~[:var])
+              "(?<#{var}>[^/]+)"
+            else
+              Regexp.escape(part).to_s
+            end
+          end
 
       Regexp.new('\A\/' + parts.join('\/') + '\Z')
     end

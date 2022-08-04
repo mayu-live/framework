@@ -14,12 +14,12 @@ module Mayu
 
       Type = T.type_alias { String }
 
-      sig {void}
+      sig { void }
       def initialize
         @counter = T.let(0, Integer)
       end
 
-      sig {returns(Type)}
+      sig { returns(Type) }
       def next!
         id = @counter.tap { @counter = @counter.succ }
         number_to_base(id, DIGITS.length).map { DIGITS[_1] }.join(JOINER)
@@ -27,7 +27,7 @@ module Mayu
 
       private
 
-      sig {params(number: Integer, base: Integer).returns(T::Array[Integer])}
+      sig { params(number: Integer, base: Integer).returns(T::Array[Integer]) }
       def number_to_base(number, base)
         return [0] if number.zero?
 

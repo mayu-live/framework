@@ -200,7 +200,8 @@ module Mayu
           end
 
           vnode.descriptor = descriptor
-          vnode.children = update_children(parent_id, vnode, descriptors, patch:)
+          vnode.children =
+            update_children(parent_id, vnode, descriptors, patch:)
 
           vnode
         else

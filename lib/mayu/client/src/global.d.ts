@@ -1,20 +1,19 @@
-import type Mayu from './Mayu.js'
+import type Mayu from "./Mayu.js";
 
 declare global {
   interface Node {
-    __MAYU_ID: number
+    __MAYU_ID: number;
   }
 
-  interface Navigation extends EventTarget {
-  }
+  interface Navigation extends EventTarget {}
 
   interface NavigateEvent extends Event {
-    transitionWhile: (promise: Promise<any>) => void
+    transitionWhile: (promise: Promise<any>) => void;
   }
 
   interface Window {
-    Mayu: Mayu
-    navigation?: Navigation
+    Mayu: Mayu;
+    navigation?: Navigation;
   }
 
   interface Document {

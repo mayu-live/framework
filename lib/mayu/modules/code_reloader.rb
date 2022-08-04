@@ -1,6 +1,6 @@
 # typed: strict
 
-require 'filewatcher'
+require "filewatcher"
 
 module Mayu
   module Modules
@@ -14,12 +14,12 @@ module Mayu
       # hidden in this abstraction and not exposed.
       extend T::Sig
 
-      sig{params(system: System).void}
+      sig { params(system: System).void }
       def initialize(system)
         @system = system
       end
 
-      sig {params(block: T.proc.void).void}
+      sig { params(block: T.proc.void).void }
       def on_update(&block)
         last_value = $mayu_code_reloader_last_update
 
@@ -35,19 +35,21 @@ module Mayu
         end
       end
 
-      sig {params(task: Async::Task).void}
+      sig { params(task: Async::Task).void }
       def start(task: Async::Task.current)
         task.async do |task|
-          Filewatcher.new(@system.root, every: true).watch do |file|
-            puts "\e[36mFile change detected: #{file}\e[0m"
-            if File.exist?(file)
-              if @system.reload_module(file)
-                $mayu_code_reloader_last_update = Time.now
+          Filewatcher
+            .new(@system.root, every: true)
+            .watch do |file|
+              puts "\e[36mFile change detected: #{file}\e[0m"
+              if File.exist?(file)
+                if @system.reload_module(file)
+                  $mayu_code_reloader_last_update = Time.now
+                end
+              else
+                @system.remove_module(file)
               end
-            else
-              @system.remove_module(file)
             end
-          end
         end
       end
     end

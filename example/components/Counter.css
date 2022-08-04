@@ -1,6 +1,6 @@
 .buttons {
   display: flex;
-  gap: .5em;
+  gap: 0.5em;
 }
 
 .button {

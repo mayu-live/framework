@@ -1,6 +1,6 @@
 import logger from "./logger.js";
 
-export type IdNode = { id: number; ch?: [IdNode], type: string };
+export type IdNode = { id: number; ch?: [IdNode]; type: string };
 type CacheEntry = { node: Node; childIds: Set<number> };
 
 type InsertPatch = {
@@ -46,23 +46,23 @@ export type Patch =
   | StylesheetPatch;
 
 function cloneScriptElement(element: HTMLScriptElement) {
-  const script = document.createElement('script')
+  const script = document.createElement("script");
   script.text = element.innerHTML;
   for (const attr of element.attributes) {
-    console.log('Setting attribute', attr.name, 'to', attr.value)
-    script.setAttribute(attr.name, attr.value)
+    console.log("Setting attribute", attr.name, "to", attr.value);
+    script.setAttribute(attr.name, attr.value);
   }
-  return script
+  return script;
 }
 
 function replaceScriptNodes(parent: Node, node: Node) {
-  if ((node as Element).tagName === 'SCRIPT') {
-    parent.replaceChild(cloneScriptElement(node as HTMLScriptElement), node)
-    return
+  if ((node as Element).tagName === "SCRIPT") {
+    parent.replaceChild(cloneScriptElement(node as HTMLScriptElement), node);
+    return;
   }
 
   for (const child of node.childNodes) {
-    replaceScriptNodes(node, child)
+    replaceScriptNodes(node, child);
   }
 }
 
@@ -127,13 +127,13 @@ class NodeTree {
           // const stylesheet = await import(path, { assert: { type: 'css' } });
           // document.adoptedStyleSheets.push(stylesheet)
           if (document.querySelector(`link[href="${href}"]`)) {
-            continue
+            continue;
           }
 
-          const link = document.createElement('link')
-          link.setAttribute('rel', 'stylesheet')
-          link.setAttribute('href', href)
-          document.head.insertAdjacentElement('beforeend', link)
+          const link = document.createElement("link");
+          link.setAttribute("rel", "stylesheet");
+          link.setAttribute("href", href);
+          document.head.insertAdjacentElement("beforeend", link);
         }
 
         break;
@@ -222,8 +222,8 @@ class NodeTree {
       }
 
       requestIdleCallback(() => {
-        replaceScriptNodes(parentEntry.node, insertedNode)
-      })
+        replaceScriptNodes(parentEntry.node, insertedNode);
+      });
 
       this.updateCache(insertedNode, idTreeNode);
     });
@@ -334,9 +334,15 @@ class NodeTree {
     this.#removeRecursiveFromCache(idTreeNode.id);
 
     this.#cache.set(idTreeNode.id, { node, childIds });
-    node.__MAYU_ID = idTreeNode.id
+    node.__MAYU_ID = idTreeNode.id;
 
-    logger.group("Add to cache", idTreeNode.id, "type", node.nodeName, idTreeNode.type);
+    logger.group(
+      "Add to cache",
+      idTreeNode.id,
+      "type",
+      node.nodeName,
+      idTreeNode.type
+    );
 
     // logger.log('Updating cache for', node, 'with id', idTreeNode.i)
 
@@ -369,7 +375,7 @@ class NodeTree {
     });
 
     if (i < ch.length) {
-      throw new Error('hello');
+      throw new Error("hello");
     }
 
     logger.groupEnd();

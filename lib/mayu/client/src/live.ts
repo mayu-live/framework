@@ -1,12 +1,12 @@
-import Mayu from './Mayu.js'
+import Mayu from "./Mayu.js";
 
-const url = new URL(import.meta.url)
-const id = url.search.slice(1)
+const url = new URL(import.meta.url);
+const id = url.search.slice(1);
 
-document.querySelector(`script[src*="${url.pathname}"]`)?.remove()
+document.querySelector(`script[src*="${url.pathname}"]`)?.remove();
 
 if (!id) {
-  throw new Error('Missing id query parameter')
+  throw new Error("Missing id query parameter");
 }
 
-window.Mayu = new Mayu(id)
+window.Mayu = new Mayu(id);

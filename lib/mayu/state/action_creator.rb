@@ -105,7 +105,11 @@ module Mayu
               request_id = Nanoid.generate()
               store.dispatch(pending, *args, **kwargs.merge(request_id:))
               result =
-                T.unsafe(@block).call(store, *args, **kwargs.merge(task:, request_id:))
+                T.unsafe(@block).call(
+                  store,
+                  *args,
+                  **kwargs.merge(task:, request_id:)
+                )
               store.dispatch(fulfilled, result)
             rescue => error
               store.dispatch(rejected, { error:, request_id: })

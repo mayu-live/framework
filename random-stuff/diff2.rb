@@ -33,21 +33,20 @@ def diff2(vnodes, descriptors)
 
   last = nil
 
-  result = descriptors.map do |descriptor|
-    index = vnodes.find_index { same?(_1, descriptor) }
+  result =
+    descriptors.map do |descriptor|
+      index = vnodes.find_index { same?(_1, descriptor) }
 
-    unless index
-      vnode = insert(descriptor, before: last && last[:id])
-      next last = vnode
+      unless index
+        vnode = insert(descriptor, before: last && last[:id])
+        next last = vnode
+      end
+
+      vnode = vnodes.delete_at(index)
+      last = patch(vnode, descriptor)
     end
 
-    vnode = vnodes.delete_at(index)
-    last = patch(vnode, descriptor)
-  end
-
-  vnodes.each do |vnode|
-    remove(vnode)
-  end
+  vnodes.each { |vnode| remove(vnode) }
 
   result.reverse
 end
@@ -57,19 +56,12 @@ def v(type, content, key: nil)
 end
 
 children = []
-children = diff2(children, [
-  v(:p, 1, key: 1),
-  v(:p, 2, key: 2),
-  v(:p, 3, key: 3),
-])
-children = diff2(children, [
-  v(:p, 1, key: 1),
-  v(:p, 3, key: 3),
-  v(:p, 2, key: 2),
-  v(:p, 2, key: 5),
-])
-children = diff2(children, [
-  v(:p, 1, key: 1),
-  v(:p, 2, key: 5),
-  v(:p, 2, key: 2),
-])
+children =
+  diff2(children, [v(:p, 1, key: 1), v(:p, 2, key: 2), v(:p, 3, key: 3)])
+children =
+  diff2(
+    children,
+    [v(:p, 1, key: 1), v(:p, 3, key: 3), v(:p, 2, key: 2), v(:p, 2, key: 5)]
+  )
+children =
+  diff2(children, [v(:p, 1, key: 1), v(:p, 2, key: 5), v(:p, 2, key: 2)])

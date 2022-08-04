@@ -102,19 +102,25 @@ def diff_list(list1, list2)
   if left.done?
     ref_elm = list2[right.end_idx + 1]&.key
 
-    right.start_idx.upto(right.end_idx).each do |i|
-      if ref_elm
-        puts "Insert #{list2[i]} before #{ref_elm.inspect}"
-      else
-        puts "Append #{list2[i]}"
+    right
+      .start_idx
+      .upto(right.end_idx)
+      .each do |i|
+        if ref_elm
+          puts "Insert #{list2[i]} before #{ref_elm.inspect}"
+        else
+          puts "Append #{list2[i]}"
+        end
       end
-    end
   elsif right.done?
-    left.start_idx.upto(left.end_idx).each do |i|
-      next if moved_indexes.include?(i)
-      vnode = list1[i]
-      puts "Remove #{list1[i]}"
-    end
+    left
+      .start_idx
+      .upto(left.end_idx)
+      .each do |i|
+        next if moved_indexes.include?(i)
+        vnode = list1[i]
+        puts "Remove #{list1[i]}"
+      end
   end
 end
 
@@ -142,11 +148,7 @@ class Descriptor
 
   def same?(other)
     if key == other.key && type == other.type
-      if type == :input
-        props[:type] == props[:type]
-      else
-        true
-      end
+      type == :input ? props[:type] == props[:type] : true
     else
       false
     end
@@ -168,16 +170,16 @@ class VNode
 end
 
 list1 = [
-  VNode.new('keyed1', key: 'keyed1'),
-  VNode.new('keyed2', key: 'keyed2'),
-  VNode.new('keyed3', key: 'keyed3'),
-  VNode.new('unkeyed1'),
+  VNode.new("keyed1", key: "keyed1"),
+  VNode.new("keyed2", key: "keyed2"),
+  VNode.new("keyed3", key: "keyed3"),
+  VNode.new("unkeyed1")
 ]
 
 list2 = [
-  VNode.new('keyed2', key: 'keyed2'),
-  VNode.new('unkeyed1'),
-  VNode.new('keyed3', key: 'keyed3'),
+  VNode.new("keyed2", key: "keyed2"),
+  VNode.new("unkeyed1"),
+  VNode.new("keyed3", key: "keyed3")
 ]
 
 diff_list(list1, list2)

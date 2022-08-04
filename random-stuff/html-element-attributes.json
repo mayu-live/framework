@@ -77,29 +77,11 @@
     "preload",
     "src"
   ],
-  "base": [
-    "href",
-    "target"
-  ],
-  "basefont": [
-    "color",
-    "face",
-    "size"
-  ],
-  "blockquote": [
-    "cite"
-  ],
-  "body": [
-    "alink",
-    "background",
-    "bgcolor",
-    "link",
-    "text",
-    "vlink"
-  ],
-  "br": [
-    "clear"
-  ],
+  "base": ["href", "target"],
+  "basefont": ["color", "face", "size"],
+  "blockquote": ["cite"],
+  "body": ["alink", "background", "bgcolor", "link", "text", "vlink"],
+  "br": ["clear"],
   "button": [
     "disabled",
     "form",
@@ -112,67 +94,20 @@
     "type",
     "value"
   ],
-  "canvas": [
-    "height",
-    "width"
-  ],
-  "caption": [
-    "align"
-  ],
-  "col": [
-    "align",
-    "char",
-    "charoff",
-    "span",
-    "valign",
-    "width"
-  ],
-  "colgroup": [
-    "align",
-    "char",
-    "charoff",
-    "span",
-    "valign",
-    "width"
-  ],
-  "data": [
-    "value"
-  ],
-  "del": [
-    "cite",
-    "datetime"
-  ],
-  "details": [
-    "open"
-  ],
-  "dialog": [
-    "open"
-  ],
-  "dir": [
-    "compact"
-  ],
-  "div": [
-    "align"
-  ],
-  "dl": [
-    "compact"
-  ],
-  "embed": [
-    "height",
-    "src",
-    "type",
-    "width"
-  ],
-  "fieldset": [
-    "disabled",
-    "form",
-    "name"
-  ],
-  "font": [
-    "color",
-    "face",
-    "size"
-  ],
+  "canvas": ["height", "width"],
+  "caption": ["align"],
+  "col": ["align", "char", "charoff", "span", "valign", "width"],
+  "colgroup": ["align", "char", "charoff", "span", "valign", "width"],
+  "data": ["value"],
+  "del": ["cite", "datetime"],
+  "details": ["open"],
+  "dialog": ["open"],
+  "dir": ["compact"],
+  "div": ["align"],
+  "dl": ["compact"],
+  "embed": ["height", "src", "type", "width"],
+  "fieldset": ["disabled", "form", "name"],
+  "font": ["color", "face", "size"],
   "form": [
     "accept",
     "accept-charset",
@@ -194,41 +129,16 @@
     "scrolling",
     "src"
   ],
-  "frameset": [
-    "cols",
-    "rows"
-  ],
-  "h1": [
-    "align"
-  ],
-  "h2": [
-    "align"
-  ],
-  "h3": [
-    "align"
-  ],
-  "h4": [
-    "align"
-  ],
-  "h5": [
-    "align"
-  ],
-  "h6": [
-    "align"
-  ],
-  "head": [
-    "profile"
-  ],
-  "hr": [
-    "align",
-    "noshade",
-    "size",
-    "width"
-  ],
-  "html": [
-    "manifest",
-    "version"
-  ],
+  "frameset": ["cols", "rows"],
+  "h1": ["align"],
+  "h2": ["align"],
+  "h3": ["align"],
+  "h4": ["align"],
+  "h5": ["align"],
+  "h6": ["align"],
+  "head": ["profile"],
+  "hr": ["align", "noshade", "size", "width"],
+  "html": ["manifest", "version"],
   "iframe": [
     "align",
     "allow",
@@ -304,24 +214,11 @@
     "value",
     "width"
   ],
-  "ins": [
-    "cite",
-    "datetime"
-  ],
-  "isindex": [
-    "prompt"
-  ],
-  "label": [
-    "for",
-    "form"
-  ],
-  "legend": [
-    "align"
-  ],
-  "li": [
-    "type",
-    "value"
-  ],
+  "ins": ["cite", "datetime"],
+  "isindex": ["prompt"],
+  "label": ["for", "form"],
+  "legend": ["align"],
+  "li": ["type", "value"],
   "link": [
     "as",
     "charset",
@@ -341,28 +238,10 @@
     "target",
     "type"
   ],
-  "map": [
-    "name"
-  ],
-  "menu": [
-    "compact"
-  ],
-  "meta": [
-    "charset",
-    "content",
-    "http-equiv",
-    "media",
-    "name",
-    "scheme"
-  ],
-  "meter": [
-    "high",
-    "low",
-    "max",
-    "min",
-    "optimum",
-    "value"
-  ],
+  "map": ["name"],
+  "menu": ["compact"],
+  "meta": ["charset", "content", "http-equiv", "media", "name", "scheme"],
+  "meter": ["high", "low", "max", "min", "optimum", "value"],
   "object": [
     "align",
     "archive",
@@ -383,46 +262,15 @@
     "vspace",
     "width"
   ],
-  "ol": [
-    "compact",
-    "reversed",
-    "start",
-    "type"
-  ],
-  "optgroup": [
-    "disabled",
-    "label"
-  ],
-  "option": [
-    "disabled",
-    "label",
-    "selected",
-    "value"
-  ],
-  "output": [
-    "for",
-    "form",
-    "name"
-  ],
-  "p": [
-    "align"
-  ],
-  "param": [
-    "name",
-    "type",
-    "value",
-    "valuetype"
-  ],
-  "pre": [
-    "width"
-  ],
-  "progress": [
-    "max",
-    "value"
-  ],
-  "q": [
-    "cite"
-  ],
+  "ol": ["compact", "reversed", "start", "type"],
+  "optgroup": ["disabled", "label"],
+  "option": ["disabled", "label", "selected", "value"],
+  "output": ["for", "form", "name"],
+  "p": ["align"],
+  "param": ["name", "type", "value", "valuetype"],
+  "pre": ["width"],
+  "progress": ["max", "value"],
+  "q": ["cite"],
   "script": [
     "async",
     "charset",
@@ -444,22 +292,9 @@
     "required",
     "size"
   ],
-  "slot": [
-    "name"
-  ],
-  "source": [
-    "height",
-    "media",
-    "sizes",
-    "src",
-    "srcset",
-    "type",
-    "width"
-  ],
-  "style": [
-    "media",
-    "type"
-  ],
+  "slot": ["name"],
+  "source": ["height", "media", "sizes", "src", "srcset", "type", "width"],
+  "style": ["media", "type"],
   "table": [
     "align",
     "bgcolor",
@@ -471,12 +306,7 @@
     "summary",
     "width"
   ],
-  "tbody": [
-    "align",
-    "char",
-    "charoff",
-    "valign"
-  ],
+  "tbody": ["align", "char", "charoff", "valign"],
   "td": [
     "abbr",
     "align",
@@ -508,12 +338,7 @@
     "rows",
     "wrap"
   ],
-  "tfoot": [
-    "align",
-    "char",
-    "charoff",
-    "valign"
-  ],
+  "tfoot": ["align", "char", "charoff", "valign"],
   "th": [
     "abbr",
     "align",
@@ -530,33 +355,11 @@
     "valign",
     "width"
   ],
-  "thead": [
-    "align",
-    "char",
-    "charoff",
-    "valign"
-  ],
-  "time": [
-    "datetime"
-  ],
-  "tr": [
-    "align",
-    "bgcolor",
-    "char",
-    "charoff",
-    "valign"
-  ],
-  "track": [
-    "default",
-    "kind",
-    "label",
-    "src",
-    "srclang"
-  ],
-  "ul": [
-    "compact",
-    "type"
-  ],
+  "thead": ["align", "char", "charoff", "valign"],
+  "time": ["datetime"],
+  "tr": ["align", "bgcolor", "char", "charoff", "valign"],
+  "track": ["default", "kind", "label", "src", "srclang"],
+  "ul": ["compact", "type"],
   "video": [
     "autoplay",
     "controls",

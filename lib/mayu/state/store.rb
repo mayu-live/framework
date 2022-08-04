@@ -19,9 +19,7 @@ module Mayu
       sig { returns(State) }
       attr_reader :state
 
-      sig do
-        params(initial_state: State, reducers: Reducers).void
-      end
+      sig { params(initial_state: State, reducers: Reducers).void }
       def initialize(initial_state, reducers:)
         @state = T.let(initial_state, State)
         @reducer = T.let(combine_reducers(reducers), Reducer)
@@ -47,7 +45,8 @@ module Mayu
         return action.call(self) if action.is_a?(Proc)
 
         @semaphore.async do
-          new_state = @reducer.call(@state.dup, T.unsafe(ActionWrapper).new(**action))
+          new_state =
+            @reducer.call(@state.dup, T.unsafe(ActionWrapper).new(**action))
           @state = new_state
         rescue => e
           Console.logger.error(self) { "Reducer crashed" }

@@ -12,13 +12,10 @@ module Mayu
           T.proc.params(kwargs: Component::Props).returns(T.nilable(Descriptor))
         end
 
-      ElementType = T.type_alias {
-        T.any(
-          Symbol,
-          T.class_of(Component::Base),
-          LambdaComponent
-        )
-      }
+      ElementType =
+        T.type_alias do
+          T.any(Symbol, T.class_of(Component::Base), LambdaComponent)
+        end
 
       Children = T.type_alias { T.any(ChildType, T::Array[ChildType]) }
       ChildType = T.type_alias { T.nilable(Descriptor) }
@@ -32,7 +29,7 @@ module Mayu
       TEXT = :TEXT
       COMMENT = :COMMENT
 
-      sig {returns(Descriptor)}
+      sig { returns(Descriptor) }
       def self.comment
         Descriptor.new(:COMMENT)
       end
@@ -104,11 +101,7 @@ module Mayu
       sig { params(other: Descriptor).returns(T::Boolean) }
       def same?(other)
         if key == other.key && type == other.type
-          if type == :input
-            props[:type] == props[:type]
-          else
-            true
-          end
+          type == :input ? props[:type] == props[:type] : true
         else
           false
         end

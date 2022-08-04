@@ -11,7 +11,7 @@ module Mayu
         $mayu_assets_manager ||= new
       end
 
-      sig {params(public_filename: String).returns(T.nilable(Asset))}
+      sig { params(public_filename: String).returns(T.nilable(Asset)) }
       def self.find(public_filename)
         instance.find(public_filename)
       end
@@ -24,11 +24,11 @@ module Mayu
       class Asset
         extend T::Sig
 
-        sig{returns(String)}
+        sig { returns(String) }
         attr_reader :public_filename
-        sig{returns(String)}
+        sig { returns(String) }
         attr_reader :content
-        sig{returns(String)}
+        sig { returns(String) }
         attr_reader :content_type
 
         sig { params(path: String, content_type: String, content: String).void }
@@ -64,12 +64,12 @@ module Mayu
         @assets.delete(path)
       end
 
-      sig {params(public_filename: String).returns(T.nilable(Asset))}
+      sig { params(public_filename: String).returns(T.nilable(Asset)) }
       def find(public_filename)
         @assets.values.find { _1.public_filename == public_filename }
       end
 
-      sig {params(paths: T::Array[String]).returns(T::Array[String])}
+      sig { params(paths: T::Array[String]).returns(T::Array[String]) }
       def public_filenames(paths)
         T.unsafe(@assets).values_at(*paths).compact.map(&:public_filename)
       end

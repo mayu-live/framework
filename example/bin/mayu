@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 root = File.dirname(__FILE__)
-$LOAD_PATH.unshift(File.join(root, '..', '..', 'lib'))
+$LOAD_PATH.unshift(File.join(root, "..", "..", "lib"))
 
 case ARGV.first
 when "dev"

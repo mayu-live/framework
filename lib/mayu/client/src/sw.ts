@@ -1,12 +1,12 @@
 const SESSION_IDS = new Map<string, string>();
 
 type RecentlyClosedInfo = {
-  sessionId: string,
-  clientId: string,
-  time: number,
-}
+  sessionId: string;
+  clientId: string;
+  time: number;
+};
 
-let RECENTLY_CLOSED: RecentlyClosedInfo | null = null
+let RECENTLY_CLOSED: RecentlyClosedInfo | null = null;
 
 addEventListener("activate", (event: any) => {
   console.log("ACTIVATGE ASSSDASDASD");
@@ -39,28 +39,36 @@ addEventListener("fetch", (event) => {
 
   const recentlyClosed = RECENTLY_CLOSED;
 
-  if (!recentlyClosed) return
+  if (!recentlyClosed) return;
 
-  event.respondWith(tryToReuseSessionId(event, recentlyClosed))
+  event.respondWith(tryToReuseSessionId(event, recentlyClosed));
 });
 
-async function tryToReuseSessionId(event: FetchEvent, recentlyClosed: RecentlyClosedInfo) {
-  const request = event.request
-  const clientIds = Array.from(await clients.matchAll({type: 'window'}), (client: WindowClient) => client.id)
+async function tryToReuseSessionId(
+  event: FetchEvent,
+  recentlyClosed: RecentlyClosedInfo
+) {
+  const request = event.request;
+  const clientIds = Array.from(
+    await clients.matchAll({ type: "window" }),
+    (client: WindowClient) => client.id
+  );
 
   if (clientIds.includes(recentlyClosed.clientId)) {
-    return request
+    return request;
   }
 
-  const url = new URL(request.url)
+  const url = new URL(request.url);
 
-  if (url.pathname.startsWith('/__mayu/')) {
-    return request
+  if (url.pathname.startsWith("/__mayu/")) {
+    return request;
   }
 
-  const location = `/__mayu/resume/${recentlyClosed.sessionId}/?path=${encodeURIComponent(request.url)}`
+  const location = `/__mayu/resume/${
+    recentlyClosed.sessionId
+  }/?path=${encodeURIComponent(request.url)}`;
 
-  return fetch(location, { headers: request.headers })
+  return fetch(location, { headers: request.headers });
   /*Request
   return new Response(new Blob(), {
     status: 302,
@@ -71,26 +79,26 @@ async function tryToReuseSessionId(event: FetchEvent, recentlyClosed: RecentlyCl
 }
 
 addEventListener("message", (event) => {
-  const data = event.data
+  const data = event.data;
 
   switch (data.type) {
-    case 'sessionId': {
-      const sourceId = (event.source as any).id
+    case "sessionId": {
+      const sourceId = (event.source as any).id;
       const sessionId = event.data.sessionId;
-      console.log('Assigning source id', sourceId, 'to session id', sessionId)
-      SESSION_IDS.set(sourceId, sessionId)
+      console.log("Assigning source id", sourceId, "to session id", sessionId);
+      SESSION_IDS.set(sourceId, sessionId);
       break;
     }
-    case 'closeWindow': {
+    case "closeWindow": {
       RECENTLY_CLOSED = {
         sessionId: event.data.sessionId,
         clientId: (event.source as any).id,
         time: new Date().getTime(),
-      }
+      };
       break;
     }
     default: {
-      console.error(`Unhandled event`, data.type)
+      console.error(`Unhandled event`, data.type);
     }
   }
 });

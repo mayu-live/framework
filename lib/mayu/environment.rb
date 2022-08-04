@@ -8,30 +8,41 @@ module Mayu
   class Environment
     extend T::Sig
 
-    APP_DIR = 'app'
-    STORE_DIR = 'store'
+    APP_DIR = "app"
+    STORE_DIR = "store"
 
-    sig {returns(String)}
+    sig { returns(String) }
     attr_reader :root
-    sig {returns(T::Array[Routes::Route])}
+    sig { returns(T::Array[Routes::Route]) }
     attr_reader :routes
-    sig {returns(State::Store::Reducers)}
+    sig { returns(State::Store::Reducers) }
     attr_reader :reducers
-    sig {returns(Modules::System)}
+    sig { returns(Modules::System) }
     attr_reader :modules
 
-    sig {params(root: String, hot_reload: T::Boolean).void}
+    sig { params(root: String, hot_reload: T::Boolean).void }
     def initialize(root:, hot_reload: false)
       @root = root
-      @routes = T.let(
-        Routes.build_routes(File.join(root, APP_DIR)),
-        T::Array[Routes::Route]
-      )
-      @reducers = T.let(State::Loader.new(File.join(root, STORE_DIR)).load, State::Store::Reducers)
-      @modules = T.let(Modules::System.new(root, enable_code_reloader: hot_reload), Modules::System)
+      @routes =
+        T.let(
+          Routes.build_routes(File.join(root, APP_DIR)),
+          T::Array[Routes::Route]
+        )
+      @reducers =
+        T.let(
+          State::Loader.new(File.join(root, STORE_DIR)).load,
+          State::Store::Reducers
+        )
+      @modules =
+        T.let(
+          Modules::System.new(root, enable_code_reloader: hot_reload),
+          Modules::System
+        )
     end
 
-    sig{params(initial_state: T::Hash[Symbol, T.untyped]).returns(State::Store)}
+    sig do
+      params(initial_state: T::Hash[Symbol, T.untyped]).returns(State::Store)
+    end
     def create_store(initial_state: {})
       State::Store.new(initial_state, reducers:)
     end
@@ -46,13 +57,16 @@ module Mayu
       page_component = modules.load_page(route_match.template).klass
 
       # Apply the layouts.
-      route_match.layouts.reverse.reduce(VDOM.h(page_component)) do |app, layout|
-        layout_component = modules.load_page(layout).klass
-        VDOM.h(layout_component, {}, [app])
-      end
+      route_match
+        .layouts
+        .reverse
+        .reduce(VDOM.h(page_component)) do |app, layout|
+          layout_component = modules.load_page(layout).klass
+          VDOM.h(layout_component, {}, [app])
+        end
     end
 
-    sig{params(request_path: String).returns(Routes::RouteMatch)}
+    sig { params(request_path: String).returns(Routes::RouteMatch) }
     def match_route(request_path)
       Routes.match_route(@routes, request_path)
     end

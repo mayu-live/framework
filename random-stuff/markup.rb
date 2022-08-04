@@ -125,10 +125,7 @@ class VNode
   def to_json
     return children.first&.to_json if component
 
-    json = {
-      id: id,
-      type: descriptor.type.to_s,
-    }
+    json = { id: id, type: descriptor.type.to_s }
 
     return "<--mayu-id=#{id}-->" if descriptor.comment?
     return descriptor.text if descriptor.text?
@@ -219,7 +216,12 @@ class Markup
   end
 
   def method_missing(sym, *args, **props, &block)
-    const = ::Kernel.const_get(sym) rescue nil
+    const =
+      begin
+        ::Kernel.const_get(sym)
+      rescue StandardError
+        nil
+      end
 
     if const.is_a?(Class) && const < Component
       return h(const, *args, **props, &block)
@@ -401,19 +403,19 @@ class VDOM
         vnode.descriptor = descriptor
         component.props = descriptor.props
         component.state = component.next_state.clone
-        descriptors = add_comments_between_texts(Array(component.render).compact)
+        descriptors =
+          add_comments_between_texts(Array(component.render).compact)
 
         ctx.enter(vnode) do
-          vnode.children = update_children(ctx, vnode.children.compact, descriptors)
+          vnode.children =
+            update_children(ctx, vnode.children.compact, descriptors)
         end
       end
 
       return vnode
     end
 
-    if vnode.descriptor == descriptor
-      return vnode
-    end
+    return vnode if vnode.descriptor == descriptor
 
     if descriptor.text?
       unless vnode.descriptor.text == descriptor.text
@@ -433,16 +435,13 @@ class VDOM
         puts "adding new children"
 
         ctx.enter(vnode) do
-          vnode.children = add_comments_between_texts(descriptor.children).map do
-            init_vnode(ctx, _1).tap do |child|
-              ctx.insert(child)
+          vnode.children =
+            add_comments_between_texts(descriptor.children).map do
+              init_vnode(ctx, _1).tap { |child| ctx.insert(child) }
             end
-          end
         end
       elsif vnode.children.length > 0
-        ctx.enter(vnode) do
-          vnode.children.each { remove_vnode(ctx, _1) }
-        end
+        ctx.enter(vnode) { vnode.children.each { remove_vnode(ctx, _1) } }
         vnode.children = []
       elsif vnode.descriptor.text?
         ctx.patch(:text, vnode, "")
@@ -476,16 +475,13 @@ class VDOM
     children = descriptor.children
 
     children =
-      if component
-        Array(component.render).compact
-      else
-        descriptor.children
-      end
+      (component ? Array(component.render).compact : descriptor.children)
 
     ctx.enter(vnode) do
-      vnode.children = add_comments_between_texts(children).map do
-        init_vnode(ctx, _1, nested: true)
-      end
+      vnode.children =
+        add_comments_between_texts(children).map do
+          init_vnode(ctx, _1, nested: true)
+        end
     end
 
     vnode.component&.mount
@@ -611,7 +607,7 @@ class VDOM
           vnode = init_vnode(ctx, descriptors[i])
           children.push(vnode)
 
-          ctx.insert(vnode)# before: ref_elm)
+          ctx.insert(vnode) # before: ref_elm)
         end
     elsif descriptors.start_idx > descriptors.end_idx
       vnodes
@@ -651,11 +647,7 @@ class VDOM
         prev2 = prev
         prev = curr if curr
 
-        if prev2&.text? && curr&.text?
-          [comment, curr]
-        else
-          [curr]
-        end
+        prev2&.text? && curr&.text? ? [comment, curr] : [curr]
       end
       .flatten
   end
@@ -715,10 +707,8 @@ App =
   component do |numbers:, children:|
     puts "Returning #{numbers}"
     div do
-      ul { numbers.each { |i, j| li(key: i){ str "item #{j}" } } }
-      MyComponent do
-        span "hello"
-      end
+      ul { numbers.each { |i, j| li(key: i) { str "item #{j}" } } }
+      MyComponent { span "hello" }
     end
   end
 
@@ -737,19 +727,22 @@ end
 
 patch_sets = []
 vdom = VDOM.new
-tree = vdom.render(Descriptor.new(App, { numbers: [[1, 1], [2, 2], [3, 3]] })) do |patches|
-  patch_sets.push(patches)
-end
+tree =
+  vdom.render(
+    Descriptor.new(App, { numbers: [[1, 1], [2, 2], [3, 3]] })
+  ) { |patches| patch_sets.push(patches) }
 puts format2(tree.to_s)
 # puts JSON.pretty_generate(tree.to_json)
-tree = vdom.render(Descriptor.new(App, { numbers: [[2, 1], [4, 4], [3, 3], [1, 2]] })) do |patches|
-  patch_sets.push(patches)
-end
+tree =
+  vdom.render(
+    Descriptor.new(App, { numbers: [[2, 1], [4, 4], [3, 3], [1, 2]] })
+  ) { |patches| patch_sets.push(patches) }
 puts format2(tree.to_s)
 
-tree = vdom.render(Descriptor.new(App, { numbers: [] })) do |patches|
-  patch_sets.push(patches)
-end
+tree =
+  vdom.render(Descriptor.new(App, { numbers: [] })) do |patches|
+    patch_sets.push(patches)
+  end
 
 puts format2(tree.to_s)
 File.write("patches.json", JSON.pretty_generate(patch_sets))
