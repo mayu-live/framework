@@ -9,8 +9,13 @@ render do
     </head>
     <body class={styles.body}>
       <Header />
-      <h1>asd</h1>
       <main class={styles.main}>
+        <menu>
+          <li><a href="/">Start page</a></li>
+          <li><a href="/about">About</a></li>
+          <li><a href="/items">Items</a></li>
+          <li><a href="/items/123">Item 123</a></li>
+        </menu>
         {children}
       </main>
     </body>

@@ -62,6 +62,11 @@ module Mayu
         @component ||= Component.wrap(self, type, props, task:)
       end
 
+      sig { params(path: String).void }
+      def navigate(path)
+        @vtree.navigate(path)
+      end
+
       sig { void }
       def enqueue_update!
         @vtree.enqueue_update!(self)

@@ -5,10 +5,12 @@ module Mayu
     class IdGenerator
       extend T::Sig
 
-      EMOJIS = T.let(
-        "🌱🌴🌵🌸🌺🌻🌼🌿🍀🍃".chars,
-        T::Array[String]
-      )
+      # ALPHABET = "🌱🌴🌵🌸🌺🌻🌼🌿🍀🍃"
+      # JOINER = " "
+      ALPHABET = "0123456789"
+      JOINER = ""
+
+      DIGITS = T.let(ALPHABET.chars.freeze, T::Array[String])
 
       Type = T.type_alias { String }
 
@@ -20,7 +22,7 @@ module Mayu
       sig {returns(Type)}
       def next!
         id = @counter.tap { @counter = @counter.succ }
-        number_to_base(id, EMOJIS.length).map { EMOJIS[_1] }.join(" ")
+        number_to_base(id, DIGITS.length).map { DIGITS[_1] }.join(JOINER)
       end
 
       private

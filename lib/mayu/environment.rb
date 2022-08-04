@@ -40,5 +40,21 @@ module Mayu
     def create_store(initial_state: {})
       State::Store.new(initial_state, reducers:)
     end
+
+    sig { params(request_path: String).returns(VDOM::Descriptor) }
+    def load_root(request_path)
+      # We should match the route earlier, so that we don't have to get this
+      # far in case it doesn't match...
+      route_match = match_route(request_path)
+
+      # Load the page component.
+      page_component = modules.load_page(route_match.template).klass
+
+      # Apply the layouts.
+      route_match.layouts.reverse.reduce(VDOM.h(page_component)) do |app, layout|
+        layout_component = modules.load_page(layout).klass
+        VDOM.h(layout_component, {}, [app])
+      end
+    end
   end
 end

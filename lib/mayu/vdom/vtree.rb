@@ -167,6 +167,11 @@ module Mayu
       sig { returns(IdGenerator::Type) }
       def next_id! = @id_generator.next!
 
+      sig { params(path: String).void }
+      def navigate(path)
+        @on_update.signal([:navigate, path])
+      end
+
       private
 
       sig { params(ctx: UpdateContext).void }

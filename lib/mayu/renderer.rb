@@ -13,27 +13,12 @@ module Mayu
 
     sig { params(environment: Environment, request_path: String, parent: T.any(Async::Task, Async::Barrier)).void }
     def initialize(environment:, request_path:, parent: Async::Task.current)
-      # We should match the route earlier, so that we don't have to get this
-      # far in case it doesn't match...
-      route_match = environment.match_route(request_path)
+      @environment = environment
 
-      # Load the page component.
-      page_component = environment.modules.load_page(route_match.template).klass
-
-      # Apply the layouts.
-      app = route_match.layouts.reverse.reduce(VDOM.h(page_component)) do |app, layout|
-        layout_component = environment.modules.load_page(layout).klass
-        VDOM.h(layout_component, {}, [app])
-      end
-
-      # Store the root of the application.
-      # If we change the URL, we should find a new page component
-      # for that path, replace @root and rerender.
-      # Same thing if a file is reloaded...
-      # Also, for reloading we need to keep track of which components import
+      # For reloading we need to keep track of which components import
       # other compoents, because we need to replace the constants in their
       # classes...
-      @root = T.let(app, VDOM::Descriptor)
+      @root = T.let(environment.load_root(request_path), VDOM::Descriptor)
 
       # Set up a barrier to group async tasks together.
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
@@ -62,6 +47,9 @@ module Mayu
           case message
           in :patch, patches
             respond(:patch, patches)
+          in :navigate, href
+            navigate(href)
+            respond(:navigate, href)
           else
             puts "\e[31mUnknown event: #{message.inspect}\e[0m"
           end
@@ -115,6 +103,12 @@ module Mayu
     def id_tree = @vtree.id_tree
 
     private
+
+    sig { params(path: String).void }
+    def navigate(path)
+      @root = @environment.load_root(path)
+      rerender!
+    end
 
     sig { params(args: T.untyped).void }
     def respond(*args) = @out.enqueue(args)

@@ -65,19 +65,25 @@ class Mayu {
       { once: true }
     );
 
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/__mayu.serviceWorker.js", { scope: "/" })
-        .then((reg) => {
-          console.log("Registration Successful", reg);
-          reg?.active?.postMessage({ type: "sessionId", sessionId });
+    this.connection.addEventListener("navigate", (e) => {
+      const path = JSON.parse(e.data)
+      console.log('Navigating to', path)
+      history.pushState({}, '', path)
+    });
 
-          window.addEventListener("beforeunload", () => {
-            reg?.active?.postMessage({ type: "closeWindow", sessionId });
-          });
-        })
-        .catch((e) => console.error(e));
-    }
+    // if ("serviceWorker" in navigator) {
+    //   navigator.serviceWorker
+    //     .register("/__mayu.serviceWorker.js", { scope: "/" })
+    //     .then((reg) => {
+    //       console.log("Registration Successful", reg);
+    //       reg?.active?.postMessage({ type: "sessionId", sessionId });
+    //
+    //       window.addEventListener("beforeunload", () => {
+    //         reg?.active?.postMessage({ type: "closeWindow", sessionId });
+    //       });
+    //     })
+    //     .catch((e) => console.error(e));
+    // }
 
     const pingTimer = new PingTimer();
 

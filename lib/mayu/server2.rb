@@ -74,6 +74,8 @@ module Mayu
               push(:init, payload)
             in [:patch, payload]
               push(:patch, payload)
+            in [:navigate, payload]
+              push(:navigate, payload)
             in [:close]
               subtask.stop
             end

@@ -124,10 +124,14 @@ module Mayu
           Component::Hax::HeadComponent
         when :body
           Component::Hax::BodyComponent
+        when :a
+          Component::Hax::AComponent
         when :__mayu_head
           :head
         when :__mayu_body
           :body
+        when :__mayu_a
+          :a
         else
           type
         end

@@ -136,6 +136,11 @@ module Mayu
           @barrier.async(&blk)
         end
 
+        sig { params(path: String).void }
+        def navigate(path)
+          @vnode.navigate(path)
+        end
+
         sig do
           params(
             stuff: T.nilable(State),
@@ -207,11 +212,15 @@ module Mayu
           params(blk: T.proc.returns(T.nilable(Descriptor::Children))).void
         end
         def self.render(&blk) = define_method(:render, &blk)
+
         sig { params(blk: T.proc.params(arg0: Props).returns(State)).void }
+
         def self.initial_state(&blk) =
           define_singleton_method(:get_initial_state, &blk)
-        sig { params(name: Symbol, blk: T.proc.returns(State)).void }
+
+        sig { params(name: Symbol, blk: T.proc.bind(T.attached_class).void).void }
         def self.handler(name, &blk) = define_method(:"handle_#{name}", &blk)
+
         sig do
           params(
             blk:
@@ -221,6 +230,7 @@ module Mayu
                 .returns(T::Boolean)
           ).void
         end
+
         def self.should_update?(&blk) = define_method(:should_update?, &blk)
 
         sig { params(blk: T.proc.void).void }
@@ -287,9 +297,14 @@ module Mayu
           @wrapper.update(stuff, &blk)
         end
 
-        sig { params(name: Symbol, args: T.untyped).returns(HandlerRef) }
-        def handler(name, *args)
-          HandlerRef.new(self, name, args)
+        sig { params(name: Symbol, args: T.untyped, kwargs: T.untyped).returns(HandlerRef) }
+        def handler(name, *args, **kwargs)
+          HandlerRef.new(self, name, args, kwargs)
+        end
+
+        sig { params(path: String).void }
+        def navigate(path)
+          @wrapper.navigate(path)
         end
       end
 
@@ -308,17 +323,19 @@ module Mayu
           params(
             component: Component::Base,
             name: Symbol,
-            args: T::Array[T.untyped]
+            args: T::Array[T.untyped],
+            kwargs: T::Hash[Symbol, T.untyped],
           ).void
         end
-        def initialize(component, name, args = [])
+        def initialize(component, name, args = [], kwargs = {})
           @component = component
           @name = name
           @args = args
+          @kwargs = kwargs
           @id =
             T.let(
               Digest::SHA256.hexdigest(
-                [@component.object_id, @name, @args].map(&:inspect).join(":")
+                [@component.object_id, @name, @args, @kwargs].map(&:inspect).join(":")
               ),
               String
             )
@@ -327,7 +344,7 @@ module Mayu
         sig { params(payload: T.untyped).void }
         def call(payload)
           method = @component.method(:"handle_#{@name}")
-          T.unsafe(method).call(*[payload, *@args].first(method.arity))
+          T.unsafe(method).call(*[payload, *@args, **@kwargs].first(method.arity))
         end
 
         sig { returns(String) }
@@ -358,6 +375,17 @@ module Mayu
           sig { override.returns(T.nilable(Descriptor)) }
           def render
             h(:__mayu_body, **props) { children }
+          end
+        end
+
+        class AComponent < Component::Base
+          handler(:click) do |_event, href|
+            navigate(href.to_s)
+          end
+
+          sig { override.returns(T.nilable(Descriptor)) }
+          def render
+            h(:__mayu_a, **props.merge(on_click: handler(:click, props[:href]))) { children }
           end
         end
       end
