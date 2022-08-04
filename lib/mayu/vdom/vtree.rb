@@ -100,6 +100,8 @@ module Mayu
 
                 ctx = UpdateContext.new
 
+                start_at = Time.now
+
                 @update_queue.size.times do
                   vnode = @update_queue.dequeue
 
@@ -109,6 +111,7 @@ module Mayu
                 end
 
                 commit!(ctx)
+                puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
               end
             rescue => e
               puts e
@@ -124,10 +127,12 @@ module Mayu
 
       sig { params(descriptor: Descriptor).void }
       def render(descriptor)
+        start_at = Time.now
         ctx = UpdateContext.new
         @root = patch(ctx, @root, descriptor)
         p ctx
         commit!(ctx)
+        puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
       end
 
       sig { params(handler_id: String, payload: T.untyped).void }
