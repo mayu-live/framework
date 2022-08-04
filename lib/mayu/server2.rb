@@ -281,6 +281,22 @@ module Mayu
       [200, {}, ["ok"]]
     end
 
+    class ResumeApp
+      MOUNT_PATH = "/__mayu/resume"
+
+      def call(env)
+        request = Rack::Request.new(env)
+        location = request.params[:path] || '/'
+        cookie_name = Session.cookie_name(session_id)
+        session_key =
+          request
+            .cookies
+            .fetch(cookie_name) { return 401, {}, ["Session cookie not set"] }
+        Console.logger.info(self) { "Resuming not implemented yet!!" }
+        return [302, {'location' => location}, ['resuming not implemented']]
+      end
+    end
+
     class CallbackHandlerApp
       MOUNT_PATH = "/__mayu/handler"
 
@@ -381,6 +397,8 @@ module Mayu
           .map { File.basename(_1) }
           .map { ["/__mayu/#{_1}", _1] }
           .to_h
+            .merge('/__mayu.serviceWorker.js' => 'sw.js')
+      p urls
       { root: JS_ROOT_DIR, urls: }
     end
 
@@ -394,6 +412,10 @@ module Mayu
 
         map CallbackHandlerApp::MOUNT_PATH do
           run CallbackHandlerApp.new
+        end
+
+        map ResumeApp::MOUNT_PATH do
+          run ResumeApp.new
         end
 
         map AssetsApp::MOUNT_PATH do

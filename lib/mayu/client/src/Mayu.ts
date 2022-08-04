@@ -60,6 +60,19 @@ class Mayu {
       { once: true }
     );
 
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/__mayu.serviceWorker.js', { scope: '/' })
+        .then((reg) => {
+          console.log('Registration Successful', reg);
+          reg?.active?.postMessage({ type: 'sessionId', sessionId })
+
+          window.addEventListener('beforeunload', () => {
+            reg?.active?.postMessage({ type: 'closeWindow', sessionId })
+          })
+        })
+        .catch((e) => console.error(e))
+    }
+
     const pingView = new PingView()
     this.connection.addEventListener('pong', (e) => {
       const time = JSON.parse(e.data);

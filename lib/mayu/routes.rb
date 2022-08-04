@@ -57,10 +57,11 @@ module Mayu
       if not_found = entries.delete(NOT_FOUND_FILENAME)
         routes.push(Route.new({
           path: path.join('/'),
-          regexp: path_to_regexp(path.concat(["[...anything]"]).join('/')),
+          regexp: path_to_regexp((path + ["[anything]"]).join('/')),
           layouts:,
           template: T.unsafe(File).join(*path, not_found)
         }))
+        p routes.last
       else
         if level.zero?
           Console.logger.warn(self) {
