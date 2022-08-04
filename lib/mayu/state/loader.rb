@@ -1,9 +1,79 @@
 # typed: strict
 
 require_relative "store"
+require_relative "../app"
 
 module Mayu
   module State
+    class Selector
+      module SelectorModule
+        extend T::Sig
+
+        sig do
+          params(
+            block: T.proc.params(state: T.untyped).returns(T.untyped)
+          ).returns(Selector)
+        end
+        def selector(&block)
+          Selector.new
+        end
+
+        sig do
+          params(
+            block: T.proc.params(state: T.untyped).returns(T.untyped)
+          ).returns(Module)
+        end
+        def self.build(&block)
+          mod = Module.new
+          mod.send(:extend, SelectorModule)
+          mod.class_eval(&block)
+          mod
+        end
+      end
+
+      extend T::Sig
+    end
+
+    module Actions
+      module ActionModule
+        extend T::Sig
+
+        sig do
+          params(
+            type: Symbol,
+            block: T.nilable(ActionCreator::PreparedActionCreator::ProcType)
+          ).returns(ActionCreator::Base)
+        end
+        def action(type, &block)
+          ActionCreator.create(type, &block)
+        end
+
+        sig do
+          params(
+            type: Symbol,
+            block: ActionCreator::AsyncActionCreator::ProcType
+          ).returns(ActionCreator::AsyncActionCreator)
+        end
+        def async(type, &block)
+          ActionCreator.async(type, &block)
+        end
+
+        sig do
+          params(
+            block: T.proc.params(state: T.untyped).returns(T.untyped)
+          ).returns(Module)
+        end
+        def self.build(&block)
+          mod = Module.new
+          mod.send(:extend, ActionModule)
+          mod.class_eval(&block)
+          mod
+        end
+      end
+
+      extend T::Sig
+    end
+
     module ReducerDSL
       extend T::Sig
       extend T::Helpers
@@ -14,62 +84,61 @@ module Mayu
       end
 
       sig do
-        abstract.params(action: ActionCreator, reducer: Store::Reducer).void
+        abstract
+          .params(action: ActionCreator::Base, reducer: Store::Reducer)
+          .void
       end
       def reducer(action, &reducer)
       end
 
-      sig do
-        abstract
-          .params(
-            type: Symbol,
-            block: T.nilable(ActionCreator::PreparedActionCreator::ProcType)
-          )
-          .void
-      end
-      def action(type, &block)
-      end
-
-      sig do
-        abstract
-          .params(url: String, options: T.untyped)
-          .void
-      end
+      sig { abstract.params(url: String, options: T.untyped).void }
       def fetch(url, **options)
       end
 
       sig do
         abstract
           .params(
-            type: Symbol,
-            block: ActionCreator::AsyncActionCreator::ProcType
+            block:
+              T.proc.bind(Selector::SelectorModule).params(arg0: T.untyped).void
           )
-          .returns(ActionCreator::AsyncActionCreator)
+          .returns(Module)
       end
-      def async_action(type, &block)
+      def selectors(&block)
+      end
+
+      sig do
+        abstract
+          .params(
+            block:
+              T.proc.bind(Actions::ActionModule).params(arg0: T.untyped).void
+          )
+          .returns(Module)
+      end
+      def actions(&block)
       end
     end
 
     class Loader
       extend T::Sig
 
-      class ReducerBuilder < BasicObject
+      class ReducerBuilder
         extend ::T::Sig
         include ::Mayu::State::ReducerDSL
 
         sig do
-          params(source: String, path: String).returns(
+          params(source: ::String, path: ::String).returns(
             T::Hash[Symbol, T.untyped]
           )
         end
         def self.build(source, path)
-          { initial_state: nil, reducers: [] }.tap do
-            new(_1).instance_eval(source, path, 0)
+          { initial_state: nil, reducers: [], actions: [] }.tap do
+            new(File.basename(path, ".*"), _1).instance_eval(source, path, 0)
           end
         end
 
-        sig { params(data: T::Hash[Symbol, T.untyped]).void }
-        def initialize(data)
+        sig { params(prefix: String, data: T::Hash[::Symbol, T.untyped]).void }
+        def initialize(prefix, data)
+          @prefix = prefix
           @data = data
         end
 
@@ -78,37 +147,42 @@ module Mayu
           @data[:initial_state] = kwargs
         end
 
+        sig { override.params(url: String, options: T.untyped).void }
+        def fetch(url, **options)
+        end
+
         sig do
           override
             .params(
-              type: Symbol,
               block:
-                T.nilable(
-                  ::Mayu::State::ActionCreator::PreparedActionCreator::ProcType
-                )
+                T
+                  .proc
+                  .bind(Selector::SelectorModule)
+                  .params(arg0: T.untyped)
+                  .void
             )
-            .void
+            .returns(Module)
         end
-        def action(type, &block)
-          @data[:actions].push(
-            ::Mayu::State::ActionCreator.create(type, &block)
-          )
+        def selectors(&block)
+          @data[:selectors] = Selector::SelectorModule.build(&block)
         end
 
         sig do
           override
             .params(
-              type: Symbol,
-              block: ::Mayu::State::ActionCreator::AsyncActionCreator::ProcType
+              block:
+                T.proc.bind(Actions::ActionModule).params(arg0: T.untyped).void
             )
-            .returns(::Mayu::State::ActionCreator::AsyncActionCreator)
+            .returns(Module)
         end
-        def async_action(type, &block)
-          @data[:actions].push(::Mayu::State::ActionCreator.async(type, &block))
+        def actions(&block)
+          @data[:actions] = Actions::ActionModule.build(&block)
         end
 
         sig do
-          override.params(action: ActionCreator, reducer: Store::Reducer).void
+          override
+            .params(action: ActionCreator::Base, reducer: Store::Reducer)
+            .void
         end
         def reducer(action, &reducer)
           @data[:reducers].push([action, reducer])
@@ -120,24 +194,30 @@ module Mayu
         @directory = directory
       end
 
-      sig { returns(T::Hash[Symbol, Store::Reducer]) }
+      sig { returns(Store::Reducers) }
       def load
         Dir[File.join(@directory, "*.rb")]
-          .each do |path|
+          .map do |path|
             data = ReducerBuilder.build(File.read(path), path)
-            name =
-              File.basename(path, ".*"),
-              [
-                ->(state, action) do
-                  state ||= data[:initial_state]
+            name = File.basename(path, ".*").capitalize.to_sym
 
-                  data[:reducers]
-                    .filter { _1 === action }
-                    .reduce(state) do |state, (_, reducer)|
-                      reducer.call(state, action)
-                    end
-                end
-              ]
+            Mayu::App.replace_module(name,
+              Actions: data[:action_module],
+              Selectors: data[:selector_module]
+            )
+
+            [
+              name,
+              ->(state, action) do
+                state ||= data[:initial_state]
+
+                data[:reducers]
+                  .filter { _1 === action }
+                  .reduce(state || data[:initial_state]) do |state, (_, reducer)|
+                    reducer.call(state, action)
+                  end
+              end
+            ]
           end
           .to_h
       end

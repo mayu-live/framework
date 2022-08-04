@@ -14,12 +14,13 @@ module Mayu
           T.proc.params(arg0: State, arg1: ActionWrapper).returns(State)
         end
       Thunk = T.type_alias { T.proc.params(arg0: Store).void }
+      Reducers = T.type_alias { T::Hash[Symbol, Store::Reducer] }
 
       sig { returns(State) }
       attr_reader :state
 
       sig do
-        params(initial_state: State, reducers: T::Hash[Symbol, Reducer]).void
+        params(initial_state: State, reducers: Reducers).void
       end
       def initialize(initial_state, reducers:)
         @state = T.let(initial_state, State)

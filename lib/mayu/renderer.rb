@@ -4,18 +4,27 @@ require_relative "vdom"
 require_relative "vdom/vtree"
 require_relative "vdom/component"
 require_relative "modules/system"
+require_relative "routes"
 
 module Mayu
   class Renderer
     extend T::Sig
 
-    sig { params(parent: T.any(Async::Task, Async::Barrier)).void }
-    def initialize(parent: Async::Task.current)
+    sig { params(root: String, routes: T::Array[Routes::Route], reducers: State::Store::Reducers, request_uri: String, parent: T.any(Async::Task, Async::Barrier)).void }
+    def initialize(root:, routes:, reducers:, request_uri:, parent: Async::Task.current)
       @in = T.let(Async::Queue.new, Async::Queue)
       @out = T.let(Async::Queue.new, Async::Queue)
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
 
-      modules = Mayu::Modules::System.new(File.join(Dir.pwd, "example", "app"))
+      modules = Mayu::Modules::System.new(File.join(root))
+
+      route_match = Routes.match_route(routes, request_uri)
+
+      route_match.layouts.map do |layout|
+        p layout
+      # modules.load_page(route_match.layouts)
+      end
+      p route_match.layouts
 
       app =
         T.let(

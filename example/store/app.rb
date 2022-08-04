@@ -5,14 +5,16 @@ extend Mayu::State::ReducerDSL
 
 initial_state(items: [])
 
-AddItem = action(:AddItem)
-RemoveItem = action(:RemoveItem)
+actions do
+  AddItem = action(:AddItem)
+  RemoveItem = action(:RemoveItem)
 
-LoadItems = async_action(:LoadItems) do |store|
-  puts "Loading items"
-  sleep 1
-  puts "Loaded items"
-  rand(10).succ.times.map { "Loaded item #{_1.succ}" }
+  LoadItems = async(:LoadItems) do |store|
+    puts "Loading items"
+    sleep 1
+    puts "Loaded items"
+    rand(10).succ.times.map { "Loaded item #{_1.succ}" }
+  end
 end
 
 reducer(AddItem) do |state, payload|

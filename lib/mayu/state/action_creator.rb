@@ -67,7 +67,7 @@ module Mayu
         sig { returns(StaticActionCreator) }
         attr_reader :pending
         sig { returns(StaticActionCreator) }
-        attr_reader :rejected
+        attr_reader :fulfilled
         sig { returns(StaticActionCreator) }
         attr_reader :rejected
 
@@ -80,9 +80,9 @@ module Mayu
               StaticActionCreator.new(:"#{type}/pending"),
               StaticActionCreator
             )
-          @rejected =
+          @fulfilled =
             T.let(
-              StaticActionCreator.new(:"#{type}/rejected"),
+              StaticActionCreator.new(:"#{type}/fulfilled"),
               StaticActionCreator
             )
           @rejected =
@@ -106,7 +106,7 @@ module Mayu
               store.dispatch(pending, *args, **kwargs.merge(request_id:))
               result =
                 T.unsafe(@block).call(store, *args, **kwargs.merge(task:, request_id:))
-              store.dispatch(rejected, result)
+              store.dispatch(fulfilled, result)
             rescue => error
               store.dispatch(rejected, { error:, request_id: })
             end

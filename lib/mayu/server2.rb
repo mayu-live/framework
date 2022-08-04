@@ -1,6 +1,8 @@
 # typed: false
 
+require_relative "../mayu"
 require_relative "renderer"
+require_relative "state/loader"
 
 module Mayu
   module Server2
@@ -27,8 +29,8 @@ module Mayu
         end
       end
 
-      def self.init(task: Async::Task.current)
-        self.store(new(task:))
+      def self.init(root:, routes:, reducers:, request_uri:, task: Async::Task.current)
+        self.store(new(root:, routes:, reducers:, request_uri:, task:))
       end
 
       def self.connect(id, key, task: Async::Task.current)
@@ -47,7 +49,11 @@ module Mayu
       attr_reader :key
 
       def initialize(
-        timeout_in_seconds = DEFAULT_TIMEOUT_IN_SECONDS,
+        root:,
+        reducers:,
+        routes:,
+        request_uri:,
+        timeout_in_seconds: DEFAULT_TIMEOUT_IN_SECONDS,
         task: Async::Task.current
       )
         @id = SecureRandom.uuid
@@ -58,7 +64,7 @@ module Mayu
         @task = task
         @timeout_task = nil
 
-        @renderer = Renderer.new(parent: @task)
+        @renderer = Renderer.new(root:, reducers:, routes:, request_uri:, parent: @task)
 
         @task.async do |subtask|
           loop do
@@ -302,6 +308,15 @@ module Mayu
     end
 
     class InitSessionApp
+      def initialize(root:)
+        @root = root
+        @routes = T.let(
+          Routes.build_routes(File.join(root, "app")),
+          T::Array[Routes::Route]
+        )
+        @reducers = State::Loader.new(File.join(root, "store")).load
+      end
+
       def call(env)
         request = Rack::Request.new(env)
 
@@ -321,7 +336,12 @@ module Mayu
           return 406, {}, ["Not acceptable, try requesting HTML instead"]
         end
 
-        session = Session.init
+        session = Session.init(
+          root: @root,
+          routes: @routes,
+          reducers: @reducers,
+          request_uri: request.path_info,
+        )
 
         response =
           Rack::Response.new(
@@ -349,8 +369,9 @@ module Mayu
     end
 
     JS_ROOT_DIR = File.join(File.dirname(__FILE__), "client", "dist")
-    PUBLIC_ROOT_DIR =
-      File.join(File.dirname(__FILE__), "..", "..", "example", "public")
+    APP_DIR = "app"
+    PUBLIC_DIR = "public"
+    STORE_DIR = "store"
 
     def self.rack_static_options_for_js
       urls =
@@ -361,7 +382,9 @@ module Mayu
       { root: JS_ROOT_DIR, urls: }
     end
 
-    App =
+    def self.build(root)
+      public_root_dir = File.join(root, PUBLIC_DIR)
+
       Rack::Builder.new do
         map EventStreamApp::MOUNT_PATH do
           run EventStreamApp.new
@@ -377,9 +400,10 @@ module Mayu
 
         use Rack::Static, Mayu::Server2.rack_static_options_for_js
 
-        use Rack::Static, urls: [""], root: PUBLIC_ROOT_DIR, cascade: true
+        use Rack::Static, urls: [""], root: public_root_dir, cascade: true
 
-        run InitSessionApp.new
+        run InitSessionApp.new(root:)
       end
+    end
   end
 end
