@@ -1,37 +1,42 @@
 import logger from "./logger.js";
 import NodeTree from "./NodeTree.js";
+import PingTimer from "./PingTimer.js";
 
 class PingView {
   div: HTMLDivElement;
 
   constructor() {
-    const div = document.createElement('div')
-    div.style.setProperty('position', 'fixed')
-    div.style.setProperty('bottom', '0')
-    div.style.setProperty('left', '0')
-    div.style.setProperty('z-index', '10')
-    div.style.setProperty('backdrop-filter', 'blur(5px)')
-    div.style.setProperty('border', '0 solid #0003')
-    div.style.setProperty('border-width', '1px 1px 0 0')
-    div.style.setProperty('font-size', '.9em')
-    div.style.setProperty('padding', '.2em .5em')
-    div.style.setProperty('border-top-right-radius', '3px')
-    div.style.setProperty('pointer-events', 'none')
-    div.style.setProperty('text-shadow', Array(10).fill('0 0 2px #000').join(','))
-    div.style.setProperty('color', '#fff')
-    div.style.setProperty('font-weight', 'bold')
-    div.style.setProperty('font-family', 'monospace')
-    div.querySelector("::before")
-    document.body.appendChild(div)
+    const div = document.createElement("div");
+    div.style.setProperty("position", "fixed");
+    div.style.setProperty("bottom", "0");
+    div.style.setProperty("left", "0");
+    div.style.setProperty("z-index", "10");
+    div.style.setProperty("backdrop-filter", "blur(5px)");
+    div.style.setProperty("border", "0 solid #0003");
+    div.style.setProperty("border-width", "1px 1px 0 0");
+    div.style.setProperty("font-size", ".9em");
+    div.style.setProperty("padding", ".2em .5em");
+    div.style.setProperty("border-top-right-radius", "3px");
+    div.style.setProperty("pointer-events", "none");
+    div.style.setProperty(
+      "text-shadow",
+      Array(10).fill("0 0 2px #000").join(",")
+    );
+    div.style.setProperty("color", "#fff");
+    div.style.setProperty("font-weight", "bold");
+    div.style.setProperty("font-family", "monospace");
+    div.querySelector("::before");
+    document.body.appendChild(div);
 
-    this.div = div
+    this.div = div;
   }
 
   update(text: string) {
-    this.div.textContent = text
+    this.div.textContent = text;
   }
 }
 
+// TODO: Make more of this set up stuff in a functional way.
 class Mayu {
   readonly sessionId: string;
   readonly connection: EventSource;
@@ -50,8 +55,8 @@ class Mayu {
     this.connection.addEventListener(
       "init",
       (e) => {
-        const ids = (JSON.parse(e.data) as any);
-        const nodeTree = new NodeTree(ids)
+        const ids = JSON.parse(e.data) as any;
+        const nodeTree = new NodeTree(ids);
 
         this.connection.addEventListener("patch", (e) => {
           nodeTree.apply(JSON.parse(e.data));
@@ -60,25 +65,49 @@ class Mayu {
       { once: true }
     );
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/__mayu.serviceWorker.js', { scope: '/' })
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/__mayu.serviceWorker.js", { scope: "/" })
         .then((reg) => {
-          console.log('Registration Successful', reg);
-          reg?.active?.postMessage({ type: 'sessionId', sessionId })
+          console.log("Registration Successful", reg);
+          reg?.active?.postMessage({ type: "sessionId", sessionId });
 
-          window.addEventListener('beforeunload', () => {
-            reg?.active?.postMessage({ type: 'closeWindow', sessionId })
-          })
+          window.addEventListener("beforeunload", () => {
+            reg?.active?.postMessage({ type: "closeWindow", sessionId });
+          });
         })
-        .catch((e) => console.error(e))
+        .catch((e) => console.error(e));
     }
 
-    const pingView = new PingView()
-    this.connection.addEventListener('pong', (e) => {
-      const time = JSON.parse(e.data);
-      const delta = new Date().getTime() - time;
-      pingView.update(`Ping: ${delta} ms`)
-    })
+    const pingTimer = new PingTimer();
+
+    this.connection.addEventListener("pong", (e) => {
+      pingTimer.pong(JSON.parse(e.data));
+    });
+
+    const pingView = new PingView();
+
+    async function pingLoop() {
+      while (true) {
+        try {
+          const pingTime = await pingTimer.ping((now) => {
+            fetch(`/__mayu/handler/${sessionId}/ping`, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify(now),
+            });
+          });
+
+          pingView.update(`Ping: ${pingTime} ms`);
+          await pingTimer.sleep(PingTimer.PING_FREQUENCY_MS);
+        } catch (e) {
+          console.error("Error. Retrying in", PingTimer.RETRY_TIME_MS, "ms");
+          await pingTimer.sleep(PingTimer.RETRY_TIME_MS);
+        }
+      }
+    }
+
+    pingLoop();
 
     this.#ping();
   }
@@ -104,15 +133,7 @@ class Mayu {
     });
   }
 
-  async #ping() {
-    await fetch(`/__mayu/handler/${this.sessionId}/ping`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(new Date().getTime()),
-    });
-
-    setTimeout(() => this.#ping(), 3000)
-  }
+  async #ping() {}
 }
 
 export default Mayu;
