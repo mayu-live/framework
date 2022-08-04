@@ -190,18 +190,76 @@ Maybe I'm too inspired by the JS world.
 
 Components currently basic state that they can pass to children via props.
 
+Currrently working on getting something similar to Redux working...
+
+#### `state/auth.rb`
+
+```ruby
+CurrentUserSelector = create_selector do |state|
+  state.dig(:auth, :current_user)
+end
+
+LogIn = async_action(:log_in) do |store, username:, password:|
+  user = DB[:users].where(username:)
+  raise InvalidCredentials unless user
+  user
+end
+
+initial_state(
+  logging_in: false,
+  current_user: nil,
+  error: nil,
+)
+
+match(LogIn.pending) do |state|
+  state[:error] = nil
+  state[:logging_in] = true
+end
+
+match(LogIn.fulfilled) do |state, user|
+  state[:logging_in] = false
+  state[:current_user] = user
+end
+
+match(LogIn.rejected) do |state, error|
+  case error
+  when InvalidCredentials
+    state[:error] = "Invalid credentials"
+  else
+    state[:error] = error.message
+  end
+  state[:logging_in] = false
+end
+```
+
+#### `components/CurrentUser.mayu`
+
+```ruby
+use_store do |props|
+  {
+    current_user: CurrentUserSelector,
+  }
+end
+```
+```mayu
+render do
+  if current_user = store[:current_user]
+    <p>{current_user[:name]}</p>
+  end
+    <p>Please log in!</p>
+  end
+end
+```
+
 #### Missing features
 
-* There needs to be something like Reacts ContextProvider before we can
-  have global state. This should be fixed in the VDOM.
-* A basic version of Redux would be great.
-  It would be easy to make something like that.
 * I have been looking a lot at [XState](https://xstate.js.org/) which
   looks great, but I have never used it. I could probably implement
   something like Redux myself, but XState seems pretty complex.
-  I do believe however that state machines would be perfect for
+  I do believe however that statecharts would be perfect for
   this project, so we should look into that.
-  It would be great if the schema was compatible with XState too.
+  It would be great if the schema was compatible with XState too,
+  to be able to use the visualizer.
 
 ### Assets
 
@@ -210,3 +268,62 @@ Components currently basic state that they can pass to children via props.
 * Not even images are handled or anything.
 * For production builds, it should be possible to scan through
  the `app/`-directory, and for all assets that are found, :
+
+### I18n
+
+Translations should be stored in a format like the Rails translations...
+
+Some translations can contain tags, so that you can do:
+
+#### `i18n/en.yaml`
+
+```
+pages:
+  page:
+    title: "Title"
+    welcome: "Welcome <bold>%{name}</bold> to my <red>webpage</red>"
+  items:
+    page:
+      title: "Title"
+      welcome: "Welcome <bold>%{name}</bold> to my <red>webpage</red>"
+    [id]:
+      page:
+        title: "Showing item %{id}"
+}
+```
+
+#### MyComponent
+
+```
+t("welcome",
+  bold: <span style={{ fontWeight: "bold" }} />,
+  red: <span style={{ color: "red" }} />,
+)
+```
+
+Translations should always be scoped to the current page...
+Components should have their own translations..
+
+Idk, maybe even translations should be stored in the same directory as the components?
+So that one doesn't have to jump around so much...
+
+`MyComponent.mayu`, `MyComponent.css`, `MyComponent.en.i18n`, `MyComponent.es.i18n`
+
+On the other hand it would yield a lot of files in each directory...
+
+#### Missing features
+
+* Nothing done.
+* Need to implement some sort of parser that can insert components
+  where the tags are... I have done this before in javascript.
+
+### Pages and routing
+
+Simple routing implemented but not integrated.
+Based on next.js dynamic routing and new layout RFC.
+
+So you create a page by putting it in `app/my-page/page.mayu` and it will get
+the path `/my-page/`. A page is a component but if you do `import` it will
+look for components in the `components/` directory, so you can't import other
+pages. If you need to share functionality, put stuff in components.
+
