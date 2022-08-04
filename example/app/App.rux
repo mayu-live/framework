@@ -18,7 +18,7 @@ handler(:click) do |e, tab|
 end
 
 source = <<~EOF
-<strong># app/Clock.mayu</strong>
+# app/Clock.mayu
 
 initial_state do |props|
   { time: Time.now }
@@ -42,7 +42,7 @@ render do
   </span>
 end
 
-<strong>/* app/Clock.css */</strong>
+/* app/Clock.css */
 
 .clock {
   font-family: monospace;

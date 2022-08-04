@@ -5,7 +5,7 @@ render do
   <header class={styles.header}>
     <div class={styles.inner}>
       <div class={styles.left}>
-        <h1>mayu live</h1>
+        <h1 class={styles.title}>mayu live</h1>
         <Tagline />
       </div>
       <Clock />

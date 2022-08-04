@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Shrikhand&display=swap');
+
 .html {
   background: #000;
   margin: 0;
@@ -16,7 +18,8 @@
   background: #000;
   margin: 0;
   padding: 0;
-  font-family: monospace;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 1.2em;
 }
 
 .main {

@@ -17,7 +17,9 @@
 }
 
 .title {
-  font-size: 2em;
+  font-family: 'Shrikhand', cursive;
+  font-size: 3em;
+  margin: 0;
 }
 
 .tagline {
