@@ -5,6 +5,7 @@ require_relative "vdom/vtree"
 require_relative "vdom/component"
 require_relative "modules/system"
 require_relative "routes"
+require_relative "state/store"
 
 module Mayu
   class Renderer
@@ -19,6 +20,7 @@ module Mayu
       modules = Mayu::Modules::System.new(File.join(root))
 
       route_match = Routes.match_route(routes, request_uri)
+      p route_match
 
       route_match.layouts.map do |layout|
         p layout
@@ -26,14 +28,17 @@ module Mayu
       end
       p route_match.layouts
 
-      app =
-        T.let(
-          modules.load_component("App").klass,
-          T.class_of(Mayu::VDOM::Component::Base)
-        )
+      app = VDOM.h(modules.load_page(route_match.template).klass)
 
-      @root = T.let(VDOM.h(app), VDOM::Descriptor)
-      @vtree = T.let(VDOM::VTree.new(task: @barrier), VDOM::VTree)
+      route_match.layouts.reverse.each do |layout|
+        layout_component = modules.load_page(route_match.template).klass
+        app = VDOM.h(layout_component, {}, [app])
+      end
+
+      store = State::Store.new({}, reducers:)
+
+      @root = T.let(app, VDOM::Descriptor)
+      @vtree = T.let(VDOM::VTree.new(store: store, task: @barrier), VDOM::VTree)
 
       @barrier.async(annotation: "Renderer patch sets") do
         @vtree.on_update.wait => :patch, initial_patches

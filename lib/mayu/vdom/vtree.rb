@@ -73,8 +73,8 @@ module Mayu
       sig { returns(Async::Condition) }
       attr_reader :on_update
 
-      sig { params(task: Async::Barrier).void }
-      def initialize(task: Async::Task.current)
+      sig { params(store: State::Store, task: Async::Barrier).void }
+      def initialize(store:, task: Async::Task.current)
         @root = T.let(nil, T.nilable(VNode))
         @id_generator = T.let(IdGenerator.new, IdGenerator)
 
@@ -86,22 +86,27 @@ module Mayu
 
         @sent_stylesheets = T.let(Set.new, T::Set[String])
 
+        @store = store
+
         @update_task =
           T.let(
             task.async(annotation: "VTree updater") do |task|
               loop do
+                sleep 0.05
+
+                next if @update_queue.empty?
+
                 ctx = UpdateContext.new
 
                 @update_queue.size.times do
                   vnode = @update_queue.dequeue
+
                   if vnode.component&.dirty?
                     patch_vnode(ctx, vnode, vnode.descriptor)
                   end
                 end
 
                 commit!(ctx)
-
-                sleep 0.05
               end
             rescue => e
               puts e

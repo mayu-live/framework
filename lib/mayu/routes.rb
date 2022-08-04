@@ -26,10 +26,11 @@ module Mayu
     sig{params(root: String, routes: T::Array[Route], layouts: T::Array[String], path: T::Array[String], level: Integer).returns(T::Array[Route])}
     def self.build_routes(root, routes: [], layouts:  [], path: [], level: 0)
       dir = T.unsafe(File).join(root, *path)
+      p [:build_routes, dir]
       return routes unless File.directory?(dir)
 
-      dirname = File.basename(dir)
       entries = Dir.entries(dir) - %w(. ..)
+      p entries
 
       if layout = entries.delete(LAYOUT_FILENAME)
         layouts += [T.unsafe(File).join(*path, layout)]
@@ -45,10 +46,10 @@ module Mayu
       end
 
       entries.each do |entry|
-        build_routes(File.join(root, entry),
+        build_routes(File.join(root),
           routes:,
           layouts:,
-          path: path + [dirname],
+          path: path + [entry],
           level: level.succ,
         )
       end
@@ -89,6 +90,8 @@ module Mayu
             .transform_values(&:to_s)
         )
       end
+      p request_path
+      p routes
 
       raise NotFoundError,
         "Page not found, and no 404 page either. You should probably create one."

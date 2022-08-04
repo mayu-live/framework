@@ -26,6 +26,8 @@ module Mayu
         @state = T.let(initial_state, State)
         @reducer = T.let(combine_reducers(reducers), Reducer)
         @semaphore = T.let(Async::Semaphore.new, Async::Semaphore)
+
+        dispatch({ type: :__INIT__, payload: nil })
       end
 
       ActionHash = T.type_alias { T::Hash[Symbol, T.untyped] }
