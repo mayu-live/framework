@@ -10,6 +10,7 @@ gem "rake"
 gem "rux"
 gem "crass"
 gem "falcon"
+gem "toml-rb"
 
 group :development do
   gem "guard", require: false

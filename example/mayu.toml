@@ -1,0 +1,8 @@
+[dev]
+  # These settings don't do anything.. yet
+  port = 9292
+  hot_reload = true
+
+[prod]
+  hostname = "mayu.live"
+  port = 3000
