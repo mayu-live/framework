@@ -242,6 +242,14 @@ module Mayu
           return [404, { 'content-type' => 'text/plain' }, ['There is no favicon']]
         end
 
+        unless env["REQUEST_METHOD"].to_s == "GET"
+          return [405, {}, ["Only GET requests are supported."]]
+        end
+
+        unless env["HTTP_ACCEPT"].to_s.split(",").include?("text/html")
+          return [406, {}, ["Not acceptable, try requesting HTML instead"]]
+        end
+
         session = Session.init
 
         response = Rack::Response.new(session.initial_render, 200, { 'content-type' => 'text/html; charset=utf-8' })

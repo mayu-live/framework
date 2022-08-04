@@ -29,6 +29,11 @@ module Mayu
       @barrier.async(annotation: "Renderer patch sets") do
         @vtree.on_update.wait => :patch, initial_patches
         first_insert = initial_patches.find { _1[:type] == :insert }
+
+        unless first_insert
+          raise "No insert patch in initial render!"
+        end
+
         respond(:initial_render, initial_patches)
         respond(:init, first_insert[:ids])
 
