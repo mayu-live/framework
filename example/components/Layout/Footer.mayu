@@ -1,5 +1,5 @@
 GithubLink = (
-  <a class={styles.link} href="https://github.com/mayu-live">
+  <a target="_blank" class={styles.link} href="https://github.com/mayu-live">
     github.com/mayu-live
   </a>
 )
