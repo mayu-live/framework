@@ -58,8 +58,6 @@ module Mayu
             rerender!
           in [:handle_callback, callback_id, payload]
             @vtree.handle_event(callback_id, payload)
-          in [:handle_event, handler_id, payload]
-            @vtree.handle_event(handler_id, payload)
           else
             puts "Invalid message: #{message.inspect}"
           end
@@ -93,9 +91,6 @@ module Mayu
 
     sig { returns(T.untyped) }
     def id_tree = @vtree.id_tree
-
-    sig { returns(T.untyped) }
-    def stylesheets = @vtree.stylesheets.dup
 
     private
 

@@ -29,7 +29,7 @@ module Mayu
       def parent = @parents.last
 
       sig { returns(VNode::Id) }
-      def dom_parent_id = @dom_parent_ids.last || 0
+      def dom_parent_id = @dom_parent_ids.last || "probably root"
 
       sig { params(vnode: VNode, blk: T.proc.void).void }
       def enter(vnode, &blk)

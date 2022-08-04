@@ -12,7 +12,7 @@
 }
 
 .title {
-  font-family: 'Shrikhand', cursive;
+  font-family: var(--title-font), cursive;
   font-size: 3em;
   line-height: 1em;
 }

@@ -21,9 +21,16 @@ end
 handler :submit do |e|
   case state[:auth_state]
   when :logged_out
-    update(auth_state: :logging_in)
-
-    sleep 2
+    update(auth_state: :logging_in, message: "Loading user data")
+    sleep 1
+    update(message: "Verifying credentials")
+    sleep 1
+    update(message: "Checking some thing with an external service")
+    sleep 1
+    update(message: "Checking another thing with another external service")
+    sleep 1
+    update(message: "Almost done!")
+    sleep 1
 
     if e["formData"]["name"].strip.empty?
       update(auth_state: :logged_out, error: "Empty username!")
@@ -75,7 +82,7 @@ render do
         </form>
       </Fieldset>
     when :logging_in
-      <p>Hold on, logging in!</p>
+      <p>{state[:message]}</p>
     when :logged_in
       <div>
         <h1>Welcome {state[:username]}!</h1>

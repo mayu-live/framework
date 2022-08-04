@@ -4,7 +4,7 @@ Clock = import("./Clock")
 render do
   <header class={styles.header}>
     <div class={styles.inner}>
-      <h1 class={styles.title}>mayu live</h1>
+      <h1 class={styles.title}>Mayu Live</h1>
       <Tagline class={styles.tagline} />
     </div>
   </header>

@@ -1,14 +1,15 @@
 # typed: strict
 
 require "async/queue"
+require "nanoid"
 require_relative "component"
 require_relative "descriptor"
 require_relative "dom"
 require_relative "vnode"
 require_relative "css_attributes"
 require_relative "update_context"
+require_relative "id_generator"
 require_relative "../event_emitter"
-require "pry"
 
 module Mayu
   module VDOM
@@ -17,54 +18,55 @@ module Mayu
 
       class Indexes
         extend T::Sig
+        extend T::Generic
 
-        sig { params(indexes: T::Array[Integer]).void }
+        Elem = type_member
+
+        sig { params(indexes: T::Array[Elem]).void }
         def initialize(indexes = [])
           @indexes = indexes
         end
 
-        sig { params(id: Integer).void }
+        sig { params(id: Elem).void }
         def append(id)
           @indexes.delete(id)
           @indexes.push(id)
         end
 
-        sig { params(index: Integer).returns(T.nilable(Integer)) }
+        sig { params(index: Integer).returns(T.nilable(Elem)) }
         def [](index) = @indexes[index]
 
-        sig { params(id: Integer).returns(T.nilable(Integer)) }
+        sig { params(id: Elem).returns(T.nilable(Integer)) }
         def index(id) = @indexes.index(id)
-        sig { params(id: Integer).returns(T.nilable(Integer)) }
+        sig { params(id: Elem).returns(T.nilable(Integer)) }
         def rindex(id) = @indexes.rindex(id)
 
 
-        sig { params(id: Integer, after: T.nilable(Integer)).void }
+        sig { params(id: Elem, after: T.nilable(Elem)).void }
         def insert_after(id, after)
           insert_before(id, after && next_sibling(after))
         end
 
-        sig { params(id: Integer, before: T.nilable(Integer)).void }
+        sig { params(id: Elem, before: T.nilable(Elem)).void }
         def insert_before(id, before)
           @indexes.delete(id)
           index = before && @indexes.index(before)
           index ? @indexes.insert(index, id) : @indexes.push(id)
         end
 
-        sig { params(id: Integer).returns(T.nilable(Integer)) }
+        sig { params(id: Elem).returns(T.nilable(Elem)) }
         def next_sibling(id)
           if index = @indexes.index(id)
             @indexes[index.succ]
           end
         end
 
-        sig { params(id: Integer).void }
+        sig { params(id: Elem).void }
         def remove(id) = @indexes.delete(id)
 
-        sig { returns(T::Array[Integer]) }
+        sig { returns(T::Array[Elem]) }
         def to_a = @indexes
       end
-
-      Id = T.type_alias { Integer }
 
       sig { returns(T::Array[T.untyped]) }
       attr_reader :patchsets
@@ -74,7 +76,7 @@ module Mayu
       sig { params(task: Async::Barrier).void }
       def initialize(task: Async::Task.current)
         @root = T.let(nil, T.nilable(VNode))
-        @id_counter = T.let(0, Id)
+        @id_generator = T.let(IdGenerator.new, IdGenerator)
 
         @handlers = T.let({}, T::Hash[String, Component::HandlerRef])
 
@@ -157,10 +159,8 @@ module Mayu
         @update_queue.enqueue(vnode)
       end
 
-      sig { returns(Id) }
-      def next_id!
-        @id_counter.tap { @id_counter = @id_counter.succ }
-      end
+      sig { returns(IdGenerator::Type) }
+      def next_id! = @id_generator.next!
 
       private
 
@@ -318,6 +318,13 @@ module Mayu
             descriptor.props[:children]
           end
 
+        if (stylesheet = component&.stylesheet).is_a?(Modules::CSS::CSSModule)
+          unless @sent_stylesheets.include?(stylesheet.path)
+            ctx.stylesheet(stylesheet.path)
+            @sent_stylesheets.add(stylesheet.path)
+          end
+        end
+
         ctx.enter(vnode) do
           vnode.children =
             add_comments_between_texts(children).map do
@@ -327,13 +334,6 @@ module Mayu
 
         vnode.component&.mount
         update_handlers({}, vnode.props)
-
-        if (stylesheet = component&.stylesheet).is_a?(Modules::CSS::CSSModule)
-          unless @sent_stylesheets.include?(stylesheet.path)
-            ctx.stylesheet(stylesheet.path)
-            @sent_stylesheets.add(stylesheet.path)
-          end
-        end
 
         vnode
       end
@@ -407,11 +407,8 @@ module Mayu
           new_indexes = Indexes.new(indexes.to_a - vnodes.map(&:id))
           current_index = indexes.index(vnode.id)
 
-
           before_id = indexes[expected_index]
-          before = before_id && all_vnodes.find do
-            _1.id == before_id
-          end
+          before = before_id && all_vnodes.find { _1.id == before_id } || nil
 
           if old_ids.include?(vnode.id)
             unless current_index == expected_index

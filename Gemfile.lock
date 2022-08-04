@@ -73,6 +73,7 @@ GEM
     mapping (1.1.1)
     method_source (1.0.0)
     minitest (5.16.2)
+    nanoid (2.0.0)
     nenv (0.3.0)
     netrc (0.11.0)
     notiffany (0.1.3)
@@ -178,6 +179,7 @@ DEPENDENCIES
   guard
   guard-falcon
   minitest
+  nanoid
   prettier
   pry
   rack-test

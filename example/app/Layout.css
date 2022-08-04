@@ -4,10 +4,17 @@
   background: #000;
   margin: 0;
   padding: 0;
+  --title-font: "Shrikhand";
 
   --page-max-width: 900px;
   --white: #e3fcfc;
   --blue: #14ccca;
+
+  --celadon-blue: #4281a4ff;
+  --verdigris: #48a9a6ff;
+  --timberwolf: #e4dfdaff;
+  --tan: #d4b483ff;
+  --fuzzy-wuzzy: #c1666bff;
 }
 
 .html *,

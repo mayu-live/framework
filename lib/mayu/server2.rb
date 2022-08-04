@@ -11,13 +11,9 @@ module Mayu
         end
 
         def fetch(id, key)
-          session = __SESSIONS__.fetch(id) do
-            return yield :session_not_found
-          end
+          session = __SESSIONS__.fetch(id) { return yield :session_not_found }
 
-          unless session.key == key
-            return yield :invalid_session_key
-          end
+          return yield :invalid_session_key unless session.key == key
 
           session
         end
@@ -102,26 +98,30 @@ module Mayu
 
           patches.each do |patch|
             case patch
-            in type: :insert, html:
+            in { type: :insert, html: }
               rendered_html = html
-            in type: :stylesheet, paths:
+            in { type: :stylesheet, paths: }
               paths.each { stylesheets.add(_1) }
-          else
-            raise patch.inspect
+            else
+              raise patch.inspect
             end
           end
 
-          style = stylesheets.map { |stylesheet|
-            %{<link rel="stylesheet" href="#{stylesheet}">}
-          }.join
+          style =
+            stylesheets
+              .map do |stylesheet|
+                %{<link rel="stylesheet" href="#{stylesheet}">}
+              end
+              .join
 
-          script = %{<script type="module" src="/__mayu/live.js?#{@id}"></script>}
+          script =
+            %{<script type="module" src="/__mayu/live.js?#{@id}"></script>}
 
           body.write(
             rendered_html
               .prepend("<!DOCTYPE html>\n")
               .sub(%r{</head>}) { "#{style}#{_1}" }
-              .sub(%r{.*\K</body>}) { "#{script}#{_1}" }
+              .sub(%r{</head>}) { "#{script}#{_1}" }
           )
         ensure
           body.close
@@ -138,15 +138,17 @@ module Mayu
         @semaphore.async do
           @timeout_task&.stop
 
-          task.async do
-            loop do
-              @messages.dequeue => id, event, data
-              body.write(format_message(id, event, data))
+          task
+            .async do
+              loop do
+                @messages.dequeue => [id, event, data]
+                body.write(format_message(id, event, data))
+              end
+            ensure
+              body.close
+              start_timeout
             end
-          ensure
-            body.close
-            start_timeout
-          end.wait
+            .wait
         end
 
         body
@@ -171,9 +173,7 @@ module Mayu
 
         @timeout_task =
           @task.async do |subtask|
-            @timeout_in_seconds.times do
-              subtask.sleep 1
-            end
+            @timeout_in_seconds.times { subtask.sleep 1 }
 
             self.class.delete(id)
           ensure
@@ -186,17 +186,25 @@ module Mayu
       MOUNT_PATH = "/__mayu/assets"
 
       def call(env)
-        asset =  Mayu::Assets::Manager.find(File.basename(env[Rack::PATH_INFO].to_s))
+        asset =
+          Mayu::Assets::Manager.find(File.basename(env[Rack::PATH_INFO].to_s))
 
-        unless asset
-          return [404, {}, ['File not found']]
-        end
+        return 404, {}, ["File not found"] unless asset
 
         unless env["HTTP_ACCEPT"].to_s.split(",").include?(asset.content_type)
-          return [406, {}, ["Not acceptable, try requesting #{asset.content_type} instead"]]
+          return [
+            406,
+            {},
+            ["Not acceptable, try requesting #{asset.content_type} instead"]
+          ]
         end
 
-        [200, { "content-type" => asset.content_type }, [asset.content]]
+        headers = {
+          "content-type" => asset.content_type,
+          "cache-control" => "public, max-age=604800, immutable"
+        }
+
+        [200, headers, [asset.content]]
       end
     end
 
@@ -207,7 +215,7 @@ module Mayu
         "content-type" => "text/event-stream",
         "connection" => "keep-alive",
         "cache-control" => "no-cache",
-        "x-accel-buffering" => "no",
+        "x-accel-buffering" => "no"
       }
 
       def call(env)
@@ -215,9 +223,10 @@ module Mayu
         session_id = request.path_info.to_s.split("/", 2).last
         cookie_name = Session.cookie_name(session_id)
 
-        session_key = request.cookies.fetch(cookie_name) do
-          return [401, {}, ["Session cookie not set"]]
-        end
+        session_key =
+          request
+            .cookies
+            .fetch(cookie_name) { return 401, {}, ["Session cookie not set"] }
 
         case Session.connect(session_id, session_key)
         in :session_not_found
@@ -241,13 +250,19 @@ module Mayu
         request = Rack::Request.new(env)
         session_id, handler_id = request.path_info.to_s.split("/", 3).last(2)
         cookie_name = Session.cookie_name(session_id)
-        session_key = request.cookies.fetch(cookie_name) do
-          return [401, {}, ["Session cookie not set"]]
-        end
+        session_key =
+          request
+            .cookies
+            .fetch(cookie_name) { return 401, {}, ["Session cookie not set"] }
 
         payload = JSON.parse(request.body.read)
 
-        case Session.handle_callback(session_id, session_key, handler_id, payload)
+        case Session.handle_callback(
+          session_id,
+          session_key,
+          handler_id,
+          payload
+        )
         when :session_not_found
           [404, {}, ["Session not found"]]
         else
@@ -261,20 +276,32 @@ module Mayu
         request = Rack::Request.new(env)
 
         if request.path_info == "/favicon.ico"
-          return [404, { 'content-type' => 'text/plain' }, ['There is no favicon']]
+          return [
+            404,
+            { "content-type" => "text/plain" },
+            ["There is no favicon"]
+          ]
         end
 
         unless env["REQUEST_METHOD"].to_s == "GET"
-          return [405, {}, ["Only GET requests are supported."]]
+          return 405, {}, ["Only GET requests are supported."]
         end
 
         unless env["HTTP_ACCEPT"].to_s.split(",").include?("text/html")
-          return [406, {}, ["Not acceptable, try requesting HTML instead"]]
+          return 406, {}, ["Not acceptable, try requesting HTML instead"]
         end
 
         session = Session.init
 
-        response = Rack::Response.new(session.initial_render, 200, { 'content-type' => 'text/html; charset=utf-8' })
+        response =
+          Rack::Response.new(
+            session.initial_render,
+            200,
+            {
+              "content-type" => "text/html; charset=utf-8",
+              "cache-control" => "no-store",
+            }
+          )
 
         response.set_cookie(
           session.cookie_name,
@@ -283,7 +310,7 @@ module Mayu
             secure: true,
             http_only: true,
             same_site: :strict,
-            value: session.key,
+            value: session.key
           }
         )
 
@@ -292,40 +319,37 @@ module Mayu
     end
 
     JS_ROOT_DIR = File.join(File.dirname(__FILE__), "client", "dist")
-    PUBLIC_ROOT_DIR = File.join(File.dirname(__FILE__), "..", "..", "example", "public")
+    PUBLIC_ROOT_DIR =
+      File.join(File.dirname(__FILE__), "..", "..", "example", "public")
 
     def self.rack_static_options_for_js
       urls =
-        Dir[File.join(JS_ROOT_DIR, '*.js')]
+        Dir[File.join(JS_ROOT_DIR, "*.js")]
           .map { File.basename(_1) }
           .map { ["/__mayu/#{_1}", _1] }
           .to_h
       { root: JS_ROOT_DIR, urls: }
     end
 
-    App = Rack::Builder.new do
+    App =
+      Rack::Builder.new do
+        map EventStreamApp::MOUNT_PATH do
+          run EventStreamApp.new
+        end
 
-      map EventStreamApp::MOUNT_PATH do
-        run EventStreamApp.new
+        map CallbackHandlerApp::MOUNT_PATH do
+          run CallbackHandlerApp.new
+        end
+
+        map AssetsApp::MOUNT_PATH do
+          run AssetsApp.new
+        end
+
+        use Rack::Static, Mayu::Server2.rack_static_options_for_js
+
+        use Rack::Static, urls: [""], root: PUBLIC_ROOT_DIR, cascade: true
+
+        run InitSessionApp.new
       end
-
-      map CallbackHandlerApp::MOUNT_PATH do
-        run CallbackHandlerApp.new
-      end
-
-      map AssetsApp::MOUNT_PATH do
-        run AssetsApp.new
-      end
-
-      use Rack::Static,
-        Mayu::Server2.rack_static_options_for_js
-
-      use Rack::Static,
-        urls: [""],
-        root: PUBLIC_ROOT_DIR,
-        cascade: true
-
-      run InitSessionApp.new
-    end
   end
 end

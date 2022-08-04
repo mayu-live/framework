@@ -3,6 +3,7 @@
 require_relative "component"
 require_relative "descriptor"
 require_relative "dom"
+require_relative "id_generator"
 
 module Mayu
   module VDOM
@@ -10,7 +11,7 @@ module Mayu
       extend T::Sig
 
       Children = T.type_alias { T::Array[VNode] }
-      Id = T.type_alias { Integer }
+      Id = T.type_alias { IdGenerator::Type }
 
       sig { returns(Id) }
       attr_reader :id
@@ -21,7 +22,7 @@ module Mayu
       sig { returns(Id) }
       def dom_id
         if component
-          children.first&.dom_id || -1
+          children.first&.dom_id or raise "There is no DOM id"
         else
           id
         end

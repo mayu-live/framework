@@ -116,3 +116,97 @@ That would make the container images way smaller.
 ### Hosting
 
 Provide a default configuration for hosting on fly.io and other services.
+
+## Implementation status
+
+### VDOM
+
+The VDOM is working, however some parts of the code are quite messy.
+Should probably be rewritten once or twice while finding out what
+is working and not.
+
+#### Missing features
+
+* Contexts are highly prioritized.
+  It should be possible to provide any sort of data to child
+  components at any level, and those child components that subscribe
+  to those context changes should be updated...
+  It would probably be possible to register callbacks for each
+  context in the VTree object, and add some sort of special hooks
+  to some special Provider/Consumer objects so that the providers
+  can update the consumers...
+* Child diffing algorithm is not very efficient.
+  It seems to work well for simple demos, but it
+  generates too many move instructions.
+  I tried to make an implementation based on the
+  algorithm in snabbdom/vue but the resulting order
+  in the VDOM and the DOM would be different every
+  time and I just got tired of it and wrote an
+  unoptimized implementation, that while inefficient,
+  at least gets the order right.
+* Rendering should be paused while the user is disconnected
+  to prevent sending a bunch of irrelevant updates whenever
+  they come online.
+
+### Components
+
+What is working is asynchronous stuff... Even handlers are async.
+However, it seems like each handler can only run once at a time.
+
+#### Missing features
+
+* There needs to be a way to define inline stateless
+  components. Not exactly sure how it would look.
+* Prop type validation maybe?
+
+### Modules
+
+Do we need modules?
+Maybe I'm too inspired by the JS world.
+
+#### Missing features
+
+* The entire thing needs to be rethought.
+* The CSS for a component needs to be updated dynamically.
+* Hot module replacement that works with images and everything.
+* Some file watcher library would be good to use here to monitor
+  all changes... Could maybe even instantiate some sort of tree
+  similar to the VDOM tree and perform different actions when
+  things change in the file tree...
+  If a component uses an image, like this maybe:
+  ```
+  Logo = image("./Logo.png", format: :webp, versions: {
+    500w: { max_width: 500 },
+    800w: { max_width: 800 },
+  })
+  ```
+  ... then the asset watcher thing could maybe see that if the image has
+  changed, it should remove the old image files, and create new versions.
+  Similar to mounting/unmounting in the VDOM...
+  If we could make a more generic VDOM-library for dealing with any sort
+  of changes, then we could do something like that.
+
+### State management
+
+Components currently basic state that they can pass to children via props.
+
+#### Missing features
+
+* There needs to be something like Reacts ContextProvider before we can
+  have global state. This should be fixed in the VDOM.
+* A basic version of Redux would be great.
+  It would be easy to make something like that.
+* I have been looking a lot at [XState](https://xstate.js.org/) which
+  looks great, but I have never used it. I could probably implement
+  something like Redux myself, but XState seems pretty complex.
+  I do believe however that state machines would be perfect for
+  this project, so we should look into that.
+  It would be great if the schema was compatible with XState too.
+
+### Assets
+
+#### Missing features
+
+* Not even images are handled or anything.
+* For production builds, it should be possible to scan through
+ the `app/`-directory, and for all assets that are found, :

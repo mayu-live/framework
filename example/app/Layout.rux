@@ -1,5 +1,6 @@
 Header = import("./Layout/Header")
 Footer = import("./Layout/Footer")
+Nav = import("./Layout/Tabs")
 
 initial_state do |props|
   { title: "Mayu Live — Real time component based server-side reactive web framework in Ruby" }
@@ -14,6 +15,7 @@ render do
     </head>
     <body class={styles.body}>
       <Header />
+      <Nav tabs={%w(Main Quotes NameReverser Counter RandomNumbers Tree)} />
       <main class={styles.main}>
         {children}
       </main>

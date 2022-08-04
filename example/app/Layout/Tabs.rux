@@ -1,0 +1,24 @@
+initial_state do |props|
+  { index: 0 }
+end
+
+handler(:select_tab) do |event, index|
+  update(index:)
+end
+
+render do
+  tabs = props[:tabs].map.with_index do |tab, i|
+    class_name = [
+      styles.button,
+      i == state[:index] ? styles.selected : nil
+    ].compact.join(" ")
+
+    <button key={i} on-click={handler(:select_tab, i)} class={class_name}>
+      {tab}
+    </button>
+  end
+
+  <nav class={styles.buttons}>
+    {tabs}
+  </nav>
+end
