@@ -1,10 +1,31 @@
 initial_state do |props|
-  { count: 0 }
+  { count: 0, running: false }
 end
 
-handler :increment do |x, prev|
+handler :add do |x, amount|
   update do |state|
-    { count: state[:count].next }
+    { count: state[:count] + amount }
+  end
+end
+
+handler :reset do |x|
+  update(count: 0)
+end
+
+handler :toggle do |x|
+  if state[:running]
+    update(running: false)
+    return
+  else
+    update(running: true)
+  end
+
+  async do
+    loop do
+      update { |state| { count: state[:count].succ } }
+      sleep 0.5
+      break unless state[:running]
+    end
   end
 end
 
@@ -13,11 +34,30 @@ should_update? do |next_props, next_state|
 end
 
 render do
-  count = state[:count]
+  autocount_info =
+    if state[:running]
+      <p>Auto-counter is currently running. To stop it, click the button you clicked to start it.</p>
+    end
 
   <div>
-    <button on-click={handler(:increment, count)}>
-      Click me! {count}
-    </button>
+    <p class={styles.count}>Count: <span class={styles.value}>{state[:count]}</span></p>
+    <div class={styles.buttons}>
+      <button class={styles.button} on-click={handler(:add, 1)}>
+        Add 1
+      </button>
+      <button class={styles.button} on-click={handler(:add, 10)}>
+        Add 10
+      </button>
+      <button class={styles.button} on-click={handler(:add, 50)}>
+        Add 50
+      </button>
+      <button class={styles.button} on-click={handler(:toggle)}>
+        {state[:running] ? "Stop autocount" : "Start autocount"}
+      </button>
+      <button class={styles.button} on-click={handler(:reset)}>
+        Reset
+      </button>
+    </div>
+    {autocount_info}
   </div>
 end

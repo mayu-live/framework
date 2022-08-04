@@ -1,0 +1,19 @@
+.buttons {
+  display: flex;
+  gap: .5em;
+}
+
+.button {
+  font-size: 1.1em;
+  font-family: monospace;
+  flex: 1;
+}
+
+.count {
+  font-size: 1.2em;
+}
+
+.value {
+  font-weight: bold;
+  font-size: 1.4em;
+}
