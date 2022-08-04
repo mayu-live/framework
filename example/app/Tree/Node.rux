@@ -1,0 +1,37 @@
+initial_state do |props|
+  { path: [], open: props[:initial_open] }
+end
+
+handler :toggle_open do |_|
+  update { |state| { open: !state[:open] } }
+end
+
+Node = self
+
+render do
+  name = File.basename(props[:path])
+
+  if File.directory?(props[:path])
+    entries =
+      Dir.glob(File.join(props[:path], "*"))
+        .grep_v(/node_modules|sorbet|vendor/)
+        .sort
+        .map do |path|
+          <Node key={path} path={path} />
+        end
+
+    class_name =
+      if entries.empty?
+        styles.emptyDirectory
+      else
+        styles.directory
+      end
+
+    <li>
+      <span class={class_name} on-click={handler(:toggle_open)}>{name}/</span>
+      {state[:open] ? <ul>{entries}</ul> : nil}
+    </li>
+  else
+    <li>{name}</li>
+  end
+end

@@ -1,0 +1,9 @@
+.directory {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.emptyDirectory {
+  font-weight: thin;
+  opacity: .5;
+}

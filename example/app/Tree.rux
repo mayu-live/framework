@@ -1,0 +1,7 @@
+TreeNode = import("./Tree/Node")
+
+render do
+  <ul>
+    <TreeNode path={File.expand_path(File.dirname(__FILE__))} initial-open={true} />
+  </ul>
+end

@@ -6,6 +6,7 @@ List = import("./List")
 Section = import("./Layout/Section")
 Form = import("./Form")
 Tabs = import("./Tabs")
+Tree = import("./Tree")
 FeatureList = import("./FeatureList")
 
 initial_state do |props|
@@ -17,7 +18,7 @@ handler(:click) do |e, tab|
 end
 
 source = <<~EOF
-# app/Clock.mayu
+<strong># app/Clock.mayu</strong>
 
 initial_state do |props|
   { time: Time.now }
@@ -40,6 +41,12 @@ render do
     {state[:time].strftime("%H:%M:%S")}
   </span>
 end
+
+<strong>/* app/Clock.css */</strong>
+
+.clock {
+  font-family: monospace;
+}
 EOF
 
 render do
@@ -67,6 +74,10 @@ render do
       <Section title="Random numbers">
         <h3>Random numbers</h3>
         <List />
+      </Section>
+      <Section title="Tree">
+        <h3>Tree</h3>
+        <Tree />
       </Section>
     </Tabs>
   </Layout>

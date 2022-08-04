@@ -1,0 +1,709 @@
+[
+  {
+    "patches": [
+      {
+        "id": 0,
+        "parent": null,
+        "html": "<ul data-mayu-id=\"1\"><li key=\"0\" data-mayu-id=\"2\">Item 0</li><li key=\"1\" data-mayu-id=\"4\">Item 1</li><li key=\"2\" data-mayu-id=\"6\">Item 2</li><li key=\"3\" data-mayu-id=\"8\">Item 3</li><li key=\"4\" data-mayu-id=\"10\">Item 4</li><li key=\"5\" data-mayu-id=\"12\">Item 5</li><li key=\"6\" data-mayu-id=\"14\">Item 6</li></ul>",
+        "ids": {
+          "id": 1,
+          "ch": [
+            {
+              "id": 2,
+              "ch": [
+                {
+                  "id": 3
+                }
+              ]
+            },
+            {
+              "id": 4,
+              "ch": [
+                {
+                  "id": 5
+                }
+              ]
+            },
+            {
+              "id": 6,
+              "ch": [
+                {
+                  "id": 7
+                }
+              ]
+            },
+            {
+              "id": 8,
+              "ch": [
+                {
+                  "id": 9
+                }
+              ]
+            },
+            {
+              "id": 10,
+              "ch": [
+                {
+                  "id": 11
+                }
+              ]
+            },
+            {
+              "id": 12,
+              "ch": [
+                {
+                  "id": 13
+                }
+              ]
+            },
+            {
+              "id": 14,
+              "ch": [
+                {
+                  "id": 15
+                }
+              ]
+            }
+          ]
+        },
+        "type": "insert"
+      }
+    ],
+    "output": "<ul data-mayu-id=\"1\"><li key=\"0\" data-mayu-id=\"2\">Item 0</li><li key=\"1\" data-mayu-id=\"4\">Item 1</li><li key=\"2\" data-mayu-id=\"6\">Item 2</li><li key=\"3\" data-mayu-id=\"8\">Item 3</li><li key=\"4\" data-mayu-id=\"10\">Item 4</li><li key=\"5\" data-mayu-id=\"12\">Item 5</li><li key=\"6\" data-mayu-id=\"14\">Item 6</li></ul>"
+  },
+  {
+    "patches": [
+      {
+        "id": 14,
+        "parent": 1,
+        "type": "remove"
+      }
+    ],
+    "output": "<ul data-mayu-id=\"1\"><li key=\"0\" data-mayu-id=\"2\">Item 0</li><li key=\"1\" data-mayu-id=\"4\">Item 1</li><li key=\"2\" data-mayu-id=\"6\">Item 2</li><li key=\"3\" data-mayu-id=\"8\">Item 3</li><li key=\"4\" data-mayu-id=\"10\">Item 4</li><li key=\"5\" data-mayu-id=\"12\">Item 5</li></ul>"
+  },
+  {
+    "patches": [
+      {
+        "id": 6,
+        "parent": 1,
+        "after": 10,
+        "type": "move"
+      },
+      {
+        "id": 16,
+        "parent": 1,
+        "before": 8,
+        "html": "<p key=\"3\" data-mayu-id=\"16\">Item 3</p>",
+        "ids": {
+          "id": 16,
+          "ch": [
+            {
+              "id": 17
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 8,
+        "parent": 1,
+        "type": "remove"
+      }
+    ],
+    "output": "<ul data-mayu-id=\"1\"><li key=\"0\" data-mayu-id=\"2\">Item 0</li><li key=\"1\" data-mayu-id=\"4\">Item 1</li><p key=\"3\" data-mayu-id=\"16\">Item 3</p><li key=\"4\" data-mayu-id=\"10\">Item 4</li><li key=\"2\" data-mayu-id=\"6\">Item 2</li><li key=\"5\" data-mayu-id=\"12\">Item 5</li></ul>"
+  },
+  {
+    "patches": [
+      {
+        "id": 6,
+        "parent": 1,
+        "before": 16,
+        "type": "move"
+      },
+      {
+        "id": 18,
+        "parent": 1,
+        "before": 16,
+        "html": "<li key=\"3\" data-mayu-id=\"18\">Item 3</li>",
+        "ids": {
+          "id": 18,
+          "ch": [
+            {
+              "id": 19
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 10,
+        "parent": 1,
+        "before": 16,
+        "type": "move"
+      },
+      {
+        "id": 12,
+        "parent": 1,
+        "before": 16,
+        "type": "move"
+      },
+      {
+        "id": 20,
+        "parent": 1,
+        "before": 16,
+        "html": "<li key=\"6\" data-mayu-id=\"20\">Item 6</li>",
+        "ids": {
+          "id": 20,
+          "ch": [
+            {
+              "id": 21
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 16,
+        "parent": 1,
+        "type": "remove"
+      }
+    ],
+    "output": "<ul data-mayu-id=\"1\"><li key=\"0\" data-mayu-id=\"2\">Item 0</li><li key=\"1\" data-mayu-id=\"4\">Item 1</li><li key=\"2\" data-mayu-id=\"6\">Item 2</li><li key=\"3\" data-mayu-id=\"18\">Item 3</li><li key=\"4\" data-mayu-id=\"10\">Item 4</li><li key=\"5\" data-mayu-id=\"12\">Item 5</li><li key=\"6\" data-mayu-id=\"20\">Item 6</li></ul>"
+  },
+  {
+    "patches": [
+      {
+        "id": 10,
+        "parent": 1,
+        "before": 2,
+        "type": "move"
+      },
+      {
+        "id": 22,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"13\" data-mayu-id=\"22\">Item 13</li>",
+        "ids": {
+          "id": 22,
+          "ch": [
+            {
+              "id": 23
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 24,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"7\" data-mayu-id=\"24\">Item 7</li>",
+        "ids": {
+          "id": 24,
+          "ch": [
+            {
+              "id": 25
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 26,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"12\" data-mayu-id=\"26\">Item 12</li>",
+        "ids": {
+          "id": 26,
+          "ch": [
+            {
+              "id": 27
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 28,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"9\" data-mayu-id=\"28\">Item 9</li>",
+        "ids": {
+          "id": 28,
+          "ch": [
+            {
+              "id": 29
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 30,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"15\" data-mayu-id=\"30\">Item 15</li>",
+        "ids": {
+          "id": 30,
+          "ch": [
+            {
+              "id": 31
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 32,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"19\" data-mayu-id=\"32\">Item 19</li>",
+        "ids": {
+          "id": 32,
+          "ch": [
+            {
+              "id": 33
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 20,
+        "parent": 1,
+        "before": 2,
+        "type": "move"
+      },
+      {
+        "id": 6,
+        "parent": 1,
+        "before": 2,
+        "type": "move"
+      },
+      {
+        "id": 34,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"11\" data-mayu-id=\"34\">Item 11</li>",
+        "ids": {
+          "id": 34,
+          "ch": [
+            {
+              "id": 35
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 36,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"17\" data-mayu-id=\"36\">Item 17</li>",
+        "ids": {
+          "id": 36,
+          "ch": [
+            {
+              "id": 37
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 18,
+        "parent": 1,
+        "before": 2,
+        "type": "move"
+      },
+      {
+        "id": 38,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"16\" data-mayu-id=\"38\">Item 16</li>",
+        "ids": {
+          "id": 38,
+          "ch": [
+            {
+              "id": 39
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 40,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"18\" data-mayu-id=\"40\">Item 18</li>",
+        "ids": {
+          "id": 40,
+          "ch": [
+            {
+              "id": 41
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 42,
+        "parent": 1,
+        "before": 2,
+        "html": "<li key=\"8\" data-mayu-id=\"42\">Item 8</li>",
+        "ids": {
+          "id": 42,
+          "ch": [
+            {
+              "id": 43
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 44,
+        "parent": 1,
+        "before": 4,
+        "html": "<li key=\"14\" data-mayu-id=\"44\">Item 14</li>",
+        "ids": {
+          "id": 44,
+          "ch": [
+            {
+              "id": 45
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 46,
+        "parent": 1,
+        "before": 6,
+        "html": "<li key=\"10\" data-mayu-id=\"46\">Item 10</li>",
+        "ids": {
+          "id": 46,
+          "ch": [
+            {
+              "id": 47
+            }
+          ]
+        },
+        "type": "insert"
+      }
+    ],
+    "output": "<ul data-mayu-id=\"1\"><li key=\"4\" data-mayu-id=\"10\">Item 4</li><li key=\"13\" data-mayu-id=\"22\">Item 13</li><li key=\"7\" data-mayu-id=\"24\">Item 7</li><li key=\"12\" data-mayu-id=\"26\">Item 12</li><li key=\"9\" data-mayu-id=\"28\">Item 9</li><li key=\"15\" data-mayu-id=\"30\">Item 15</li><li key=\"19\" data-mayu-id=\"32\">Item 19</li><li key=\"6\" data-mayu-id=\"20\">Item 6</li><li key=\"10\" data-mayu-id=\"46\">Item 10</li><li key=\"2\" data-mayu-id=\"6\">Item 2</li><li key=\"11\" data-mayu-id=\"34\">Item 11</li><li key=\"17\" data-mayu-id=\"36\">Item 17</li><li key=\"3\" data-mayu-id=\"18\">Item 3</li><li key=\"16\" data-mayu-id=\"38\">Item 16</li><li key=\"18\" data-mayu-id=\"40\">Item 18</li><li key=\"8\" data-mayu-id=\"42\">Item 8</li><li key=\"0\" data-mayu-id=\"2\">Item 0</li><li key=\"14\" data-mayu-id=\"44\">Item 14</li><li key=\"1\" data-mayu-id=\"4\">Item 1</li><li key=\"5\" data-mayu-id=\"12\">Item 5</li></ul>"
+  },
+  {
+    "patches": [
+      {
+        "id": 48,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"30\" data-mayu-id=\"48\">Item 30</li>",
+        "ids": {
+          "id": 48,
+          "ch": [
+            {
+              "id": 49
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 38,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 50,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"24\" data-mayu-id=\"50\">Item 24</li>",
+        "ids": {
+          "id": 50,
+          "ch": [
+            {
+              "id": 51
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 44,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 40,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 52,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"21\" data-mayu-id=\"52\">Item 21</li>",
+        "ids": {
+          "id": 52,
+          "ch": [
+            {
+              "id": 53
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 54,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"22\" data-mayu-id=\"54\">Item 22</li>",
+        "ids": {
+          "id": 54,
+          "ch": [
+            {
+              "id": 55
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 22,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 36,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 32,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 30,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 56,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"26\" data-mayu-id=\"56\">Item 26</li>",
+        "ids": {
+          "id": 56,
+          "ch": [
+            {
+              "id": 57
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 58,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"20\" data-mayu-id=\"58\">Item 20</li>",
+        "ids": {
+          "id": 58,
+          "ch": [
+            {
+              "id": 59
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 60,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"27\" data-mayu-id=\"60\">Item 27</li>",
+        "ids": {
+          "id": 60,
+          "ch": [
+            {
+              "id": 61
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 62,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"28\" data-mayu-id=\"62\">Item 28</li>",
+        "ids": {
+          "id": 62,
+          "ch": [
+            {
+              "id": 63
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 64,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"32\" data-mayu-id=\"64\">Item 32</li>",
+        "ids": {
+          "id": 64,
+          "ch": [
+            {
+              "id": 65
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 66,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"31\" data-mayu-id=\"66\">Item 31</li>",
+        "ids": {
+          "id": 66,
+          "ch": [
+            {
+              "id": 67
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 34,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 28,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 68,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"23\" data-mayu-id=\"68\">Item 23</li>",
+        "ids": {
+          "id": 68,
+          "ch": [
+            {
+              "id": 69
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 42,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 70,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"29\" data-mayu-id=\"70\">Item 29</li>",
+        "ids": {
+          "id": 70,
+          "ch": [
+            {
+              "id": 71
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 46,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 26,
+        "parent": 1,
+        "before": 10,
+        "type": "move"
+      },
+      {
+        "id": 72,
+        "parent": 1,
+        "before": 10,
+        "html": "<li key=\"25\" data-mayu-id=\"72\">Item 25</li>",
+        "ids": {
+          "id": 72,
+          "ch": [
+            {
+              "id": 73
+            }
+          ]
+        },
+        "type": "insert"
+      },
+      {
+        "id": 10,
+        "parent": 1,
+        "type": "remove"
+      },
+      {
+        "id": 24,
+        "parent": 1,
+        "type": "remove"
+      },
+      {
+        "id": 20,
+        "parent": 1,
+        "type": "remove"
+      },
+      {
+        "id": 6,
+        "parent": 1,
+        "type": "remove"
+      },
+      {
+        "id": 18,
+        "parent": 1,
+        "type": "remove"
+      },
+      {
+        "id": 2,
+        "parent": 1,
+        "type": "remove"
+      },
+      {
+        "id": 4,
+        "parent": 1,
+        "type": "remove"
+      },
+      {
+        "id": 12,
+        "parent": 1,
+        "type": "remove"
+      }
+    ],
+    "output": "<ul data-mayu-id=\"1\"><li key=\"30\" data-mayu-id=\"48\">Item 30</li><li key=\"16\" data-mayu-id=\"38\">Item 16</li><li key=\"24\" data-mayu-id=\"50\">Item 24</li><li key=\"14\" data-mayu-id=\"44\">Item 14</li><li key=\"18\" data-mayu-id=\"40\">Item 18</li><li key=\"21\" data-mayu-id=\"52\">Item 21</li><li key=\"22\" data-mayu-id=\"54\">Item 22</li><li key=\"13\" data-mayu-id=\"22\">Item 13</li><li key=\"17\" data-mayu-id=\"36\">Item 17</li><li key=\"19\" data-mayu-id=\"32\">Item 19</li><li key=\"15\" data-mayu-id=\"30\">Item 15</li><li key=\"26\" data-mayu-id=\"56\">Item 26</li><li key=\"20\" data-mayu-id=\"58\">Item 20</li><li key=\"27\" data-mayu-id=\"60\">Item 27</li><li key=\"28\" data-mayu-id=\"62\">Item 28</li><li key=\"32\" data-mayu-id=\"64\">Item 32</li><li key=\"31\" data-mayu-id=\"66\">Item 31</li><li key=\"11\" data-mayu-id=\"34\">Item 11</li><li key=\"9\" data-mayu-id=\"28\">Item 9</li><li key=\"23\" data-mayu-id=\"68\">Item 23</li><li key=\"8\" data-mayu-id=\"42\">Item 8</li><li key=\"29\" data-mayu-id=\"70\">Item 29</li><li key=\"10\" data-mayu-id=\"46\">Item 10</li><li key=\"12\" data-mayu-id=\"26\">Item 12</li><li key=\"25\" data-mayu-id=\"72\">Item 25</li></ul>"
+  }
+]
