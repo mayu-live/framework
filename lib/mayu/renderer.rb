@@ -11,33 +11,38 @@ module Mayu
   class Renderer
     extend T::Sig
 
-    sig { params(root: String, routes: T::Array[Routes::Route], reducers: State::Store::Reducers, request_uri: String, parent: T.any(Async::Task, Async::Barrier)).void }
-    def initialize(root:, routes:, reducers:, request_uri:, parent: Async::Task.current)
-      @in = T.let(Async::Queue.new, Async::Queue)
-      @out = T.let(Async::Queue.new, Async::Queue)
+    sig { params(environment: Environment, request_path: String, parent: T.any(Async::Task, Async::Barrier)).void }
+    def initialize(environment:, request_path:, parent: Async::Task.current)
+      # We should match the route earlier, so that we don't have to get this
+      # far in case it doesn't match...
+      route_match = environment.match_route(request_path)
+
+      # Load the page component.
+      page_component = environment.modules.load_page(route_match.template).klass
+
+      # Apply the layouts.
+      app = route_match.layouts.reverse.reduce(VDOM.h(page_component)) do |app, layout|
+        layout_component = environment.modules.load_page(layout).klass
+        VDOM.h(layout_component, {}, [app])
+      end
+
+      # Store the root of the application.
+      # If we change the URL, we should find a new page component
+      # for that path, replace @root and rerender.
+      # Same thing if a file is reloaded...
+      # Also, for reloading we need to keep track of which components import
+      # other compoents, because we need to replace the constants in their
+      # classes...
+      @root = T.let(app, VDOM::Descriptor)
+
+      # Set up a barrier to group async tasks together.
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
 
-      modules = Mayu::Modules::System.new(File.join(root))
+      # Create the store.
+      # In the future we could initialize the state with something already
+      # stored somewhere. But for now we start with an empty state.
+      store = environment.create_store(initial_state: {})
 
-      route_match = Routes.match_route(routes, request_uri)
-      p route_match
-
-      route_match.layouts.map do |layout|
-        p layout
-      # modules.load_page(route_match.layouts)
-      end
-      p route_match.layouts
-
-      app = VDOM.h(modules.load_page(route_match.template).klass)
-
-      route_match.layouts.reverse.each do |layout|
-        layout_component = modules.load_page(layout).klass
-        app = VDOM.h(layout_component, {}, [app])
-      end
-
-      store = State::Store.new({}, reducers:)
-
-      @root = T.let(app, VDOM::Descriptor)
       @vtree = T.let(VDOM::VTree.new(store: store, task: @barrier), VDOM::VTree)
 
       @barrier.async(annotation: "Renderer patch sets") do
@@ -62,6 +67,9 @@ module Mayu
           end
         end
       end
+
+      @in = T.let(Async::Queue.new, Async::Queue)
+      @out = T.let(Async::Queue.new, Async::Queue)
 
       @barrier.async(annotation: "Renderer event handlers") do
         loop do

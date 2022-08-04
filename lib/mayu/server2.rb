@@ -1,6 +1,7 @@
 # typed: false
 
 require_relative "../mayu"
+require_relative "environment"
 require_relative "renderer"
 require_relative "state/loader"
 
@@ -29,8 +30,8 @@ module Mayu
         end
       end
 
-      def self.init(root:, routes:, reducers:, request_uri:, task: Async::Task.current)
-        self.store(new(root:, routes:, reducers:, request_uri:, task:))
+      def self.init(environment:, request_path:, task: Async::Task.current)
+        self.store(new(environment:, request_path:, task:))
       end
 
       def self.connect(id, key, task: Async::Task.current)
@@ -49,10 +50,8 @@ module Mayu
       attr_reader :key
 
       def initialize(
-        root:,
-        reducers:,
-        routes:,
-        request_uri:,
+        environment:,
+        request_path:,
         timeout_in_seconds: DEFAULT_TIMEOUT_IN_SECONDS,
         task: Async::Task.current
       )
@@ -64,7 +63,7 @@ module Mayu
         @task = task
         @timeout_task = nil
 
-        @renderer = Renderer.new(root:, reducers:, routes:, request_uri:, parent: @task)
+        @renderer = Renderer.new(environment:, request_path:, parent: @task)
 
         @task.async do |subtask|
           loop do
@@ -327,12 +326,7 @@ module Mayu
 
     class InitSessionApp
       def initialize(root:)
-        @root = root
-        @routes = T.let(
-          Routes.build_routes(File.join(root, "app")),
-          T::Array[Routes::Route]
-        )
-        @reducers = State::Loader.new(File.join(root, "store")).load
+        @environment = Environment.new(root:)
       end
 
       def call(env)
@@ -355,10 +349,8 @@ module Mayu
         end
 
         session = Session.init(
-          root: @root,
-          routes: @routes,
-          reducers: @reducers,
-          request_uri: request.path_info,
+          environment: @environment,
+          request_path: request.path_info,
         )
 
         response =
