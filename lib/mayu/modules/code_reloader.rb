@@ -5,23 +5,26 @@ require 'filewatcher'
 module Mayu
   module Modules
     class CodeReloader
+      # The global variable in here is an ugly hack.
+      # Couldn't get a way to communicate updates to
+      # the renderer from here because I got errors
+      # about transfering fibers across threads or
+      # something. Tricky to fix. This should work,
+      # but it's not very nice. At least it's
+      # hidden in this abstraction and not exposed.
       extend T::Sig
-
-      sig{returns(Async::Queue)}
-      attr_reader :notification
 
       sig{params(system: System).void}
       def initialize(system)
         @system = system
-        @notification = T.let(Async::Queue.new, Async::Queue)
       end
 
       sig {params(block: T.proc.void).void}
       def on_update(&block)
-        last_value = $MAYU_LAST_UPDATE
+        last_value = $mayu_code_reloader_last_update
 
         loop do
-          new_value = $MAYU_LAST_UPDATE
+          new_value = $mayu_code_reloader_last_update
 
           unless last_value == new_value
             last_value = new_value
@@ -39,7 +42,7 @@ module Mayu
             puts "\e[36mFile change detected: #{file}\e[0m"
             if File.exist?(file)
               if @system.reload_module(file)
-                $MAYU_LAST_UPDATE = Time.now
+                $mayu_code_reloader_last_update = Time.now
               end
             else
               @system.remove_module(file)

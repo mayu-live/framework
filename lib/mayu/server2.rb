@@ -327,8 +327,8 @@ module Mayu
     end
 
     class InitSessionApp
-      def initialize(root:)
-        @environment = Environment.new(root:)
+      def initialize(root:, hot_reload:)
+        @environment = Environment.new(root:, hot_reload:)
       end
 
       def call(env)
@@ -396,7 +396,7 @@ module Mayu
       { root: JS_ROOT_DIR, urls: }
     end
 
-    def self.build(root)
+    def self.build(root:, hot_reload:)
       public_root_dir = File.join(root, PUBLIC_DIR)
 
       Rack::Builder.new do
@@ -420,7 +420,7 @@ module Mayu
 
         use Rack::Static, urls: [""], root: public_root_dir, cascade: true
 
-        run InitSessionApp.new(root:)
+        run InitSessionApp.new(root:, hot_reload:)
       end
     end
   end

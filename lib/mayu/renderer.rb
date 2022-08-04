@@ -14,7 +14,7 @@ module Mayu
     sig { params(environment: Environment, request_path: String, parent: T.any(Async::Task, Async::Barrier)).void }
     def initialize(environment:, request_path:, parent: Async::Task.current)
       @environment = environment
-      @request_path = request_path
+      @current_path = request_path
 
       # For reloading we need to keep track of which components import
       # other compoents, because we need to replace the constants in their
@@ -31,9 +31,11 @@ module Mayu
 
       @vtree = T.let(VDOM::VTree.new(store: store, task: @barrier), VDOM::VTree)
 
-      @barrier.async do
-        environment.modules.code_reloader.on_update do
-          navigate(@request_path)
+      if code_reloader = environment.modules.code_reloader
+        @barrier.async do
+          code_reloader.on_update do
+            navigate(@current_path)
+          end
         end
       end
 
@@ -113,9 +115,8 @@ module Mayu
 
     sig { params(path: String).void }
     def navigate(path)
-      puts "NAVIGATING TO #{path}"
       @app = @environment.load_root(path)
-      @request_path = path
+      @current_path = path
       rerender!
     end
 

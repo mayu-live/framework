@@ -5,6 +5,8 @@ load :rack, :supervisor
 
 hostname = "mayu.fly.dev"
 
+ENV["MAYU_ENV"] = "production"
+
 rack(hostname) do
   endpoint(
     Async::HTTP::Endpoint.parse("http://0.0.0.0:3000").with(

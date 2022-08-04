@@ -18,17 +18,19 @@ module Mayu
       attr_reader :root
       sig {returns(DependencyGraph)}
       attr_reader :dependency_graph
-      sig {returns(CodeReloader)}
+      sig {returns(T.nilable(CodeReloader))}
       attr_reader :code_reloader
 
-      sig { params(root: String).void }
-      def initialize(root)
+      sig { params(root: String, enable_code_reloader: T::Boolean).void }
+      def initialize(root, enable_code_reloader: false)
         @root = T.let(File.expand_path(root), String)
         @modules = T.let({}, T::Hash[String, ModuleType])
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
-        @code_reloader = T.let(CodeReloader.new(self), CodeReloader)
 
-        @code_reloader.start
+        if enable_code_reloader
+          @code_reloader = T.let(CodeReloader.new(self), CodeReloader)
+          @code_reloader.start
+        end
       end
 
       sig {params(source: String, target: String).void}

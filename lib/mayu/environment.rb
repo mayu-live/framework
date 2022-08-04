@@ -20,20 +20,15 @@ module Mayu
     sig {returns(Modules::System)}
     attr_reader :modules
 
-    sig {params(root: String).void}
-    def initialize(root:)
+    sig {params(root: String, hot_reload: T::Boolean).void}
+    def initialize(root:, hot_reload: false)
       @root = root
       @routes = T.let(
         Routes.build_routes(File.join(root, APP_DIR)),
         T::Array[Routes::Route]
       )
       @reducers = T.let(State::Loader.new(File.join(root, STORE_DIR)).load, State::Store::Reducers)
-      @modules = T.let(Modules::System.new(root), Modules::System)
-    end
-
-    sig{params(request_path: String).returns(Routes::RouteMatch)}
-    def match_route(request_path)
-      Routes.match_route(@routes, request_path)
+      @modules = T.let(Modules::System.new(root, enable_code_reloader: hot_reload), Modules::System)
     end
 
     sig{params(initial_state: T::Hash[Symbol, T.untyped]).returns(State::Store)}
@@ -55,6 +50,11 @@ module Mayu
         layout_component = modules.load_page(layout).klass
         VDOM.h(layout_component, {}, [app])
       end
+    end
+
+    sig{params(request_path: String).returns(Routes::RouteMatch)}
+    def match_route(request_path)
+      Routes.match_route(@routes, request_path)
     end
   end
 end
