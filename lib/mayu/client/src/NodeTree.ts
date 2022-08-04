@@ -55,7 +55,6 @@ class NodeTree {
 
   apply(patches: Patch[]) {
     for (const patch of patches) {
-      console.log(patch)
       this.applyPatch(patch);
     }
   }
