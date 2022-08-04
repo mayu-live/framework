@@ -3,6 +3,7 @@
 require_relative "component_module"
 require_relative "css"
 require_relative "dependency_graph"
+require_relative "code_reloader"
 
 module Mayu
   module Modules
@@ -24,7 +25,9 @@ module Mayu
         @root = T.let(File.expand_path(root), String)
         @modules = T.let({}, T::Hash[String, ModuleType])
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
-        # @code_reloader = T.let(CodeReloader.new(self), CodeReloader)
+        @code_reloader = T.let(CodeReloader.new(self), CodeReloader)
+
+        @code_reloader.start
       end
 
       sig {params(source: String, target: String).void}
@@ -38,7 +41,7 @@ module Mayu
 
         @dependency_graph.add_node(full_path)
 
-        T.cast(@modules[resolved_path] ||= ComponentModule.new(
+        T.cast(@modules[full_path] ||= ComponentModule.new(
           self,
           resolved_path,
           full_path,
@@ -52,7 +55,7 @@ module Mayu
 
         @dependency_graph.add_node(full_path)
 
-        T.cast(@modules[resolved_path] ||= ComponentModule.new(
+        T.cast(@modules[full_path] ||= ComponentModule.new(
           self,
           resolved_path,
           full_path,
@@ -71,6 +74,48 @@ module Mayu
           raise ResolveError,
             "Could not find #{full_path} in #{@root}"
         end
+      end
+
+      sig {params(path: String).void}
+      def remove_module(path)
+        puts "\e[31mRemoving module #{path}\e[0m"
+        @dependency_graph.remove_node(path)
+      end
+
+      sig {params(full_path: String).void}
+      def reload_module(full_path)
+        return unless full_path.end_with?(".mayu")
+        return unless @dependency_graph.has_node?(full_path)
+
+        old_module = @modules.delete(full_path)
+        return unless old_module
+
+        puts "\e[33mReloading module #{full_path}\e[0m"
+
+        resolved_path = full_path[(@root.length)..-1].to_s.split("/").slice(1..-1).to_a.join("/")
+
+        component_module = ComponentModule.new(
+          self,
+          resolved_path,
+          full_path,
+          File.read(full_path)
+        )
+
+        @dependency_graph.direct_dependants_of(full_path).each do |dependant|
+          dep = @modules[dependant]
+
+          if dep.is_a?(Mayu::Modules::ComponentModule)
+            dep.klass.constants.each do |const|
+              value = dep.klass.const_get(const)
+              if value == old_module
+                puts "\e[35mUpdating #{const} in #{dep}\e[0m"
+                dep.klass.const_set(const, component_module)
+              end
+            end
+          end
+        end
+
+        @modules[full_path] = component_module
       end
 
       sig { params(path: String).returns(CSS::Base) }

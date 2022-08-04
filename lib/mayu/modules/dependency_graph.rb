@@ -55,6 +55,10 @@ module Mayu
         @nodes.each { |node| node.delete(id) }
       end
 
+      def has_node?(id)
+        @nodes.include?(id)
+      end
+
       def add_dependency(source_id, target_id)
         with_source_and_target(source_id, target_id) do |source, target|
           source.outgoing.add(target_id)
