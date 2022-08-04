@@ -37,13 +37,13 @@ module Mayu
         if File.file?(File.join(@root, full_path))
           full_path
         else
-          full_path.sub(/(.rux)?$/, ".rux")
+          full_path.sub(/(.mayu)?$/, ".mayu")
         end
       end
 
       sig { params(path: String).returns(CSS::Base) }
       def load_css(path)
-        CSS.load(File.join(@root, resolve_path(path).sub(/\.rux$/, ".css")))
+        CSS.load(File.join(@root, resolve_path(path).sub(/\.mayu$/, ".css")))
       end
     end
   end

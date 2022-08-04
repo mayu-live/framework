@@ -15,7 +15,7 @@ render do
     </head>
     <body class={styles.body}>
       <Header />
-      <Nav tabs={%w(Main Quotes NameReverser Counter RandomNumbers Tree)} />
+      {nil && <Nav tabs={%w(Main Quotes NameReverser Counter RandomNumbers Tree)} />}
       <main class={styles.main}>
         {children}
       </main>

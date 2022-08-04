@@ -166,7 +166,11 @@ module Mayu
 
       sig { params(ctx: UpdateContext).void }
       def commit!(ctx)
-        @on_update.signal([:patch, ctx.patches + ctx.stylesheet_patch])
+        patches = ctx.patches + ctx.stylesheet_patch
+
+        unless patches.empty?
+          @on_update.signal([:patch, patches])
+        end
       end
 
       sig do

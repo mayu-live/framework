@@ -80,7 +80,7 @@ module Mayu
 
         def initialize(path, src)
           @path = path
-          @hash = Digest::SHA256.digest(src)
+          @hash = Digest::SHA256.digest(Digest::SHA256.digest(path) + Digest::SHA256.digest(src))
 
           class_names = {}
           compositions = {}
