@@ -65,6 +65,13 @@ class Mayu {
       { once: true }
     );
 
+    if (window.navigation) {
+      window.navigation.addEventListener('navigate', (e: NavigateEvent) => {
+        console.log(e)
+        // e.preventDefault()
+      });
+    }
+
     this.connection.addEventListener("navigate", (e) => {
       const path = JSON.parse(e.data)
       console.log('Navigating to', path)

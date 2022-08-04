@@ -5,8 +5,16 @@ declare global {
     __MAYU_ID: number
   }
 
+  interface Navigation extends EventTarget {
+  }
+
+  interface NavigateEvent extends Event {
+    transitionWhile: (promise: Promise<any>) => void
+  }
+
   interface Window {
     Mayu: Mayu
+    navigation?: Navigation
   }
 
   interface Document {
