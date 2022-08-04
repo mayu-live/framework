@@ -184,15 +184,12 @@ module Mayu
         include Interface
         include VDOM::H
 
-        sig { params(path: String).returns(T.class_of(Component::Base)) }
-        def self.import(path)
-          case const_get(:MAYU_MODULE)
-          in { system: system, path: self_path }
-            cm = system.load_component(path, self_path)
-            cm.klass
-          else
-            raise "wtf"
-          end
+        sig { params(component_path: String).returns(T.class_of(Component::Base)) }
+        def self.import(component_path)
+          const_get(:MAYU_MODULE) => { system:, path:, full_path: }
+          cm = system.load_component(component_path, path)
+          system.add_dependency(full_path, cm.klass.const_get(:MAYU_MODULE)[:full_path])
+          cm.klass
         end
 
         sig { returns(Props) }

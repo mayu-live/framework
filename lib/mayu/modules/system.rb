@@ -2,6 +2,7 @@
 
 require_relative "component_module"
 require_relative "css"
+require_relative "dependency_graph"
 
 module Mayu
   module Modules
@@ -12,16 +13,30 @@ module Mayu
 
       ModuleType = T.type_alias { T.any(ComponentModule, CSS::Base) }
 
+      sig{returns(String)}
+      attr_reader :root
+
+      sig {returns(DependencyGraph)}
+      attr_reader :dependency_graph
+
       sig { params(root: String).void }
       def initialize(root)
         @root = T.let(File.expand_path(root), String)
         @modules = T.let({}, T::Hash[String, ModuleType])
+        @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
+        # @code_reloader = T.let(CodeReloader.new(self), CodeReloader)
+      end
+
+      sig {params(source: String, target: String).void}
+      def add_dependency(source, target)
+        @dependency_graph.add_dependency(source, target)
       end
 
       sig { params(path: String, source_path: String).returns(ComponentModule) }
       def load_page(path, source_path = "/")
         resolve_path('app', path, source_path) => [full_path, resolved_path]
-        p [:load_page, path, resolved_path, full_path]
+
+        @dependency_graph.add_node(full_path)
 
         T.cast(@modules[resolved_path] ||= ComponentModule.new(
           self,
@@ -34,6 +49,8 @@ module Mayu
       sig { params(path: String, source_path: String).returns(ComponentModule) }
       def load_component(path, source_path = "/")
         resolve_path('components', path, source_path) => [full_path, resolved_path]
+
+        @dependency_graph.add_node(full_path)
 
         T.cast(@modules[resolved_path] ||= ComponentModule.new(
           self,

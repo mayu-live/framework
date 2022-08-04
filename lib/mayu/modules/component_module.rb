@@ -24,7 +24,7 @@ module Mayu
             T.class_of(VDOM::Component::Base)
           )
 
-        @klass.const_set(:MAYU_MODULE, { system:, path: })
+        @klass.const_set(:MAYU_MODULE, { system:, path:, full_path: })
 
         @klass.class_eval do
           define_method :__mayu_module do

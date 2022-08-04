@@ -3,6 +3,7 @@
 module Mayu
   module Modules
     class DependencyGraph
+      extend T::Sig
       # This is basically a reimplementation of this library:
       # https://github.com/jriecken/dependency-graph
 
