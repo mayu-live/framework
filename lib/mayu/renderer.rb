@@ -18,7 +18,7 @@ module Mayu
       # For reloading we need to keep track of which components import
       # other compoents, because we need to replace the constants in their
       # classes...
-      @root = T.let(environment.load_root(request_path), VDOM::Descriptor)
+      @app = T.let(environment.load_root(request_path), VDOM::Descriptor)
 
       # Set up a barrier to group async tasks together.
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
@@ -31,7 +31,7 @@ module Mayu
       @vtree = T.let(VDOM::VTree.new(store: store, task: @barrier), VDOM::VTree)
 
       @barrier.async(annotation: "Renderer patch sets") do
-        @vtree.on_update.wait => :patch, initial_patches
+        @vtree.on_update.dequeue => :patch, initial_patches
         initial_insert = initial_patches.find { _1[:type] == :insert }
 
         unless initial_insert
@@ -42,7 +42,7 @@ module Mayu
         respond(:init, initial_insert[:ids])
 
         loop do
-          message = @vtree.on_update.wait
+          message = @vtree.on_update.dequeue
 
           case message
           in :patch, patches
@@ -106,7 +106,7 @@ module Mayu
 
     sig { params(path: String).void }
     def navigate(path)
-      @root = @environment.load_root(path)
+      @app = @environment.load_root(path)
       rerender!
     end
 
@@ -114,6 +114,6 @@ module Mayu
     def respond(*args) = @out.enqueue(args)
 
     sig {void}
-    def rerender! = @vtree.render(@root)
+    def rerender! = @vtree.render(@app)
   end
 end

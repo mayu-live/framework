@@ -28,22 +28,22 @@ module Mayu
         resolved_path = resolve_path(@app_root, path, source_path)
         p [:load_page, path, resolved_path]
 
-        @modules[resolved_path] = ComponentModule.new(
+        T.cast(@modules[resolved_path] ||= ComponentModule.new(
           self,
           resolved_path,
           File.read(File.join(@app_root, resolved_path))
-        )
+        ), Mayu::Modules::ComponentModule)
       end
 
       sig { params(path: String, source_path: String).returns(ComponentModule) }
       def load_component(path, source_path = "/")
         resolved_path = resolve_path(@components_root, path, source_path)
 
-        @modules[resolved_path] = ComponentModule.new(
+        T.cast(@modules[resolved_path] ||= ComponentModule.new(
           self,
           resolved_path,
           File.read(File.join(@components_root, resolved_path))
-        )
+        ), Mayu::Modules::ComponentModule)
       end
 
       sig { params(root: String, path: String, source_path: String).returns(String) }
@@ -59,7 +59,8 @@ module Mayu
 
       sig { params(path: String).returns(CSS::Base) }
       def load_css(path)
-        CSS.load(File.join(@components_root, resolve_path(@components_root, path).sub(/\.mayu$/, ".css")))
+        resolved_path = resolve_path(@components_root, path).sub(/\.mayu$/, ".css")
+        CSS.load(File.join(@components_root, resolved_path))
       end
     end
   end

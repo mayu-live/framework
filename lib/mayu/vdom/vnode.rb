@@ -55,6 +55,10 @@ module Mayu
         @descriptor = descriptor
         @children = T.let([], Children)
         @component = T.let(nil, T.nilable(Component::Wrapper))
+        # TODO:
+        # VNodes should keep track of the associated stylesheet and whenever
+        # the styhesheets differ, they should unload the old one and load the new...
+        # @stylesheet = T.let(nil, T.nilable(Module::CSSModule::Base))
       end
 
       sig { params(task: Async::Task).returns(T.nilable(Component::Wrapper)) }

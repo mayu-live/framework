@@ -41,7 +41,6 @@ module Mayu
         sig { params(id: Elem).returns(T.nilable(Integer)) }
         def rindex(id) = @indexes.rindex(id)
 
-
         sig { params(id: Elem, after: T.nilable(Elem)).void }
         def insert_after(id, after)
           insert_before(id, after && next_sibling(after))
@@ -70,7 +69,7 @@ module Mayu
 
       sig { returns(T::Array[T.untyped]) }
       attr_reader :patchsets
-      sig { returns(Async::Condition) }
+      sig { returns(Async::Queue) }
       attr_reader :on_update
 
       sig { params(store: State::Store, task: Async::Barrier).void }
@@ -82,7 +81,10 @@ module Mayu
 
         @patchsets = T.let([], T::Array[T.untyped])
         @update_queue = T.let(Async::Queue.new, Async::Queue)
-        @on_update = T.let(Async::Condition.new, Async::Condition)
+        @on_update = T.let(Async::Queue.new, Async::Queue)
+
+        @update_semaphore =
+          T.let(Async::Semaphore.new(parent: task), Async::Semaphore)
 
         @sent_stylesheets = T.let(Set.new, T::Set[String])
 
@@ -120,12 +122,12 @@ module Mayu
       sig { returns(T::Boolean) }
       def running? = @update_task.running?
 
-      sig { params(descriptor: Descriptor).returns(T.nilable(VNode)) }
+      sig { params(descriptor: Descriptor).void }
       def render(descriptor)
         ctx = UpdateContext.new
         @root = patch(ctx, @root, descriptor)
+        p ctx
         commit!(ctx)
-        @root
       end
 
       sig { params(handler_id: String, payload: T.untyped).void }
@@ -158,8 +160,6 @@ module Mayu
         return unless component
         return if component.dirty?
 
-        # puts "\e[33mEnqueueing\e[0m"
-
         component.dirty!
         @update_queue.enqueue(vnode)
       end
@@ -169,7 +169,7 @@ module Mayu
 
       sig { params(path: String).void }
       def navigate(path)
-        @on_update.signal([:navigate, path])
+        @on_update.enqueue([:navigate, path])
       end
 
       private
@@ -177,10 +177,7 @@ module Mayu
       sig { params(ctx: UpdateContext).void }
       def commit!(ctx)
         patches = ctx.patches + ctx.stylesheet_patch
-
-        unless patches.empty?
-          @on_update.signal([:patch, patches])
-        end
+        @on_update.enqueue([:patch, patches]) unless patches.empty?
       end
 
       sig do
@@ -294,7 +291,7 @@ module Mayu
           elsif vnode.descriptor.text?
             ctx.text(vnode, "")
           else
-            puts "got here"
+            # Everything seems to be exactly the same
           end
         end
 
@@ -339,6 +336,8 @@ module Mayu
           end
         end
 
+        puts "\e[32mInitializing vnode #{vnode.id} #{vnode.descriptor.type} with #{children.length} children\e[0m"
+
         ctx.enter(vnode) do
           vnode.children =
             add_comments_between_texts(children).map do
@@ -358,10 +357,9 @@ module Mayu
         )
       end
       def remove_vnode(ctx, vnode, patch: true)
+        puts "\e[31mRemoving vnode #{vnode.id} #{vnode.descriptor.type}\e[0m"
         vnode.component&.unmount
-        if patch
-          ctx.remove(vnode)
-        end
+        ctx.remove(vnode) if patch
         vnode.children.map { remove_vnode(ctx, _1, patch: false) }
         update_handlers(vnode.props, {})
         nil
@@ -398,16 +396,19 @@ module Mayu
         indexes = Indexes.new(vnodes.map(&:id))
 
         new_children =
-          T.let(descriptors.map.with_index do |descriptor, i|
-            vnode = vnodes.find { _1.same?(descriptor) }
+          T.let(
+            descriptors.map.with_index do |descriptor, i|
+              vnode = vnodes.find { _1.same?(descriptor) }
 
-            if vnode
-              vnodes.delete(vnode)
-              patch_vnode(ctx, vnode, descriptor)
-            else
-              init_vnode(ctx, descriptor)
-            end
-          end, T::Array[VNode])
+              if vnode
+                vnodes.delete(vnode)
+                patch_vnode(ctx, vnode, descriptor)
+              else
+                init_vnode(ctx, descriptor)
+              end
+            end,
+            T::Array[VNode]
+          )
 
         # This is very inefficient.
         # I tried to get the algorithm from snabbdom/vue to work,
@@ -435,9 +436,7 @@ module Mayu
           end
         end
 
-        vnodes.each do |vnode|
-          remove_vnode(ctx, vnode)
-        end
+        vnodes.each { |vnode| remove_vnode(ctx, vnode) }
 
         new_children
       end
