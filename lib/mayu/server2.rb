@@ -102,9 +102,11 @@ module Mayu
               rendered_html = html
             in { type: :stylesheet, paths: }
               paths.each { stylesheets.add(_1) }
-            else
-              raise patch.inspect
             end
+          end
+
+          if rendered_html.empty?
+            raise "Rendered html is empty"
           end
 
           style =
@@ -120,8 +122,8 @@ module Mayu
           body.write(
             rendered_html
               .prepend("<!DOCTYPE html>\n")
-              .sub(%r{</head>}) { "#{style}#{_1}" }
               .sub(%r{</head>}) { "#{script}#{_1}" }
+              .sub(%r{</head>}) { "#{style}#{_1}" }
           )
         ensure
           body.close
@@ -155,7 +157,11 @@ module Mayu
       end
 
       def handle_callback(callback_id, payload)
-        @renderer.handle_callback(callback_id, payload)
+        if callback_id == "ping"
+          push(:pong, payload.to_i)
+        else
+          @renderer.handle_callback(callback_id, payload)
+        end
       end
 
       private
@@ -241,6 +247,30 @@ module Mayu
           [500, {}, ["Internal server error"]]
         end
       end
+    end
+
+    class PingHandlerCallback
+      MOUNT_PATH = "/__mayu/ping"
+
+      def call(env)
+        request = Rack::Request.new(env)
+        session_id, handler_id = request.path_info.to_s.split("/", 3).last(2)
+        cookie_name = Session.cookie_name(session_id)
+        session_key =
+          request
+            .cookies
+            .fetch(cookie_name) { return 401, {}, ["Session cookie not set"] }
+
+        payload = JSON.parse(request.body.read)
+
+        Session.ping(
+          session_id,
+          session_key,
+          payload
+        )
+      end
+
+      [200, {}, ["ok"]]
     end
 
     class CallbackHandlerApp
