@@ -1,6 +1,9 @@
 import logger from "./logger.js";
 import NodeTree from "./NodeTree.js";
 import PingTimer from "./PingTimer.js";
+import DisconnectedComponent from './DisconnectedComponent.js'
+
+window.customElements.define('mayu-disconnected', DisconnectedComponent);
 
 class PingView {
   div: HTMLDivElement;
@@ -47,9 +50,17 @@ class Mayu {
 
     this.connection = new EventSource(`/__mayu/events/${this.sessionId}`);
 
+    const disconnectedElement = document.createElement('mayu-disconnected');
+
+    this.connection.onopen = () => {
+      console.log('Connection opened')
+      document.body.querySelectorAll('mayu-disconnected').forEach((el) => el.remove())
+    }
+
     this.connection.onerror = (e) => {
       logger.log(e);
       logger.error("Connection error.");
+      document.body.appendChild(disconnectedElement)
     };
 
     this.connection.addEventListener(
