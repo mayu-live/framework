@@ -16,9 +16,10 @@ module Mayu
 
       sig{returns(String)}
       attr_reader :root
-
       sig {returns(DependencyGraph)}
       attr_reader :dependency_graph
+      sig {returns(CodeReloader)}
+      attr_reader :code_reloader
 
       sig { params(root: String).void }
       def initialize(root)
@@ -37,6 +38,7 @@ module Mayu
 
       sig { params(path: String, source_path: String).returns(ComponentModule) }
       def load_page(path, source_path = "/")
+        puts "LOADING PAGE #{path}"
         resolve_path('app', path, source_path) => [full_path, resolved_path]
 
         @dependency_graph.add_node(full_path)
@@ -82,13 +84,13 @@ module Mayu
         @dependency_graph.remove_node(path)
       end
 
-      sig {params(full_path: String).void}
+      sig {params(full_path: String).returns(T::Boolean)}
       def reload_module(full_path)
-        return unless full_path.end_with?(".mayu")
-        return unless @dependency_graph.has_node?(full_path)
+        return false unless full_path.end_with?(".mayu")
+        return false unless @dependency_graph.has_node?(full_path)
 
         old_module = @modules.delete(full_path)
-        return unless old_module
+        return false unless old_module
 
         puts "\e[33mReloading module #{full_path}\e[0m"
 
@@ -116,6 +118,8 @@ module Mayu
         end
 
         @modules[full_path] = component_module
+
+        true
       end
 
       sig { params(path: String).returns(CSS::Base) }
