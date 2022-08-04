@@ -1,0 +1,3 @@
+render do
+  <p>Showing item</p>
+end

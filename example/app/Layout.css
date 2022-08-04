@@ -1,38 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&family=Shrikhand&display=swap');
-
 .html {
-  background: #000;
-  margin: 0;
-  padding: 0;
-  --title-font: "Shrikhand";
-
-  --page-max-width: 900px;
-  --white: #e3fcfc;
-  --blue: #14ccca;
-
-  --celadon-blue: #4281a4ff;
-  --verdigris: #48a9a6ff;
-  --timberwolf: #e4dfdaff;
-  --tan: #d4b483ff;
-  --fuzzy-wuzzy: #c1666bff;
 }
-
-.html *,
-.html *::before,
-.html *::after {
-  box-sizing: border-box;
-}
-
 .body {
-  background: #000;
-  margin: 0;
-  padding: 0;
-  font-family: 'Open Sans', sans-serif;
-  font-size: 1.2em;
 }
-
 .main {
-  background: #fff;
-  color: #000;
-  min-height: 70vh;
 }

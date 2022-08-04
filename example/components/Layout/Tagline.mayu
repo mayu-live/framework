@@ -1,6 +1,7 @@
 TAGLINES = [
   "Kinda like ReactJS but server side Ruby",
   "Interactive server side rendered apps",
+  "If you thought Rails had a lot of magic, this is gonna blow your mind...",
   "No APIs required!",
   "No JavaScript required!",
 ]
