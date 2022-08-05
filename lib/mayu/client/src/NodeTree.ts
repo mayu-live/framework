@@ -45,6 +45,27 @@ export type Patch =
   | StylePatch
   | StylesheetPatch;
 
+function cloneScriptElement(element: HTMLScriptElement) {
+  const script = document.createElement('script')
+  script.text = element.innerHTML;
+  for (const attr of element.attributes) {
+    console.log('Setting attribute', attr.name, 'to', attr.value)
+    script.setAttribute(attr.name, attr.value)
+  }
+  return script
+}
+
+function replaceScriptNodes(parent: Node, node: Node) {
+  if ((node as Element).tagName === 'SCRIPT') {
+    parent.replaceChild(cloneScriptElement(node as HTMLScriptElement), node)
+    return
+  }
+
+  for (const child of node.childNodes) {
+    replaceScriptNodes(node, child)
+  }
+}
+
 class NodeTree {
   #cache = new Map<number, CacheEntry>();
 
@@ -199,6 +220,10 @@ class NodeTree {
       if (entry) {
         (entry.node as HTMLElement).outerHTML = (node as HTMLElement).outerHTML;
       }
+
+      requestIdleCallback(() => {
+        replaceScriptNodes(parentEntry.node, insertedNode)
+      })
 
       this.updateCache(insertedNode, idTreeNode);
     });
