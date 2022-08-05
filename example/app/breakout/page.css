@@ -1,0 +1,14 @@
+.game {
+  border: 1px solid #ccc;
+  width: 100%;
+}
+
+.game::after {
+  padding-bottom: 100%;
+  content: " ";
+  display: block;
+}
+
+.controller {
+  background: #c0c;
+}

@@ -1,4 +1,4 @@
-Tree = import("../Tree")
+Tree = import("Tree")
 
 render do
   <div>

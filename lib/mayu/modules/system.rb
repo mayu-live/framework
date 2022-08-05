@@ -25,6 +25,8 @@ module Mayu
       sig { params(root: String, enable_code_reloader: T::Boolean).void }
       def initialize(root, enable_code_reloader: false)
         @root = T.let(File.expand_path(root), String)
+        @components_root = T.let(File.join(@root, 'components'), String)
+        @pages_root = T.let(File.join(@root, 'app'), String)
         @modules = T.let({}, T::Hash[String, ModuleType])
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
 
@@ -39,10 +41,10 @@ module Mayu
         @dependency_graph.add_dependency(source, target)
       end
 
-      sig { params(path: String, source_path: String).returns(ComponentModule) }
-      def load_page(path, source_path = "/")
+      sig { params(path: String).returns(ComponentModule) }
+      def load_page(path)
         puts "LOADING PAGE #{path}"
-        resolve_path("app", path, source_path) => [full_path, resolved_path]
+        full_path = resolved_path = File.expand_path(path, @pages_root)
 
         @dependency_graph.add_node(full_path)
 
@@ -58,11 +60,9 @@ module Mayu
       end
 
       sig { params(path: String, source_path: String).returns(ComponentModule) }
-      def load_component(path, source_path = "/")
-        resolve_path("components", path, source_path) => [
-          full_path,
-          resolved_path
-        ]
+      def load_component(path, source_path = @components_root)
+        full_path = resolve_component(path, source_path)
+        resolved_path = full_path
 
         @dependency_graph.add_node(full_path)
 
@@ -75,26 +75,6 @@ module Mayu
           ),
           Mayu::Modules::ComponentModule
         )
-      end
-
-      sig do
-        params(subdir: String, path: String, source_path: String).returns(
-          [String, String]
-        )
-      end
-      def resolve_path(subdir, path, source_path = "/")
-        resolved_path =
-          File.expand_path(path, File.dirname(source_path)).sub(
-            /(\.mayu)?$/,
-            ".mayu"
-          )
-        full_path = File.join(@root, subdir, resolved_path)
-
-        if File.file?(full_path)
-          [full_path, resolved_path]
-        else
-          raise ResolveError, "Could not find #{full_path} in #{@root}"
-        end
       end
 
       sig { params(path: String).void }
@@ -105,6 +85,10 @@ module Mayu
 
       sig { params(full_path: String).returns(T::Boolean) }
       def reload_module(full_path)
+        if full_path.end_with?(".css")
+          return reload_module(full_path.sub(/\.css$/, '.mayu'))
+        end
+
         return false unless full_path.end_with?(".mayu")
         return false unless @dependency_graph.has_node?(full_path)
 
@@ -120,6 +104,8 @@ module Mayu
             .slice(1..-1)
             .to_a
             .join("/")
+
+        p [resolved_path:, full_path:]
 
         component_module =
           ComponentModule.new(
@@ -155,6 +141,46 @@ module Mayu
         # CSS files are always together with their components,
         # just replace the extension.
         CSS.load(path.sub(/\.mayu$/, ".css"))
+      end
+
+      private
+
+      sig {params(path: String, source_path: String).returns(String)}
+      def resolve_component(path, source_path)
+        resolved_path =
+          if path.match(/\A\.\.?\//)
+            File.expand_path(path, File.dirname(source_path))
+          else
+            File.expand_path(path, @components_root)
+          end
+
+        unless in_valid_directory?(resolved_path)
+          raise ResolveError, "Could not resolve #{path} from #{source_path}"
+        end
+
+        resolved_path_with_extension = resolved_path.sub(/(\.mayu)?$/, '.mayu')
+
+        if File.exist?(resolved_path_with_extension)
+          return resolved_path_with_extension
+        end
+
+        if File.directory?(resolved_path)
+          resolved_path = File.join(resolved_path, File.basename(resolved_path))
+        end
+
+        resolved_path_with_extension = resolved_path.sub(/(\.mayu)?$/, '.mayu')
+
+        if File.exist?(resolved_path_with_extension)
+          return resolved_path_with_extension
+        end
+
+        raise ResolveError, "Could not resolve #{path} from #{source_path} (tried #{resolved_path})"
+      end
+
+      sig {params(path: String).returns(T::Boolean)}
+      def in_valid_directory?(path)
+        path.start_with?(@components_root) ||
+        path.start_with?(@pages_root)
       end
     end
   end

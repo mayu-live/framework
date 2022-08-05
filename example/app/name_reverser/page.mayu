@@ -1,5 +1,5 @@
-Input = import("../Form/Input")
-Fieldset = import("../Form/Fieldset")
+Input = import("Form/Input")
+Fieldset = import("Form/Fieldset")
 
 initial_state do |props|
   {

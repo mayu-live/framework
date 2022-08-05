@@ -1,0 +1,7 @@
+render do
+  <div class={styles.game}>
+    <div>
+      <input class={styles.controller} min={0} max={100} step={1} />
+    </div>
+  </div>
+end

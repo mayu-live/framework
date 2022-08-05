@@ -18,6 +18,7 @@ render do
           <li class={styles.menuItem}><a class={styles.menuLink} href="/name_reverser">Name reverser</a></li>
           <li class={styles.menuItem}><a class={styles.menuLink} href="/counter">Counter</a></li>
           <li class={styles.menuItem}><a class={styles.menuLink} href="/numbers">Numbers</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/breakout">Breakout</a></li>
           <li class={styles.menuItem}><a class={styles.menuLink} href="/about">About</a></li>
         </menu>
         <div class={styles.mainWrap}>
