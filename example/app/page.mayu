@@ -6,6 +6,8 @@ render do
     <h4>(upcoming) features:</h4>
     <FeatureList />
     <h4>Write components like this:</h4>
-    <pre style={{background: "#f0f0f0", padding: "1em"}}>{CGI.escape_html(source)}</pre>
+    <pre class={styles.source}>
+      {CGI.escape_html(source)}
+    </pre>
   </div>
 end

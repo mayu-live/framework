@@ -54,4 +54,6 @@ COPY --from=build /app /app
 
 ENV PORT 3000
 
+WORKDIR /app/example
+
 CMD ["bundle", "exec", "falcon", "host"]
