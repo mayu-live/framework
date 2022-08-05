@@ -6,6 +6,7 @@ require_relative "state/store"
 require_relative "routes"
 require_relative "metrics"
 require_relative "modules/system"
+require_relative "fetch"
 
 module Mayu
   class Environment
@@ -26,11 +27,15 @@ module Mayu
     attr_reader :modules
     sig { returns(Prometheus::Client::Registry) }
     attr_reader :prometheus_registry
+    sig { returns(Fetch) }
+    attr_reader :fetch
 
     sig { params(root: String, region: String, hot_reload: T::Boolean).void }
     def initialize(root:, region:, hot_reload: false)
       @root = root
       @region = region
+      # TODO: Reload routes when things change in /pages...
+      # probably have to set up an async task...
       @routes =
         T.let(
           Routes.build_routes(File.join(root, APP_DIR)),
@@ -48,6 +53,7 @@ module Mayu
         )
       @prometheus_registry =
         T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
+      @fetch = T.let(Fetch.new, Fetch)
     end
 
     sig do
