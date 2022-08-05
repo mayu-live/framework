@@ -3,21 +3,25 @@ import NodeTree from "./NodeTree.js";
 import PingTimer from "./PingTimer.js";
 import PingComponent from "./PingComponent.js";
 import DisconnectedComponent from "./DisconnectedComponent.js";
+import ProgressBar from "./ProgressBar";
 
 window.customElements.define("mayu-disconnected", DisconnectedComponent);
 window.customElements.define("mayu-ping", PingComponent);
-
+window.customElements.define("mayu-progress-bar", ProgressBar);
 
 // TODO: Make more of this set up stuff in a functional way.
 class Mayu {
   readonly sessionId: string;
   readonly connection: EventSource;
   readonly queue = <MessageEvent[]>[];
+  readonly progressBar = document.createElement("mayu-progress-bar") as ProgressBar
 
   constructor(sessionId: string) {
     this.sessionId = sessionId;
 
     this.connection = new EventSource(`/__mayu/events/${this.sessionId}`);
+
+    document.body.appendChild(this.progressBar)
 
     const disconnectedElement = document.createElement("mayu-disconnected");
 
@@ -58,6 +62,7 @@ class Mayu {
       const path = JSON.parse(e.data);
       console.log("Navigating to", path);
       history.pushState({}, "", path);
+      this.progressBar.setAttribute('progress', 100)
     });
 
     // if ("serviceWorker" in navigator) {
@@ -110,7 +115,7 @@ class Mayu {
     this.#ping();
   }
 
-  handle(e: Event, handlerId: string) {
+  async handle(e: Event, handlerId: string) {
     e.preventDefault();
 
     const payload = {
@@ -122,13 +127,27 @@ class Mayu {
       payload.formData = Object.fromEntries(new FormData(e.target).entries());
     }
 
-    fetch(`/__mayu/handler/${this.sessionId}/${handlerId}`, {
+    this.progressBar.setAttribute('progress', '0')
+
+    let didRun = false
+    const timeout = setTimeout(() => {
+      this.progressBar.setAttribute('progress', '25')
+      didRun = true
+    }, 1)
+
+    await fetch(`/__mayu/handler/${this.sessionId}/${handlerId}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
       body: JSON.stringify(payload),
     });
+
+    clearTimeout(timeout)
+
+    if (didRun) {
+      this.progressBar.setAttribute('progress', '100')
+    }
   }
 
   async #ping() {}

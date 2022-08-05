@@ -1,5 +1,10 @@
 initial_state do |props|
-  { result: nil, error: nil, page: 0, per_page: 20 }
+  {
+    result: nil,
+    error: nil,
+    page: 0,
+    per_page: 20,
+  }
 end
 
 mount do
@@ -76,9 +81,11 @@ render do
       </div>
     end
 
+  error = <p>{state[:error]}</p> if state[:error]
+
   <div>
     <h1>Pokémon</h1>
-    {state[:error] && <p>{state[:error]}</p> || nil}
+    {error}
     {content}
     <details style={{ margin: "2em 0" }}>
       <summary>Show source</summary>
