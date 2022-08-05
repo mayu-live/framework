@@ -24,9 +24,9 @@ module Mayu
       alias ok? ok
       alias redirected? redirected
 
-      sig { returns(String) }
-      def json
-        JSON.parse(body)
+      sig { params(symbolize_names: T::Boolean).returns(T.untyped) }
+      def json(symbolize_names: false)
+        JSON.parse(body, symbolize_names:)
       end
 
       sig { returns(String) }
@@ -56,26 +56,31 @@ module Mayu
       ).returns(Response)
     end
     def fetch(url, method: :GET, headers: {}, body: nil)
-      res = @internet.call(method.to_s.downcase.to_sym, url, headers.to_a, body)
+      puts "\e[35mFETCHING #{url}\e[0m"
+      res = @internet.call(method, url, headers.to_a, body)
+      puts "\e[34mFETCHED #{url}\e[0m"
 
       Response.new(
         url:,
-        body: res.body.read,
+        body: res.read,
         headers: res.headers.to_h,
         status: res.status,
         status_text: Rack::Utils::HTTP_STATUS_CODES[res.status],
         ok: res.success?,
         redirected: res.redirection?
       )
+    rescue => e
+      puts "\e[32mFAILED ON #{url}\e[0m"
+      raise
     end
   end
 end
-
-Async do
-  fetch = Mayu::Fetch.new
-  res =
-    fetch.fetch(
-      "https://raw.githubusercontent.com/rack/rack/main/lib/rack/utils.rb"
-    )
-  p res
-end
+#
+# Async do
+#   fetch = Mayu::Fetch.new
+#   res =
+#     fetch.fetch(
+#       "https://raw.githubusercontent.com/rack/rack/main/lib/rack/utils.rb"
+#     )
+#   p res
+# end

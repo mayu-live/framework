@@ -3,9 +3,9 @@ initial_state do |props|
 end
 
 mount do
-  internet = Async::HTTP::Internet.new
-  response = internet.get("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
-  update(result: JSON.parse(response.read, symbolize_names: true))
+  res = fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
+  result = res.json(symbolize_names: true)
+  update(result:)
 rescue => e
   update(error: e.message)
 end
@@ -14,7 +14,6 @@ handler :next_page do |e|
   update do |state|
     per_page = state[:per_page]
     total_pages = (state[:result][:results].length / per_page).floor
-
     { page: [state[:page].succ, total_pages].min }
   end
 end
@@ -31,7 +30,10 @@ render do
   pokemons =
     case state[:result]
     in nil
-      <p>Loading pokémon from <a href="https://pokeapi.co/">PokéAPI</a>...</p>
+      <div>
+        <p>Loading pokémon from <a href="https://pokeapi.co/">PokéAPI</a>...</p>
+        <p>This actually loads faster but 1 second is added for the async effect</p>
+      </div>
     in results:
       per_page = state[:per_page]
       total_pages = (results.length / per_page).floor

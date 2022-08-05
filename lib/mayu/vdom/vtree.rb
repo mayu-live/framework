@@ -67,19 +67,19 @@ module Mayu
         def to_a = @indexes
       end
 
-      sig { returns(T::Array[T.untyped]) }
-      attr_reader :patchsets
       sig { returns(Async::Queue) }
       attr_reader :on_update
+      sig {returns(Fetch)}
+      attr_reader :fetch
 
-      sig { params(store: State::Store, task: Async::Barrier).void }
-      def initialize(store:, task: Async::Task.current)
+      sig { params(store: State::Store, fetch: Fetch, task: Async::Barrier).void }
+      def initialize(store:, fetch:, task: Async::Task.current)
         @root = T.let(nil, T.nilable(VNode))
         @id_generator = T.let(IdGenerator.new, IdGenerator)
+        @fetch = fetch
 
         @handlers = T.let({}, T::Hash[String, Component::HandlerRef])
 
-        @patchsets = T.let([], T::Array[T.untyped])
         @update_queue = T.let(Async::Queue.new, Async::Queue)
         @on_update = T.let(Async::Queue.new, Async::Queue)
 

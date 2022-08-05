@@ -71,6 +71,11 @@ module Mayu
         # @stylesheet = T.let(nil, T.nilable(Module::CSSModule::Base))
       end
 
+      sig { params(url: String, method: Symbol, headers: T::Hash[String, String], body: T.nilable(String)).returns(Fetch::Response) }
+      def fetch(url, method: :GET, headers: {}, body: nil)
+        @vtree.fetch.fetch(url, method:, headers:, body:)
+      end
+
       sig { params(task: Async::Task).returns(T.nilable(Component::Wrapper)) }
       def init_component(task: Async::Task.current)
         @component ||= Component.wrap(self, type, props, task:)

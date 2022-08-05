@@ -136,6 +136,11 @@ module Mayu
           @barrier.async(&blk)
         end
 
+        sig { params(url: String, method: Symbol, headers: T::Hash[String, String], body: T.nilable(String)).returns(Fetch::Response) }
+        def fetch(url, method: :GET, headers: {}, body: nil)
+          @vnode.fetch(url, method:, headers:, body:)
+        end
+
         sig { params(path: String).void }
         def navigate(path)
           @vnode.navigate(path)
@@ -237,6 +242,11 @@ module Mayu
 
         sig { params(blk: T.proc.void).void }
         def async(&blk) = @wrapper.async(&blk)
+
+        sig { params(url: String, method: Symbol, headers: T::Hash[String, String], body: T.nilable(String)).returns(Fetch::Response) }
+        def fetch(url, method: :GET, headers: {}, body: nil)
+          @wrapper.fetch(url, method:, headers:, body:)
+        end
 
         sig { override.void }
         def mount = nil
