@@ -1,5 +1,5 @@
 Header = import("Layout/Header")
-Tabs = import("Layout/Tabs")
+Footer = import("Layout/Footer")
 
 render do
   <html lang="en" class={styles.html}>
@@ -26,6 +26,7 @@ render do
           </main>
         </div>
       </div>
+      <Footer />
     </body>
   </html>
 end

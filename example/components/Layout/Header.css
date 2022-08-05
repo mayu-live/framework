@@ -1,8 +1,10 @@
 .header {
+  grid-area: header;
   background: var(--blue);
   color: var(--white);
   text-shadow: 2px 2px 7px #0009;
   padding: 1em;
+  overflow: hidden;
 }
 
 .inner {

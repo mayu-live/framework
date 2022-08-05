@@ -5,10 +5,10 @@ module Mayu
     class IdGenerator
       extend T::Sig
 
-      # ALPHABET = "🌱🌴🌵🌸🌺🌻🌼🌿🍀🍃"
-      # JOINER = " "
-      ALPHABET = "0123456789"
-      JOINER = ""
+      ALPHABET = "🌱🌴🌵🌸🌺🌻🌼🌿🍀🍃"
+      JOINER = " "
+      # ALPHABET = "0123456789"
+      # JOINER = ""
 
       DIGITS = T.let(ALPHABET.chars.freeze, T::Array[String])
 
