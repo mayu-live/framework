@@ -1,6 +1,0 @@
-render do
-  <div>
-    <p><a href="/items">Show all items</a></p>
-    {children}
-  </div>
-end

@@ -13,7 +13,7 @@ render do
       <div class={styles.wrap}>
         <menu class={styles.menu}>
           <li class={styles.menuItem}><a class={styles.menuLink} href="/">Start page</a></li>
-          <li class={styles.menuItem}><a class={styles.menuLink} href="/items">Items</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/pokemon">Pokémon</a></li>
           <li class={styles.menuItem}><a class={styles.menuLink} href="/tree">Tree</a></li>
           <li class={styles.menuItem}><a class={styles.menuLink} href="/name_reverser">Name reverser</a></li>
           <li class={styles.menuItem}><a class={styles.menuLink} href="/counter">Counter</a></li>

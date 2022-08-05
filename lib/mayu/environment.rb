@@ -1,5 +1,7 @@
 # typed: strict
 
+require "async"
+require "async/http/internet"
 require_relative "state/store"
 require_relative "routes"
 require_relative "metrics"
@@ -44,7 +46,8 @@ module Mayu
           Modules::System.new(root, enable_code_reloader: hot_reload),
           Modules::System
         )
-      @prometheus_registry = T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
+      @prometheus_registry =
+        T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
     end
 
     sig do

@@ -1,0 +1,6 @@
+render do
+  <div>
+    <p><a href="/pokemon">Back to all pokémon</a></p>
+    {children}
+  </div>
+end

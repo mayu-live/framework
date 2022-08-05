@@ -1,0 +1,77 @@
+initial_state do |props|
+  { result: nil, error: nil, page: 0, per_page: 20 }
+end
+
+mount do
+  internet = Async::HTTP::Internet.new
+  response = internet.get("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
+  update(result: JSON.parse(response.read, symbolize_names: true))
+rescue => e
+  update(error: e.message)
+end
+
+handler :next_page do |e|
+  update { |state| { page: state[:page].succ } }
+end
+
+handler :prev_page do |e|
+  update { |state| { page: state[:page].pred } }
+end
+
+handler :set_per_page do |e|
+  update(per_page: e["value"].to_i, page: 0)
+end
+
+render do
+  pokemons =
+    case state[:result]
+    in nil
+      <p>Loading pokémon from <a href="https://pokeapi.co/">PokéAPI</a>...</p>
+    in results:
+      per_page = state[:per_page]
+      total_pages = (results.length / per_page).floor
+
+      <div>
+        <div>
+          <div>
+            Per page:
+            <select on-change={handler(:set_per_page)} value={state[:per_page]}>
+              <option value={20}>20</option>
+              <option value={40}>40</option>
+              <option value={80}>80</option>
+            </select>
+          </div>
+          <button on-click={handler(:prev_page)}>Previous page</button>
+          <span>Page {state[:page].succ} of {total_pages.succ}</span>
+          <button on-click={handler(:next_page)}>Next page</button>
+        </div>
+        <ul>
+          {results.slice(state[:page] * per_page, per_page).map do |result|
+            id = result[:url].scan(/\/(\d+)\//).flatten.last.to_i
+            <li key={result[:url]}>
+              <a href={"/pokemon/#{id}"}>{result[:name].capitalize}</a>
+            </li>
+          end}
+        </ul>
+        <div>
+          <div>
+            Per page:
+            <select on-change={handler(:set_per_page)} value={state[:per_page]}>
+              <option value={20}>20</option>
+              <option value={40}>40</option>
+              <option value={80}>80</option>
+            </select>
+          </div>
+          <button on-click={handler(:prev_page)}>Previous page</button>
+          <span>Page {state[:page].succ} of {total_pages.succ}</span>
+          <button on-click={handler(:next_page)}>Next page</button>
+        </div>
+      </div>
+    end
+
+  <div>
+    <h1>Pokémon</h1>
+    {state[:error] && <p>{state[:error]}</p> || nil}
+    {pokemons}
+  </div>
+end
