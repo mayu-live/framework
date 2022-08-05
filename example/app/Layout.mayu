@@ -1,3 +1,5 @@
+Header = import("Layout/Header")
+
 render do
   <html lang="en" class={styles.html}>
     <head>
@@ -6,6 +8,8 @@ render do
       <title>mayu live - real time server side web applications</title>
     </head>
     <body class={styles.body}>
+      <Header />
+      <h1>asd</h1>
       <main class={styles.main}>
         {children}
       </main>

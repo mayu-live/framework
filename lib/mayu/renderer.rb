@@ -31,7 +31,7 @@ module Mayu
       app = VDOM.h(modules.load_page(route_match.template).klass)
 
       route_match.layouts.reverse.each do |layout|
-        layout_component = modules.load_page(route_match.template).klass
+        layout_component = modules.load_page(layout).klass
         app = VDOM.h(layout_component, {}, [app])
       end
 

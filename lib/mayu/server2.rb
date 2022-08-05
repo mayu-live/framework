@@ -152,6 +152,8 @@ module Mayu
                 @messages.dequeue => [id, event, data]
                 body.write(format_message(id, event, data))
               end
+            rescue Async::HTTP::Body::Writable::Closed
+              puts "Write error, closing"
             ensure
               body.close
               start_timeout

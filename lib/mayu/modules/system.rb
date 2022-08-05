@@ -26,6 +26,7 @@ module Mayu
       sig { params(path: String, source_path: String).returns(ComponentModule) }
       def load_page(path, source_path = "/")
         resolved_path = resolve_path(@app_root, path, source_path)
+        p [:load_page, path, resolved_path]
 
         @modules[resolved_path] = ComponentModule.new(
           self,

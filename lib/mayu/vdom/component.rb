@@ -37,7 +37,7 @@ module Mayu
         def should_update?(props, state)
         end
 
-        sig { abstract.returns(T.nilable(Descriptor)) }
+        sig { abstract.returns(T.any(T.nilable(Descriptor), [Descriptor])) }
         def render
         end
 
@@ -108,7 +108,7 @@ module Mayu
           wrap_errors { @instance.should_update?(next_props, next_state) }
         end
 
-        sig { override.returns(T.nilable(Descriptor)) }
+        sig { override.returns(T.any(T.nilable(Descriptor), [Descriptor])) }
         def render
           wrap_errors { @instance.render }
         ensure
