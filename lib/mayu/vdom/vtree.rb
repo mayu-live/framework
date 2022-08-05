@@ -111,7 +111,7 @@ module Mayu
                 end
 
                 commit!(ctx)
-                puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
+                # puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
               end
             rescue => e
               puts e
@@ -130,9 +130,8 @@ module Mayu
         start_at = Time.now
         ctx = UpdateContext.new
         @root = patch(ctx, @root, descriptor)
-        p ctx
         commit!(ctx)
-        puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
+        # puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
       end
 
       sig { params(handler_id: String, payload: T.untyped).void }
@@ -341,7 +340,7 @@ module Mayu
           end
         end
 
-        puts "\e[32mInitializing vnode #{vnode.id} #{vnode.descriptor.type} with #{children.length} children\e[0m"
+        # puts "\e[32mInitializing vnode #{vnode.id} #{vnode.descriptor.type} with #{children.length} children\e[0m"
 
         ctx.enter(vnode) do
           vnode.children =
@@ -362,7 +361,8 @@ module Mayu
         )
       end
       def remove_vnode(ctx, vnode, patch: true)
-        puts "\e[31mRemoving vnode #{vnode.id} #{vnode.descriptor.type}\e[0m"
+        # puts "\e[31mRemoving vnode #{vnode.id} #{vnode.descriptor.type}\e[0m"
+
         vnode.component&.unmount
         ctx.remove(vnode) if patch
         vnode.children.map { remove_vnode(ctx, _1, patch: false) }
