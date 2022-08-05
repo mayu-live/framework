@@ -13,11 +13,11 @@ render do
 
   if File.directory?(props[:path])
     entries =
-      Dir.glob(File.join(props[:path], "*"))
+      Dir.entries(props[:path]).-(%w(. ..))
         .grep_v(/node_modules|sorbet|vendor/)
         .sort
         .map do |path|
-          <Node key={path} path={path} />
+          <Node key={path} path={File.join(props[:path], path)} />
         end
 
     class_name =
