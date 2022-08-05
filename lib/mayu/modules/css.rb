@@ -9,6 +9,7 @@ module Mayu
   module Modules
     module CSS
       def self.load(path)
+        puts "\e[33mLOADING CSS #{path}\e[0m"
         mod = CSSModule.new(path, File.read(path))
         Mayu::Assets::Manager.instance.add(path, "text/css", mod.to_s)
         mod

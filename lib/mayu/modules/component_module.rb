@@ -11,8 +11,8 @@ module Mayu
       sig { returns(T.class_of(VDOM::Component::Base)) }
       attr_reader :klass
 
-      sig { params(system: Modules::System, path: String, source: String).void }
-      def initialize(system, path, source)
+      sig { params(system: Modules::System, path: String, full_path: String, source: String).void }
+      def initialize(system, path, full_path, source)
         transpiled = Rux.to_ruby(source, visitor: RuxVisitor.new)
 
         @klass =
@@ -32,8 +32,8 @@ module Mayu
           end
         end
 
-        @klass.const_set(:CSS, system.load_css(path))
-        @klass.class_eval(transpiled, path, 0)
+        @klass.const_set(:CSS, system.load_css(full_path))
+        @klass.class_eval(transpiled, full_path, 0)
       end
     end
   end

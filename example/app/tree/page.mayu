@@ -1,0 +1,5 @@
+Tree = import("../Tree")
+
+render do
+  <Tree />
+end

@@ -1,3 +1,10 @@
 render do
-  <p>List of items</p>
+  <div>
+    <p>All items</p>
+    <ul>
+      {1.upto(30).map do |i|
+        <li key={i}><a href={"/items/#{i}"}>Item {i}</a></li>
+      end}
+    </ul>
+  </div>
 end

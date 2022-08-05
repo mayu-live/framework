@@ -1,3 +1,5 @@
 render do
-  children
+  <div>
+    {children}
+  </div>
 end

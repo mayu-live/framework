@@ -1,4 +1,5 @@
 Header = import("Layout/Header")
+Tabs = import("Layout/Tabs")
 
 render do
   <html lang="en" class={styles.html}>
@@ -9,15 +10,20 @@ render do
     </head>
     <body class={styles.body}>
       <Header />
-      <main class={styles.main}>
-        <menu>
-          <li><a href="/">Start page</a></li>
-          <li><a href="/about">About</a></li>
-          <li><a href="/items">Items</a></li>
-          <li><a href="/items/123">Item 123</a></li>
+      <div class={styles.wrap}>
+        <menu class={styles.menu}>
+          <li><a class={styles.menuLink} href="/">Start page</a></li>
+          <li><a class={styles.menuLink} href="/items">Items</a></li>
+          <li><a class={styles.menuLink} href="/tree">Tree</a></li>
+          <li><a class={styles.menuLink} href="/name_reverser">Name reverser</a></li>
+          <li><a class={styles.menuLink} href="/counter">Counter</a></li>
+          <li><a class={styles.menuLink} href="/numbers">Numbers</a></li>
+          <li><a class={styles.menuLink} href="/about">About</a></li>
         </menu>
-        {children}
-      </main>
+        <main class={styles.main}>
+          {children}
+        </main>
+      </div>
     </body>
   </html>
 end
