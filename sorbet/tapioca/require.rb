@@ -424,3 +424,5 @@ require "unparser/writer/send/binary"
 require "unparser/writer/send/regular"
 require "unparser/writer/send/unary"
 require "uri"
+require 'prometheus/middleware/collector'
+require 'prometheus/middleware/exporter'

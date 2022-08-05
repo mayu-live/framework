@@ -4,6 +4,7 @@ require_relative "../mayu"
 require_relative "environment"
 require_relative "renderer"
 require_relative "state/loader"
+require_relative "metrics"
 
 module Mayu
   module Server2
@@ -55,6 +56,7 @@ module Mayu
         timeout_in_seconds: DEFAULT_TIMEOUT_IN_SECONDS,
         task: Async::Task.current
       )
+        @environment = environment
         @id = SecureRandom.uuid
         @key = SecureRandom.uuid
         @timeout_in_seconds = timeout_in_seconds
@@ -167,7 +169,7 @@ module Mayu
         if callback_id == "ping"
           push(:pong, {
             time: payload.to_i,
-            region: ENV.fetch("FLY_REGION", 'localhost'),
+            region: @environment.region,
           })
         else
           @renderer.handle_callback(callback_id, payload)
@@ -326,8 +328,8 @@ module Mayu
     end
 
     class InitSessionApp
-      def initialize(root:, hot_reload:)
-        @environment = Environment.new(root:, hot_reload:)
+      def initialize(environment)
+        @environment = environment
       end
 
       def call(env)
@@ -397,9 +399,17 @@ module Mayu
     end
 
     def self.build(root:, hot_reload:)
+      region = ENV.fetch("FLY_REGION", 'localhost')
       public_root_dir = File.join(root, PUBLIC_DIR)
+      environment = Environment.new(root:, region:, hot_reload:)
 
       Rack::Builder.new do
+        #use Rack::Deflater
+        use Metrics::Middleware::Collector,
+          registry: environment.prometheus_registry
+        use Metrics::Middleware::Exporter,
+          registry: environment.prometheus_registry
+
         map EventStreamApp::MOUNT_PATH do
           run EventStreamApp.new
         end
@@ -420,7 +430,7 @@ module Mayu
 
         use Rack::Static, urls: [""], root: public_root_dir, cascade: true
 
-        run InitSessionApp.new(root:, hot_reload:)
+        run InitSessionApp.new(environment)
       end
     end
   end

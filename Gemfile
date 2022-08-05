@@ -11,6 +11,7 @@ gem "rux"
 gem "crass"
 gem "falcon"
 gem "toml-rb"
+gem "prometheus-client"
 
 group :development do
   gem "guard", require: false

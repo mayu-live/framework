@@ -2,6 +2,7 @@
 
 require_relative "state/store"
 require_relative "routes"
+require_relative "metrics"
 require_relative "modules/system"
 
 module Mayu
@@ -13,16 +14,21 @@ module Mayu
 
     sig { returns(String) }
     attr_reader :root
+    sig { returns(String) }
+    attr_reader :region
     sig { returns(T::Array[Routes::Route]) }
     attr_reader :routes
     sig { returns(State::Store::Reducers) }
     attr_reader :reducers
     sig { returns(Modules::System) }
     attr_reader :modules
+    sig { returns(Prometheus::Client::Registry) }
+    attr_reader :prometheus_registry
 
-    sig { params(root: String, hot_reload: T::Boolean).void }
-    def initialize(root:, hot_reload: false)
+    sig { params(root: String, region: String, hot_reload: T::Boolean).void }
+    def initialize(root:, region:, hot_reload: false)
       @root = root
+      @region = region
       @routes =
         T.let(
           Routes.build_routes(File.join(root, APP_DIR)),
@@ -38,6 +44,7 @@ module Mayu
           Modules::System.new(root, enable_code_reloader: hot_reload),
           Modules::System
         )
+      @prometheus_registry = T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
     end
 
     sig do
