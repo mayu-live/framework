@@ -404,10 +404,9 @@ module Mayu
       environment = Environment.new(root:, region:, hot_reload:)
 
       Rack::Builder.new do
-        #use Rack::Deflater
+        use Rack::CommonLogger
+
         use Metrics::Middleware::Collector,
-          registry: environment.prometheus_registry
-        use Metrics::Middleware::Exporter,
           registry: environment.prometheus_registry
 
         map EventStreamApp::MOUNT_PATH do
@@ -431,6 +430,24 @@ module Mayu
         use Rack::Static, urls: [""], root: public_root_dir, cascade: true
 
         run InitSessionApp.new(environment)
+      end
+    end
+
+    def self.build_metrics_app(root:)
+      region = ENV.fetch("FLY_REGION", 'localhost')
+      environment = Environment.new(root:, region:, hot_reload: false)
+
+      Rack::Builder.new do
+        use Rack::CommonLogger
+
+        use Rack::Deflater
+
+        use Metrics::Middleware::Collector,
+          registry: environment.prometheus_registry
+        use Metrics::Middleware::Exporter,
+          registry: environment.prometheus_registry
+
+        run ->(_) { [200, {'content-type' => 'text/html'}, ['ok']] }
       end
     end
   end

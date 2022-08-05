@@ -8,6 +8,10 @@ processes = []
 
 [env]
 
+[metrics]
+  port = 9091
+  path = "/metrics"
+
 [experimental]
   allowed_public_ports = []
   auto_rollback = true
