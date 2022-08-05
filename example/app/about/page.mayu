@@ -5,12 +5,17 @@ render do
       <li>Mayu is a VDOM implementation in Ruby.</li>
       <li>Mayu lets you write components similar to React components, renders them on the server and streams all DOM updates to the browser.</li>
       <li>Event handlers run on the server, there is no need to implement an API.</li>
-      <li>CSS is supported with CSS modules and only loads the CSS for what is being shown on the current page.</li>
-      <li>Global state management similar to Redux Toolkit.</li>
-      <li><a href="https://github.com/camertron/rux">JSX-inspired syntax</a></li>
-      <li>Hot-reloading in development mode</li>
+      <li>Only the required CSS is loaded on each page</li>
+      <li>
+        Global state management similar to Redux Toolkit.{' '}
+        <a target="_blank" href="https://gist.github.com/aalin/1aa258a61b2671314866bc437a87ed0a#file-store__auth-rb">
+          Example Auth.rb
+        </a>
+      </li>
+      <li><a target="_blank" href="https://github.com/camertron/rux">JSX-inspired syntax</a>.</li>
+      <li>Hot-reloading in development mode.</li>
       <li>Designed for edge computing.</li>
     </ul>
-    <p>More information on <a href="https://github.com/mayu-live">GitHub</a></p>
+    <p>More information on <a target="_blank" href="https://github.com/mayu-live">GitHub</a></p>
   </div>
 end

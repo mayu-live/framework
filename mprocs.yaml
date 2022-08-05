@@ -1,0 +1,5 @@
+procs:
+  example:
+    shell: "cd example && bundle exec falcon serve --threaded --count 2"
+  client:
+    shell: "cd lib/mayu/client && npm run dev"
