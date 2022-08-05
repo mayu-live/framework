@@ -11,11 +11,16 @@ rescue => e
 end
 
 handler :next_page do |e|
-  update { |state| { page: state[:page].succ } }
+  update do |state|
+    per_page = state[:per_page]
+    total_pages = (state[:result][:results].length / per_page).floor
+
+    { page: [state[:page].succ, total_pages].min }
+  end
 end
 
 handler :prev_page do |e|
-  update { |state| { page: state[:page].pred } }
+  update { |state| { page: [state[:page].pred, 0].max } }
 end
 
 handler :set_per_page do |e|
@@ -30,6 +35,7 @@ render do
     in results:
       per_page = state[:per_page]
       total_pages = (results.length / per_page).floor
+      results_on_this_page = results.slice(state[:page] * per_page, per_page) || []
 
       <div>
         <div>
@@ -46,7 +52,7 @@ render do
           <button on-click={handler(:next_page)}>Next page</button>
         </div>
         <ul>
-          {results.slice(state[:page] * per_page, per_page).map do |result|
+          {results_on_this_page.map do |result|
             id = result[:url].scan(/\/(\d+)\//).flatten.last.to_i
             <li key={result[:url]}>
               <a href={"/pokemon/#{id}"}>{result[:name].capitalize}</a>
