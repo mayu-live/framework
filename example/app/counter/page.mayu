@@ -40,6 +40,7 @@ render do
     end
 
   <div>
+    <h1>Counter</h1>
     <p class={styles.count}>Count: <span class={styles.value}>{state[:count]}</span></p>
     <div class={styles.buttons}>
       <button class={styles.button} on-click={handler(:add, 1)}>

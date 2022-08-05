@@ -12,17 +12,19 @@ render do
       <Header />
       <div class={styles.wrap}>
         <menu class={styles.menu}>
-          <li><a class={styles.menuLink} href="/">Start page</a></li>
-          <li><a class={styles.menuLink} href="/items">Items</a></li>
-          <li><a class={styles.menuLink} href="/tree">Tree</a></li>
-          <li><a class={styles.menuLink} href="/name_reverser">Name reverser</a></li>
-          <li><a class={styles.menuLink} href="/counter">Counter</a></li>
-          <li><a class={styles.menuLink} href="/numbers">Numbers</a></li>
-          <li><a class={styles.menuLink} href="/about">About</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/">Start page</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/items">Items</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/tree">Tree</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/name_reverser">Name reverser</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/counter">Counter</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/numbers">Numbers</a></li>
+          <li class={styles.menuItem}><a class={styles.menuLink} href="/about">About</a></li>
         </menu>
-        <main class={styles.main}>
-          {children}
-        </main>
+        <div class={styles.mainWrap}>
+          <main class={styles.main}>
+            {children}
+          </main>
+        </div>
       </div>
     </body>
   </html>

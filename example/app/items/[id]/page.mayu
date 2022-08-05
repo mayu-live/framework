@@ -1,3 +1,6 @@
 render do
-  <p>Showing item</p>
+  <div>
+    <h1>Showing item</h1>
+    <p>Item info here</p>
+  </div>
 end

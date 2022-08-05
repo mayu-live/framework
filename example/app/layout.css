@@ -34,6 +34,9 @@
 .wrap {
   background: #fff;
   color: #000;
+}
+
+.mainWrap {
   padding: 0 1em;
 }
 
@@ -44,6 +47,7 @@
 }
 
 .menu {
+  background: var(--timberwolf);
   list-style-type: none;
   margin: 0;
   padding: 1em;
@@ -52,17 +56,20 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
+  font-size: .9em;
 }
 
-.menuLink {
+.menuItem {
+  flex: 0;
   margin: 0;
   padding: 0;
   display: block;
+  white-space: nowrap;
+}
 
+.menuLink {
   border-radius: 3px;
-  background: #14ccca;
   transition: all .1s;
-  border: 1px solid #0001;
   padding: .5em;
   font-size: .9em;
 }
@@ -72,16 +79,12 @@
 .menuLink:active,
 .menuLink:hover {
   text-decoration: none;
-  color: #fff;
+  color: #000;
 }
 
+.menuLink:active,
 .menuLink:hover {
-  color: var(--white);
-  filter: brightness(110%);
-}
-
-.menuLink:active {
-  filter: brightness(90%);
+  text-decoration: underline;
 }
 
 .currentPage {

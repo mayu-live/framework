@@ -29,11 +29,11 @@ render do
 
     <li>
       <span class={class_name} on-click={handler(:toggle_open)}>
-        {state[:open] ? "📂" : "📁"} {name}
-      /</span>
+        {state[:open] ? "📂 " : "📁 "}{name}/
+      </span>
       {state[:open] ? <ul>{entries}</ul> : nil}
     </li>
   else
-    <li>{name.end_with?(".mayu") ? "🐍" : "📄"}{name}</li>
+    <li>{name.end_with?(".mayu") ? "🐍 " : "📄 "}{name}</li>
   end
 end

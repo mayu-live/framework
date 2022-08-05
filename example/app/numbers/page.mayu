@@ -26,6 +26,7 @@ render do
   end
 
   <div>
+    <h1>Random numbers</h1>
     <button on-click={handler(:rerender)}>
       Rerender
     </button>

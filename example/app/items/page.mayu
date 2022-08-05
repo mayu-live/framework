@@ -1,6 +1,6 @@
 render do
   <div>
-    <p>All items</p>
+    <h1>All items</h1>
     <ul>
       {1.upto(30).map do |i|
         <li key={i}><a href={"/items/#{i}"}>Item {i}</a></li>

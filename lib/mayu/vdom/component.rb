@@ -385,7 +385,12 @@ module Mayu
 
           sig { override.returns(T.nilable(Descriptor)) }
           def render
-            h(:__mayu_a, **props.merge(on_click: handler(:click, props[:href]))) { children }
+            if props[:href].to_s.match(/\A[a-z0-9]+:\/\//)
+              overridden_props = {rel: "noreferrer"}.merge(props)
+              h(:__mayu_a, **overridden_props) { children }
+            else
+              h(:__mayu_a, **props.merge(on_click: handler(:click, props[:href]))) { children }
+            end
           end
         end
       end

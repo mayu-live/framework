@@ -50,6 +50,7 @@ render do
   can_log_in = state[:auth_state] == :logged_out
 
   <div>
+    <h1>Name reverser</h1>
     {case state[:auth_state]
     when :logged_out
       <Fieldset>
