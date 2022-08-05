@@ -9,6 +9,7 @@ render do
       <li>Global state management similar to Redux Toolkit.</li>
       <li><a href="https://github.com/camertron/rux">JSX-inspired syntax</a></li>
       <li>Hot-reloading in development mode</li>
+      <li>Designed for edge computing.</li>
     </ul>
     <p>More information on <a href="https://github.com/mayu-live">GitHub</a></p>
   </div>
