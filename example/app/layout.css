@@ -32,9 +32,9 @@
   display: grid;
   min-height: 100vh;
   grid-template:
-    "header" min-content
-    "main" auto
-    "footer" min-content;
+    "header" auto
+    "main" 1fr
+    "footer" auto;
 }
 
 .wrap {

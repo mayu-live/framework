@@ -14,20 +14,27 @@ handler :next_page do |e|
   update do |state|
     per_page = state[:per_page]
     total_pages = (state[:result][:results].length / per_page).floor
-    { page: [state[:page].succ, total_pages].min }
+    page = [state[:page].succ, total_pages].min
+    { page: }
   end
 end
 
 handler :prev_page do |e|
-  update { |state| { page: [state[:page].pred, 0].max } }
+  update do |state|
+    page = [state[:page].pred, 0].max
+    { page: }
+  end
 end
 
 handler :set_per_page do |e|
-  update(per_page: e["value"].to_i, page: 0)
+  update(
+    page: 0,
+    per_page: e["value"].to_i,
+  )
 end
 
 render do
-  pokemons =
+  content =
     case state[:result]
     in nil
       <div>
@@ -39,8 +46,11 @@ render do
       total_pages = (results.length / per_page).floor
       results_on_this_page = results.slice(state[:page] * per_page, per_page) || []
 
-      <div>
-        <div>
+      pagination = (
+        <fieldset>
+          <legend>Page {state[:page].succ} of {total_pages.succ}</legend>
+          <button on-click={handler(:prev_page)}>Previous page</button>
+          <button on-click={handler(:next_page)}>Next page</button>
           <div>
             Per page:
             <select on-change={handler(:set_per_page)} value={state[:per_page]}>
@@ -49,10 +59,11 @@ render do
               <option value={80}>80</option>
             </select>
           </div>
-          <button on-click={handler(:prev_page)}>Previous page</button>
-          <span>Page {state[:page].succ} of {total_pages.succ}</span>
-          <button on-click={handler(:next_page)}>Next page</button>
-        </div>
+        </fieldset>
+      )
+
+      <div>
+        {pagination}
         <ul>
           {results_on_this_page.map do |result|
             id = result[:url].scan(/\/(\d+)\//).flatten.last.to_i
@@ -61,25 +72,17 @@ render do
             </li>
           end}
         </ul>
-        <div>
-          <div>
-            Per page:
-            <select on-change={handler(:set_per_page)} value={state[:per_page]}>
-              <option value={20}>20</option>
-              <option value={40}>40</option>
-              <option value={80}>80</option>
-            </select>
-          </div>
-          <button on-click={handler(:prev_page)}>Previous page</button>
-          <span>Page {state[:page].succ} of {total_pages.succ}</span>
-          <button on-click={handler(:next_page)}>Next page</button>
-        </div>
+        {pagination}
       </div>
     end
 
   <div>
     <h1>Pokémon</h1>
     {state[:error] && <p>{state[:error]}</p> || nil}
-    {pokemons}
+    {content}
+    <details style={{ margin: "2em 0" }}>
+      <summary>Show source</summary>
+      <pre style={{ background: "#f0f0f0", padding: "1em" }}>{CGI.escape_html(source)}</pre>
+    </details>
   </div>
 end
