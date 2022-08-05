@@ -1,43 +1,12 @@
 import logger from "./logger.js";
 import NodeTree from "./NodeTree.js";
 import PingTimer from "./PingTimer.js";
+import PingComponent from "./PingComponent.js";
 import DisconnectedComponent from "./DisconnectedComponent.js";
 
 window.customElements.define("mayu-disconnected", DisconnectedComponent);
+window.customElements.define("mayu-ping", PingComponent);
 
-class PingView {
-  div: HTMLDivElement;
-
-  constructor() {
-    const div = document.createElement("div");
-    div.style.setProperty("position", "fixed");
-    div.style.setProperty("bottom", "0");
-    div.style.setProperty("left", "0");
-    div.style.setProperty("z-index", "10");
-    div.style.setProperty("backdrop-filter", "blur(5px)");
-    div.style.setProperty("border", "0 solid #0003");
-    div.style.setProperty("border-width", "1px 1px 0 0");
-    div.style.setProperty("font-size", ".9em");
-    div.style.setProperty("padding", ".2em .5em");
-    div.style.setProperty("border-top-right-radius", "3px");
-    div.style.setProperty("pointer-events", "none");
-    div.style.setProperty(
-      "text-shadow",
-      Array(10).fill("0 0 2px #000").join(",")
-    );
-    div.style.setProperty("color", "#fff");
-    div.style.setProperty("font-weight", "bold");
-    div.style.setProperty("font-family", "monospace");
-    div.querySelector("::before");
-    document.body.appendChild(div);
-
-    this.div = div;
-  }
-
-  update(text: string) {
-    this.div.textContent = text;
-  }
-}
 
 // TODO: Make more of this set up stuff in a functional way.
 class Mayu {
@@ -111,7 +80,8 @@ class Mayu {
       pingTimer.pong(JSON.parse(e.data));
     });
 
-    const pingView = new PingView();
+    const pingElement = document.createElement('mayu-ping') as PingComponent;
+    document.body.appendChild(pingElement);
 
     async function pingLoop() {
       while (true) {
@@ -124,7 +94,9 @@ class Mayu {
             });
           });
 
-          pingView.update(`Ping: ${ping} ms (${region})`);
+          pingElement.setAttribute('ping', `${ping} ms`)
+          pingElement.setAttribute('region', region)
+
           await pingTimer.sleep(PingTimer.PING_FREQUENCY_MS);
         } catch (e) {
           console.error("Error. Retrying in", PingTimer.RETRY_TIME_MS, "ms");
