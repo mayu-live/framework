@@ -1,5 +1,0 @@
-dev:
-  port: 9292
-prod:
-  host: "mayu.live"
-  port: 3000"

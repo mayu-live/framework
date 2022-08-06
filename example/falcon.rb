@@ -8,7 +8,10 @@ load :rack, :supervisor
 ENV["MAYU_ENV"] = "production"
 
 config =
-  TomlRB.load_file("example/mayu.toml", symbolize_keys: true).fetch(:prod, {})
+  TomlRB.load_file(
+    File.join(File.dirname(__FILE__), "mayu.toml"),
+    symbolize_keys: true,
+  ).fetch(:prod, {})
 
 hostname = config.fetch(:hostname, "localhost")
 port = config.fetch(:port, 3000)
