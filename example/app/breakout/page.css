@@ -1,14 +1,36 @@
 .game {
   border: 1px solid #ccc;
   width: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
 .game::after {
-  padding-bottom: 100%;
-  content: " ";
   display: block;
+  padding-bottom: 75%;
+  content: " ";
+}
+
+.ball {
+  position: absolute;
+  transition: left .2s, top .2s;
+  width: 20px;
+  height: 20px;
+  background: #f0f;
+  border-radius: 100%;
+  transform: translate(-50%, -50%);
+}
+
+.player {
+  position: absolute;
+  transition: left .2s;
+  height: 20px;
+  background: #000;
+  border-radius: 3px;
+  transform: translate(-50%, -50%);
 }
 
 .controller {
-  background: #c0c;
+  width: 100%;
+  display: block;
 }
