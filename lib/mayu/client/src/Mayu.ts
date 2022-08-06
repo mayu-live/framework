@@ -80,7 +80,7 @@ class Mayu {
 
     if (window.navigation) {
       window.navigation.addEventListener("navigate", (e: NavigateEvent) => {
-        console.log(e);
+        // console.log(e);
         // e.preventDefault()
       });
     }
@@ -116,7 +116,7 @@ class Mayu {
     async function pingLoop() {
       while (true) {
         try {
-          const pingTime = await pingTimer.ping((now) => {
+          const { ping, region } = await pingTimer.ping((now) => {
             fetch(`/__mayu/handler/${sessionId}/ping`, {
               method: "POST",
               headers: { "content-type": "application/json" },
@@ -124,7 +124,7 @@ class Mayu {
             });
           });
 
-          pingView.update(`Ping: ${pingTime} ms`);
+          pingView.update(`Ping: ${ping} ms (${region})`);
           await pingTimer.sleep(PingTimer.PING_FREQUENCY_MS);
         } catch (e) {
           console.error("Error. Retrying in", PingTimer.RETRY_TIME_MS, "ms");

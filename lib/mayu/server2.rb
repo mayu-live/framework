@@ -165,7 +165,10 @@ module Mayu
 
       def handle_callback(callback_id, payload)
         if callback_id == "ping"
-          push(:pong, payload.to_i)
+          push(:pong, {
+            time: payload.to_i,
+            region: ENV.fetch("FLY_REGION", 'localhost'),
+          })
         else
           @renderer.handle_callback(callback_id, payload)
         end
