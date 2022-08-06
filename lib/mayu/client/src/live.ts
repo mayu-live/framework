@@ -1,4 +1,4 @@
-import Mayu from "./Mayu.js";
+import Mayu from "./Mayu";
 
 const url = new URL(import.meta.url);
 const id = url.search.slice(1);

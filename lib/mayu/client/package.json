@@ -12,14 +12,18 @@
   },
   "homepage": "https://github.com/mayu-live/prototype#readme",
   "scripts": {
-    "dev": "npm run build -- --watch --sourcemap=inline",
-    "build": "esbuild src/*.ts --outdir=dist",
-    "build:production": "npm run build -- --minify",
+    "dev": "npm run build -- --watch --sourcemap inline",
+    "build": "rollup -c rollup.config.js",
+    "build:production": "npm run build -- --compact",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@rollup/plugin-typescript": "^8.3.4",
     "@types/serviceworker": "^0.0.48",
     "esbuild": "^0.14.48",
+    "rollup": "^2.77.2",
+    "rollup-plugin-terser": "^7.0.2",
+    "tslib": "^2.4.0",
     "typescript": "^4.7.4"
   }
 }

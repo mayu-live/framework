@@ -36,6 +36,10 @@ module Mayu
 
         def proxy
         end
+
+        def hash
+          "no hash"
+        end
       end
 
       class NoModule < Base
@@ -78,6 +82,8 @@ module Mayu
         def inspect
           "#<CSSModule path=#{@path} idents=#{@class_names.keys.inspect}>"
         end
+
+        attr_reader :hash
 
         def initialize(path, src)
           @path = path

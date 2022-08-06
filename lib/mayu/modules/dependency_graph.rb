@@ -1,5 +1,7 @@
 # typed: true
 
+require "pry"
+
 module Mayu
   module Modules
     class DependencyGraph
@@ -62,6 +64,7 @@ module Mayu
       end
 
       def add_dependency(source_id, target_id)
+        puts "Adding dependency to #{source_id}: #{target_id}"
         with_source_and_target(source_id, target_id) do |source, target|
           source.outgoing.add(target_id)
           target.incoming.add(source_id)

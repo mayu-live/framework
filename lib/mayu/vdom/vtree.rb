@@ -334,7 +334,7 @@ module Mayu
           end
 
         if (stylesheet = component&.stylesheet).is_a?(Modules::CSS::CSSModule)
-          unless @sent_stylesheets.include?(stylesheet.path)
+          unless @sent_stylesheets.include?(stylesheet.hash)
             ctx.stylesheet(stylesheet.path)
             @sent_stylesheets.add(stylesheet.path)
           end

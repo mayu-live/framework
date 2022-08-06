@@ -94,6 +94,7 @@ module Mayu
 
         old_module = @modules.delete(full_path)
         return false unless old_module
+        return false unless old_module.is_a?(Mayu::Modules::ComponentModule)
 
         puts "\e[33mReloading module #{full_path}\e[0m"
 
@@ -115,23 +116,32 @@ module Mayu
             File.read(full_path)
           )
 
-        @dependency_graph
-          .direct_dependants_of(full_path)
-          .each do |dependant|
-            dep = @modules[dependant]
-
-            if dep.is_a?(Mayu::Modules::ComponentModule)
-              dep.klass.constants.each do |const|
-                value = dep.klass.const_get(const)
-                if value == old_module
-                  puts "\e[35mUpdating #{const} in #{dep}\e[0m"
-                  dep.klass.const_set(const, component_module)
-                end
-              end
-            end
-          end
+        # @dependency_graph
+        #   .direct_dependants_of(full_path)
+        #   .each do |dependant|
+        #     dep = @modules[dependant]
+        #
+        #     if dep.is_a?(Mayu::Modules::ComponentModule)
+        #       dep.klass.constants.each do |const|
+        #         value = dep.klass.const_get(const)
+        #         if value == old_module.klass
+        #           puts "\e[35mUpdating #{const} in #{dep}\e[0m"
+        #           dep.klass.send(:remove_const, const)
+        #           dep.klass.const_set(const, component_module)
+        #         end
+        #       end
+        #     end
+        #   end
 
         @modules[full_path] = component_module
+
+        @dependency_graph.dependants_of(full_path).each do |dependant|
+          # TODO: This should only do this once, uh.
+          # Now all dependants will be reloaded every time...
+          # recursively... which means some will be updated
+          # more than once..
+          reload_module(dependant)
+        end
 
         true
       end

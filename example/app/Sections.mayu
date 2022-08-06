@@ -4,7 +4,7 @@ render do
   <div>
     <section class={styles.section}>
       <div>
-        <h2 class={styles.title}>Interactive apps without JavaScript</h2>
+        <h2 class={styles.title}>Interactive web apps without JavaScript</h2>
         <p class={styles.text}>You write all logic in Ruby. Everything runs on the server.</p>
       </div>
     </section>
@@ -13,7 +13,7 @@ render do
         <h2 class={styles.title}>But how does it work?</h2>
         <p class={styles.text}>Mayu implements a Virtual DOM in Ruby. All DOM updates are streamed to the browser via Server-Sent Events.</p>
         <p class={styles.text}>All callbacks run on the server. You can write to the database securely directly in an onsubmit-handler. There is no need to for an API. Your callback handlers are your endpoints.</p>
-        <p class={styles.text}>Mayu needs about 10kB of JavaScript (before gzip) to be able to patch the DOM. This loads </p>
+        <p class={styles.text}>Mayu needs 10kB of JavaScript (before gzip) to be able to patch the DOM. This loads </p>
       </div>
     </section>
     <section>
