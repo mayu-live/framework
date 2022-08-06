@@ -239,6 +239,8 @@ module Mayu
                 update_children(ctx, vnode.children.compact, descriptors)
             end
 
+            update_stylesheet(ctx, component)
+
             component.did_update(prev_props, prev_state)
           end
 
@@ -315,6 +317,16 @@ module Mayu
         nil
       end
 
+      sig {params(ctx: UpdateContext, component: Component::Wrapper).void}
+      def update_stylesheet(ctx, component)
+        stylesheet = component.stylesheet
+        return unless stylesheet.is_a?(Modules::CSS::CSSModule)
+        return if @sent_stylesheets.include?(stylesheet.hash)
+        puts "Adding stylesheet #{stylesheet.path}"
+        ctx.stylesheet(stylesheet.hash)
+        @sent_stylesheets.add(stylesheet.hash)
+      end
+
       sig do
         params(
           ctx: UpdateContext,
@@ -333,13 +345,7 @@ module Mayu
             descriptor.props[:children]
           end
 
-        if (stylesheet = component&.stylesheet).is_a?(Modules::CSS::CSSModule)
-          unless @sent_stylesheets.include?(stylesheet.hash)
-            ctx.stylesheet(stylesheet.path)
-            @sent_stylesheets.add(stylesheet.path)
-          end
-        end
-
+        update_stylesheet(ctx, component) if component
         # puts "\e[32mInitializing vnode #{vnode.id} #{vnode.descriptor.type} with #{children.length} children\e[0m"
 
         ctx.enter(vnode) do

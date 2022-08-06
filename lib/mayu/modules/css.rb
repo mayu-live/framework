@@ -11,7 +11,7 @@ module Mayu
       def self.load(path)
         puts "\e[33mLOADING CSS #{path}\e[0m"
         mod = CSSModule.new(path, File.read(path))
-        Mayu::Assets::Manager.instance.add(path, "text/css", mod.to_s)
+        Mayu::Assets::Manager.instance.add(path, mod.hash.to_s, "text/css", mod.to_s)
         mod
       rescue => e
         NoModule.new(path)
@@ -88,7 +88,7 @@ module Mayu
         def initialize(path, src)
           @path = path
           @hash =
-            Digest::SHA256.digest(
+            Digest::SHA256.hexdigest(
               Digest::SHA256.digest(path) + Digest::SHA256.digest(src)
             )
 

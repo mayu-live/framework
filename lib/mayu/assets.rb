@@ -30,10 +30,13 @@ module Mayu
         attr_reader :content
         sig { returns(String) }
         attr_reader :content_type
+        sig { returns(String) }
+        attr_reader :hash
 
-        sig { params(path: String, content_type: String, content: String).void }
-        def initialize(path, content_type, content)
+        sig { params(path: String, hash: String, content_type: String, content: String).void }
+        def initialize(path, hash, content_type, content)
           @path = path
+          @hash = hash
           @content_type = content_type
           @content = content
           @public_filename = T.let(calculate_public_filename, String)
@@ -41,10 +44,7 @@ module Mayu
 
         sig { returns(String) }
         def calculate_public_filename
-          hash = Digest::SHA256.hexdigest(@path + @content)
           extname = File.extname(@path)
-          # basename = File.basename(@path, extname)
-          # "#{basename}-#{hash.slice(0, 8)}#{extname}"
           hash + extname
         end
       end
@@ -54,14 +54,14 @@ module Mayu
         @assets = T.let({}, T::Hash[String, Asset])
       end
 
-      sig { params(path: String, content_type: String, content: String).void }
-      def add(path, content_type, content)
-        @assets[path] ||= Asset.new(path, content_type, content)
+      sig { params(path: String, hash: String, content_type: String, content: String).void }
+      def add(path, hash, content_type, content)
+        @assets[hash] ||= Asset.new(path, hash, content_type, content)
       end
 
-      sig { params(path: String).void }
-      def remove(path)
-        @assets.delete(path)
+      sig { params(hash: String).void }
+      def remove(hash)
+        @assets.delete(hash)
       end
 
       sig { params(public_filename: String).returns(T.nilable(Asset)) }

@@ -150,9 +150,9 @@ module Mayu
         end
       end
 
-      sig { params(path: String).void }
-      def stylesheet(path)
-        @stylesheets.add(path)
+      sig { params(hash: String).void }
+      def stylesheet(hash)
+        @stylesheets.add(hash)
       end
 
       sig { params(vnode: VNode, text: String, append: T::Boolean).void }
