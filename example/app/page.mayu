@@ -1,4 +1,5 @@
 FeatureList = import("FeatureList")
+Sections = import("./Sections")
 
 render do
   <div>
@@ -9,5 +10,6 @@ render do
     <pre class={styles.source}>
       {CGI.escape_html(source)}
     </pre>
+    <Sections />
   </div>
 end
