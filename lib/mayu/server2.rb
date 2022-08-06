@@ -207,7 +207,9 @@ module Mayu
 
         return 404, {}, ["File not found"] unless asset
 
-        unless env["HTTP_ACCEPT"].to_s.split(",").include?(asset.content_type)
+        accept = env["HTTP_ACCEPT"].to_s.split(",")
+
+        unless accept.include?("*/*") || accept.include?(asset.content_type)
           return [
             406,
             {},
