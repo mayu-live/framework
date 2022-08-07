@@ -1,14 +1,29 @@
 #!/usr/bin/env ruby
 
-root = File.dirname(__FILE__)
+root = File.join(File.dirname(__FILE__), "..")
 $LOAD_PATH.unshift(File.join(root, "..", "..", "lib"))
 
-case ARGV.first
-when "dev"
-  exec("bundle", "exec", "falcon", "serve", "--threaded", "--count", "2")
-when "prod"
-  exec("bundle", "exec", "falcon", "host")
-else
-  $stder.puts "Unknown command: #{ARGV.first}"
-  exit 1
-end
+COMMANDS = {
+  "dev" => -> do
+    exec("bundle", "exec", "falcon", "serve", "--threaded", "--count", "2")
+  end,
+  "prod" => -> { exec("bundle", "exec", "falcon", "host") }
+}
+
+cmd, *rest = ARGV
+
+COMMANDS
+  .fetch(cmd) do
+    if cmd
+      $stderr.puts "Missing command argument"
+    else
+      $stderr.puts "Unknown command: #{cmd}"
+    end
+    $stderr.puts
+    $stderr.puts "Try any of the following:"
+    COMMANDS.keys.each do |cmd|
+      puts "\t#$0 #{cmd}"
+    end
+    exit 1
+  end
+  .call(*rest)
