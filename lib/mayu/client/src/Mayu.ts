@@ -3,11 +3,37 @@ import NodeTree from "./NodeTree.js";
 import PingTimer from "./PingTimer.js";
 import PingComponent from "./PingComponent.js";
 import DisconnectedComponent from "./DisconnectedComponent.js";
+import ExceptionComponent from "./ExceptionComponent.js";
 import ProgressBar from "./ProgressBar";
 
 window.customElements.define("mayu-disconnected", DisconnectedComponent);
 window.customElements.define("mayu-ping", PingComponent);
 window.customElements.define("mayu-progress-bar", ProgressBar);
+window.customElements.define("mayu-exception", ExceptionComponent);
+
+function h(type: string, children: any[] = [], attrs: Record<string, any> = {}) {
+  const el = document.createElement(type)
+
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value) {
+      if (value === true) {
+        el.setAttribute(key, key)
+      } else {
+        el.setAttribute(key, value)
+      }
+    }
+  }
+
+  children.forEach((child) => {
+    if ((child as any) instanceof Node) {
+      el.appendChild(child)
+    } else if (child) {
+      el.appendChild(document.createTextNode(String(child)))
+    }
+  })
+
+  return el
+}
 
 // TODO: Make more of this set up stuff in a functional way.
 class Mayu {
@@ -51,18 +77,26 @@ class Mayu {
       { once: true }
     );
 
-    if (window.navigation) {
-      window.navigation.addEventListener("navigate", (e: NavigateEvent) => {
-        // console.log(e);
-        // e.preventDefault()
-      });
-    }
+    // if (window.navigation) {
+    //   window.navigation.addEventListener("navigate", (e: NavigateEvent) => {
+    //     // console.log(e);
+    //     // e.preventDefault()
+    //   });
+    // }
 
     this.connection.addEventListener("exception", (e) => {
       const error = JSON.parse(e.data) as { type: string, message: string, backtrace: string[] }
       const {type, message, backtrace} = error
-      const cleanedBacktrace = backtrace.filter((line) => !/\/vendor\/bundle\//.test(line))
-      alert(`${type}: ${message}\n\n${cleanedBacktrace.join("\n")}`)
+      const cleanedBacktrace = backtrace
+        .filter((line) => !/\/vendor\/bundle\//.test(line))
+        .join('\n')
+
+      const el = h('mayu-exception', [
+        h('span', [`${type}: ${message}`], { slot: 'title' }),
+        h('span', [cleanedBacktrace], { slot: 'backtrace' }),
+      ])
+
+      document.body.appendChild(el)
     })
 
     this.connection.addEventListener("navigate", (e) => {

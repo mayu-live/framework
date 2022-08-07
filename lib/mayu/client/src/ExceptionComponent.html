@@ -1,0 +1,75 @@
+<style>
+  dialog {
+    position: fixed;
+    width: 80vw;
+    height: 80vh;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10001;
+    background: #fff;
+    border: 5px solid #c00;
+    border-radius: 3px;
+    font-family: monospace;
+    overflow: hidden;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    box-shadow: #0000003f 0px 54px 55px, #0000001e 0px -12px 30px,
+      #0000001e 0px 4px 6px, #0000002b 0px 12px 13px, #00000016 0px -3px 5px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    background: #c00;
+    color: #fff;
+    text-shadow: 0 0 15px #fff, 0 0 2px #000;
+    padding-bottom: 5px;
+  }
+
+  header > button {
+    flex: 0;
+    background: transparent;
+    font-size: 2em;
+    opacity: .5;
+    border: 0;
+    cursor: pointer;
+  }
+
+  header > button:hover {
+    opacity: 1;
+  }
+
+  h1 {
+    font-size: 2em;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+  }
+
+  main {
+    overflow-y: scroll;
+    flex: 1;
+  }
+
+  pre {
+    white-space: pre-wrap;
+    margin: 1rem;
+    flex: 1;
+    overflow: hidden;
+  }
+</style>
+<dialog>
+  <header>
+    <h1>
+      <slot name="title"></slot>
+    </h1>
+    <button onclick="console.log(this.getRootNode().host.remove())">⨉</button>
+  </header>
+  <main>
+    <pre><slot name="backtrace"></slot></pre>
+  </main>
+</dialog>
