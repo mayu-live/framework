@@ -2,7 +2,6 @@
   dialog {
     position: fixed;
     width: 80vw;
-    height: 80vh;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -19,6 +18,10 @@
     padding: 0;
     box-shadow: #0000003f 0px 54px 55px, #0000001e 0px -12px 30px,
       #0000001e 0px 4px 6px, #0000002b 0px 12px 13px, #00000016 0px -3px 5px;
+  }
+
+  dialog::backdrop {
+    backdrop-filter: brightness(30%) blur(5px);
   }
 
   header {
