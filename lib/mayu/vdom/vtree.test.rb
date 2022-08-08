@@ -18,8 +18,8 @@ class TestVTree < Minitest::Test
     def render
       @lol ||= rand
       h.div do
-        h.h1 "Hej världen#{@lol}"
-        h.h2 "Hello the world"
+        h.h1 "Hola mundo#{@lol}"
+        h.h2 "Hello world"
       end.div
     end
   end
@@ -69,8 +69,8 @@ class TestVTree < Minitest::Test
       number_lists.each do |numbers|
         vtree.render(
           h.div do
-              h.h1 "Hej världen"
-              h.h2 "Hello the world"
+              h.h1 "Hola mundo"
+              h.h2 "Hello world"
               h.ul do
                 numbers.each do |num|
                   h.li num, key: num
