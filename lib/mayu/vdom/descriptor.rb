@@ -12,10 +12,10 @@ module Mayu
           T.proc.params(kwargs: Component::Props).returns(T.nilable(Descriptor))
         end
 
-      ElementType =
-        T.type_alias do
-          T.any(Symbol, T.class_of(Component::Base), LambdaComponent)
-        end
+      ComponentType =
+        T.type_alias { T.any(T.class_of(Component::Base), LambdaComponent) }
+
+      ElementType = T.type_alias { T.any(Symbol, ComponentType) }
 
       Children = T.type_alias { T.any(ChildType, T::Array[ChildType]) }
       ChildType = T.type_alias { T.nilable(Descriptor) }
@@ -30,8 +30,15 @@ module Mayu
       COMMENT = :COMMENT
 
       sig { returns(Descriptor) }
-      def self.comment
-        Descriptor.new(:COMMENT)
+      def self.comment = new(:COMMENT)
+
+      sig { params(text_content: T.untyped).returns(Descriptor) }
+      def self.text(text_content) =
+        new(TEXT, { text_content: text_content.to_s })
+
+      sig { params(descriptor: T.untyped).returns(Descriptor) }
+      def self.or_text(descriptor)
+        descriptor.is_a?(self) ? descriptor : text(descriptor)
       end
 
       sig { returns(ElementType) }
@@ -60,9 +67,9 @@ module Mayu
               when child.is_a?(Descriptor)
                 child
               when type == :title
-                self.class.new(TEXT, { text_content: child.to_s })
+                self.class.text(child)
               when !child.to_s.empty?
-                self.class.new(TEXT, { text_content: child.to_s })
+                self.class.text(child)
               end
             end
             .compact

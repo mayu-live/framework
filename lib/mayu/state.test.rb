@@ -1,12 +1,14 @@
 # typed: true
 
 require "minitest/autorun"
-require_relative "descriptor"
+require_relative "vdom/descriptor"
 require_relative "state"
 
 class TestState < Minitest::Test
   class MyComponent < Mayu::VDOM::Component::Base
   end
+
+  State = Mayu::State
 
   INCREMENT = State::ActionCreator.create(:increment)
   DECREMENT = State::ActionCreator.create(:decrement)

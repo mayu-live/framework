@@ -6,6 +6,8 @@ require "rexml/document"
 require "stringio"
 require_relative "vtree"
 require_relative "h"
+require_relative "../state"
+require_relative "../fetch"
 
 class TestVTree < Minitest::Test
   include Mayu::VDOM::H
@@ -23,7 +25,9 @@ class TestVTree < Minitest::Test
 
   def test_yolo
     Async do |task|
-      vtree = Mayu::VDOM::VTree.new()
+      store = Mayu::State::Store.new({}, reducers: {})
+      fetch = Mayu::Fetch.new
+      vtree = Mayu::VDOM::VTree.new(store:, fetch:)
 
       vtree.render(h(:div) { [h(:h1) { "Title" }, h(MyComponent)] })
 

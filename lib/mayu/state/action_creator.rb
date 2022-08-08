@@ -1,6 +1,7 @@
 # typed: strict
 
 require "nanoid"
+require_relative "../fetch"
 
 module Mayu
   module State
@@ -18,7 +19,7 @@ module Mayu
           @type = type
         end
 
-        sig { params(payload: T.untyped).returns(Store::ActionHash) }
+        sig { params(payload: T.untyped).returns(T.any(Store::ActionHash, Store::Thunk)) }
         def call(payload = nil)
           { type:, payload: }
         end
@@ -93,7 +94,8 @@ module Mayu
         end
 
         sig do
-          params(
+          override
+          .params(
             args: T.untyped,
             parent: Async::Task,
             kwargs: T.untyped

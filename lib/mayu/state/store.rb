@@ -1,5 +1,7 @@
 # typed: strict
 
+require "async"
+require "async/semaphore"
 require_relative "action_wrapper"
 require_relative "action_creator"
 

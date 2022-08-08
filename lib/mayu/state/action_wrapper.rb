@@ -23,7 +23,7 @@ module Mayu
 
       sig { returns(String) }
       def inspect
-        "<Action##{type} payload=#{payload.inspect}>"
+        "#<Action/#{type} payload=#{payload.inspect}>"
       end
     end
   end
