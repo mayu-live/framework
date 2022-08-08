@@ -19,7 +19,7 @@ module Barkup
     sig {void}
     def initialize
       @streams = []
-      @tag_builder = ElementBuilder.new(self)
+      @element_builder = ElementBuilder.new(self)
     end
 
     sig{params(node: Node).returns(T.self_type)}
@@ -34,7 +34,7 @@ module Barkup
         self << Text.new(text)
       end
 
-      @tag_builder
+      @element_builder
     end
 
     def capture(&block)
