@@ -1,6 +1,6 @@
 Dockerfile
 vendor/bundle
-lib/mayu/client/node_modules
 lib/mayu/client/dist
 .git
 supervisor.ipc
+node_modules
