@@ -47,83 +47,73 @@ end
 def generate_file(writer)
   writer << "# typed: strict"
   writer << ""
+  writer << "require_relative 'unclosed_element'"
+  writer << ""
   writer.block "module Mayu" do
-    writer.block "module VDOM" do
-      writer.puts "class Descriptor ; end"
-    end
     writer.block "module Markup" do
-      writer.puts "class Builder ; end"
-      writer.block "class DescriptorBuilder < BasicObject" do
-        writer << <<~EOF
-          Descriptor = ::Mayu::VDOM::Descriptor
-          Builder = ::Mayu::Markup::Builder
-          T = ::T
-          extend T::Sig
+      writer.block "module Generated" do
+        writer.block "module UnclosedElements" do
+          Mayu::HTML::TAGS.each do |tag|
+            next if Mayu::HTML.void_tag?(tag)
 
-          BooleanValue = ::T.type_alias { ::T.nilable(::T::Boolean) }
-          Value = ::T.type_alias { ::T.nilable(::T.any(::String, ::Numeric, ::T::Boolean)) }
-          EventHandler = ::T.type_alias { ::T.nilable(::T.proc.void) }
-
-          sig {params(builder: Builder).void}
-          def initialize(builder)
-            @builder = builder
+            writer.block "class #{camelize(tag)} < UnclosedElement" do
+              writer.puts "sig {returns(::Mayu::VDOM::Descriptor)}; def #{tag} = @descriptor"
+            end
           end
+        end
 
-          sig {params(klass: ::T.untyped).returns(::T::Boolean)}
-          def is_a?(klass)
-            ::Object.instance_method(:is_a?).bind(self).call(klass)
-          end
-        EOF
+        writer.block "module BuilderInterface" do
+          writer << <<~EOF
+            extend T::Sig
+            extend T::Helpers
+            interface!
 
-        writer.block "module TagClosers" do
-          writer.block "class BaseTagCloser < BasicObject" do
-            writer << "extend ::T::Sig"
-            writer << <<~EOF
-              sig {params(klass: ::T.untyped).returns(::T::Boolean)}
-              def is_a?(klass)
-                ::Object.instance_method(:is_a?).bind(self).call(klass)
-              end
-            EOF
-          end
+            sig{abstract.params(type: VDOM::Descriptor::ElementType, children: T::Array[VDOM::Descriptor::ChildType], props: T::Hash[Symbol, T.untyped], block: T.nilable(T.proc.void)).returns(VDOM::Descriptor)}
+            def create_element(type, children, props, &block)
+            end
+          EOF
+        end
+
+        writer.block "module DescriptorBuilders" do
+          writer << <<~EOF
+            extend T::Sig
+
+            include BuilderInterface
+
+            BooleanValue = T.type_alias { T.nilable(T::Boolean) }
+            Value = T.type_alias { T.nilable(T.any(::String, ::Numeric, T::Boolean)) }
+            EventHandler = T.type_alias { T.nilable(T.proc.void) }
+
+          EOF
 
           Mayu::HTML::TAGS.each do |tag|
-            writer.block "class #{camelize(tag)} < BaseTagCloser" do
-              writer.puts "sig {void}; def #{tag} = nil"
+            if Mayu::HTML.void_tag?(tag)
+              writer.puts "sig {params(attributes: T.untyped).void}"
+              writer.puts "def #{tag}(**attributes) = void!(:#{tag}, **attributes)"
+            else
+              writer.puts "sig {params(children: T.untyped, attributes: T.untyped, block: T.nilable(T.proc.void)).returns(UnclosedElements::#{camelize(tag)})}"
+              writer.block "def #{tag}(*children, **attributes, &block)" do
+                writer.puts "UnclosedElements::#{camelize(tag)}.new(tag!(:#{tag}, children, **attributes, &block))"
+              end
             end
+
+            writer.puts
           end
+
+          writer << <<~EOF
+            private
+
+            sig {params(tag: ::Symbol, attributes: T.untyped).returns(VDOM::Descriptor)}
+            def void!(tag, **attributes)
+              create_element(tag, [], attributes)
+            end
+
+            sig {params(tag: ::Symbol, children: T::Array[T.untyped], attributes: T.untyped, block: T.nilable(T.proc.void)).returns(VDOM::Descriptor)}
+            def tag!(tag, children, **attributes, &block)
+              create_element(tag, children, attributes, &block)
+            end
+          EOF
         end
-
-        Mayu::HTML::TAGS.each do |tag|
-          if Mayu::HTML.void_tag?(tag)
-            writer.puts "sig {params(attributes: ::T.untyped).void}"
-            writer.puts "def #{tag}(**attributes) = void!(:#{tag}, **attributes)"
-          else
-            writer.puts "sig {params(children: ::T.untyped, attributes: ::T.untyped, block: ::T.nilable(::T.proc.bind(Builder).void)).returns(TagClosers::#{camelize(tag)})}"
-            writer.block "def #{tag}(*children, **attributes, &block)" do
-              writer.puts "tag!(:#{tag}, children, **attributes, &block)"
-              writer.puts "TagClosers::#{camelize(tag)}.new"
-            end
-          end
-
-          writer.puts
-        end
-
-        writer << <<~EOF
-          private
-
-          sig {params(tag: ::Symbol, attributes: ::T.untyped).void}
-          def void!(tag, **attributes)
-            @builder << Descriptor.new(tag, attributes.filter { _2 }, [])
-          end
-
-          sig {params(tag: ::Symbol, children: ::T::Array[::T.untyped], attributes: ::T.untyped, block: ::T.nilable(::T.proc.bind(Builder).void)).void}
-          def tag!(tag, children, **attributes, &block)
-            children = (children + (block ? @builder.capture(&block) : [])).map do
-              Descriptor.or_text(_1)
-            end
-            @builder << Descriptor.new(tag, attributes.filter { _2 }, children)
-          end
-        EOF
       end
     end
   end

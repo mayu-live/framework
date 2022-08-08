@@ -5,8 +5,13 @@ require_relative "../markup"
 require_relative "../vdom/descriptor"
 require "pry"
 
-output =
-  Mayu::Markup.build do
+extend T::Sig
+
+class MyComponent
+  extend T::Sig
+
+  sig {returns(Mayu::VDOM::Descriptor)}
+  def render
     h.div do
       h.h1 "Page title"
 
@@ -30,13 +35,17 @@ output =
       end.table
 
       h.div do
-        h "Hello "
+        h << "Hello "
         h.span "world", style: "font-weight: bold;"
       end.div
     end.div
   end
 
-extend T::Sig
+  sig{returns(Mayu::Markup::Builder)}
+  def h
+    Mayu::Markup::Builder.new
+  end
+end
 
 sig{ params(descriptor: Mayu::VDOM::Descriptor).void}
 def debug(descriptor)
@@ -53,5 +62,4 @@ def debug(descriptor)
   end
 end
 
-raise unless output
-debug(output)
+debug(MyComponent.new.render)
