@@ -20,7 +20,9 @@ module Mayu
         ).void
       end
       def initialize(system, path, full_path, source)
-        transpiled = Rux.to_ruby(source, visitor: RuxVisitor.new)
+        if path.end_with?('.mayu')
+          source = Rux.to_ruby(source, visitor: RuxVisitor.new)
+        end
 
         @klass =
           T.let(
@@ -40,7 +42,7 @@ module Mayu
         end
 
         @klass.const_set(:CSS, system.load_css(full_path))
-        @klass.class_eval(transpiled, full_path, 0)
+        @klass.class_eval(source, full_path, 0)
       end
     end
   end
