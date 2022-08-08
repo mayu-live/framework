@@ -78,10 +78,15 @@ module Mayu
               push(:patch, payload)
             in [:navigate, payload]
               push(:navigate, payload)
+            in [:exception, payload]
+              push(:exception, payload)
             in [:close]
               subtask.stop
             end
           end
+        rescue => e
+          p e
+          raise
         ensure
           @task.stop
         end

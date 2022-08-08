@@ -35,6 +35,7 @@
     "header" auto
     "main" 1fr
     "footer" auto;
+  overflow-y: scroll;
 }
 
 .wrap {

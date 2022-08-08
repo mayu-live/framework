@@ -4,6 +4,7 @@ require_relative "component"
 require_relative "descriptor"
 require_relative "dom"
 require_relative "id_generator"
+require_relative "../html"
 
 module Mayu
   module VDOM
@@ -163,7 +164,7 @@ module Mayu
 
         formatted_props =
           props
-            .reject { _1 == :children || _1 == :dangerously_set_inner_html }
+            .reject { _1 == :children || _1 == :dangerously_set_inner_html || !_2 }
             .map do |key, value|
               if key == :style && value.is_a?(Hash)
                 next(
@@ -173,6 +174,10 @@ module Mayu
                     value: CSSAttributes.new(**value).to_s
                   )
                 )
+              end
+
+              if HTML.boolean_attribute?(key) || value.is_a?(TrueClass) || value.is_a?(FalseClass)
+                value = key.to_s
               end
 
               format(

@@ -22,9 +22,9 @@ module Mayu
       sig { returns(T.nilable(CodeReloader)) }
       attr_reader :code_reloader
 
-      COMPONENT_EXTENSION = ".mayu"
-      COMPONENT_EXTENSION_RE = /\.mayu$/
-      COMPONENT_EXTENSION_RE2 = /(\.mayu)?$/
+      COMPONENT_EXTENSION = ".rb"
+      COMPONENT_EXTENSION_RE = /\.rb$/
+      COMPONENT_EXTENSION_RE2 = /(\.rb)?$/
 
       sig { params(root: String, enable_code_reloader: T::Boolean).void }
       def initialize(root, enable_code_reloader: false)

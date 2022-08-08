@@ -1,0 +1,17 @@
+.directory {
+  font-weight: bold;
+  padding-left: .5em;
+}
+
+.directory:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.emptyDirectory {
+}
+
+.emptyDirectory::after,
+.directory::after {
+  content: "/";
+}

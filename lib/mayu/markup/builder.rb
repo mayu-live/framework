@@ -32,6 +32,16 @@ module Mayu
       def h
         ::Mayu::Markup::Builder.new(@__fiber)
       end
+
+      sig{returns(String)}
+      def to_s
+        inspect
+      end
+
+      sig{returns(String)}
+      def inspect
+        "#<RenderContext real_self=#{@__real_self}>"
+      end
     end
 
     class Builder
@@ -54,7 +64,7 @@ module Mayu
         descriptor
       end
 
-      sig{params(component: VDOM::Descriptor::ComponentType, children: VDOM::Descriptor::ChildType, props: T::Hash[Symbol, T.untyped], block: T.nilable(T.proc.void)).void}
+      sig{params(component: VDOM::Descriptor::ComponentType, children: VDOM::Descriptor::ChildType, props: T.untyped, block: T.nilable(T.proc.void)).returns(VDOM::Descriptor)}
       def [](component, *children, **props, &block)
         create_element(component, children, props, &block)
       end
@@ -88,10 +98,10 @@ module Mayu
                   #$logger.info "Opening #{element}"
                   opened = element
                 in [:close, descriptor]
-                  unless opened == descriptor.type
-                    raise NestingError,
-                          "Closing a #{descriptor.type.inspect} but expected #{opened.inspect}"
-                  end
+                  # unless opened == descriptor.type
+                  #   raise NestingError,
+                  #         "Closing a #{descriptor.type.inspect} but expected #{opened.inspect}"
+                  # end
 
                   #$logger.info "Closing #{descriptor.type}"
                   opened = nil

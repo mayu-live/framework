@@ -34,3 +34,14 @@
   width: 100%;
   display: block;
 }
+
+.bricks {
+}
+
+.brick {
+  position: absolute;
+  width: 8%;
+  height: 2%;
+  background: #c00;
+  transform: translate(-50%, -50%);
+}

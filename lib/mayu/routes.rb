@@ -4,9 +4,9 @@ module Mayu
   module Routes
     extend T::Sig
 
-    PAGE_FILENAME = "page.mayu"
-    LAYOUT_FILENAME = "layout.mayu"
-    NOT_FOUND_FILENAME = "404.mayu"
+    PAGE_FILENAME = "page.rb"
+    LAYOUT_FILENAME = "layout.rb"
+    NOT_FOUND_FILENAME = "404.rb"
 
     class NotFoundError < StandardError
     end

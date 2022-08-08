@@ -114,7 +114,15 @@ module Mayu
                 # puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
               end
             rescue => e
-              puts e
+              puts e.message
+              puts e.backtrace
+              error = {
+                type: e.class.name,
+                message: e.message,
+                backtrace: e.backtrace,
+              }
+
+              @on_update.enqueue([:exception, error])
             end,
             Async::Task
           )
@@ -522,8 +530,11 @@ module Mayu
 
         new_props.each do |attr, value|
           next if attr == :children
+
           old_value = old_props[attr]
           next if value == old_props[attr]
+
+          removed.push(attr) and next unless value
 
           if attr == :style && old_value.is_a?(Hash) && value.is_a?(Hash)
             CSSAttributes.new(**old_value).patch(
@@ -534,10 +545,14 @@ module Mayu
             next
           end
 
-          ctx.set_attribute(vnode, attr.to_s, value.to_s)
+          if HTML.boolean_attribute?(attr) || value == true
+            ctx.set_attribute(vnode, attr.to_s, attr.to_s)
+          else
+            ctx.set_attribute(vnode, attr.to_s, value.to_s)
+          end
         end
 
-        removed.each { |attr| ctx.remove_attribute(vnode, attr.to_s) }
+        removed.uniq.each { |attr| ctx.remove_attribute(vnode, attr.to_s) }
       end
 
       sig { params(str1: String, str2: String).returns(T.nilable(String)) }

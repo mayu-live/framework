@@ -72,6 +72,7 @@ GEM
     localhost (1.1.9)
     lumberjack (1.2.8)
     mapping (1.1.1)
+    matrix (0.4.2)
     method_source (1.0.0)
     minitest (5.16.2)
     nanoid (2.0.0)
@@ -182,6 +183,7 @@ DEPENDENCIES
   filewatcher
   guard
   guard-falcon
+  matrix
   minitest
   nanoid
   prettier

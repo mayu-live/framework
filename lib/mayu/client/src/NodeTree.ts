@@ -375,7 +375,7 @@ class NodeTree {
     });
 
     if (i < ch.length) {
-      throw new Error("hello");
+      // throw new Error("hello");
     }
 
     logger.groupEnd();

@@ -76,9 +76,9 @@ module Mayu
       route_match
         .layouts
         .reverse
-        .reduce(VDOM.h(page_component)) do |app, layout|
+        .reduce(VDOM.h[page_component]) do |app, layout|
           layout_component = modules.load_page(layout).klass
-          VDOM.h(layout_component, {}, [app])
+          VDOM.h[layout_component, T.cast(app, VDOM::Descriptor)]
         end
     end
 

@@ -2,6 +2,7 @@
 
 require_relative "h"
 require_relative "../modules/css"
+require_relative "../markup"
 require "async/barrier"
 
 module Mayu
@@ -197,6 +198,11 @@ module Mayu
           cm.klass
         end
 
+        sig {returns(String)}
+        def inspect
+          self.class.const_get(:MAYU_MODULE).fetch(:path, "unknown path")
+        end
+
         sig { returns(Props) }
         def props = @wrapper.props
         sig { returns(State) }
@@ -211,12 +217,17 @@ module Mayu
         def self.get_initial_state(props) = {}
 
         sig do
-          params(blk: T.proc.returns(T.nilable(Descriptor::Children))).void
+          # params(blk: T.proc.returns(T.nilable(Descriptor::Children))).void
+          params(blk: T.proc.void).void
         end
-        def self.render(&blk) = define_method(:render, &blk)
+        def self.render(&blk)
+          define_method :render, &blk
+        end
+
+        # sig {returns(Markup::Builder)}
+        # def h = Markup::Builder.new
 
         sig { params(blk: T.proc.params(arg0: Props).returns(State)).void }
-
         def self.initial_state(&blk) =
           define_singleton_method(:get_initial_state, &blk)
 
@@ -369,19 +380,14 @@ module Mayu
         class HeadComponent < Component::Base
           sig { override.returns(T.nilable(Descriptor)) }
           def render
-            h(:__mayu_head, **props) do
-              [
-                children
-                #h(:link, rel: "stylesheet", href: "/foo.css")
-              ].flatten.compact
-            end
+            h.create_element(:__mayu_head, [children].flatten.compact, props)
           end
         end
 
         class BodyComponent < Component::Base
           sig { override.returns(T.nilable(Descriptor)) }
           def render
-            h(:__mayu_body, **props) { children }
+            h.create_element(:__mayu_body, [children].flatten.compact, **props)
           end
         end
 
@@ -392,12 +398,14 @@ module Mayu
 
           sig { override.returns(T.nilable(Descriptor)) }
           def render
-            if props[:href].to_s.match(/\A[a-z0-9]+:\/\//)
-              overridden_props = {rel: "noreferrer"}.merge(props)
-              h(:__mayu_a, **overridden_props) { children }
-            else
-              h(:__mayu_a, **props.merge(on_click: handler(:click, props[:href]))) { children }
-            end
+            overridden_props =
+              if props[:href].to_s.match(/\A[a-z0-9]+:\/\//)
+                {rel: "noreferrer"}.merge(props)
+              else
+                props.merge(on_click: handler(:click, props[:href]))
+              end
+
+            h.create_element(:__mayu_a, [children].flatten.compact, overridden_props)
           end
         end
       end

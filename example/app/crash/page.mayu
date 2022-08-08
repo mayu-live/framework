@@ -1,0 +1,39 @@
+initial_state do |state|
+  { step: 'init' }
+end
+
+handler :crash do |e|
+  update(step: 'start crash')
+  raise "crashing"
+end
+
+render do
+  H.div do
+    H.p do
+      H.button "Crash", on_click: handler(:crash)
+    end
+
+    H.pre JSON.pretty_generate(state)
+  end
+end
+#
+# render do
+#   h(:div) do [
+#     h(:p) do
+#       h(:button, "Crash", on_click: handler(:crash)),
+#     end,
+#     h(:pre, JSON.pretty_generate(state))
+#   ] end
+# end
+#
+# render do
+#   <div>
+#     <p><button on-click={handler(:crash)}>Crash</button></p>
+#     <pre>{JSON.pretty_generate(state)}</pre>
+#   </div>
+# end
+#
+#
+#
+#
+#

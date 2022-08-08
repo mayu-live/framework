@@ -61,6 +61,8 @@ module Mayu
           case message
           in [:patch, patches]
             respond(:patch, patches)
+          in [:exception, error]
+            respond(:exception, error)
           in [:navigate, href]
             navigate(href)
             respond(:navigate, href)

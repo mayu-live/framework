@@ -11,7 +11,6 @@ module Mayu
       params(block: T.proc.bind(Builder).void).returns(T.nilable(VDOM::Descriptor))
     end
     def self.build(&block)
-      Builder.new.capture(&block)&.first
     end
 
     sig do

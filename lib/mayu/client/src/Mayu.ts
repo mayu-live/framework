@@ -58,6 +58,13 @@ class Mayu {
       });
     }
 
+    this.connection.addEventListener("exception", (e) => {
+      const error = JSON.parse(e.data) as { type: string, message: string, backtrace: string[] }
+      const {type, message, backtrace} = error
+      const cleanedBacktrace = backtrace.filter((line) => !/\/vendor\/bundle\//.test(line))
+      alert(`${type}: ${message}\n\n${cleanedBacktrace.join("\n")}`)
+    })
+
     this.connection.addEventListener("navigate", (e) => {
       const path = JSON.parse(e.data);
       console.log("Navigating to", path);
