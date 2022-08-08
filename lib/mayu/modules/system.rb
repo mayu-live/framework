@@ -22,6 +22,10 @@ module Mayu
       sig { returns(T.nilable(CodeReloader)) }
       attr_reader :code_reloader
 
+      COMPONENT_EXTENSION = ".mayu"
+      COMPONENT_EXTENSION_RE = /\.mayu$/
+      COMPONENT_EXTENSION_RE2 = /(\.mayu)?$/
+
       sig { params(root: String, enable_code_reloader: T::Boolean).void }
       def initialize(root, enable_code_reloader: false)
         @root = T.let(File.expand_path(root), String)
@@ -86,10 +90,10 @@ module Mayu
       sig { params(full_path: String).returns(T::Boolean) }
       def reload_module(full_path)
         if full_path.end_with?(".css")
-          return reload_module(full_path.sub(/\.css$/, '.mayu'))
+          return reload_module(full_path.sub(/\.css$/, COMPONENT_EXTENSION))
         end
 
-        return false unless full_path.end_with?(".mayu")
+        return false unless full_path.end_with?(COMPONENT_EXTENSION)
         return false unless @dependency_graph.has_node?(full_path)
 
         old_module = @modules.delete(full_path)
@@ -150,7 +154,7 @@ module Mayu
       def load_css(path)
         # CSS files are always together with their components,
         # just replace the extension.
-        CSS.load(path.sub(/\.mayu$/, ".css"))
+        CSS.load(path.sub(COMPONENT_EXTENSION_RE, ".css"))
       end
 
       private
@@ -168,7 +172,7 @@ module Mayu
           raise ResolveError, "Could not resolve #{path} from #{source_path}"
         end
 
-        resolved_path_with_extension = resolved_path.sub(/(\.mayu)?$/, '.mayu')
+        resolved_path_with_extension = resolved_path.sub(COMPONENT_EXTENSION_RE2, COMPONENT_EXTENSION)
 
         if File.exist?(resolved_path_with_extension)
           return resolved_path_with_extension
@@ -178,7 +182,7 @@ module Mayu
           resolved_path = File.join(resolved_path, File.basename(resolved_path))
         end
 
-        resolved_path_with_extension = resolved_path.sub(/(\.mayu)?$/, '.mayu')
+        resolved_path_with_extension = resolved_path.sub(COMPONENT_EXTENSION_RE2, COMPONENT_EXTENSION)
 
         if File.exist?(resolved_path_with_extension)
           return resolved_path_with_extension
