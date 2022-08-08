@@ -13,20 +13,20 @@ gem "falcon"
 gem "toml-rb"
 gem "prometheus-client"
 
-group :development do
-  gem "guard", require: false
-  gem "guard-falcon"
-  gem "sorbet", require: false
-  gem "tapioca", require: false
-  gem "prettier", require: false
-end
-
 gem "sorbet-runtime"
-gem "rack-test"
 gem "async-http"
-gem "minitest"
-gem "rexml"
 gem "filewatcher"
 gem "nanoid"
 
 gem "matrix"
+
+group :development do
+  gem "guard", require: false
+  gem "guard-falcon", require: false
+  gem "sorbet", require: false
+  gem "tapioca", require: false
+  gem "prettier", require: false
+  gem "rack-test", require: false
+  gem "minitest", require: false
+  gem "rexml", require: false
+end

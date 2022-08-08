@@ -2,320 +2,235 @@
 
 ## Description
 
-Here comes a description of what this is, and what it aims to be.
-The project is very early on in development so it's likely that most
-things still haven't been implemented yet.
+Mayu Live is a real-time server-side component-based 
+DOM rendering framework written in Ruby.
 
-- Ruby based Virtual DOM diffing inspired by React JS.
-- JSX-inspired syntax.
-- Server side rendering.
-- DOM-updates are streamed from the server.
-- No API required, callbacks just work.
-- No JavaScript required.
-- CSS-modules — no scoping issues.
-- Async updates - no blocking.
-- XState-compatible state machines and immutable data structures.
-- Module system inspired by JavaScript.
-- Hot module replacement in development mode.
-- Image scaling, compression.
-- Source maps for rux files.
-- Designed to be hosted on services like fly.io
-  where you can deploy apps to different regions
-  for lower latency.
-- Mayu means river in Quechua.
+It is very early in development and nothing is guaranteed to work.
+Still trying to figure out how to make a framework that is both
+easy to use and fun to work with.
 
-## App structure
+Some parts are quite messy and some files are very long.
+This is fine. I like to paint with a broad brush until
+things are put in place and things feel right.
 
-A Mayu-app is structured like this:
+## Getting started
 
-```
-my_app
-├── App
-│   ├── App.css
-│   ├── App.rux
-│   └── index.rux
-├── mayu.yaml
-├── bin
-│   └── mayu
-└── machines
-```
+First run `bundle` to install all dependencies.
 
-In your `app/`-directory, you place all your application files.
+Enter the `example/` directory and run `bin/mayu dev`.
 
-## Requests
+## Features
 
-```
-├── __mayu
-│   ├── assets
-│   │   ├── App-[hash].css
-│   │   └── Logo-version-[hash].png
-│   ├── events/:session_id
-│   ├── handler/:session_id/:handler_id
-│   └── live.js
-└── * # catch-all route
-```
+Most of these features are implemented.
 
-All unmatched requests with the HTTP `Accept` header set to `text/html` will render the app.
+There is no guarantee that they work yet.
 
-## Some ideas
+### 100% server side
 
-### Module system
+This means that all rendering is done on the server,
+and even callback handlers run on the server.
+There is no need to implement an API, you access databases
+and private APIs from your callback handlers.
 
-Maybe base imports/exports on [digital-fabric/modulation](https://github.com/digital-fabric/modulation).
+Mayu detects changes in the VDOM-tree and sends instructions
+on how to patch the DOM to the browser via
+[Server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
 
-Or maybe not. Maybe better if all .rux files only export one component.
+Callbacks are just regular `POST` requests.
 
-### Images
+### 100% async
 
-Maybe could do something like:
+[socketry/async](https://github.com/socketry/async) makes it possible
+to do all this without blocking.
 
 ```
-Logo = image("./Logo.png", format: :webp, versions: {
-  500w: { max_width: 500 },
-  800w: { max_width: 800 },
-})
+mount do
+  update(value: 0)
+  sleep 1
+  update(value: 1)
+end
 
 render do
-  <div>
-    <img src={Logo} />
-  </div>
-end
-```
-
-In this case, `Logo` would be an instance of the struct `ImageDescriptor`:
-
-```
-class ImageDescriptor
-  extend T::Struct
-
-  class ImageSource
-    extend T::Struct
-
-    prop :url, String
-    prop :width, Integer
-    prop :height, Integer
-
-    sig {returns(String)}
-    def to_s() = url
+  h.div do
+    h.p state[:value]
   end
-
-  prop :blur_data_url, String
-  prop :content_type, String
-  prop :sources, T::Array[ImageSource]
-
-  sig {returns(String)}
-  def to_s() = sources.first.to_s
 end
 ```
 
-All image versions will be created during build time.
-It should also be possible to build once and sync images to a CDN
-and then have all images being pointed to the CDN instead...
-That would make the container images way smaller.
-
-### Hosting
-
-Provide a default configuration for hosting on fly.io and other services.
-
-## Implementation status
-
-### VDOM
-
-The VDOM is working, however some parts of the code are quite messy.
-Should probably be rewritten once or twice while finding out what
-is working and not.
-
-#### Missing features
-
-- Contexts are highly prioritized.
-  It should be possible to provide any sort of data to child
-  components at any level, and those child components that subscribe
-  to those context changes should be updated...
-  It would probably be possible to register callbacks for each
-  context in the VTree object, and add some sort of special hooks
-  to some special Provider/Consumer objects so that the providers
-  can update the consumers...
-- Child diffing algorithm is not very efficient.
-  It seems to work well for simple demos, but it
-  generates too many move instructions.
-  I tried to make an implementation based on the
-  algorithm in snabbdom/vue but the resulting order
-  in the VDOM and the DOM would be different every
-  time and I just got tired of it and wrote an
-  unoptimized implementation, that while inefficient,
-  at least gets the order right.
-- Rendering should be paused while the user is disconnected
-  to prevent sending a bunch of irrelevant updates whenever
-  they come online.
+This will first render "0", and after 1 second it would change to "1".
 
 ### Components
 
-What is working is asynchronous stuff... Even handlers are async.
-However, it seems like each handler can only run once at a time.
+Components are the building blocks of a Mayu application.
+They contain logic and return other components or HTML elements.
 
-#### Missing features
+You might be familiar with ReactJS and other component based
+rendering libraries. This is the same thing, but in Ruby.
 
-- There needs to be a way to define inline stateless
-  components. Not exactly sure how it would look.
-- Prop type validation maybe?
+### CSS modules
 
-### Modules
+[CSS Modules](https://github.com/css-modules/css-modules) makes sure
+that all CSS class names are scoped locally.
+You can access styles in a component using the `styles` method.
 
-Do we need modules?
-Maybe I'm too inspired by the JS world.
-
-#### Missing features
-
-- The entire thing needs to be rethought.
-- The CSS for a component needs to be updated dynamically.
-- Hot module replacement that works with images and everything.
-- Some file watcher library would be good to use here to monitor
-  all changes... Could maybe even instantiate some sort of tree
-  similar to the VDOM tree and perform different actions when
-  things change in the file tree...
-  If a component uses an image, like this maybe:
-  ```
-  Logo = image("./Logo.png", format: :webp, versions: {
-    500w: { max_width: 500 },
-    800w: { max_width: 800 },
-  })
-  ```
-  ... then the asset watcher thing could maybe see that if the image has
-  changed, it should remove the old image files, and create new versions.
-  Similar to mounting/unmounting in the VDOM...
-  If we could make a more generic VDOM-library for dealing with any sort
-  of changes, then we could do something like that.
+Also, only the CSS for the components currently on the page will
+be included with the HTML. With HTTP/2 all the CSS files load
+in parallel which makes everything super fast.
 
 ### State management
 
-Components currently basic state that they can pass to children via props.
+Mayu comes with some basic state management inspired by
+[Redux Toolkit](https://redux-toolkit.js.org/).
 
-Currrently working on getting something similar to Redux working...
+This is implemented but not yet integrated into the VDOM logic.
 
-#### `state/auth.rb`
+Ideally I would want something like [XState](https://xstate.js.org/),
+but I'm not experienced with it so I can't make anything like it.
 
-```ruby
-CurrentUserSelector =
-  create_selector { |state| state.dig(:auth, :current_user) }
+### Simple routing
 
-LogIn =
-  async_action(:log_in) do |store, username:, password:|
-    user = DB[:users].where(username:)
-    raise InvalidCredentials unless user
-    user
-  end
+Routing is inspired by the
+[Next.js Layouts RFC](https://nextjs.org/blog/layouts-rfc).
 
-initial_state(logging_in: false, current_user: nil, error: nil)
+Here's the structure of a blog app:
 
-match(LogIn.pending) do |state|
-  state[:error] = nil
-  state[:logging_in] = true
-end
-
-match(LogIn.fulfilled) do |state, user|
-  state[:logging_in] = false
-  state[:current_user] = user
-end
-
-match(LogIn.rejected) do |state, error|
-  case error
-  when InvalidCredentials
-    state[:error] = "Invalid credentials"
-  else
-    state[:error] = error.message
-  end
-  state[:logging_in] = false
-end
+```
+app
+├── layout.css
+├── layout.rb
+├── page.css
+├── page.rb
+├── about
+│   ├── page.css
+│   └── page.rb
+└── posts
+    ├── layout.css
+    ├── layout.rb
+    ├── page.css
+    ├── page.rb
+    └── [id]
+        ├── page.css
+        └── page.rb
 ```
 
-#### `components/CurrentUser.mayu`
+This would create the following routes:
+
+| **name**      | **component**            | **layouts**                           |
+|---------------|--------------------------|---------------------------------------|
+| `/`           | `app/page.rb`            | `app/layout.rb`                       |
+| `/posts/`     | `app/posts/page.rb`      | `app/layout.rb` `app/posts/layout.rb` |
+| `/posts/:id/` | `app/posts/[id]/page.rb` | `app/layout.rb` `app/posts/layout.rb` |
+| `/about/`     | `app/about/page.rb`      | `app/layout.rb`                       |
+| `/*`          | `app/404.rb`             | `app/layout.rb`                       |
+
+Look in the `example/` directory for an example.
+
+### Hot reloading
+
+Components and styles update immediately in the browser as you edit files.
+No browser refresh needed.
+
+### Small browser footprint
+
+Everything is minified and optimized and deliviered over HTTP/2.
+
+![Request waterfall screenshot](https://quad.pe/e/h9BqRqnMwh.png)
+
+### Templating
+
+There is a basic templating engine inspired by Markaby.
+A difference is that you have to write `h.div` instead of just `div`
+and that you have to close tags with `end.div`.
+
+It looks like this:
 
 ```ruby
-use_store { |props| { current_user: CurrentUserSelector } }
-```
-
-```mayu
 render do
-  if current_user = store[:current_user]
-    <p>{current_user[:name]}</p>
-  end
-    <p>Please log in!</p>
-  end
+  h.div do
+    h.h1 "Page title"
+    h.ul do
+      h.li "Item 1"
+      h.li "Item 2"
+      h.li "Item 3"
+    end.ul 
+  end.div
 end
 ```
 
-#### Missing features
+I don't know why I made it so that tags have to be closed. 
+I had some idea about static typing and I don't like having 
+waterfalls with `end` I guess.
 
-- I have been looking a lot at [XState](https://xstate.js.org/) which
-  looks great, but I have never used it. I could probably implement
-  something like Redux myself, but XState seems pretty complex.
-  I do believe however that statecharts would be perfect for
-  this project, so we should look into that.
-  It would be great if the schema was compatible with XState too,
-  to be able to use the visualizer.
+There is some funky stuff going on with scoping due to `instance_eval`
+and while it works reasonably well, it's not very comfortable to use.
 
-### Assets
+Ideally I would want to use [Rux](https://github.com/camertron/rux),
+however I encountered some parsing issues and I don't know how to
+fix them. Sometimes it would interpret indentation as space (` `)
+and I don't know how to patch the ruby plugin for treesitter to
+support this syntax. It would be pretty awesome though.
 
-#### Missing features
+A nice thing with JSX is that it separates markup and logic.
+You can look at a React component and you can distinguish elements
+from logic very easily because the syntax is different from regular
+JavaScript.
 
-- Not even images are handled or anything.
-- For production builds, it should be possible to scan through
-  the `app/`-directory, and for all assets that are found, :
+## Tests
 
-### I18n
+Tests are located in the `lib/`-directory next to their implementation.
+So for `lib/mayu/state.rb` the test would be located in
+`lib/mayu/state.test.rb`.
 
-Translations should be stored in a format like the Rails translations...
+I have always liked this convention in the JS-world.
+It's nice to have things that belong together in the same place,
+rather to have a separate tree for tests.
 
-Some translations can contain tags, so that you can do:
+There aren't many tests yet. Kinda painting with a broad brush at the moment.
 
-#### `i18n/en.yaml`
+## Virtual DOM
 
-```
-pages:
-  page:
-    title: "Title"
-    welcome: "Welcome <bold>%{name}</bold> to my <red>webpage</red>"
-  items:
-    page:
-      title: "Title"
-      welcome: "Welcome <bold>%{name}</bold> to my <red>webpage</red>"
-    [id]:
-      page:
-        title: "Showing item %{id}"
-}
-```
+Components return a `VDOM::Descriptor` which has a `type`, `props` and a `key`,
+similar to React, and `props` can also contain children.
+`VDOM::VTree` is responsible for keeping track of the `VDOM::VNode`s that make
+up the application. A `VNode` has a `Descriptor` and children which is an array
+of `VNode` objects. It can also have a component, in that case it would call
+the appropriate lifecycle methods of that component and pass its descriptors'
+props to the component before rendering.
 
-#### MyComponent
+The child diffing algorithm is a little bit inefficient. I have tried several
+times to implement the algorithm in snabbdom/preact/million, but they rely
+on DOM-operations for ordering (`node.insertBefore`) and the algorithm has
+to take care of that and make sure that the order is exactly the same in the
+VDOM as in the DOM after all patch operations have been applied.
 
-```
-t("welcome",
-  bold: <span style={{ fontWeight: "bold" }} />,
-  red: <span style={{ color: "red" }} />,
-)
-```
+The child diffing algorithm makes a few unnecessary moves, and there's lots of
+room for improvement, but at least the order is correct.
 
-Translations should always be scoped to the current page...
-Components should have their own translations..
+## Server
 
-Idk, maybe even translations should be stored in the same directory as the components?
-So that one doesn't have to jump around so much...
+The server logic is located in `lib/mayu/server2`.
+Look at the `build` method to find all the endpoints.
 
-`MyComponent.mayu`, `MyComponent.css`, `MyComponent.en.i18n`, `MyComponent.es.i18n`
+All requests are routed to the `InitSession` rack app, and then they get
+a session id and a session token back as a HTTPOnly cookie, and then they
+will use this cookie to connect to the SSE-endpoint to receive updates.
 
-On the other hand it would yield a lot of files in each directory...
+It also serves some static files.
 
-#### Missing features
+I would like to rewrite the server in Go and have it basically just deal
+with connections, and then it would communicate to Ruby processes over
+[NATS](https://nats.io/).
 
-- Nothing done.
-- Need to implement some sort of parser that can insert components
-  where the tags are... I have done this before in javascript.
+## Static typing
 
-### Pages and routing
+Most files are strictly typed with [Sorbet](https://sorbet.org/).
+Some aren't strictly typed yet, but the goal is to have `# typed: strict`
+everywhere, even in components.
 
-Simple routing implemented but not integrated.
-Based on next.js dynamic routing and new layout RFC.
+## Contributing
 
-So you create a page by putting it in `app/my-page/page.mayu` and it will get
-the path `/my-page/`. A page is a component but if you do `import` it will
-look for components in the `components/` directory, so you can't import other
-pages. If you need to share functionality, put stuff in components.
+Bug reports and pull requests are welcome on GitHub at
+https://github.com/mayu-live/framework.
+This project is intended to be a safe, welcoming space for collaboration,
+and contributors are expected to adhere to the
+[code of conduct](https://github.com/mayu-live/framework/blob/main/CODE_OF_CONDUCT.md).
