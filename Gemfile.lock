@@ -129,6 +129,7 @@ GEM
       sorbet-static (= 0.5.10148)
     sorbet-runtime (0.5.10148)
     sorbet-static (0.5.10148-universal-darwin-20)
+    sorbet-static (0.5.10148-x86_64-linux)
     sorbet-static-and-runtime (0.5.10148)
       sorbet (= 0.5.10148)
       sorbet-runtime (= 0.5.10148)
@@ -175,6 +176,7 @@ GEM
 
 PLATFORMS
   x86_64-darwin-20
+  x86_64-linux
 
 DEPENDENCIES
   async-http
