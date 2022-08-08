@@ -149,6 +149,15 @@ module Mayu
             raise KeyError, "Handler not found: #{handler_id}"
           end
           .call(payload)
+      rescue => e
+        puts e.message
+        puts e.backtrace
+        error = {
+          type: e.class.name,
+          message: e.message,
+          backtrace: e.backtrace,
+        }
+        @on_update.enqueue([:exception, error])
       end
 
       sig { returns(String) }

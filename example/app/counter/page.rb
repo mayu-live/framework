@@ -29,6 +29,11 @@ handler :toggle do |x|
   end
 end
 
+handler :crash do |x|
+  sleep 0.5
+  raise "Crashed"
+end
+
 should_update? do |next_props, next_state|
   super(next_props, next_state)
 end
@@ -69,6 +74,10 @@ render do
         h << "Reset"
       end
     end.div
+
+    h.div class: styles.buttons do
+      h.button "Crash", on_click: handler(:crash)
+    end
 
     h << autocount_info
   end.div
