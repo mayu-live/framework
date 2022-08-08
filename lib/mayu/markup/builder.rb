@@ -27,7 +27,7 @@ module Mayu
       sig do
         params(
           text_or_component:
-            T.nilable(T.any(String, VDOM::Descriptor::ComponentType)),
+          T.nilable(T.any(T.untyped, VDOM::Descriptor::ComponentType)),
           component_props: T.untyped,
           block: T.nilable(T.proc.void)
         ).returns(DescriptorBuilder)
@@ -36,10 +36,12 @@ module Mayu
         case text_or_component
         when nil
           # do nothing
+        when VDOM::Descriptor
+          @streams.last&.push(text_or_component)
         when Class, Proc
-          VDOM::Descriptor.new(text_or_component, component_props, block ? capture(&block) : [])
+          @streams.last&.push(VDOM::Descriptor.new(text_or_component, component_props, block ? capture(&block) : []))
         else
-          VDOM::Descriptor.text(text_or_component.to_s)
+          @streams.last&.push(VDOM::Descriptor.text(text_or_component.to_s))
         end
 
         @element_builder
@@ -52,7 +54,8 @@ module Mayu
       end
       def capture(&block)
         @streams.push([])
-        instance_eval(&block)
+        yield
+        # instance_eval(&block)
         @streams.pop
       end
     end
