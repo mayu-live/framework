@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Main package.json for mayu",
   "scripts": {
-    "prettier": "prettier --write '**/*'"
+    "prettier": "prettier --write '**/*'",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
@@ -23,6 +24,11 @@
   "devDependencies": {
     "@prettier/plugin-ruby": "^3.1.2",
     "happy-dom": "^6.0.4",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
     "prettier": "^2.7.1"
+  },
+  "lint-staged": {
+    "*.{rb,js,jsx,ts,tsx,md,html,css}": "prettier --write"
   }
 }
