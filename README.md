@@ -99,21 +99,21 @@ Here's the structure of a blog app:
 
 ```
 app
-├── layout.css
-├── layout.rb
-├── page.css
 ├── page.rb
+├── page.css
+├── layout.rb
+├── layout.css
 ├── about
-│   ├── page.css
-│   └── page.rb
+│   ├── page.rb
+│   └── page.css
 └── posts
-    ├── layout.css
-    ├── layout.rb
-    ├── page.css
     ├── page.rb
+    ├── page.css
+    ├── layout.rb
+    ├── layout.css
     └── [id]
-        ├── page.css
         └── page.rb
+        ├── page.css
 ```
 
 This would create the following routes:
