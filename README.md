@@ -2,7 +2,7 @@
 
 ## Description
 
-Mayu Live is a real-time server-side component-based 
+Mayu is a real-time server-side component-based 
 DOM rendering framework written in Ruby.
 
 It is very early in development and nothing is guaranteed to work.
