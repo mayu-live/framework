@@ -1,6 +1,7 @@
 # typed: true
 
 require "minitest/autorun"
+require "test_helper"
 require "async"
 require "rexml/document"
 require "stringio"

@@ -1,6 +1,7 @@
 # typed: true
 
 require "minitest/autorun"
+require "test_helper"
 require_relative "descriptor"
 
 class TestDescriptor < Minitest::Test

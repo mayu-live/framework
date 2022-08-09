@@ -29,4 +29,5 @@ group :development do
   gem "rack-test", require: false
   gem "minitest", require: false
   gem "rexml", require: false
+  gem "minitest-reporters", require: false
 end
