@@ -31,7 +31,7 @@ mount do
       if x > 1.0
         direction = reflect_angle(direction, Vector[-1, 0])
       elsif x < -1.0
-        direction = reflect_angle(direction, Vector[ 1, 0])
+        direction = reflect_angle(direction, Vector[1, 0])
       end
 
       lol = false
@@ -40,7 +40,7 @@ mount do
         direction = reflect_angle(direction, Vector[0, 1])
         lol = true
       elsif y < -1.0
-        direction = reflect_angle(direction, Vector[0,-1])
+        direction = reflect_angle(direction, Vector[0, -1])
         lol = true
       end
 
@@ -56,9 +56,7 @@ mount do
         brick_index = (nx / 2.0 + 0.5) * row.length
 
         if brick = row[brick_index]
-          if brick > 0.0
-            direction = reflect_angle(direction, Vector[0,-1])
-          end
+          direction = reflect_angle(direction, Vector[0, -1]) if brick > 0.0
 
           bricks[row_index][brick_index] -= 0.2
         end
@@ -68,22 +66,24 @@ mount do
     end
     sleep 0.1
   end
-catch => e
-p e
+  catch => e
+  p e
 end
 
 def clamp(x, min, max)
   case
-  when x > max then max
-  when x < min then min
-  else x
+  when x > max
+    max
+  when x < min
+    min
+  else
+    x
   end
 end
 
-handler(:move) do |e|
-  update(player_x: clamp(e["value"].to_f, -1.0, 1.0))
-end
+handler(:move) { |e| update(player_x: clamp(e["value"].to_f, -1.0, 1.0)) }
 
+# stree-ignore
 render do
   state => {x:, y:, player_x:, bricks:}
 

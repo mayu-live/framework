@@ -1,14 +1,13 @@
 FileEntry = import("./FileEntry")
 DirectoryListing = self
 
-initial_state do |props|
-  { path: [], open: props[:initial_open] }
-end
+initial_state { |props| { path: [], open: props[:initial_open] } }
 
 handler :toggle_open do |_|
   update { |state| { open: !state[:open] } }
 end
 
+# stree-ignore
 render do
   name = File.basename(props[:path])
 

@@ -1,7 +1,7 @@
 # typed: strict
-
+# DO NOT EDIT! THIS FILE IS GENERATED AUTOMATICALLY.
+# If you want to change it, update `generate.rb` instead.
 require_relative "unclosed_element"
-
 module Mayu
   module Markup
     module Generated
@@ -449,7 +449,6 @@ module Mayu
         def a(*children, **attributes, &block)
           UnclosedElements::A.new(tag!(:a, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -462,7 +461,6 @@ module Mayu
             tag!(:abbr, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -475,10 +473,8 @@ module Mayu
             tag!(:address, children, **attributes, &block)
           )
         end
-
         sig { params(attributes: T.untyped).void }
         def area(**attributes) = void!(:area, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -491,7 +487,6 @@ module Mayu
             tag!(:article, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -504,7 +499,6 @@ module Mayu
             tag!(:aside, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -517,7 +511,6 @@ module Mayu
             tag!(:audio, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -528,10 +521,8 @@ module Mayu
         def b(*children, **attributes, &block)
           UnclosedElements::B.new(tag!(:b, children, **attributes, &block))
         end
-
         sig { params(attributes: T.untyped).void }
         def base(**attributes) = void!(:base, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -542,7 +533,6 @@ module Mayu
         def bdi(*children, **attributes, &block)
           UnclosedElements::Bdi.new(tag!(:bdi, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -553,7 +543,6 @@ module Mayu
         def bdo(*children, **attributes, &block)
           UnclosedElements::Bdo.new(tag!(:bdo, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -566,7 +555,6 @@ module Mayu
             tag!(:blockquote, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -579,10 +567,8 @@ module Mayu
             tag!(:body, children, **attributes, &block)
           )
         end
-
         sig { params(attributes: T.untyped).void }
         def br(**attributes) = void!(:br, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -595,7 +581,6 @@ module Mayu
             tag!(:button, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -608,7 +593,6 @@ module Mayu
             tag!(:canvas, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -621,7 +605,6 @@ module Mayu
             tag!(:caption, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -634,7 +617,6 @@ module Mayu
             tag!(:cite, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -647,10 +629,8 @@ module Mayu
             tag!(:code, children, **attributes, &block)
           )
         end
-
         sig { params(attributes: T.untyped).void }
         def col(**attributes) = void!(:col, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -663,7 +643,6 @@ module Mayu
             tag!(:colgroup, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -676,7 +655,6 @@ module Mayu
             tag!(:data, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -689,7 +667,6 @@ module Mayu
             tag!(:datalist, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -700,7 +677,6 @@ module Mayu
         def dd(*children, **attributes, &block)
           UnclosedElements::Dd.new(tag!(:dd, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -711,7 +687,6 @@ module Mayu
         def del(*children, **attributes, &block)
           UnclosedElements::Del.new(tag!(:del, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -724,7 +699,6 @@ module Mayu
             tag!(:details, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -735,7 +709,6 @@ module Mayu
         def dfn(*children, **attributes, &block)
           UnclosedElements::Dfn.new(tag!(:dfn, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -748,7 +721,6 @@ module Mayu
             tag!(:dialog, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -759,7 +731,6 @@ module Mayu
         def div(*children, **attributes, &block)
           UnclosedElements::Div.new(tag!(:div, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -770,7 +741,6 @@ module Mayu
         def dl(*children, **attributes, &block)
           UnclosedElements::Dl.new(tag!(:dl, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -781,7 +751,6 @@ module Mayu
         def dt(*children, **attributes, &block)
           UnclosedElements::Dt.new(tag!(:dt, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -792,10 +761,8 @@ module Mayu
         def em(*children, **attributes, &block)
           UnclosedElements::Em.new(tag!(:em, children, **attributes, &block))
         end
-
         sig { params(attributes: T.untyped).void }
         def embed(**attributes) = void!(:embed, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -808,7 +775,6 @@ module Mayu
             tag!(:fieldset, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -821,7 +787,6 @@ module Mayu
             tag!(:figcaption, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -834,7 +799,6 @@ module Mayu
             tag!(:figure, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -847,7 +811,6 @@ module Mayu
             tag!(:footer, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -860,7 +823,6 @@ module Mayu
             tag!(:form, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -871,7 +833,6 @@ module Mayu
         def h1(*children, **attributes, &block)
           UnclosedElements::H1.new(tag!(:h1, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -882,7 +843,6 @@ module Mayu
         def h2(*children, **attributes, &block)
           UnclosedElements::H2.new(tag!(:h2, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -893,7 +853,6 @@ module Mayu
         def h3(*children, **attributes, &block)
           UnclosedElements::H3.new(tag!(:h3, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -904,7 +863,6 @@ module Mayu
         def h4(*children, **attributes, &block)
           UnclosedElements::H4.new(tag!(:h4, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -915,7 +873,6 @@ module Mayu
         def h5(*children, **attributes, &block)
           UnclosedElements::H5.new(tag!(:h5, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -926,7 +883,6 @@ module Mayu
         def h6(*children, **attributes, &block)
           UnclosedElements::H6.new(tag!(:h6, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -939,7 +895,6 @@ module Mayu
             tag!(:head, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -952,7 +907,6 @@ module Mayu
             tag!(:header, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -965,10 +919,8 @@ module Mayu
             tag!(:hgroup, children, **attributes, &block)
           )
         end
-
         sig { params(attributes: T.untyped).void }
         def hr(**attributes) = void!(:hr, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -981,7 +933,6 @@ module Mayu
             tag!(:html, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -992,7 +943,6 @@ module Mayu
         def i(*children, **attributes, &block)
           UnclosedElements::I.new(tag!(:i, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1005,13 +955,10 @@ module Mayu
             tag!(:iframe, children, **attributes, &block)
           )
         end
-
         sig { params(attributes: T.untyped).void }
         def img(**attributes) = void!(:img, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def input(**attributes) = void!(:input, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -1022,7 +969,6 @@ module Mayu
         def ins(*children, **attributes, &block)
           UnclosedElements::Ins.new(tag!(:ins, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1033,7 +979,6 @@ module Mayu
         def kbd(*children, **attributes, &block)
           UnclosedElements::Kbd.new(tag!(:kbd, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1046,7 +991,6 @@ module Mayu
             tag!(:label, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1059,7 +1003,6 @@ module Mayu
             tag!(:legend, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1070,10 +1013,8 @@ module Mayu
         def li(*children, **attributes, &block)
           UnclosedElements::Li.new(tag!(:li, children, **attributes, &block))
         end
-
         sig { params(attributes: T.untyped).void }
         def link(**attributes) = void!(:link, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -1086,7 +1027,6 @@ module Mayu
             tag!(:main, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1097,7 +1037,6 @@ module Mayu
         def map(*children, **attributes, &block)
           UnclosedElements::Map.new(tag!(:map, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1110,7 +1049,6 @@ module Mayu
             tag!(:mark, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1123,7 +1061,6 @@ module Mayu
             tag!(:math, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1136,13 +1073,10 @@ module Mayu
             tag!(:menu, children, **attributes, &block)
           )
         end
-
         sig { params(attributes: T.untyped).void }
         def menuitem(**attributes) = void!(:menuitem, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def meta(**attributes) = void!(:meta, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -1155,7 +1089,6 @@ module Mayu
             tag!(:meter, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1166,7 +1099,6 @@ module Mayu
         def nav(*children, **attributes, &block)
           UnclosedElements::Nav.new(tag!(:nav, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1179,7 +1111,6 @@ module Mayu
             tag!(:noscript, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1192,7 +1123,6 @@ module Mayu
             tag!(:object, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1203,7 +1133,6 @@ module Mayu
         def ol(*children, **attributes, &block)
           UnclosedElements::Ol.new(tag!(:ol, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1216,7 +1145,6 @@ module Mayu
             tag!(:optgroup, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1229,7 +1157,6 @@ module Mayu
             tag!(:option, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1242,7 +1169,6 @@ module Mayu
             tag!(:output, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1253,10 +1179,8 @@ module Mayu
         def p(*children, **attributes, &block)
           UnclosedElements::P.new(tag!(:p, children, **attributes, &block))
         end
-
         sig { params(attributes: T.untyped).void }
         def param(**attributes) = void!(:param, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -1269,7 +1193,6 @@ module Mayu
             tag!(:picture, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1280,7 +1203,6 @@ module Mayu
         def pre(*children, **attributes, &block)
           UnclosedElements::Pre.new(tag!(:pre, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1293,7 +1215,6 @@ module Mayu
             tag!(:progress, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1304,7 +1225,6 @@ module Mayu
         def q(*children, **attributes, &block)
           UnclosedElements::Q.new(tag!(:q, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1315,7 +1235,6 @@ module Mayu
         def rb(*children, **attributes, &block)
           UnclosedElements::Rb.new(tag!(:rb, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1326,7 +1245,6 @@ module Mayu
         def rp(*children, **attributes, &block)
           UnclosedElements::Rp.new(tag!(:rp, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1337,7 +1255,6 @@ module Mayu
         def rt(*children, **attributes, &block)
           UnclosedElements::Rt.new(tag!(:rt, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1348,7 +1265,6 @@ module Mayu
         def rtc(*children, **attributes, &block)
           UnclosedElements::Rtc.new(tag!(:rtc, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1361,7 +1277,6 @@ module Mayu
             tag!(:ruby, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1372,7 +1287,6 @@ module Mayu
         def s(*children, **attributes, &block)
           UnclosedElements::S.new(tag!(:s, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1385,7 +1299,6 @@ module Mayu
             tag!(:samp, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1398,7 +1311,6 @@ module Mayu
             tag!(:script, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1411,7 +1323,6 @@ module Mayu
             tag!(:section, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1424,7 +1335,6 @@ module Mayu
             tag!(:select, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1437,7 +1347,6 @@ module Mayu
             tag!(:slot, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1450,10 +1359,8 @@ module Mayu
             tag!(:small, children, **attributes, &block)
           )
         end
-
         sig { params(attributes: T.untyped).void }
         def source(**attributes) = void!(:source, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -1466,7 +1373,6 @@ module Mayu
             tag!(:span, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1479,7 +1385,6 @@ module Mayu
             tag!(:strong, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1492,7 +1397,6 @@ module Mayu
             tag!(:style, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1503,7 +1407,6 @@ module Mayu
         def sub(*children, **attributes, &block)
           UnclosedElements::Sub.new(tag!(:sub, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1516,7 +1419,6 @@ module Mayu
             tag!(:summary, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1527,7 +1429,6 @@ module Mayu
         def sup(*children, **attributes, &block)
           UnclosedElements::Sup.new(tag!(:sup, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1538,7 +1439,6 @@ module Mayu
         def svg(*children, **attributes, &block)
           UnclosedElements::Svg.new(tag!(:svg, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1551,7 +1451,6 @@ module Mayu
             tag!(:table, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1564,7 +1463,6 @@ module Mayu
             tag!(:tbody, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1575,7 +1473,6 @@ module Mayu
         def td(*children, **attributes, &block)
           UnclosedElements::Td.new(tag!(:td, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1588,7 +1485,6 @@ module Mayu
             tag!(:template, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1601,7 +1497,6 @@ module Mayu
             tag!(:textarea, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1614,7 +1509,6 @@ module Mayu
             tag!(:tfoot, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1625,7 +1519,6 @@ module Mayu
         def th(*children, **attributes, &block)
           UnclosedElements::Th.new(tag!(:th, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1638,7 +1531,6 @@ module Mayu
             tag!(:thead, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1651,7 +1543,6 @@ module Mayu
             tag!(:time, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1664,7 +1555,6 @@ module Mayu
             tag!(:title, children, **attributes, &block)
           )
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1675,10 +1565,8 @@ module Mayu
         def tr(*children, **attributes, &block)
           UnclosedElements::Tr.new(tag!(:tr, children, **attributes, &block))
         end
-
         sig { params(attributes: T.untyped).void }
         def track(**attributes) = void!(:track, **attributes)
-
         sig do
           params(
             children: T.untyped,
@@ -1689,7 +1577,6 @@ module Mayu
         def u(*children, **attributes, &block)
           UnclosedElements::U.new(tag!(:u, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1700,7 +1587,6 @@ module Mayu
         def ul(*children, **attributes, &block)
           UnclosedElements::Ul.new(tag!(:ul, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1711,7 +1597,6 @@ module Mayu
         def var(*children, **attributes, &block)
           UnclosedElements::Var.new(tag!(:var, children, **attributes, &block))
         end
-
         sig do
           params(
             children: T.untyped,
@@ -1724,52 +1609,36 @@ module Mayu
             tag!(:video, children, **attributes, &block)
           )
         end
-
         sig { params(attributes: T.untyped).void }
         def wbr(**attributes) = void!(:wbr, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def area(**attributes) = void!(:area, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def base(**attributes) = void!(:base, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def br(**attributes) = void!(:br, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def col(**attributes) = void!(:col, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def embed(**attributes) = void!(:embed, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def hr(**attributes) = void!(:hr, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def img(**attributes) = void!(:img, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def input(**attributes) = void!(:input, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def link(**attributes) = void!(:link, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def menuitem(**attributes) = void!(:menuitem, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def meta(**attributes) = void!(:meta, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def param(**attributes) = void!(:param, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def source(**attributes) = void!(:source, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def track(**attributes) = void!(:track, **attributes)
-
         sig { params(attributes: T.untyped).void }
         def wbr(**attributes) = void!(:wbr, **attributes)
 

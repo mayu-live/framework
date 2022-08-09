@@ -29,8 +29,8 @@ module Mayu
       sig { params(root: String, enable_code_reloader: T::Boolean).void }
       def initialize(root, enable_code_reloader: false)
         @root = T.let(File.expand_path(root), String)
-        @components_root = T.let(File.join(@root, 'components'), String)
-        @pages_root = T.let(File.join(@root, 'app'), String)
+        @components_root = T.let(File.join(@root, "components"), String)
+        @pages_root = T.let(File.join(@root, "app"), String)
         @modules = T.let({}, T::Hash[String, ModuleType])
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
 
@@ -139,13 +139,15 @@ module Mayu
 
         @modules[full_path] = component_module
 
-        @dependency_graph.dependants_of(full_path).each do |dependant|
-          # TODO: This should only do this once, uh.
-          # Now all dependants will be reloaded every time...
-          # recursively... which means some will be updated
-          # more than once..
-          reload_module(dependant)
-        end
+        @dependency_graph
+          .dependants_of(full_path)
+          .each do |dependant|
+            # TODO: This should only do this once, uh.
+            # Now all dependants will be reloaded every time...
+            # recursively... which means some will be updated
+            # more than once..
+            reload_module(dependant)
+          end
 
         true
       end
@@ -159,10 +161,10 @@ module Mayu
 
       private
 
-      sig {params(path: String, source_path: String).returns(String)}
+      sig { params(path: String, source_path: String).returns(String) }
       def resolve_component(path, source_path)
         resolved_path =
-          if path.match(/\A\.\.?\//)
+          if path.match(%r{\A\.\.?/})
             File.expand_path(path, File.dirname(source_path))
           else
             File.expand_path(path, @components_root)
@@ -172,7 +174,8 @@ module Mayu
           raise ResolveError, "Could not resolve #{path} from #{source_path}"
         end
 
-        resolved_path_with_extension = resolved_path.sub(COMPONENT_EXTENSION_RE2, COMPONENT_EXTENSION)
+        resolved_path_with_extension =
+          resolved_path.sub(COMPONENT_EXTENSION_RE2, COMPONENT_EXTENSION)
 
         if File.exist?(resolved_path_with_extension)
           return resolved_path_with_extension
@@ -182,19 +185,20 @@ module Mayu
           resolved_path = File.join(resolved_path, File.basename(resolved_path))
         end
 
-        resolved_path_with_extension = resolved_path.sub(COMPONENT_EXTENSION_RE2, COMPONENT_EXTENSION)
+        resolved_path_with_extension =
+          resolved_path.sub(COMPONENT_EXTENSION_RE2, COMPONENT_EXTENSION)
 
         if File.exist?(resolved_path_with_extension)
           return resolved_path_with_extension
         end
 
-        raise ResolveError, "Could not resolve #{path} from #{source_path} (tried #{resolved_path})"
+        raise ResolveError,
+              "Could not resolve #{path} from #{source_path} (tried #{resolved_path})"
       end
 
-      sig {params(path: String).returns(T::Boolean)}
+      sig { params(path: String).returns(T::Boolean) }
       def in_valid_directory?(path)
-        path.start_with?(@components_root) ||
-        path.start_with?(@pages_root)
+        path.start_with?(@components_root) || path.start_with?(@pages_root)
       end
     end
   end

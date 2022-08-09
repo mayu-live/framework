@@ -1,5 +1,6 @@
 DirectoryListing = import("./DirectoryListing")
 
+# stree-ignore
 render do
   h.div do
     h.h1 "App tree"

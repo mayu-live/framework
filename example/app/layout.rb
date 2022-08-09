@@ -1,6 +1,7 @@
 Header = import("Layout/Header")
 Footer = import("Layout/Footer")
 
+# stree-ignore
 render do
   h.html lang: "en", class: styles.html do
     h.head do

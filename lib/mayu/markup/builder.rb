@@ -9,7 +9,7 @@ module Mayu
     class RenderContext < BasicObject
       extend ::T::Sig
 
-      sig {params(fiber: ::Fiber, real_self: ::T.untyped).void}
+      sig { params(fiber: ::Fiber, real_self: ::T.untyped).void }
       def initialize(fiber, real_self)
         @__fiber = fiber
         @__real_self = real_self
@@ -23,22 +23,29 @@ module Mayu
         end
       end
 
-      sig{params(method: ::Symbol, args: ::T.untyped, kwargs: ::T.untyped, block: ::T.untyped).returns(::T.untyped)}
+      sig do
+        params(
+          method: ::Symbol,
+          args: ::T.untyped,
+          kwargs: ::T.untyped,
+          block: ::T.untyped
+        ).returns(::T.untyped)
+      end
       def method_missing(method, *args, **kwargs, &block)
         @__real_self.send(method, *args, **kwargs, &block)
       end
 
-      sig{returns(::Mayu::Markup::Builder)}
+      sig { returns(::Mayu::Markup::Builder) }
       def h
         ::Mayu::Markup::Builder.new(@__fiber)
       end
 
-      sig{returns(String)}
+      sig { returns(String) }
       def to_s
         inspect
       end
 
-      sig{returns(String)}
+      sig { returns(String) }
       def inspect
         "#<RenderContext real_self=#{@__real_self}>"
       end
@@ -57,19 +64,35 @@ module Mayu
         @parent_fiber = parent_fiber
       end
 
-      sig {params(descriptor_or_text: T.untyped).returns(VDOM::Descriptor)}
+      sig { params(descriptor_or_text: T.untyped).returns(VDOM::Descriptor) }
       def <<(descriptor_or_text)
         descriptor = VDOM::Descriptor.or_text(descriptor_or_text)
         @parent_fiber&.resume([:append, descriptor])
         descriptor
       end
 
-      sig{params(component: VDOM::Descriptor::ComponentType, children: VDOM::Descriptor::ChildType, props: T.untyped, block: T.nilable(T.proc.void)).returns(VDOM::Descriptor)}
+      sig do
+        params(
+          component: VDOM::Descriptor::ComponentType,
+          children: VDOM::Descriptor::ChildType,
+          props: T.untyped,
+          block: T.nilable(T.proc.void)
+        ).returns(VDOM::Descriptor)
+      end
       def [](component, *children, **props, &block)
         create_element(component, children, props, &block)
       end
 
-      sig{override.params(type: VDOM::Descriptor::ElementType, children: T::Array[VDOM::Descriptor::ChildType], props: T::Hash[Symbol, T.untyped], block: T.nilable(T.proc.void)).returns(VDOM::Descriptor)}
+      sig do
+        override
+          .params(
+            type: VDOM::Descriptor::ElementType,
+            children: T::Array[VDOM::Descriptor::ChildType],
+            props: T::Hash[Symbol, T.untyped],
+            block: T.nilable(T.proc.void)
+          )
+          .returns(VDOM::Descriptor)
+      end
       def create_element(type, children, props, &block)
         @parent_fiber&.resume([:open, type])
         capture_children(children, &block) if block
@@ -80,12 +103,17 @@ module Mayu
 
       private
 
-      sig{params(children: T::Array[VDOM::Descriptor::ChildType], block: T.proc.void).void}
+      sig do
+        params(
+          children: T::Array[VDOM::Descriptor::ChildType],
+          block: T.proc.void
+        ).void
+      end
       def capture_children(children, &block)
         fiber =
           Fiber.new do |msg|
             catch :terminate do
-                opened = T.let(nil, T.nilable(VDOM::Descriptor::ElementType))
+              opened = T.let(nil, T.nilable(VDOM::Descriptor::ElementType))
 
               loop do
                 case msg

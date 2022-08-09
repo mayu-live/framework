@@ -11,28 +11,32 @@ window.customElements.define("mayu-ping", PingComponent);
 window.customElements.define("mayu-progress-bar", ProgressBar);
 window.customElements.define("mayu-exception", ExceptionComponent);
 
-function h(type: string, children: any[] = [], attrs: Record<string, any> = {}) {
-  const el = document.createElement(type)
+function h(
+  type: string,
+  children: any[] = [],
+  attrs: Record<string, any> = {}
+) {
+  const el = document.createElement(type);
 
   for (const [key, value] of Object.entries(attrs)) {
     if (value) {
       if (value === true) {
-        el.setAttribute(key, key)
+        el.setAttribute(key, key);
       } else {
-        el.setAttribute(key, value)
+        el.setAttribute(key, value);
       }
     }
   }
 
   children.forEach((child) => {
     if ((child as any) instanceof Node) {
-      el.appendChild(child)
+      el.appendChild(child);
     } else if (child) {
-      el.appendChild(document.createTextNode(String(child)))
+      el.appendChild(document.createTextNode(String(child)));
     }
-  })
+  });
 
-  return el
+  return el;
 }
 
 // TODO: Make more of this set up stuff in a functional way.
@@ -40,14 +44,16 @@ class Mayu {
   readonly sessionId: string;
   readonly connection: EventSource;
   readonly queue = <MessageEvent[]>[];
-  readonly progressBar = document.createElement("mayu-progress-bar") as ProgressBar
+  readonly progressBar = document.createElement(
+    "mayu-progress-bar"
+  ) as ProgressBar;
 
   constructor(sessionId: string) {
     this.sessionId = sessionId;
 
     this.connection = new EventSource(`/__mayu/events/${this.sessionId}`);
 
-    document.body.appendChild(this.progressBar)
+    document.body.appendChild(this.progressBar);
 
     const disconnectedElement = document.createElement("mayu-disconnected");
 
@@ -85,25 +91,29 @@ class Mayu {
     // }
 
     this.connection.addEventListener("exception", (e) => {
-      const error = JSON.parse(e.data) as { type: string, message: string, backtrace: string[] }
-      const {type, message, backtrace} = error
+      const error = JSON.parse(e.data) as {
+        type: string;
+        message: string;
+        backtrace: string[];
+      };
+      const { type, message, backtrace } = error;
       const cleanedBacktrace = backtrace
         .filter((line) => !/\/vendor\/bundle\//.test(line))
-        .join('\n')
+        .join("\n");
 
-      const el = h('mayu-exception', [
-        h('span', [`${type}: ${message}`], { slot: 'title' }),
-        h('span', [cleanedBacktrace], { slot: 'backtrace' }),
-      ])
+      const el = h("mayu-exception", [
+        h("span", [`${type}: ${message}`], { slot: "title" }),
+        h("span", [cleanedBacktrace], { slot: "backtrace" }),
+      ]);
 
-      document.body.appendChild(el)
-    })
+      document.body.appendChild(el);
+    });
 
     this.connection.addEventListener("navigate", (e) => {
       const path = JSON.parse(e.data);
       console.log("Navigating to", path);
       history.pushState({}, "", path);
-      this.progressBar.setAttribute('progress', 100)
+      this.progressBar.setAttribute("progress", 100);
     });
 
     // if ("serviceWorker" in navigator) {
@@ -126,7 +136,7 @@ class Mayu {
       pingTimer.pong(JSON.parse(e.data));
     });
 
-    const pingElement = document.createElement('mayu-ping') as PingComponent;
+    const pingElement = document.createElement("mayu-ping") as PingComponent;
     document.body.appendChild(pingElement);
 
     async function pingLoop() {
@@ -140,8 +150,8 @@ class Mayu {
             });
           });
 
-          pingElement.setAttribute('ping', `${ping} ms`)
-          pingElement.setAttribute('region', region)
+          pingElement.setAttribute("ping", `${ping} ms`);
+          pingElement.setAttribute("region", region);
 
           await pingTimer.sleep(PingTimer.PING_FREQUENCY_MS);
         } catch (e) {
@@ -168,13 +178,13 @@ class Mayu {
       payload.formData = Object.fromEntries(new FormData(e.target).entries());
     }
 
-    this.progressBar.setAttribute('progress', '0')
+    this.progressBar.setAttribute("progress", "0");
 
-    let didRun = false
+    let didRun = false;
     const timeout = setTimeout(() => {
-      this.progressBar.setAttribute('progress', '25')
-      didRun = true
-    }, 1)
+      this.progressBar.setAttribute("progress", "25");
+      didRun = true;
+    }, 1);
 
     await fetch(`/__mayu/handler/${this.sessionId}/${handlerId}`, {
       method: "POST",
@@ -184,10 +194,10 @@ class Mayu {
       body: JSON.stringify(payload),
     });
 
-    clearTimeout(timeout)
+    clearTimeout(timeout);
 
     if (didRun) {
-      this.progressBar.setAttribute('progress', '100')
+      this.progressBar.setAttribute("progress", "100");
     }
   }
 

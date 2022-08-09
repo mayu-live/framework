@@ -17,10 +17,12 @@ class TestVTree < Minitest::Test
 
     def render
       @lol ||= rand
-      h.div do
-        h.h1 "Hola mundo#{@lol}"
-        h.h2 "Hello world"
-      end.div
+      h
+        .div do
+          h.h1 "Hola mundo#{@lol}"
+          h.h2 "Hello world"
+        end
+        .div
     end
   end
 
@@ -31,10 +33,12 @@ class TestVTree < Minitest::Test
       vtree = Mayu::VDOM::VTree.new(store:, fetch:)
 
       vtree.render(
-        h.div do
-          h.h1 "Title"
-          h[MyComponent]
-        end.div
+        h
+          .div do
+            h.h1 "Title"
+            h[MyComponent]
+          end
+          .div
       )
 
       vtree.to_html.tap { |html| print_xml(html) }
@@ -42,12 +46,14 @@ class TestVTree < Minitest::Test
       puts
 
       vtree.render(
-        h.div do
-          h.h1 "Title"
-          h[MyComponent]
-          h.div "foo"
-          h[MyComponent]
-        end.div
+        h
+          .div do
+            h.h1 "Title"
+            h[MyComponent]
+            h.div "foo"
+            h[MyComponent]
+          end
+          .div
       )
 
       vtree.to_html.tap { |html| print_xml(html) }
@@ -58,7 +64,11 @@ class TestVTree < Minitest::Test
 
   def testx_foo
     Async do |task|
-      vtree = Mayu::VDOM::VTree.new(fetch: Mayu::Fetch.new, store: Mayu::State::Store.new({}, reducers: {}))
+      vtree =
+        Mayu::VDOM::VTree.new(
+          fetch: Mayu::Fetch.new,
+          store: Mayu::State::Store.new({}, reducers: {})
+        )
 
       number_lists = [
         [0, 2, 1, 6, 7, 8, 4, 3, 5],
@@ -68,15 +78,13 @@ class TestVTree < Minitest::Test
 
       number_lists.each do |numbers|
         vtree.render(
-          h.div do
+          h
+            .div do
               h.h1 "Hola mundo"
               h.h2 "Hello world"
-              h.ul do
-                numbers.each do |num|
-                  h.li num, key: num
-                end
-            end.ul
-          end.div
+              h.ul { numbers.each { |num| h.li num, key: num } }.ul
+            end
+            .div
         )
 
         html = vtree.to_html

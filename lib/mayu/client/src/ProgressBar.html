@@ -1,27 +1,27 @@
 <style>
-.progress {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  display: block;
-  z-index: 10000;
-  height: 5px;
-  background: transparent;
-  border: 0;
-  appearance: none;
-  pointer-events: none;
-  transition: opacity .5s ease;
-}
-.value {
-  height: 100%;
-  width: 0;
-  background: #0866f7;
-  transition: width 1s ease;
-  box-shadow: 0 0 3px #000;
-  border-bottom-left-radius: 3px;
-}
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    display: block;
+    z-index: 10000;
+    height: 5px;
+    background: transparent;
+    border: 0;
+    appearance: none;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  .value {
+    height: 100%;
+    width: 0;
+    background: #0866f7;
+    transition: width 1s ease;
+    box-shadow: 0 0 3px #000;
+    border-bottom-left-radius: 3px;
+  }
 </style>
 <div class="progress">
   <div class="value"></div>

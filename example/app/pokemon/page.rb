@@ -1,13 +1,6 @@
-Pagination = import('./Pagination')
+Pagination = import("./Pagination")
 
-initial_state do |props|
-  {
-    result: nil,
-    error: nil,
-    page: 0,
-    per_page: 20,
-  }
-end
+initial_state { |props| { result: nil, error: nil, page: 0, per_page: 20 } }
 
 mount do
   sleep 1
@@ -35,12 +28,10 @@ handler :prev_page do |e|
 end
 
 handler :set_per_page do |e|
-  update(
-    page: 0,
-    per_page: e["value"].to_i,
-  )
+  update(page: 0, per_page: e["value"].to_i)
 end
 
+# stree-ignore
 render do
   state => result:
 

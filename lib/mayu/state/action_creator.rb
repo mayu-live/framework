@@ -19,7 +19,11 @@ module Mayu
           @type = type
         end
 
-        sig { params(payload: T.untyped).returns(T.any(Store::ActionHash, Store::Thunk)) }
+        sig do
+          params(payload: T.untyped).returns(
+            T.any(Store::ActionHash, Store::Thunk)
+          )
+        end
         def call(payload = nil)
           { type:, payload: }
         end
@@ -95,11 +99,8 @@ module Mayu
 
         sig do
           override
-          .params(
-            args: T.untyped,
-            parent: Async::Task,
-            kwargs: T.untyped
-          ).returns(Store::Thunk)
+            .params(args: T.untyped, parent: Async::Task, kwargs: T.untyped)
+            .returns(Store::Thunk)
         end
         def call(*args, parent: Async::Task.current, **kwargs)
           ->(store) do

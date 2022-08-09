@@ -1,11 +1,7 @@
-initial_state do |props|
-  { count: 0, running: false }
-end
+initial_state { |props| { count: 0, running: false } }
 
 handler :add do |x, amount|
-  update do |state|
-    { count: state[:count] + amount }
-  end
+  update { |state| { count: state[:count] + amount } }
 end
 
 handler :reset do |x|
@@ -34,10 +30,9 @@ handler :crash do |x|
   raise "Crashed"
 end
 
-should_update? do |next_props, next_state|
-  super(next_props, next_state)
-end
+should_update? { |next_props, next_state| super(next_props, next_state) }
 
+# stree-ignore
 render do
   autocount_info =
     if state[:running]

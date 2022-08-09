@@ -20,7 +20,7 @@ module Mayu
         ).void
       end
       def initialize(system, path, full_path, source)
-        if path.end_with?('.mayu')
+        if path.end_with?(".mayu")
           source = Rux.to_ruby(source, visitor: RuxVisitor.new)
         end
 

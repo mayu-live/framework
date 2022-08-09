@@ -20,7 +20,7 @@ Start the server in production mode:
 ## App structure
 
 | **name**      | **description**   |
-|---------------|-------------------|
+| ------------- | ----------------- |
 | `app/`        | Pages             |
 | `components/` | Shared components |
 | `store/`      | State             |

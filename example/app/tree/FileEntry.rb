@@ -9,6 +9,7 @@ def icon
   end
 end
 
+# stree-ignore
 render do
   list_style_type = "'\\%s'" % icon.codepoints.first.to_s(16)
 

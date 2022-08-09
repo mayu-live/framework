@@ -72,7 +72,14 @@ module Mayu
         # @stylesheet = T.let(nil, T.nilable(Module::CSSModule::Base))
       end
 
-      sig { params(url: String, method: Symbol, headers: T::Hash[String, String], body: T.nilable(String)).returns(Fetch::Response) }
+      sig do
+        params(
+          url: String,
+          method: Symbol,
+          headers: T::Hash[String, String],
+          body: T.nilable(String)
+        ).returns(Fetch::Response)
+      end
       def fetch(url, method: :GET, headers: {}, body: nil)
         @vtree.fetch.fetch(url, method:, headers:, body:)
       end
@@ -164,7 +171,9 @@ module Mayu
 
         formatted_props =
           props
-            .reject { _1 == :children || _1 == :dangerously_set_inner_html || !_2 }
+            .reject do
+              _1 == :children || _1 == :dangerously_set_inner_html || !_2
+            end
             .map do |key, value|
               if key == :style && value.is_a?(Hash)
                 next(
@@ -176,7 +185,8 @@ module Mayu
                 )
               end
 
-              if HTML.boolean_attribute?(key) || value.is_a?(TrueClass) || value.is_a?(FalseClass)
+              if HTML.boolean_attribute?(key) || value.is_a?(TrueClass) ||
+                   value.is_a?(FalseClass)
                 value = key.to_s
               end
 

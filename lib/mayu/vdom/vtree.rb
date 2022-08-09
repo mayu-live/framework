@@ -69,10 +69,12 @@ module Mayu
 
       sig { returns(Async::Queue) }
       attr_reader :on_update
-      sig {returns(Fetch)}
+      sig { returns(Fetch) }
       attr_reader :fetch
 
-      sig { params(store: State::Store, fetch: Fetch, task: Async::Barrier).void }
+      sig do
+        params(store: State::Store, fetch: Fetch, task: Async::Barrier).void
+      end
       def initialize(store:, fetch:, task: Async::Task.current)
         @root = T.let(nil, T.nilable(VNode))
         @id_generator = T.let(IdGenerator.new, IdGenerator)
@@ -119,7 +121,7 @@ module Mayu
               error = {
                 type: e.class.name,
                 message: e.message,
-                backtrace: e.backtrace,
+                backtrace: e.backtrace
               }
 
               @on_update.enqueue([:exception, error])
@@ -155,7 +157,7 @@ module Mayu
         error = {
           type: e.class.name,
           message: e.message,
-          backtrace: e.backtrace,
+          backtrace: e.backtrace
         }
         @on_update.enqueue([:exception, error])
       end
@@ -334,7 +336,7 @@ module Mayu
         nil
       end
 
-      sig {params(ctx: UpdateContext, component: Component::Wrapper).void}
+      sig { params(ctx: UpdateContext, component: Component::Wrapper).void }
       def update_stylesheet(ctx, component)
         stylesheet = component.stylesheet
         return unless stylesheet.is_a?(Modules::CSS::CSSModule)

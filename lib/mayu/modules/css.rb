@@ -11,7 +11,12 @@ module Mayu
       def self.load(path)
         puts "\e[33mLOADING CSS #{path}\e[0m"
         mod = CSSModule.new(path, File.read(path))
-        Mayu::Assets::Manager.instance.add(path, mod.hash.to_s, "text/css", mod.to_s)
+        Mayu::Assets::Manager.instance.add(
+          path,
+          mod.hash.to_s,
+          "text/css",
+          mod.to_s
+        )
         mod
       rescue => e
         NoModule.new(path)

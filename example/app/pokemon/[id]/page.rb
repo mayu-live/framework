@@ -1,6 +1,4 @@
-initial_state do |props|
-  { result: nil, error: nil }
-end
+initial_state { |props| { result: nil, error: nil } }
 
 mount do
   res = fetch("https://pokeapi.co/api/v2/pokemon/1/")
@@ -10,6 +8,7 @@ rescue => e
   update(error: e.message)
 end
 
+# stree-ignore
 render do
   pokemon = state[:result]
 

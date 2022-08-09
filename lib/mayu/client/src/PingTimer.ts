@@ -1,22 +1,19 @@
 type Pong = {
-  time: number,
-  region: string,
-}
+  time: number;
+  region: string;
+};
 
 type Result = {
-  ping: number,
-  region: string,
-}
+  ping: number;
+  region: string;
+};
 
 class PingTimer {
   static PING_FREQUENCY_MS = 2_000;
   static PING_TIMEOUT_MS = this.PING_FREQUENCY_MS * 3;
   static RETRY_TIME_MS = 1_000;
 
-  #pingPromises = new Map<
-    number,
-    (pong: Pong) => void
-  >();
+  #pingPromises = new Map<number, (pong: Pong) => void>();
 
   ping(callback: (time: number) => void): Promise<Result> {
     return new Promise(async (resolve, reject) => {

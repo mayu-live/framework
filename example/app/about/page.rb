@@ -1,3 +1,4 @@
+# stree-ignore
 render do
   h.div do
     h.h1 "About"

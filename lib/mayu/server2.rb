@@ -172,10 +172,7 @@ module Mayu
 
       def handle_callback(callback_id, payload)
         if callback_id == "ping"
-          push(:pong, {
-            time: payload.to_i,
-            region: @environment.region,
-          })
+          push(:pong, { time: payload.to_i, region: @environment.region })
         else
           @renderer.handle_callback(callback_id, payload)
         end
@@ -404,7 +401,7 @@ module Mayu
     end
 
     def self.build(root:, hot_reload:)
-      region = ENV.fetch("FLY_REGION", 'localhost')
+      region = ENV.fetch("FLY_REGION", "localhost")
       public_root_dir = File.join(root, PUBLIC_DIR)
       environment = Environment.new(root:, region:, hot_reload:)
 
@@ -412,7 +409,7 @@ module Mayu
         use Rack::CommonLogger
 
         use Metrics::Middleware::Collector,
-          registry: environment.prometheus_registry
+            registry: environment.prometheus_registry
 
         map EventStreamApp::MOUNT_PATH do
           run EventStreamApp.new
@@ -439,7 +436,7 @@ module Mayu
     end
 
     def self.build_metrics_app(root:)
-      region = ENV.fetch("FLY_REGION", 'localhost')
+      region = ENV.fetch("FLY_REGION", "localhost")
       environment = Environment.new(root:, region:, hot_reload: false)
 
       Rack::Builder.new do
@@ -448,11 +445,11 @@ module Mayu
         use Rack::Deflater
 
         use Metrics::Middleware::Collector,
-          registry: environment.prometheus_registry
+            registry: environment.prometheus_registry
         use Metrics::Middleware::Exporter,
-          registry: environment.prometheus_registry
+            registry: environment.prometheus_registry
 
-        run ->(_) { [200, {'content-type' => 'text/html'}, ['ok']] }
+        run ->(_) { [200, { "content-type" => "text/html" }, ["ok"]] }
       end
     end
   end

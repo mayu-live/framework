@@ -2,7 +2,7 @@
 
 ## Description
 
-Mayu is a real-time server-side component-based 
+Mayu is a real-time server-side component-based
 VDOM rendering framework written in Ruby.
 
 It is very early in development and nothing is guaranteed to work.
@@ -50,10 +50,11 @@ mount do
   update(value: 1)
 end
 
+# stree-ignore
 render do
   h.div do
     h.pre state[:value]
-  end
+  end.div
 end
 ```
 
@@ -118,7 +119,7 @@ app
 This would create the following routes:
 
 | **name**      | **component**            | **layouts**                           |
-|---------------|--------------------------|---------------------------------------|
+| ------------- | ------------------------ | ------------------------------------- |
 | `/`           | `app/page.rb`            | `app/layout.rb`                       |
 | `/posts/`     | `app/posts/page.rb`      | `app/layout.rb` `app/posts/layout.rb` |
 | `/posts/:id/` | `app/posts/[id]/page.rb` | `app/layout.rb` `app/posts/layout.rb` |
@@ -147,6 +148,7 @@ and that you have to close tags with `end.div`.
 It looks like this:
 
 ```ruby
+# stree-ignore
 render do
   h.div do
     h.h1 "Page title"
@@ -154,13 +156,13 @@ render do
       3.times do |i|
         h.li "Item #{i + 1}"
       end
-    end.ul 
+    end.ul
   end.div
 end
 ```
 
-I don't know why I made it so that tags have to be closed. 
-I had some idea about static typing and I don't like having 
+I don't know why I made it so that tags have to be closed.
+I had some idea about static typing and I don't like having
 waterfalls with `end` I guess.
 
 There is some funky stuff going on with scoping due to `instance_eval`

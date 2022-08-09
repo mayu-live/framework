@@ -2,16 +2,11 @@ Input = import("Form/Input")
 Fieldset = import("Form/Fieldset")
 
 initial_state do |props|
-  {
-    name: "",
-    password: "",
-    auth_state: :logged_out,
-    error: nil
-  }
+  { name: "", password: "", auth_state: :logged_out, error: nil }
 end
 
 handler :set_value do |e, key|
-  update(key => e["value"].to_s.strip, error: nil)
+  update(key => e["value"].to_s.strip, :error => nil)
 end
 
 handler :log_out do |e|
@@ -37,15 +32,13 @@ handler :submit do |e|
       next
     end
 
-    update(
-      auth_state: :logged_in,
-      username: e["formData"]["name"]
-    )
+    update(auth_state: :logged_in, username: e["formData"]["name"])
   when :logging_in
     return
   end
 end
 
+# stree-ignore
 render do
   can_log_in = state[:auth_state] == :logged_out
 

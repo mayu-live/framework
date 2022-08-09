@@ -23,9 +23,7 @@ module Mayu
       #   end
       # end
 
-      sig do
-        returns(Markup::Builder)
-      end
+      sig { returns(Markup::Builder) }
       def h
         Markup::Builder.new
       end

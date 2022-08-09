@@ -1,8 +1,8 @@
 # typed: true
 #
 require "prometheus/client/registry"
-require 'prometheus/middleware/collector'
-require 'prometheus/middleware/exporter'
+require "prometheus/middleware/collector"
+require "prometheus/middleware/exporter"
 
 module Mayu
   module Metrics
@@ -12,9 +12,7 @@ module Mayu
       # Prometheus::Client::Registry::AlreadyRegisteredError: http_server_requests_total has already been registered
       def register(metric)
         name = metric.name
-        @mutex.synchronize do
-          metric = @metrics[name.to_sym] ||= metric
-        end
+        @mutex.synchronize { metric = @metrics[name.to_sym] ||= metric }
         metric
       end
     end

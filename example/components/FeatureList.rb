@@ -5,28 +5,26 @@ ITEMS = [
   "100% async",
   "CSS-modules",
   "Asset handling (image compression etc)",
-  "Hot-reloading",
+  "Hot-reloading"
 ]
 
-initial_state do |props|
-  { active: 0 }
-end
+initial_state { |props| { active: 0 } }
 
 mount do
   loop do
     sleep 3
 
-    update do |state|
-      { active: state[:active].succ % ITEMS.size }
-    end
+    update { |state| { active: state[:active].succ % ITEMS.size } }
   end
 end
 
 render do
-  h.ul do
-    ITEMS.map.with_index do |item, i|
-      class_name = state[:active] == i ? styles.active : ""
-      h.li item, class: class_name
+  h
+    .ul do
+      ITEMS.map.with_index do |item, i|
+        class_name = state[:active] == i ? styles.active : ""
+        h.li item, class: class_name
+      end
     end
-  end.ul
+    .ul
 end

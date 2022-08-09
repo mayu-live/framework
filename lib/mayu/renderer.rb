@@ -35,12 +35,15 @@ module Mayu
       # stored somewhere. But for now we start with an empty state.
       store = environment.create_store(initial_state: {})
 
-      @vtree = T.let(
-        VDOM::VTree.new(
-          store: store,
-          fetch: environment.fetch,
-          task: @barrier,
-        ), VDOM::VTree)
+      @vtree =
+        T.let(
+          VDOM::VTree.new(
+            store: store,
+            fetch: environment.fetch,
+            task: @barrier
+          ),
+          VDOM::VTree
+        )
 
       if code_reloader = environment.modules.code_reloader
         @barrier.async { code_reloader.on_update { navigate(@current_path) } }

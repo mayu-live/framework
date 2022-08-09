@@ -1,7 +1,7 @@
-import html from './DisconnectedComponent.html'
+import html from "./DisconnectedComponent.html";
 
 const template = document.createElement("template");
-template.innerHTML = html
+template.innerHTML = html;
 
 class DisconnectedComponent extends HTMLElement {
   dialog?: HTMLDialogElement;

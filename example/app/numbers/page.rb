@@ -1,23 +1,16 @@
-initial_state do |props|
-  { count: 0, length: 5 }
-end
+initial_state { |props| { count: 0, length: 5 } }
 
-should_update? do |next_props, next_state|
-  true
-end
+should_update? { |next_props, next_state| true }
 
 handler :rerender do |event|
-  update do |state|
-    { count: state[:count] + 1 }
-  end
+  update { |state| { count: state[:count] + 1 } }
 end
 
 handler :update_length do |event|
-  update do |state|
-    { length: event["value"].to_i }
-  end
+  update { |state| { length: event["value"].to_i } }
 end
 
+# stree-ignore
 render do
   numbers = state[:length].times.to_a.shuffle
 
@@ -45,4 +38,3 @@ render do
     end.ul
   end.div
 end
-

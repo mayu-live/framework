@@ -1,6 +1,7 @@
 FeatureList = import("FeatureList")
 Sections = import("./Sections")
 
+# stree-ignore
 render do
   h.div do
     h.p "Mayu Live enables rich, real-time user experiences with server-rendered HTML."

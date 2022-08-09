@@ -21,9 +21,7 @@ COMMANDS
     end
     $stderr.puts
     $stderr.puts "Try any of the following:"
-    COMMANDS.keys.each do |cmd|
-      puts "\t#$0 #{cmd}"
-    end
+    COMMANDS.keys.each { |cmd| puts "\t#{$0} #{cmd}" }
     exit 1
   end
   .call(*rest)

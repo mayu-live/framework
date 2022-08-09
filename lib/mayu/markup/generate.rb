@@ -1,16 +1,14 @@
 #!/usr/bin/env ruby
 # typed: true
 
-unless $0 == __FILE__
-  raise "#$0 is meant to be run as a script"
-end
+raise "#{$0} is meant to be run as a script" unless $0 == __FILE__
 
 require "bundler/setup"
 require "sorbet-runtime"
 require_relative "../html"
 
 def camelize(str)
-  str.to_s.capitalize.gsub(/_(\w)/){$1.upcase}
+  str.to_s.capitalize.gsub(/_(\w)/) { $1.upcase }
 end
 
 class Writer
@@ -21,7 +19,7 @@ class Writer
 
   def puts(str = "")
     indent = "  " * @level
-    @io.puts(str.gsub(/^/, indent).gsub(/\s+$/, ''))
+    @io.puts(str.gsub(/^/, indent).gsub(/\s+$/, ""))
     self
   end
 
@@ -45,10 +43,16 @@ class Writer
 end
 
 def generate_file(writer)
-  writer << "# typed: strict"
-  writer << ""
-  writer << "require_relative 'unclosed_element'"
-  writer << ""
+  writer << <<~EOF
+    # typed: strict
+
+    # DO NOT EDIT! THIS FILE IS GENERATED AUTOMATICALLY.
+    # If you want to change it, update `generate.rb` instead.
+
+    require_relative "unclosed_element"
+
+  EOF
+
   writer.block "module Mayu" do
     writer.block "module Markup" do
       writer.block "module Generated" do
@@ -56,9 +60,12 @@ def generate_file(writer)
           Mayu::HTML::TAGS.each do |tag|
             next if Mayu::HTML.void_tag?(tag)
 
-            writer.block "class #{camelize(tag)} < UnclosedElement" do
-              writer.puts "sig {returns(::Mayu::VDOM::Descriptor)}; def #{tag} = @descriptor"
-            end
+            writer << <<~EOF
+              class #{camelize(tag)} < UnclosedElement
+                sig {returns(::Mayu::VDOM::Descriptor)}
+                def #{tag} = @descriptor
+              end
+            EOF
           end
         end
 
@@ -68,7 +75,15 @@ def generate_file(writer)
             extend T::Helpers
             interface!
 
-            sig{abstract.params(type: VDOM::Descriptor::ElementType, children: T::Array[VDOM::Descriptor::ChildType], props: T::Hash[Symbol, T.untyped], block: T.nilable(T.proc.void)).returns(VDOM::Descriptor)}
+            sig do
+              abstract
+                .params(
+                  type: VDOM::Descriptor::ElementType,
+                  children: T::Array[VDOM::Descriptor::ChildType],
+                  props: T::Hash[Symbol, T.untyped],
+                  block: T.nilable(T.proc.void),
+                ).returns(VDOM::Descriptor)
+            end
             def create_element(type, children, props, &block)
             end
           EOF
@@ -87,17 +102,23 @@ def generate_file(writer)
           EOF
 
           Mayu::HTML::TAGS.each do |tag|
-            if Mayu::HTML.void_tag?(tag)
-              writer.puts "sig {params(attributes: T.untyped).void}"
-              writer.puts "def #{tag}(**attributes) = void!(:#{tag}, **attributes)"
-            else
-              writer.puts "sig {params(children: T.untyped, attributes: T.untyped, block: T.nilable(T.proc.void)).returns(UnclosedElements::#{camelize(tag)})}"
-              writer.block "def #{tag}(*children, **attributes, &block)" do
-                writer.puts "UnclosedElements::#{camelize(tag)}.new(tag!(:#{tag}, children, **attributes, &block))"
-              end
-            end
+            Mayu::HTML.void_tag?(tag) ? writer << <<~EOF : writer << <<~EOF
+                sig {params(attributes: T.untyped).void}
+                def #{tag}(**attributes) = void!(:#{tag}, **attributes)
 
-            writer.puts
+              EOF
+                sig do
+                  params(
+                    children: T.untyped,
+                    attributes: T.untyped,
+                    block: T.nilable(T.proc.void),
+                  ).returns(UnclosedElements::#{camelize(tag)})
+                end
+                def #{tag}(*children, **attributes, &block)
+                  UnclosedElements::#{camelize(tag)}.new(tag!(:#{tag}, children, **attributes, &block))
+                end
+
+              EOF
           end
 
           writer << <<~EOF
@@ -120,13 +141,7 @@ def generate_file(writer)
 end
 
 filename = "descriptor_builder.rb"
-
 puts "Generating #{filename}"
-
-File.open(filename, 'w') do |f|
-  generate_file(Writer.new(f))
-end
-
+File.open(filename, "w") { |f| generate_file(Writer.new(f)) }
 puts "Prettifying #{filename}"
-
 system("npx", "prettier", "-w", filename)

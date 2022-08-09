@@ -1,3 +1,4 @@
+# stree-ignore
 render do
   h.fieldset do
     h.legend "Page #{props[:page].succ} of #{props[:total_pages].succ}"

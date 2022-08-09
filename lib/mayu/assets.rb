@@ -33,7 +33,14 @@ module Mayu
         sig { returns(String) }
         attr_reader :hash
 
-        sig { params(path: String, hash: String, content_type: String, content: String).void }
+        sig do
+          params(
+            path: String,
+            hash: String,
+            content_type: String,
+            content: String
+          ).void
+        end
         def initialize(path, hash, content_type, content)
           @path = path
           @hash = hash
@@ -54,7 +61,14 @@ module Mayu
         @assets = T.let({}, T::Hash[String, Asset])
       end
 
-      sig { params(path: String, hash: String, content_type: String, content: String).void }
+      sig do
+        params(
+          path: String,
+          hash: String,
+          content_type: String,
+          content: String
+        ).void
+      end
       def add(path, hash, content_type, content)
         @assets[hash] ||= Asset.new(path, hash, content_type, content)
       end
