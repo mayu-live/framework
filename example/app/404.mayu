@@ -1,3 +1,0 @@
-render do
-  <p>Not found!!</p>
-end

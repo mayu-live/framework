@@ -1,9 +1,0 @@
-Tree = import("Tree")
-
-render do
-  <div>
-    <h1>App tree</h1>
-    <p>This page shows the file structure of the example project (this webpage).</p>
-    <Tree />
-  </div>
-end

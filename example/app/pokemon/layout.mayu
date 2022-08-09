@@ -1,5 +1,0 @@
-render do
-  <div>
-    {children}
-  </div>
-end
