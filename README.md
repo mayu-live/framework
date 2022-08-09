@@ -118,15 +118,15 @@ app
 
 This would create the following routes:
 
-| **name**      | **component**            | **layouts**                           |
+| **path**      | **component**            | **layouts**                           |
 | ------------- | ------------------------ | ------------------------------------- |
 | `/`           | `app/page.rb`            | `app/layout.rb`                       |
+| `/about/`     | `app/about/page.rb`      | `app/layout.rb`                       |
 | `/posts/`     | `app/posts/page.rb`      | `app/layout.rb` `app/posts/layout.rb` |
 | `/posts/:id/` | `app/posts/[id]/page.rb` | `app/layout.rb` `app/posts/layout.rb` |
-| `/about/`     | `app/about/page.rb`      | `app/layout.rb`                       |
 | `/*`          | `app/404.rb`             | `app/layout.rb`                       |
 
-Look in the `example/` directory for an example.
+Look in `example/app` for examples.
 
 ### Hot reloading
 
