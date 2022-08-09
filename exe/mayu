@@ -1,3 +1,35 @@
 #!/usr/bin/env ruby
 
-require "mayu"
+root = File.join(File.dirname(__FILE__), "..")
+$LOAD_PATH.unshift(File.join(root, "..", "..", "lib"))
+
+COMMANDS = {
+  "dev" => -> do
+    exec("bundle", "exec", "falcon", "serve", "--threaded", "--count", "2")
+  end,
+  "prod" => -> { exec("bundle", "exec", "falcon", "host") }
+}
+
+cmd, *rest = ARGV
+
+$stderr.puts "\e[36m" + <<~BANNER + "\e[0m"
+• ▌ ▄ ·.  ▄▄▄·  ▄· ▄▌▄• ▄▌    ▄▄▌  ▪   ▌ ▐·▄▄▄ .
+·██ ▐███▪▐█ ▀█ ▐█▪██▌█▪██▌    ██•  ██ ▪█·█▌▀▄.▀·
+▐█ ▌▐▌▐█·▄█▀▀█ ▐█▌▐█▪█▌▐█▌    ██▪  ▐█·▐█▐█•▐▀▀▪▄
+██ ██▌▐█▌▐█ ▪▐▌ ▐█▀·.▐█▄█▌    ▐█▌▐▌▐█▌ ███ ▐█▄▄▌
+▀▀  █▪▀▀▀ ▀  ▀   ▀ •  ▀▀▀     .▀▀▀ ▀▀▀. ▀   ▀▀▀
+BANNER
+
+COMMANDS
+  .fetch(cmd) do
+    if cmd
+      $stderr.puts "Unknown command: #{cmd}"
+    else
+      $stderr.puts "Missing command argument!"
+    end
+    $stderr.puts
+    $stderr.puts "Try any of the following:"
+    COMMANDS.keys.each { |cmd| puts "\t#{$0} #{cmd}" }
+    exit 1
+  end
+  .call(*rest)

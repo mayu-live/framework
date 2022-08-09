@@ -7,15 +7,19 @@ interactive components. The purpose of this app is both
 to demonstrate features of the framework as well as
 testing out stuff while developing.
 
-## Starting the server
+## Getting started
+
+Install dependencies
+
+    bundle install
 
 Start the server in development mode:
 
-    bin/mayu dev
+    bundle exec mayu dev
 
 Start the server in production mode:
 
-    bin/mayu prod
+    bundle exec mayu prod
 
 ## App structure
 
