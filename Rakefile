@@ -1,5 +1,7 @@
+# frozen_string_literal: true
 # typed: ignore
 
+require "bundler/setup"
 require "minitest/test_task"
 require "sorbet-runtime"
 

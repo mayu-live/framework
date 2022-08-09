@@ -17,9 +17,10 @@ class TestVTree < Minitest::Test
 
     def render
       @lol ||= rand
-      h(:div) do
-        [h(:h1) { "Hej världen#{@lol}" }, h(:h2) { "Hello the world" }]
-      end
+      h.div do
+        h.h1 "Hej världen#{@lol}"
+        h.h2 "Hello the world"
+      end.div
     end
   end
 
@@ -29,21 +30,24 @@ class TestVTree < Minitest::Test
       fetch = Mayu::Fetch.new
       vtree = Mayu::VDOM::VTree.new(store:, fetch:)
 
-      vtree.render(h(:div) { [h(:h1) { "Title" }, h(MyComponent)] })
+      vtree.render(
+        h.div do
+          h.h1 "Title"
+          h[MyComponent]
+        end.div
+      )
 
       vtree.to_html.tap { |html| print_xml(html) }
 
       puts
 
       vtree.render(
-        h(:div) do
-          [
-            h(:h1) { "Title" },
-            h(MyComponent),
-            h(:div) { "foo" },
-            h(MyComponent)
-          ]
-        end
+        h.div do
+          h.h1 "Title"
+          h[MyComponent]
+          h.div "foo"
+          h[MyComponent]
+        end.div
       )
 
       vtree.to_html.tap { |html| print_xml(html) }
@@ -54,7 +58,7 @@ class TestVTree < Minitest::Test
 
   def testx_foo
     Async do |task|
-      vtree = Mayu::VDOM::VTree.new()
+      vtree = Mayu::VDOM::VTree.new(fetch: Mayu::Fetch.new, store: Mayu::State::Store.new({}, reducers: {}))
 
       number_lists = [
         [0, 2, 1, 6, 7, 8, 4, 3, 5],
@@ -64,13 +68,15 @@ class TestVTree < Minitest::Test
 
       number_lists.each do |numbers|
         vtree.render(
-          h(:div) do
-            [
-              h(:h1) { "Hej världen" },
-              h(:h2) { "Hello the world" },
-              h(:ul) { numbers.map { |num| h(:li, key: num) { num } } }
-            ]
-          end
+          h.div do
+              h.h1 "Hej världen"
+              h.h2 "Hello the world"
+              h.ul do
+                numbers.each do |num|
+                  h.li num, key: num
+                end
+            end.ul
+          end.div
         )
 
         html = vtree.to_html

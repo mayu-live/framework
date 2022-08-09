@@ -1,5 +1,0 @@
-#!/usr/bin/env ruby
-
-require_relative "../lib/mayu/cli"
-
-Mayu::CLI.call(ARGV)
