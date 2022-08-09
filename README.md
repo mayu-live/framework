@@ -43,7 +43,7 @@ Callbacks are just regular `POST` requests.
 [socketry/async](https://github.com/socketry/async) makes it possible
 to do all this without blocking.
 
-```
+```ruby
 mount do
   update(value: 0)
   sleep 1
