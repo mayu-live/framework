@@ -84,6 +84,8 @@ Mayu comes with some basic state management inspired by
 
 This is implemented but not yet integrated into the VDOM logic.
 
+[Example store](https://github.com/mayu-live/prototype/blob/main/example/store/auth.rb)
+
 Ideally I would want something like [XState](https://xstate.js.org/),
 but I'm not experienced with it so I can't make anything like it.
 
