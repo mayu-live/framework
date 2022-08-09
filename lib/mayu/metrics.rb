@@ -23,6 +23,7 @@ module Mayu
 
       class Collector < Prometheus::Middleware::Collector
         def strip_ids_from_path(path)
+          # Strip sha256 hashes
           super.gsub(%r{/[[:xdigit:]]{64}(?=\.|/|$)}, '/:hash\\1')
         end
       end

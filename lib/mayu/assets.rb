@@ -16,9 +16,9 @@ module Mayu
         instance.find(public_filename)
       end
 
-      sig { params(path: String, content_type: String, content: String).void }
-      def self.add(path, content_type, content)
-        instance.add(path, content_type, content)
+      sig { params(path: String, hash: String, content_type: String, content: String).void }
+      def self.add(path, hash, content_type, content)
+        instance.add(path, hash, content_type, content)
       end
 
       class Asset

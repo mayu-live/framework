@@ -9,6 +9,8 @@ require "pry"
 require "uri"
 
 module Mayu
+  # This class implements a simplified version of the Fetch API.
+  # https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
   class Fetch
     class Response < T::Struct
       extend T::Sig

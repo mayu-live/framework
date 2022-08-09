@@ -10,6 +10,8 @@ require_relative "fetch"
 
 module Mayu
   class Environment
+    # The Environment class is instantiated on startup and contains
+    # configuration and everything that should be shared.
     extend T::Sig
 
     APP_DIR = "app"

@@ -13,7 +13,7 @@
   },
   "homepage": "https://github.com/mayu-live/prototype#readme",
   "scripts": {
-    "dev": "npm run build -- --watch --sourcemap inline",
+    "watch": "npm run build -- --watch --sourcemap inline",
     "build": "rollup -c rollup.config.js",
     "build:production": "npm run build -- --compact",
     "test": "echo \"Error: no test specified\" && exit 1"
