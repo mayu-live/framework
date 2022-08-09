@@ -11,7 +11,7 @@ Some parts are quite messy and some files are very long.
 This is fine. I like to paint with a broad brush until
 things are put in place and things feel right.
 
-# 🚀 Getting started
+# Getting started
 
 ## Install dependencies
 
@@ -65,13 +65,13 @@ Depending on your system/browser you might need to do one of the following:
 
     rake test
 
-# ✨ Features
+# Features
 
 Most of these features are implemented.
 
 There is no guarantee that they work yet.
 
-## 100% server side 💯
+## 100% server side
 
 This means that all rendering is done on the server,
 and even callback handlers run on the server.
@@ -84,7 +84,7 @@ on how to patch the DOM to the browser via
 
 Callbacks are just regular `POST` requests.
 
-## 100% async 💯
+## 100% async
 
 [socketry/async](https://github.com/socketry/async) makes it possible
 to do all this without blocking.
@@ -106,7 +106,7 @@ end
 
 This will first render `0`, and after 1 second it would change to `1`.
 
-## Components 🧱
+## Components
 
 Components are the building blocks of a Mayu application.
 They contain logic and return other components or HTML elements.
@@ -114,7 +114,7 @@ They contain logic and return other components or HTML elements.
 You might be familiar with ReactJS and other component based
 rendering libraries. This is the same thing, but in Ruby.
 
-## CSS modules 🎨
+## CSS modules
 
 [CSS Modules](https://github.com/css-modules/css-modules) makes sure
 that all CSS class names are scoped locally.
@@ -124,7 +124,7 @@ Also, only the CSS for the components currently on the page will
 be included with the HTML. With HTTP/2 all the CSS files load
 in parallel which makes everything super fast.
 
-## State management 📝
+## State management
 
 Mayu comes with some basic state management inspired by
 [Redux Toolkit](https://redux-toolkit.js.org/).
@@ -136,7 +136,7 @@ This is implemented but not yet integrated into the VDOM logic.
 Ideally I would want something like [XState](https://xstate.js.org/),
 but I'm not experienced with it so I can't make anything like it.
 
-## Simple routing 🗺
+## Simple routing
 
 Routing is inspired by the
 [Next.js Layouts RFC](https://nextjs.org/blog/layouts-rfc).
@@ -174,18 +174,18 @@ This would create the following routes:
 
 Look in `example/app` for examples.
 
-## Hot reloading 🔥
+## Hot reloading
 
 Components and styles update immediately in the browser as you edit files.
 No browser refresh needed.
 
-## Small browser footprint 👠
+## Small browser footprint
 
 Everything is minified and optimized and deliviered over HTTP/2.
 
 ![Request waterfall screenshot](https://quad.pe/e/h9BqRqnMwh.png)
 
-## Templating 🖼️
+## Templating
 
 There is a basic templating engine inspired by Markaby.
 A difference is that you have to write `h.div` instead of just `div`
