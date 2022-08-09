@@ -29,6 +29,40 @@ Install node dependencies
 
     bin/mprocs
 
+Then open https://localhost:9292/ in your browser.
+
+Mayu uses [falcon](https://github.com/socketry/falcon) which generates a
+self-signed certificate for localhost.
+
+Depending on your system/browser you might need to do one of the following:
+
+<details>
+  <summary>MacOS: Add the certificate to the keychain</summary>
+  <ol>
+    <li>Open `~/.localhost/localhost.crt` with Keychain Access.</li>
+    <li>Choose `Get Info` and open `Trust` then choose `Always trust`.</li>
+    <li>Restart your browsers.</li>
+  </ol>
+</details>
+
+<details>
+  <summary>Chrome: Enable self-signed certs for localhost</summary>
+  Go to `chrome://flags/#allow-insecure-localhost` and enable the setting.
+  This will allow requests to localhost over HTTPS even when an invalid
+  certificate is presented.
+</details>
+
+<details>
+  <summary>Firefox: Enable self-signed certs for localhost</summary>
+  Firefox will show **Warning: Potential Security Risk Ahead**.
+  Click `Advanced`, then `Accept the Risk and Continue` to add an exception
+  for this certificate.
+</details>
+
+> Note about Firefox: I've never been able to inspect Server-Sent Events
+> in the Developer Tools. So if you're trying to debug them, try a
+> Chromium-based browser.
+
 ### Run the tests
 
     rake test
