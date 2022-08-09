@@ -27,8 +27,7 @@ Install node dependencies
 
 ### Start the example app
 
-Enter the `example/` directory and run `bundle` again,
-then start the app with `bundle exec mayu dev`.
+    bin/mprocs
 
 ### Run the tests
 

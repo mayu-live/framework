@@ -6,7 +6,6 @@ require "minitest/test_task"
 require "minitest/reporters"
 require "sorbet-runtime"
 
-
 Minitest::TestTask.create(:test) do |t|
   t.libs << "lib"
   t.warning = false
