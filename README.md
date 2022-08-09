@@ -52,12 +52,12 @@ end
 
 render do
   h.div do
-    h.p state[:value]
+    h.pre state[:value]
   end
 end
 ```
 
-This will first render "0", and after 1 second it would change to "1".
+This will first render `0`, and after 1 second it would change to `1`.
 
 ### Components
 
@@ -149,9 +149,9 @@ render do
   h.div do
     h.h1 "Page title"
     h.ul do
-      h.li "Item 1"
-      h.li "Item 2"
-      h.li "Item 3"
+      3.times do |i|
+        h.li "Item #{i + 1}"
+      end
     end.ul 
   end.div
 end
