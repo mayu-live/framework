@@ -64,6 +64,7 @@ GEM
     io-event (1.0.9)
     localhost (1.1.9)
     mapping (1.1.1)
+    matrix (0.4.2)
     method_source (1.0.0)
     nanoid (2.0.0)
     optimist (3.0.1)
@@ -104,6 +105,7 @@ PLATFORMS
   x86_64-darwin-20
 
 DEPENDENCIES
+  matrix
   mayu-live!
 
 BUNDLED WITH

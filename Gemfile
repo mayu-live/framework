@@ -18,8 +18,6 @@ gem "async-http"
 gem "filewatcher"
 gem "nanoid"
 
-gem "matrix"
-
 group :development do
   gem "guard", require: false
   gem "guard-falcon", require: false
