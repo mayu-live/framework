@@ -1,4 +1,4 @@
-# Mayu Live
+# Mayu Live ![example workflow](https://github.com/mayu-live/prototype/actions/workflows/ruby.yml/badge.svg)
 
 ## Description
 
