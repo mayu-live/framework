@@ -15,9 +15,24 @@ things are put in place and things feel right.
 
 ## Getting started
 
-First run `bundle` to install all dependencies.
+### Install dependencies
 
-Enter the `example/` directory and run `bin/mayu dev`.
+Install Ruby dependencies
+
+    bundle
+
+Install node dependencies
+
+    npm install
+
+### Start the example app
+
+Enter the `example/` directory and run `bundle` again,
+then start the app with `bundle exec mayu dev`.
+
+### Run the tests
+
+    rake test
 
 ## Features
 
