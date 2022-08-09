@@ -9,7 +9,6 @@ require_relative "vnode"
 require_relative "css_attributes"
 require_relative "update_context"
 require_relative "id_generator"
-require_relative "../event_emitter"
 
 module Mayu
   module VDOM
