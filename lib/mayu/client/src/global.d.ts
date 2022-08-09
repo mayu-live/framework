@@ -20,3 +20,8 @@ declare global {
     adoptedStyleSheets: any[];
   }
 }
+
+declare module "*.html" {
+  const value: string;
+  export default value;
+}

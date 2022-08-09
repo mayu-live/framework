@@ -1,15 +1,12 @@
 import logger from "./logger.js";
 import NodeTree from "./NodeTree.js";
 import PingTimer from "./PingTimer.js";
-import PingComponent from "./PingComponent.js";
-import DisconnectedComponent from "./DisconnectedComponent.js";
-import ExceptionComponent from "./ExceptionComponent.js";
-import ProgressBar from "./ProgressBar";
 
-window.customElements.define("mayu-disconnected", DisconnectedComponent);
-window.customElements.define("mayu-ping", PingComponent);
-window.customElements.define("mayu-progress-bar", ProgressBar);
-window.customElements.define("mayu-exception", ExceptionComponent);
+import type MayuPingElement from "./custom-elements/mayu-ping";
+import type MayuProgressBar from "./custom-elements/mayu-progress-bar";
+
+import defineCustomElements from "./custom-elements";
+defineCustomElements();
 
 function h(
   type: string,
@@ -46,7 +43,7 @@ class Mayu {
   readonly queue = <MessageEvent[]>[];
   readonly progressBar = document.createElement(
     "mayu-progress-bar"
-  ) as ProgressBar;
+  ) as MayuProgressBar;
 
   constructor(sessionId: string) {
     this.sessionId = sessionId;
@@ -113,7 +110,7 @@ class Mayu {
       const path = JSON.parse(e.data);
       console.log("Navigating to", path);
       history.pushState({}, "", path);
-      this.progressBar.setAttribute("progress", 100);
+      this.progressBar.setAttribute("progress", "100");
     });
 
     // if ("serviceWorker" in navigator) {
@@ -136,7 +133,7 @@ class Mayu {
       pingTimer.pong(JSON.parse(e.data));
     });
 
-    const pingElement = document.createElement("mayu-ping") as PingComponent;
+    const pingElement = document.createElement("mayu-ping") as MayuPingElement;
     document.body.appendChild(pingElement);
 
     async function pingLoop() {

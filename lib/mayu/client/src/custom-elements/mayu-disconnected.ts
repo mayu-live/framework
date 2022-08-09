@@ -1,9 +1,9 @@
-import html from "./ExceptionComponent.html";
+import html from "./mayu-disconnected.html";
 
 const template = document.createElement("template");
 template.innerHTML = html;
 
-class ExceptionComponent extends HTMLElement {
+class DisconnectedComponent extends HTMLElement {
   dialog?: HTMLDialogElement;
 
   connectedCallback() {
@@ -11,11 +11,13 @@ class ExceptionComponent extends HTMLElement {
       this.attachShadow({ mode: "open" });
     }
 
-    this.shadowRoot!.appendChild(template.content.cloneNode(true));
+    this.shadowRoot!.appendChild(
+      template.content.cloneNode(true)
+    ) as DocumentFragment;
 
     this.dialog = this.shadowRoot!.querySelector("dialog") as HTMLDialogElement;
 
-    this.dialog!.showModal();
+    this.dialog?.showModal();
   }
 
   disconnectedCallback() {
@@ -23,4 +25,4 @@ class ExceptionComponent extends HTMLElement {
   }
 }
 
-export default ExceptionComponent;
+export default DisconnectedComponent;

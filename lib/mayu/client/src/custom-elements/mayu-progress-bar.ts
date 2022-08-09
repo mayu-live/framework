@@ -1,4 +1,4 @@
-import html from "./ProgressBar.html";
+import html from "./mayu-progress-bar.html";
 
 const template = document.createElement("template");
 template.innerHTML = html;

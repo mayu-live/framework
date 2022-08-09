@@ -1,4 +1,4 @@
-import html from "./PingComponent.html";
+import html from "./mayu-ping.html";
 
 const template = document.createElement("template");
 template.innerHTML = html;
