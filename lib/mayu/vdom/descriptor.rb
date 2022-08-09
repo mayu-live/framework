@@ -121,11 +121,11 @@ module Mayu
         # This allows us to inject some special markup
         case type
         when :head
-          Component::Hax::HeadComponent
+          Component::SpecialComponents::HeadComponent
         when :body
-          Component::Hax::BodyComponent
+          Component::SpecialComponents::BodyComponent
         when :a
-          Component::Hax::AComponent
+          Component::SpecialComponents::AComponent
         when :__mayu_head
           :head
         when :__mayu_body

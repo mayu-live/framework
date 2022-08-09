@@ -5,7 +5,7 @@ require_relative "../component"
 module Mayu
   module VDOM
     module Component
-      module Hax
+      module SpecialComponents
         class HeadComponent < Component::Base
           sig { override.returns(T.nilable(Descriptor)) }
           def render

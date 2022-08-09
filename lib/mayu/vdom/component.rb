@@ -7,6 +7,7 @@ require_relative "../markup"
 require_relative "component/interface"
 require_relative "component/base"
 require_relative "component/wrapper"
+require_relative "component/special_components"
 
 module Mayu
   module VDOM
