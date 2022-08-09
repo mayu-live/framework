@@ -35,11 +35,9 @@ module Mayu
     end
     def self.build_routes(root, routes: [], layouts: [], path: [], level: 0)
       dir = T.unsafe(File).join(root, *path)
-      p [:build_routes, dir]
       return routes unless File.directory?(dir)
 
       entries = Dir.entries(dir) - %w[. ..]
-      p entries
 
       if layout = entries.delete(LAYOUT_FILENAME)
         layouts += [T.unsafe(File).join(*path, layout)]
