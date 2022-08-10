@@ -10,14 +10,16 @@
 .inner {
   max-width: var(--page-max-width);
   margin: 0 auto;
-  padding: 0 1em;
+  padding: 0;
 }
 
 .title {
   font-family: var(--title-font), cursive;
-  font-size: 3em;
+  font-size: 5em;
   line-height: 1em;
   font-weight: 100;
+  margin: 0;
+  padding: 0;
 }
 
 .tagline {

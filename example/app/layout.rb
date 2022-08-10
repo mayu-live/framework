@@ -12,22 +12,24 @@ render do
       h[Header]
 
       h.div class: styles.wrap do
-        h.menu class: styles.menu do
-          [
-            ["Start page", "/"],
-            ["Pokémon", "/pokemon"],
-            ["Tree", "/tree"],
-            ["Name reverser", "/name-reverser"],
-            ["Counter", "/counter"],
-            ["Numbers", "/numbers"],
-            ["Breakout", "/breakout"],
-            ["About", "/about"],
-          ].each do |title, href|
-            h.li class: styles.menuItem do
-              h.a(title, class: styles.menuLink, href:)
-            end.li
-          end
-        end.menu
+        h.div class: styles.menuWrap do
+          h.menu class: styles.menu do
+            [
+              ["Start page", "/"],
+              ["Pokémon", "/pokemon"],
+              ["Tree", "/tree"],
+              ["Name reverser", "/name-reverser"],
+              ["Counter", "/counter"],
+              ["Numbers", "/numbers"],
+              ["Breakout", "/breakout"],
+              ["About", "/about"],
+            ].each do |title, href|
+              h.li class: styles.menuItem do
+                h.a(title, class: styles.menuLink, href:)
+              end.li
+            end
+          end.menu
+        end.div
 
         h.div class: styles.mainWrap do
           h.main class: styles.main do
