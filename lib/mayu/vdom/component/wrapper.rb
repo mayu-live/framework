@@ -12,12 +12,10 @@ module Mayu
         extend T::Sig
         include Component::Interface
 
-        sig {returns(T.nilable(Modules::CSS::CSSModule))}
+        sig { returns(T.nilable(Modules::CSS::CSSModule)) }
         def stylesheet
           if stylesheet = @instance.class.stylesheets
-            if stylesheet.is_a?(Modules::CSS::CSSModule)
-              stylesheet
-            end
+            stylesheet if stylesheet.is_a?(Modules::CSS::CSSModule)
           end
         end
 
@@ -63,6 +61,9 @@ module Mayu
           wrap_errors { @instance.should_update?(next_props, next_state) }
         end
 
+        sig { returns(Mayu::State::Store) }
+        def store = @vnode.store
+
         sig { override.returns(T.any(T.nilable(Descriptor), [Descriptor])) }
         def render
           wrap_errors { @instance.render }
@@ -91,7 +92,14 @@ module Mayu
           @barrier.async(&blk)
         end
 
-        sig { params(url: String, method: Symbol, headers: T::Hash[String, String], body: T.nilable(String)).returns(Fetch::Response) }
+        sig do
+          params(
+            url: String,
+            method: Symbol,
+            headers: T::Hash[String, String],
+            body: T.nilable(String)
+          ).returns(Fetch::Response)
+        end
         def fetch(url, method: :GET, headers: {}, body: nil)
           @vnode.fetch(url, method:, headers:, body:)
         end

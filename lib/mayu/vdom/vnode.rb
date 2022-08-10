@@ -84,6 +84,9 @@ module Mayu
         @vtree.session.fetch.fetch(url, method:, headers:, body:)
       end
 
+      sig { returns(Mayu::State::Store) }
+      def store = @vtree.session.store
+
       sig { params(task: Async::Task).returns(T.nilable(Component::Wrapper)) }
       def init_component(task: Async::Task.current)
         @component ||= Component.wrap(self, type, props, task:)
