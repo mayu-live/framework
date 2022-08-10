@@ -125,6 +125,7 @@ that all CSS class names are scoped locally.
 You can access styles in a component using the `styles` method.
 
 ```css
+# components/Example.css
 .box {
   padding: 1px;
   border: 1px solid #000;
@@ -141,6 +142,7 @@ You can access styles in a component using the `styles` method.
 ```
 
 ```ruby
+# components/Example.rb
 render do
   h.div class: styles.outer do
     h.p "Hello world", class: styles.hello
@@ -153,7 +155,7 @@ This would generate the following HTML:
 
 ```html
 <div class="box-MjQSEK">
-  <p class="hello-vmTY0O"></p>
+  <p class="hello-vmTY0O">Hello world</p>
   <button class="button-qQao_H">Click me!</button>
 </div>
 ```
