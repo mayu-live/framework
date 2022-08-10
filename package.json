@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Main package.json for mayu",
   "scripts": {
+    "build": "npm -w lib/mayu/client run build:production",
     "prettier": "prettier --write '**/*'",
     "prepare": "husky install"
   },
