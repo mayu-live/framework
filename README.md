@@ -125,7 +125,7 @@ that all CSS class names are scoped locally.
 You can access styles in a component using the `styles` method.
 
 ```css
-# components/Example.css
+/* components/Example.css */
 .box {
   padding: 1px;
   border: 1px solid #000;
