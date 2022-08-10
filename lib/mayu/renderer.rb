@@ -5,7 +5,7 @@ require_relative "vdom/vtree"
 require_relative "vdom/component"
 require_relative "modules/system"
 require_relative "routes"
-require_relative "state/store"
+require_relative "session"
 
 module Mayu
   class Renderer
@@ -20,33 +20,25 @@ module Mayu
     end
     def initialize(environment:, request_path:, parent: Async::Task.current)
       @environment = environment
-      @current_path = request_path
-
-      # For reloading we need to keep track of which components import
-      # other compoents, because we need to replace the constants in their
-      # classes...
-      @app = T.let(environment.load_root(request_path), VDOM::Descriptor)
+      @session = T.let(Session.new(environment, request_path:), Session)
 
       # Set up a barrier to group async tasks together.
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
 
-      # Create the store.
-      # In the future we could initialize the state with something already
-      # stored somewhere. But for now we start with an empty state.
-      store = environment.create_store(initial_state: {})
-
       @vtree =
         T.let(
           VDOM::VTree.new(
-            store: store,
-            fetch: environment.fetch,
+            store: @session.store,
+            fetch: @session.fetch,
             task: @barrier
           ),
           VDOM::VTree
         )
 
       if code_reloader = environment.modules.code_reloader
-        @barrier.async { code_reloader.on_update { navigate(@current_path) } }
+        @barrier.async do
+          code_reloader.on_update { navigate(@session.current_path) }
+        end
       end
 
       @barrier.async(annotation: "Renderer patch sets") do
@@ -125,8 +117,7 @@ module Mayu
 
     sig { params(path: String).void }
     def navigate(path)
-      @app = @environment.load_root(path)
-      @current_path = path
+      @session.navigate(path)
       rerender!
     end
 
@@ -134,6 +125,6 @@ module Mayu
     def respond(*args) = @out.enqueue(args)
 
     sig { void }
-    def rerender! = @vtree.render(@app)
+    def rerender! = @vtree.render(@session.app)
   end
 end
