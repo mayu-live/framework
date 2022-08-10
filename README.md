@@ -1,4 +1,4 @@
-# Mayu Live ![example workflow](https://github.com/mayu-live/framework/actions/workflows/ruby.yml/badge.svg)
+# Mayu Live ![Ruby build status](https://github.com/mayu-live/framework/actions/workflows/ruby.yml/badge.svg) ![Node.js build status](https://github.com/mayu-live/framework/actions/workflows/node.js.yml/badge.svg)
 
 Mayu is a real-time server-side component-based
 VDOM rendering framework written in Ruby.
