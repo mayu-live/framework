@@ -7,8 +7,7 @@ require "rexml/document"
 require "stringio"
 require_relative "vtree"
 require_relative "h"
-require_relative "../state"
-require_relative "../fetch"
+require_relative "../session"
 
 class TestVTree < Minitest::Test
   include Mayu::VDOM::H
@@ -29,9 +28,7 @@ class TestVTree < Minitest::Test
 
   def test_yolo
     Async do |task|
-      store = Mayu::State::Store.new({}, reducers: {})
-      fetch = Mayu::Fetch.new
-      vtree = Mayu::VDOM::VTree.new(store:, fetch:)
+      vtree = setup_vtree
 
       vtree.render(
         h
@@ -65,11 +62,7 @@ class TestVTree < Minitest::Test
 
   def testx_foo
     Async do |task|
-      vtree =
-        Mayu::VDOM::VTree.new(
-          fetch: Mayu::Fetch.new,
-          store: Mayu::State::Store.new({}, reducers: {})
-        )
+      vtree = setup_vtree
 
       number_lists = [
         [0, 2, 1, 6, 7, 8, 4, 3, 5],
@@ -98,6 +91,21 @@ class TestVTree < Minitest::Test
   end
 
   private
+
+  def setup_vtree
+    environment = Mayu::Environment.new(region: "test", root: "")
+
+    environment.instance_eval do
+      def load_root(path)
+        Mayu::VDOM::Descriptor.new(:div)
+      end
+      def match_route(path)
+      end
+    end
+
+    session = Mayu::Session.new(environment, request_path: "/")
+    Mayu::VDOM::VTree.new(session:)
+  end
 
   def print_xml(source)
     io = StringIO.new

@@ -81,7 +81,7 @@ module Mayu
         ).returns(Fetch::Response)
       end
       def fetch(url, method: :GET, headers: {}, body: nil)
-        @vtree.fetch.fetch(url, method:, headers:, body:)
+        @vtree.session.fetch.fetch(url, method:, headers:, body:)
       end
 
       sig { params(task: Async::Task).returns(T.nilable(Component::Wrapper)) }

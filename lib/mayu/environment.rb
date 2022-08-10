@@ -3,6 +3,7 @@
 require "async"
 require "async/http/internet"
 require_relative "state/store"
+require_relative "state/loader"
 require_relative "routes"
 require_relative "metrics"
 require_relative "modules/system"

@@ -9,6 +9,7 @@ require_relative "vnode"
 require_relative "css_attributes"
 require_relative "update_context"
 require_relative "id_generator"
+require_relative "../session"
 
 module Mayu
   module VDOM
@@ -68,16 +69,14 @@ module Mayu
 
       sig { returns(Async::Queue) }
       attr_reader :on_update
-      sig { returns(Fetch) }
-      attr_reader :fetch
+      sig { returns(Session) }
+      attr_reader :session
 
-      sig do
-        params(store: State::Store, fetch: Fetch, task: Async::Barrier).void
-      end
-      def initialize(store:, fetch:, task: Async::Task.current)
+      sig { params(session: Session, task: Async::Barrier).void }
+      def initialize(session:, task: Async::Task.current)
         @root = T.let(nil, T.nilable(VNode))
         @id_generator = T.let(IdGenerator.new, IdGenerator)
-        @fetch = fetch
+        @session = T.let(session, Session)
 
         @handlers = T.let({}, T::Hash[String, Component::HandlerRef])
 
@@ -88,8 +87,6 @@ module Mayu
           T.let(Async::Semaphore.new(parent: task), Async::Semaphore)
 
         @sent_stylesheets = T.let(Set.new, T::Set[String])
-
-        @store = store
 
         @update_task =
           T.let(
