@@ -90,21 +90,25 @@ Callbacks are just regular `POST` requests.
 to do all this without blocking.
 
 ```ruby
+# components/Clock.rb
 mount do
-  update(value: 0)
-  sleep 1
-  update(value: 1)
+  loop do
+    update(time: Time.now.to_s)
+    sleep 0.5
+  end
 end
 
 # stree-ignore
 render do
   h.div do
-    h.pre state[:value]
+    h.p state[:time]
   end.div
 end
 ```
 
-This will first render `0`, and after 1 second it would change to `1`.
+This will print the current server time.
+
+The component will render only once every second even though it updates twice per second, since the time string only changes once per second.
 
 ## Components
 
@@ -120,7 +124,47 @@ rendering libraries. This is the same thing, but in Ruby.
 that all CSS class names are scoped locally.
 You can access styles in a component using the `styles` method.
 
-Also, only the CSS for the components currently on the page will
+```css
+.box {
+  padding: 1px;
+  border: 1px solid #000;
+}
+
+.hello {
+  font-weight: bold;
+}
+
+.button {
+  background: #0f0;
+  color: #fff;
+}
+```
+
+```ruby
+render do
+  h.div class: styles.outer do
+    h.p "Hello world", class: styles.hello
+    h.button "Click me", class: styles.button
+  end.div
+end
+```
+
+This would generate the following HTML:
+
+```html
+<div class="box-MjQSEK">
+  <p class="hello-vmTY0O"></p>
+  <button class="button-qQao_H">Click me!</button>
+</div>
+```
+
+This will be inserted in the HEAD:
+
+```html
+<link rel="stylesheet" href="/__mayu/assets/f934819a6d2a3f41509c86da3e27d88b36d119db52e03003477486dbee8df3fc.css">
+```
+
+Only the CSS for the components currently on the page will
 be included with the HTML. With HTTP/2 all the CSS files load
 in parallel which makes everything super fast.
 
