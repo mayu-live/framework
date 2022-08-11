@@ -163,7 +163,10 @@ This would generate the following HTML:
 This will be inserted in the HEAD:
 
 ```html
-<link rel="stylesheet" href="/__mayu/assets/f934819a6d2a3f41509c86da3e27d88b36d119db52e03003477486dbee8df3fc.css">
+<link
+  rel="stylesheet"
+  href="/__mayu/assets/f934819a6d2a3f41509c86da3e27d88b36d119db52e03003477486dbee8df3fc.css"
+/>
 ```
 
 Only the CSS for the components currently on the page will
@@ -306,7 +309,7 @@ room for improvement, but at least the order is correct.
 
 ## Server
 
-The server logic is located in `lib/mayu/server2`.
+The server logic is located in `lib/mayu/server`.
 Look at the `build` method to find all the endpoints.
 
 All requests are routed to the `InitSession` rack app, and then they get
