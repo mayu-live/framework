@@ -1,5 +1,7 @@
 # typed: false
 
+require "rack/brotli"
+
 require_relative "../mayu"
 require_relative "environment"
 require_relative "state/loader"
@@ -35,6 +37,11 @@ module Mayu
 
       Rack::Builder.new do
         use Rack::CommonLogger
+
+        use Rack::Brotli,
+            include: %w[text/css text/html text/javascript text/plain]
+
+        use Rack::Deflater, include: %w[text/event-stream]
 
         use Metrics::Middleware::Collector,
             registry: environment.prometheus_registry

@@ -8,8 +8,7 @@ module Mayu
       MOUNT_PATH = "/__mayu/events"
 
       EVENT_STREAM_HEADERS = {
-        "content-type" => "text/event-stream",
-        "connection" => "keep-alive",
+        "content-type" => "text/event-stream; charset=utf-8",
         "cache-control" => "no-cache",
         "x-accel-buffering" => "no"
       }
@@ -32,7 +31,7 @@ module Mayu
         in :too_many_connections
           [429, {}, ["Too many connections"]]
         in Async::HTTP::Body::Writable => body
-          [200, { "content-type" => "text/event-stream; charset=utf-8" }, body]
+          [200, EVENT_STREAM_HEADERS, body]
         else
           [500, {}, ["Internal server error"]]
         end
