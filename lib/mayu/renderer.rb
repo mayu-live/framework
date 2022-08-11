@@ -25,7 +25,8 @@ module Mayu
       # Set up a barrier to group async tasks together.
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
 
-      @vtree = T.let(VDOM::VTree.new(session:, task: @barrier), VDOM::VTree)
+      @vtree =
+        T.let(VDOM::VTree.new(session: @session, task: @barrier), VDOM::VTree)
 
       if code_reloader = environment.modules.code_reloader
         @barrier.async do
