@@ -2,6 +2,8 @@
 
 source "https://rubygems.org"
 
+gemspec
+
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
 
 gem "pry"
