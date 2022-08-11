@@ -10,7 +10,6 @@ require_relative "server/callback_handler_app"
 require_relative "server/event_stream_app"
 require_relative "server/init_session_app"
 require_relative "server/resume_app"
-require_relative "server/ping_handler_callback"
 
 module Mayu
   module Server
