@@ -7,7 +7,21 @@ require "mayu/banner"
 
 COMMANDS = {
   "dev" => -> do
-    exec("bundle", "exec", "falcon", "serve", "--threaded", "--count", "2")
+    port = ENV.fetch("PORT", "9292")
+    host = ENV.fetch("HOST", "localhost")
+
+    puts "\e[33mStarting development server on \e[4;35mhttps://#{host}:#{port}\e[0m"
+    puts
+
+    # stree-ignore
+    exec(
+      "bundle", "exec",
+      "falcon", "serve",
+      "--threaded",
+      "--count", "2",
+      "--port", port,
+      "--hostname", host,
+    )
   end,
   "prod" => -> { exec("bundle", "exec", "falcon", "host") }
 }
