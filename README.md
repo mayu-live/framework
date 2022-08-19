@@ -36,25 +36,31 @@ Depending on your system/browser you might need to do one of the following:
 
 <details>
   <summary><strong>MacOS:</strong> Add the certificate to the keychain</summary>
-  <ol>
-    <li>Open `~/.localhost/localhost.crt` with Keychain Access.</li>
-    <li>Choose `Get Info` and open `Trust` then choose `Always trust`.</li>
-    <li>Restart your browsers.</li>
-  </ol>
+  <blockquote>
+      <ol>
+        <li>Open <code>~/.localhost/localhost.crt</code> with Keychain Access.</li>
+        <li>Choose <i>Get Info</i> and open <i>Trust</i> then choose `Always trust`.</li>
+        <li>Restart your browsers.</li>
+      </ol>
+  </blockquote>
 </details>
 
 <details>
   <summary><strong>Chrome:</strong> Enable self-signed certs for localhost</summary>
-  Go to `chrome://flags/#allow-insecure-localhost` and enable the setting.
-  This will allow requests to localhost over HTTPS even when an invalid
-  certificate is presented.
+  <blockquote>
+      Go to <code>chrome://flags/#allow-insecure-localhost</code> and enable the setting.
+      This will allow requests to localhost over HTTPS even when an invalid
+      certificate is presented.
+  </blockquote>
 </details>
 
 <details>
   <summary><strong>Firefox:</strong> Add an exception for the certificate</summary>
-  Firefox will show **Warning: Potential Security Risk Ahead**.
-  Click `Advanced`, then `Accept the Risk and Continue` to add an exception
-  for this certificate.
+  <blockquote>
+      Firefox will show <strong>Warning: Potential Security Risk Ahead</strong>.
+      Click <i>Advanced</i>, then <i>Accept the Risk and Continue</i> to add an exception
+      for this certificate.
+  </blockquote>
 </details>
 
 > ℹ️ Note about Firefox: I've never been able to inspect Server-Sent Events
@@ -144,7 +150,7 @@ You can access styles in a component using the `styles` method.
 ```ruby
 # components/Example.rb
 render do
-  h.div class: styles.outer do
+  h.div class: styles.box do
     h.p "Hello world", class: styles.hello
     h.button "Click me", class: styles.button
   end.div
@@ -160,7 +166,7 @@ This would generate the following HTML:
 </div>
 ```
 
-This will be inserted in the HEAD:
+This will be inserted into `<head />`:
 
 ```html
 <link
@@ -207,8 +213,8 @@ app
     ├── layout.rb
     ├── layout.css
     └── [id]
-        └── page.rb
-        ├── page.css
+        ├── page.rb
+        └── page.css
 ```
 
 This would create the following routes:
