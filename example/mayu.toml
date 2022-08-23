@@ -6,3 +6,8 @@
 [prod]
   hostname = "mayu.live"
   port = 3000
+  num_processes = 1
+  max_sessions = 4
+  keepalive_seconds = 10
+  print_capacity_interval = 5
+  heartbeat_interval = 0.5

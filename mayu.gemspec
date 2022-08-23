@@ -47,6 +47,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "filewatcher", "~> 1.1.1"
   spec.add_dependency "async-http", "~> 0.56.6"
   spec.add_dependency "rack-brotli", "~> 1.2.0"
+  spec.add_dependency "nats-pure", "~> 2.1.2"
+  spec.add_dependency "msgpack", "~> 1.5.5"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html

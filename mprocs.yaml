@@ -1,5 +1,11 @@
 procs:
   example:
-    shell: "cd example && bundle exec mayu dev"
+    shell: "cd example && bundle exec mayu prod"
+    env:
+      SECRET_KEY: "foobar"
+      FLY_APP_NAME: "mayu-live"
+      FLY_ALLOC_ID: "7179fa69-d6bd-46e7-842d-99092f7d84b1"
+      FLY_REGION: "localhost"
+      NATS_SERVER: "nats://localhost:4222"
   client:
     shell: "cd lib/mayu/client && npm run watch"
