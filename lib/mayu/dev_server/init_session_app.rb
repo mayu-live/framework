@@ -3,7 +3,7 @@
 require_relative "session"
 
 module Mayu
-  module Server
+  module DevServer
     class InitSessionApp
       def initialize(environment)
         @environment = environment

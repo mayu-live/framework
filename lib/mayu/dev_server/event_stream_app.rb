@@ -3,7 +3,7 @@
 require_relative "session"
 
 module Mayu
-  module Server
+  module DevServer
     class EventStreamApp
       MOUNT_PATH = "/__mayu/events"
 

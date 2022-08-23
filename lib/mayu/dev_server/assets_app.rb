@@ -1,7 +1,7 @@
 # typed: false
 
 module Mayu
-  module Server
+  module DevServer
     class AssetsApp
       MOUNT_PATH = "/__mayu/assets"
 

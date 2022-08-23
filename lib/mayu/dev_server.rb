@@ -7,14 +7,14 @@ require_relative "environment"
 require_relative "state/loader"
 require_relative "metrics"
 
-require_relative "server/assets_app"
-require_relative "server/callback_handler_app"
-require_relative "server/event_stream_app"
-require_relative "server/init_session_app"
-require_relative "server/resume_app"
+require_relative "dev_server/assets_app"
+require_relative "dev_server/callback_handler_app"
+require_relative "dev_server/event_stream_app"
+require_relative "dev_server/init_session_app"
+require_relative "dev_server/resume_app"
 
 module Mayu
-  module Server
+  module DevServer
     JS_ROOT_DIR = File.join(File.dirname(__FILE__), "client", "dist")
     APP_DIR = "app"
     PUBLIC_DIR = "public"
@@ -62,7 +62,7 @@ module Mayu
           run AssetsApp.new
         end
 
-        use Rack::Static, Mayu::Server.rack_static_options_for_js
+        use Rack::Static, DevServer.rack_static_options_for_js
 
         use Rack::Static, urls: [""], root: public_root_dir, cascade: true
 
