@@ -3,7 +3,7 @@
 require_relative "session"
 
 module Mayu
-  module Server
+  module DevServer
     class ResumeApp
       MOUNT_PATH = "/__mayu/resume"
 

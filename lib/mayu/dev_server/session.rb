@@ -3,7 +3,7 @@
 require_relative "../renderer"
 
 module Mayu
-  module Server
+  module DevServer
     class Session
       class << self
         def __SESSIONS__

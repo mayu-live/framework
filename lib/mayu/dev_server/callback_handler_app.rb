@@ -3,7 +3,7 @@
 require_relative "session"
 
 module Mayu
-  module Server
+  module DevServer
     class CallbackHandlerApp
       MOUNT_PATH = "/__mayu/handler"
       DEFAULT_HEADERS = { "content-type" => "text/plain" }

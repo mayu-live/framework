@@ -5,6 +5,6 @@
 root = File.dirname(__FILE__)
 $LOAD_PATH.unshift(File.join(root, "..", "lib"))
 
-require "mayu/server"
+require "mayu/dev_server"
 
-run Mayu::Server.build(root:, hot_reload: ENV["MAYU_ENV"] != "production")
+run Mayu::DevServer.build(root:, hot_reload: ENV["MAYU_ENV"] != "production")
