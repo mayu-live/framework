@@ -30,7 +30,7 @@ module Mayu
         when :session_not_found
           [404, DEFAULT_HEADERS, ["Session not found"]]
         else
-          [200, DEFAULT_HEADERS, ["ok"]]
+          [200, DEFAULT_HEADERS, ["oklol"]]
         end
       end
     end

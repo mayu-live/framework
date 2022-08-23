@@ -1,8 +1,8 @@
 #!/usr/bin/env -S falcon host
 # frozen_string_literal: true
 
+require "sorbet-runtime"
 require "toml-rb"
-require "pry"
 require "prometheus/client"
 require "prometheus/client/data_stores/direct_file_store"
 
@@ -31,9 +31,13 @@ port = config.fetch(:port, 3000)
 rack(hostname) do
   endpoint(
     Async::HTTP::Endpoint.parse("http://0.0.0.0:#{port}").with(
-      protocol: Async::HTTP::Protocol::HTTP2
+      # protocol: Async::HTTP::Protocol::HTTP2
+      protocol: Async::HTTP::Protocol::HTTP11
     )
   )
+
+  config_path("config.prod.ru")
+  count config[:num_processes].to_i.nonzero?
 end
 
 rack("metrics") do
@@ -44,6 +48,7 @@ rack("metrics") do
   )
 
   config_path("config.metrics.ru")
+  count 1
 end
 
 supervisor
