@@ -1,4 +1,4 @@
-# typed: false
+# typed: true
 
 require "rack/brotli"
 
@@ -7,11 +7,8 @@ require_relative "environment"
 require_relative "state/loader"
 require_relative "metrics"
 
+require "mayu/edge/server"
 require_relative "dev_server/assets_app"
-require_relative "dev_server/callback_handler_app"
-require_relative "dev_server/event_stream_app"
-require_relative "dev_server/init_session_app"
-require_relative "dev_server/resume_app"
 
 module Mayu
   module DevServer
@@ -34,8 +31,11 @@ module Mayu
       region = ENV.fetch("FLY_REGION", "localhost")
       public_root_dir = File.join(root, PUBLIC_DIR)
       environment = Environment.new(root:, region:, hot_reload:)
+      metrics = {}
 
       Rack::Builder.new do
+        T.bind(self, Rack::Builder)
+
         use Rack::CommonLogger
 
         use Rack::Brotli,
@@ -46,16 +46,16 @@ module Mayu
         use Metrics::Middleware::Collector,
             registry: environment.prometheus_registry
 
-        map EventStreamApp::MOUNT_PATH do
-          run EventStreamApp.new
+        map "/__mayu/api/events" do
+          run Edge::Server::EventStreamApp.new(environment:)
         end
 
-        map CallbackHandlerApp::MOUNT_PATH do
-          run CallbackHandlerApp.new
+        map "/__mayu/api/callback" do
+          run Edge::Server::CallbackApp.new(environment:)
         end
 
-        map ResumeApp::MOUNT_PATH do
-          run ResumeApp.new
+        map "/__mayu/api/resume" do
+          run Edge::Server::ResumeSessionApp.new(environment:)
         end
 
         map AssetsApp::MOUNT_PATH do
@@ -66,7 +66,7 @@ module Mayu
 
         use Rack::Static, urls: [""], root: public_root_dir, cascade: true
 
-        run InitSessionApp.new(environment)
+        run Edge::Server::InitSessionApp.new(environment:, metrics:)
       end
     end
 
