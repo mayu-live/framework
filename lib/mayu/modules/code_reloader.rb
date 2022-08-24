@@ -39,9 +39,12 @@ module Mayu
       def start(task: Async::Task.current)
         task.async do |task|
           Filewatcher
-            .new(@system.root, every: true)
+            .new(
+              %w[app components store].map { File.join(@system.root, _1) },
+              every: true
+            )
             .watch do |file|
-              puts "\e[36mFile change detected: #{file}\e[0m"
+              puts "\e[36mFile change detected: #{file} #{@system.root}\e[0m"
               if File.exist?(file)
                 if @system.reload_module(file)
                   $mayu_code_reloader_last_update = Time.now
