@@ -8,6 +8,7 @@ require_relative "routes"
 require_relative "metrics"
 require_relative "modules/system"
 require_relative "fetch"
+require_relative "server/cluster"
 
 module Mayu
   class Environment
@@ -32,11 +33,21 @@ module Mayu
     attr_reader :prometheus_registry
     sig { returns(Fetch) }
     attr_reader :fetch
+    sig { returns(Server::Cluster) }
+    attr_reader :cluster
 
-    sig { params(root: String, region: String, hot_reload: T::Boolean).void }
-    def initialize(root:, region:, hot_reload: false)
+    sig do
+      params(
+        root: String,
+        region: String,
+        cluster: Server::Cluster,
+        hot_reload: T::Boolean
+      ).void
+    end
+    def initialize(root:, region:, cluster:, hot_reload: false)
       @root = root
       @region = region
+      @cluster = cluster
       # TODO: Reload routes when things change in /pages...
       # probably have to set up an async task...
       @routes =

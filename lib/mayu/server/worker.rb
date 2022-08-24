@@ -15,9 +15,11 @@ module Mayu
     module Worker
       extend T::Sig
 
-      sig { params(cluster: Cluster, metrics: Metrics, config: Config).void }
-      def self.start(cluster:, metrics:, config:)
-        logger = cluster.logger
+      sig do
+        params(environment: Environment, metrics: Metrics, config: Config).void
+      end
+      def self.start(environment:, metrics:, config:)
+        logger = environment.cluster.logger
         message_cipher = MessageCipher.new(key: config.SECRET_KEY)
 
         Async do |task|
@@ -26,7 +28,7 @@ module Mayu
           print_capacity = Async::Condition.new
 
           interrupt = Async::IO::Trap.new(:INT)
-          interrupt.install!
+          # interrupt.install!
 
           task.async do |subtask|
             sleep(rand * config.PRINT_CAPACITY_INTERVAL)
@@ -56,7 +58,8 @@ module Mayu
           subscribe_task =
             task.async do
               loop do
-                cluster
+                environment
+                  .cluster
                   .workers
                   .subscribe(queue: "worker") do |msg|
                     throw :unsubscribe if semaphore.blocking?
@@ -71,7 +74,7 @@ module Mayu
 
                       semaphore.async do |subtask|
                         started_at = Time.now
-                        session = Session.init(cluster)
+                        session = Session.init(environment)
 
                         logger.info("Inititalizing #{session.id}")
 
@@ -92,13 +95,14 @@ module Mayu
                       semaphore.async do |subtask|
                         started_at = Time.now
                         state = message_cipher.load(encrypted_state)
-                        session = Session.resume(cluster, state)
+                        session = Session.resume(environment, state)
 
                         logger.info("Resuming #{session.id}")
 
                         msg.respond(id: session.id, token: session.token)
 
                         session_loop(
+                          environment,
                           session,
                           metrics:,
                           logger:,
@@ -119,13 +123,14 @@ module Mayu
                          { session: { id:, token:, state: }, connection_id: }
                        ]
                       semaphore.async do |subtask|
-                        session = Session.new(cluster, id:, token:, state:)
+                        session = Session.new(environment, id:, token:, state:)
 
                         logger.info("Resuming transferred #{session.id}")
 
-                        #  msg.respond(status: :ok, alloc_id: cluster.alloc_id)
+                        #  msg.respond(status: :ok, alloc_id: environment.cluster.alloc_id)
 
                         session_loop(
+                          environment,
                           session,
                           metrics:,
                           logger:,
@@ -159,16 +164,22 @@ module Mayu
 
             subscribe_task.stop
 
-            next if barrier.empty?
+            logger.error("Interrupt", "Stopped subscriptions")
 
-            barrier.wait
-            interrupt.default!
+            unless barrier.empty?
+              subtask.with_timeout(5) do
+                barrier.wait
+              rescue Async::TimeoutError
+                interrupt.default!
+              end
+            end
           end
         end
       end
 
       sig do
         params(
+          environment: Environment,
           session: Session,
           metrics: Metrics,
           interrupt: Async::IO::Trap,
@@ -179,6 +190,7 @@ module Mayu
         ).returns(Async::Task)
       end
       def self.session_loop(
+        environment,
         session,
         metrics:,
         interrupt:,
@@ -195,16 +207,18 @@ module Mayu
             .renderer
             .run do |message|
               if connection_id
-                session
+                environment
                   .cluster
                   .connection(connection_id)
                   .publish([:patch, message])
               end
             end
             .wait
+
+          logger.warn("DONE WAITING FOR RENDE")
         ensure
           logger.debug("Session #{session.id}", "Stopping RENDER task")
-          on_finish.signal()
+          on_finish.signal(:render)
         end
 
         barrier.async do
@@ -227,32 +241,34 @@ module Mayu
             if time_passed > config.KEEPALIVE_SECONDS
               metrics.session_timeout.increment
               logger.warn("Session #{session.id}", "Timed out")
-              on_finish.signal()
+              on_finish.signal(:timeout)
               break
             end
 
             if connection_id
-              session.cluster.connection(connection_id).publish(:heartbeat)
+              environment.cluster.connection(connection_id).publish(:heartbeat)
               last_heartbeat_at = Time.now.to_f
               metrics.session_heartbeats.increment
             end
           end
         ensure
           logger.debug("Session #{session.id}", "Stopping HEARTBEAT task")
-          on_finish.signal()
+          on_finish.signal(:heartbeat)
         end
 
         barrier.async do |subtask|
+          Console.logger.warn("Starting subscribe")
           session
             .subject
             .subscribe do |msg|
+              Console.logger.warn("message", msg.data.inspect)
               case msg.data
               in [:ping, timestamp]
                 logger.debug("Session #{session.id}", "Ping")
                 msg.respond(
                   timestamp:,
-                  region: session.cluster.region,
-                  alloc_id: session.cluster.alloc_id
+                  region: environment.cluster.region,
+                  alloc_id: environment.cluster.alloc_id
                 )
                 metrics.session_callbacks.increment
               in [:handle_callback, event_handler_id, payload]
@@ -266,7 +282,10 @@ module Mayu
                       "Closing old connection: #{connection_id}"
                     )
 
-                    session.cluster.connection(connection_id).publish(:close)
+                    environment
+                      .cluster
+                      .connection(connection_id)
+                      .publish(:close)
                   rescue StandardError
                     nil
                   end
@@ -294,19 +313,25 @@ module Mayu
               end
             end
             .wait
+
+          Console.logger.fatal(self, "done waiting!!")
+        rescue => e
+          Console.logger.fatal(e)
+          raise
         ensure
-          on_finish.signal()
+          on_finish.signal(:subscribe)
           logger.warn("Session #{session.id}", "Stopping SUBSCRIBE task")
         end
 
-        task.async do
+        task.parent.async do
+          logger.warn("WAITING FOR INTERRUTP")
           interrupt.wait
+
+          logger.warn("GOT INTERRUPT, STOPPING THE TASK")
 
           logger.warn("Session #{session.id}", "Stopping task")
 
-          # I feel like I'm doing some funky stuff here.
-          # Stopping the same task?
-          task.stop
+          on_finish.signal(:interrupt)
 
           logger.warn("Session #{session.id}", "Waiting for subtasks to stop")
 
@@ -316,7 +341,7 @@ module Mayu
           if connection_id
             logger.info("Session #{session.id}", "Transferring state")
 
-            session.cluster.workers.publish(
+            environment.cluster.workers.publish(
               [:transfer, { session: session.transfer_data, connection_id: }]
             )
 
@@ -324,7 +349,8 @@ module Mayu
           end
         end
 
-        on_finish.wait
+        reason = on_finish.wait
+        Console.logger.fatal("ON FINISH CALLED", reason)
         task.stop
       end
     end

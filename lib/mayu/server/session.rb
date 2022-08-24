@@ -11,17 +11,15 @@ module Mayu
       attr_reader :id
       sig { returns(String) }
       attr_reader :token
-      sig { returns(Cluster) }
-      attr_reader :cluster
       sig { returns(Renderer) }
       attr_reader :renderer
 
-      sig { params(cluster: Cluster).returns(T.attached_class) }
-      def self.init(cluster)
+      sig { params(environment: Environment).returns(T.attached_class) }
+      def self.init(environment)
         id = SecureRandom.uuid
-        token = cluster.generate_session_token
+        token = environment.cluster.generate_session_token
 
-        new(cluster, id:, token:)
+        new(environment, id:, token:)
       end
 
       StoredState =
@@ -30,29 +28,32 @@ module Mayu
         end
 
       sig do
-        params(cluster: Cluster, stored_state: StoredState).returns(
+        params(environment: Environment, stored_state: StoredState).returns(
           T.attached_class
         )
       end
-      def self.resume(cluster, stored_state)
+      def self.resume(environment, stored_state)
         stored_state => { session: { id:, token: }, state: }
 
-        new(cluster, id:, token:, state:)
+        new(environment, id:, token:, state:)
       end
 
       sig do
         params(
-          cluster: Cluster,
+          environment: Environment,
           id: String,
           token: String,
+          request_path: String,
           state: T.untyped
         ).void
       end
-      def initialize(cluster, id:, token:, state: nil)
-        @cluster = cluster
+      def initialize(environment, id:, token:, request_path: "/", state: nil)
+        @environment = environment
+        @cluster = T.let(environment.cluster, Cluster)
         @id = id
         @token = token
-        @renderer = T.let(Renderer.new(state:), Renderer)
+        @renderer =
+          T.let(Renderer.new(environment:, request_path:, state:), Renderer)
       end
 
       sig { returns(Cluster::Subject) }

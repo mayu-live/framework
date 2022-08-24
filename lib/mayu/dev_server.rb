@@ -37,7 +37,7 @@ module Mayu
       region = ENV.fetch("FLY_REGION", "localhost")
       Console.logger.warn("hello")
       public_root_dir = File.join(root, PUBLIC_DIR)
-      environment = Environment.new(root:, region:, hot_reload:)
+
       fake_nats = FakeNATS::Client.new
       edge_env = DevServer::EdgeEnv.new(nats: fake_nats, region:)
 
@@ -55,10 +55,11 @@ module Mayu
         )
 
       cluster = Server::Cluster.new(:worker, nats: fake_nats, config:)
+      environment = Environment.new(root:, region:, cluster:, hot_reload:)
       metrics =
         Metrics.new(cluster:, prometheus: environment.prometheus_registry)
 
-      Server::Worker.start(config:, cluster:, metrics:)
+      Server::Worker.start(config:, environment:, metrics:)
 
       Rack::Builder.new do
         T.bind(self, Rack::Builder)

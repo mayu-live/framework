@@ -65,6 +65,8 @@ module Mayu
             catch :unsubscribe do
               loop { block.call(queue.deq) }
             end
+
+            Console.logger.fatal(self, "cluster ending")
           ensure
             sub&.unsubscribe
           end

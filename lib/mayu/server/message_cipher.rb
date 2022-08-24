@@ -69,6 +69,10 @@ module Mayu
 
       sig { params(message: String, auth_data: String).returns(String) }
       def decode_message(message, auth_data: "")
+        Console.logger.warn(self, message)
+        Console.logger.warn(self, message)
+        Console.logger.warn(self, message)
+        Console.logger.warn(self, message)
         message
           .then { parse_prefix(_1) }
           .then { Base64.urlsafe_decode64(_1) }
