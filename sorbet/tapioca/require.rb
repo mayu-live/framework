@@ -31,7 +31,6 @@ require "async/io/ssl_socket"
 require "async/io/stream"
 require "async/io/trap"
 require "async/io/unix_endpoint"
-require "async/logger"
 require "async/notification"
 require "async/pool/controller"
 require "async/queue"
@@ -427,3 +426,4 @@ require "unparser/writer/send/unary"
 require "uri"
 require 'prometheus/middleware/collector'
 require 'prometheus/middleware/exporter'
+require "mayu/edge/server"

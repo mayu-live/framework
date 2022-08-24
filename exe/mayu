@@ -6,7 +6,7 @@ $LOAD_PATH.unshift(File.join(MAYU_ROOT, "..", "..", "lib"))
 require "mayu/banner"
 
 COMMANDS = {
-  "dev" => -> do
+  "dev" => -> (*_) do
     port = ENV.fetch("PORT", "9292")
     host = ENV.fetch("HOST", "localhost")
 
