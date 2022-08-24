@@ -54,13 +54,22 @@ module Mayu
             .signal(Msg.new(self, subject, data, respond_to:))
         end
 
+        class Sub
+          extend T::Sig
+
+          sig { void }
+          def unsubscribe
+            throw :unsubscribe
+          end
+        end
+
         sig do
           params(
             subject: String,
             queue: T.nilable(String),
             task: Async::Task,
             block: T.proc.params(arg0: Msg).void
-          ).returns(Async::Task)
+          ).returns(Sub)
         end
         def subscribe(subject, queue: nil, task: Async::Task.current, &block)
           subscription = @subscriptions[subject] ||= Async::Condition.new
@@ -68,6 +77,8 @@ module Mayu
           task.async do
             catch(:unsubscribe) { loop { yield subscription.wait } }
           end
+
+          Sub.new
         end
 
         sig { params(subject: String, data: String).returns(Msg) }

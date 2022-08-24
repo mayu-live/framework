@@ -28,7 +28,22 @@ module Mayu
         def subscribe(task: Async::Task.current, **options, &block)
           Console.logger.warn("Subscribing to", @subject)
 
-          @nats.subscribe(@subject, **options) { |msg| yield Message.new(msg) }
+          queue = Async::Queue.new
+
+          sub =
+            @nats.subscribe(@subject, **options) do |msg|
+              queue.enqueue(Message.new(msg))
+            end
+
+          task.async do |subtask|
+            catch :unsubscribe do
+              loop { block.call(queue.dequeue) }
+            end
+            Console.logger.warn(self, "GOT UNSUBSCRIBE")
+          ensure
+            Console.logger.warn(self, "UNSUBSCRIIIBING")
+            sub&.unsubscribe
+          end
         end
 
         class Message

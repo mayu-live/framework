@@ -124,13 +124,9 @@ module Mayu
               end
               .join
 
-          script =
-            %{<script type="module" src="/__mayu/live.js?#{@id}"></script>}
-
           body.write(
             rendered_html
               .prepend("<!DOCTYPE html>\n")
-              .sub(%r{</head>}) { "#{script}#{_1}" }
               .sub(%r{</head>}) { "#{style}#{_1}" }
           )
         ensure
