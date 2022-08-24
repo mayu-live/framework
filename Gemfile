@@ -20,6 +20,10 @@ gem "async-http"
 gem "filewatcher"
 gem "nanoid"
 
+source "https://rubygems.pkg.github.com/mayu-live" do
+  gem "mayu-edge"
+end
+
 group :development do
   gem "guard", require: false
   gem "guard-falcon", require: false
