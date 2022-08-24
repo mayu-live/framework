@@ -1,14 +1,20 @@
 # typed: true
 
 require "rack/brotli"
+require "mayu/edge/server"
 
 require_relative "../mayu"
 require_relative "environment"
 require_relative "state/loader"
 require_relative "metrics"
 
-require "mayu/edge/server"
 require_relative "dev_server/assets_app"
+require_relative "dev_server/fake_nats"
+require_relative "dev_server/edge_env"
+require_relative "server/worker"
+require_relative "server/config"
+require_relative "server/cluster"
+require_relative "metrics"
 
 module Mayu
   module DevServer
@@ -29,9 +35,30 @@ module Mayu
 
     def self.build(root:, hot_reload:)
       region = ENV.fetch("FLY_REGION", "localhost")
+      Console.logger.warn("hello")
       public_root_dir = File.join(root, PUBLIC_DIR)
       environment = Environment.new(root:, region:, hot_reload:)
-      metrics = {}
+      fake_nats = FakeNATS::Client.new
+      edge_env = DevServer::EdgeEnv.new(nats: fake_nats, region:)
+
+      config =
+        Server::Config.new(
+          SECRET_KEY: "dev",
+          MAX_SESSIONS: 4,
+          PRINT_CAPACITY_INTERVAL: 10.0,
+          HEARTBEAT_INTERVAL_SECONDS: 1.0,
+          KEEPALIVE_SECONDS: 10.0,
+          NATS_SERVER: "fake://lol",
+          FLY_APP_NAME: "mayu-dev",
+          FLY_ALLOC_ID: SecureRandom.uuid,
+          FLY_REGION: "dev"
+        )
+
+      cluster = Server::Cluster.new(:worker, nats: fake_nats, config:)
+      metrics =
+        Metrics.new(cluster:, prometheus: environment.prometheus_registry)
+
+      Server::Worker.start(config:, cluster:, metrics:)
 
       Rack::Builder.new do
         T.bind(self, Rack::Builder)
@@ -47,15 +74,15 @@ module Mayu
             registry: environment.prometheus_registry
 
         map "/__mayu/api/events" do
-          run Edge::Server::EventStreamApp.new(environment:)
+          run Edge::Server::EventStreamApp.new(environment: edge_env)
         end
 
         map "/__mayu/api/callback" do
-          run Edge::Server::CallbackApp.new(environment:)
+          run Edge::Server::CallbackApp.new(environment: edge_env)
         end
 
         map "/__mayu/api/resume" do
-          run Edge::Server::ResumeSessionApp.new(environment:)
+          run Edge::Server::ResumeSessionApp.new(environment: edge_env)
         end
 
         map AssetsApp::MOUNT_PATH do
@@ -66,7 +93,11 @@ module Mayu
 
         use Rack::Static, urls: [""], root: public_root_dir, cascade: true
 
-        run Edge::Server::InitSessionApp.new(environment:, metrics:)
+        map "/__mayu/static" do
+          use Rack::Static, urls: [""], root: public_root_dir
+        end
+
+        run Edge::Server::InitSessionApp.new(environment: edge_env, metrics:)
       end
     end
 
@@ -75,6 +106,8 @@ module Mayu
       environment = Environment.new(root:, region:, hot_reload: false)
 
       Rack::Builder.new do
+        T.bind(self, Rack::Builder)
+
         use Rack::CommonLogger
 
         use Rack::Deflater

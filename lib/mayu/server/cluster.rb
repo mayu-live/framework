@@ -14,7 +14,7 @@ module Mayu
       class Subject
         extend T::Sig
 
-        sig { params(nats: NATS::IO::Client, subject: String).void }
+        sig { params(nats: NatsClient, subject: String).void }
         def initialize(nats, subject)
           @nats = nats
           @subject = subject
@@ -79,7 +79,7 @@ module Mayu
       class Message
         extend T::Sig
 
-        sig { params(msg: NATS::Msg).void }
+        sig { params(msg: NatsMsg).void }
         def initialize(msg)
           @msg = msg
         end
@@ -124,6 +124,10 @@ module Mayu
         SecureRandom.alphanumeric(SESSION_TOKEN_LENGTH)
       end
 
+      NatsClient =
+        T.type_alias { T.any(NATS::IO::Client, DevServer::FakeNATS::Client) }
+      NatsMsg = T.type_alias { T.any(NATS::Msg, DevServer::FakeNATS::Msg) }
+
       sig { returns(Symbol) }
       attr_reader :type
       sig { returns(String) }
@@ -132,17 +136,17 @@ module Mayu
       attr_reader :region
       sig { returns(String) }
       attr_reader :alloc_id
-      sig { returns(NATS::Client) }
+      sig { returns(NatsClient) }
       attr_reader :nats
       sig { returns(T.untyped) }
       attr_reader :logger
 
-      sig { params(type: Symbol).void }
-      def initialize(type)
+      sig { params(type: Symbol, config: Config, nats: NatsClient).void }
+      def initialize(type, config:, nats: NATS::IO::Client.new)
         @type = type
-        @app_name = T.let(ENV.fetch("FLY_APP_NAME"), String)
-        @region = T.let(ENV.fetch("FLY_REGION"), String)
-        @alloc_id = T.let(ENV.fetch("FLY_ALLOC_ID"), String)
+        @app_name = T.let(config.FLY_APP_NAME, String)
+        @region = T.let(config.FLY_REGION, String)
+        @alloc_id = T.let(config.FLY_ALLOC_ID, String)
 
         @logger =
           T.let(
@@ -150,12 +154,12 @@ module Mayu
             T.untyped
           )
 
-        @nats = T.let(NATS::IO::Client.new, NATS::Client)
+        @nats = T.let(nats, NatsClient)
 
         @nats.on_disconnect { logger.warn("NATS", "disconnected") }
         @nats.on_reconnect { logger.warn("NATS", "reconnected") }
 
-        nats_server = ENV.fetch("NATS_SERVER").gsub("FLY_REGION", @region)
+        nats_server = config.NATS_SERVER.gsub("FLY_REGION", @region)
         @logger.warn("NATS") { "Connecting to #{nats_server.inspect}" }
 
         @nats.connect(
