@@ -1,204 +1,189 @@
-import logger from "./logger.js";
 import NodeTree from "./NodeTree.js";
 import PingTimer from "./PingTimer.js";
 
 import type MayuPingElement from "./custom-elements/mayu-ping";
 import type MayuProgressBar from "./custom-elements/mayu-progress-bar";
-
 import defineCustomElements from "./custom-elements";
 defineCustomElements();
 
-function h(
-  type: string,
-  children: any[] = [],
-  attrs: Record<string, any> = {}
-) {
-  const el = document.createElement(type);
+const SESSION_ID_KEY = "mayu.sessionId";
 
-  for (const [key, value] of Object.entries(attrs)) {
-    if (value) {
-      if (value === true) {
-        el.setAttribute(key, key);
-      } else {
-        el.setAttribute(key, value);
-      }
-    }
-  }
+export default async function init(encryptedState: string) {
+  const sessionId = await resume(
+    encryptedState,
+    sessionStorage.getItem(SESSION_ID_KEY)
+  );
 
-  children.forEach((child) => {
-    if ((child as any) instanceof Node) {
-      el.appendChild(child);
-    } else if (child) {
-      el.appendChild(document.createTextNode(String(child)));
-    }
+  window.Mayu = setupGlobalObject(sessionId);
+
+  let isUnloading = false;
+
+  window.addEventListener("beforeunload", () => {
+    isUnloading = true;
   });
 
-  return el;
+  const es = new EventSource(`/__mayu/api/events/${sessionId}`);
+
+  es.onopen = () => {
+    console.log("Opened session", sessionId);
+    sessionStorage.setItem(SESSION_ID_KEY, sessionId);
+    startPing(es, sessionId);
+  };
+
+  es.onerror = () => {
+    console.log({ isUnloading, readyState: document.readyState });
+    if (isUnloading) return;
+    sessionStorage.removeItem(SESSION_ID_KEY);
+  };
+
+  es.addEventListener("patch", (msg) => {
+    prependLog(msg.data);
+  });
+
+  es.addEventListener(
+    "init",
+    (e) => {
+      const ids = JSON.parse(e.data) as any;
+      const nodeTree = new NodeTree(ids);
+
+      es.addEventListener("patch", (e) => {
+        nodeTree.apply(JSON.parse(e.data));
+      });
+    },
+    { once: true }
+  );
+
+  const messages = document.createElement("ul");
+  document.body.appendChild(messages);
+
+  function prependLog(text: string) {
+    const el = document.createElement("li");
+    el.textContent = text;
+    messages.prepend(el);
+  }
 }
 
-// TODO: Make more of this set up stuff in a functional way.
-class Mayu {
-  readonly sessionId: string;
-  readonly connection: EventSource;
-  readonly queue = <MessageEvent[]>[];
-  readonly progressBar = document.createElement(
+async function resume(state: string, storedSessionId: string | null) {
+  const path = storedSessionId
+    ? `/__mayu/api/resume/${storedSessionId}`
+    : "/__mayu/api/resume";
+
+  console.log({ storedSessionId });
+
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: state,
+  });
+
+  if (!res.ok) {
+    alert("Could not resume state");
+    throw new Error("Got a non-ok response from the resume endpoint");
+  }
+
+  return res.text();
+}
+
+function setupGlobalObject(sessionId: string) {
+  const progressBar = document.createElement(
     "mayu-progress-bar"
   ) as MayuProgressBar;
 
-  constructor(sessionId: string) {
-    this.sessionId = sessionId;
+  document.body.appendChild(progressBar);
 
-    this.connection = new EventSource(`/__mayu/events/${this.sessionId}`);
+  return {
+    async handle(e: Event, handlerId: string) {
+      e.preventDefault();
 
-    document.body.appendChild(this.progressBar);
+      const payload = {
+        type: e.type,
+        value: (e.target as any).value,
+      } as Record<string, any>;
 
-    const disconnectedElement = document.createElement("mayu-disconnected");
-
-    this.connection.onopen = () => {
-      console.log("Connection opened");
-      document.body
-        .querySelectorAll("mayu-disconnected")
-        .forEach((el) => el.remove());
-    };
-
-    this.connection.onerror = (e) => {
-      logger.log(e);
-      logger.error("Connection error.");
-      document.body.appendChild(disconnectedElement);
-    };
-
-    this.connection.addEventListener(
-      "init",
-      (e) => {
-        const ids = JSON.parse(e.data) as any;
-        const nodeTree = new NodeTree(ids);
-
-        this.connection.addEventListener("patch", (e) => {
-          nodeTree.apply(JSON.parse(e.data));
-        });
-      },
-      { once: true }
-    );
-
-    // if (window.navigation) {
-    //   window.navigation.addEventListener("navigate", (e: NavigateEvent) => {
-    //     // console.log(e);
-    //     // e.preventDefault()
-    //   });
-    // }
-
-    this.connection.addEventListener("exception", (e) => {
-      const error = JSON.parse(e.data) as {
-        type: string;
-        message: string;
-        backtrace: string[];
-      };
-      const { type, message, backtrace } = error;
-      const cleanedBacktrace = backtrace
-        .filter((line) => !/\/vendor\/bundle\//.test(line))
-        .join("\n");
-
-      const el = h("mayu-exception", [
-        h("span", [`${type}: ${message}`], { slot: "title" }),
-        h("span", [cleanedBacktrace], { slot: "backtrace" }),
-      ]);
-
-      document.body.appendChild(el);
-    });
-
-    this.connection.addEventListener("navigate", (e) => {
-      const path = JSON.parse(e.data);
-      console.log("Navigating to", path);
-      history.pushState({}, "", path);
-      this.progressBar.setAttribute("progress", "100");
-    });
-
-    // if ("serviceWorker" in navigator) {
-    //   navigator.serviceWorker
-    //     .register("/__mayu.serviceWorker.js", { scope: "/" })
-    //     .then((reg) => {
-    //       console.log("Registration Successful", reg);
-    //       reg?.active?.postMessage({ type: "sessionId", sessionId });
-    //
-    //       window.addEventListener("beforeunload", () => {
-    //         reg?.active?.postMessage({ type: "closeWindow", sessionId });
-    //       });
-    //     })
-    //     .catch((e) => console.error(e));
-    // }
-
-    const pingTimer = new PingTimer();
-
-    this.connection.addEventListener("pong", (e) => {
-      pingTimer.pong(JSON.parse(e.data));
-    });
-
-    const pingElement = document.createElement("mayu-ping") as MayuPingElement;
-    document.body.appendChild(pingElement);
-
-    async function pingLoop() {
-      while (true) {
-        try {
-          const { ping, region } = await pingTimer.ping((now) => {
-            fetch(`/__mayu/handler/${sessionId}/ping`, {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify(now),
-            });
-          });
-
-          pingElement.setAttribute("ping", `${ping} ms`);
-          pingElement.setAttribute("region", region);
-
-          await pingTimer.sleep(PingTimer.PING_FREQUENCY_MS);
-        } catch (e) {
-          console.error("Error. Retrying in", PingTimer.RETRY_TIME_MS, "ms");
-          await pingTimer.sleep(PingTimer.RETRY_TIME_MS);
-        }
+      if (e.target instanceof HTMLFormElement) {
+        payload.formData = Object.fromEntries(new FormData(e.target).entries());
       }
-    }
 
-    pingLoop();
+      progressBar.setAttribute("progress", "0");
 
-    this.#ping();
-  }
+      let didRun = false;
+      const timeout = setTimeout(() => {
+        progressBar.setAttribute("progress", "25");
+        didRun = true;
+      }, 1);
 
-  async handle(e: Event, handlerId: string) {
-    e.preventDefault();
+      await fetch(`/__mayu/api/callback/${sessionId}/${handlerId}`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    const payload = {
-      type: e.type,
-      value: (e.target as any).value,
-    } as Record<string, any>;
+      clearTimeout(timeout);
 
-    if (e.target instanceof HTMLFormElement) {
-      payload.formData = Object.fromEntries(new FormData(e.target).entries());
-    }
+      if (didRun) {
+        progressBar.setAttribute("progress", "100");
+      }
+    },
 
-    this.progressBar.setAttribute("progress", "0");
+    async ping() {
+      const res = await fetch(`/__mayu/api/callback/${sessionId}/ping`, {
+        method: "POST",
+        body: JSON.stringify(performance.now()),
+      });
 
-    let didRun = false;
-    const timeout = setTimeout(() => {
-      this.progressBar.setAttribute("progress", "25");
-      didRun = true;
-    }, 1);
+      const data = await res.json();
+      const latency = performance.now() - data.timestamp;
+      const worker = data.worker;
 
-    await fetch(`/__mayu/handler/${this.sessionId}/${handlerId}`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    clearTimeout(timeout);
-
-    if (didRun) {
-      this.progressBar.setAttribute("progress", "100");
-    }
-  }
-
-  async #ping() {}
+      console.log(
+        [
+          `Latency: ${latency.toFixed(3)}ms`,
+          `Worker: ${worker.toFixed(3)}ms`,
+          `Server id: ${data.serverId}`,
+          `Server region: ${data.serverRegion}`,
+          `Worker id: ${data.workerId}`,
+          `Worker region: ${data.workerRegion}`,
+          `Routed from: ${data.routedFrom}`,
+        ].join("\n")
+      );
+    },
+  };
 }
 
-export default Mayu;
+async function startPing(es: EventSource, sessionId: string) {
+  const pingTimer = new PingTimer();
+
+  es.addEventListener("pong", (e) => {
+    pingTimer.pong(JSON.parse(e.data));
+  });
+
+  const pingElement = document.createElement("mayu-ping") as MayuPingElement;
+  document.body.appendChild(pingElement);
+
+  async function pingLoop() {
+    while (true) {
+      try {
+        const { ping, region } = await pingTimer.ping((now) => {
+          fetch(`/__mayu/api/callback/${sessionId}/ping`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(now),
+          });
+        });
+
+        pingElement.setAttribute("ping", `${ping} ms`);
+        pingElement.setAttribute("region", region);
+
+        await pingTimer.sleep(PingTimer.PING_FREQUENCY_MS);
+      } catch (e) {
+        console.log(e);
+        console.error("Error. Retrying in", PingTimer.RETRY_TIME_MS, "ms");
+        await pingTimer.sleep(PingTimer.RETRY_TIME_MS);
+      }
+    }
+  }
+
+  pingLoop();
+}

@@ -1,5 +1,5 @@
 type Pong = {
-  time: number;
+  timestamp: number;
   region: string;
 };
 
@@ -25,9 +25,9 @@ class PingTimer {
         reject("timeout");
       }, PingTimer.PING_TIMEOUT_MS);
 
-      this.#pingPromises.set(now, ({ time, region }) => {
+      this.#pingPromises.set(now, ({ timestamp, region }) => {
         clearTimeout(timeout);
-        const ping = new Date().getTime() - time;
+        const ping = new Date().getTime() - timestamp;
         resolve({ ping, region });
       });
 
@@ -41,16 +41,17 @@ class PingTimer {
     });
   }
 
-  pong({ time, region }: Pong) {
-    const resolve = this.#pingPromises.get(time);
+  pong(pong: Pong) {
+    const { timestamp, region } = pong;
+    const resolve = this.#pingPromises.get(timestamp);
 
     if (!resolve) {
-      console.error("Got unexpected pong with time", time);
+      console.error("Got unexpected pong with time", timestamp);
       return;
     }
 
-    this.#pingPromises.delete(time);
-    resolve({ time, region });
+    this.#pingPromises.delete(timestamp);
+    resolve({ timestamp, region });
   }
 }
 
