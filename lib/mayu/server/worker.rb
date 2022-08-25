@@ -203,19 +203,35 @@ module Mayu
         barrier = Async::Barrier.new
 
         barrier.async do
+          q = Async::Queue.new
+
           session
             .renderer
             .run do |message|
-              if connection_id
+              unless connection_id
+                q.enqueue(message)
+                next
+              end
+
+              until q.empty?
                 environment
                   .cluster
                   .connection(connection_id)
-                  .publish([:patch, message])
+                  .publish([:send, q.dequeue])
               end
+
+              environment
+                .cluster
+                .connection(connection_id)
+                .publish([:send, message])
             end
             .wait
 
           logger.warn("DONE WAITING FOR RENDE")
+        rescue => e
+          Console.logger.error(e)
+          puts e.backtrace
+          raise
         ensure
           logger.debug("Session #{session.id}", "Stopping RENDER task")
           on_finish.signal(:render)
@@ -265,13 +281,25 @@ module Mayu
               case msg.data
               in [:ping, timestamp]
                 logger.debug("Session #{session.id}", "Ping")
-                msg.respond(
+                response = {
                   timestamp:,
                   region: environment.cluster.region,
                   alloc_id: environment.cluster.alloc_id
-                )
+                }
+                if connection_id
+                  environment
+                    .cluster
+                    .connection(connection_id)
+                    .publish([:send, [:pong, response]])
+                end
+                msg.respond(response)
                 metrics.session_callbacks.increment
               in [:handle_callback, event_handler_id, payload]
+                begin
+                  session.renderer.handle_callback(event_handler_id, payload)
+                rescue => e
+                  Console.logger.error(self, e)
+                end
                 msg.respond(:ok)
                 metrics.session_callbacks.increment
               in [:connect, new_connection_id]

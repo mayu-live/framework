@@ -26,6 +26,7 @@ module Mayu
         @environment = environment
         @state = T.let({ request_path: }.merge(state || {}), State)
         @messages = T.let(Async::Queue.new, Async::Queue)
+        @renderer = T.let(nil, T.nilable(Mayu::Renderer))
       end
 
       sig { params(task: Async::Task).returns(InitialHtmlAndState) }
@@ -37,6 +38,7 @@ module Mayu
             parent: task
           )
         renderer.take => [:initial_render, patches]
+        renderer.take => [:init, ids]
         renderer.stop
 
         rendered_html = ""
@@ -66,6 +68,11 @@ module Mayu
         { html:, state: }
       end
 
+      sig { params(event_handler_id: String, payload: T.untyped).void }
+      def handle_callback(event_handler_id, payload)
+        @renderer.handle_callback(event_handler_id, payload || {})
+      end
+
       sig do
         params(
           task: Async::Task,
@@ -73,19 +80,23 @@ module Mayu
         ).returns(Async::Task)
       end
       def run(task: Async::Task.current, &block)
-        renderer =
-          Mayu::Renderer.new(
-            environment: @environment,
-            request_path: state[:request_path].to_s,
-            parent: task
+        @renderer =
+          T.let(
+            Mayu::Renderer.new(
+              environment: @environment,
+              request_path: state[:request_path].to_s,
+              parent: task
+            ),
+            Mayu::Renderer
           )
 
-        msg = renderer.take
+        msg = @renderer.take
         msg => [:initial_render, _patches]
 
         task.async do |subtask|
           loop do
-            msg = renderer.take
+            msg = @renderer.take
+            Console.logger.warn(msg.inspect)
             case msg
             in [:initial_render, payload]
               yield [:initial_render, payload]
@@ -106,7 +117,8 @@ module Mayu
           end
         ensure
           Console.logger.warn("ENDING")
-          renderer.stop
+          @renderer.stop
+          @renderer = nil
           task.stop
         end
       end

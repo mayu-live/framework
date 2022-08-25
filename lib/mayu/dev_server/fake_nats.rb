@@ -57,9 +57,14 @@ module Mayu
         class Sub
           extend T::Sig
 
+          sig { params(task: Async::Task).void }
+          def initialize(task)
+            @task = task
+          end
+
           sig { void }
           def unsubscribe
-            throw :unsubscribe
+            @task.stop
           end
         end
 
@@ -74,11 +79,7 @@ module Mayu
         def subscribe(subject, queue: nil, task: Async::Task.current, &block)
           subscription = @subscriptions[subject] ||= Async::Condition.new
 
-          task.async do
-            catch(:unsubscribe) { loop { yield subscription.wait } }
-          end
-
-          Sub.new
+          Sub.new(task.async { loop { yield subscription.wait } })
         end
 
         sig { params(subject: String, data: String).returns(Msg) }
@@ -86,14 +87,13 @@ module Mayu
           respond_to = SecureRandom.uuid
           condition = Async::Condition.new
 
-          subscribe(respond_to) do |msg|
-            condition.signal(msg)
-            throw :unsubscribe
-          end
+          sub = subscribe(respond_to) { |msg| condition.signal(msg) }
 
           publish(subject, data, respond_to:)
 
-          condition.wait
+          msg = condition.wait
+          sub.unsubscribe
+          msg
         end
 
         sig { params(servers: [String], kwargs: T.untyped).void }

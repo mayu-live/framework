@@ -71,7 +71,7 @@ module Mayu
         script_id = "script_" + SecureRandom.alphanumeric(32)
 
         script = <<~EOF
-          <script type="module" src="/__mayu/static/live.js##{encrypted_data}"></script>
+          <script type="module" src="/__mayu/live.js##{encrypted_data}"></script>
         EOF
 
         html.sub(%r{</body>}) { "#{script}#{_1}" }
