@@ -71,29 +71,33 @@ module Mayu
         )
       end
       def run(&block)
-        task =
-          @renderer
-            .run do |msg|
-              case msg
-              in [:initial_render, payload]
-                yield [:initial_render, payload]
-              in [:init, payload]
-                yield [:init, payload]
-              in [:patch, payload]
-                yield [:patch, payload]
-              in [:navigate, payload]
-                yield [:navigate, payload]
-              in [:exception, payload]
-                yield [:exception, payload]
-              in [:close]
-                raise Async::Stop
-              end
+        @renderer
+          .run do |msg|
+            Console.logger.error(msg.inspect)
+            case msg
+            in [:initial_render, payload]
+              yield [:initial_render, payload]
+            in [:init, payload]
+              yield [:init, payload]
+            in [:patch, payload]
+              yield [:patch, payload]
+            in [:navigate, payload]
+              yield [:navigate, payload]
+            in [:exception, payload]
+              yield [:exception, payload]
+            in [:close]
+              binding.pry
+              raise Async::Stop
             end
-            .wait
+          end
+          .wait
+      rescue => e
+        binding.pry
+        Console.logger.fatal(e)
       ensure
         Console.logger.warn("ENDING")
         @renderer.stop
-        task&.stop
+        # task&.stop
       end
     end
   end
