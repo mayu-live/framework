@@ -93,7 +93,7 @@ module Mayu
       sig { returns(T::Boolean) }
       def element? = @type.is_a?(Symbol)
       sig { returns(T::Boolean) }
-      def component? = Component.component_class?(@type)
+      def component? = Component::Base.component_class?(@type)
       sig { returns(T::Array[Descriptor]) }
       def children = props[:children]
       sig { returns(T::Boolean) }

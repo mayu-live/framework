@@ -164,7 +164,7 @@ module Mayu
 
         cleaned_children = children
 
-        if component
+        if descriptor.component?
           cleaned_children.each { _1.write_html(io) }
           return
         end

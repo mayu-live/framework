@@ -23,7 +23,6 @@ module Mayu
 
     sig { params(path: String).void }
     def navigate(path)
-      @app = @environment.load_root(path)
       @current_path = path
     end
 

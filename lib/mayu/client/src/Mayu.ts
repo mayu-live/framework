@@ -43,10 +43,15 @@ export default async function init(encryptedState: string) {
   es.addEventListener(
     "init",
     (e) => {
-      const ids = JSON.parse(e.data) as any;
+      console.log(e);
+      const { ids } = JSON.parse(e.data) as any;
       const nodeTree = new NodeTree(ids);
 
+      console.log("ids", ids);
+      console.log("nodeTree", nodeTree);
+
       es.addEventListener("patch", (e) => {
+        console.log("patch", e.data);
         nodeTree.apply(JSON.parse(e.data));
       });
     },

@@ -76,8 +76,8 @@ module Mayu
         end
 
         sig { params(handler_id: String, payload: T.untyped).void }
-        def handle_event(handler_id, payload = {})
-          @vtree.handle_event(handler_id, payload)
+        def handle_callback(handler_id, payload = {})
+          @vtree.handle_callback(handler_id, payload)
         end
 
         sig do
@@ -326,7 +326,12 @@ module Mayu
             if vnode.descriptor.children != descriptor.children
               ctx.enter(vnode) do
                 vnode.children =
-                  update_children(ctx, vnode.children, descriptor.children)
+                  update_children(
+                    ctx,
+                    vnode.children,
+                    descriptor.children,
+                    lifecycles:
+                  )
               end
             end
           elsif descriptor.children?
@@ -394,7 +399,7 @@ module Mayu
       def init_vnode(ctx, descriptor, lifecycles:, nested: false)
         vnode = VNode.new(self, ctx.dom_parent_id, descriptor)
 
-        component = vnode.init_component if lifecycles
+        component = vnode.init_component
 
         children =
           if component

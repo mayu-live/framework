@@ -27,10 +27,11 @@ module Mayu
     )
       @environment = environment
       @session = T.let(Session.new(environment, request_path:), Session)
-      @app = app
 
       # Set up a barrier to group async tasks together.
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
+
+      @app = app
 
       @vtree =
         T.let(VDOM::VTree.new(session: @session, task: @barrier), VDOM::VTree)
@@ -43,10 +44,12 @@ module Mayu
     end
 
     sig do
-      returns({ html: String, ids: T.untyped, stylesheets: T::Array[String] })
+      params(lifecycles: T::Boolean).returns(
+        { html: String, ids: T.untyped, stylesheets: T::Array[String] }
+      )
     end
-    def initial_render
-      render!
+    def initial_render(lifecycles: false)
+      @vtree.render(@app, lifecycles:)
       root = @vtree.root
       raise unless root
       html = root.to_html
@@ -63,6 +66,8 @@ module Mayu
     def run(&block)
       updater = VDOM::VTree::Updater.new(@vtree)
       puts "STARTING RUN"
+
+      yield [:init, initial_render(lifecycles: true)]
 
       updater.run do |msg|
         Console.logger.warn(msg.inspect)
@@ -102,13 +107,14 @@ module Mayu
 
     sig { params(path: String).void }
     def navigate(path)
+      @app = @environment.load_root(path)
       @session.navigate(path)
       render!
     end
 
     sig { returns(VDOM::UpdateContext) }
     def render!
-      @vtree.render(@app)
+      @vtree.render(@app, lifecycles: true)
     end
   end
 end
