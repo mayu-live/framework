@@ -191,9 +191,15 @@ module Mayu
         io << "</#{type}>"
       end
 
-      sig { params(attr: T.any(String, Symbol), value: T.untyped).void }
+      sig do
+        params(attr: T.any(String, Symbol), value: T.untyped).returns(String)
+      end
       def format_attr(attr, value)
-        format(' $<attr>s="$<value>s"', attr.to_s, CGI.escape_html(value.to_s))
+        format(
+          %{ %<attr>s="%<value>s"},
+          attr: attr.to_s,
+          value: CGI.escape_html(value.to_s)
+        )
       end
 
       sig { params(block: T.proc.params(arg0: String).void).void }
@@ -205,9 +211,10 @@ module Mayu
             next true if prop == :dangerously_set_inner_html
             false
           end
-          .map do |prop, value|
+          .each do |prop, value|
             if prop == :style && value.is_a?(Hash)
-              next format_attr(prop, CSSAttributes.new(**value).to_s)
+              yield format_attr(prop, CSSAttributes.new(**value).to_s)
+              next
             end
 
             if HTML.boolean_attribute?(prop) || value.is_a?(TrueClass) ||
@@ -222,7 +229,7 @@ module Mayu
                 .sub(/\Ainitial_value\Z/, "value")
                 .tr("_", "-")
 
-            format_attr(attr, value)
+            yield format_attr(attr, value)
           end
       end
 

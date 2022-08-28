@@ -164,7 +164,7 @@ module Mayu
       end
 
       sig { params(handler_id: String, payload: T.untyped).void }
-      def handle_event(handler_id, payload = {})
+      def handle_callback(handler_id, payload = {})
         @handlers
           .fetch(handler_id) do
             raise KeyError, "Handler not found: #{handler_id}"
