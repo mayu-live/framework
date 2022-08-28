@@ -25,6 +25,16 @@ module Mayu
         number_to_base(id, DIGITS.length).map { DIGITS[_1] }.join(JOINER)
       end
 
+      sig { returns(Integer) }
+      def marshal_dump
+        @counter
+      end
+
+      sig { params(counter: Integer).void }
+      def marshal_load(counter)
+        @counter = counter
+      end
+
       private
 
       sig { params(number: Integer, base: Integer).returns(T::Array[Integer]) }

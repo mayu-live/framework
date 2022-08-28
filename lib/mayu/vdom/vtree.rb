@@ -156,6 +156,18 @@ module Mayu
         @sent_stylesheets = T.let(Set.new, T::Set[String])
       end
 
+      sig { returns(T::Array[T.untyped]) }
+      def marshal_dump
+        [@root, @id_generator, @sent_stylesheets, @handlers]
+      end
+
+      sig { params(a: T::Array[T.untyped]).void }
+      def marshal_load(a)
+        @root, @id_generator, @sent_stylesheets, @handlers = a
+        @update_queue = Async::Queue.new
+        @update_semaphore = Async::Semaphore.new
+      end
+
       sig do
         params(descriptor: Descriptor, lifecycles: T::Boolean).returns(
           UpdateContext

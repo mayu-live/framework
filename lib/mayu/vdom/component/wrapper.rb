@@ -52,6 +52,23 @@ module Mayu
           @barrier = T.let(Async::Barrier.new(parent: task), Async::Barrier)
         end
 
+        sig { returns(T.untyped) }
+        def marshal_dump
+          [@vnode, @props, @state]
+        end
+
+        sig { params(a: T.untyped).void }
+        def marshal_load(a)
+          @vnode, @props, @state = a
+          @next_state = @state.clone
+          @instance =
+            T.cast(@vnode.descriptor.type, T.class_of(Component::Base)).new(
+              self
+            )
+          @dirty = false
+          @barrier = Async::Barrier.new
+        end
+
         sig do
           override
             .params(next_props: Props, next_state: State)

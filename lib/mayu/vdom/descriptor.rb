@@ -86,6 +86,31 @@ module Mayu
         @key = T.let(@props.delete(:key), T.untyped)
       end
 
+      sig { params(level: Integer).returns(String) }
+      def _dump(level)
+        type =
+          if component?
+            klass = T.cast(@type, T.class_of(Component::Base))
+
+            component = klass.name || klass.const_get(:MAYU_MODULE).fetch(:path)
+            { component: }
+          else
+            @type
+          end
+
+        MessagePack.pack([type, Marshal.dump(@props), @key])
+      end
+
+      sig { params(str: String).returns(T.attached_class) }
+      def self._load(str)
+        type, props, key = MessagePack.unpack(str)
+        obj = allocate
+        obj.instance_variable_set(:@type, type)
+        obj.instance_variable_set(:@props, Marshal.load(props))
+        obj.instance_variable_set(:@key, key)
+        obj
+      end
+
       sig { returns(T::Boolean) }
       def text? = @type == TEXT
       sig { returns(T::Boolean) }

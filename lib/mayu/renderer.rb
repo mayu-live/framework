@@ -55,6 +55,8 @@ module Mayu
       html = root.to_html
       ids = root.id_tree
       stylesheets = []
+      binding.pry
+      asd = Marshal.dump(@vtree.root)
       { html:, ids:, stylesheets: }
     end
 
