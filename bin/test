@@ -8,9 +8,5 @@ $LOAD_PATH.unshift(File.join(__dir__, ".."))
 $LOAD_PATH.unshift(File.join(__dir__, "..", "lib"))
 
 ARGV.each do
-  p _1
-  p File.expand_path(_1, Dir.pwd)
   require File.expand_path(_1, Dir.pwd)
 end
-
-Minitest.run(ARGV)
