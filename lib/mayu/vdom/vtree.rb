@@ -89,9 +89,14 @@ module Mayu
         def run(task: Async::Task.current, &block)
           task.async(annotation: "VTree updater") do |task|
             loop do
-              sleep 0.05
+              sleep 0.5
 
-              next if @vtree.update_queue.empty?
+              if @vtree.update_queue.empty?
+                puts "@vtree item: #{@vtree.update_queue.size}"
+                next
+              else
+                puts "@vtree item: #{@vtree.update_queue.size}"
+              end
 
               ctx = UpdateContext.new
 

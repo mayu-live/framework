@@ -203,11 +203,19 @@ module Mayu
         barrier = Async::Barrier.new
 
         barrier.async do
+          loop do
+            Console.logger.warn("Hopp")
+            sleep 1
+          end
+        end
+
+        barrier.async do
           q = Async::Queue.new
 
           session
             .renderer
             .run do |message|
+              Console.logger.error(message)
               unless connection_id
                 q.enqueue(message)
                 next
@@ -262,9 +270,18 @@ module Mayu
             end
 
             if connection_id
-              environment.cluster.connection(connection_id).publish(:heartbeat)
-              last_heartbeat_at = Time.now.to_f
-              metrics.session_heartbeats.increment
+              begin
+                environment
+                  .cluster
+                  .connection(connection_id)
+                  .publish(:heartbeat)
+              rescue NATS::IO::NoRespondersError
+                # seems like connection is down or something?
+              else
+                last_heartbeat_at = Time.now.to_f
+              ensure
+                metrics.session_heartbeats.increment
+              end
             end
           end
         ensure

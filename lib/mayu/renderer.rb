@@ -56,27 +56,26 @@ module Mayu
     end
 
     sig do
-      params(
-        task: Async::Task,
-        block: T.proc.params(msg: [Symbol, T.untyped]).void
-      ).returns(Async::Task)
+      params(block: T.proc.params(msg: [Symbol, T.untyped]).void).returns(
+        Async::Task
+      )
     end
-    def run(task: Async::Task.current, &block)
-      task.async do
-        updater = VDOM::VTree::Updater.new(@vtree)
+    def run(&block)
+      updater = VDOM::VTree::Updater.new(@vtree)
+      puts "STARTING RUN"
 
-        updater.run do |msg|
-          case msg
-          in [:patch, patches]
-            yield [:patch, patches]
-          in [:exception, error]
-            yield [:exception, error]
-          in [:navigate, href]
-            navigate(href)
-            yield [:navigate, href]
-          else
-            puts "\e[31mUnknown event: #{msg.inspect}\e[0m"
-          end
+      updater.run do |msg|
+        Console.logger.warn(msg.inspect)
+        case msg
+        in [:patch, patches]
+          yield [:patch, patches]
+        in [:exception, error]
+          yield [:exception, error]
+        in [:navigate, href]
+          navigate(href)
+          yield [:navigate, href]
+        else
+          puts "\e[31mUnknown event: #{msg.inspect}\e[0m"
         end
       end
     end
