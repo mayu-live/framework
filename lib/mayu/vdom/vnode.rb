@@ -22,11 +22,7 @@ module Mayu
 
       sig { returns(Id) }
       def dom_id
-        if component
-          children.first&.dom_id or raise "There is no DOM id"
-        else
-          id
-        end
+        component ? children.first&.dom_id || "root" : id
       end
 
       sig { returns(Descriptor) }
@@ -146,6 +142,88 @@ module Mayu
       sig { returns(String) }
       def inspect
         "<#VNode:#{id} type=#{descriptor.type} key=#{descriptor.key}>"
+      end
+
+      sig { returns(String) }
+      def to_html
+        StringIO.new.tap { write_html(_1) }.tap(&:rewind).read
+      end
+
+      sig { params(io: StringIO).void }
+      def write_html(io)
+        type = descriptor.type
+
+        case type
+        when Descriptor::TEXT
+          io << descriptor.text
+          return
+        when Descriptor::COMMENT
+          io << "<!--mayu-id=#{@id}-->"
+          return
+        end
+
+        cleaned_children = children
+
+        if component
+          cleaned_children.each { _1.write_html(io) }
+          return
+        end
+
+        io << "<#{type}"
+
+        io << %< data-mayu-id="#{@id.to_s}">
+
+        io << %< data-mayu-key="#{descriptor.key.to_s}"> if descriptor.key
+
+        format_props { |formatted_prop| io << formatted_prop }
+
+        io << ">"
+
+        return if Mayu::HTML.void_tag?(type)
+
+        if dangerously_set_inner_html =
+             props.dig(:dangerously_set_inner_html, :__html)
+          io << dangerously_set_inner_html
+        else
+          cleaned_children.each { _1.write_html(io) }
+        end
+
+        io << "</#{type}>"
+      end
+
+      sig { params(attr: T.any(String, Symbol), value: T.untyped).void }
+      def format_attr(attr, value)
+        format(' $<attr>s="$<value>s"', attr.to_s, CGI.escape_html(value.to_s))
+      end
+
+      sig { params(block: T.proc.params(arg0: String).void).void }
+      def format_props(&block)
+        props
+          .reject do |prop, value|
+            next true unless value
+            next true if prop == :children
+            next true if prop == :dangerously_set_inner_html
+            false
+          end
+          .map do |prop, value|
+            if prop == :style && value.is_a?(Hash)
+              next format_attr(prop, CSSAttributes.new(**value).to_s)
+            end
+
+            if HTML.boolean_attribute?(prop) || value.is_a?(TrueClass) ||
+                 value.is_a?(FalseClass)
+              value = prop.to_s
+            end
+
+            attr =
+              prop
+                .to_s
+                .sub(/^on_/, "on")
+                .sub(/\Ainitial_value\Z/, "value")
+                .tr("_", "-")
+
+            format_attr(attr, value)
+          end
       end
 
       sig do

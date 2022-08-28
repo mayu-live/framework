@@ -58,7 +58,8 @@ module Mayu
             .returns(T::Boolean)
         end
         def should_update?(next_props, next_state)
-          wrap_errors { @instance.should_update?(next_props, next_state) }
+          wrap_errors { @instance.should_update?(next_props, next_state) } ||
+            dirty?
         end
 
         sig { returns(Mayu::State::Store) }
