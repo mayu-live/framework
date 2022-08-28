@@ -11,6 +11,7 @@ ITEMS = [
 initial_state { |props| { active: 0 } }
 
 mount do
+  Console.logger.warn("MOUNT!!!")
   loop do
     sleep 3
 

@@ -103,7 +103,12 @@ module Mayu
       def validate_hmac(input)
         hmac, message = input.unpack("a32 a*")
 
-        raise InvalidHMACError unless hmac == Digest::SHA256.digest(message)
+        unless OpenSSL.fixed_length_secure_compare(
+                 hmac,
+                 Digest::SHA256.digest(message)
+               )
+          raise InvalidHMACError
+        end
 
         message
       end
@@ -136,12 +141,15 @@ module Mayu
       def encrypt(message, auth_data: "")
         cipher = OpenSSL::Cipher.new("aes-256-gcm")
         cipher.encrypt
-        cipher.key = @key
+        salt = SecureRandom.random_bytes(8)
+        cipher.key = generate_key(salt)
         cipher.iv = iv = cipher.random_iv
         cipher.auth_data = auth_data
         cipher_text = cipher.update(message) + cipher.final
         auth_tag = cipher.auth_tag
-        [auth_tag.bytesize, auth_tag, iv, cipher_text].pack("C a* a* a*")
+        [auth_tag.bytesize, auth_tag, salt, iv, cipher_text].pack(
+          "C a* a* a* a*"
+        )
       rescue OpenSSL::Cipher::CipherError
         raise EncryptError
       end
@@ -150,16 +158,33 @@ module Mayu
       def decrypt(data, auth_data: "")
         data.unpack("C a*") => [Integer => auth_tag_len, String => data]
 
-        data.unpack("a#{auth_tag_len} a12 a*") => [auth_tag, iv, cipher_text]
+        data.unpack("a#{auth_tag_len} a8 a12 a*") => [
+          auth_tag,
+          salt,
+          iv,
+          cipher_text
+        ]
 
         cipher = OpenSSL::Cipher.new("aes-256-gcm")
         cipher.iv = iv
-        cipher.key = @key
+        cipher.key = generate_key(salt)
         cipher.auth_data = auth_data
         cipher.auth_tag = auth_tag
         cipher.update(cipher_text) + cipher.final
       rescue OpenSSL::Cipher::CipherError
         raise DecryptError
+      end
+
+      sig { params(salt: String).returns(String) }
+      def generate_key(salt)
+        OpenSSL::KDF.scrypt(
+          @key,
+          salt:, # Salt.
+          N: 2**14, # CPU/memory cost parameter. This must be a power of 2.
+          r: 8, # Block size parameter.
+          p: 1, # Parallelization parameter
+          length: 32 # Length in octets of the derived key
+        )
       end
     end
   end

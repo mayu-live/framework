@@ -203,19 +203,12 @@ module Mayu
         barrier = Async::Barrier.new
 
         barrier.async do
-          loop do
-            Console.logger.warn("Hopp")
-            sleep 1
-          end
-        end
-
-        barrier.async do
           q = Async::Queue.new
 
           session
             .renderer
             .run do |message|
-              Console.logger.error(message)
+              Console.logger.error(message.inspect)
               unless connection_id
                 q.enqueue(message)
                 next
