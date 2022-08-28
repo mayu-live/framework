@@ -23,6 +23,10 @@ module Mayu
       end
       class DecryptError < StandardError
       end
+      class InvalidHMACError < StandardError
+      end
+      class InvalidPrefixError < StandardError
+      end
 
       sig { params(key: String, prefix: String, ttl: Integer).void }
       def initialize(
@@ -61,6 +65,7 @@ module Mayu
       def encode_message(message, auth_data: "")
         message
           .then { Marshal.dump(_1) }
+          .then { prepend_hmac(_1) }
           .then { Brotli.deflate(_1) }
           .then { encrypt(_1, auth_data:) }
           .then { Base64.urlsafe_encode64(_1) }
@@ -74,6 +79,7 @@ module Mayu
           .then { Base64.urlsafe_decode64(_1) }
           .then { decrypt(_1, auth_data:) }
           .then { Brotli.inflate(_1) }
+          .then { validate_hmac(_1) }
           .then { Marshal.load(_1) }
           .tap { validate_times(_1) }
           .fetch(:payload)
@@ -84,9 +90,22 @@ module Mayu
         if str.start_with?(@prefix)
           str.delete_prefix(@prefix)
         else
-          raise ArgumentError,
+          raise InvalidPrefixError,
                 "The given message doesn't have the correct prefix"
         end
+      end
+
+      def prepend_hmac(input)
+        hmac = Digest::SHA256.digest(input)
+        input.prepend(hmac)
+      end
+
+      def validate_hmac(input)
+        hmac, message = input.unpack("a32 a*")
+
+        raise InvalidHMACError unless hmac == Digest::SHA256.digest(message)
+
+        message
       end
 
       sig { params(message: { iss: Float, exp: Float, payload: String }).void }
