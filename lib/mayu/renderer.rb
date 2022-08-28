@@ -15,12 +15,19 @@ module Mayu
       params(
         environment: Environment,
         request_path: String,
+        app: VDOM::Descriptor,
         parent: T.any(Async::Task, Async::Barrier)
       ).void
     end
-    def initialize(environment:, request_path:, parent: Async::Task.current)
+    def initialize(
+      environment:,
+      request_path:,
+      app: environment.load_root(request_path),
+      parent: Async::Task.current
+    )
       @environment = environment
       @session = T.let(Session.new(environment, request_path:), Session)
+      @app = app
 
       # Set up a barrier to group async tasks together.
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
@@ -33,57 +40,50 @@ module Mayu
           code_reloader.on_update { navigate(@session.current_path) }
         end
       end
+    end
 
-      @barrier.async(annotation: "Renderer patch sets") do
-        @vtree.on_update.dequeue => [:patch, initial_patches]
-        initial_insert = initial_patches.find { _1[:type] == :insert }
+    sig do
+      returns({ html: String, ids: T.untyped, stylesheets: T::Array[String] })
+    end
+    def initial_render
+      render!
+      root = @vtree.root
+      raise unless root
+      html = root.to_html
+      ids = root.id_tree
+      stylesheets = []
+      { html:, ids:, stylesheets: }
+    end
 
-        raise "No insert patch in initial render!" unless initial_insert
+    sig do
+      params(
+        task: Async::Task,
+        block: T.proc.params(msg: [Symbol, T.untyped]).void
+      ).returns(Async::Task)
+    end
+    def run(task: Async::Task.current, &block)
+      task.async do
+        updater = VDOM::VTree::Updater.new(@vtree)
 
-        respond(:initial_render, initial_patches)
-        respond(:init, initial_insert[:ids])
-
-        loop do
-          message = @vtree.on_update.dequeue
-
-          case message
+        updater.run do |msg|
+          case msg
           in [:patch, patches]
-            respond(:patch, patches)
+            yield [:patch, patches]
           in [:exception, error]
-            respond(:exception, error)
+            yield [:exception, error]
           in [:navigate, href]
             navigate(href)
-            respond(:navigate, href)
+            yield [:navigate, href]
           else
-            puts "\e[31mUnknown event: #{message.inspect}\e[0m"
+            puts "\e[31mUnknown event: #{msg.inspect}\e[0m"
           end
         end
       end
-
-      @in = T.let(Async::Queue.new, Async::Queue)
-      @out = T.let(Async::Queue.new, Async::Queue)
-
-      @barrier.async(annotation: "Renderer event handlers") do
-        loop do
-          message = @in.dequeue
-
-          case message
-          in :render
-            rerender!
-          in [:handle_callback, callback_id, payload]
-            @vtree.handle_event(callback_id, payload)
-          else
-            puts "Invalid message: #{message.inspect}"
-          end
-        end
-      end
-
-      rerender!
     end
 
     sig { params(callback_id: String, payload: T.untyped).returns(T::Boolean) }
     def handle_callback(callback_id, payload = {})
-      send(:handle_callback, callback_id, payload)
+      @vtree.handle_callback(callback_id, payload)
       true
     end
 
@@ -92,15 +92,8 @@ module Mayu
 
     sig { void }
     def stop
-      @vtree.stop!
+      # @vtree.stop!
       @barrier.stop
-    end
-
-    sig { params(args: T.untyped).void }
-    def send(*args) = @in.enqueue(args)
-    sig { returns(T.untyped) }
-    def take
-      @out.dequeue
     end
 
     sig { returns(T.untyped) }
@@ -111,13 +104,12 @@ module Mayu
     sig { params(path: String).void }
     def navigate(path)
       @session.navigate(path)
-      rerender!
+      render!
     end
 
-    sig { params(args: T.untyped).void }
-    def respond(*args) = @out.enqueue(args)
-
-    sig { void }
-    def rerender! = @vtree.render(@session.app)
+    sig { returns(VDOM::UpdateContext) }
+    def render!
+      @vtree.render(@app)
+    end
   end
 end

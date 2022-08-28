@@ -10,12 +10,9 @@ module Mayu
     def initialize(environment, request_path:)
       @environment = environment
       @store = T.let(create_store, State::Store)
-      @app = T.let(environment.load_root(request_path), VDOM::Descriptor)
       @current_path = request_path
     end
 
-    sig { returns(VDOM::Descriptor) }
-    attr_reader :app
     sig { returns(State::Store) }
     attr_reader :store
     sig { returns(String) }

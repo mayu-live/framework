@@ -67,10 +67,73 @@ module Mayu
         def to_a = @indexes
       end
 
-      sig { returns(Async::Queue) }
-      attr_reader :on_update
+      class Updater
+        extend T::Sig
+
+        sig { params(vtree: VTree).void }
+        def initialize(vtree)
+          @vtree = vtree
+        end
+
+        sig { params(handler_id: String, payload: T.untyped).void }
+        def handle_event(handler_id, payload = {})
+          @vtree.handle_event(handler_id, payload)
+        end
+
+        sig do
+          params(
+            task: Async::Task,
+            block: T.proc.params(arg0: [Symbol, T.untyped]).void
+          ).returns(Async::Task)
+        end
+        def run(task: Async::Task.current, &block)
+          task.async(annotation: "VTree updater") do |task|
+            loop do
+              sleep 0.05
+
+              next if @vtree.update_queue.empty?
+
+              ctx = UpdateContext.new
+
+              start_at = Time.now
+
+              @vtree.update_queue.size.times do
+                case @vtree.update_queue.dequeue
+                in [:navigate, path]
+                  yield [:navigate, path]
+                in [:exception, error]
+                  yield [:exception, error]
+                in VNode => vnode
+                  if vnode.component&.dirty?
+                    @vtree.patch(ctx, vnode, vnode.descriptor, lifecycles: true)
+                  end
+                end
+              end
+
+              patches = ctx.patches + ctx.stylesheet_patch
+              yield [:patch, patches] unless patches.empty?
+              # puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
+            end
+          rescue => e
+            puts e.message
+            puts e.backtrace
+            error = {
+              type: e.class.name,
+              message: e.message,
+              backtrace: e.backtrace
+            }
+
+            yield [:exception, error]
+          end
+        end
+      end
+
       sig { returns(Session) }
       attr_reader :session
+      sig { returns(Async::Queue) }
+      attr_reader :update_queue
+      sig { returns(T.nilable(VNode)) }
+      attr_reader :root
 
       sig { params(session: Session, task: Async::Barrier).void }
       def initialize(session:, task: Async::Task.current)
@@ -81,63 +144,23 @@ module Mayu
         @handlers = T.let({}, T::Hash[String, Component::HandlerRef])
 
         @update_queue = T.let(Async::Queue.new, Async::Queue)
-        @on_update = T.let(Async::Queue.new, Async::Queue)
 
         @update_semaphore =
           T.let(Async::Semaphore.new(parent: task), Async::Semaphore)
 
         @sent_stylesheets = T.let(Set.new, T::Set[String])
-
-        @update_task =
-          T.let(
-            task.async(annotation: "VTree updater") do |task|
-              loop do
-                sleep 0.05
-
-                next if @update_queue.empty?
-
-                ctx = UpdateContext.new
-
-                start_at = Time.now
-
-                @update_queue.size.times do
-                  vnode = @update_queue.dequeue
-
-                  if vnode.component&.dirty?
-                    patch_vnode(ctx, vnode, vnode.descriptor)
-                  end
-                end
-
-                commit!(ctx)
-                # puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
-              end
-            rescue => e
-              puts e.message
-              puts e.backtrace
-              error = {
-                type: e.class.name,
-                message: e.message,
-                backtrace: e.backtrace
-              }
-
-              @on_update.enqueue([:exception, error])
-            end,
-            Async::Task
-          )
       end
 
-      sig { void }
-      def stop! = @update_task.stop
-      sig { returns(T::Boolean) }
-      def running? = @update_task.running?
-
-      sig { params(descriptor: Descriptor).void }
-      def render(descriptor)
+      sig do
+        params(descriptor: Descriptor, lifecycles: T::Boolean).returns(
+          UpdateContext
+        )
+      end
+      def render(descriptor, lifecycles: true)
         start_at = Time.now
         ctx = UpdateContext.new
-        @root = patch(ctx, @root, descriptor)
-        commit!(ctx)
-        # puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
+        @root = patch(ctx, @root, descriptor, lifecycles:)
+        ctx
       end
 
       sig { params(handler_id: String, payload: T.untyped).void }
@@ -155,12 +178,12 @@ module Mayu
           message: e.message,
           backtrace: e.backtrace
         }
-        @on_update.enqueue([:exception, error])
+        @update_queue.enqueue([:exception, error])
       end
 
       sig { returns(String) }
       def to_html
-        @root&.inspect_tree(exclude_components: true).to_s
+        @root&.to_html.to_s
       end
 
       sig { params(exclude_components: T::Boolean).returns(String) }
@@ -188,60 +211,55 @@ module Mayu
 
       sig { params(path: String).void }
       def navigate(path)
-        @on_update.enqueue([:navigate, path])
-      end
-
-      private
-
-      sig { params(ctx: UpdateContext).void }
-      def commit!(ctx)
-        patches = ctx.patches + ctx.stylesheet_patch
-        @on_update.enqueue([:patch, patches]) unless patches.empty?
+        @update_queue.enqueue([:navigate, path])
       end
 
       sig do
         params(
           ctx: UpdateContext,
           vnode: T.nilable(VNode),
-          descriptor: T.nilable(Descriptor)
+          descriptor: T.nilable(Descriptor),
+          lifecycles: T::Boolean
         ).returns(T.nilable(VNode))
       end
-      def patch(ctx, vnode, descriptor)
+      def patch(ctx, vnode, descriptor, lifecycles:)
         unless vnode
           return nil unless descriptor
 
-          vnode = init_vnode(ctx, descriptor)
+          vnode = init_vnode(ctx, descriptor, lifecycles:)
           ctx.insert(vnode)
           return vnode
         end
 
-        return remove_vnode(ctx, vnode) unless descriptor
+        return remove_vnode(ctx, vnode, lifecycles:) unless descriptor
 
         if vnode.descriptor.same?(descriptor)
-          patch_vnode(ctx, vnode, descriptor)
+          patch_vnode(ctx, vnode, descriptor, lifecycles:)
         else
-          remove_vnode(ctx, vnode)
-          vnode = init_vnode(ctx, descriptor)
+          remove_vnode(ctx, vnode, lifecycles:)
+          vnode = init_vnode(ctx, descriptor, lifecycles:)
           ctx.insert(vnode)
           return vnode
         end
       end
+
+      private
 
       sig do
         params(
           ctx: UpdateContext,
           vnode: VNode,
-          descriptor: Descriptor
+          descriptor: Descriptor,
+          lifecycles: T::Boolean
         ).returns(VNode)
       end
-      def patch_vnode(ctx, vnode, descriptor)
+      def patch_vnode(ctx, vnode, descriptor, lifecycles:)
         unless vnode.descriptor.same?(descriptor)
           raise "Can not patch different types!"
         end
 
         if component = vnode.component
-          if component.should_update?(descriptor.props, component.next_state) ||
-               component.dirty?
+          if component.should_update?(descriptor.props, component.next_state)
             vnode.descriptor = descriptor
             prev_props, prev_state = component.props, component.state
             component.props = descriptor.props
@@ -251,12 +269,17 @@ module Mayu
 
             ctx.enter(vnode) do
               vnode.children =
-                update_children(ctx, vnode.children.compact, descriptors)
+                update_children(
+                  ctx,
+                  vnode.children.compact,
+                  descriptors,
+                  lifecycles:
+                )
             end
 
             update_stylesheet(ctx, component)
 
-            component.did_update(prev_props, prev_state)
+            component.did_update(prev_props, prev_state) if lifecycles
           end
 
           return vnode
@@ -270,7 +293,12 @@ module Mayu
 
           ctx.enter(vnode) do
             vnode.children =
-              update_children(ctx, vnode.children.compact, descriptors)
+              update_children(
+                ctx,
+                vnode.children.compact,
+                descriptors,
+                lifecycles:
+              )
           end
 
           return vnode
@@ -303,11 +331,15 @@ module Mayu
             ctx.enter(vnode) do
               vnode.children =
                 add_comments_between_texts(descriptor.children).map do
-                  init_vnode(ctx, _1).tap { |child| ctx.insert(child) }
+                  init_vnode(ctx, _1, lifecycles:).tap do |child|
+                    ctx.insert(child)
+                  end
                 end
             end
           elsif vnode.children.length > 0
-            ctx.enter(vnode) { vnode.children.each { remove_vnode(ctx, _1) } }
+            ctx.enter(vnode) do
+              vnode.children.each { remove_vnode(ctx, _1, lifecycles:) }
+            end
             vnode.children = []
           elsif vnode.descriptor.text?
             ctx.text(vnode, "")
@@ -325,10 +357,14 @@ module Mayu
       end
 
       sig do
-        params(ctx: UpdateContext, vnodes: T::Array[VNode]).returns(NilClass)
+        params(
+          ctx: UpdateContext,
+          vnodes: T::Array[VNode],
+          lifecycles: T::Boolean
+        ).returns(NilClass)
       end
-      def remove_vnodes(ctx, vnodes)
-        vnodes.each { |vnode| remove_vnode(ctx, vnode) }
+      def remove_vnodes(ctx, vnodes, lifecycles:)
+        vnodes.each { |vnode| remove_vnode(ctx, vnode, lifecycles:) }
         nil
       end
 
@@ -346,12 +382,14 @@ module Mayu
         params(
           ctx: UpdateContext,
           descriptor: Descriptor,
+          lifecycles: T::Boolean,
           nested: T::Boolean
         ).returns(VNode)
       end
-      def init_vnode(ctx, descriptor, nested: false)
+      def init_vnode(ctx, descriptor, lifecycles:, nested: false)
         vnode = VNode.new(self, ctx.dom_parent_id, descriptor)
-        component = vnode.init_component
+
+        component = vnode.init_component if lifecycles
 
         children =
           if component
@@ -366,27 +404,31 @@ module Mayu
         ctx.enter(vnode) do
           vnode.children =
             add_comments_between_texts(children).map do
-              init_vnode(ctx, _1, nested: true)
+              init_vnode(ctx, _1, lifecycles:, nested: true)
             end
         end
 
-        vnode.component&.mount
+        vnode.component&.mount if lifecycles
+
         update_handlers({}, vnode.props)
 
         vnode
       end
 
       sig do
-        params(ctx: UpdateContext, vnode: VNode, patch: T::Boolean).returns(
-          NilClass
-        )
+        params(
+          ctx: UpdateContext,
+          vnode: VNode,
+          lifecycles: T::Boolean,
+          patch: T::Boolean
+        ).returns(NilClass)
       end
-      def remove_vnode(ctx, vnode, patch: true)
+      def remove_vnode(ctx, vnode, lifecycles:, patch: true)
         # puts "\e[31mRemoving vnode #{vnode.id} #{vnode.descriptor.type}\e[0m"
 
-        vnode.component&.unmount
+        vnode.component&.unmount if lifecycles
         ctx.remove(vnode) if patch
-        vnode.children.map { remove_vnode(ctx, _1, patch: false) }
+        vnode.children.map { remove_vnode(ctx, _1, lifecycles:, patch: false) }
         update_handlers(vnode.props, {})
         nil
       end
@@ -409,10 +451,11 @@ module Mayu
         params(
           ctx: UpdateContext,
           vnodes: T::Array[VNode],
-          descriptors: T::Array[Descriptor]
+          descriptors: T::Array[Descriptor],
+          lifecycles: T::Boolean
         ).returns(T::Array[VNode])
       end
-      def update_children(ctx, vnodes, descriptors)
+      def update_children(ctx, vnodes, descriptors, lifecycles:)
         check_duplicate_keys(descriptors)
 
         vnodes = vnodes.compact
@@ -428,9 +471,9 @@ module Mayu
 
               if vnode
                 vnodes.delete(vnode)
-                patch_vnode(ctx, vnode, descriptor)
+                patch_vnode(ctx, vnode, descriptor, lifecycles:)
               else
-                init_vnode(ctx, descriptor)
+                init_vnode(ctx, descriptor, lifecycles:)
               end
             end,
             T::Array[VNode]
@@ -462,7 +505,7 @@ module Mayu
           end
         end
 
-        vnodes.each { |vnode| remove_vnode(ctx, vnode) }
+        vnodes.each { |vnode| remove_vnode(ctx, vnode, lifecycles:) }
 
         new_children
       end
