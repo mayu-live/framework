@@ -68,6 +68,16 @@ module Mayu
         # @stylesheet = T.let(nil, T.nilable(Module::CSSModule::Base))
       end
 
+      sig { returns(T.untyped) }
+      def marshal_dump
+        [@id, @dom_parent_id, @descriptor, @children, @component]
+      end
+
+      sig { params(a: T.untyped).void }
+      def marshal_load(a)
+        @id, @dom_parent_id, @descriptor, @children, @component = a
+      end
+
       sig do
         params(
           url: String,
