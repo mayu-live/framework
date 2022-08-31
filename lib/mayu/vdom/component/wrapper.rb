@@ -54,18 +54,14 @@ module Mayu
 
         sig { returns(T.untyped) }
         def marshal_dump
-          [@vnode, @props, @state]
+          [@props, @state]
         end
 
         sig { params(a: T.untyped).void }
         def marshal_load(a)
-          @vnode, @props, @state = a
+          @props, @state = a
           @next_state = @state.clone
-          @instance =
-            T.cast(@vnode.descriptor.type, T.class_of(Component::Base)).new(
-              self
-            )
-          @dirty = false
+          @dirty = true
           @barrier = Async::Barrier.new
         end
 
@@ -109,6 +105,9 @@ module Mayu
         def async(&blk)
           @barrier.async(&blk)
         end
+
+        sig { returns(String) }
+        def vnode_id = @vnode.id
 
         sig do
           params(

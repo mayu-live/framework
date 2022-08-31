@@ -10,7 +10,8 @@ module Mayu
       extend T::Sig
 
       State = T.type_alias { T::Hash[Symbol, T.untyped] }
-      InitialHtmlAndState = T.type_alias { { html: String, state: State } }
+      InitialHtmlAndState =
+        T.type_alias { { html: String, state: State, vtree: String } }
 
       sig { returns(State) }
       attr_reader :state
@@ -20,6 +21,7 @@ module Mayu
           environment: Mayu::Environment,
           request_path: String,
           state: T.nilable(State),
+          vtree: T.nilable(String),
           task: Async::Task
         ).void
       end
@@ -27,6 +29,7 @@ module Mayu
         environment:,
         request_path:,
         state: {},
+        vtree: nil,
         task: Async::Task.current
       )
         @environment = environment
@@ -37,6 +40,7 @@ module Mayu
             Mayu::Renderer.new(
               environment: @environment,
               request_path: request_path.to_s,
+              vtree:,
               parent: task
             ),
             Mayu::Renderer
@@ -45,7 +49,7 @@ module Mayu
 
       sig { params(task: Async::Task).returns(InitialHtmlAndState) }
       def initial_html_and_state(task: Async::Task.current)
-        @renderer.initial_render => { html:, ids:, stylesheets: }
+        @renderer.initial_render => { html:, ids:, stylesheets:, vtree: }
 
         style =
           stylesheets
@@ -57,7 +61,7 @@ module Mayu
         html =
           html.sub(%r{</head>}) { "#{style}#{_1}" }.prepend("<!DOCTYPE html>\n")
 
-        { html:, state: }
+        { html:, state:, vtree: }
       end
 
       sig { params(event_handler_id: String, payload: T.untyped).void }
@@ -76,7 +80,7 @@ module Mayu
             Console.logger.error(msg.inspect)
             case msg
             in [:initial_render, payload]
-              yield [:initial_render, payload]
+              #   yield [:initial_render, payload]
             in [:init, payload]
               yield [:init, payload]
             in [:patch, payload]

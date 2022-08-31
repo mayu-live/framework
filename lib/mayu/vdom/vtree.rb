@@ -158,14 +158,16 @@ module Mayu
 
       sig { returns(T::Array[T.untyped]) }
       def marshal_dump
-        [@root, @id_generator, @sent_stylesheets, @handlers]
+        [@root, @id_generator, @sent_stylesheets]
       end
 
       sig { params(a: T::Array[T.untyped]).void }
       def marshal_load(a)
-        @root, @id_generator, @sent_stylesheets, @handlers = a
+        @root, @id_generator, @sent_stylesheets = a
+        @handlers = {}
         @update_queue = Async::Queue.new
         @update_semaphore = Async::Semaphore.new
+        @root.instance_variable_set(:@vtree, self)
       end
 
       sig do

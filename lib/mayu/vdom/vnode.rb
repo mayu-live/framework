@@ -70,12 +70,29 @@ module Mayu
 
       sig { returns(T.untyped) }
       def marshal_dump
-        [@id, @dom_parent_id, @descriptor, @children, @component]
+        [@id, @dom_parent_id, @component, @children, @descriptor]
       end
 
       sig { params(a: T.untyped).void }
       def marshal_load(a)
-        @id, @dom_parent_id, @descriptor, @children, @component = a
+        @id, @dom_parent_id, @component, @children, @descriptor = a
+
+        if @component
+          @component.instance_variable_set(:@vnode, self)
+          instance =
+            T.cast(@descriptor.type, T.class_of(Component::Base)).new(
+              @component
+            )
+          @component.instance_variable_set(:@instance, instance)
+          instance.instance_variable_set(:@wrapper, @component)
+        end
+      end
+
+      sig { params(block: T.proc.params(vnode: VNode).void).void }
+      def traverse(&block)
+        yield self
+
+        children.each { |child| child.traverse(&block) }
       end
 
       sig do

@@ -16,6 +16,7 @@ module Mayu
         environment: Environment,
         request_path: String,
         app: VDOM::Descriptor,
+        vtree: T.nilable(String),
         parent: T.any(Async::Task, Async::Barrier)
       ).void
     end
@@ -23,6 +24,7 @@ module Mayu
       environment:,
       request_path:,
       app: environment.load_root(request_path),
+      vtree: nil,
       parent: Async::Task.current
     )
       @environment = environment
@@ -33,8 +35,7 @@ module Mayu
 
       @app = app
 
-      @vtree =
-        T.let(VDOM::VTree.new(session: @session, task: @barrier), VDOM::VTree)
+      @vtree = T.let(restore_vtree(vtree), VDOM::VTree)
 
       if code_reloader = environment.modules.code_reloader
         @barrier.async do
@@ -43,9 +44,41 @@ module Mayu
       end
     end
 
+    sig { params(vtree: T.nilable(String)).returns(VDOM::VTree) }
+    def restore_vtree(vtree = nil)
+      if vtree
+        res =
+          T.cast(
+            Marshal.restore(
+              vtree,
+              ->(obj) do
+                case obj
+                when VDOM::VTree
+                  obj.instance_variable_set(:@session, @session)
+                  obj.instance_variable_set(:@task, @barrier)
+                end
+                obj
+              end
+            ),
+            VDOM::VTree
+          )
+
+        res.root&.traverse { |vnode| vnode.instance_variable_set(:@vtree, res) }
+
+        res
+      else
+        VDOM::VTree.new(session: @session, task: @barrier)
+      end
+    end
+
     sig do
       params(lifecycles: T::Boolean).returns(
-        { html: String, ids: T.untyped, stylesheets: T::Array[String] }
+        {
+          html: String,
+          ids: T.untyped,
+          stylesheets: T::Array[String],
+          vtree: String
+        }
       )
     end
     def initial_render(lifecycles: false)
@@ -55,9 +88,8 @@ module Mayu
       html = root.to_html
       ids = root.id_tree
       stylesheets = []
-      binding.pry
-      asd = Marshal.dump(@vtree.root)
-      { html:, ids:, stylesheets: }
+      vtree = Marshal.dump(@vtree)
+      { html:, ids:, stylesheets:, vtree: }
     end
 
     sig do
@@ -69,10 +101,20 @@ module Mayu
       updater = VDOM::VTree::Updater.new(@vtree)
       puts "STARTING RUN"
 
-      yield [:init, initial_render(lifecycles: true)]
+      root = @vtree.root
+
+      raise "No root!" unless root
+
+      root.traverse do |vnode|
+        if c = vnode.component
+          c.mount
+          @vtree.update_queue.enqueue(vnode)
+        end
+      end
+
+      yield [:init, { ids: root.id_tree }]
 
       updater.run do |msg|
-        Console.logger.warn(msg.inspect)
         case msg
         in [:patch, patches]
           yield [:patch, patches]

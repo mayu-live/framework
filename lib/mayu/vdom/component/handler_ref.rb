@@ -17,7 +17,7 @@ module Mayu
             component: Component::Base,
             name: Symbol,
             args: T::Array[T.untyped],
-            kwargs: T::Hash[Symbol, T.untyped],
+            kwargs: T::Hash[Symbol, T.untyped]
           ).void
         end
         def initialize(component, name, args = [], kwargs = {})
@@ -28,7 +28,9 @@ module Mayu
           @id =
             T.let(
               Digest::SHA256.hexdigest(
-                [@component.object_id, @name, @args, @kwargs].map(&:inspect).join(":")
+                [@component.vnode_id, @name, @args, @kwargs].map(
+                  &:inspect
+                ).join(":")
               ),
               String
             )
@@ -37,7 +39,9 @@ module Mayu
         sig { params(payload: T.untyped).void }
         def call(payload)
           method = @component.method(:"handle_#{@name}")
-          T.unsafe(method).call(*[payload, *@args, **@kwargs].first(method.arity))
+          T.unsafe(method).call(
+            *[payload, *@args, **@kwargs].first(method.arity)
+          )
         end
 
         sig { returns(String) }

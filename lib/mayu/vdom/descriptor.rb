@@ -86,29 +86,38 @@ module Mayu
         @key = T.let(@props.delete(:key), T.untyped)
       end
 
-      sig { params(level: Integer).returns(String) }
-      def _dump(level)
+      sig { returns(T::Array[T.untyped]) }
+      def marshal_dump
         type =
           if component?
             klass = T.cast(@type, T.class_of(Component::Base))
 
-            component = klass.name || klass.const_get(:MAYU_MODULE).fetch(:path)
-            { component: }
+            if klass.name
+              { klass: klass }
+            else
+              component = klass.const_get(:MAYU_MODULE).fetch(:path)
+              { component: }
+            end
           else
             @type
           end
 
-        MessagePack.pack([type, Marshal.dump(@props), @key])
+        [type, props, key]
       end
 
-      sig { params(str: String).returns(T.attached_class) }
-      def self._load(str)
-        type, props, key = MessagePack.unpack(str)
-        obj = allocate
-        obj.instance_variable_set(:@type, type)
-        obj.instance_variable_set(:@props, Marshal.load(props))
-        obj.instance_variable_set(:@key, key)
-        obj
+      sig { params(a: T::Array[T.untyped]).void }
+      def marshal_load(a)
+        type, @props, @key = a
+
+        @type =
+          case type
+          in klass:
+            klass
+          in component:
+            Component::Base
+          else
+            type
+          end
       end
 
       sig { returns(T::Boolean) }
