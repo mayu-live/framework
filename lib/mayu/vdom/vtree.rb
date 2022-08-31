@@ -77,6 +77,7 @@ module Mayu
 
         sig { params(handler_id: String, payload: T.untyped).void }
         def handle_callback(handler_id, payload = {})
+          p(["Handle callback", payload])
           @vtree.handle_callback(handler_id, payload)
         end
 
@@ -588,7 +589,10 @@ module Mayu
 
         new_props
           .values_at(*T.unsafe(new_handlers))
-          .each { |handler| @handlers[handler.id] = handler }
+          .each do |handler|
+            @handlers[handler.id] = handler
+            p handler.id
+          end
       end
 
       sig do

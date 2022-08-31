@@ -208,7 +208,7 @@ module Mayu
           session
             .renderer
             .run do |message|
-              Console.logger.error(message.inspect)
+              # Console.logger.error(message.inspect)
               unless connection_id
                 q.enqueue(message)
                 next
