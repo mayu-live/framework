@@ -36,10 +36,14 @@ class ProgressBar extends HTMLElement {
           // this.progress!.removeAttribute('hide')
           this.later(() => {
             this.progress!.style.setProperty("opacity", "0");
-          }, 500);
+          }, 200);
           break;
         default:
-          clearTimeout(this.timeout);
+          this.later(() => {
+            const width =
+              Number(this.value!.style.getPropertyValue("width")) + 10;
+            this.value!.style.setProperty("width", width);
+          }, 10 + Math.random() * 50);
         // this.progress!.style.setProperty('opacity', '1')
         // this.progress!.removeAttribute('hide')
       }

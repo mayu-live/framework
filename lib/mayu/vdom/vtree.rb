@@ -70,8 +70,11 @@ module Mayu
       class Updater
         extend T::Sig
 
+        # This value limits how many updates per second we can make.
+        DEFAULT_UPDATES_PER_SECOND = 20
+
         sig { params(vtree: VTree, updates_per_second: Integer).void }
-        def initialize(vtree, updates_per_second: 20)
+        def initialize(vtree, updates_per_second: DEFAULT_UPDATES_PER_SECOND)
           @vtree = vtree
           @updates_per_second = updates_per_second
         end
@@ -91,13 +94,10 @@ module Mayu
         def run(task: Async::Task.current, &block)
           task.async(annotation: "VTree updater") do |task|
             loop do
-              sleep 1.0 / @updates_per_second
+              @vtree.update_queue.wait while @vtree.update_queue.empty?
 
-              if @vtree.update_queue.empty?
-                next
-              else
-                puts "@vtree item: #{@vtree.update_queue.size}"
-              end
+              sleep 1.0 / @updates_per_second
+              puts "@vtree item: #{@vtree.update_queue.size}"
 
               ctx = UpdateContext.new
 
@@ -121,7 +121,7 @@ module Mayu
 
               patches = ctx.patches + ctx.stylesheet_patch
               yield [:patch, patches] unless patches.empty?
-              # puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
+              puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
             end
           rescue => e
             puts e.message
