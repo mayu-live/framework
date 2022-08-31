@@ -13,17 +13,24 @@ module Mayu
         include Interface
         include VDOM::H
 
-        sig { params(component_path: String).returns(T.class_of(Component::Base)) }
+        sig do
+          params(component_path: String).returns(T.class_of(Component::Base))
+        end
         def self.import(component_path)
           const_get(:MAYU_MODULE) => { system:, path:, full_path: }
           cm = system.load_component(component_path, path)
-          system.add_dependency(full_path, cm.klass.const_get(:MAYU_MODULE)[:full_path])
+          system.add_dependency(
+            full_path,
+            cm.klass.const_get(:MAYU_MODULE)[:full_path]
+          )
           cm.klass
         end
 
-        sig {returns(String)}
+        sig { returns(String) }
         def inspect
-          self.class.const_get(:MAYU_MODULE).fetch(:path, "unknown path")
+          self.class.const_defined?(:MAYU_MODULE) &&
+            self.class.const_get(:MAYU_MODULE).fetch(:path, "unknown path") ||
+            "no module"
         end
 
         sig { returns(Props) }
@@ -54,7 +61,9 @@ module Mayu
         def self.initial_state(&blk) =
           define_singleton_method(:get_initial_state, &blk)
 
-        sig { params(name: Symbol, blk: T.proc.bind(T.attached_class).void).void }
+        sig do
+          params(name: Symbol, blk: T.proc.bind(T.attached_class).void).void
+        end
         def self.handler(name, &blk) = define_method(:"handle_#{name}", &blk)
 
         sig do
@@ -77,7 +86,14 @@ module Mayu
         sig { params(blk: T.proc.void).void }
         def async(&blk) = @wrapper.async(&blk)
 
-        sig { params(url: String, method: Symbol, headers: T::Hash[String, String], body: T.nilable(String)).returns(Fetch::Response) }
+        sig do
+          params(
+            url: String,
+            method: Symbol,
+            headers: T::Hash[String, String],
+            body: T.nilable(String)
+          ).returns(Fetch::Response)
+        end
         def fetch(url, method: :GET, headers: {}, body: nil)
           @wrapper.fetch(url, method:, headers:, body:)
         end
@@ -138,7 +154,14 @@ module Mayu
           @wrapper.update(stuff, &blk)
         end
 
-        sig { params(name: Symbol, args: T.untyped, kwargs: T.untyped).returns(HandlerRef) }
+        sig { returns(String) }
+        def vnode_id = @wrapper.vnode_id
+
+        sig do
+          params(name: Symbol, args: T.untyped, kwargs: T.untyped).returns(
+            HandlerRef
+          )
+        end
         def handler(name, *args, **kwargs)
           HandlerRef.new(self, name, args, kwargs)
         end

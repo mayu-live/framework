@@ -24,7 +24,14 @@ module Mayu
 
       StoredState =
         T.type_alias do
-          { session: { id: String, token: String }, state: Renderer::State }
+          {
+            session: {
+              id: String,
+              token: String
+            },
+            state: Renderer::State,
+            vtree: String
+          }
         end
 
       sig do
@@ -33,9 +40,9 @@ module Mayu
         )
       end
       def self.resume(environment, stored_state)
-        stored_state => { session: { id:, token: }, state: }
+        stored_state => { session: { id:, token: }, state:, vtree: }
 
-        new(environment, id:, token:, state:)
+        new(environment, id:, token:, state:, vtree:)
       end
 
       sig do
@@ -44,16 +51,27 @@ module Mayu
           id: String,
           token: String,
           request_path: String,
-          state: T.untyped
+          state: T.untyped,
+          vtree: T.nilable(String)
         ).void
       end
-      def initialize(environment, id:, token:, request_path: "/", state: nil)
+      def initialize(
+        environment,
+        id:,
+        token:,
+        request_path: "/",
+        state: nil,
+        vtree: nil
+      )
         @environment = environment
         @cluster = T.let(environment.cluster, Cluster)
         @id = id
         @token = token
         @renderer =
-          T.let(Renderer.new(environment:, request_path:, state:), Renderer)
+          T.let(
+            Renderer.new(environment:, request_path:, state:, vtree:),
+            Renderer
+          )
       end
 
       sig { returns(Cluster::Subject) }
@@ -63,10 +81,10 @@ module Mayu
 
       sig { params(message_cipher: MessageCipher).returns(String) }
       def initial_html(message_cipher)
-        renderer.initial_html_and_state => { state:, html: }
+        renderer.initial_html_and_state => { state:, html:, vtree: }
 
         encrypted_data =
-          message_cipher.dump({ session: { id:, token: }, state: })
+          message_cipher.dump({ session: { id:, token: }, state:, vtree: })
 
         script_id = "script_" + SecureRandom.alphanumeric(32)
 

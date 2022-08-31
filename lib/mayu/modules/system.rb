@@ -8,6 +8,9 @@ require_relative "code_reloader"
 module Mayu
   module Modules
     class System
+      module MODULES
+      end
+
       extend T::Sig
 
       class ResolveError < StandardError
@@ -138,6 +141,7 @@ module Mayu
         #   end
 
         @modules[full_path] = component_module
+        MODULES.const_set()
 
         @dependency_graph
           .dependants_of(full_path)
