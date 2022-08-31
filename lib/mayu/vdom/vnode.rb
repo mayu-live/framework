@@ -62,20 +62,33 @@ module Mayu
         @descriptor = descriptor
         @children = T.let([], Children)
         @component = T.let(nil, T.nilable(Component::Wrapper))
+        @removed = T.let(false, T::Boolean)
         # TODO:
         # VNodes should keep track of the associated stylesheet and whenever
         # the styhesheets differ, they should unload the old one and load the new...
         # @stylesheet = T.let(nil, T.nilable(Module::CSSModule::Base))
       end
 
+      sig { returns(T::Boolean) }
+      def removed? = @removed
+      sig { void }
+      def remove! = @removed = true
+      sig { returns(T::Boolean) }
+      def assert_not_removed!
+        return true unless removed?
+        raise "VNode is marked as removed and should not be used!"
+      end
+
       sig { returns(T.untyped) }
       def marshal_dump
+        assert_not_removed!
         [@id, @dom_parent_id, @component, @children, @descriptor]
       end
 
       sig { params(a: T.untyped).void }
       def marshal_load(a)
         @id, @dom_parent_id, @component, @children, @descriptor = a
+        @removed = false
 
         if @component
           @component.instance_variable_set(:@vnode, self)

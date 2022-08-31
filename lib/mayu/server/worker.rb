@@ -287,7 +287,7 @@ module Mayu
           session
             .subject
             .subscribe do |msg|
-              Console.logger.warn("message", msg.data.inspect)
+              # Console.logger.warn(self, "message", msg.data.inspect)
               case msg.data
               in [:ping, timestamp]
                 logger.debug("Session #{session.id}", "Ping")

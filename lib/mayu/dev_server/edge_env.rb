@@ -14,7 +14,7 @@ module Mayu
         end
 
         def request(*data)
-          Console.logger.warn("Requesting from", @subject)
+          # Console.logger.warn(self, "Requesting from", @subject)
           Message.new(
             @nats.request(@subject, T.unsafe(MessagePack).pack(*data))
           )

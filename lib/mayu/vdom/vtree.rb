@@ -70,9 +70,10 @@ module Mayu
       class Updater
         extend T::Sig
 
-        sig { params(vtree: VTree).void }
-        def initialize(vtree)
+        sig { params(vtree: VTree, updates_per_second: Integer).void }
+        def initialize(vtree, updates_per_second: 20)
           @vtree = vtree
+          @updates_per_second = updates_per_second
         end
 
         sig { params(handler_id: String, payload: T.untyped).void }
@@ -90,10 +91,9 @@ module Mayu
         def run(task: Async::Task.current, &block)
           task.async(annotation: "VTree updater") do |task|
             loop do
-              sleep 0.5
+              sleep 1.0 / @updates_per_second
 
               if @vtree.update_queue.empty?
-                puts "@vtree item: #{@vtree.update_queue.size}"
                 next
               else
                 puts "@vtree item: #{@vtree.update_queue.size}"
@@ -105,14 +105,17 @@ module Mayu
 
               @vtree.update_queue.size.times do
                 case @vtree.update_queue.dequeue
+                in [:replace_root, descriptor]
+                  @vtree.render(descriptor, ctx:)
                 in [:navigate, path]
                   yield [:navigate, path]
                 in [:exception, error]
                   yield [:exception, error]
                 in VNode => vnode
-                  if vnode.component&.dirty?
-                    @vtree.patch(ctx, vnode, vnode.descriptor, lifecycles: true)
-                  end
+                  next if vnode.removed?
+                  # puts "Patching #{vnode.component.inspect}"
+                  next unless vnode.component&.dirty?
+                  @vtree.patch(ctx, vnode, vnode.descriptor, lifecycles: true)
                 end
               end
 
@@ -172,15 +175,21 @@ module Mayu
       end
 
       sig do
-        params(descriptor: Descriptor, lifecycles: T::Boolean).returns(
-          UpdateContext
-        )
+        params(
+          descriptor: Descriptor,
+          ctx: UpdateContext,
+          lifecycles: T::Boolean
+        ).returns(UpdateContext)
       end
-      def render(descriptor, lifecycles: true)
+      def render(descriptor, ctx: UpdateContext.new, lifecycles: true)
         start_at = Time.now
-        ctx = UpdateContext.new
         @root = patch(ctx, @root, descriptor, lifecycles:)
         ctx
+      end
+
+      sig { params(descriptor: Descriptor).void }
+      def replace_root(descriptor)
+        @update_queue.enqueue([:replace_root, descriptor])
       end
 
       sig { params(handler_id: String, payload: T.untyped).void }
@@ -452,6 +461,7 @@ module Mayu
         # puts "\e[31mRemoving vnode #{vnode.id} #{vnode.descriptor.type}\e[0m"
 
         vnode.component&.unmount if lifecycles
+        vnode.remove!
         ctx.remove(vnode) if patch
         vnode.children.map { remove_vnode(ctx, _1, lifecycles:, patch: false) }
         update_handlers(vnode.props, {})
@@ -589,10 +599,7 @@ module Mayu
 
         new_props
           .values_at(*T.unsafe(new_handlers))
-          .each do |handler|
-            @handlers[handler.id] = handler
-            p handler.id
-          end
+          .each { |handler| @handlers[handler.id] = handler }
       end
 
       sig do

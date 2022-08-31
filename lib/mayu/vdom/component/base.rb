@@ -71,19 +71,19 @@ module Mayu
             blk:
               T
                 .proc
+                .bind(T.attached_class)
                 .params(next_props: Props, next_state: State)
                 .returns(T::Boolean)
           ).void
         end
-
         def self.should_update?(&blk) = define_method(:should_update?, &blk)
 
-        sig { params(blk: T.proc.void).void }
+        sig { params(blk: T.proc.bind(T.attached_class).void).void }
         def self.mount(&blk) = define_method(:mount, &blk)
-        sig { params(blk: T.proc.void).void }
+        sig { params(blk: T.proc.bind(T.attached_class).void).void }
         def self.unmount(&blk) = define_method(:unmount, &blk)
 
-        sig { params(blk: T.proc.void).void }
+        sig { params(blk: T.proc.bind(T.attached_class).void).void }
         def async(&blk) = @wrapper.async(&blk)
 
         sig do

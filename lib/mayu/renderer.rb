@@ -64,7 +64,7 @@ module Mayu
                   in component:
                     @environment.modules.load_component(component)
                   else
-                    obj
+                    obj.type
                   end
                 else
                   obj
@@ -121,9 +121,11 @@ module Mayu
       root.traverse do |vnode|
         if c = vnode.component
           c.mount
-          @vtree.update_queue.enqueue(vnode)
+          # @vtree.update_queue.enqueue(vnode)
         end
       end
+
+      @vtree.render(@app, lifecycles: true)
 
       updater.run do |msg|
         case msg
@@ -164,7 +166,7 @@ module Mayu
     def navigate(path)
       @app = @environment.load_root(path)
       @session.navigate(path)
-      render!
+      @vtree.replace_root(@app)
     end
 
     sig { returns(VDOM::UpdateContext) }
