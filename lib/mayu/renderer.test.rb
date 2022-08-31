@@ -9,20 +9,89 @@ require_relative "environment"
 require_relative "dev_server/fake_nats"
 
 class TestRenderer < Minitest::Test
+  class FooComponent < Mayu::VDOM::Component::Base
+    initial_state { |props| { count: 0 } }
+
+    mount do
+      loop do
+        update { |state| { count: state[:count] + 1 } }
+
+        sleep 0.1
+      end
+    end
+
+    def render
+      h.div { h.p "Hello #{state[:count]}" }.div
+    end
+  end
+
   class MyComponent < Mayu::VDOM::Component::Base
     def render
-      h.div { h.h1 "hello world" }.div
+      h
+        .div do
+          h.h1 "hello world"
+          h[FooComponent]
+        end
+        .div
+    end
+  end
+
+  class PageComponent < Mayu::VDOM::Component::Base
+    initial_state { |props| { page: 0 } }
+
+    handler(:set_page) { |e, page| update(page:) }
+
+    def render
+      h
+        .div do
+          h.button "Page 0", on_click: handler(:set_page, 0)
+          h.button "Page 1", on_click: handler(:set_page, 1)
+
+          case state[:page]
+          when 0
+            h[MyComponent]
+          when 1
+            h[FooComponent]
+          else
+            h.p "Unknown page"
+          end
+        end
+        .div
     end
   end
 
   def test_renderer
     Sync do
-      root = Mayu::VDOM::Descriptor.new(MyComponent, {}, [])
+      root = Mayu::VDOM::Descriptor.new(PageComponent, {}, [])
 
       setup_environment(root) do |environment|
         renderer = Mayu::Renderer.new(environment:, request_path: "/")
 
-        renderer.initial_render => { html:, ids:, stylesheets: }
+        renderer.initial_render => { html:, ids:, stylesheets:, vtree: }
+        puts html
+        handlers = html.scan(/&#39;([[:xdigit:]]+)&#39;/).flatten
+
+        renderer2 = Mayu::Renderer.new(environment:, request_path: "/", vtree:)
+
+        x = 0
+
+        on_finish = Async::Condition.new
+
+        update_task =
+          renderer2.run do |msg|
+            if x > 0
+              handler = handlers[(x / 2) % handlers.length]
+              puts "Calling handler #{handler}"
+              renderer2.handle_callback(handler, {})
+            end
+
+            on_finish.signal if x > 10
+
+            x += 1
+          end
+
+        on_finish.wait
+        update_task.stop
 
         p html
       end

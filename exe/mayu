@@ -17,8 +17,7 @@ COMMANDS = {
     exec(
       "bundle", "exec",
       "falcon", "serve",
-      "--threaded",
-      "--count", "2",
+      "--count", "8",
       "--port", port,
       "--hostname", host,
     )

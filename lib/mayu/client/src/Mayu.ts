@@ -36,10 +36,6 @@ export default async function init(encryptedState: string) {
     sessionStorage.removeItem(SESSION_ID_KEY);
   };
 
-  es.addEventListener("patch", (msg) => {
-    prependLog(msg.data);
-  });
-
   es.addEventListener(
     "init",
     (e) => {
@@ -57,15 +53,6 @@ export default async function init(encryptedState: string) {
     },
     { once: true }
   );
-
-  const messages = document.createElement("ul");
-  document.body.appendChild(messages);
-
-  function prependLog(text: string) {
-    const el = document.createElement("li");
-    el.textContent = text;
-    messages.prepend(el);
-  }
 }
 
 async function resume(state: string, storedSessionId: string | null) {
