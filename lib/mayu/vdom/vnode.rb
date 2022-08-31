@@ -79,10 +79,7 @@ module Mayu
 
         if @component
           @component.instance_variable_set(:@vnode, self)
-          instance =
-            T.cast(@descriptor.type, T.class_of(Component::Base)).new(
-              @component
-            )
+          instance = descriptor.component_class.new(@component)
           @component.instance_variable_set(:@instance, instance)
           instance.instance_variable_set(:@wrapper, @component)
         end

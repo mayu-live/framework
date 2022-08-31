@@ -77,7 +77,7 @@ module Mayu
       def run(&block)
         @renderer
           .run do |msg|
-            Console.logger.error(msg.inspect)
+            # Console.logger.error(msg.inspect)
             case msg
             in [:initial_render, payload]
               #   yield [:initial_render, payload]

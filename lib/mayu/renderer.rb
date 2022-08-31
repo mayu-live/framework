@@ -56,8 +56,19 @@ module Mayu
                 when VDOM::VTree
                   obj.instance_variable_set(:@session, @session)
                   obj.instance_variable_set(:@task, @barrier)
+                  obj
+                when VDOM::Descriptor::ComponentMarshaler
+                  case obj.type
+                  in klass:
+                    klass
+                  in component:
+                    @environment.modules.load_component(component)
+                  else
+                    obj
+                  end
+                else
+                  obj
                 end
-                obj
               end
             ),
             VDOM::VTree
@@ -105,14 +116,14 @@ module Mayu
 
       raise "No root!" unless root
 
+      yield [:init, { ids: root.id_tree }]
+
       root.traverse do |vnode|
         if c = vnode.component
           c.mount
           @vtree.update_queue.enqueue(vnode)
         end
       end
-
-      yield [:init, { ids: root.id_tree }]
 
       updater.run do |msg|
         case msg

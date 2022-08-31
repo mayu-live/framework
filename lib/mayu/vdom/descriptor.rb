@@ -86,38 +86,51 @@ module Mayu
         @key = T.let(@props.delete(:key), T.untyped)
       end
 
+      class ComponentMarshaler
+        extend T::Sig
+
+        sig { returns(T.untyped) }
+        attr_reader :type
+
+        sig { params(type: T.untyped).void }
+        def initialize(type)
+          @type =
+            T.let(
+              if Component::Base.component_class?(type)
+                klass = T.cast(type, T.class_of(Component::Base))
+
+                if klass.name
+                  { klass: klass }
+                else
+                  component = klass.const_get(:MAYU_MODULE).fetch(:path)
+                  { component: }
+                end
+              else
+                type
+              end,
+              T.untyped
+            )
+        end
+
+        sig { returns(T.untyped) }
+        def marshal_dump
+          @type
+        end
+
+        sig { params(a: T.untyped).void }
+        def marshal_load(a)
+          @type = a
+        end
+      end
+
       sig { returns(T::Array[T.untyped]) }
       def marshal_dump
-        type =
-          if component?
-            klass = T.cast(@type, T.class_of(Component::Base))
-
-            if klass.name
-              { klass: klass }
-            else
-              component = klass.const_get(:MAYU_MODULE).fetch(:path)
-              { component: }
-            end
-          else
-            @type
-          end
-
-        [type, props, key]
+        [ComponentMarshaler.new(type), props, key]
       end
 
       sig { params(a: T::Array[T.untyped]).void }
       def marshal_load(a)
-        type, @props, @key = a
-
-        @type =
-          case type
-          in klass:
-            klass
-          in component:
-            Component::Base
-          else
-            type
-          end
+        @type, @props, @key = a
       end
 
       sig { returns(T::Boolean) }
@@ -132,6 +145,15 @@ module Mayu
       def children = props[:children]
       sig { returns(T::Boolean) }
       def children? = children.any?
+
+      sig { returns(T.class_of(Component::Base)) }
+      def component_class
+        if Component::Base.component_class?(@type)
+          T.cast(@type, T.class_of(Component::Base))
+        else
+          raise "#{@type.inspect} is not a component class"
+        end
+      end
 
       sig { returns(String) }
       def text
