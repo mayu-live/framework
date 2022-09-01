@@ -1,5 +1,5 @@
 # typed: strict
-require_relative "renderer"
+require_relative "../renderer"
 require_relative "cluster"
 
 module Mayu
@@ -11,8 +11,12 @@ module Mayu
       attr_reader :id
       sig { returns(String) }
       attr_reader :token
-      sig { returns(Renderer) }
+      sig { returns(Mayu::Renderer) }
       attr_reader :renderer
+      sig { returns(T::Hash[Symbol, T.untyped]) }
+      attr_reader :state
+      sig { returns(Environment) }
+      attr_reader :environment
 
       sig { params(environment: Environment).returns(T.attached_class) }
       def self.init(environment)
@@ -60,17 +64,20 @@ module Mayu
         id:,
         token:,
         request_path: "/",
-        state: nil,
+        state: {},
         vtree: nil
       )
         @environment = environment
         @cluster = T.let(environment.cluster, Cluster)
         @id = id
         @token = token
+        @store =
+          T.let(environment.create_store(state || {}), Mayu::State::Store)
+        @request_path = request_path
         @renderer =
           T.let(
-            Renderer.new(environment:, request_path:, state:, vtree:),
-            Renderer
+            Mayu::Renderer.new(session: self, request_path:, vtree:),
+            Mayu::Renderer
           )
       end
 
@@ -81,10 +88,10 @@ module Mayu
 
       sig { params(message_cipher: MessageCipher).returns(String) }
       def initial_html(message_cipher)
-        renderer.initial_html_and_state => { state:, html:, vtree: }
+        @renderer.initial_render => { html:, ids:, stylesheets:, vtree: }
 
         encrypted_data =
-          message_cipher.dump({ session: { id:, token: }, state:, vtree: })
+          message_cipher.dump(session: { id:, token: }, state:, vtree:)
 
         script_id = "script_" + SecureRandom.alphanumeric(32)
 
@@ -92,12 +99,43 @@ module Mayu
           <script type="module" src="/__mayu/live.js##{encrypted_data}"></script>
         EOF
 
-        html.sub(%r{</body>}) { "#{script}#{_1}" }
+        style =
+          stylesheets
+            .map do |stylesheet|
+              %{<link rel="stylesheet" href="#{stylesheet}">}
+            end
+            .join
+
+        html
+          .sub(%r{</head>}) { "#{style}#{_1}" }
+          .sub(%r{\K</body>}) { "#{script}#{_1}" }
+          .prepend("<!DOCTYPE html>\n")
+      end
+
+      sig do
+        params(block: T.proc.params(msg: [Symbol, T.untyped]).void).returns(
+          Async::Task
+        )
+      end
+      def run(&block)
+        @renderer.run { |msg| yield msg }.wait
+      rescue => e
+        binding.pry
+        Console.logger.fatal(e)
+      ensure
+        Console.logger.warn("ENDING")
+        @renderer.stop
+        # task&.stop
+      end
+
+      sig { params(event_handler_id: String, payload: T.untyped).void }
+      def handle_callback(event_handler_id, payload)
+        @renderer.handle_callback(event_handler_id, payload || {})
       end
 
       sig { returns({ id: String, token: String, state: Renderer::State }) }
       def transfer_data
-        { id:, token:, state: renderer.state }
+        { id:, token:, state: }
       end
     end
   end
