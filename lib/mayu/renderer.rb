@@ -3,6 +3,7 @@
 require_relative "vdom"
 require_relative "vdom/vtree"
 require_relative "vdom/component"
+require_relative "vdom/hydration"
 require_relative "modules/system"
 require_relative "routes"
 require_relative "session"
@@ -47,35 +48,8 @@ module Mayu
     sig { params(vtree: T.nilable(String)).returns(VDOM::VTree) }
     def restore_vtree(vtree = nil)
       if vtree
-        res =
-          T.cast(
-            Marshal.restore(
-              vtree,
-              ->(obj) do
-                case obj
-                when VDOM::VTree
-                  obj.instance_variable_set(:@session, @session)
-                  obj.instance_variable_set(:@task, @barrier)
-                  obj
-                when VDOM::Descriptor::ComponentMarshaler
-                  case obj.type
-                  in klass:
-                    klass
-                  in component:
-                    @environment.modules.load_component(component)
-                  else
-                    obj.type
-                  end
-                else
-                  obj
-                end
-              end
-            ),
-            VDOM::VTree
-          )
-
+        res = VDOM::Hydration.dehydrate(vtree)
         res.root&.traverse { |vnode| vnode.instance_variable_set(:@vtree, res) }
-
         res
       else
         VDOM::VTree.new(session: @session, task: @barrier)
@@ -99,7 +73,7 @@ module Mayu
       html = root.to_html
       ids = root.id_tree
       stylesheets = []
-      vtree = Marshal.dump(@vtree)
+      vtree = VDOM::Hydration.hydrate(@vtree)
       { html:, ids:, stylesheets:, vtree: }
     end
 
