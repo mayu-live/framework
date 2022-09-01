@@ -22,14 +22,14 @@ module Mayu
       ).void
     end
     def initialize(
-      environment:,
+      session:,
       request_path:,
-      app: environment.load_root(request_path),
+      app: session.environment.load_root(request_path),
       vtree: nil,
       parent: Async::Task.current
     )
       @environment = environment
-      @session = T.let(Session.new(environment, request_path:), Session)
+      @session = T.let(Session.new(environment, request_path:), Server::Session)
 
       # Set up a barrier to group async tasks together.
       @barrier = T.let(Async::Barrier.new(parent:), Async::Barrier)
