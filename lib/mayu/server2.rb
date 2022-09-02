@@ -6,10 +6,12 @@ require "async"
 require "async/container"
 require "async/http/server"
 require "async/http/endpoint"
+require "protocol/http/body/file"
 require "async/io/host_endpoint"
 require "async/io/shared_endpoint"
 require "async/io/ssl_endpoint"
 require "localhost"
+require "mime/types"
 require_relative "environment"
 require_relative "session"
 
@@ -20,8 +22,15 @@ module Mayu
 
       Status = T.type_alias { Integer }
       Headers = T.type_alias { T::Hash[String, String] }
-      Body = T.type_alias { T.any(String, Async::HTTP::Body::Writable) }
-      ResponseArray = T.type_alias { [Status, Headers, [Body]] }
+      Body =
+        T.type_alias do
+          T.any(
+            [String],
+            Async::HTTP::Body::Writable,
+            Protocol::HTTP::Body::File
+          )
+        end
+      ResponseArray = T.type_alias { [Status, Headers, Body] }
 
       sig { returns(Environment) }
       attr_reader :environment
@@ -39,51 +48,96 @@ module Mayu
         )
       end
 
+      sig { params(request: Protocol::HTTP::Request).returns(String) }
+      def get_token_cookie(request)
+        cookies = CGI::Cookie.parse(request.headers.fetch("cookie", ""))
+        cookies.fetch("mayu-token") { raise "Cookie mayu-token is not set" }
+      end
+
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
         case [request.method, request.path.delete_prefix("/").split("/")]
-        in ["POST", ["__mayu", "session", session_id, "resume"]]
-          token =
-            CGI::Cookie.parse(request.headers.fetch("cookie", "")).fetch(
-              "mayu-token"
-            )
-          data = @environment.message_cipher.load(request.body.to_s)
-          session = Session.restore(environment:, data:)
-          @sessions[
-            session_key(session_id: session.id, session_token: session.token)
-          ] = session
+        in ["POST", ["__mayu", "session", "resume"]]
+          encrypted_session = request.read
+          p encrypted_session
+          dumped = @environment.message_cipher.load(encrypted_session)
+          session = Session.restore(environment:, dumped:)
+
+          @sessions[session_key(session.id, session.token)] = session
+
+          headers = {
+            "content-type" => "text/plain",
+            "set-cookie" => session_token_cookie(session.id, session.token)
+          }
+
+          respond(headers:, body: [session.id])
         in ["POST", ["__mayu", "session", session_id, "callback", callback_id]]
-          token =
-            CGI::Cookie.parse(request.headers.fetch("cookie", "")).fetch(
-              "mayu-token"
-            )
           session = @sessions.fetch(session_key(session_id, token))
           session.handle_callback(callback_id)
-        in ["GET", []]
-          respond(
-            headers: {
-              "content-type" => "text/plain"
-            },
-            body: "Hello world"
-          )
-        end
+        in ["GET", ["__mayu", "live.js"]]
+          filename = File.join(__dir__, "client", "dist", "live.js")
+          mime_type = MIME::Types.type_for(filename).first
+          content_type = mime_type.to_s
 
-        if request.method == "GET"
-          Session.init(environment:, path: request.path)
+          respond(
+            body: Protocol::HTTP::Body::File.open(filename),
+            headers: {
+              "content-type" => content_type
+            }
+          )
+        in ["GET", ["__mayu", "static", filename]]
+          public_root = File.join(@environment.root, "public")
+          path = File.join(public_root, File.expand_path(filename, "/"))
+          body = Protocol::HTTP::Body::File.open(path)
+          MIME::Types.type_for(path).first.to_s
+
+          mime_type = MIME::Types.type_for(filename).first
+          content_type = mime_type.to_s
+
+          respond(
+            body: Protocol::HTTP::Body::File.open(filename),
+            headers: {
+              "content-type" => content_type
+            }
+          )
+        in ["GET", _path]
+          session = Session.new(environment:, path: request.path)
+          html = session.initial_render
+          headers = { "content-type" => "text/html; charset=utf-8" }
+          respond(status: 200, body: [html], headers:)
         else
-          respond(status: 400, body: "Invalid request")
+          respond(status: 400, body: ["Invalid request"])
         end
       end
 
       private
 
       sig do
+        params(
+          session_id: String,
+          session_token: String,
+          ttl_seconds: Integer
+        ).returns(String)
+      end
+      def session_token_cookie(session_id, session_token, ttl_seconds: 60 * 60)
+        expires = Time.now.utc + ttl_seconds
+
+        cookie = [
+          "mayu-token=#{session_token}",
+          "path=/__mayu/session/#{session_id}/",
+          "expires=#{expires.httpdate}",
+          "secure",
+          "HttpOnly"
+        ].join("; ")
+      end
+
+      sig do
         params(status: Integer, headers: Headers, body: Body).returns(
           ResponseArray
         )
       end
-      def respond(status: 200, headers: {}, body: "")
-        [status, headers, [body]]
+      def respond(status: 200, headers: {}, body: [""])
+        [status, headers, body]
       end
 
       sig do

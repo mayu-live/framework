@@ -36,3 +36,5 @@ group :development do
   gem "minitest-reporters", require: false
   gem "localhost", require: false
 end
+
+gem "mime-types"
