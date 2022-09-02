@@ -95,20 +95,13 @@ module Mayu
         end
     end
 
-    EndpointOrSocket =
-      T.type_alias { T.any(Async::IO::Endpoint, Async::IO::SSLSocket) }
-
-    sig { params(endpoint: EndpointOrSocket).returns(Async::HTTP::Server) }
+    sig { params(endpoint: Async::IO::Endpoint).returns(Async::HTTP::Server) }
     def self.setup_server(endpoint:)
       Async::HTTP::Server.for(
         endpoint,
         protocol: Async::HTTP::Protocol::HTTP2,
         scheme: "https"
       ) do |request|
-        p request.headers
-        p request.method
-        p request.path
-
         case [request.method, request.path.delete_prefix("/").split("/")]
         in [String, ["__mayu", "session", String => session_id, *args]]
           SessionAPI.handle(request, session_id, args)
