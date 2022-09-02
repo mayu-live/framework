@@ -45,9 +45,7 @@ module Mayu
       def call(request)
         case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]
-          encrypted_session = request.read
-          p encrypted_session
-          dumped = @environment.message_cipher.load(encrypted_session)
+          dumped = @environment.message_cipher.load(request.read)
           session = Session.restore(environment:, dumped:)
 
           @sessions[session_key(session.id, session.token)] = session
@@ -84,9 +82,11 @@ module Mayu
             in [:patch, patches]
               body.write(format_event(:patch, patches))
             in [:exception, data]
-              body.write(format_event(:patch, data))
+              body.write(format_event(:exception, data))
             in [:navigate, data]
               body.write(format_event(:navigate, data))
+            else
+              Console.logger.error(self, "Unhandled message: #{msg.inspect}")
             end
           end
 
