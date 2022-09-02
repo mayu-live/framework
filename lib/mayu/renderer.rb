@@ -2,6 +2,7 @@
 
 require_relative "vdom"
 require_relative "vdom/vtree"
+require_relative "vdom/h"
 require_relative "vdom/component"
 require_relative "vdom/hydration"
 require_relative "modules/system"
@@ -17,7 +18,7 @@ module Mayu
         environment: Environment,
         request_path: String,
         app: VDOM::Descriptor,
-        vtree: T.nilable(String),
+        vtree: VDOM::VTree,
         parent: T.any(Async::Task, Async::Barrier)
       ).void
     end
@@ -48,9 +49,7 @@ module Mayu
     sig { params(vtree: T.nilable(String)).returns(VDOM::VTree) }
     def restore_vtree(vtree = nil)
       if vtree
-        res = VDOM::Hydration.dehydrate(vtree)
-        res.root&.traverse { |vnode| vnode.instance_variable_set(:@vtree, res) }
-        res
+        VDOM::Hydration.dump(vtree)
       else
         VDOM::VTree.new(session: @session, task: @barrier)
       end
