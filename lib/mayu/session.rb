@@ -13,56 +13,23 @@ module Mayu
       params(environment: Environment, path: String).returns(T.attached_class)
     end
     def self.init(environment:, path:)
-      session = new(environment:, path:)
-
-      session.initial_render => { html:, stylesheets: }
-
-      encrypted_session = environment.message_cipher.dump(session)
-
-      script = <<~EOF
-        <script type="module" src="/__mayu/live.js##{encrypted_session}"></script>
-      EOF
-
-      style =
-        stylesheets
-          .map { |stylesheet| %{<link rel="stylesheet" href="#{stylesheet}">} }
-          .join
-
-      body =
-        html
-          .sub(%r{</head>}) { "#{style}#{_1}" }
-          .sub(%r{\K</body>}) { "#{script}#{_1}" }
-          .prepend("<!doctype html>\n")
-
-      expires = Time.now + 60 * 60
-      cookie = [
-        "mayu-token=#{session.token}",
-        "path=/__mayu/session/#{session.id}/",
-        "expires=#{expires.httpdate}",
-        "secure",
-        "HttpOnly"
-      ].join("; ")
-
-      [
-        200,
-        {
-          "content-type" => "text/html; charset=utf-8",
-          "set-cookie" => cookie
-        },
-        [body]
-      ]
+      new(environment:, path:)
     end
 
     sig do
       params(environment: Environment, dumped: String).returns(T.attached_class)
     end
-    def self.restore(environment, dumped)
+    def self.restore(environment:, dumped:)
       Marshal.restore(
+        dumped,
         ->(obj) do
           case obj
           when self
+            p "SEetting ENVINRonemetn"
             obj.instance_variable_set(:@environment, environment)
             obj
+          when SerializedSession
+            obj.to_session(environment)
           else
             obj
           end
@@ -76,6 +43,10 @@ module Mayu
     attr_reader :id
     sig { returns(String) }
     attr_reader :token
+    sig { returns(String) }
+    attr_reader :path
+    sig { returns(Environment) }
+    attr_reader :environment
 
     sig do
       params(
@@ -99,7 +70,38 @@ module Mayu
       @app = T.let(environment.load_root(path), VDOM::Descriptor)
     end
 
-    sig { returns(Marshaled) }
+    sig { returns(String) }
+    def initial_render
+      @vtree.render(@app, lifecycles: false)
+
+      root = @vtree.root or raise "There is no root"
+
+      html = root.to_html
+      stylesheets = []
+
+      freeze
+
+      encrypted_session =
+        @environment.message_cipher.dump(
+          Marshal.dump(SerializedSession.new(marshal_dump))
+        )
+
+      script = <<~EOF
+        <script type="module" src="/__mayu/live.js##{encrypted_session}"></script>
+      EOF
+
+      style =
+        stylesheets
+          .map { |stylesheet| %{<link rel="stylesheet" href="#{stylesheet}">} }
+          .join
+
+      html
+        .sub(%r{</head>}) { "#{style}#{_1}" }
+        .sub(%r{\K</body>}) { "#{script}#{_1}" }
+        .prepend("<!doctype html>\n")
+    end
+
+    sig { returns(T::Array[T.untyped]) }
     def marshal_dump
       [
         @id,
@@ -110,12 +112,42 @@ module Mayu
       ]
     end
 
-    sig { params(a: Marshaled).void }
+    class SerializedSession
+      extend T::Sig
+
+      sig { returns(T::Array[T.untyped]) }
+      attr_reader :data
+
+      sig { params(data: T::Array[T.untyped]).void }
+      def initialize(data)
+        @data = data
+      end
+
+      sig { params(environment: Environment).returns(Session) }
+      def to_session(environment)
+        session = Session.allocate
+        session.instance_variable_set(:@environment, environment)
+        session.marshal_load(@data)
+        session
+      end
+
+      sig { returns(T::Array[T.untyped]) }
+      def marshal_dump
+        @data
+      end
+
+      sig { params(a: T::Array[T.untyped]).void }
+      def marshal_load(a)
+        @data = a
+      end
+    end
+
+    sig { params(a: T::Array[T.untyped]).void }
     def marshal_load(a)
       @id, @token, @path, dumped_vtree, state = a
-      @vtree = VDOM::Hydration.restore(dumped_vtree)
-      @store = @environment.create_store(initial_state: state)
-      @app = T.let(@environment.load_root(path), VDOM::Descriptor)
+      @vtree = VDOM::Hydration.restore(dumped_vtree, session: self)
+      @store = @environment.create_store(initial_state: Marshal.restore(state))
+      @app = @environment.load_root(@path)
     end
 
     sig do
@@ -128,20 +160,6 @@ module Mayu
     end
     def fetch(url, method: :GET, headers: {}, body: nil)
       @environment.fetch.fetch(url, method:, headers:, body:)
-    end
-
-    sig do
-      params(lifecycles: T::Boolean).returns(
-        { html: String, stylesheets: T::Array[String] }
-      )
-    end
-    def initial_render(lifecycles: false)
-      @vtree.render(@app, lifecycles:)
-      root = @vtree.root
-      raise unless root
-      html = root.to_html
-      stylesheets = []
-      { html:, stylesheets: }
     end
 
     sig do

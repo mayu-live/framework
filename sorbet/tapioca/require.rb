@@ -427,3 +427,4 @@ require "uri"
 require 'prometheus/middleware/collector'
 require 'prometheus/middleware/exporter'
 require "mayu/edge/server"
+require "mime/types"

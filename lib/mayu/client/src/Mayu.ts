@@ -22,7 +22,7 @@ export default async function init(encryptedState: string) {
     isUnloading = true;
   });
 
-  const es = new EventSource(`/__mayu/api/events/${sessionId}`);
+  const es = new EventSource(`/__mayu/session/${sessionId}/events`);
 
   es.onopen = () => {
     console.log("Opened session", sessionId);
@@ -57,8 +57,8 @@ export default async function init(encryptedState: string) {
 
 async function resume(state: string, storedSessionId: string | null) {
   const path = storedSessionId
-    ? `/__mayu/api/resume/${storedSessionId}`
-    : "/__mayu/api/resume";
+    ? `/__mayu/session/resume/${storedSessionId}`
+    : "/__mayu/session/resume";
 
   console.log({ storedSessionId });
 
@@ -104,7 +104,7 @@ function setupGlobalObject(sessionId: string) {
         didRun = true;
       }, 1);
 
-      await fetch(`/__mayu/api/callback/${sessionId}/${handlerId}`, {
+      await fetch(`/__mayu/session/${sessionId}/callback/${handlerId}`, {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -117,29 +117,6 @@ function setupGlobalObject(sessionId: string) {
       if (didRun) {
         progressBar.setAttribute("progress", "100");
       }
-    },
-
-    async ping() {
-      const res = await fetch(`/__mayu/api/callback/${sessionId}/ping`, {
-        method: "POST",
-        body: JSON.stringify(performance.now()),
-      });
-
-      const data = await res.json();
-      const latency = performance.now() - data.timestamp;
-      const worker = data.worker;
-
-      console.log(
-        [
-          `Latency: ${latency.toFixed(3)}ms`,
-          `Worker: ${worker.toFixed(3)}ms`,
-          `Server id: ${data.serverId}`,
-          `Server region: ${data.serverRegion}`,
-          `Worker id: ${data.workerId}`,
-          `Worker region: ${data.workerRegion}`,
-          `Routed from: ${data.routedFrom}`,
-        ].join("\n")
-      );
     },
   };
 }
@@ -158,7 +135,7 @@ async function startPing(es: EventSource, sessionId: string) {
     while (true) {
       try {
         const { ping, region } = await pingTimer.ping((now) => {
-          fetch(`/__mayu/api/callback/${sessionId}/ping`, {
+          fetch(`/__mayu/session/${sessionId}/callback/ping`, {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify(now),

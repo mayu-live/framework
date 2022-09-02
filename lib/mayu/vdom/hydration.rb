@@ -11,13 +11,11 @@ module Mayu
       end
 
       sig do
-        params(
-          dumped: String,
-          session: Server::Session,
-          barrier: Async::Barrier
-        ).returns(VTree)
+        params(dumped: String, session: Session, task: Async::Task).returns(
+          VTree
+        )
       end
-      def self.restore(dumped, session:, barrier:)
+      def self.restore(dumped, session:, task: Async::Task.current)
         vtree =
           Marshal.restore(
             dumped,
@@ -25,7 +23,7 @@ module Mayu
               case obj
               when VDOM::VTree
                 obj.instance_variable_set(:@session, session)
-                obj.instance_variable_set(:@task, barrier)
+                obj.instance_variable_set(:@task, task)
                 obj
               when VDOM::Descriptor::ComponentMarshaler
                 case obj.type
