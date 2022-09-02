@@ -114,7 +114,7 @@ module Mayu
         ).returns(Fetch::Response)
       end
       def fetch(url, method: :GET, headers: {}, body: nil)
-        @vtree.session.fetch.fetch(url, method:, headers:, body:)
+        @vtree.session.fetch(url, method:, headers:, body:)
       end
 
       sig { returns(Mayu::State::Store) }

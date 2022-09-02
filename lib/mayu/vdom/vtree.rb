@@ -144,7 +144,7 @@ module Mayu
       sig { returns(T.nilable(VNode)) }
       attr_reader :root
 
-      sig { params(session: Session, task: Async::Barrier).void }
+      sig { params(session: Session, task: Async::Task).void }
       def initialize(session:, task: Async::Task.current)
         @root = T.let(nil, T.nilable(VNode))
         @id_generator = T.let(IdGenerator.new, IdGenerator)

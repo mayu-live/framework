@@ -114,10 +114,13 @@ module Mayu
             "Page not found, and no 404 page either. You should probably create one."
     end
 
-    sig { params(path: String).returns(Regexp) }
-    def self.path_to_regexp(path)
+    sig do
+      params(path: String, formats: T::Hash[Symbol, Regexp]).returns(Regexp)
+    end
+    def self.path_to_regexp(path, formats: {})
       parts =
         path
+          .delete_prefix("/")
           .split("/")
           .map do |part|
             if part.match(/\A\[(?<var>\w+)\]\Z/)

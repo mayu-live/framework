@@ -10,33 +10,97 @@ require "async/io/host_endpoint"
 require "async/io/shared_endpoint"
 require "async/io/ssl_endpoint"
 require "localhost"
+require_relative "environment"
+require_relative "session"
 
 module Mayu
   module Server2
-    module SessionAPI
+    class Server
       extend T::Sig
 
-      #sig {params(request: Async::HTTP::Request, session_id: String, args: T::Array[String]).void}
-      def self.handle(request, session_id, args)
-        case [request.method, args]
-        in ["GET", ["events"]]
-          body = Async::HTTP::Body::Writable.new
-          Protocol::HTTP::Response[
-            200,
-            { "content-type" => "text/event-stream; charset=utf-8" },
-            body
-          ]
-        in ["callback", "ping"]
-          Protocol::HTTP::Response[
-            200,
-            { "content-type" => "text/plain; charset=utf-8" },
-            ["pong"]
-          ]
-        in ["callback", callback_id]
+      Status = T.type_alias { Integer }
+      Headers = T.type_alias { T::Hash[String, String] }
+      Body = T.type_alias { T.any(String, Async::HTTP::Body::Writable) }
+      ResponseArray = T.type_alias { [Status, Headers, [Body]] }
+
+      sig { returns(Environment) }
+      attr_reader :environment
+
+      sig { params(environment: Environment).void }
+      def initialize(environment)
+        @environment = environment
+        @sessions = T.let({}, T::Hash[String, Session])
+      end
+
+      sig { params(session_id: String, token: String).returns(String) }
+      def session_key(session_id, token)
+        Digest::SHA256.digest(
+          Digest::SHA256.digest(session_id) + Digest::SHA256.digest(token)
+        )
+      end
+
+      sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
+      def call(request)
+        case [request.method, request.path.delete_prefix("/").split("/")]
+        in ["POST", ["__mayu", "session", session_id, "resume"]]
+          token =
+            CGI::Cookie.parse(request.headers.fetch("cookie", "")).fetch(
+              "mayu-token"
+            )
+          data = @environment.message_cipher.load(request.body.to_s)
+          session = Session.restore(environment:, data:)
+          @sessions[
+            session_key(session_id: session.id, session_token: session.token)
+          ] = session
+        in ["POST", ["__mayu", "session", session_id, "callback", callback_id]]
+          token =
+            CGI::Cookie.parse(request.headers.fetch("cookie", "")).fetch(
+              "mayu-token"
+            )
+          session = @sessions.fetch(session_key(session_id, token))
+          session.handle_callback(callback_id)
+        in ["GET", []]
+          respond(
+            headers: {
+              "content-type" => "text/plain"
+            },
+            body: "Hello world"
+          )
+        end
+
+        if request.method == "GET"
+          Session.init(environment:, path: request.path)
+        else
+          respond(status: 400, body: "Invalid request")
         end
       end
-    end
 
+      private
+
+      sig do
+        params(status: Integer, headers: Headers, body: Body).returns(
+          ResponseArray
+        )
+      end
+      def respond(status: 200, headers: {}, body: "")
+        [status, headers, [body]]
+      end
+
+      sig do
+        params(
+          headers: Headers,
+          task: Async::Task,
+          block: T.proc.params(arg0: Async::HTTP::Body::Writable).void
+        ).returns(ResponseArray)
+      end
+      def stream(headers: {}, task: Async::Task.current, &block)
+        body = Async::HTTP::Body::Writable.new
+
+        task.async { yield body }
+
+        respond(headers:, body:)
+      end
+    end
     extend T::Sig
 
     sig do
@@ -97,22 +161,24 @@ module Mayu
 
     sig { params(endpoint: Async::IO::Endpoint).returns(Async::HTTP::Server) }
     def self.setup_server(endpoint:)
+      config =
+        Mayu::Environment::Config.new(
+          SECRET_KEY: "development",
+          FLY_APP_NAME: "mayu-dev",
+          FLY_ALLOC_ID: SecureRandom.uuid.gsub(/\h/, "0"),
+          FLY_REGION: "dev"
+        )
+      root = File.expand_path(File.join(__dir__, "..", "..", "example"))
+
+      environment = Mayu::Environment.new(root:, config:, hot_reload: true)
+
+      server = Server.new(environment)
+
       Async::HTTP::Server.for(
         endpoint,
         protocol: Async::HTTP::Protocol::HTTP2,
         scheme: "https"
-      ) do |request|
-        case [request.method, request.path.delete_prefix("/").split("/")]
-        in [String, ["__mayu", "session", String => session_id, *args]]
-          SessionAPI.handle(request, session_id, args)
-        in ["GET", []]
-          Protocol::HTTP::Response[
-            200,
-            { "content-type" => "text/plain" },
-            ["Hello World"]
-          ]
-        end
-      end
+      ) { |request| Protocol::HTTP::Response[*server.call(request)] }
     end
   end
 end

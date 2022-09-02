@@ -10,6 +10,16 @@ module Mayu
     class Store
       extend T::Sig
 
+      sig { returns(T.untyped) }
+      def marshal_dump
+        [@state]
+      end
+
+      sig { params(a: T.untyped).void }
+      def marshal_load(a)
+        @state = a.first
+      end
+
       State = T.type_alias { T.untyped }
       Reducer =
         T.type_alias do
