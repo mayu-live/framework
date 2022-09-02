@@ -5,7 +5,11 @@ require "sorbet-runtime"
 require "async"
 require "async/container"
 require "async/http/server"
+require "async/http/endpoint"
 require "async/io/host_endpoint"
+require "async/io/shared_endpoint"
+require "async/io/ssl_endpoint"
+require "localhost"
 
 module Mayu
   module Server2
@@ -40,48 +44,84 @@ module Mayu
         Async::Container::Forked
       )
     end
-    def self.start(host: "127.0.0.1", port: 7811, count: 1)
-      endpoint = Async::IO::Endpoint.tcp(host, port)
-      container = Async::Container.new
+    def self.start_dev(host: "localhost", port: 7811, count: 1)
+      uri = URI.for("https", nil, host, port, nil, "/", nil, nil, nil).normalize
 
-      Console.logger.info(self) { "Starting server..." }
+      ssl_context = dev_ssl_context(host)
+      server_endpoint =
+        Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
+      bound_endpoint =
+        Async { Async::IO::SharedEndpoint.bound(server_endpoint) }.wait
 
-      container
-        .run(count:) do
-          server =
-            Async::HTTP::Server.for(
-              endpoint,
-              protocol: Async::HTTP::Protocol::HTTP11,
-              scheme: "http"
-            ) do |request|
-              p request.headers
-              p request.method
-              p request.path
+      Console.logger.info(self) { "Starting server on https://#{host}:#{port}" }
 
-              p request
-
-              case [request.method, request.path.delete_prefix("/").split("/")]
-              in [String, ["__mayu", "session", String => session_id, *args]]
-                SessionAPI.handle(request, session_id, args)
-              in ["GET", []]
-                Protocol::HTTP::Response[
-                  200,
-                  { "content-type" => "text/plain" },
-                  ["Hello World"]
-                ]
-              end
-            end
-
-          Async { server.run }
-        end
-        .wait
-    ensure
-      container&.stop
+      start_container(endpoint: bound_endpoint, count:)
     end
 
-    def self.session_request(request, session_id, path)
+    sig { params(host: String).returns(OpenSSL::SSL::SSLContext) }
+    def self.dev_ssl_context(host)
+      authority = Localhost::Authority.fetch(host)
+
+      authority.server_context.tap do |context|
+        context.alpn_select_cb =
+          lambda { |protocols| protocols.include?("h2") ? "h2" : nil }
+
+        context.alpn_protocols = ["h2"]
+        context.session_id_context = "mayu"
+      end
+    end
+
+    sig do
+      params(endpoint: Async::IO::Endpoint, count: Integer).returns(
+        Async::Container::Forked
+      )
+    end
+    def self.start_container(endpoint:, count:)
+      Console.logger.info(self, "Starting container...")
+
+      Async::Container::Forked
+        .new
+        .run(count:, restart: true) do |instance|
+          Console.logger.info(self, "Child process started.")
+
+          Async do |task|
+            server = setup_server(endpoint:)
+            server.run
+            instance.ready!
+            task.children.each(&:wait)
+          end
+        ensure
+          Console.logger.info(self, "Child processes exiting:", $!)
+        end
+    end
+
+    EndpointOrSocket =
+      T.type_alias { T.any(Async::IO::Endpoint, Async::IO::SSLSocket) }
+
+    sig { params(endpoint: EndpointOrSocket).returns(Async::HTTP::Server) }
+    def self.setup_server(endpoint:)
+      Async::HTTP::Server.for(
+        endpoint,
+        protocol: Async::HTTP::Protocol::HTTP2,
+        scheme: "https"
+      ) do |request|
+        p request.headers
+        p request.method
+        p request.path
+
+        case [request.method, request.path.delete_prefix("/").split("/")]
+        in [String, ["__mayu", "session", String => session_id, *args]]
+          SessionAPI.handle(request, session_id, args)
+        in ["GET", []]
+          Protocol::HTTP::Response[
+            200,
+            { "content-type" => "text/plain" },
+            ["Hello World"]
+          ]
+        end
+      end
     end
   end
 end
 
-Mayu::Server2.start
+Mayu::Server2.start_dev(port: 1234, count: 2).wait
