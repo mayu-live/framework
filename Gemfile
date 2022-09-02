@@ -35,6 +35,7 @@ group :development do
   gem "rexml", require: false
   gem "minitest-reporters", require: false
   gem "localhost", require: false
+  gem "matrix", require: false
 end
 
 gem "mime-types"

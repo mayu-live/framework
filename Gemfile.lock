@@ -96,6 +96,7 @@ GEM
     localhost (1.1.9)
     lumberjack (1.2.8)
     mapping (1.1.1)
+    matrix (0.4.2)
     method_source (1.0.0)
     mime-types (3.4.1)
       mime-types-data (~> 3.2015)
@@ -242,6 +243,7 @@ DEPENDENCIES
   guard
   guard-falcon
   localhost
+  matrix
   mayu-edge!
   mayu-live!
   mime-types

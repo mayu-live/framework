@@ -41,23 +41,10 @@ module Mayu
         @sessions = T.let({}, T::Hash[String, Session])
       end
 
-      sig { params(session_id: String, token: String).returns(String) }
-      def session_key(session_id, token)
-        Digest::SHA256.digest(
-          Digest::SHA256.digest(session_id) + Digest::SHA256.digest(token)
-        )
-      end
-
-      sig { params(request: Protocol::HTTP::Request).returns(String) }
-      def get_token_cookie(request)
-        cookies = CGI::Cookie.parse(request.headers.fetch("cookie", ""))
-        cookies.fetch("mayu-token") { raise "Cookie mayu-token is not set" }
-      end
-
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
         case [request.method, request.path.delete_prefix("/").split("/")]
-        in ["POST", ["__mayu", "session", "resume"]]
+        in ["POST", ["__mayu", "session", "resume", *_rest]]
           encrypted_session = request.read
           p encrypted_session
           dumped = @environment.message_cipher.load(encrypted_session)
@@ -71,9 +58,41 @@ module Mayu
           }
 
           respond(headers:, body: [session.id])
+        in ["POST", ["__mayu", "session", session_id, "ping"]]
+          session = fetch_session(session_id, get_session_token_cookie(request))
+
+          respond(
+            headers: {
+              "content-type" => "application/json"
+            },
+            body: [request.read]
+          )
         in ["POST", ["__mayu", "session", session_id, "callback", callback_id]]
-          session = @sessions.fetch(session_key(session_id, token))
-          session.handle_callback(callback_id)
+          session = fetch_session(session_id, get_session_token_cookie(request))
+          payload = JSON.parse(request.read)
+          session.handle_callback(callback_id, payload)
+          [200, { "content-type" => "text/plain" }, ["ok"]]
+        in ["GET", ["__mayu", "session", session_id, "events"]]
+          session = fetch_session(session_id, get_session_token_cookie(request))
+
+          body = Async::HTTP::Body::Writable.new
+
+          session.run do |msg|
+            case msg
+            in [:init, data]
+              body.write(format_event(:init, data))
+            in [:patch, patches]
+              body.write(format_event(:patch, patches))
+            in [:exception, data]
+              body.write(format_event(:patch, data))
+            in [:navigate, data]
+              body.write(format_event(:navigate, data))
+            end
+          end
+
+          headers = { "content-type" => "text/event-stream; charset=utf-8" }
+
+          respond(headers:, body:)
         in ["GET", ["__mayu", "live.js"]]
           filename = File.join(__dir__, "client", "dist", "live.js")
           mime_type = MIME::Types.type_for(filename).first
@@ -112,6 +131,31 @@ module Mayu
 
       private
 
+      sig { params(event: Symbol, data: T.untyped).returns(String) }
+      def format_event(event, data)
+        "event: #{event}\ndata: #{JSON.generate(data)}\n\n"
+      end
+
+      sig { params(id: String, token: String).returns(Session) }
+      def fetch_session(id, token)
+        @sessions.fetch(session_key(id, token))
+      end
+
+      sig { params(session_id: String, token: String).returns(String) }
+      def session_key(session_id, token)
+        Digest::SHA256.digest(
+          Digest::SHA256.digest(session_id) + Digest::SHA256.digest(token)
+        )
+      end
+
+      sig { params(request: Protocol::HTTP::Request).returns(String) }
+      def get_session_token_cookie(request)
+        cookies = CGI::Cookie.parse(request.headers["cookie"].to_s)
+        cookies
+          .fetch("mayu-token") { raise "Cookie mayu-token is not set" }
+          .first
+      end
+
       sig do
         params(
           session_id: String,
@@ -148,11 +192,6 @@ module Mayu
         ).returns(ResponseArray)
       end
       def stream(headers: {}, task: Async::Task.current, &block)
-        body = Async::HTTP::Body::Writable.new
-
-        task.async { yield body }
-
-        respond(headers:, body:)
       end
     end
     extend T::Sig
@@ -237,4 +276,4 @@ module Mayu
   end
 end
 
-Mayu::Server2.start_dev(port: 1234, count: 2).wait
+Mayu::Server2.start_dev(port: 9292, count: 2).wait
