@@ -135,11 +135,10 @@ async function startPing(es: EventSource, sessionId: string) {
     while (true) {
       try {
         const { ping, region } = await pingTimer.ping((now) => {
-          fetch(`/__mayu/session/${sessionId}/callback/ping`, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(now),
-          });
+          navigator.sendBeacon(
+            `/__mayu/session/${sessionId}/ping`,
+            JSON.stringify(now)
+          );
         });
 
         pingElement.setAttribute("ping", `${ping} ms`);

@@ -163,6 +163,20 @@ module Mayu
     end
 
     sig do
+      params(callback_id: String, payload: T::Hash[Symbol, T.untyped]).void
+    end
+    def handle_callback(callback_id, payload = {})
+      @vtree.handle_callback(callback_id, payload)
+    end
+
+    sig { params(path: String).void }
+    def navigate(path)
+      @app = @environment.load_root(path)
+      @path = path
+      @vtree.replace_root(@app)
+    end
+
+    sig do
       params(block: T.proc.params(msg: [Symbol, T.untyped]).void).returns(
         Async::Task
       )
