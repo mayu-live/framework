@@ -238,6 +238,7 @@ DEPENDENCIES
   filewatcher
   guard
   guard-falcon
+  localhost
   mayu-edge!
   mayu-live!
   minitest

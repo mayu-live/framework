@@ -34,4 +34,5 @@ group :development do
   gem "minitest", require: false
   gem "rexml", require: false
   gem "minitest-reporters", require: false
+  gem "localhost", require: false
 end
