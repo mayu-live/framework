@@ -1,5 +1,6 @@
 # typed: strict
 
+require "time"
 require_relative "environment"
 require_relative "vdom/vtree"
 require_relative "vdom/hydration"
@@ -32,7 +33,24 @@ module Mayu
           .sub(%r{</head>}) { "#{style}#{_1}" }
           .sub(%r{\K</body>}) { "#{script}#{_1}" }
           .prepend("<!doctype html>\n")
-      [200, { "content-type" => "text/html; charset=utf-8" }, [body]]
+
+      expires = Time.now + 60 * 60
+      cookie = [
+        "mayu-token=#{session.token}",
+        "path=/__mayu/session/#{session.id}/",
+        "expires=#{expires.httpdate}",
+        "secure",
+        "HttpOnly"
+      ].join("; ")
+
+      [
+        200,
+        {
+          "content-type" => "text/html; charset=utf-8",
+          "set-cookie" => cookie
+        },
+        [body]
+      ]
     end
 
     sig do
@@ -53,6 +71,11 @@ module Mayu
     end
 
     Marshaled = T.type_alias { [String, String, String, String, String] }
+
+    sig { returns(String) }
+    attr_reader :id
+    sig { returns(String) }
+    attr_reader :token
 
     sig do
       params(
