@@ -1,6 +1,7 @@
 # typed: strict
 
 require_relative "handler_ref"
+require_relative "../markup"
 
 module Mayu
   module Component
@@ -109,6 +110,9 @@ module Mayu
       def helpers
         @__wrapper.helpers
       end
+
+      sig { returns(Markup::Builder) }
+      def h = Markup::Builder.new
 
       sig do
         params(
