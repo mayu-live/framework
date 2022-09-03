@@ -1,6 +1,7 @@
 # typed: strict
 
 require "sorbet-runtime"
+require_relative "../markup"
 
 module Mayu
   module VDOM

@@ -7,7 +7,7 @@ require_relative "state/store"
 require_relative "state/loader"
 require_relative "routes"
 require_relative "metrics"
-require_relative "modules/system"
+require_relative "modules2/system"
 require_relative "fetch"
 require_relative "message_cipher"
 
@@ -65,7 +65,7 @@ module Mayu
     attr_reader :routes
     sig { returns(State::Store::Reducers) }
     attr_reader :reducers
-    sig { returns(Modules::System) }
+    sig { returns(Modules2::System) }
     attr_reader :modules
     sig { returns(Prometheus::Client::Registry) }
     attr_reader :prometheus_registry
@@ -76,7 +76,7 @@ module Mayu
 
     sig { params(root: String, config: Config, hot_reload: T::Boolean).void }
     def initialize(root:, config:, hot_reload: false)
-      @root = root
+      @root = T.let(File.absolute_path(root), String)
       @config = config
       @message_cipher =
         T.let(MessageCipher.new(key: config.SECRET_KEY), MessageCipher)
@@ -84,18 +84,18 @@ module Mayu
       # probably have to set up an async task...
       @routes =
         T.let(
-          Routes.build_routes(File.join(root, APP_DIR)),
+          Routes.build_routes(File.join(@root, APP_DIR)),
           T::Array[Routes::Route]
         )
       @reducers =
         T.let(
-          State::Loader.new(File.join(root, STORE_DIR)).load,
+          State::Loader.new(File.join(@root, STORE_DIR)).load,
           State::Store::Reducers
         )
       @modules =
         T.let(
-          Modules::System.new(root, enable_code_reloader: hot_reload),
-          Modules::System
+          Modules2::System.new(@root), #,, enable_code_reloader: hot_reload),
+          Modules2::System
         )
       @prometheus_registry =
         T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
@@ -116,7 +116,9 @@ module Mayu
       route_match = match_route(request_path)
 
       # Load the page component.
-      page_component = modules.load_page(route_match.template).klass
+      modules.load_page(route_match.template).type =>
+        Modules2::ModuleTypes::Ruby => mod_type
+      page_component = mod_type.klass
 
       # Apply the layouts.
       route_match
@@ -126,6 +128,12 @@ module Mayu
           layout_component = modules.load_page(layout).klass
           VDOM.h[layout_component, T.cast(app, VDOM::Descriptor)]
         end
+    end
+
+    sig { params(path: String).returns(String) }
+    def self.normalize_path(path)
+      File.absolute_path(path).delete_prefix!(root) or
+        raise ArgumentError, "Path #{path} is not in project root"
     end
 
     sig { params(request_path: String).returns(Routes::RouteMatch) }

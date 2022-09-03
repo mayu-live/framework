@@ -1,6 +1,6 @@
 # typed: strict
 
-require_relative "../vdom/component"
+require_relative "../component"
 require_relative "rux_visitor"
 
 module Mayu
@@ -11,7 +11,7 @@ module Mayu
 
       extend T::Sig
 
-      sig { returns(T.class_of(VDOM::Component::Base)) }
+      sig { returns(T.class_of(Component::Base)) }
       attr_reader :klass
 
       sig do
@@ -29,11 +29,8 @@ module Mayu
 
         @klass =
           T.let(
-            T.cast(
-              Class.new(VDOM::Component::Base),
-              T.class_of(VDOM::Component::Base)
-            ),
-            T.class_of(VDOM::Component::Base)
+            T.cast(Class.new(Component::Base), T.class_of(Component::Base)),
+            T.class_of(Component::Base)
           )
 
         @klass.const_set(:MAYU_MODULE, { system:, path:, full_path: })

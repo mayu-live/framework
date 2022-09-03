@@ -19,6 +19,11 @@ module Mayu
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
       end
 
+      sig { params(path: String).returns(Mod) }
+      def load_page(path)
+        load(path, "/app")
+      end
+
       sig { params(path: String, source_path: String).returns(Mod) }
       def load(path, source_path = "/")
         resolved_path = @resolver.resolve(path, source_path)

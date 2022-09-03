@@ -1,5 +1,8 @@
 # typed: strict
 
+require "async/barrier"
+require_relative "helpers"
+
 module Mayu
   module Component
     class Wrapper
@@ -8,7 +11,7 @@ module Mayu
       sig do
         params(vnode: VDOM::VNode, klass: T.class_of(Base), props: Props).void
       end
-      def initialize(vnode, klass, props: {})
+      def initialize(vnode, klass, props = {})
         @vnode = vnode
         @props = T.let(props, Props)
         @state = T.let(klass.get_initial_state(**props), State)
@@ -17,6 +20,13 @@ module Mayu
         @instance = T.let(klass.new(self), Base)
         @barrier = T.let(Async::Barrier.new, Async::Barrier)
         @helpers = T.let(Helpers.new(vnode), Helpers)
+      end
+
+      sig do
+        returns(T.nilable(Mayu::Modules2::ModuleTypes::CSS::ClassnameProxy))
+      end
+      def stylesheet
+        nil
       end
 
       sig { returns(T.untyped) }
@@ -65,7 +75,7 @@ module Mayu
         @barrier.stop
       end
 
-      sig { returns(T.nilable(T.any(VDOM::Descriptor, [VDOM::Descriptor]))) }
+      sig { returns(ChildType) }
       def render
         @instance.render
       ensure
@@ -107,6 +117,7 @@ module Mayu
       sig { void }
       def enqueue_update!
         @vnode.enqueue_update!
+        @dirty = true
       end
     end
   end

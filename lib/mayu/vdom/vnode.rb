@@ -1,6 +1,6 @@
 # typed: strict
 
-require_relative "component"
+require_relative "../component"
 require_relative "descriptor"
 require_relative "dom"
 require_relative "id_generator"
@@ -120,9 +120,9 @@ module Mayu
       sig { returns(Mayu::State::Store) }
       def store = @vtree.session.store
 
-      sig { params(task: Async::Task).returns(T.nilable(Component::Wrapper)) }
-      def init_component(task: Async::Task.current)
-        @component ||= Component.wrap(self, type, props, task:)
+      sig { returns(T.nilable(Component::Wrapper)) }
+      def init_component
+        @component ||= Component.wrap(self, type, props)
       end
 
       sig { params(path: String).void }
@@ -216,7 +216,7 @@ module Mayu
 
         io << ">"
 
-        return if Mayu::HTML.void_tag?(type)
+        return if type.is_a?(Symbol) && Mayu::HTML.void_tag?(type)
 
         if dangerously_set_inner_html =
              props.dig(:dangerously_set_inner_html, :__html)
