@@ -2,7 +2,7 @@
 
 require "async/queue"
 require "nanoid"
-require_relative "component"
+require_relative "../component"
 require_relative "descriptor"
 require_relative "dom"
 require_relative "vnode"
@@ -404,12 +404,12 @@ module Mayu
 
       sig { params(ctx: UpdateContext, component: Component::Wrapper).void }
       def update_stylesheet(ctx, component)
-        stylesheet = component.stylesheet
-        return unless stylesheet.is_a?(Modules::CSS::CSSModule)
-        return if @sent_stylesheets.include?(stylesheet.hash)
-        puts "Adding stylesheet #{stylesheet.path}"
-        ctx.stylesheet(stylesheet.hash)
-        @sent_stylesheets.add(stylesheet.hash)
+        # stylesheet = component.stylesheet
+        # return unless stylesheet.is_a?(Modules::CSS::CSSModule)
+        # return if @sent_stylesheets.include?(stylesheet.hash)
+        # puts "Adding stylesheet #{stylesheet.path}"
+        # ctx.stylesheet(stylesheet.hash)
+        # @sent_stylesheets.add(stylesheet.hash)
       end
 
       sig do

@@ -1,4 +1,7 @@
 # typed: strict
+
+require_relative "handler_ref"
+
 module Mayu
   module Component
     class Base
@@ -6,17 +9,40 @@ module Mayu
       extend T::Helpers
       abstract!
 
-      sig do
-        overridable.params(props: T.untyped).returns(VDOM::Component::State)
-      end
+      sig { overridable.params(props: T.untyped).returns(Component::State) }
       def self.get_initial_state(**props)
         {}
       end
 
+      class << self
+        extend T::Sig
+
+        sig { void }
+        def initialize
+          # This will never be called but will make Sorbet happy
+          @__mayu_module = T.let(nil, T.nilable(Modules2::Mod))
+        end
+
+        sig { params(__mayu_module: Modules2::Mod).void }
+        attr_writer :__mayu_module
+
+        sig { returns(Modules2::Mod) }
+        def __mayu_module
+          @__mayu_module or raise "__mayu_module is not set"
+        end
+
+        sig { params(path: String).returns(T.class_of(Base)) }
+        def self.import(path)
+          __mayu_module.load_relative(path) => mod
+          mod.type => Modules2::ModuleTypes::Ruby => ruby
+          ruby.klass
+        end
+      end
+
       sig do
         overridable
-          .params(props: VDOM::Component::Props, state: VDOM::Component::State)
-          .returns(VDOM::Component::State)
+          .params(props: Component::Props, state: Component::State)
+          .returns(Component::State)
       end
       def self.get_derived_state_from_props(props, state)
         {}
@@ -44,10 +70,7 @@ module Mayu
 
       sig do
         overridable
-          .params(
-            next_props: VDOM::Component::Props,
-            next_state: VDOM::Component::State
-          )
+          .params(next_props: Component::Props, next_state: Component::State)
           .returns(T::Boolean)
       end
       def should_update?(next_props, next_state)
@@ -69,9 +92,7 @@ module Mayu
       sig { params(blk: T.proc.bind(T.self_type).void).void }
       def async(&blk) = @__wrapper.async(&blk)
 
-      sig do
-        abstract.returns(T.nilable(T.any(VDOM::Descriptor, [VDOM::Descriptor])))
-      end
+      sig { abstract.returns(ChildType) }
       def render
       end
 

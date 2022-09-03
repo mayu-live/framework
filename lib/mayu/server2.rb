@@ -261,7 +261,7 @@ module Mayu
           FLY_ALLOC_ID: SecureRandom.uuid.gsub(/\h/, "0"),
           FLY_REGION: "dev"
         )
-      root = File.expand_path(File.join(__dir__, "..", "..", "example"))
+      root = File.expand_path(File.join(__dir__, "..", "..", "example2"))
 
       environment = Mayu::Environment.new(root:, config:, hot_reload: true)
 

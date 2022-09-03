@@ -1,6 +1,7 @@
 # typed: strict
 
-require_relative "component"
+require_relative "../component"
+require_relative "component_marshaler"
 
 module Mayu
   module VDOM
@@ -19,12 +20,6 @@ module Mayu
 
       Children = T.type_alias { T.any(ChildType, T::Array[ChildType]) }
       ChildType = T.type_alias { T.nilable(Descriptor) }
-      ComponentChildren =
-        T.type_alias { T.any(ComponentChildType, T::Array[ComponentChildType]) }
-      ComponentChildType =
-        T.type_alias do
-          T.nilable(T.any(Descriptor, T::Boolean, String, Numeric))
-        end
 
       TEXT = :TEXT
       COMMENT = :COMMENT
@@ -52,7 +47,7 @@ module Mayu
         params(
           type: ElementType,
           props: Component::Props,
-          children: ComponentChildren
+          children: Component::Children
         ).void
       end
       def initialize(type, props = {}, children = [])
@@ -82,45 +77,7 @@ module Mayu
         # }.flatten
 
         @props = T.let(props.merge(children:), Component::Props)
-
         @key = T.let(@props.delete(:key), T.untyped)
-      end
-
-      class ComponentMarshaler
-        extend T::Sig
-
-        sig { returns(T.untyped) }
-        attr_reader :type
-
-        sig { params(type: T.untyped).void }
-        def initialize(type)
-          @type =
-            T.let(
-              if Component::Base.component_class?(type)
-                klass = T.cast(type, T.class_of(Component::Base))
-
-                if klass.name
-                  { klass: klass }
-                else
-                  component = klass.const_get(:MAYU_MODULE).fetch(:path)
-                  { component: }
-                end
-              else
-                type
-              end,
-              T.untyped
-            )
-        end
-
-        sig { returns(T.untyped) }
-        def marshal_dump
-          @type
-        end
-
-        sig { params(a: T.untyped).void }
-        def marshal_load(a)
-          @type = a
-        end
       end
 
       sig { returns(T::Array[T.untyped]) }
@@ -140,7 +97,7 @@ module Mayu
       sig { returns(T::Boolean) }
       def element? = @type.is_a?(Symbol)
       sig { returns(T::Boolean) }
-      def component? = Component::Base.component_class?(@type)
+      def component? = Component.component_class?(@type)
       sig { returns(T::Array[Descriptor]) }
       def children = props[:children]
       sig { returns(T::Boolean) }
@@ -148,7 +105,7 @@ module Mayu
 
       sig { returns(T.class_of(Component::Base)) }
       def component_class
-        if Component::Base.component_class?(@type)
+        if Component.component_class?(@type)
           T.cast(@type, T.class_of(Component::Base))
         else
           raise "#{@type.inspect} is not a component class"
