@@ -20,6 +20,12 @@ module Mayu
       end
 
       sig { params(path: String).returns(T.class_of(Component::Base)) }
+      def load_component(path)
+        load_page(path).type => ModuleTypes::Ruby => type
+        type.klass
+      end
+
+      sig { params(path: String).returns(T.class_of(Component::Base)) }
       def load_page_component(path)
         load_page(path).type => ModuleTypes::Ruby => type
         type.klass

@@ -2,6 +2,7 @@
 
 require_relative "component/wrapper"
 require_relative "component/base"
+require_relative "component/special_components"
 
 module Mayu
   module Component

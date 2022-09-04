@@ -19,15 +19,17 @@ module Mayu
         ).void
       end
       def initialize(component, name, args = [], kwargs = {})
-        @method = T.let(component.method(name), T.untyped)
+        @component = component
+        @name = name
         # TODO: Validate args
+        # method = T.let(component.method(name), T.untyped)
         @args = args
         @kwargs = kwargs
         @id =
           T.let(
             Digest::SHA256.hexdigest(
-              [@method.receiver.vnode_id, @method.name, @args, @kwargs].map do
-                  Digest::SHA256.digest(_1)
+              [component.vnode_id, name, @args, @kwargs].map do
+                  Digest::SHA256.digest(_1.inspect)
                 end
                 .join
             ),
@@ -37,7 +39,7 @@ module Mayu
 
       sig { params(payload: T.untyped).void }
       def call(payload)
-        @method.call(payload, *@args, **@kwargs)
+        @component.send(@name, payload, *@args, **@kwargs)
       end
 
       sig { returns(String) }
