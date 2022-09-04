@@ -118,6 +118,7 @@ module Mayu
       # Load the page component.
       modules.load_page(route_match.template).type =>
         Modules2::ModuleTypes::Ruby => mod_type
+
       page_component = mod_type.klass
 
       # Apply the layouts.
@@ -125,7 +126,7 @@ module Mayu
         .layouts
         .reverse
         .reduce(VDOM.h[page_component]) do |app, layout|
-          layout_component = modules.load_page(layout).klass
+          layout_component = modules.load_page_component(layout)
           VDOM.h[layout_component, T.cast(app, VDOM::Descriptor)]
         end
     end
