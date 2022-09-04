@@ -22,7 +22,8 @@ module Mayu
       extend T::Sig
 
       Status = T.type_alias { Integer }
-      Headers = T.type_alias { T::Hash[String, String] }
+      Headers =
+        T.type_alias { T::Hash[String, T.any(String, T::Array[String])] }
       Body =
         T.type_alias do
           T.any(
@@ -127,7 +128,10 @@ module Mayu
         in ["GET", _path]
           session = Session.new(environment:, path: request.path)
           html = session.initial_render
-          headers = { "content-type" => "text/html; charset=utf-8" }
+          headers = {
+            "content-type" => "text/html; charset=utf-8",
+            "link" => "</__mayu/live.js>; rel=preload; as=script"
+          }
           respond(status: 200, body: [html], headers:)
         else
           respond(status: 400, body: ["Invalid request"])
