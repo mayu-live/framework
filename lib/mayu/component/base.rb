@@ -123,6 +123,11 @@ module Mayu
       def update_state(state = nil, &blk)
         @__wrapper.update(state, &blk)
       end
+
+      sig { returns(VDOM::Descriptor::Children) }
+      def children = props[:children].compact
+      sig { returns(VDOM::Descriptor::Children) }
+      def children = props[:children]
     end
   end
 end

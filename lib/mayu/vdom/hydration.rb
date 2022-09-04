@@ -25,7 +25,7 @@ module Mayu
                 obj.instance_variable_set(:@session, session)
                 obj.instance_variable_set(:@task, task)
                 obj
-              when VDOM::Descriptor::ComponentMarshaler
+              when VDOM::ComponentMarshaler
                 case obj.type
                 in klass:
                   klass
