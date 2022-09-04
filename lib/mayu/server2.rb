@@ -43,6 +43,8 @@ module Mayu
 
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
+        Console.logger.info(self) { "#{request.method} #{request.path}" }
+
         case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]
           dumped = @environment.message_cipher.load(request.read)
@@ -74,6 +76,8 @@ module Mayu
           session = fetch_session(session_id, get_session_token_cookie(request))
 
           body = Async::HTTP::Body::Writable.new
+
+          body.write("retry: 1000\n\n")
 
           session.run do |msg|
             case msg
@@ -183,25 +187,16 @@ module Mayu
       def respond(status: 200, headers: {}, body: [""])
         [status, headers, body]
       end
-
-      sig do
-        params(
-          headers: Headers,
-          task: Async::Task,
-          block: T.proc.params(arg0: Async::HTTP::Body::Writable).void
-        ).returns(ResponseArray)
-      end
-      def stream(headers: {}, task: Async::Task.current, &block)
-      end
     end
+
     extend T::Sig
 
     sig do
-      params(host: String, port: Integer, count: Integer).returns(
+      params(root: String, host: String, port: Integer, count: Integer).returns(
         Async::Container::Forked
       )
     end
-    def self.start_dev(host: "localhost", port: 7811, count: 1)
+    def self.start_dev(root:, host: "localhost", port: 7811, count: 1)
       uri = URI.for("https", nil, host, port, nil, "/", nil, nil, nil).normalize
 
       ssl_context = dev_ssl_context(host)
@@ -210,9 +205,11 @@ module Mayu
       bound_endpoint =
         Async { Async::IO::SharedEndpoint.bound(server_endpoint) }.wait
 
-      Console.logger.info(self) { "Starting server on https://#{host}:#{port}" }
+      Console.logger.info(self) { "Starting server on #{uri}" }
 
-      start_container(endpoint: bound_endpoint, count:)
+      Process.setproctitle("mayu-live file://#{root} #{uri}")
+
+      start_container(root:, endpoint: bound_endpoint, count:)
     end
 
     sig { params(host: String).returns(OpenSSL::SSL::SSLContext) }
@@ -220,8 +217,8 @@ module Mayu
       authority = Localhost::Authority.fetch(host)
 
       authority.server_context.tap do |context|
-        context.alpn_select_cb =
-          lambda { |protocols| protocols.include?("h2") ? "h2" : nil }
+        context.alpn_select_cb = lambda { |_| "h2" }
+        lambda { |protocols| protocols.include?("h2") ? "h2" : nil }
 
         context.alpn_protocols = ["h2"]
         context.session_id_context = "mayu"
@@ -229,11 +226,13 @@ module Mayu
     end
 
     sig do
-      params(endpoint: Async::IO::Endpoint, count: Integer).returns(
-        Async::Container::Forked
-      )
+      params(
+        root: String,
+        endpoint: Async::IO::Endpoint,
+        count: Integer
+      ).returns(Async::Container::Forked)
     end
-    def self.start_container(endpoint:, count:)
+    def self.start_container(root:, endpoint:, count:)
       Console.logger.info(self, "Starting container...")
 
       Async::Container::Forked
@@ -242,8 +241,9 @@ module Mayu
           Console.logger.info(self, "Child process started.")
 
           Async do |task|
-            server = setup_server(endpoint:)
+            server = setup_server(root:, endpoint:)
             server.run
+
             instance.ready!
             task.children.each(&:wait)
           end
@@ -252,8 +252,12 @@ module Mayu
         end
     end
 
-    sig { params(endpoint: Async::IO::Endpoint).returns(Async::HTTP::Server) }
-    def self.setup_server(endpoint:)
+    sig do
+      params(root: String, endpoint: Async::IO::Endpoint).returns(
+        Async::HTTP::Server
+      )
+    end
+    def self.setup_server(root:, endpoint:)
       config =
         Mayu::Environment::Config.new(
           SECRET_KEY: "development",
@@ -261,9 +265,10 @@ module Mayu
           FLY_ALLOC_ID: SecureRandom.uuid.gsub(/\h/, "0"),
           FLY_REGION: "dev"
         )
-      root = File.expand_path(File.join(__dir__, "..", "..", "example2"))
 
       environment = Mayu::Environment.new(root:, config:, hot_reload: true)
+
+      Routes.log_routes(environment.routes)
 
       server = Server.new(environment)
 
@@ -276,4 +281,6 @@ module Mayu
   end
 end
 
-Mayu::Server2.start_dev(port: 9292, count: 2).wait
+root = File.expand_path(File.join(__dir__, "..", "..", "example2"))
+
+Mayu::Server2.start_dev(root:, port: 9292, count: 2).wait

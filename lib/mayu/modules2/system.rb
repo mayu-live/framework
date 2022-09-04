@@ -19,6 +19,12 @@ module Mayu
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
       end
 
+      sig { params(path: String).returns(T.class_of(Component::Base)) }
+      def load_page_component(path)
+        load_page(path).type => ModuleTypes::Ruby => type
+        type.klass
+      end
+
       sig { params(path: String).returns(Mod) }
       def load_page(path)
         load(path, "/app")

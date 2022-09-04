@@ -1,12 +1,10 @@
 # typed: strict
 
+require "terminal-table"
+
 module Mayu
   module Routes
     extend T::Sig
-
-    PAGE_FILENAME = "page.rb"
-    LAYOUT_FILENAME = "layout.rb"
-    NOT_FOUND_FILENAME = "404.rb"
 
     class NotFoundError < StandardError
     end
@@ -23,6 +21,10 @@ module Mayu
       const :layouts, T::Array[String]
       const :template, String
     end
+
+    PAGE_FILENAME = "page.rb"
+    LAYOUT_FILENAME = "layout.rb"
+    NOT_FOUND_FILENAME = "404.rb"
 
     sig do
       params(
@@ -67,15 +69,12 @@ module Mayu
       if not_found = entries.delete(NOT_FOUND_FILENAME)
         routes.push(
           Route.new(
-            {
-              path: path.join("/"),
-              regexp: path_to_regexp((path + ["[anything]"]).join("/")),
-              layouts:,
-              template: T.unsafe(File).join(*path, not_found)
-            }
+            path: path.join("/"),
+            regexp: path_to_regexp((path + ["[anything]"]).join("/")),
+            layouts:,
+            template: T.unsafe(File).join(*path, not_found)
           )
         )
-        p routes.last
       else
         Console.logger.warn(self) { <<~EOF } if level.zero?
             There is no #{NOT_FOUND_FILENAME} in the app root,
@@ -84,6 +83,30 @@ module Mayu
       end
 
       routes
+    end
+
+    sig { params(routes: T::Array[Route]).void }
+    def self.log_routes(routes)
+      Console
+        .logger
+        .info(self) do
+          Terminal::Table.new do |t|
+            t.headings =
+              %w[Path Template Layouts Regexp].map { "\e[1m#{_1}\e[0m" }
+            t.style = { all_separators: true, border: :unicode }
+
+            routes.each do |route|
+              t.add_row(
+                [
+                  "/#{route.path}",
+                  route.template,
+                  route.layouts.join("\n"),
+                  "/#{route.regexp.to_s}/"
+                ]
+              )
+            end
+          end
+        end
     end
 
     sig do
@@ -107,8 +130,6 @@ module Mayu
           )
         )
       end
-      p request_path
-      p routes
 
       raise NotFoundError,
             "Page not found, and no 404 page either. You should probably create one."
@@ -133,11 +154,5 @@ module Mayu
 
       Regexp.new('\A\/' + parts.join('\/') + '\Z')
     end
-    #
-    # PAGES_ROOT = File.join(File.dirname(__FILE__), "example", "pages")
-    #
-    # routes = build_routes(PAGES_ROOT)
-    #
-    # p match_route(routes, "/items/123")
   end
 end
