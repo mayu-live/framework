@@ -49,26 +49,11 @@ def generate_file(writer)
     # DO NOT EDIT! THIS FILE IS GENERATED AUTOMATICALLY.
     # If you want to change it, update `generate.rb` instead.
 
-    require_relative "unclosed_element"
-
   EOF
 
   writer.block "module Mayu" do
     writer.block "module Markup" do
       writer.block "module Generated" do
-        writer.block "module UnclosedElements" do
-          Mayu::HTML::TAGS.each do |tag|
-            next if Mayu::HTML.void_tag?(tag)
-
-            writer << <<~EOF
-              class #{camelize(tag)} < UnclosedElement
-                sig {returns(::Mayu::VDOM::Descriptor)}
-                def #{tag} = @descriptor
-              end
-            EOF
-          end
-        end
-
         writer.block "module BuilderInterface" do
           writer << <<~EOF
             extend T::Sig
@@ -112,10 +97,10 @@ def generate_file(writer)
                     children: T.untyped,
                     attributes: T.untyped,
                     block: T.nilable(T.proc.void),
-                  ).returns(UnclosedElements::#{camelize(tag)})
+                  ).returns(VDOM::Descriptor)
                 end
                 def #{tag}(*children, **attributes, &block)
-                  UnclosedElements::#{camelize(tag)}.new(tag!(:#{tag}, children, **attributes, &block))
+                  tag!(:#{tag}, children, **attributes, &block)
                 end
 
               EOF
@@ -140,7 +125,7 @@ def generate_file(writer)
   end
 end
 
-filename = "descriptor_builder.rb"
+filename = File.join(__dir__, "descriptor_builder.rb")
 puts "Generating #{filename}"
 File.open(filename, "w") { |f| generate_file(Writer.new(f)) }
 puts "Prettifying #{filename}"

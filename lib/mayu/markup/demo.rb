@@ -12,47 +12,33 @@ class MyComponent
 
   sig { returns(Mayu::VDOM::Descriptor) }
   def render
-    h
-      .div do
-        h.h1 "Page title"
+    h.div do
+      h.h1 "Page title"
 
-        h
-          .table do
-            h
-              .tbody do
-                h
-                  .tr do
-                    h.td "Item 1"
-                    h.td "User 1"
-                  end
-                  .tr
-
-                h
-                  .tr do
-                    h.td "Item 2"
-                    h.td "User 1"
-                  end
-                  .tr
-
-                h
-                  .tr do
-                    h.td "Item 3"
-                    h.td "User 2"
-                  end
-                  .tr
-              end
-              .tbody
+      h.table do
+        h.tbody do
+          h.tr do
+            h.td "Item 1"
+            h.td "User 1"
           end
-          .table
 
-        h
-          .div do
-            h << "Hello "
-            h.span "world", style: "font-weight: bold;"
+          h.tr do
+            h.td "Item 2"
+            h.td "User 1"
           end
-          .div
+
+          h.tr do
+            h.td "Item 3"
+            h.td "User 2"
+          end
+        end
       end
-      .div
+
+      h.div do
+        h << "Hello "
+        h.span "world", style: "font-weight: bold;"
+      end
+    end
   end
 
   sig { returns(Mayu::Markup::Builder) }
