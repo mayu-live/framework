@@ -1,6 +1,6 @@
 # typed: strict
 
-require_relative "mod"
+require_relative "resource"
 require_relative "module_types/base"
 require_relative "module_types/ruby"
 require_relative "module_types/css"
@@ -11,14 +11,14 @@ module Mayu
     module Types
       extend T::Sig
 
-      sig { params(mod: Resource).returns(Base) }
-      def self.load(mod)
-        self.for(mod).load(mod)
+      sig { params(resource: Resource).returns(Base) }
+      def self.load(resource)
+        self.for(resource).load(resource)
       end
 
-      sig { params(mod: Resource).returns(T.class_of(Base)) }
-      def self.for(mod)
-        case mod.extname
+      sig { params(resource: Resource).returns(T.class_of(Base)) }
+      def self.for(resource)
+        case resource.extname
         when ".rb"
           Ruby
         when ".css"
@@ -26,7 +26,7 @@ module Mayu
         when ".png", ".jpg", ".jpeg"
           Image
         else
-          raise "No module type for #{mod.path}"
+          raise "No module type for #{resource.path}"
         end
       end
     end

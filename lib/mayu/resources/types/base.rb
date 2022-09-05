@@ -1,6 +1,6 @@
 # typed: strict
 
-require_relative "../mod"
+require_relative "../resource"
 
 module Mayu
   module Resources
@@ -10,13 +10,13 @@ module Mayu
         extend T::Helpers
         abstract!
 
-        sig { params(mod: Resource).void }
-        def initialize(mod)
-          @mod = mod
+        sig { params(resource: Resource).void }
+        def initialize(resource)
+          @resource = resource
         end
 
-        sig { abstract.params(mod: Resource).returns(T.attached_class) }
-        def self.load(mod)
+        sig { abstract.params(resource: Resource).returns(T.attached_class) }
+        def self.load(resource)
         end
       end
     end
