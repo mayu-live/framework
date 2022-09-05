@@ -5,7 +5,7 @@ require_relative "vdom/vtree"
 require_relative "vdom/h"
 require_relative "vdom/component"
 require_relative "vdom/hydration"
-require_relative "modules/system"
+require_relative "resources/system"
 require_relative "routes"
 require_relative "session"
 
@@ -39,7 +39,7 @@ module Mayu
 
       @vtree = T.let(restore_vtree(vtree), VDOM::VTree)
 
-      if code_reloader = environment.modules.code_reloader
+      if code_reloader = environment.resources.code_reloader
         @barrier.async do
           code_reloader.on_update { navigate(@session.current_path) }
         end

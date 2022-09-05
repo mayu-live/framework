@@ -30,7 +30,7 @@ module Mayu
     sig { returns(State::Store::Reducers) }
     attr_reader :reducers
     sig { returns(Resources::System) }
-    attr_reader :modules
+    attr_reader :resources
     sig { returns(Prometheus::Client::Registry) }
     attr_reader :prometheus_registry
     sig { returns(Fetch) }
@@ -56,7 +56,7 @@ module Mayu
           State::Loader.new(File.join(@root, STORE_DIR)).load,
           State::Store::Reducers
         )
-      @modules =
+      @resources =
         T.let(
           Resources::System.new(@root), #,, enable_code_reloader: hot_reload),
           Resources::System
@@ -80,7 +80,7 @@ module Mayu
       route_match = match_route(request_path)
 
       # Load the page component.
-      modules.load_page(route_match.template).type =>
+      resources.load_page(route_match.template).type =>
         Resources::Types::Ruby => mod_type
 
       page_component = mod_type.klass
@@ -90,7 +90,7 @@ module Mayu
         .layouts
         .reverse
         .reduce(VDOM.h[page_component]) do |app, layout|
-          layout_component = modules.load_page_component(layout)
+          layout_component = resources.load_page_component(layout)
           VDOM.h[layout_component, T.cast(app, VDOM::Descriptor)]
         end
     end
