@@ -6,15 +6,6 @@ module Mayu
   module Resources
     module Types
       class Ruby < Base
-        class ComponentBuilder
-          extend T::Sig
-
-          sig { params(klass: T.class_of(Component::Base)).void }
-          def initialize(klass)
-            @klass = klass
-          end
-        end
-
         sig { override.params(resource: Resource).returns(T.attached_class) }
         def self.load(resource)
           source = File.read(resource.absolute_path)
