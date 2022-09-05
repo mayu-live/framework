@@ -30,7 +30,7 @@ module Mayu
                 in klass:
                   klass
                 in component:
-                  session.environment.modules.load_component(component)
+                  session.environment.resources.load_component(component)
                 else
                   obj.type
                 end
