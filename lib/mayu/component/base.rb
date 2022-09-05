@@ -21,20 +21,20 @@ module Mayu
         sig { void }
         def initialize
           # This will never be called but will make Sorbet happy
-          @__mayu_module = T.let(nil, T.nilable(Resources::Resource))
+          @__mayu_resource = T.let(nil, T.nilable(Resources::Resource))
         end
 
-        sig { params(__mayu_module: Resources::Resource).void }
-        attr_writer :__mayu_module
+        sig { params(__mayu_resource: Resources::Resource).void }
+        attr_writer :__mayu_resource
 
         sig { returns(Resources::Resource) }
-        def __mayu_module
-          @__mayu_module or raise "__mayu_module is not set"
+        def __mayu_resource
+          @__mayu_resource or raise "__mayu_resource is not set"
         end
 
         sig { params(path: String).returns(T.class_of(Base)) }
         def self.import(path)
-          __mayu_module.load_relative(path) => mod
+          __mayu_resource.load_relative(path) => mod
           mod.type => Resources::Types::Ruby => ruby
           ruby.klass
         end

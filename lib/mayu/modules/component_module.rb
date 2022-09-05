@@ -33,7 +33,7 @@ module Mayu
             T.class_of(Component::Base)
           )
 
-        @klass.const_set(:MAYU_MODULE, { system:, path:, full_path: })
+        @klass.const_set(:MAYU_RESOURCE, { system:, path:, full_path: })
 
         MODULES.const_set(
           "MOD_#{Digest::SHA256.hexdigest(full_path)}".to_sym,
@@ -41,8 +41,8 @@ module Mayu
         )
 
         @klass.class_eval do
-          define_method :__mayu_module do
-            self.const_get(:MAYU_MODULE)
+          define_method :__mayu_resource do
+            self.const_get(:MAYU_RESOURCE)
           end
         end
 
