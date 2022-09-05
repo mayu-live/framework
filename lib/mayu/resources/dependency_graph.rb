@@ -1,5 +1,8 @@
 # typed: strict
 
+require "tsort"
+require "set"
+
 module Mayu
   module Resources
     class DependencyGraph
@@ -17,8 +20,8 @@ module Mayu
 
         sig { void }
         def initialize
-          @incoming = T::Set[String].new
-          @outgoing = T::Set[String].new
+          @incoming = T.let(Set.new, T::Set[String])
+          @outgoing = T.let(Set.new, T::Set[String])
         end
 
         sig { params(id: String).void }
@@ -82,8 +85,8 @@ module Mayu
       sig { params(source_id: String, target_id: String).void }
       def remove_dependency(source_id, target_id)
         with_source_and_target(source_id, target_id) do |source, target|
-          source.outgoing.remove(target_id)
-          source.incoming.remove(source_id)
+          source.outgoing.delete(target_id)
+          source.incoming.delete(source_id)
         end
       end
 
@@ -151,8 +154,12 @@ module Mayu
         @nodes.filter { _2.incoming.empty? }.keys
       end
 
-      sig { params(only_leaves: T::Boolean).void }
+      sig { params(only_leaves: T::Boolean).returns(T::Array[String]) }
       def overall_order(only_leaves: true)
+        TSort.tsort(
+          ->(&b) { @nodes.keys.each(&b) },
+          ->(key, &b) { @nodes.fetch(key).outgoing.each(&b) }
+        )
       end
 
       private
