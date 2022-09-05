@@ -1,10 +1,10 @@
 # typed: strict
 
 require_relative "resource"
-require_relative "module_types/base"
-require_relative "module_types/ruby"
-require_relative "module_types/css"
-require_relative "module_types/image"
+require_relative "types/base"
+require_relative "types/ruby"
+require_relative "types/css"
+require_relative "types/image"
 
 module Mayu
   module Resources

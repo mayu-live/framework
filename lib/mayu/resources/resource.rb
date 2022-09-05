@@ -1,6 +1,6 @@
 # typed: strict
 
-require_relative "module_types"
+require_relative "types"
 
 module Mayu
   module Resources
