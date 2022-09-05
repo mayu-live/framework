@@ -7,16 +7,16 @@ require_relative "module_types/css"
 require_relative "module_types/image"
 
 module Mayu
-  module Modules2
-    module ModuleTypes
+  module Resources
+    module Types
       extend T::Sig
 
-      sig { params(mod: Mod).returns(Base) }
+      sig { params(mod: Resource).returns(Base) }
       def self.load(mod)
         self.for(mod).load(mod)
       end
 
-      sig { params(mod: Mod).returns(T.class_of(Base)) }
+      sig { params(mod: Resource).returns(T.class_of(Base)) }
       def self.for(mod)
         case mod.extname
         when ".rb"

@@ -3,7 +3,7 @@
 require_relative "system"
 
 module Mayu
-  module Modules2
+  module Resources
     class Resolver
       class ResolveError < StandardError
       end

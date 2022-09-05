@@ -21,13 +21,13 @@ module Mayu
         sig { void }
         def initialize
           # This will never be called but will make Sorbet happy
-          @__mayu_module = T.let(nil, T.nilable(Modules2::Mod))
+          @__mayu_module = T.let(nil, T.nilable(Resources::Resource))
         end
 
-        sig { params(__mayu_module: Modules2::Mod).void }
+        sig { params(__mayu_module: Resources::Resource).void }
         attr_writer :__mayu_module
 
-        sig { returns(Modules2::Mod) }
+        sig { returns(Resources::Resource) }
         def __mayu_module
           @__mayu_module or raise "__mayu_module is not set"
         end
@@ -35,7 +35,7 @@ module Mayu
         sig { params(path: String).returns(T.class_of(Base)) }
         def self.import(path)
           __mayu_module.load_relative(path) => mod
-          mod.type => Modules2::ModuleTypes::Ruby => ruby
+          mod.type => Resources::Types::Ruby => ruby
           ruby.klass
         end
       end
@@ -85,7 +85,7 @@ module Mayu
         end
       end
 
-      sig { returns(Modules2::ModuleTypes::CSS::ClassnameProxy) }
+      sig { returns(Resources::Types::CSS::ClassnameProxy) }
       def styles
         raise "todo"
       end

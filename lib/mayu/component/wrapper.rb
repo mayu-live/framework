@@ -22,9 +22,7 @@ module Mayu
         @helpers = T.let(Helpers.new(vnode), Helpers)
       end
 
-      sig do
-        returns(T.nilable(Mayu::Modules2::ModuleTypes::CSS::ClassnameProxy))
-      end
+      sig { returns(T.nilable(Mayu::Resources::Types::CSS::ClassnameProxy)) }
       def stylesheet
         nil
       end

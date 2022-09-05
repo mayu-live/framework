@@ -3,19 +3,19 @@
 require_relative "../mod"
 
 module Mayu
-  module Modules2
-    module ModuleTypes
+  module Resources
+    module Types
       class Base
         extend T::Sig
         extend T::Helpers
         abstract!
 
-        sig { params(mod: Mod).void }
+        sig { params(mod: Resource).void }
         def initialize(mod)
           @mod = mod
         end
 
-        sig { abstract.params(mod: Mod).returns(T.attached_class) }
+        sig { abstract.params(mod: Resource).returns(T.attached_class) }
         def self.load(mod)
         end
       end
