@@ -18,7 +18,7 @@ module Mayu
               if klass.name
                 { klass: klass }
               else
-                component = klass.__mayu_module.path
+                component = klass.__mayu_resource.path
                 { component: }
               end
             else

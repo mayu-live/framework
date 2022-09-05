@@ -16,7 +16,7 @@ module Mayu
               T.class_of(Component::Base)
             )
 
-          klass.__mayu_module = resource
+          klass.__mayu_resource = resource
           klass.class_eval(source, resource.path, 0)
           klass
 

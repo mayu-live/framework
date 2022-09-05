@@ -16,7 +16,14 @@ module Mayu
         instance.find(public_filename)
       end
 
-      sig { params(path: String, hash: String, content_type: String, content: String).void }
+      sig do
+        params(
+          path: String,
+          hash: String,
+          content_type: String,
+          content: String
+        ).void
+      end
       def self.add(path, hash, content_type, content)
         instance.add(path, hash, content_type, content)
       end
@@ -86,6 +93,15 @@ module Mayu
       sig { params(paths: T::Array[String]).returns(T::Array[String]) }
       def public_filenames(paths)
         T.unsafe(@assets).values_at(*paths).compact.map(&:public_filename)
+      end
+    end
+
+    class Asset
+      extend T::Sig
+
+      sig { params(hash: String, parent: T.nilable(Asset)).void }
+      def initialize(hash, parent: nil)
+        @hash = hash
       end
     end
   end
