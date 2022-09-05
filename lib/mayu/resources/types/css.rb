@@ -3,10 +3,10 @@
 require_relative "base"
 
 module Mayu
-  module Modules2
-    module ModuleTypes
+  module Resources
+    module Types
       class CSS < Base
-        sig { override.params(mod: Mod).returns(T.attached_class) }
+        sig { override.params(mod: Resource).returns(T.attached_class) }
         def self.load(mod)
           new(mod, File.read(mod.absolute_path))
         end
@@ -27,10 +27,10 @@ module Mayu
 
         sig { returns(String) }
         def inspect
-          "#<CSSModule path=#{@path} idents=#{@class_names.keys.inspect}>"
+          "#<CSSResourceule path=#{@path} idents=#{@class_names.keys.inspect}>"
         end
 
-        sig { params(mod: Mod, src: String).void }
+        sig { params(mod: Resource, src: String).void }
         def initialize(mod, src)
           super(mod)
 

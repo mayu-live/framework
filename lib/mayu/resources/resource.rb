@@ -3,13 +3,13 @@
 require_relative "module_types"
 
 module Mayu
-  module Modules2
-    class Mod
+  module Resources
+    class Resource
       extend T::Sig
 
       sig { returns(String) }
       attr_reader :path
-      sig { returns(ModuleTypes::Base) }
+      sig { returns(Types::Base) }
       attr_reader :type
 
       sig { params(system: System, path: String).void }
@@ -19,10 +19,10 @@ module Mayu
         @assets = T.let({}, T::Hash[String, String])
         @extname = T.let(nil, T.nilable(String))
         @hash = T.let(nil, T.nilable(String))
-        @type = T.let(ModuleTypes.load(self), ModuleTypes::Base)
+        @type = T.let(Types.load(self), Types::Base)
       end
 
-      sig { params(path: String).returns(Mod) }
+      sig { params(path: String).returns(Resource) }
       def load_relative(path)
         @system.load(path, File.dirname(path))
       end

@@ -1,7 +1,7 @@
 # typed: strict
 
 module Mayu
-  module Modules2
+  module Resources
     class DependencyGraph
       extend T::Sig
       # This is basically a reimplementation of this library:
@@ -195,7 +195,7 @@ module Mayu
 end
 
 if __FILE__ == $0
-  graph = Mayu::Modules2::DependencyGraph.new
+  graph = Mayu::Resources::DependencyGraph.new
 
   graph.add_node("a")
   graph.add_node("b")

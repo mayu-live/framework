@@ -7,7 +7,7 @@ require_relative "state/store"
 require_relative "state/loader"
 require_relative "routes"
 require_relative "metrics"
-require_relative "modules2/system"
+require_relative "resources/system"
 require_relative "fetch"
 require_relative "message_cipher"
 require_relative "configuration"
@@ -29,7 +29,7 @@ module Mayu
     attr_reader :routes
     sig { returns(State::Store::Reducers) }
     attr_reader :reducers
-    sig { returns(Modules2::System) }
+    sig { returns(Resources::System) }
     attr_reader :modules
     sig { returns(Prometheus::Client::Registry) }
     attr_reader :prometheus_registry
@@ -58,8 +58,8 @@ module Mayu
         )
       @modules =
         T.let(
-          Modules2::System.new(@root), #,, enable_code_reloader: hot_reload),
-          Modules2::System
+          Resources::System.new(@root), #,, enable_code_reloader: hot_reload),
+          Resources::System
         )
       @prometheus_registry =
         T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
@@ -81,7 +81,7 @@ module Mayu
 
       # Load the page component.
       modules.load_page(route_match.template).type =>
-        Modules2::ModuleTypes::Ruby => mod_type
+        Resources::Types::Ruby => mod_type
 
       page_component = mod_type.klass
 

@@ -3,8 +3,8 @@
 require_relative "base"
 
 module Mayu
-  module Modules2
-    module ModuleTypes
+  module Resources
+    module Types
       class Ruby < Base
         class ComponentBuilder
           extend T::Sig
@@ -15,7 +15,7 @@ module Mayu
           end
         end
 
-        sig { override.params(mod: Mod).returns(T.attached_class) }
+        sig { override.params(mod: Resource).returns(T.attached_class) }
         def self.load(mod)
           source = File.read(mod.absolute_path)
 
@@ -35,7 +35,7 @@ module Mayu
         sig { returns(T.class_of(Component::Base)) }
         attr_reader :klass
 
-        sig { params(mod: Mod, klass: T.class_of(Component::Base)).void }
+        sig { params(mod: Resource, klass: T.class_of(Component::Base)).void }
         def initialize(mod, klass)
           super(mod)
           @klass = klass
