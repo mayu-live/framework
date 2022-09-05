@@ -15,9 +15,9 @@ module Mayu
           end
         end
 
-        sig { override.params(mod: Resource).returns(T.attached_class) }
-        def self.load(mod)
-          source = File.read(mod.absolute_path)
+        sig { override.params(resource: Resource).returns(T.attached_class) }
+        def self.load(resource)
+          source = File.read(resource.absolute_path)
 
           klass =
             T.let(
@@ -25,19 +25,21 @@ module Mayu
               T.class_of(Component::Base)
             )
 
-          klass.__mayu_module = mod
-          klass.class_eval(source, mod.path, 0)
+          klass.__mayu_module = resource
+          klass.class_eval(source, resource.path, 0)
           klass
 
-          new(mod, klass)
+          new(resource, klass)
         end
 
         sig { returns(T.class_of(Component::Base)) }
         attr_reader :klass
 
-        sig { params(mod: Resource, klass: T.class_of(Component::Base)).void }
-        def initialize(mod, klass)
-          super(mod)
+        sig do
+          params(resource: Resource, klass: T.class_of(Component::Base)).void
+        end
+        def initialize(resource, klass)
+          super(resource)
           @klass = klass
         end
       end

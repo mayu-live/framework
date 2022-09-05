@@ -6,9 +6,9 @@ module Mayu
   module Resources
     module Types
       class CSS < Base
-        sig { override.params(mod: Resource).returns(T.attached_class) }
-        def self.load(mod)
-          new(mod, File.read(mod.absolute_path))
+        sig { override.params(resource: Resource).returns(T.attached_class) }
+        def self.load(resource)
+          new(resource, File.read(resource.absolute_path))
         end
 
         class ClassnameProxy
@@ -30,9 +30,9 @@ module Mayu
           "#<CSSResourceule path=#{@path} idents=#{@class_names.keys.inspect}>"
         end
 
-        sig { params(mod: Resource, src: String).void }
-        def initialize(mod, src)
-          super(mod)
+        sig { params(resource: Resource, src: String).void }
+        def initialize(resource, src)
+          super(resource)
 
           class_names = {}
           compositions = {}

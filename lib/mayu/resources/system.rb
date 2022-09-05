@@ -2,7 +2,7 @@
 
 require_relative "resolver"
 require_relative "dependency_graph"
-require_relative "mod"
+require_relative "resource"
 
 module Mayu
   module Resources
