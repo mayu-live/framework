@@ -122,16 +122,16 @@ module Mayu
           content = ::File.read(source)
           hash = Digest::SHA256.hexdigest(content)
           extension = @mime_type.preferred_extension
-          target = ::File.join(outdir, "#{hash}.#{extension}")
+          filename = "#{hash}.#{extension}"
+          target = ::File.join(outdir, filename)
           ::File.write(target, content)
-          target
+          filename
         end
       end
 
       class Content < Base
         sig { params(content_type: String, content: String).void }
         def initialize(content_type:, content:)
-          p content_type
           @mime_type = T.let(MIME::Types[content_type].first, MIME::Type)
           @content = content
         end
@@ -140,9 +140,10 @@ module Mayu
         def generate(root:, outdir:)
           hash = Digest::SHA256.hexdigest(@content)
           extension = @mime_type.preferred_extension
-          target = ::File.join(outdir, "#{hash}.#{extension}")
+          filename = "#{hash}.#{extension}"
+          target = ::File.join(outdir, filename)
           ::File.write(target, @content)
-          target
+          filename
         end
       end
     end
@@ -175,7 +176,7 @@ module Mayu
       def generate(root:, outdir:)
         return if @filename.resolved?
         filename = @source.generate(root:, outdir:)
-        @filename.resolve(filename)
+        @filename.resolve("/__mayu/assets/" + filename)
         Console.logger.info("Generated asset #{filename}")
       end
 

@@ -10,62 +10,13 @@ require_relative "css_attributes"
 require_relative "update_context"
 require_relative "id_generator"
 require_relative "../session"
+require_relative "../ref_counter"
+require_relative "indexes"
 
 module Mayu
   module VDOM
     class VTree
       extend T::Sig
-
-      class Indexes
-        extend T::Sig
-        extend T::Generic
-
-        Elem = type_member
-
-        sig { params(indexes: T::Array[Elem]).void }
-        def initialize(indexes = [])
-          @indexes = indexes
-        end
-
-        sig { params(id: Elem).void }
-        def append(id)
-          @indexes.delete(id)
-          @indexes.push(id)
-        end
-
-        sig { params(index: Integer).returns(T.nilable(Elem)) }
-        def [](index) = @indexes[index]
-
-        sig { params(id: Elem).returns(T.nilable(Integer)) }
-        def index(id) = @indexes.index(id)
-        sig { params(id: Elem).returns(T.nilable(Integer)) }
-        def rindex(id) = @indexes.rindex(id)
-
-        sig { params(id: Elem, after: T.nilable(Elem)).void }
-        def insert_after(id, after)
-          insert_before(id, after && next_sibling(after))
-        end
-
-        sig { params(id: Elem, before: T.nilable(Elem)).void }
-        def insert_before(id, before)
-          @indexes.delete(id)
-          index = before && @indexes.index(before)
-          index ? @indexes.insert(index, id) : @indexes.push(id)
-        end
-
-        sig { params(id: Elem).returns(T.nilable(Elem)) }
-        def next_sibling(id)
-          if index = @indexes.index(id)
-            @indexes[index.succ]
-          end
-        end
-
-        sig { params(id: Elem).void }
-        def remove(id) = @indexes.delete(id)
-
-        sig { returns(T::Array[Elem]) }
-        def to_a = @indexes
-      end
 
       class Updater
         extend T::Sig
@@ -144,6 +95,9 @@ module Mayu
       sig { returns(T.nilable(VNode)) }
       attr_reader :root
 
+      sig { returns(T::Array[String]) }
+      def assets = @asset_refs.keys
+
       sig { params(session: Session, task: Async::Task).void }
       def initialize(session:, task: Async::Task.current)
         @root = T.let(nil, T.nilable(VNode))
@@ -158,6 +112,7 @@ module Mayu
           T.let(Async::Semaphore.new(parent: task), Async::Semaphore)
 
         @sent_stylesheets = T.let(Set.new, T::Set[String])
+        @asset_refs = T.let(RefCounter.new, RefCounter[String])
       end
 
       sig { returns(T::Array[T.untyped]) }
@@ -171,6 +126,7 @@ module Mayu
         @handlers = {}
         @update_queue = Async::Queue.new
         @update_semaphore = Async::Semaphore.new
+        @asset_refs = T.let(RefCounter.new, RefCounter[String])
         @root.instance_variable_set(:@vtree, self)
       end
 
@@ -404,12 +360,16 @@ module Mayu
 
       sig { params(ctx: UpdateContext, component: Component::Wrapper).void }
       def update_stylesheet(ctx, component)
-        # stylesheet = component.stylesheet
-        # return unless stylesheet.is_a?(Modules::CSS::CSSModule)
-        # return if @sent_stylesheets.include?(stylesheet.hash)
-        # puts "Adding stylesheet #{stylesheet.path}"
-        # ctx.stylesheet(stylesheet.hash)
-        # @sent_stylesheets.add(stylesheet.hash)
+        if stylesheet =
+             (
+               begin
+                 component.stylesheet
+               rescue StandardError
+                 nil
+               end
+             )
+          @asset_refs.acquire(stylesheet.asset.filename)
+        end
       end
 
       sig do

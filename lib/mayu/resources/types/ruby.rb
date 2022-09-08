@@ -21,7 +21,7 @@ module Mayu
 
           styles = resource.system.load_css(resource)
 
-          klass.define_singleton_method(:styles) { styles }
+          klass.define_singleton_method(:stylesheet) { styles.type } if styles
 
           new(resource, klass)
         end

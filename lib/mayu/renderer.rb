@@ -56,27 +56,6 @@ module Mayu
     end
 
     sig do
-      params(lifecycles: T::Boolean).returns(
-        {
-          html: String,
-          ids: T.untyped,
-          stylesheets: T::Array[String],
-          vtree: String
-        }
-      )
-    end
-    def initial_render(lifecycles: false)
-      @vtree.render(@app, lifecycles:)
-      root = @vtree.root
-      raise unless root
-      html = root.to_html
-      ids = root.id_tree
-      stylesheets = []
-      vtree = VDOM::Hydration.hydrate(@vtree)
-      { html:, ids:, stylesheets:, vtree: }
-    end
-
-    sig do
       params(block: T.proc.params(msg: [Symbol, T.untyped]).void).returns(
         Async::Task
       )

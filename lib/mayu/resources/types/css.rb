@@ -55,8 +55,17 @@ module Mayu
           @hash = T.let(Digest::SHA256.digest(@src), String)
 
           @asset =
-            Assets::Asset.from_content(content_type: "text/css", content: @src)
+            T.let(
+              Assets::Asset.from_content(
+                content_type: "text/css",
+                content: @src
+              ),
+              Assets::Asset
+            )
         end
+
+        sig { returns(Assets::Asset) }
+        attr_reader :asset
 
         sig { returns(ClassnameProxy) }
         def proxy

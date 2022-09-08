@@ -85,9 +85,14 @@ module Mayu
         end
       end
 
+      sig { returns(Resources::Types::CSS) }
+      def self.stylesheet
+        raise "There are no styles for #{self}"
+      end
+
       sig { returns(Resources::Types::CSS::ClassnameProxy) }
       def self.styles
-        raise "There are no styles for #{self}"
+        stylesheet.proxy
       end
 
       sig { returns(Resources::Types::CSS::ClassnameProxy) }

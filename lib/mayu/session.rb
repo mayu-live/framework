@@ -77,7 +77,7 @@ module Mayu
       root = @vtree.root or raise "There is no root"
 
       html = root.to_html
-      stylesheets = []
+      stylesheets = @vtree.assets
 
       freeze
 
