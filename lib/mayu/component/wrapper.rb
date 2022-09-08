@@ -8,6 +8,11 @@ module Mayu
     class Wrapper
       extend T::Sig
 
+      sig { returns(Props) }
+      attr_accessor :props
+      sig { returns(State) }
+      attr_accessor :state
+
       sig do
         params(vnode: VDOM::VNode, klass: T.class_of(Base), props: Props).void
       end
@@ -80,11 +85,7 @@ module Mayu
         @dirty = false
       end
 
-      sig do
-        override
-          .params(next_props: Props, next_state: State)
-          .returns(T::Boolean)
-      end
+      sig { params(next_props: Props, next_state: State).returns(T::Boolean) }
       def should_update?(next_props, next_state)
         @dirty || @instance.should_update?(next_props, next_state)
       end

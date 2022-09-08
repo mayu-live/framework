@@ -18,7 +18,7 @@ module Mayu
     # configuration and everything that should be shared.
     extend T::Sig
 
-    APP_DIR = "app"
+    PAGES_DIR = "pages"
     STORE_DIR = "store"
 
     sig { returns(String) }
@@ -48,7 +48,7 @@ module Mayu
       # probably have to set up an async task...
       @routes =
         T.let(
-          Routes.build_routes(File.join(@root, APP_DIR)),
+          Routes.build_routes(File.join(@root, PAGES_DIR)),
           T::Array[Routes::Route]
         )
       @reducers =
