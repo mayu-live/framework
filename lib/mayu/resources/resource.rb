@@ -11,6 +11,8 @@ module Mayu
       attr_reader :path
       sig { returns(Types::Base) }
       attr_reader :type
+      sig { returns(System) }
+      attr_reader :system
 
       sig { params(system: System, path: String).void }
       def initialize(system, path)
@@ -19,7 +21,7 @@ module Mayu
         @assets = T.let({}, T::Hash[String, String])
         @extname = T.let(nil, T.nilable(String))
         @hash = T.let(nil, T.nilable(String))
-        @type = T.let(Types.load(self), Types::Base)
+        @type = T.let(Types.for_resource(self), Types::Base)
       end
 
       sig { params(path: String).returns(Resource) }

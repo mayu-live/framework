@@ -1,5 +1,6 @@
 # typed: strict
 
+require "crass"
 require_relative "base"
 
 module Mayu
@@ -51,6 +52,10 @@ module Mayu
 
           @src = T.let(Crass::Parser.stringify(tree).strip + "\n", String)
           @proxy = T.let(nil, T.nilable(ClassnameProxy))
+          @hash = T.let(Digest::SHA256.digest(@src), String)
+
+          @asset =
+            Assets::Asset.from_content(content_type: "text/css", content: @src)
         end
 
         sig { returns(ClassnameProxy) }
@@ -136,7 +141,8 @@ module Mayu
 
         sig { params(ident: String).returns(String) }
         def hashify_ident(ident)
-          hash = Base64.urlsafe_encode64(Digest::SHA256.digest(@hash + ident))
+          hash =
+            Base64.urlsafe_encode64(Digest::SHA256.digest("#{hash} #{ident}"))
           "#{ident}-#{hash[0..5]}"
         end
 

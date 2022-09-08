@@ -1,6 +1,7 @@
 # typed: strict
 
 require_relative "../resource"
+require_relative "../../assets"
 
 module Mayu
   module Resources
@@ -10,9 +11,13 @@ module Mayu
         extend T::Helpers
         abstract!
 
+        sig { returns(T.nilable(Assets::Asset)) }
+        attr_reader :asset
+
         sig { params(resource: Resource).void }
         def initialize(resource)
           @resource = resource
+          @asset = T.let(nil, T.nilable(Assets::Asset))
         end
 
         sig { abstract.params(resource: Resource).returns(T.attached_class) }

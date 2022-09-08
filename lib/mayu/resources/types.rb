@@ -12,7 +12,7 @@ module Mayu
       extend T::Sig
 
       sig { params(resource: Resource).returns(Base) }
-      def self.load(resource)
+      def self.for_resource(resource)
         self.for(resource).load(resource)
       end
 

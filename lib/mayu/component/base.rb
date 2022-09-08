@@ -86,8 +86,13 @@ module Mayu
       end
 
       sig { returns(Resources::Types::CSS::ClassnameProxy) }
+      def self.styles
+        raise "There are no styles for #{self}"
+      end
+
+      sig { returns(Resources::Types::CSS::ClassnameProxy) }
       def styles
-        raise "todo"
+        self.class.styles
       end
 
       sig { params(blk: T.proc.bind(T.self_type).void).void }

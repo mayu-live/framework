@@ -18,7 +18,10 @@ module Mayu
 
           klass.__mayu_resource = resource
           klass.class_eval(source, resource.path, 0)
-          klass
+
+          styles = resource.system.load_css(resource)
+
+          klass.define_singleton_method(:styles) { styles }
 
           new(resource, klass)
         end
