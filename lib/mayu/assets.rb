@@ -176,8 +176,10 @@ module Mayu
       def generate(root:, outdir:)
         return if @filename.resolved?
         filename = @source.generate(root:, outdir:)
-        @filename.resolve("/__mayu/assets/" + filename)
+        Console.logger.info(self, "Generated asset #{filename}")
+        @filename.resolve(filename)
         Console.logger.info("Generated asset #{filename}")
+        filename
       end
 
       sig { returns(String) }

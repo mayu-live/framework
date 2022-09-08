@@ -17,7 +17,7 @@ module Mayu
             )
 
           klass.__mayu_resource = resource
-          klass.class_eval(source, resource.path, 0)
+          klass.class_eval(source, resource.path, 1)
 
           styles = resource.system.load_css(resource)
 

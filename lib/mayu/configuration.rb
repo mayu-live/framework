@@ -4,6 +4,14 @@ require "toml-rb"
 
 module Mayu
   class Configuration < T::Struct
+    class PathsConfig < T::Struct
+      const :components, String, default: "components"
+      const :pages, String, default: "pages"
+      const :stores, String, default: "stores"
+      const :public, String, default: "public"
+      const :assets, String, default: ".assets"
+    end
+
     extend T::Sig
 
     CONFIG_FILE = "mayu.toml"
@@ -38,6 +46,10 @@ module Mayu
       env_config = config.dig(:env, env) || {}
 
       merged_config = base_config.merge(env_config)
+
+      if merged_config[:paths]
+        merged_config[:paths] = PathsConfig.new(merged_config[:paths])
+      end
 
       secret_key =
         merged_config.fetch(:secret_key) do
@@ -82,5 +94,7 @@ module Mayu
     const :max_sessions, Integer, default: 50
 
     const :hot_reload, T::Boolean, default: false
+
+    const :paths, PathsConfig, default: PathsConfig.new
   end
 end

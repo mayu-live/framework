@@ -92,7 +92,9 @@ module Mayu
 
       style =
         stylesheets
-          .map { |stylesheet| %{<link rel="stylesheet" href="#{stylesheet}">} }
+          .map do |stylesheet|
+            %{<link rel="stylesheet" href="/__mayu/static/#{stylesheet}">}
+          end
           .join
 
       html

@@ -13,7 +13,7 @@ module Mayu
       PAGES_PATH = "/pages"
       STORES_PATH = "/stores"
       COMPONENTS_PATH = "/components"
-      ASSETS_PATH = "/assets"
+      ASSETS_PATH = ".assets"
 
       sig { returns(String) }
       attr_reader :root

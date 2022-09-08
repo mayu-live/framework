@@ -66,6 +66,11 @@ module Mayu
       @fetch = T.let(Fetch.new, Fetch)
     end
 
+    sig { params(name: Symbol).returns(String) }
+    def path(name)
+      File.join(@root, @config.paths.send(name))
+    end
+
     sig do
       params(initial_state: T::Hash[Symbol, T.untyped]).returns(State::Store)
     end

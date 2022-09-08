@@ -1,3 +1,5 @@
 def render
-  Mayu::VDOM::Descriptor.text("HELLO")
+  h.div class: styles.foo do
+    h << "hello"
+  end
 end
