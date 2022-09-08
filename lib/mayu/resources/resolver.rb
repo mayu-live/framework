@@ -17,7 +17,15 @@ module Mayu
       end
 
       sig { params(path: String, source_dir: String).returns(String) }
-      def resolve(path, source_dir)
+      def resolve(path, source_dir = "/")
+        # if path.start_with?("/")
+        #   return resolve(".#{path}", "/")
+        # end
+        #
+        # if !path.match(/\A\.\.?\//)
+        #   return resolve("./#{path}", "/components")
+        # end
+
         relative_to_root = File.absolute_path(path, source_dir)
         absolute_path = File.join(@system.root, relative_to_root)
 

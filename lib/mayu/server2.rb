@@ -111,7 +111,26 @@ module Mayu
             }
           )
         in ["GET", ["__mayu", "static", filename]]
-          public_root = File.join(@environment.root, "public")
+          path =
+            File.join(
+              @environment.path(:assets),
+              File.expand_path(filename, "/")
+            )
+          body = Protocol::HTTP::Body::File.open(path)
+          MIME::Types.type_for(path).first.to_s
+
+          mime_type = MIME::Types.type_for(filename).first
+          content_type = mime_type.to_s
+
+          respond(
+            body: Protocol::HTTP::Body::File.open(path),
+            headers: {
+              "content-type" => content_type,
+              "cache-control" => "public, max-age=604800"
+            }
+          )
+        in ["GET", ["__mayu", "static", filename]]
+          public_root = File.join(@environment.path(:public))
           path = File.join(public_root, File.expand_path(filename, "/"))
           body = Protocol::HTTP::Body::File.open(path)
           MIME::Types.type_for(path).first.to_s
@@ -147,7 +166,9 @@ module Mayu
 
       sig { params(id: String, token: String).returns(Session) }
       def fetch_session(id, token)
-        @sessions.fetch(session_key(id, token))
+        @sessions.fetch(session_key(id, token)) do
+          raise "Session not found or invalid token: #{id}"
+        end
       end
 
       sig { params(session_id: String, token: String).returns(String) }
@@ -288,5 +309,17 @@ pwd = File.expand_path(File.join(__dir__, "..", "..", "example2"))
 config = Mayu::Configuration.load_config(:dev, pwd:)
 
 Mayu::Configuration.log_config(config)
+
+live_js =
+  Mayu::Assets::Asset.from_file(
+    path:
+      Pathname
+        .new(File.join(__dir__, "client", "dist", "live.js"))
+        .relative_path_from(config.root)
+        .to_s
+  ).generate(
+    root: config.root,
+    outdir: File.join(config.root, config.paths.assets)
+  )
 
 Mayu::Server2.start_dev(config).wait
