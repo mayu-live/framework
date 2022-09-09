@@ -82,7 +82,7 @@ module Mayu
 
       sig { returns(T::Array[T.untyped]) }
       def marshal_dump
-        [ComponentMarshaler.new(type), props, key]
+        [ComponentMarshaler.new(type), Hydration.dump_props(props), key]
       end
 
       sig { params(a: T::Array[T.untyped]).void }

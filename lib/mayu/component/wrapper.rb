@@ -34,7 +34,7 @@ module Mayu
 
       sig { returns(T.untyped) }
       def marshal_dump
-        [@props, @state]
+        [VDOM::Hydration.dump_props(@props), VDOM::Hydration.dump_state(@state)]
       end
 
       sig { params(a: T.untyped).void }

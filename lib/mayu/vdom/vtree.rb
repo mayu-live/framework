@@ -44,6 +44,8 @@ module Mayu
         end
         def run(task: Async::Task.current, &block)
           task.async(annotation: "VTree updater") do |task|
+            assets = T::Set[String].new
+
             loop do
               @vtree.update_queue.wait while @vtree.update_queue.empty?
 
@@ -72,7 +74,16 @@ module Mayu
                 end
               end
 
-              patches = ctx.patches + ctx.stylesheet_patch
+              stylesheets = []
+
+              @vtree.assets.each do |asset|
+                next if assets.include?(asset)
+                next unless asset.end_with?(".css")
+                stylesheets.push(asset)
+                assets.add(asset)
+              end
+
+              patches = ctx.patches + stylesheet_patch(stylesheets)
               yield [:patch, patches] unless patches.empty?
               puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
             end
@@ -87,6 +98,17 @@ module Mayu
 
             yield [:exception, error]
           end
+        end
+
+        sig do
+          params(stylesheets: T::Array[String]).returns(T::Array[T.untyped])
+        end
+        def stylesheet_patch(stylesheets)
+          return [] unless stylesheets
+
+          paths = stylesheets.map { "/__mayu/static/#{_1}" }
+
+          [{ type: :stylesheet, paths: }]
         end
       end
 

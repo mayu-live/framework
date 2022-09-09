@@ -84,7 +84,7 @@ module Mayu
         session.initial_render => { html:, stylesheets: }
 
         links = [
-          "</__mayu/static/#{environment.init_js}>; rel=preload; as=script; crossOrigin",
+          "</__mayu/static/#{environment.init_js}>; rel=preload; as=script; crossorigin; fetchpriority=high",
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
         headers = {

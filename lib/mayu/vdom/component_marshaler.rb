@@ -1,3 +1,5 @@
+# typed: strict
+
 require_relative "../component"
 
 module Mayu
@@ -12,14 +14,21 @@ module Mayu
       def initialize(type)
         @type =
           T.let(
-            if Component.component_class?(type)
+            if Component === type
               klass = T.cast(type, T.class_of(Component::Base))
 
-              if klass.name
-                { klass: klass }
-              else
-                component = klass.__mayu_resource.path
+              if resource =
+                   (
+                     begin
+                       klass.__mayu_resource
+                     rescue StandardError
+                       nil
+                     end
+                   )
+                component = resource.path
                 { component: }
+              else
+                { klass: klass }
               end
             else
               type

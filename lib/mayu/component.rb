@@ -27,6 +27,11 @@ module Mayu
 
     ElementType = T.type_alias { T.any(Symbol, ComponentType) }
 
+    sig { params(other: T.untyped).returns(T::Boolean) }
+    def self.===(other)
+      component_class?(other)
+    end
+
     sig { params(klass: T.untyped).returns(T::Boolean) }
     def self.component_class?(klass)
       !!(klass.is_a?(Class) && klass < Base)

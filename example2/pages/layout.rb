@@ -1,4 +1,6 @@
-# typed: true
+# typed: false
+
+Header = import("Layout/Header")
 
 def render
   h.html do
@@ -8,6 +10,8 @@ def render
     end
 
     h.body(class: styles.body) do
+      h[Header]
+
       h.header(class: styles.header) do
         h.div(class: styles.maxWidth) { h.h1 "Mayu Live", class: styles.title }
       end
