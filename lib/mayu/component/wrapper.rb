@@ -68,7 +68,7 @@ module Mayu
 
       sig { params(prev_props: Props, prev_state: State).void }
       def did_update(prev_props, prev_state)
-        async { @instance.mount }
+        async { @instance.did_update(prev_props, prev_state) }
       end
 
       sig { void }

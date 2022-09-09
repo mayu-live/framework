@@ -14,6 +14,8 @@ export default async function init(encryptedState: string) {
     sessionStorage.getItem(SESSION_ID_KEY)
   );
 
+  const disconnectedElement = document.createElement("mayu-disconnected");
+
   window.Mayu = setupGlobalObject(sessionId);
 
   let isUnloading = false;
@@ -28,12 +30,17 @@ export default async function init(encryptedState: string) {
     console.log("Opened session", sessionId);
     sessionStorage.setItem(SESSION_ID_KEY, sessionId);
     startPing(es, sessionId);
+
+    document.body
+      .querySelectorAll("mayu-disconnected")
+      .forEach((el) => el.remove());
   };
 
   es.onerror = () => {
     console.log({ isUnloading, readyState: document.readyState });
     if (isUnloading) return;
     sessionStorage.removeItem(SESSION_ID_KEY);
+    document.body.appendChild(disconnectedElement);
   };
 
   es.addEventListener("navigate", (e) => {
