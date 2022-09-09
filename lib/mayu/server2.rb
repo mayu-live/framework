@@ -84,8 +84,8 @@ module Mayu
         session.initial_render => { html:, stylesheets: }
 
         links = [
-          "</__mayu/live.js>; rel=preload; as=script",
-          *stylesheets.map { "<#{_1}>; rel=stylesheet" }
+          "</__mayu/static/#{environment.init_js}>; rel=preload; as=script; crossOrigin",
+          *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
         headers = {
           "content-type" => "text/html; charset=utf-8",
@@ -107,6 +107,9 @@ module Mayu
         }
 
         respond(headers:, body: [session.id])
+      rescue MessageCipher::Error => e
+        Console.logger.error(self, e.class.name, e.message)
+        respond(status: 500, body: ["error"])
       end
 
       sig do
@@ -339,14 +342,5 @@ pwd = File.expand_path(File.join(__dir__, "..", "..", "example2"))
 config = Mayu::Configuration.load_config(:dev, pwd:)
 
 Mayu::Configuration.log_config(config)
-
-live_js =
-  Mayu::Assets::Asset.from_file(
-    path:
-      Pathname
-        .new(File.join(__dir__, "client", "dist", "live.js"))
-        .relative_path_from(config.root)
-        .to_s
-  ).generate(root: config.root, outdir: config.paths.assets)
 
 Mayu::Server2.start_dev(config).wait

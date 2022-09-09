@@ -192,9 +192,10 @@ module Mayu
         @filename = T.let(Async::Variable.new, Async::Variable)
       end
 
-      sig { params(root: String, outdir: String).void }
+      sig { params(root: String, outdir: String).returns(String) }
       def generate(root:, outdir:)
-        return if @filename.resolved?
+        return @filename.value if @filename.resolved?
+
         filename = @source.generate(root:, outdir:)
         Console.logger.info(self, "Generated asset #{filename}")
         @filename.resolve(filename)

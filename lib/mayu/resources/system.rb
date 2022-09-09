@@ -74,9 +74,8 @@ module Mayu
 
       sig { params(resolved_path: String).returns(Resource) }
       def load_resource2(resolved_path)
-        Console.logger.info("Loading #{resolved_path}")
-
         @resources[resolved_path] ||= begin
+          Console.logger.info("Loading #{resolved_path}")
           resource = Resource.load(self, resolved_path)
           puts "Loaded resource #{resource.inspect}"
           resource.type.asset&.generate(root:, outdir: ASSETS_PATH)

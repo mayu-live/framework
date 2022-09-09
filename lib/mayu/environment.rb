@@ -64,6 +64,23 @@ module Mayu
       @prometheus_registry =
         T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
       @fetch = T.let(Fetch.new, Fetch)
+      @init_js = T.let(nil, T.nilable(String))
+    end
+
+    sig { returns(String) }
+    def init_js
+      @init_js ||=
+        begin
+          path =
+            Pathname
+              .new(File.join(__dir__, "client", "dist", "live.js"))
+              .relative_path_from(config.root)
+              .to_s
+          Mayu::Assets::Asset.from_file(path:).generate(
+            root: config.root,
+            outdir: config.paths.assets
+          )
+        end
     end
 
     sig { params(name: Symbol).returns(String) }

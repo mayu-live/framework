@@ -90,19 +90,21 @@ module Mayu
           Marshal.dump(SerializedSession.new(marshal_dump))
         )
 
-      script = <<~EOF
-        <script type="module" src="/__mayu/live.js##{encrypted_session}"></script>
-      EOF
+      head = [
+        %{<script type="module" src="/__mayu/static/#{environment.init_js}" crossorigin></script>},
+        *stylesheets.map do |stylesheet|
+          %{<link rel="stylesheet" href="#{stylesheet}">}
+        end
+      ].join
 
-      style =
-        stylesheets
-          .map { |stylesheet| %{<link rel="stylesheet" href="#{stylesheet}">} }
-          .join
+      tail = <<~HTML
+        <template id="mayu-init">#{encrypted_session}</template>
+      HTML
 
       html =
         html
-          .sub(%r{</head>}) { "#{style}#{_1}" }
-          .sub(%r{\K</body>}) { "#{script}#{_1}" }
+          .sub(%r{</head>}) { "#{head}#{_1}" }
+          .sub(%r{\K</body>}) { "#{tail}#{_1}" }
           .prepend("<!doctype html>\n")
 
       { html:, stylesheets: }
