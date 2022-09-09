@@ -3,21 +3,21 @@
 module Mayu
   module Component
     module SpecialComponents
-      class HeadComponent < Component::Base
+      class Head < Component::Base
         sig { override.returns(T.nilable(VDOM::Descriptor)) }
         def render
           h.create_element(:__mayu_head, [children].flatten.compact, props)
         end
       end
 
-      class BodyComponent < Component::Base
+      class Body < Component::Base
         sig { override.returns(T.nilable(VDOM::Descriptor)) }
         def render
           h.create_element(:__mayu_body, [children].flatten.compact, **props)
         end
       end
 
-      class AComponent < Component::Base
+      class A < Component::Base
         sig { params(_: T.untyped, href: String).void }
         def handle_click(_, href)
           helpers.navigate(href.to_s)
