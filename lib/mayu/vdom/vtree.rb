@@ -389,14 +389,7 @@ module Mayu
 
       sig { params(ctx: UpdateContext, component: Component::Wrapper).void }
       def update_stylesheet(ctx, component)
-        if stylesheet =
-             (
-               begin
-                 component.stylesheet
-               rescue StandardError
-                 nil
-               end
-             )
+        if stylesheet = component.stylesheet
           @asset_refs.acquire(stylesheet.asset.filename)
         end
       end
