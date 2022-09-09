@@ -1,3 +1,7 @@
 .foo {
   background: #f0f;
 }
+
+.active {
+  font-weight: bold;
+}
