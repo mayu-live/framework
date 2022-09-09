@@ -16,17 +16,19 @@ module Mayu
 
     Message = T.type_alias { { iss: Float, exp: Float, payload: T.untyped } }
 
-    class ExpiredError < StandardError
+    class Error < StandardError
     end
-    class IssuedInTheFutureError < StandardError
+    class ExpiredError < Error
     end
-    class EncryptError < StandardError
+    class IssuedInTheFutureError < Error
     end
-    class DecryptError < StandardError
+    class EncryptError < Error
     end
-    class InvalidHMACError < StandardError
+    class DecryptError < Error
     end
-    class InvalidPrefixError < StandardError
+    class InvalidHMACError < Error
+    end
+    class InvalidPrefixError < Error
     end
 
     sig { params(key: String, prefix: String, ttl: Integer).void }
