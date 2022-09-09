@@ -85,6 +85,14 @@ module Mayu
         end
       end
 
+      sig do
+        overridable
+          .params(prev_props: Component::Props, prev_state: Component::State)
+          .void
+      end
+      def did_update(prev_props, prev_state)
+      end
+
       sig { returns(Resources::Types::CSS) }
       def self.stylesheet
         raise "There are no styles for #{self}"
@@ -130,7 +138,7 @@ module Mayu
           blk: T.nilable(T.proc.params(arg0: State).returns(State))
         ).void
       end
-      def update_state(state = nil, &blk)
+      def update(state = nil, &blk)
         @__wrapper.update(state, &blk)
       end
 
