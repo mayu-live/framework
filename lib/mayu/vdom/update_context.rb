@@ -20,11 +20,7 @@ module Mayu
       def stylesheet_patch
         return [] if @stylesheets.empty?
 
-        paths =
-          Mayu::Assets::Manager
-            .instance
-            .public_filenames(@stylesheets.to_a)
-            .map { "/__mayu/assets/" + _1 }
+        paths = @stylesheets.to_a.map { "/__mayu/static/#{_1}" }
 
         [{ type: :stylesheet, paths: }]
       end

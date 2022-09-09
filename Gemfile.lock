@@ -6,6 +6,7 @@ PATH
       crass (~> 1.0.6)
       falcon (~> 0.42.2)
       filewatcher (~> 1.1.1)
+      listen (~> 3.7.1)
       msgpack (~> 1.5.5)
       nanoid (~> 2.0.0)
       nats-pure (~> 2.1.2)

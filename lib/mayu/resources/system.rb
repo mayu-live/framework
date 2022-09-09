@@ -28,7 +28,7 @@ module Mayu
 
       sig { params(path: String).returns(T.class_of(Component::Base)) }
       def load_component(path)
-        load_page(path).type => Types::Ruby => type
+        load_resource(path, "/components").type => Types::Ruby => type
         type.klass
       end
 

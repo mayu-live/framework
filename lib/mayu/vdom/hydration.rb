@@ -46,6 +46,30 @@ module Mayu
 
         vtree
       end
+
+      sig { params(props: Component::Props).returns(Component::Props) }
+      def self.dump_props(props)
+        props.transform_values { |value| dump_value(value) }
+      end
+
+      sig { params(state: Component::State).returns(Component::State) }
+      def self.dump_state(state)
+        state.transform_values { |value| dump_value(value) }
+      end
+
+      sig { params(value: T.untyped).returns(T.untyped) }
+      def self.dump_value(value)
+        case value
+        when Hash
+          value.transform_values { dump_value(_1) }
+        when Array
+          value.map { dump_value(_1) }
+        when Component
+          ComponentMarshaler.new(value)
+        else
+          value
+        end
+      end
     end
   end
 end

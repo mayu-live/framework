@@ -33,10 +33,14 @@ module Mayu
         end
 
         sig { params(path: String).returns(T.class_of(Base)) }
-        def self.import(path)
-          __mayu_resource.load_relative(path) => mod
-          mod.type => Resources::Types::Ruby => ruby
-          ruby.klass
+        def import(path)
+          if path.start_with?("./") || path.start_with?("../")
+            __mayu_resource.load_relative(path) => mod
+            mod.type => Resources::Types::Ruby => ruby
+            ruby.klass
+          else
+            __mayu_resource.system.load_component(path)
+          end
         end
       end
 
