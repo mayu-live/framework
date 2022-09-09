@@ -54,133 +54,24 @@ module Mayu
         asd = [request.method, request.path.delete_prefix("/").split("/")]
 
         # stree-ignore
-        asd
+        case asd
         in ["POST", ["__mayu", "session", "resume", *_rest]]
-          dumped = @environment.message_cipher.load(request.read)
-          session = Session.restore(environment:, dumped:)
-
-          @sessions[session_key(session.id, session.token)] = session
-
-          headers = {
-            "content-type" => "text/plain",
-            "set-cookie" => session_token_cookie(session.id, session.token)
-          }
-
-          respond(headers:, body: [session.id])
-        in ["POST", ["__mayu", "session", session_id, "ping"]]
-          session =
-            fetch_session(session_id, get_session_token_cookie(request))
-          timestamp = request.read.to_i
-
-          session.handle_callback("ping", { timestamp: })
-
-          respond(
-            headers: {
-              "content-type" => "application/json",
-              "set-cookie" => session_token_cookie(session.id, session.token)
-            },
-            body: [timestamp.to_s]
-          )
-        in [
-             "POST",
-             ["__mayu", "session", session_id, "callback", callback_id]
-           ]
-          session =
-            fetch_session(session_id, get_session_token_cookie(request))
-          payload = JSON.parse(request.read)
-          session.handle_callback(callback_id, payload)
-          [200, { "content-type" => "text/plain" }, ["ok"]]
+          handle_resume_session(request)
+        in ["POST", ["__mayu", "session", session_id, *args]]
+          handle_session_post(request, session_id, args)
         in ["GET", ["__mayu", "session", session_id, "events"]]
-          session =
-            fetch_session(session_id, get_session_token_cookie(request))
-
-          body = Async::HTTP::Body::Writable.new
-
-          body.write("retry: 1000\n\n")
-
-          session.run do |msg|
-            case msg
-            in [:init, data]
-              body.write(format_event(:init, data))
-            in [:patch, patches]
-              body.write(format_event(:patch, patches))
-            in [:exception, data]
-              body.write(format_event(:exception, data))
-            in [:pong, data]
-              body.write(
-                format_event(
-                  :pong,
-                  { timestamp: data, region: environment.config.region }
-                )
-              )
-            in [:navigate, data]
-              body.write(format_event(:navigate, data))
-            else
-              Console.logger.error(self, "Unhandled message: #{msg.inspect}")
-            end
-          end
-
-          headers = { "content-type" => "text/event-stream; charset=utf-8" }
-
-          respond(headers:, body:)
+          handle_session_sse(request, session_id)
         in ["GET", ["__mayu", "live.js"]]
-          filename = File.join(__dir__, "client", "dist", "live.js")
-          mime_type = MIME::Types.type_for(filename).first
-          content_type = mime_type.to_s
-
-          respond(
-            body: Protocol::HTTP::Body::File.open(filename),
-            headers: {
-              "content-type" => content_type
-            }
-          )
+          send_static_file(File.join(__dir__, "client", "dist", "live.js"))
         in ["GET", ["__mayu", "static", filename]]
-          path =
+          send_static_file(
             File.join(
               @environment.path(:assets),
               File.expand_path(filename, "/")
             )
-          body = Protocol::HTTP::Body::File.open(path)
-          MIME::Types.type_for(path).first.to_s
-
-          mime_type = MIME::Types.type_for(filename).first
-          content_type = mime_type.to_s
-
-          respond(
-            body: Protocol::HTTP::Body::File.open(path),
-            headers: {
-              "content-type" => content_type,
-              "cache-control" => "public, max-age=604800"
-            }
-          )
-        in ["GET", ["__mayu", "static", filename]]
-          public_root = File.join(@environment.path(:public))
-          path = File.join(public_root, File.expand_path(filename, "/"))
-          body = Protocol::HTTP::Body::File.open(path)
-          MIME::Types.type_for(path).first.to_s
-
-          mime_type = MIME::Types.type_for(filename).first
-          content_type = mime_type.to_s
-
-          respond(
-            body: Protocol::HTTP::Body::File.open(filename),
-            headers: {
-              "content-type" => content_type
-            }
           )
         in ["GET", _path]
-          session = Session.new(environment:, path: request.path)
-          session.initial_render => { html:, stylesheets: }
-
-          links = [
-            "</__mayu/live.js>; rel=preload; as=script",
-            *stylesheets.map { "<#{_1}>; rel=stylesheet" }
-          ].join(", ")
-          headers = {
-            "content-type" => "text/html; charset=utf-8",
-            "link" => links
-          }
-          respond(status: 200, body: [html], headers:)
+          handle_init_session(request)
         else
           respond(status: 400, body: ["Invalid request"])
         end
@@ -190,6 +81,116 @@ module Mayu
       end
 
       private
+
+      sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
+      def handle_init_session(request)
+        session = Session.new(environment:, path: request.path)
+        session.initial_render => { html:, stylesheets: }
+
+        links = [
+          "</__mayu/live.js>; rel=preload; as=script",
+          *stylesheets.map { "<#{_1}>; rel=stylesheet" }
+        ].join(", ")
+        headers = {
+          "content-type" => "text/html; charset=utf-8",
+          "link" => links
+        }
+        respond(status: 200, body: [html], headers:)
+      end
+
+      sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
+      def handle_resume_session(request)
+        dumped = @environment.message_cipher.load(request.read)
+        session = Session.restore(environment:, dumped:)
+
+        @sessions[session_key(session.id, session.token)] = session
+
+        headers = {
+          "content-type" => "text/plain",
+          "set-cookie" => session_token_cookie(session.id, session.token)
+        }
+
+        respond(headers:, body: [session.id])
+      end
+
+      sig do
+        params(
+          request: Protocol::HTTP::Request,
+          session_id: String,
+          args: T::Array[String]
+        ).returns(ResponseArray)
+      end
+      def handle_session_post(request, session_id, args)
+        session = fetch_session(session_id, get_session_token_cookie(request))
+
+        case args
+        in ["ping"]
+          timestamp = request.read.to_i
+          session.handle_callback("ping", { timestamp: })
+        in ["callback", callback_id]
+          payload = JSON.parse(request.read)
+          session.handle_callback(callback_id, payload)
+        end
+
+        respond(
+          headers: {
+            "content-type" => "text/plain",
+            "set-cookie" => session_token_cookie(session.id, session.token)
+          },
+          body: ["ok"]
+        )
+      end
+      sig do
+        params(request: Protocol::HTTP::Request, session_id: String).returns(
+          ResponseArray
+        )
+      end
+      def handle_session_sse(request, session_id)
+        session = fetch_session(session_id, get_session_token_cookie(request))
+        body = Async::HTTP::Body::Writable.new
+
+        body.write("retry: 1000\n\n")
+
+        session.run do |msg|
+          case msg
+          in [:init, data]
+            body.write(format_event(:init, data))
+          in [:patch, patches]
+            body.write(format_event(:patch, patches))
+          in [:exception, data]
+            body.write(format_event(:exception, data))
+          in [:pong, data]
+            body.write(
+              format_event(
+                :pong,
+                { timestamp: data, region: environment.config.region }
+              )
+            )
+          in [:navigate, data]
+            body.write(format_event(:navigate, data))
+          else
+            Console.logger.error(self, "Unhandled message: #{msg.inspect}")
+          end
+        end
+
+        headers = { "content-type" => "text/event-stream; charset=utf-8" }
+
+        respond(headers:, body:)
+      end
+
+      sig { params(full_path: String).returns(ResponseArray) }
+      def send_static_file(full_path)
+        mime_type = MIME::Types.type_for(full_path).first
+        content_type = mime_type.to_s
+
+        respond(
+          body: Protocol::HTTP::Body::File.open(full_path),
+          headers: {
+            "content-type" => content_type,
+            "cache-control" => "public, max-age=604800"
+          }
+        )
+      end
 
       sig { params(event: Symbol, data: T.untyped).returns(String) }
       def format_event(event, data)
