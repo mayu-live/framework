@@ -97,20 +97,15 @@ module Mayu
       def did_update(prev_props, prev_state)
       end
 
+      sig { returns(T.nilable(Resources::Types::CSS)) }
+      def self.stylesheet = nil
       sig { returns(Resources::Types::CSS) }
-      def self.stylesheet
-        raise "There are no styles for #{self}"
-      end
-
+      def self.stylesheet! = stylesheet or
+        raise RuntimeError, "There is no stylesheet for this component!"
       sig { returns(Resources::Types::CSS::ClassnameProxy) }
-      def self.styles
-        stylesheet.proxy
-      end
-
+      def self.styles = stylesheet!.proxy
       sig { returns(Resources::Types::CSS::ClassnameProxy) }
-      def styles
-        self.class.styles
-      end
+      def styles = self.class.styles
 
       sig { params(blk: T.proc.bind(T.self_type).void).void }
       def async(&blk) = @__wrapper.async(&blk)
