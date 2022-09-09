@@ -36,6 +36,13 @@ export default async function init(encryptedState: string) {
     sessionStorage.removeItem(SESSION_ID_KEY);
   };
 
+  es.addEventListener("navigate", (e) => {
+    const path = JSON.parse(e.data);
+    console.log("Navigating to", path);
+    history.pushState({}, "", path);
+    //  progressBar.setAttribute("progress", "100");
+  });
+
   es.addEventListener(
     "init",
     (e) => {

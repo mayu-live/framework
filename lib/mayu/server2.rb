@@ -46,15 +46,11 @@ module Mayu
         @sessions = T.let({}, T::Hash[String, Session])
       end
 
-      # stree-ignore
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
         Console.logger.info(self) { "#{request.method} #{request.path}" }
 
-        asd = [request.method, request.path.delete_prefix("/").split("/")]
-
-        # stree-ignore
-        case asd
+        case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]
           handle_resume_session(request)
         in ["POST", ["__mayu", "session", session_id, *args]]

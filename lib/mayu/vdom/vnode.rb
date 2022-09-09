@@ -95,6 +95,10 @@ module Mayu
           instance = descriptor.component_class.new(@component)
           @component.instance_variable_set(:@instance, instance)
           instance.instance_variable_set(:@wrapper, @component)
+          @component.instance_variable_set(
+            :@helpers,
+            Component::Helpers.new(self)
+          )
         end
       end
 
