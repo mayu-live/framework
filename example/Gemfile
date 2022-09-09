@@ -4,8 +4,4 @@ source "https://rubygems.org"
 
 gem "mayu-live", path: ".."
 
-source "https://rubygems.pkg.github.com/mayu-live" do
-  gem "mayu-edge"
-end
-
 gem "matrix"
