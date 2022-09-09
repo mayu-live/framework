@@ -20,7 +20,7 @@ module Mayu
       class AComponent < Component::Base
         sig { params(_: T.untyped, href: String).void }
         def handle_click(_, href)
-          navigate(href.to_s)
+          helpers.navigate(href.to_s)
         end
 
         sig { override.returns(T.nilable(VDOM::Descriptor)) }
