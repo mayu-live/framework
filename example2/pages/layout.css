@@ -1,0 +1,32 @@
+.body {
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  background: #09c;
+  color: #fff;
+  display: flex;
+  padding: 1em;
+}
+
+.title {
+  margin: 0;
+  padding: 0;
+}
+
+.maxWidth {
+  width: min(100% - 2rem, 960px);
+  margin-inline: auto;
+}
+
+.nav {
+  background: #2ad;
+  overflow: hidden;
+}
+
+.menu {
+  list-style-type: none;
+  display: flex;
+  gap: 1em;
+}
