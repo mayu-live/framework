@@ -62,6 +62,8 @@ module Mayu
                   yield [:navigate, path]
                 in [:exception, error]
                   yield [:exception, error]
+                in [:pong, timestamp]
+                  yield [:pong, timestamp]
                 in VNode => vnode
                   next if vnode.removed?
                   # puts "Patching #{vnode.component.inspect}"
@@ -150,6 +152,11 @@ module Mayu
 
       sig { params(handler_id: String, payload: T.untyped).void }
       def handle_callback(handler_id, payload = {})
+        if handler_id == "ping"
+          @update_queue.enqueue([:pong, payload[:timestamp]])
+          return
+        end
+
         @handlers
           .fetch(handler_id) do
             raise KeyError, "Handler not found: #{handler_id}"

@@ -96,5 +96,7 @@ module Mayu
     const :hot_reload, T::Boolean, default: false
 
     const :paths, PathsConfig, default: PathsConfig.new
+
+    const :region, String, default: ENV.fetch("FLY_REGION", "dev")
   end
 end

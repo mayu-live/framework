@@ -70,14 +70,18 @@ module Mayu
       @app = T.let(environment.load_root(path), VDOM::Descriptor)
     end
 
-    sig { returns(String) }
+    sig { returns({ html: String, stylesheets: T::Array[String] }) }
     def initial_render
       @vtree.render(@app, lifecycles: false)
 
       root = @vtree.root or raise "There is no root"
 
       html = root.to_html
-      stylesheets = @vtree.assets
+      stylesheets =
+        @vtree
+          .assets
+          .select { _1.end_with?(".css") }
+          .map { "/__mayu/static/#{_1}" }
 
       freeze
 
@@ -92,15 +96,16 @@ module Mayu
 
       style =
         stylesheets
-          .map do |stylesheet|
-            %{<link rel="stylesheet" href="/__mayu/static/#{stylesheet}">}
-          end
+          .map { |stylesheet| %{<link rel="stylesheet" href="#{stylesheet}">} }
           .join
 
-      html
-        .sub(%r{</head>}) { "#{style}#{_1}" }
-        .sub(%r{\K</body>}) { "#{script}#{_1}" }
-        .prepend("<!doctype html>\n")
+      html =
+        html
+          .sub(%r{</head>}) { "#{style}#{_1}" }
+          .sub(%r{\K</body>}) { "#{script}#{_1}" }
+          .prepend("<!doctype html>\n")
+
+      { html:, stylesheets: }
     end
 
     sig { returns(T::Array[T.untyped]) }
@@ -207,6 +212,8 @@ module Mayu
           yield [:patch, patches]
         in [:exception, error]
           yield [:exception, error]
+        in [:pong, timestamp]
+          yield [:pong, timestamp]
         in [:navigate, href]
           navigate(href)
           yield [:navigate, href]

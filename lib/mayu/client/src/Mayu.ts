@@ -125,6 +125,7 @@ async function startPing(es: EventSource, sessionId: string) {
   const pingTimer = new PingTimer();
 
   es.addEventListener("pong", (e) => {
+    console.log("pong", e.data);
     pingTimer.pong(JSON.parse(e.data));
   });
 

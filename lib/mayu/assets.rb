@@ -104,8 +104,25 @@ module Mayu
         extend T::Helpers
         abstract!
 
+        sig { returns(MIME::Type) }
+        attr_reader :mime_type
+
         sig { abstract.params(root: String, outdir: String).returns(String) }
         def generate(root:, outdir:)
+        end
+
+        sig { returns(T::Boolean) }
+        def compressable?
+          case [mime_type.media_type, mime_type.sub_type]
+          in ["text", _]
+            true
+          in ["application", "javascript"]
+            true
+          in ["application", "json"]
+            true
+          else
+            false
+          end
         end
       end
 
@@ -123,8 +140,11 @@ module Mayu
           hash = Digest::SHA256.hexdigest(content)
           extension = @mime_type.preferred_extension
           filename = "#{hash}.#{extension}"
-          target = ::File.join(outdir, filename)
+          target = ::File.join(root, outdir, filename)
           ::File.write(target, content)
+
+          ::File.write("#{target}.br", Brotli.deflate(content)) if compressable?
+
           filename
         end
       end
@@ -141,7 +161,7 @@ module Mayu
           hash = Digest::SHA256.hexdigest(@content)
           extension = @mime_type.preferred_extension
           filename = "#{hash}.#{extension}"
-          target = ::File.join(outdir, filename)
+          target = ::File.join(root, outdir, filename)
           ::File.write(target, @content)
           filename
         end

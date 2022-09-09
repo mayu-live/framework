@@ -18,7 +18,7 @@ module Mayu
       end
 
       class AComponent < Component::Base
-        sig { params(_: T.untyped, href: String) }
+        sig { params(_: T.untyped, href: String).void }
         def handle_click(_, href)
           navigate(href.to_s)
         end

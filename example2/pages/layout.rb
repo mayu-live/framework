@@ -7,10 +7,8 @@ def render
     h.body do
       h.div do
         h.menu do
-          h.li do
-            h.a "Start page", href: "/"
-            h.a "Pokemon", href: "/pokemon"
-          end
+          h.li { h.a "Start page", href: "/" }
+          h.li { h.a "Pokemon", href: "/pokemon" }
         end
 
         h << children.first
