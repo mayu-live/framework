@@ -20,6 +20,13 @@ def render
       end
 
       h.main { h.section(class: styles.maxWidth) { h << children.first } }
+
+      h.footer(class: styles.footer) do
+        h.p(class: styles.maxWidth) do
+          h.a "github.com/mayu-live",
+              href: "https://github.com/mayu-live/framework"
+        end
+      end
     end
   end
 end

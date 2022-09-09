@@ -30,3 +30,7 @@
   display: flex;
   gap: 1em;
 }
+
+.footer {
+  background: #000;
+}
