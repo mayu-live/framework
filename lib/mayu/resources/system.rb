@@ -65,6 +65,11 @@ module Mayu
         load_resource2(@resolver.resolve(path, source_path))
       end
 
+      sig { returns(String) }
+      def inspect
+        "#<#{self.class.name} @root=#{@root.inspect} resources=#{@resources.size}>"
+      end
+
       private
 
       sig { params(resolved_path: String).returns(Resource) }
@@ -74,10 +79,7 @@ module Mayu
         @resources[resolved_path] ||= begin
           resource = Resource.load(self, resolved_path)
           puts "Loaded resource #{resource.inspect}"
-          resource.type.asset&.generate(
-            root:,
-            outdir: File.join(root, ASSETS_PATH)
-          )
+          resource.type.asset&.generate(root:, outdir: ASSETS_PATH)
           resource
         end
       end
