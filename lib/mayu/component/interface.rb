@@ -14,10 +14,6 @@ module Mayu
     module DSL
       extend T::Sig
       extend T::Helpers
-
-      sig { overridable.params(path: String).returns(T.class_of(Base)) }
-      def self.import(path)
-      end
     end
   end
 end
