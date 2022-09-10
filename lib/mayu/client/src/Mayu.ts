@@ -4,6 +4,7 @@ import PingTimer from "./PingTimer.js";
 import type MayuPingElement from "./custom-elements/mayu-ping";
 import type MayuProgressBar from "./custom-elements/mayu-progress-bar";
 import defineCustomElements from "./custom-elements";
+import { info } from "console";
 defineCustomElements();
 
 const SESSION_ID_KEY = "mayu.sessionId";
@@ -50,6 +51,13 @@ export default async function init(encryptedState: string) {
     //  progressBar.setAttribute("progress", "100");
   });
 
+  window.addEventListener("popstate", () => {
+    navigateTo(
+      sessionId,
+      document.location.pathname + document.location.search
+    );
+  });
+
   es.addEventListener(
     "init",
     (e) => {
@@ -90,6 +98,24 @@ async function resume(state: string, storedSessionId: string | null) {
   return res.text();
 }
 
+function mayuCallback(sessionId: string, handlerId: string, payload: any) {
+  return fetch(`/__mayu/session/${sessionId}/callback/${handlerId}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+async function navigateTo(sessionId: string, url: string) {
+  return fetch(`/__mayu/session/${sessionId}/navigate`, {
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+    body: url,
+  });
+}
+
 function setupGlobalObject(sessionId: string) {
   const progressBar = document.createElement(
     "mayu-progress-bar"
@@ -112,25 +138,25 @@ function setupGlobalObject(sessionId: string) {
 
       progressBar.setAttribute("progress", "0");
 
+      await mayuCallback(sessionId, handlerId, payload);
+
       let didRun = false;
       const timeout = setTimeout(() => {
         progressBar.setAttribute("progress", "25");
         didRun = true;
       }, 1);
 
-      await fetch(`/__mayu/session/${sessionId}/callback/${handlerId}`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
       clearTimeout(timeout);
 
       if (didRun) {
         progressBar.setAttribute("progress", "100");
       }
+    },
+
+    async navigate(e: MouseEvent) {
+      e.preventDefault();
+      const url = new URL((e.target as HTMLAnchorElement).href);
+      return navigateTo(sessionId, url.pathname + url.search);
     },
   };
 }

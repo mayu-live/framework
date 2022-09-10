@@ -1,0 +1,5 @@
+def render
+  <div>
+    <pre>{JSON.pretty_generate(props)}</pre>
+  </div>
+end

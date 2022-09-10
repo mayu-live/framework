@@ -22,5 +22,8 @@ def render
         </li>
       end}
     </ul>
+    <pre>
+      {JSON.generate(props)}
+    </pre>
   </div>
 end

@@ -18,6 +18,12 @@ module Mayu
       end
 
       class A < Component::Base
+        class NavigateHandler
+          def to_s
+            "Mayu.navigate(event)"
+          end
+        end
+
         sig { params(_: T.untyped, href: String).void }
         def handle_click(_, href)
           helpers.navigate(href.to_s)
@@ -27,9 +33,9 @@ module Mayu
         def render
           overridden_props =
             if props[:href].to_s.match(%r{\A[a-z0-9]+://})
-              { rel: "noreferrer" }.merge(props)
+              { rel: "noreferrer", **props }
             else
-              props.merge(on_click: handler(:handle_click, props[:href]))
+              { **props, on_click: NavigateHandler.new }
             end
 
           h.create_element(
