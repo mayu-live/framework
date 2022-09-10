@@ -214,8 +214,6 @@ module Mayu
 
         io << %< data-mayu-id="#{@id.to_s}">
 
-        io << %< data-mayu-key="#{descriptor.key.to_s}"> if descriptor.key
-
         format_props { |formatted_prop| io << formatted_prop }
 
         io << ">"
