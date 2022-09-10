@@ -196,7 +196,7 @@ module Mayu
 
         case type
         when Descriptor::TEXT
-          io << descriptor.text
+          io << CGI.escape_html(descriptor.text)
           return
         when Descriptor::COMMENT
           io << "<!--mayu-id=#{@id}-->"

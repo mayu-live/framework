@@ -29,18 +29,6 @@ module Mayu
           @incoming.delete(id)
           @outgoing.delete(id)
         end
-
-        sig { params(direction: Symbol).returns(T::Set[String]) }
-        def nodes_in_direction(direction)
-          case direction
-          when :incoming
-            incoming
-          when :outgoing
-            outgoing
-          else
-            raise ArgumentError, "direction should be :incoming or :outgoing"
-          end
-        end
       end
 
       extend T::Sig
@@ -167,13 +155,13 @@ module Mayu
       sig do
         params(
           node: Node,
-          direction: Symbol,
+          direction: T.any(:incoming, :outgoing),
           block: T.proc.params(arg0: Node).void
         ).void
       end
       def dfs(node, direction, &block)
         node
-          .nodes_in_direction(direction)
+          .send(direction)
           .each { |id| dfs(@nodes.fetch(id), direction, &block) }
 
         yield node

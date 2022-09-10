@@ -1,9 +1,27 @@
 .body {
+  background: #000;
   margin: 0;
   padding: 0;
+  font-family: "Open Sans", sans-serif;
+  font-size: 1.2em;
+  display: grid;
+  min-height: 100vh;
+  grid-template:
+    "header" auto
+    "nav" auto
+    "main" 1fr
+    "footer" auto;
+  overflow-y: scroll;
+}
+
+.body *,
+.body *::before,
+.body *::after {
+  box-sizing: border-box;
 }
 
 .header {
+  grid-area: header;
   background: #09c;
   color: #fff;
   display: flex;
@@ -21,6 +39,7 @@
 }
 
 .nav {
+  grid-area: nav;
   background: #2ad;
   overflow: hidden;
 }
@@ -31,6 +50,11 @@
   gap: 1em;
 }
 
+.main {
+  grid-area: main;
+  background: #fff;
+}
+
 .footer {
-  background: #000;
+  grid-area: footer;
 }

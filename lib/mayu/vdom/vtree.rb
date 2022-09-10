@@ -104,7 +104,7 @@ module Mayu
           params(stylesheets: T::Array[String]).returns(T::Array[T.untyped])
         end
         def stylesheet_patch(stylesheets)
-          return [] unless stylesheets
+          return [] if stylesheets.empty?
 
           paths = stylesheets.map { "/__mayu/static/#{_1}" }
 
