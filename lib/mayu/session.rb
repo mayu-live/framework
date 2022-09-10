@@ -91,15 +91,13 @@ module Mayu
         )
 
       head = [
-        %{<script type="module" src="/__mayu/static/#{environment.init_js}" crossorigin></script>},
+        %{<script type="module" src="/__mayu/static/#{environment.init_js}" crossorigin="anonymous"></script>},
         *stylesheets.map do |stylesheet|
           %{<link rel="stylesheet" href="#{stylesheet}">}
         end
       ].join
 
-      tail = <<~HTML
-        <template id="mayu-init">#{encrypted_session}</template>
-      HTML
+      tail = %{<template id="mayu-init">#{encrypted_session}</template>}
 
       html =
         html
@@ -180,6 +178,7 @@ module Mayu
 
     sig { params(path: String).void }
     def navigate(path)
+      Console.logger.info(self, "navigate: #{path.inspect}")
       @app = @environment.load_root(path)
       @path = path
       @vtree.replace_root(@app)

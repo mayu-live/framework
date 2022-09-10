@@ -84,7 +84,7 @@ module Mayu
         session.initial_render => { html:, stylesheets: }
 
         links = [
-          "</__mayu/static/#{environment.init_js}>; rel=preload; as=script; crossorigin; fetchpriority=high",
+          "</__mayu/static/#{environment.init_js}>; rel=preload; as=script; crossorigin=anonymous; fetchpriority=high",
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
         headers = {
@@ -126,6 +126,8 @@ module Mayu
         in ["ping"]
           timestamp = request.read.to_i
           session.handle_callback("ping", { timestamp: })
+        in ["navigate"]
+          session.navigate(request.read)
         in ["callback", callback_id]
           payload = JSON.parse(request.read)
           session.handle_callback(callback_id, payload)
@@ -234,7 +236,8 @@ module Mayu
           "path=/__mayu/session/#{session_id}/",
           "expires=#{expires.httpdate}",
           "secure",
-          "HttpOnly"
+          "HttpOnly",
+          "SameSite=Strict"
         ].join("; ")
       end
 

@@ -49,9 +49,6 @@ module Mayu
             loop do
               @vtree.update_queue.wait while @vtree.update_queue.empty?
 
-              sleep 1.0 / @updates_per_second
-              puts "@vtree item: #{@vtree.update_queue.size}"
-
               ctx = UpdateContext.new
 
               start_at = Time.now
@@ -86,6 +83,9 @@ module Mayu
               patches = ctx.patches + stylesheet_patch(stylesheets)
               yield [:patch, patches] unless patches.empty?
               puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
+
+              sleep 1.0 / @updates_per_second
+              puts "@vtree item: #{@vtree.update_queue.size}"
             end
           rescue => e
             puts e.message
@@ -577,10 +577,12 @@ module Mayu
 
         old_props
           .values_at(*T.unsafe(removed_handlers))
+          .select { _1.is_a?(Component::HandlerRef) }
           .each { |handler| @handlers.delete(handler.id) }
 
         new_props
           .values_at(*T.unsafe(new_handlers))
+          .select { _1.is_a?(Component::HandlerRef) }
           .each { |handler| @handlers[handler.id] = handler }
       end
 

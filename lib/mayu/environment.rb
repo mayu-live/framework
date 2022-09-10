@@ -97,9 +97,12 @@ module Mayu
 
     sig { params(request_path: String).returns(VDOM::Descriptor) }
     def load_root(request_path)
+      path, search = request_path.split("?", 2)
       # We should match the route earlier, so that we don't have to get this
       # far in case it doesn't match...
-      route_match = match_route(request_path)
+      route_match = match_route(path)
+      query = Rack::Utils.parse_nested_query(search)
+      params = route_match.params
 
       # Load the page component.
       resources.load_page(route_match.template).type =>
@@ -111,9 +114,17 @@ module Mayu
       route_match
         .layouts
         .reverse
-        .reduce(VDOM.h[page_component]) do |app, layout|
+        .reduce(
+          VDOM.h2(page_component, path:, params:, query:)
+        ) do |app, layout|
           layout_component = resources.load_page_component(layout)
-          VDOM.h[layout_component, T.cast(app, VDOM::Descriptor)]
+          VDOM.h2(
+            layout_component,
+            T.cast(app, VDOM::Descriptor),
+            path:,
+            params:,
+            query:
+          )
         end
     end
 
