@@ -1,5 +1,34 @@
+def self.get_initial_state(props)
+  {
+    result: nil,
+    error: nil,
+  }
+end
+
+def mount
+  id = props.dig(:params, :id).to_i
+  res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{id}/")
+  result = res.json(symbolize_names: true)
+  update(result:)
+rescue => e
+  update(error: e.message)
+end
+
 def render
+  pokemon = state[:result]
+
+  return (
+    <p>Loading pokémon {props.inspect}</p>
+  ) unless pokemon
+
   <div>
-    <pre>{JSON.pretty_generate(props)}</pre>
+    <h1>{pokemon[:name]}</h1>
+    <img src={pokemon.dig(:sprites, :front_default)} />
+    <dl>
+      <dt>Weight</dt>
+      <dd>{pokemon[:weight]}</dd>
+      <dt>Base experience</dt>
+      <dd>{pokemon[:base_experience]}</dd>
+    </dl>
   </div>
 end

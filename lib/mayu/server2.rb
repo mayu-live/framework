@@ -21,6 +21,23 @@ module Mayu
     class Server
       extend T::Sig
 
+      UUIDv4 =
+        /
+          \A
+            [[:xdigit:]]{8}
+            -
+            [[:xdigit:]]{4}
+            -
+            4
+            [[:xdigit:]]{3}
+            -
+            [89ab]
+            [[:xdigit:]]{3}
+            -
+            [[:xdigit:]]{12}
+          \z
+        /x
+
       Status = T.type_alias { Integer }
       Headers =
         T.type_alias { T::Hash[String, T.any(String, T::Array[String])] }
@@ -53,9 +70,9 @@ module Mayu
         case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]
           handle_resume_session(request)
-        in ["POST", ["__mayu", "session", session_id, *args]]
+        in ["POST", ["__mayu", "session", UUIDv4 => session_id, *args]]
           handle_session_post(request, session_id, args)
-        in ["GET", ["__mayu", "session", session_id, "events"]]
+        in ["GET", ["__mayu", "session", UUIDv4 => session_id, "events"]]
           handle_session_sse(request, session_id)
         in ["GET", ["__mayu", "live.js"]]
           send_static_file(File.join(__dir__, "client", "dist", "live.js"))
@@ -127,8 +144,9 @@ module Mayu
           timestamp = request.read.to_i
           session.handle_callback("ping", { timestamp: })
         in ["navigate"]
-          session.navigate(request.read)
-        in ["callback", callback_id]
+          path = request.read
+          session.handle_callback("navigate", { path: })
+        in ["callback", Component::HandlerRef::ID_FORMAT => callback_id]
           payload = JSON.parse(request.read)
           session.handle_callback(callback_id, payload)
         end

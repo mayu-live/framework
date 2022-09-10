@@ -101,7 +101,7 @@ module Mayu
       # We should match the route earlier, so that we don't have to get this
       # far in case it doesn't match...
       route_match = match_route(path)
-      query = Rack::Utils.parse_nested_query(search)
+      query = Rack::Utils.parse_nested_query(search).transform_keys(&:to_sym)
       params = route_match.params
 
       # Load the page component.

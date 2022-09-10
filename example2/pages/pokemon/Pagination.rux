@@ -1,0 +1,21 @@
+def render
+  <fieldset>
+    <legend>Page {props[:page].succ} of {props[:total_pages].succ}</legend>
+    <button on-click={props[:on_click_prev]}>
+      Previous page
+    </button>
+    <button on-click={props[:on_click_next]}>
+      Next page
+    </button>
+    <div>
+      Per page:
+      <select on-change={props[:on_change_per_page]} value={props[:per_page]}>
+        {[20, 40, 80].map do |value|
+          <option key={value} value={value}>{value}</option>
+        end}
+      </select>
+    </div>
+  </fieldset>
+rescue => e
+  <pre>{e.message} {JSON.generate(props)}</pre>
+end
