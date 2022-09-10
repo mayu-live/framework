@@ -1,18 +1,66 @@
 def self.get_initial_state(**props)
-  { count: 0 }
+  {
+    result: nil,
+    error: nil,
+    page: 0,
+    per_page: 20,
+  }
 end
 
 def mount
-  loop do
-    sleep 1
+  sleep 1
 
-    update { |state| { count: state[:count].succ } }
+  res = helpers.fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
+  result = res.json(symbolize_names: true)
+  update(result:)
+rescue => e
+  update(error: e.message)
+end
+
+def handle_next_page(e)
+  update do |state|
+    per_page = state[:per_page]
+    total_pages = (state[:result][:results].length / per_page).floor
+    page = [state[:page].succ, total_pages].min
+    { page: }
   end
 end
 
+def handle_prev_page(e)
+  update do |state|
+    page = [state[:page].pred, 0].max
+    { page: }
+  end
+end
+
+def handle_set_per_page(e)
+  update(page: 0, per_page: e["value"].to_i)
+end
+
 def render
+  state => result:
+
+  return (
+    <div>
+      <p>Loading Pokémon from <a href="https://pokeapi.co/">PokéAPI</a></p>
+    </div>
+  ) unless result
+
+  result => results:
+
+  per_page = state[:per_page]
+  total_pages = (results.length / per_page).floor
+  results_on_this_page = results.slice(state[:page] * per_page, per_page) || []
+
   <div>
-    <h1></h1>
-    <pre>{state.inspect}</pre>
+    <ul>
+      {results_on_this_page.map do |result|
+        <li key={result[:url]}>
+          <a href={"/pokemon/#{result[:url][/\/(\d+)\/$/, 1].to_i}"}>
+            {result[:name].capitalize}
+          </a>
+        </li>
+      end}
+    </ul>
   </div>
 end
