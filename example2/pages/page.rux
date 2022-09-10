@@ -1,0 +1,26 @@
+ITEMS = ["server side rendered apps", "very fast", "wow"]
+
+def self.get_initial_state(**props)
+  { index: 0 }
+end
+
+def mount
+  loop do
+    sleep 1
+
+    update { |state| { index: state[:index].succ % ITEMS.size } }
+  end
+end
+
+def render
+  <div class={styles.foo}>
+    <ul>
+      {ITEMS.each_with_index.map do |item, index|
+        active = index == state[:index]
+        <li class={active && styles.active}>
+          {item}
+        </li>
+      end}
+    </ul>
+  </div>
+end

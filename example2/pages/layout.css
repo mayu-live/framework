@@ -25,7 +25,8 @@
   background: #09c;
   color: #fff;
   display: flex;
-  padding: 1em;
+  padding: 1em 0;
+  overflow: hidden;
 }
 
 .title {
@@ -45,6 +46,8 @@
 }
 
 .menu {
+  composes: maxWidth;
+  padding: 0;
   list-style-type: none;
   display: flex;
   gap: 1em;
