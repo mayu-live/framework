@@ -1,3 +1,5 @@
+Pagination = import("./Pagination")
+
 def self.get_initial_state(**props)
   {
     result: nil,
@@ -53,6 +55,15 @@ def render
   results_on_this_page = results.slice(state[:page] * per_page, per_page) || []
 
   <div>
+    <Pagination
+      page={state[:page]}
+      per-page={per_page}
+      total-pages={total_pages}
+      on-click-prev={handler(:handle_prev_page)}
+      on-click-next={handler(:handle_next_page)}
+      on-change-per-page={handler(:handle_set_per_page)}
+    />
+
     <ul>
       {results_on_this_page.map do |result|
         <li key={result[:url]}>
@@ -62,5 +73,14 @@ def render
         </li>
       end}
     </ul>
+
+    <Pagination
+      page={state[:page]}
+      per-page={per_page}
+      total-pages={total_pages}
+      on-click-prev={handler(:handle_prev_page)}
+      on-click-next={handler(:handle_next_page)}
+      on-change-per-page={handler(:handle_set_per_page)}
+    />
   </div>
 end

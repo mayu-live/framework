@@ -174,8 +174,12 @@ module Mayu
 
       sig { params(handler_id: String, payload: T.untyped).void }
       def handle_callback(handler_id, payload = {})
-        if handler_id == "ping"
+        case handler_id
+        when "ping"
           @update_queue.enqueue([:pong, payload[:timestamp]])
+          return
+        when "navigate"
+          navigate(payload[:path])
           return
         end
 

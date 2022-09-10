@@ -26,7 +26,7 @@ module Mayu
 
       sig { params(path: String).returns(Resource) }
       def load_relative(path)
-        @system.load(path, File.dirname(path))
+        @system.load_resource(path, File.dirname(self.path))
       end
 
       sig { returns(String) }
