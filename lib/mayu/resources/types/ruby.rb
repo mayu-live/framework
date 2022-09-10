@@ -1,14 +1,63 @@
 # typed: strict
 
+require "rux"
 require_relative "base"
+
+class Rux::Parser
+  # https://github.com/camertron/rux/pull/3
+  def squeeze_lit(lit)
+    lit
+      .sub(/\A\s+/) { |s| s.match?(/[\r\n]/) ? s.lstrip : s }
+      .sub(/\s+\z/) { |s| s.match?(/[\r\n]/) ? s.rstrip : s }
+      .gsub(/\s+/, " ")
+  end
+end
 
 module Mayu
   module Resources
     module Types
       class Ruby < Base
+        class RuxVisitor < Rux::Visitor
+          def visit_list(node)
+            node.children.map { |child| visit(child) }.join
+          end
+
+          def visit_ruby(node)
+            node.code
+          end
+
+          def visit_string(node)
+            node.str
+          end
+
+          def visit_tag(node)
+            "Mayu::VDOM.h2(%s)" %
+              [
+                if node.name.start_with?(/[A-Z]/)
+                  node.name
+                else
+                  node.name.to_sym.inspect
+                end,
+                *node.children.compact.map { visit(_1).strip },
+                *node.attrs.map do |k, v|
+                  Rux::Utils.attr_to_hash_elem(k, visit(v))
+                end
+              ].join(", ")
+          end
+
+          def visit_text(node)
+            node.text.to_s.inspect
+          end
+        end
+
         sig { override.params(resource: Resource).returns(T.attached_class) }
         def self.load(resource)
           source = File.read(resource.absolute_path)
+
+          if resource.absolute_path.end_with?(".rux")
+            puts source
+            source = Rux.to_ruby(source, visitor: RuxVisitor.new)
+          end
 
           klass =
             T.let(

@@ -22,9 +22,11 @@ module Mayu
       const :template, String
     end
 
-    PAGE_FILENAME = "page.rb"
-    LAYOUT_FILENAME = "layout.rb"
-    NOT_FOUND_FILENAME = "404.rb"
+    EXTENSIONS = %w[.rb .rux]
+
+    PAGE_FILENAME = "page"
+    LAYOUT_FILENAME = "layout"
+    NOT_FOUND_FILENAME = "404"
 
     sig do
       params(
@@ -41,11 +43,11 @@ module Mayu
 
       entries = Dir.entries(dir) - %w[. ..]
 
-      if layout = entries.delete(LAYOUT_FILENAME)
+      if layout = find_and_delete(entries, LAYOUT_FILENAME)
         layouts += [T.unsafe(File).join(*path, layout)]
       end
 
-      if page = entries.delete(PAGE_FILENAME)
+      if page = find_and_delete(entries, PAGE_FILENAME)
         routes.push(
           Route.new(
             path: path.join("/"),
@@ -66,7 +68,7 @@ module Mayu
         )
       end
 
-      if not_found = entries.delete(NOT_FOUND_FILENAME)
+      if not_found = find_and_delete(entries, NOT_FOUND_FILENAME)
         routes.push(
           Route.new(
             path: path.join("/"),
@@ -153,6 +155,13 @@ module Mayu
           end
 
       Regexp.new('\A\/' + parts.join('\/') + '\Z')
+    end
+
+    sig { params(a: T::Array[String], name: String).returns(T.nilable(String)) }
+    def self.find_and_delete(a, name)
+      EXTENSIONS.find do |extension|
+        a.delete("#{name}#{extension}")&.tap { return _1 }
+      end
     end
   end
 end

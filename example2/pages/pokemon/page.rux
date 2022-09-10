@@ -11,8 +11,8 @@ def mount
 end
 
 def render
-  h.div do
-    h.h1 "Pokemon"
-    h.pre state.inspect
-  end
+  <div>
+    <h1></h1>
+    <pre>{state.inspect}</pre>
+  </div>
 end

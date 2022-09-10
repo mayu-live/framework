@@ -13,7 +13,7 @@ module Mayu
       sig { params(system: System).void }
       def initialize(system)
         @system = system
-        @extensions = T.let(["", ".rb"], T::Array[String])
+        @extensions = T.let(["", ".rb", ".rux"], T::Array[String])
       end
 
       sig { params(path: String, source_dir: String).returns(String) }

@@ -1,0 +1,8 @@
+def render
+  <div>
+    <h2>About</h2>
+    <p>
+      Hello world
+    </p>
+  </div>
+end

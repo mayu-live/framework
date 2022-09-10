@@ -19,7 +19,7 @@ module Mayu
       sig { params(resource: Resource).returns(T.class_of(Base)) }
       def self.for(resource)
         case resource.extname
-        when ".rb"
+        when ".rb", ".rux"
           Ruby
         when ".css"
           CSS

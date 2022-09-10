@@ -1,0 +1,9 @@
+# typed: true
+
+def render
+  <div>
+    <h2>Pokémon</h2>
+
+    {props[:children]}
+  </div>
+end
