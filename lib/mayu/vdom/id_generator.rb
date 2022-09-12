@@ -6,11 +6,9 @@ module Mayu
       extend T::Sig
 
       # ALPHABET = "🌱🌴🌵🌸🌺🌻🌼🌿🍀🍃"
-      # ALPHABET = (("0".."9").to_a + ("a".."z").to_a).join.freeze
-      ALPHABET = T.let(("0".."9").to_a.join.freeze, String)
-      JOINER = ""
-      # ALPHABET = "0123456789"
       # JOINER = ""
+      ALPHABET = "0123456789"
+      JOINER = ""
 
       DIGITS = T.let(ALPHABET.chars.freeze, T::Array[String])
 
