@@ -499,6 +499,8 @@ module Mayu
       def update_children(ctx, vnodes, descriptors, lifecycles:)
         check_duplicate_keys(descriptors)
 
+        new_children = T.let([], T::Array[VNode])
+
         vnodes = vnodes.compact
         descriptors = descriptors.compact
         old_ids = vnodes.map(&:id)
@@ -506,19 +508,16 @@ module Mayu
         indexes = Indexes.new(vnodes.map(&:id))
 
         new_children =
-          T.let(
-            descriptors.map.with_index do |descriptor, i|
-              vnode = vnodes.find { _1.same?(descriptor) }
+          descriptors.map.with_index do |descriptor, i|
+            vnode = vnodes.find { _1.same?(descriptor) }
 
-              if vnode
-                vnodes.delete(vnode)
-                patch_vnode(ctx, vnode, descriptor, lifecycles:)
-              else
-                init_vnode(ctx, descriptor, lifecycles:)
-              end
-            end,
-            T::Array[VNode]
-          )
+            if vnode
+              vnodes.delete(vnode)
+              patch_vnode(ctx, vnode, descriptor, lifecycles:)
+            else
+              init_vnode(ctx, descriptor, lifecycles:)
+            end
+          end
 
         # This is very inefficient.
         # I tried to get the algorithm from snabbdom/vue to work,
@@ -526,6 +525,7 @@ module Mayu
         # I always got some weird ordering issues and it's tricky to debug.
         # Fun stuff for later though.
 
+        start_at = Time.now
         all_vnodes = vnodes + new_children
 
         new_children.each_with_index do |vnode, expected_index|
@@ -547,6 +547,9 @@ module Mayu
         end
 
         vnodes.each { |vnode| remove_vnode(ctx, vnode, lifecycles:) }
+        delta_time_ms = (Time.now - start_at) * 1000
+
+        Console.logger.warn(self, "Updating took %.3fms" % delta_time_ms)
 
         new_children
       end

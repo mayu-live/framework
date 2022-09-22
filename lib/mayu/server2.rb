@@ -70,7 +70,7 @@ module Mayu
 
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
-        Console.logger.info(self) { "#{request.method} #{request.path}" }
+        Console.logger.debug(self) { "#{request.method} #{request.path}" }
 
         case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]

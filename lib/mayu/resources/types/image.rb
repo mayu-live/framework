@@ -68,9 +68,12 @@ module Mayu
             )
         end
 
-        sig { params(asset_dir: String).void }
+        sig { params(asset_dir: String).returns(T::Array[Asset]) }
         def generate_assets(asset_dir)
+          result = []
           path = File.join(asset_dir, @original.filename)
+
+          result.push(Asset.new(@original.filename))
 
           unless File.exist?(path)
             puts "\e[35mCreating #{path} from copy\e[0m"
@@ -78,6 +81,7 @@ module Mayu
           end
 
           @versions.reduce(path) do |previous_path, version|
+            result.push(Asset.new(version.filename))
             path = File.join(asset_dir, version.filename)
             next path if File.exist?(path)
             puts "\e[35mGenerating #{path}\e[0m"
@@ -90,6 +94,32 @@ module Mayu
             )
             path
           end
+
+          result
+        end
+
+        sig { returns(String) }
+        def src
+          "/__mayu/static/#{@original.filename}"
+        end
+
+        sig { returns(String) }
+        def srcset
+          [@original, *@versions].map do |version|
+              "/__mayu/static/#{version.filename} #{version.width}w"
+            end
+            .reverse
+            .join(",")
+        end
+
+        sig { returns(String) }
+        def sizes
+          [
+            "100vw",
+            *@versions.map do |version|
+              "(max-width: #{version.width}px) #{version.width}px"
+            end
+          ].reverse.join(", ")
         end
 
         MarshalFormat =
