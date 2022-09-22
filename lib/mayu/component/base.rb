@@ -24,6 +24,7 @@ module Mayu
           @__mayu_resource = T.let(nil, T.nilable(Resources::Resource))
         end
 
+        # TODO: Probably better use a WeakMap in Resources for this..
         sig { params(__mayu_resource: Resources::Resource).void }
         attr_writer :__mayu_resource
 
@@ -86,6 +87,7 @@ module Mayu
       def did_update(prev_props, prev_state)
       end
 
+      # TODO: Could probably clean this up...
       sig { returns(T.nilable(Resources::Types::Stylesheet)) }
       def self.stylesheet = nil
       sig { returns(Resources::Types::Stylesheet) }

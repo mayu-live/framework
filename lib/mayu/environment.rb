@@ -75,7 +75,9 @@ module Mayu
           @resources.add_resource(
             File.join("vendor", "mayu", "live.js")
           ).type => Resources::Types::JavaScript => type
-          type.filename
+          type.assets => [asset]
+          type.generate_asset(asset, path(:assets))
+          asset.filename
         end
     end
 

@@ -20,23 +20,29 @@ module Mayu
           Marshal.restore(
             dumped,
             ->(obj) do
-              case obj
-              when VDOM::VTree
-                obj.instance_variable_set(:@session, session)
-                obj.instance_variable_set(:@task, task)
-                obj
-              when VDOM::ComponentMarshaler
-                case obj.type
-                in klass:
-                  klass
-                in component:
-                  session.environment.resources.load_component(component)
+              obj =>
+                when VDOM::VTree
+                  obj.instance_variable_set(:@session, session)
+                  obj.instance_variable_set(:@task, task)
+                  obj
+                when VDOM::ComponentMarshaler
+                  case obj.type
+                  in klass:
+                    klass
+                  in component:
+                    case session
+                      .environment
+                      .resources
+                      .load_resource(component.delete_prefix("/app"))
+                      .type
+                    Resources::Types::Component => type
+                    end
+                    type.component
+                  else
+                    obj.type
+                  end
                 else
-                  obj.type
-                end
-              else
-                obj
-              end
+                  obj
             end
           )
 

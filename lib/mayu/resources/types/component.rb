@@ -87,12 +87,14 @@ module Mayu
             styles.path
           )
 
-          impl.const_set(:Styles, styles)
-          classname_proxy = styles.type.classname_proxy
+          if styles.type.is_a?(Types::Stylesheet)
+            impl.const_set(:Styles, styles)
+            classname_proxy = styles.type.classname_proxy
 
-          impl.instance_exec(classname_proxy) do |proxy|
-            define_singleton_method(:styles) { classname_proxy }
-            define_method(:styles) { classname_proxy }
+            impl.instance_exec(classname_proxy) do |proxy|
+              define_singleton_method(:styles) { classname_proxy }
+              define_method(:styles) { classname_proxy }
+            end
           end
 
           impl
