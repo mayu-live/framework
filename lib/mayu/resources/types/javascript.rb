@@ -20,6 +20,15 @@ module Mayu
               String
             )
           @source = T.let(resource.read(encoding: "utf-8").freeze, String)
+          @assets = T.let([Asset.new(@filename)], T::Array[Asset])
+        end
+
+        sig { returns(T::Array[Asset]) }
+        attr_reader :assets
+
+        sig { params(asset: Asset, path: String).void }
+        def generate_asset(asset, path)
+          asset.generate(path, @source, compress: true)
         end
 
         sig { params(asset_dir: String).void }
@@ -31,16 +40,16 @@ module Mayu
           File.write(path + ".br", Brotli.deflate(@source))
         end
 
-        MarshalFormat = T.type_alias { [String, String] }
+        MarshalFormat = T.type_alias { [String, String, T::Array[Asset]] }
 
         sig { returns(MarshalFormat) }
         def marshal_dump
-          [@filename, @source]
+          [@filename, @source, @assets]
         end
 
         sig { params(args: MarshalFormat).void }
         def marshal_load(args)
-          @filename, @source = args
+          @filename, @source, @assets = args
         end
       end
     end

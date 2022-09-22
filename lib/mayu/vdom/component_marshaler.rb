@@ -17,6 +17,8 @@ module Mayu
             if Component === type
               klass = T.cast(type, T.class_of(Component::Base))
 
+              # TODO: Would be better to do something like
+              # resources.resouce_for_type(klass)
               if resource =
                    (
                      begin
