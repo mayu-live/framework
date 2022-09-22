@@ -346,6 +346,27 @@ module Mayu
     def self.setup_server(config, endpoint:)
       environment = Mayu::Environment.new(config)
 
+      environment.resources.start_hot_swap do
+        puts "Updated"
+               .chars
+               .map
+               .with_index { |ch, i|
+                 t = Time.now.to_f
+                 r, g, b =
+                   3
+                     .times
+                     .map { _1 / 3.0 * Math::PI }
+                     .map { _1 + t }
+                     .map { _1 + i / 10.0 }
+                     .map { Math.sin(_1)**2 }
+                     .map { _1 * 255 }
+                     .map(&:to_i)
+
+                 format("\e[38;2;%d;%d;%dm%s", r, g, b, ch)
+               }
+               .join + "\e[0m"
+      end
+
       Routes.log_routes(environment.routes)
 
       server = Server.new(environment)
