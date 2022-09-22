@@ -63,6 +63,11 @@ module Mayu
         @sessions = T.let({}, T::Hash[String, Session])
       end
 
+      sig { void }
+      def rerender
+        @sessions.values.each(&:rerender)
+      end
+
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
         Console.logger.info(self) { "#{request.method} #{request.path}" }
@@ -346,6 +351,10 @@ module Mayu
     def self.setup_server(config, endpoint:)
       environment = Mayu::Environment.new(config)
 
+      Routes.log_routes(environment.routes)
+
+      server = Server.new(environment)
+
       environment.resources.start_hot_swap do
         puts "Updated"
                .chars
@@ -365,11 +374,9 @@ module Mayu
                  format("\e[38;2;%d;%d;%dm%s", r, g, b, ch)
                }
                .join + "\e[0m"
+
+        server.rerender
       end
-
-      Routes.log_routes(environment.routes)
-
-      server = Server.new(environment)
 
       Async::HTTP::Server.for(
         endpoint,

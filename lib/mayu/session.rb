@@ -175,6 +175,12 @@ module Mayu
       @vtree.handle_callback(callback_id, payload)
     end
 
+    sig { void }
+    def rerender
+      @app = @environment.load_root(path)
+      @vtree.replace_root(@app)
+    end
+
     sig { params(path: String).void }
     def navigate(path)
       Console.logger.info(self, "navigate: #{path.inspect}")
