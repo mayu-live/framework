@@ -119,11 +119,11 @@ module Mayu
         .reduce(
           VDOM.h2(page_component, path:, params:, query:)
         ) do |app, layout|
-          p "Applying layout #{layout.inspect} to #{app.inspect}"
+          Console.logger.info(self, "Applying layout #{layout.inspect}")
+
           resources.load_resource(
             File.join("/", "app", "pages", layout)
           ).type => Resources::Types::Component => layout
-          p layout
 
           VDOM.h2(layout.component, app, path:, params:, query:)
         end

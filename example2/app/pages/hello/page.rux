@@ -1,0 +1,3 @@
+def render
+  <p>Hello</p>
+end

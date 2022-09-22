@@ -82,11 +82,14 @@ module Mayu
         in ["GET", ["__mayu", "static", filename]]
           @environment.resources.generate_assets(@environment.path(:assets))
 
+          accept_encodings = request.headers["accept_encoding"].to_s.split(", ")
+
           send_static_file(
             File.join(
               @environment.path(:assets),
               File.expand_path(filename, "/")
-            )
+            ),
+            accept_encodings:
           )
         in ["GET", _path]
           handle_init_session(request)
@@ -202,18 +205,28 @@ module Mayu
         respond(headers:, body:)
       end
 
-      sig { params(full_path: String).returns(ResponseArray) }
-      def send_static_file(full_path)
+      sig do
+        params(full_path: String, accept_encodings: T::Array[String]).returns(
+          ResponseArray
+        )
+      end
+      def send_static_file(full_path, accept_encodings: [])
         mime_type = MIME::Types.type_for(full_path).first
         content_type = mime_type.to_s
 
-        respond(
-          body: Protocol::HTTP::Body::File.open(full_path),
-          headers: {
-            "content-type" => content_type,
-            "cache-control" => "public, max-age=604800"
-          }
-        )
+        headers = {
+          "content-type" => content_type,
+          "cache-control" => "public, max-age=604800"
+        }
+
+        if accept_encodings.include?("br")
+          if File.exists?(full_path + ".br")
+            full_path += ".br"
+            headers["content-encoding"] = "br"
+          end
+        end
+
+        respond(body: Protocol::HTTP::Body::File.open(full_path), headers:)
       end
 
       sig { params(event: Symbol, data: T.untyped).returns(String) }
@@ -387,9 +400,11 @@ module Mayu
   end
 end
 
-pwd = File.expand_path(File.join(__dir__, "..", "..", "example2"))
-config = Mayu::Configuration.load_config(:dev, pwd:)
+if $0 == __FILE__
+  pwd = File.expand_path(File.join(__dir__, "..", "..", "example2"))
+  config = Mayu::Configuration.load_config(:dev, pwd:)
 
-Mayu::Configuration.log_config(config)
+  Mayu::Configuration.log_config(config)
 
-Mayu::Server2.start_dev(config).wait
+  Mayu::Server2.start_dev(config).wait
+end

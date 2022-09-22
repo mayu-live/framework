@@ -11,13 +11,11 @@ gem "pry"
 gem "rake"
 gem "rux"
 gem "crass"
-gem "falcon"
 gem "toml-rb"
 gem "prometheus-client"
 
 gem "sorbet-runtime"
 gem "async-http"
-gem "filewatcher"
 gem "nanoid"
 
 group :development do
@@ -32,8 +30,8 @@ group :development do
   gem "minitest-reporters", require: false
   gem "localhost", require: false
   gem "matrix", require: false
+  gem "ruby-prof", require: false
 end
 
 gem "mime-types"
-gem "ruby-prof"
 gem "image_size"

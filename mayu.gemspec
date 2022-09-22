@@ -35,22 +35,24 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "pry", "~> 0.14.0"
-  spec.add_dependency "rake", "~> 13.0.6"
+  spec.add_dependency "async", "~> 2.0.3"
+  spec.add_dependency "async-http", "~> 0.59.1"
+  spec.add_dependency "async-container", "~> 0.16.12"
   spec.add_dependency "crass", "~> 1.0.6"
-  spec.add_dependency "toml-rb", "~> 2.2.0"
+  spec.add_dependency "image_size", "~> 3.1.0"
+  spec.add_dependency "listen", "~> 3.7.1"
+  spec.add_dependency "localhost", "~> 1.1.9"
+  spec.add_dependency "mime-types", "~> 3.4.1"
+  spec.add_dependency "msgpack", "~> 1.5.5"
+  spec.add_dependency "nanoid", "~> 2.0.0"
   spec.add_dependency "prometheus-client", "~> 4.0.0"
-  spec.add_dependency "falcon", "~> 0.42.2"
+  spec.add_dependency "pry", "~> 0.14.0"
+  spec.add_dependency "rack-brotli", "~> 1.2.0"
+  spec.add_dependency "rake", "~> 13.0.6"
   spec.add_dependency "rux", "~> 1.0.3"
   spec.add_dependency "sorbet-runtime", "~> 0.5.10148"
-  spec.add_dependency "nanoid", "~> 2.0.0"
-  spec.add_dependency "filewatcher", "~> 1.1.1"
-  spec.add_dependency "async-http", "~> 0.59.1"
-  spec.add_dependency "rack-brotli", "~> 1.2.0"
-  spec.add_dependency "nats-pure", "~> 2.1.2"
-  spec.add_dependency "msgpack", "~> 1.5.5"
   spec.add_dependency "terminal-table", "~> 3.0.1"
-  spec.add_dependency "listen", "~> 3.7.1"
+  spec.add_dependency "toml-rb", "~> 2.2.0"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
