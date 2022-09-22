@@ -1,33 +1,28 @@
+# frozen_string_literal: true
 # typed: strict
 
-require_relative "resource"
-require_relative "types/base"
-require_relative "types/ruby"
-require_relative "types/css"
+require_relative "types/nil"
+require_relative "types/component"
 require_relative "types/image"
+require_relative "types/stylesheet"
 
 module Mayu
   module Resources
     module Types
       extend T::Sig
 
-      sig { params(resource: Resource).returns(Base) }
-      def self.for_resource(resource)
-        self.for(resource).load(resource)
-      end
-
-      sig { params(resource: Resource).returns(T.class_of(Base)) }
-      def self.for(resource)
-        case resource.extname
-        when ".rb", ".rux"
-          Ruby
-        when ".css"
-          CSS
-        when ".png", ".jpg", ".jpeg"
-          Image
-        else
-          raise "No module type for #{resource.path}"
+      sig { params(path: String).returns(T.class_of(Types::Base)) }
+      def self.for_path(path)
+        case path
+        when /\.rb\z/
+          return Component
+        when /\.css\z/
+          return Stylesheet
+        when /\.(png|jpe?g|gif|webp)$\z/
+          return Image
         end
+
+        raise "No type for #{path}"
       end
     end
   end

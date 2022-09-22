@@ -1,9 +1,10 @@
+# frozen_string_literal: true
 # typed: strict
 
-require "sorbet-runtime"
 require "listen"
 require "async"
 require "async/queue"
+require "async/task"
 require "thread"
 
 module Mayu
@@ -19,27 +20,37 @@ module Mayu
 
       sig do
         params(
-          dir: String,
+          root: String,
+          dirs: T::Array[String],
           task: Async::Task,
           block: T.proc.params(arg0: Event).void
         ).returns(Async::Task)
       end
-      def self.watch(dir = Dir.pwd, task: Async::Task.current, &block)
-        dir = File.expand_path(dir)
+      def self.watch(
+        root = Dir.pwd,
+        dirs = [""],
+        task: Async::Task.current,
+        &block
+      )
+        root = File.expand_path(root)
 
         queue = Thread::Queue.new
 
+        paths = dirs.map { File.join(root, _1) }
+
         listener =
           T.let(
-            Listen.to(dir) do |modified, added, removed|
-              Event
-                .new(
-                  modified: modified.map { _1.delete_prefix(dir) },
-                  added: added.map { _1.delete_prefix(dir) },
-                  removed: removed.map { _1.delete_prefix(dir) }
-                )
-                .then { queue.enq(_1) }
-            end,
+            T
+              .unsafe(Listen)
+              .to(*paths) do |modified, added, removed|
+                Event
+                  .new(
+                    modified: modified.map { _1.delete_prefix(root) },
+                    added: added.map { _1.delete_prefix(root) },
+                    removed: removed.map { _1.delete_prefix(root) }
+                  )
+                  .then { queue.enq(_1) }
+              end,
             Listen::Listener
           )
 

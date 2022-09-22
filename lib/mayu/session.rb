@@ -25,7 +25,6 @@ module Mayu
         ->(obj) do
           case obj
           when self
-            p "SEetting ENVINRonemetn"
             obj.instance_variable_set(:@environment, environment)
             obj
           when SerializedSession
