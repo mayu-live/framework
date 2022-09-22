@@ -47,10 +47,10 @@ module Mayu
         out.puts "graph TB"
 
         out.puts "  subgraph routes"
-        print_routes(out, tree[""]["pages"])
+        print_routes(out, tree.dig("", "app", "pages") || {})
         out.puts "  end"
 
-        print_route_edges(out, tree[""]["pages"])
+        print_route_edges(out, tree.dig("", "app", "pages") || {})
 
         print_subgraphs(out, tree)
 
