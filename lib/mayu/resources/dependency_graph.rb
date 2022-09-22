@@ -126,16 +126,19 @@ module Mayu
         params(
           id: String,
           started_at: T.nilable(String),
-          only_leaves: T::Boolean
+          only_leaves: T::Boolean,
+          block: T.nilable(T.proc.params(arg0: String).returns(T::Boolean))
         ).returns(T::Set[String])
       end
-      def dependencies_of(id, started_at = nil, only_leaves: false)
+      def dependencies_of(id, started_at = nil, only_leaves: false, &block)
         raise "Circular" if id == started_at
 
         @nodes
           .fetch(id)
           .outgoing
           .map do |dependency|
+            next nil unless yield dependency if block_given?
+
             dependencies = dependencies_of(dependency, started_at || id)
 
             if !only_leaves || dependencies.empty?
@@ -144,6 +147,7 @@ module Mayu
               dependencies
             end
           end
+          .compact
           .reduce(Set.new, &:merge)
       end
 

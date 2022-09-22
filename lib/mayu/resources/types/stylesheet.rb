@@ -65,7 +65,8 @@ module Mayu
                     Digest::SHA256.digest(resource.content_hash + str)
                   ).delete("=")
 
-                klasses[str.delete_prefix(".")] = "#{str}-#{hash}"
+                name = str.delete_prefix(".")
+                klasses[name] = "#{name}-#{hash}"
               end
 
           @source = T.let(source.freeze, String)

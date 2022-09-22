@@ -32,6 +32,13 @@ module Mayu
         @instance.class.stylesheet
       end
 
+      sig { returns(T.nilable(Resources::Resource)) }
+      def resource
+        if @instance.class.respond_to?(:__resource)
+          @instance.class.send(:__resource)
+        end
+      end
+
       sig { returns(T.untyped) }
       def marshal_dump
         [VDOM::Hydration.dump_props(@props), VDOM::Hydration.dump_state(@state)]

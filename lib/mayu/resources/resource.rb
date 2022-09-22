@@ -80,10 +80,20 @@ module Mayu
         Digest::SHA256.file(absolute_path).digest
       end
 
-      sig { params(assets_dir: String).void }
+      sig { returns(T::Array[Asset]) }
+      def assets
+        # TODO: Traverse the dependency graph from this node,
+        # stop at every component node, get all other assets...
+        # or something...
+        []
+      end
+
+      sig { params(assets_dir: String).returns(T::Array[Asset]) }
       def generate_assets(assets_dir)
         if type = self.type
           type.generate_assets(assets_dir)
+        else
+          []
         end
       end
 
