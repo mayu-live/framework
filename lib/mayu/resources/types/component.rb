@@ -17,10 +17,12 @@ module Mayu
             mod.instance_exec(resource) do |resource|
               define_singleton_method(:__resource) { resource }
 
-              sig { params(path: String).returns(Component) }
+              sig do
+                params(path: String).returns(T.class_of(Mayu::Component::Base))
+              end
               def self.require(path)
                 __resource.require(path) => Component => impl
-                impl
+                impl.component
               end
 
               sig { params(path: String).returns(Image) }

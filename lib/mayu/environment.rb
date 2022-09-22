@@ -76,7 +76,7 @@ module Mayu
             File.join("vendor", "mayu", "live.js")
           ).type => Resources::Types::JavaScript => type
           type.assets => [asset]
-          type.generate_asset(asset, path(:assets))
+          type.generate_assets(path(:assets)).first
           asset.filename
         end
     end
@@ -103,8 +103,10 @@ module Mayu
       params = route_match.params
 
       # Load the page component.
-      resources.load_resource(File.join("pages", route_match.template)).type =>
-        Resources::Types::Component => mod_type
+      path = File.join("/", "app", "pages", route_match.template)
+      resources.load_resource(
+        File.join("/", "app", "pages", route_match.template)
+      ).type => Resources::Types::Component => mod_type
 
       page_component = mod_type.component
 
@@ -118,8 +120,9 @@ module Mayu
           VDOM.h2(page_component, path:, params:, query:)
         ) do |app, layout|
           p "Applying layout #{layout.inspect} to #{app.inspect}"
-          resources.load_resource(File.join("pages", layout)).type =>
-            Resources::Types::Component => layout
+          resources.load_resource(
+            File.join("/", "app", "pages", layout)
+          ).type => Resources::Types::Component => layout
           p layout
 
           VDOM.h2(layout.component, app, path:, params:, query:)

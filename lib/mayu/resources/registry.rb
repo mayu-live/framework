@@ -14,7 +14,7 @@ MessagePack::DefaultFactory.register_type(0x00, Symbol)
 module Mayu
   module Resources
     class Registry
-      EXTENSIONS = T.let(["", ".rb"].freeze, T::Array[String])
+      EXTENSIONS = T.let(["", ".rb", ".rux"].freeze, T::Array[String])
 
       extend T::Sig
 
@@ -26,10 +26,7 @@ module Mayu
         @root = T.let(File.expand_path(root), String)
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
         @resolver =
-          T.let(
-            Resolver::FS.new(File.join(@root, "app"), extensions: EXTENSIONS),
-            Resolver::Base
-          )
+          T.let(Resolver::FS.new(@root, extensions: EXTENSIONS), Resolver::Base)
       end
 
       sig { params(dumped: String, root: String).returns(Registry) }
@@ -138,7 +135,7 @@ module Mayu
 
       sig { params(path: String, source: String).returns(Resource) }
       def load_resource(path, source = "/")
-        resolved_path = File.join("/app", @resolver.resolve(path, source))
+        resolved_path = @resolver.resolve(path, source)
         add_resource(resolved_path)
       end
 

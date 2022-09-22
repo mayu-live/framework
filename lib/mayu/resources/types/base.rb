@@ -20,12 +20,9 @@ module Mayu
           []
         end
 
-        sig { params(asset: Asset, path: String).void }
-        def generate_asset(asset, path)
-        end
-
-        sig { params(assets_dir: String).void }
+        sig { params(assets_dir: String).returns(T::Array[Asset]) }
         def generate_assets(assets_dir)
+          []
         end
       end
     end
