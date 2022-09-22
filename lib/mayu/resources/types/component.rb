@@ -91,9 +91,9 @@ module Mayu
 
           if styles.type.is_a?(Types::Stylesheet)
             impl.const_set(:Styles, styles)
-            classname_proxy = styles.type.classname_proxy
-
-            impl.instance_exec(classname_proxy) do |proxy|
+            impl.instance_exec(styles) do |styles|
+              define_singleton_method(:stylesheet) { styles.type }
+              classname_proxy = styles.type.classname_proxy
               define_singleton_method(:styles) { classname_proxy }
               define_method(:styles) { classname_proxy }
             end

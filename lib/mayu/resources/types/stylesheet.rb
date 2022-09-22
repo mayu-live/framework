@@ -77,12 +77,16 @@ module Mayu
           ClassnameProxy.new(self)
         end
 
+        sig { returns(T::Array[Asset]) }
+        def assets
+          [Asset.new(Base64.urlsafe_encode64(@resource.content_hash) + ".css")]
+        end
+
         sig { params(asset_dir: String).returns(T::Array[Asset]) }
         def generate_assets(asset_dir)
-          asset =
-            Asset.new(Base64.urlsafe_encode64(@resource.content_hash) + ".css")
-          asset.generate(asset_dir, @source, compress: true)
-          [asset]
+          assets.each do |asset|
+            asset.generate(asset_dir, @source, compress: true)
+          end
         end
 
         MarshalFormat = T.type_alias { [T::Hash[String, String], String] }
