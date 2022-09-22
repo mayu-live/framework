@@ -1,7 +1,9 @@
 .foo {
-  background: #f0f;
+  background: #fcf;
 }
 
 .active {
   font-weight: bold;
+  text-decoration: underline;
+  font-style: italic;
 }

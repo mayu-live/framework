@@ -66,7 +66,6 @@ module Mayu
             Marshal.load(
               args[0],
               ->(obj) do
-                # p obj
                 if obj.is_a?(Resource)
                   obj.instance_variable_set(:@registry, self)
                 end
@@ -107,16 +106,27 @@ module Mayu
           visited = T::Set[String].new
 
           event.modified.each { |path| reload_resource(path, visited:) }
-          event.added.each { |path| reload_resource(path, visited:) }
+          event.added.each do |path|
+            reload_resource(
+              path,
+              visited:,
+              add: path.start_with?("/app/pages/")
+            )
+          end
           event.removed.each { |path| unload_resource(path, visited:) }
 
           yield
         end
       end
 
-      sig { params(path: String, visited: T::Set[String]).void }
-      def reload_resource(path, visited: T::Set[String].new)
-        return unless @dependency_graph.has_node?(path)
+      sig do
+        params(path: String, visited: T::Set[String], add: T::Boolean).void
+      end
+      def reload_resource(path, visited: T::Set[String].new, add: false)
+        unless @dependency_graph.has_node?(path)
+          add_resource(path) if add
+          return
+        end
 
         reload_resources(
           [path, *@dependency_graph.dependants_of(path)],
@@ -129,6 +139,8 @@ module Mayu
         return unless @dependency_graph.has_node?(path)
 
         dependants = @dependency_graph.dependants_of(path)
+
+        Console.logger.info(self, "Unloading resource, #{path}")
 
         @dependency_graph.delete_node(path)
 
@@ -151,7 +163,8 @@ module Mayu
 
         @dependency_graph.add_node(resource.path, resource)
 
-        resource.type
+        type_name = resource.type.class.name.split("::").last
+        Console.logger.info(self, "Added #{type_name}: #{resource.path}")
         resource
       end
 
@@ -164,7 +177,7 @@ module Mayu
           .map { @dependency_graph.get_resource(_1) }
           .compact
           .each do |resource|
-            puts "\e[35mReloading #{resource.path}\e[0m"
+            Console.logger.info(self, "Reloading resource: #{resource.path}")
             @dependency_graph.delete_connections(resource.path)
             resource.load_type
           end

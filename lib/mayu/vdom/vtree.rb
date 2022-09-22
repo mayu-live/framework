@@ -30,12 +30,6 @@ module Mayu
           @updates_per_second = updates_per_second
         end
 
-        sig { params(handler_id: String, payload: T.untyped).void }
-        def handle_callback(handler_id, payload = {})
-          p(["Handle callback", payload])
-          @vtree.handle_callback(handler_id, payload)
-        end
-
         sig do
           params(
             task: Async::Task,
@@ -82,10 +76,24 @@ module Mayu
 
               patches = ctx.patches + stylesheet_patch(stylesheets)
               yield [:patch, patches] unless patches.empty?
-              puts "\e[34mRendering took %.3fs\e[0m" % (Time.now - start_at)
+
+              delta_time_ms = (Time.now - start_at) * 1000
+
+              if delta_time_ms > 10
+                Console.logger.warn(
+                  self,
+                  "Rendering took %.3fms" % delta_time_ms
+                )
+              end
 
               sleep 1.0 / @updates_per_second
-              puts "@vtree item: #{@vtree.update_queue.size}"
+
+              if update_queue_size = @vtree.update_queue.size.nonzero?
+                Console.logger.warn(
+                  self,
+                  "Update queue size: #{update_queue_size}"
+                )
+              end
             end
           rescue => e
             puts e.message
@@ -150,7 +158,7 @@ module Mayu
         @handlers = {}
         @update_queue = Async::Queue.new
         @update_semaphore = Async::Semaphore.new
-        @asset_refs = T.let(RefCounter.new, RefCounter[String])
+        @asset_refs = RefCounter.new
         @root.instance_variable_set(:@vtree, self)
       end
 

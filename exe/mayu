@@ -1,47 +1,11 @@
 #!/usr/bin/env ruby
 
+require "sorbet-runtime"
+
 MAYU_ROOT = File.join(File.dirname(__FILE__), "..")
 $LOAD_PATH.unshift(File.join(MAYU_ROOT, "..", "..", "lib"))
 
 require "mayu/banner"
+require "mayu/commands"
 
-COMMANDS = {
-  "dev" => -> (*_) do
-    port = ENV.fetch("PORT", "9292")
-    host = ENV.fetch("HOST", "localhost")
-
-    puts "\e[33mStarting development server on \e[4;35mhttps://#{host}:#{port}\e[0m"
-    puts
-
-    # stree-ignore
-    exec(
-      "bundle", "exec",
-      "falcon", "serve",
-      "--count", "8",
-      "--port", port,
-      "--hostname", host,
-    )
-  end,
-  "prod" => -> { exec("bundle", "exec", "falcon", "host") }
-}
-
-cmd, *rest = ARGV
-
-$stderr.puts "\e[36m#{Mayu::BANNER}\e[0m"
-
-COMMANDS
-  .fetch(cmd) do
-    if cmd
-      $stderr.puts "Unknown command: #{cmd}"
-    else
-      $stderr.puts "Missing command argument!"
-    end
-
-    $stderr.puts
-    $stderr.puts "Try any of the following:"
-
-    COMMANDS.keys.each { |cmd| puts "\t#{$0} #{cmd}" }
-
-    exit 1
-  end
-  .call(*rest)
+Mayu::Commands.call(ARGV)
