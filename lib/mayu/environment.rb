@@ -73,7 +73,7 @@ module Mayu
       @init_js ||=
         begin
           @resources.add_resource(
-            File.join("vendor", "mayu", "live.js")
+            File.join("/", "vendor", "mayu", "live.js")
           ).type => Resources::Types::JavaScript => type
           type.assets => [asset]
           type.generate_assets(path(:assets)).first
@@ -127,12 +127,6 @@ module Mayu
 
           VDOM.h2(layout.component, app, path:, params:, query:)
         end
-    end
-
-    sig { params(path: String).returns(String) }
-    def self.normalize_path(path)
-      File.absolute_path(path).delete_prefix!(root) or
-        raise ArgumentError, "Path #{path} is not in project root"
     end
 
     sig { params(request_path: String).returns(Routes::RouteMatch) }
