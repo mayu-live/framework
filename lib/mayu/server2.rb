@@ -74,9 +74,9 @@ module Mayu
           handle_session_post(request, session_id, args)
         in ["GET", ["__mayu", "session", UUIDv4 => session_id, "events"]]
           handle_session_sse(request, session_id)
-        in ["GET", ["__mayu", "live.js"]]
-          send_static_file(File.join(__dir__, "client", "dist", "live.js"))
         in ["GET", ["__mayu", "static", filename]]
+          @environment.resources.generate_assets(@environment.path(:assets))
+
           send_static_file(
             File.join(
               @environment.path(:assets),

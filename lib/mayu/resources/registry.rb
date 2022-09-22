@@ -90,11 +90,13 @@ module Mayu
         @dependency_graph.to_mermaid_url
       end
 
-      sig { params(outdir: String).void }
+      sig { params(outdir: String).returns(T::Array[Asset]) }
       def generate_assets(outdir)
+        assets = []
         @dependency_graph.each_resource do |resource|
-          resource.generate_assets(outdir)
+          resource.generate_assets(outdir).each { |asset| assets.push(asset) }
         end
+        assets
       end
 
       sig { params(block: T.proc.void).returns(Async::Task) }
