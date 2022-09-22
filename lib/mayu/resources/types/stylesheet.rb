@@ -59,7 +59,7 @@ module Mayu
           source =
             resource
               .read(encoding: "utf-8")
-              .gsub(/\.\w+\b/) do |str|
+              .gsub(/\.[a-z]\w*\b/i) do |str|
                 hash =
                   Base64.urlsafe_encode64(
                     Digest::SHA256.digest(resource.content_hash + str)
@@ -67,6 +67,7 @@ module Mayu
 
                 name = str.delete_prefix(".")
                 klasses[name] = "#{name}-#{hash}"
+                "#{str}-#{hash}"
               end
 
           @source = T.let(source.freeze, String)

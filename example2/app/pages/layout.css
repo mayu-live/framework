@@ -46,7 +46,9 @@
 }
 
 .menu {
-  composes: maxWidth;
+  /* TODO: Implement composes: maxWidth; */
+  width: min(100% - 2rem, 960px);
+  margin-inline: auto;
   padding: 0;
   list-style-type: none;
   display: flex;
