@@ -31,17 +31,6 @@ module Mayu
         def __mayu_resource
           @__mayu_resource or raise "__mayu_resource is not set"
         end
-
-        sig { params(path: String).returns(T.class_of(Base)) }
-        def import(path)
-          if path.start_with?("./") || path.start_with?("../")
-            __mayu_resource.load_relative(path) => mod
-            mod.type => Resources::Types::Ruby => ruby
-            ruby.klass
-          else
-            __mayu_resource.system.load_component(path)
-          end
-        end
       end
 
       sig do
@@ -97,14 +86,16 @@ module Mayu
       def did_update(prev_props, prev_state)
       end
 
-      sig { returns(T.nilable(Resources::Types::CSS)) }
+      sig { returns(T.nilable(Resources::Types::Stylesheet)) }
       def self.stylesheet = nil
-      sig { returns(Resources::Types::CSS) }
-      def self.stylesheet! = stylesheet or
-        raise RuntimeError, "There is no stylesheet for this component!"
-      sig { returns(Resources::Types::CSS::ClassnameProxy) }
-      def self.styles = stylesheet!.proxy
-      sig { returns(Resources::Types::CSS::ClassnameProxy) }
+      sig { returns(Resources::Types::Stylesheet) }
+      def self.stylesheet! =
+        stylesheet ||
+          raise(RuntimeError, "There is no stylesheet for this component!")
+      sig { returns(Resources::Types::Stylesheet::ClassnameProxy) }
+      def self.styles =
+        Resources::Types::Stylesheet::ClassnameProxy.new(stylesheet!)
+      sig { returns(Resources::Types::Stylesheet::ClassnameProxy) }
       def styles = self.class.styles
 
       sig { params(blk: T.proc.bind(T.self_type).void).void }

@@ -91,6 +91,7 @@ GEM
     haml (5.2.2)
       temple (>= 0.8.0)
       tilt
+    image_size (3.1.0)
     io-event (1.0.9)
     listen (3.7.1)
       rb-fsevent (~> 0.10, >= 0.10.3)
@@ -161,6 +162,7 @@ GEM
       unparser
     rbs (2.6.0)
     rexml (3.2.5)
+    ruby-prof (1.4.3)
     ruby-progressbar (1.11.0)
     rux (1.0.3)
       parser (~> 3.0)
@@ -230,6 +232,7 @@ DEPENDENCIES
   filewatcher
   guard
   guard-falcon
+  image_size
   localhost
   matrix
   mayu-live!
@@ -243,6 +246,7 @@ DEPENDENCIES
   rack-test
   rake
   rexml
+  ruby-prof
   rux
   sorbet
   sorbet-runtime
