@@ -29,11 +29,6 @@
   overflow: hidden;
 }
 
-.title {
-  margin: 0;
-  padding: 0;
-}
-
 .maxWidth {
   width: min(100% - 2rem, 960px);
   margin-inline: auto;

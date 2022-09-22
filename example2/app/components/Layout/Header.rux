@@ -1,0 +1,14 @@
+Logo = image("./logo.png")
+
+def render
+  <header class={props[:class]}>
+    <div class={props[:max_width]}>
+      <img
+        src={Logo.src}
+        sizes={Logo.sizes}
+        width={200}
+      />
+      <h1 class={styles.title}>Mayu Live</h1>
+    </div>
+  </header>
+end

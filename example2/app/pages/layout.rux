@@ -1,3 +1,5 @@
+Header = require('../components/Layout/Header')
+
 def render
   <html>
     <head>
@@ -6,11 +8,7 @@ def render
     </head>
 
     <body class={styles.body}>
-      <header class={styles.header}>
-        <div class={styles.maxWidth}>
-          <h1 class={styles.title}>Mayu Live</h1>
-        </div>
-      </header>
+      <Header class={styles.header} max-width={styles.maxWidth} />
 
       <nav class={styles.nav}>
         <menu class={styles.menu}>
