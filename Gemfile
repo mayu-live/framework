@@ -35,3 +35,5 @@ group :development do
 end
 
 gem "mime-types"
+gem "ruby-prof"
+gem "image_size"

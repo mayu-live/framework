@@ -94,7 +94,8 @@ module Mayu
             end
           end
 
-          raise ResolveError, "Could not resolve #{path} from #{source_dir}"
+          raise ResolveError,
+                "Could not resolve #{path} from #{source_dir} (app root: #{@root})"
         end
 
         private

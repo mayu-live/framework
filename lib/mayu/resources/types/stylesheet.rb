@@ -6,7 +6,50 @@ module Mayu
   module Resources
     module Types
       class Stylesheet < Base
+        class ClassnameProxy
+          extend T::Sig
+
+          sig { params(stylesheet: Stylesheet).void }
+          def initialize(stylesheet)
+            @stylesheet = stylesheet
+          end
+
+          sig { params(ident: Symbol).returns(String) }
+          def method_missing(ident)
+            @stylesheet.classes[ident.to_s].to_s
+          end
+
+          sig do
+            params(
+              args: T.any(String, Symbol),
+              kwargs: T.nilable(T::Boolean)
+            ).returns(String)
+          end
+          def [](*args, **kwargs)
+            result = Set.new
+
+            args.each do |classname|
+              if klass = @stylesheet.classes[classname.to_s]
+                result.add(klass)
+              end
+            end
+
+            kwargs.each do |classname, value|
+              next unless value
+
+              if klass = @stylesheet.classes[classname.to_s]
+                result.add(klass)
+              end
+            end
+
+            result.join(" ")
+          end
+        end
+
         extend T::Sig
+
+        sig { returns(T::Hash[String, String]) }
+        attr_reader :classes
 
         sig { params(resource: Resource).void }
         def initialize(resource)
@@ -22,37 +65,16 @@ module Mayu
                     Digest::SHA256.digest(resource.content_hash + str)
                   ).delete("=")
 
-                klasses[str] = "#{str}-#{hash}"
+                klasses[str.delete_prefix(".")] = "#{str}-#{hash}"
               end
 
-          @source = T.let(source, String)
-          @classes = T.let(klasses, T::Hash[String, String])
+          @source = T.let(source.freeze, String)
+          @classes = T.let(klasses.freeze, T::Hash[String, String])
         end
 
-        sig do
-          params(
-            args: T.any(String, Symbol),
-            kwargs: T.nilable(T::Boolean)
-          ).returns(String)
-        end
-        def classnames(*args, **kwargs)
-          result = Set.new
-
-          args.each do |classname|
-            if klass = @classes[classname.to_s]
-              result.add(klass)
-            end
-          end
-
-          kwargs.each do |classname, value|
-            next unless value
-
-            if klass = @classes[classname.to_s]
-              result.add(klass)
-            end
-          end
-
-          result.join(" ")
+        sig { returns(ClassnameProxy) }
+        def classname_proxy
+          ClassnameProxy.new(self)
         end
 
         sig { params(asset_dir: String).void }

@@ -5,6 +5,7 @@ require_relative "types/nil"
 require_relative "types/component"
 require_relative "types/image"
 require_relative "types/stylesheet"
+require_relative "types/javascript"
 
 module Mayu
   module Resources
@@ -16,6 +17,10 @@ module Mayu
         case path
         when /\.rb\z/
           return Component
+        when /\.rux\z/
+          return Component
+        when /\.js\z/
+          return JavaScript
         when /\.css\z/
           return Stylesheet
         when /\.(png|jpe?g|gif|webp)$\z/

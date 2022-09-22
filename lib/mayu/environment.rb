@@ -7,7 +7,7 @@ require_relative "state/store"
 require_relative "state/loader"
 require_relative "routes"
 require_relative "metrics"
-require_relative "resources/system"
+require_relative "resources/registry"
 require_relative "fetch"
 require_relative "message_cipher"
 require_relative "configuration"
@@ -29,7 +29,7 @@ module Mayu
     attr_reader :routes
     sig { returns(State::Store::Reducers) }
     attr_reader :reducers
-    sig { returns(Resources::System) }
+    sig { returns(Resources::Registry) }
     attr_reader :resources
     sig { returns(Prometheus::Client::Registry) }
     attr_reader :prometheus_registry
@@ -41,6 +41,7 @@ module Mayu
     sig { params(config: Configuration).void }
     def initialize(config)
       @root = T.let(config.root, String)
+      @app_root = T.let(File.join(config.root, "app"), String)
       @config = config
       @message_cipher =
         T.let(MessageCipher.new(key: config.secret_key), MessageCipher)
@@ -48,18 +49,18 @@ module Mayu
       # probably have to set up an async task...
       @routes =
         T.let(
-          Routes.build_routes(File.join(@root, PAGES_DIR)),
+          Routes.build_routes(File.join(@app_root, PAGES_DIR)),
           T::Array[Routes::Route]
         )
       @reducers =
         T.let(
-          State::Loader.new(File.join(@root, STORE_DIR)).load,
+          State::Loader.new(File.join(@app_root, STORE_DIR)).load,
           State::Store::Reducers
         )
       @resources =
         T.let(
-          Resources::System.new(@root), #,, enable_code_reloader: hot_reload),
-          Resources::System
+          Resources::Registry.new(root: @root), #,, enable_code_reloader: hot_reload),
+          Resources::Registry
         )
       @prometheus_registry =
         T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
@@ -71,15 +72,10 @@ module Mayu
     def init_js
       @init_js ||=
         begin
-          path =
-            Pathname
-              .new(File.join(__dir__, "client", "dist", "live.js"))
-              .relative_path_from(config.root)
-              .to_s
-          Mayu::Assets::Asset.from_file(path:).generate(
-            root: config.root,
-            outdir: config.paths.assets
-          )
+          @resources.add_resource(
+            File.join("vendor", "mayu", "live.js")
+          ).type => Resources::Types::JavaScript => type
+          type.filename
         end
     end
 
@@ -100,31 +96,31 @@ module Mayu
       path, search = request_path.split("?", 2)
       # We should match the route earlier, so that we don't have to get this
       # far in case it doesn't match...
-      route_match = match_route(path)
+      route_match = match_route(path.to_s)
       query = Rack::Utils.parse_nested_query(search).transform_keys(&:to_sym)
       params = route_match.params
 
       # Load the page component.
-      resources.load_page(route_match.template).type =>
-        Resources::Types::Ruby => mod_type
+      resources.load_resource(File.join("pages", route_match.template)).type =>
+        Resources::Types::Component => mod_type
 
-      page_component = mod_type.klass
+      page_component = mod_type.component
 
       # Apply the layouts.
+      # NOTE: Pages should probably be their own
+      # resource type and load their layouts.
       route_match
         .layouts
         .reverse
         .reduce(
           VDOM.h2(page_component, path:, params:, query:)
         ) do |app, layout|
-          layout_component = resources.load_page_component(layout)
-          VDOM.h2(
-            layout_component,
-            T.cast(app, VDOM::Descriptor),
-            path:,
-            params:,
-            query:
-          )
+          p "Applying layout #{layout.inspect} to #{app.inspect}"
+          resources.load_resource(File.join("pages", layout)).type =>
+            Resources::Types::Component => layout
+          p layout
+
+          VDOM.h2(layout.component, app, path:, params:, query:)
         end
     end
 

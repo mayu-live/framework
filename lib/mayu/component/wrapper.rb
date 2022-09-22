@@ -27,7 +27,7 @@ module Mayu
         @helpers = T.let(Helpers.new(vnode), Helpers)
       end
 
-      sig { returns(T.nilable(Mayu::Resources::Types::CSS)) }
+      sig { returns(T.nilable(Resources::Types::Stylesheet)) }
       def stylesheet
         @instance.class.stylesheet
       end

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 # typed: strict
-# frozen_string_literal: true
 
 require "sorbet-runtime"
 require "msgpack"
@@ -15,7 +14,6 @@ MessagePack::DefaultFactory.register_type(0x00, Symbol)
 module Mayu
   module Resources
     class Registry
-      DIRS_TO_WATCH = T.let(%w[pages components store].freeze, T::Array[String])
       EXTENSIONS = T.let(["", ".rb"].freeze, T::Array[String])
 
       extend T::Sig
@@ -28,7 +26,10 @@ module Mayu
         @root = T.let(File.expand_path(root), String)
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
         @resolver =
-          T.let(Resolver::FS.new(@root, extensions: EXTENSIONS), Resolver::Base)
+          T.let(
+            Resolver::FS.new(File.join(@root, "app"), extensions: EXTENSIONS),
+            Resolver::Base
+          )
       end
 
       sig { params(dumped: String, root: String).returns(Registry) }
@@ -101,15 +102,13 @@ module Mayu
 
       sig { params(block: T.proc.void).returns(Async::Task) }
       def start_hot_swap(&block)
-        FileWatcher.watch(@root, DIRS_TO_WATCH) do |event|
+        FileWatcher.watch(File.join(@root, "app")) do |event|
           puts "\e[33mDETECTED CHANGES\e[0m"
 
           visited = T::Set[String].new
 
           event.modified.each { |path| reload_resource(path, visited:) }
-
           event.added.each { |path| reload_resource(path, visited:) }
-
           event.removed.each { |path| unload_resource(path, visited:) }
 
           yield
@@ -139,7 +138,7 @@ module Mayu
 
       sig { params(path: String, source: String).returns(Resource) }
       def load_resource(path, source = "/")
-        resolved_path = @resolver.resolve(path, source)
+        resolved_path = File.join("/app", @resolver.resolve(path, source))
         add_resource(resolved_path)
       end
 
