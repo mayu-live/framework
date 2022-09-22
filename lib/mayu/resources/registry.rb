@@ -101,7 +101,7 @@ module Mayu
 
       sig { params(block: T.proc.void).returns(Async::Task) }
       def start_hot_swap(&block)
-        FileWatcher.watch(File.join(@root, "app")) do |event|
+        FileWatcher.watch(@root, ["app"]) do |event|
           puts "\e[33mDETECTED CHANGES\e[0m"
 
           visited = T::Set[String].new

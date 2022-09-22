@@ -37,6 +37,10 @@ module Mayu
         queue = Thread::Queue.new
 
         paths = dirs.map { File.join(root, _1) }
+        p root
+        p root
+        p root
+        p root
 
         listener =
           T.let(
