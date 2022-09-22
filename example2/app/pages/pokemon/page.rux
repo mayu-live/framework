@@ -1,4 +1,4 @@
-Pagination = import("./Pagination")
+Pagination = require("./Pagination")
 
 def self.get_initial_state(**props)
   {

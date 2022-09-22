@@ -31,13 +31,11 @@ module Mayu
           asset.generate(path, @source, compress: true)
         end
 
-        sig { params(asset_dir: String).void }
+        sig { params(asset_dir: String).returns(T::Array[Asset]) }
         def generate_assets(asset_dir)
-          path = File.join(asset_dir, @filename)
-          puts "\e[35mCreating #{path}\e[0m"
-          File.write(path, @source)
-          puts "\e[35mCompressing #{path}.br\e[0m"
-          File.write(path + ".br", Brotli.deflate(@source))
+          @assets.each do |asset|
+            asset.generate(asset_dir, @source, compress: true)
+          end
         end
 
         MarshalFormat = T.type_alias { [String, String, T::Array[Asset]] }
