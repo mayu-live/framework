@@ -393,8 +393,14 @@ module Mayu
 
       sig { params(ctx: UpdateContext, component: Component::Wrapper).void }
       def update_stylesheet(ctx, component)
+        # TODO: Make this more generic..
+        # Would be great if we could ask the dependency graph
+        # of what direct dependencies this component has, and
+        # get their assets...
+        # Images for example, could be preloaded:
+        # https://web.dev/preload-responsive-images/
         if stylesheet = component.stylesheet
-          @asset_refs.acquire(stylesheet.asset.filename)
+          stylesheet.assets.each { |asset| @asset_refs.acquire(asset.filename) }
         end
       end
 
