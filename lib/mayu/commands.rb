@@ -3,6 +3,8 @@
 
 require_relative "configuration"
 require_relative "commands/base"
+require_relative "colors"
+require_relative "banner"
 
 module Mayu
   module Commands
@@ -10,6 +12,8 @@ module Mayu
 
     sig { params(argv: T::Array[String]).void }
     def self.call(argv)
+      puts Colors.rainbow(BANNER)
+
       case argv
       in ["dev", *rest]
         require_relative "commands/dev"

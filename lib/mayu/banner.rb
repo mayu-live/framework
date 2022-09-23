@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 module Mayu
-  BANNER = <<~EOF
+  BANNER = T.let(<<~EOF.chomp.freeze, String)
     • ▌ ▄ ·.  ▄▄▄·  ▄· ▄▌▄• ▄▌    ▄▄▌  ▪   ▌ ▐·▄▄▄ .
     ·██ ▐███▪▐█ ▀█ ▐█▪██▌█▪██▌    ██•  ██ ▪█·█▌▀▄.▀·
     ▐█ ▌▐▌▐█·▄█▀▀█ ▐█▌▐█▪█▌▐█▌    ██▪  ▐█·▐█▐█•▐▀▀▪▄
