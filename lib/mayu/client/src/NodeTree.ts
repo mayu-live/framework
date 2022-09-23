@@ -197,17 +197,19 @@ class NodeTree {
     const referenceId = before || after;
     const referenceEntry = referenceId && this.#cache.get(referenceId);
 
-    const body = new DOMParser().parseFromString(`${html}`, "text/html").body;
+    const template = document
+      .createRange()
+      .createContextualFragment(`<template>${html}</template>`)
+      .firstElementChild!;
+    const content = (template as HTMLTemplateElement).content;
 
-    logger.log(`BODY TO INSERT`, body.innerHTML);
-
-    const children = Array.from(body.childNodes).reverse();
+    const children = Array.from(content.childNodes).reverse();
 
     const idsArray = [ids].flat();
 
     idsArray.forEach((idTreeNode, i) => {
-      parentEntry.childIds.add(idTreeNode.i);
-      const entry = this.#cache.get(idTreeNode.i);
+      parentEntry.childIds.add(idTreeNode.id);
+      const entry = this.#cache.get(idTreeNode.id);
       const node = entry?.node || children[i];
       const ref = referenceEntry
         ? after
