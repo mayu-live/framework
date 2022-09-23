@@ -144,29 +144,6 @@ module Mayu
         descriptor.type == type && descriptor.key == key
       end
 
-      VOID_ELEMENTS =
-        T.let(
-          %w[
-            area
-            base
-            br
-            col
-            command
-            embed
-            hr
-            img
-            input
-            keygen
-            link
-            meta
-            param
-            source
-            track
-            wbr
-          ].freeze,
-          T::Array[String]
-        )
-
       sig { returns(T.untyped) }
       def id_tree
         children = Array(self.children).flatten.compact
@@ -334,8 +311,8 @@ module Mayu
         end
         formatted_props.unshift(%< data-mayu-id="#{@id.to_s}">)
 
-        if VOID_ELEMENTS.include?(type.to_s)
-          return "<#{type}#{formatted_props.join}>"
+        if type.is_a?(Symbol) && HTML.void_tag?(type)
+          return "<#{type}#{formatted_props.join} />"
         end
 
         if props[:dangerously_set_inner_html].is_a?(Hash)
