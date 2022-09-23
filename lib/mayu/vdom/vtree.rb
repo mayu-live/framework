@@ -549,7 +549,9 @@ module Mayu
         vnodes.each { |vnode| remove_vnode(ctx, vnode, lifecycles:) }
         delta_time_ms = (Time.now - start_at) * 1000
 
-        Console.logger.warn(self, "Updating took %.3fms" % delta_time_ms)
+        if delta_time_ms > 10
+          Console.logger.warn(self, "Updating took %.3fms" % delta_time_ms)
+        end
 
         new_children
       end
