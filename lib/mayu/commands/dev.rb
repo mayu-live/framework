@@ -12,7 +12,7 @@ module Mayu
       sig { params(argv: T::Array[String]).void }
       def call(argv)
         Configuration.log_config(configuration)
-        Server2.start_dev(configuration).wait
+        Server2.start_dev(configuration)
       end
     end
   end

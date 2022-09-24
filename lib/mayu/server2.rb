@@ -10,6 +10,7 @@ require "protocol/http/body/file"
 require "async/io/host_endpoint"
 require "async/io/shared_endpoint"
 require "async/io/ssl_endpoint"
+require "async/io/trap"
 require "localhost"
 require "mime/types"
 require_relative "environment"
@@ -71,7 +72,7 @@ module Mayu
 
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
-        Console.logger.debug(self) { "#{request.method} #{request.path}" }
+        Console.logger.info(self) { "#{request.method} #{request.path}" }
 
         case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]
@@ -288,9 +289,110 @@ module Mayu
       end
     end
 
+    class Controller < Async::Container::Controller
+      extend T::Sig
+
+      sig do
+        params(
+          config: Configuration,
+          endpoint: Async::HTTP::Endpoint,
+          options: T.untyped
+        ).void
+      end
+      def initialize(config:, endpoint:, **options)
+        super(**options)
+        @config = config
+        @debug_trap = T.let(Async::IO::Trap.new(:USR1), Async::IO::Trap)
+        @endpoint = endpoint
+        @bound_endpoint = T.let(nil, T.nilable(Async::IO::SharedEndpoint))
+      end
+
+      sig { void }
+      def start
+        @bound_endpoint =
+          Async { Async::IO::SharedEndpoint.bound(@endpoint) }.wait
+
+        Console.logger.info(self) { "Starting server on #{@endpoint.to_url}" }
+
+        @debug_trap.ignore!
+        super
+      end
+
+      sig { params(args: T.untyped).void }
+      def stop(*args)
+        Console.logger.warn("Stop", args)
+        @bound_endpoint&.close
+        @debug_trap.default!
+        super
+      end
+
+      sig do
+        params(container: Async::Container::Generic).returns(
+          Async::Container::Generic
+        )
+      end
+      def setup(container)
+        container.run(
+          name: self.class.name,
+          restart: true,
+          count: @config.num_processes
+        ) do |instance|
+          Async do |task|
+            task.async do
+              if @debug_trap.install!
+                Console
+                  .logger
+                  .info(instance) do
+                    "- Per-process status: kill -USR1 #{Process.pid}"
+                  end
+              end
+
+              @debug_trap.trap do
+                Console
+                  .logger
+                  .info(self) { |buffer| task.reactor.print_hierarchy(buffer) }
+              end
+            end
+
+            endpoint = @bound_endpoint or raise "@bound_endpoint is not set"
+
+            run_server(endpoint:)
+
+            instance.ready!
+            task.children.each(&:wait)
+
+            Console.logger.warn("Ending server")
+          end
+        end
+      end
+
+      sig { params(endpoint: Async::IO::SharedEndpoint).void }
+      def run_server(endpoint:)
+        environment = Mayu::Environment.new(@config)
+        server = Server.new(environment)
+
+        Console.logger.info("Starting hot swap")
+        environment.resources.start_hot_swap do
+          Console.logger.info(
+            self,
+            Colors.rainbow("Detected code changes, rerendering.")
+          )
+          server.rerender
+        end
+
+        Async::HTTP::Server
+          .for(
+            endpoint,
+            protocol: Async::HTTP::Protocol::HTTP2,
+            scheme: "https"
+          ) { |request| Protocol::HTTP::Response[*server.call(request)] }
+          .run
+      end
+    end
+
     extend T::Sig
 
-    sig { params(config: Configuration).returns(Async::Container::Forked) }
+    sig { params(config: Configuration).void }
     def self.start_dev(config)
       uri =
         URI.for(
@@ -307,16 +409,11 @@ module Mayu
 
       ssl_context = dev_ssl_context(config.host)
 
-      server_endpoint =
-        Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
-      bound_endpoint =
-        Async { Async::IO::SharedEndpoint.bound(server_endpoint) }.wait
+      endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
 
-      Console.logger.info(self) { "Starting server on #{uri}" }
+      Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
 
-      Process.setproctitle("mayu-live file://#{config.root} #{uri}")
-
-      start_container(config, endpoint: bound_endpoint)
+      Controller.new(config:, endpoint:).run
     end
 
     sig { params(host: String).returns(OpenSSL::SSL::SSLContext) }
@@ -330,56 +427,6 @@ module Mayu
         context.alpn_protocols = ["h2"]
         context.session_id_context = "mayu"
       end
-    end
-
-    sig do
-      params(config: Configuration, endpoint: Async::IO::Endpoint).returns(
-        Async::Container::Forked
-      )
-    end
-    def self.start_container(config, endpoint:)
-      Console.logger.info(self, "Starting container...")
-
-      Async::Container::Forked
-        .new
-        .run(count: config.num_processes, restart: true) do |instance|
-          Console.logger.info(self, "Child process started.")
-
-          Async do |task|
-            server = setup_server(config, endpoint:)
-            server.run
-
-            instance.ready!
-            task.children.each(&:wait)
-          end
-        ensure
-          Console.logger.info(self, "Child processes exiting:", $!)
-        end
-    end
-
-    sig do
-      params(config: Configuration, endpoint: Async::IO::Endpoint).returns(
-        Async::HTTP::Server
-      )
-    end
-    def self.setup_server(config, endpoint:)
-      environment = Mayu::Environment.new(config)
-
-      Routes.log_routes(environment.routes)
-
-      server = Server.new(environment)
-
-      environment.resources.start_hot_swap do
-        puts Colors.rainbow("Updated")
-
-        server.rerender
-      end
-
-      Async::HTTP::Server.for(
-        endpoint,
-        protocol: Async::HTTP::Protocol::HTTP2,
-        scheme: "https"
-      ) { |request| Protocol::HTTP::Response[*server.call(request)] }
     end
   end
 end
