@@ -89,13 +89,20 @@ module Mayu
 
     const :mode, Symbol
 
+    const :scheme, String, default: "https"
+
+    sig { returns(URI) }
+    def uri
+      URI.for(scheme, nil, host, port, nil, "/", nil, nil, nil).normalize
+    end
+
     const :host, String, default: "0.0.0.0"
     const :port, Integer, default: 3000
 
     const :num_processes, Integer, default: 1
     const :max_sessions, Integer, default: 50
 
-    const :hot_reload, T::Boolean, default: false
+    const :hot_swap, T::Boolean, default: false
 
     const :paths, PathsConfig, default: PathsConfig.new
 
