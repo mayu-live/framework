@@ -31,8 +31,8 @@ module Mayu
       resolve_config_file(parent)
     end
 
-    sig { params(env: Symbol, pwd: String).returns(T.attached_class) }
-    def self.load_config(env, pwd: Dir.pwd)
+    sig { params(mode: Symbol, pwd: String).returns(T.attached_class) }
+    def self.load_config(mode, pwd: Dir.pwd)
       file = resolve_config_file(pwd)
       root = File.dirname(file)
 
@@ -43,7 +43,7 @@ module Mayu
         )
 
       base_config = config.dig(:base) || {}
-      env_config = config.dig(:env, env) || {}
+      env_config = config.dig(:env, mode) || {}
 
       merged_config = base_config.merge(env_config)
 
@@ -58,7 +58,7 @@ module Mayu
           end
         end
 
-      new(**merged_config, root:, secret_key:)
+      new(**merged_config, root:, secret_key:, mode:)
     end
 
     sig { params(configuration: Configuration).void }
@@ -86,6 +86,8 @@ module Mayu
 
     const :root, String
     const :secret_key, String
+
+    const :mode, Symbol
 
     const :host, String, default: "0.0.0.0"
     const :port, Integer, default: 3000
