@@ -1,14 +1,16 @@
 [base]
-  hot_reload = false
   secret_key = "asd"
+  hot_swap = false
 
 [env.dev]
   port = 9292
   host = "localhost"
-  hot_reload = true
+  hot_swap = true
+  scheme = "https"
 
 [env.prod]
   host = "0.0.0.0"
   port = 3000
   num_processes = 4
   max_sessions = 10
+  scheme = "http"

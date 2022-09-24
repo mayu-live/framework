@@ -372,6 +372,7 @@ module Mayu
         server = Server.new(environment)
 
         Console.logger.info("Starting hot swap")
+
         environment.resources.start_hot_swap do
           Console.logger.info(
             self,
@@ -384,7 +385,7 @@ module Mayu
           .for(
             endpoint,
             protocol: Async::HTTP::Protocol::HTTP2,
-            scheme: "https"
+            scheme: @config.scheme
           ) { |request| Protocol::HTTP::Response[*server.call(request)] }
           .run
       end
@@ -394,25 +395,21 @@ module Mayu
 
     sig { params(config: Configuration).void }
     def self.start_dev(config)
-      uri =
-        URI.for(
-          "https",
-          nil,
-          config.host,
-          config.port,
-          nil,
-          "/",
-          nil,
-          nil,
-          nil
-        ).normalize
-
       ssl_context = dev_ssl_context(config.host)
 
-      endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
+      uri = config.uri
+      endpoint =
+        Async::HTTP::Endpoint.new(config, ssl_context:, reuse_port: true)
 
       Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
 
+      Controller.new(config:, endpoint:).run
+    end
+
+    sig { params(config: Configuration).void }
+    def self.start_prod(config)
+      uri = config.uri
+      endpoint = Async::HTTP::Endpoint.new(uri, reuse_port: true)
       Controller.new(config:, endpoint:).run
     end
 
@@ -428,14 +425,20 @@ module Mayu
         context.session_id_context = "mayu"
       end
     end
+
+    sig { params(config: Configuration).returns(URI) }
+    def self.uri_from_config(config)
+      URI.for(
+        config.scheme,
+        nil,
+        config.host,
+        config.port,
+        nil,
+        "/",
+        nil,
+        nil,
+        nil
+      ).normalize
+    end
   end
-end
-
-if $0 == __FILE__
-  pwd = File.expand_path(File.join(__dir__, "..", "..", "example2"))
-  config = Mayu::Configuration.load_config(:dev, pwd:)
-
-  Mayu::Configuration.log_config(config)
-
-  Mayu::Server2.start_dev(config).wait
 end
