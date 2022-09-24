@@ -46,7 +46,10 @@ export default async function init(encryptedState: string) {
     if (isUnloading) return;
 
     sessionStorage.removeItem(SESSION_ID_KEY);
-    document.body.appendChild(disconnectedElement);
+
+    if (disconnectedElement.parentElement !== document.body) {
+      document.body.appendChild(disconnectedElement);
+    }
 
     if (errorCount++ > 5) {
       console.log("Closing event source");
