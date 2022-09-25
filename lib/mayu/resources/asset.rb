@@ -16,9 +16,11 @@ module Mayu
 
       sig { params(path: String, content: String, compress: T::Boolean).void }
       def generate(path, content, compress: false)
+        Console.logger.info(self, "Writing #{@filename}")
         File.write(File.join(path, @filename), content)
 
         if compress
+          Console.logger.info(self, "Compressing #{@filename}")
           File.write(
             File.join(path, @filename + ".br"),
             Brotli.deflate(content)

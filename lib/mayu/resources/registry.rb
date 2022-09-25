@@ -163,8 +163,10 @@ module Mayu
 
         @dependency_graph.add_node(resource.path, resource)
 
-        type_name = resource.type.class.name.split("::").last
-        Console.logger.info(self, "Added #{type_name}: #{resource.path}")
+        Console.logger.info(
+          self,
+          "Loaded #{resource.type.name} from #{resource.path}"
+        )
         resource
       end
 
