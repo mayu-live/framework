@@ -194,6 +194,11 @@ module Mayu
       end
 
       sig { returns(String) }
+      def to_mermaid_source
+        MermaidExporter.new(self).to_source
+      end
+
+      sig { returns(String) }
       def to_mermaid_url
         MermaidExporter.new(self).to_url
       end

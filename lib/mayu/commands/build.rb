@@ -32,6 +32,12 @@ module Mayu
               resources.load_resource(component).type.component
             end
 
+            File.write("app-graph.md", <<~EOF)
+              ```mermaid
+              #{resources.dependency_graph.to_mermaid_source.chomp}
+              ```
+            EOF
+
             puts "\e[34m#{resources.mermaid_url}\e[0m"
 
             assets_dir = environment.path(:assets)

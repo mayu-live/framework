@@ -135,7 +135,7 @@ module Mayu
 
         respond(headers:, body: [session.id])
       rescue MessageCipher::Error => e
-        Console.logger.error(self, e.class.name, e.message)
+        Console.logger.error(self, e)
         respond(status: 500, body: ["error"])
       end
 
