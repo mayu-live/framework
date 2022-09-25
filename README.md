@@ -1,7 +1,10 @@
 # Mayu Live ![Ruby build status](https://github.com/mayu-live/framework/actions/workflows/ruby.yml/badge.svg) ![Node.js build status](https://github.com/mayu-live/framework/actions/workflows/node.js.yml/badge.svg)
 
-Mayu is a real-time server-side component-based
-VDOM rendering framework written in Ruby.
+Mayu is a live streaming server side component-based
+VirtualDOM rendering framework written in Ruby.
+
+Everything runs on the server, except for a tiny little runtime that
+deals with the connection to the server and updates the DOM.
 
 It is very early in development and nothing is guaranteed to work.
 Still trying to figure out how to make a framework that is both
@@ -17,7 +20,7 @@ things are put in place and things feel right.
 
 Install Ruby dependencies
 
-    bundle
+    bundle install
 
 Install node dependencies
 
@@ -25,12 +28,13 @@ Install node dependencies
 
 ## Start the example app
 
-    bin/mprocs
+    cd example2
+    bundle install
+    bin/mayu dev
 
 Then open https://localhost:9292/ in your browser.
 
-Mayu uses [falcon](https://github.com/socketry/falcon) which generates a
-self-signed certificate for localhost.
+Mayu generates a self-signed certificate for localhost in development mode.
 
 Depending on your system/browser you might need to do one of the following:
 
@@ -84,7 +88,7 @@ and even callback handlers run on the server.
 There is no need to implement an API, you access databases
 and private APIs from your callback handlers.
 
-Mayu detects changes in the VDOM-tree and sends instructions
+Mayu detects changes in the VDOM and sends instructions
 on how to patch the DOM to the browser via
 [Server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
 
@@ -114,7 +118,8 @@ end
 
 This will print the current server time.
 
-The component will render only once every second even though it updates twice per second, since the time string only changes once per second.
+The component will render once every second even though it updates
+twice per second, since the time string only changes once per second.
 
 ## Components
 
@@ -147,13 +152,17 @@ You can access styles in a component using the `styles` method.
 }
 ```
 
-```ruby
-# components/Example.rb
+```
+# components/Example.rux
 render do
-  h.div class: styles.box do
-    h.p "Hello world", class: styles.hello
-    h.button "Click me", class: styles.button
-  end.div
+  <div class={styles.box}>
+    <p class={styles.hello}>
+      Hello world
+    </p>
+    <button class={styles.button}>
+      Click me
+    </button>
+  </div>
 end
 ```
 
@@ -166,18 +175,24 @@ This would generate the following HTML:
 </div>
 ```
 
-This will be inserted into `<head />`:
+This will be inserted into `<head>`:
 
 ```html
 <link
   rel="stylesheet"
-  href="/__mayu/assets/f934819a6d2a3f41509c86da3e27d88b36d119db52e03003477486dbee8df3fc.css"
+  href="/__mayu/static/NtXGjOdgHqDJUnAhmk3NwuzFnkk8Z1NlBCE_XykVE-8=.css"
 />
 ```
 
-Only the CSS for the components currently on the page will
-be included with the HTML. With HTTP/2 all the CSS files load
-in parallel which makes everything super fast.
+The browser will also be made aware of the assets used on a page via the
+[Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Link)-header,
+so that they can load even before the browser starts parsing the HTML.
+
+    $ curl -i https://localhost:9292 -k
+    HTTP/2 200
+    content-length: 5260
+    content-type: text/html; charset=utf-8
+    link: </__mayu/static/jkA-D11H90ChVHYqIOKn8I_A4w2MJ4nG-UEVP19UGqg=.js>; rel=preload; as=script; crossorigin=anonymous; fetchpriority=high, </__mayu/static/NtXGjOdgHqDJUnAhmk3NwuzFnkk8Z1NlBCE_XykVE-8=.css>; rel=preload; as=style, </__mayu/static/u6rK2NKHRcFKribL1sMcDdr1gXHbgYIVznfN5RJEKCA=.css>; rel=preload; as=style, </__mayu/static/shJPApqH5hptQERL4DivMTX42leUQRht9vGW4X_Rr84=.css>; rel=preload; as=style, </__mayu/static/ZStAGN7uGe7CU3cxSgAIOL550d1VDqVDUzdiQuFOXo8=.css>; rel=preload; as=style
 
 ## State management
 
@@ -199,7 +214,7 @@ Routing is inspired by the
 Here's the structure of a blog app:
 
 ```
-app
+app/pages
 ├── page.rb
 ├── page.css
 ├── layout.rb
@@ -212,20 +227,20 @@ app
     ├── page.css
     ├── layout.rb
     ├── layout.css
-    └── [id]
+    └── :id
         ├── page.rb
         └── page.css
 ```
 
 This would create the following routes:
 
-| **path**      | **component**            | **layouts**                           |
-| ------------- | ------------------------ | ------------------------------------- |
-| `/`           | `app/page.rb`            | `app/layout.rb`                       |
-| `/about/`     | `app/about/page.rb`      | `app/layout.rb`                       |
-| `/posts/`     | `app/posts/page.rb`      | `app/layout.rb` `app/posts/layout.rb` |
-| `/posts/:id/` | `app/posts/[id]/page.rb` | `app/layout.rb` `app/posts/layout.rb` |
-| `/*`          | `app/404.rb`             | `app/layout.rb`                       |
+| **path**      | **component**                  | **layouts**                                       |
+| ------------- | ------------------------------ | ------------------------------------------------- |
+| `/`           | `app/pages/page.rb`            | `app/pages/layout.rb`                             |
+| `/about/`     | `app/pages/about/page.rb`      | `app/pages/layout.rb`                             |
+| `/posts/`     | `app/pages/posts/page.rb`      | `app/pages/layout.rb` `app/pages/posts/layout.rb` |
+| `/posts/:id/` | `app/pages/posts/[id]/page.rb` | `app/pages/layout.rb` `app/pages/posts/layout.rb` |
+| `/*`          | `app/pages/404.rb`             | `app/pages/layout.rb`                             |
 
 Look in `example/app` for examples.
 
@@ -239,46 +254,20 @@ No browser refresh needed.
 Everything is minified and optimized and deliviered over HTTP/2.
 
 ![Request waterfall screenshot](https://quad.pe/e/h9BqRqnMwh.png)
+![Request waterfall screenshot 22](https://quad.pe/e/OVWyi8tIRk.png)
 
 ## Templating
 
-There is a basic templating engine inspired by Markaby.
-A difference is that you have to write `h.div` instead of just `div`
-and that you have to close tags with `end.div`.
+Mayu uses [Rux](https://github.com/camertron/rux) provides a JSX-like syntax,
+so that you can write components like this:
 
-It looks like this:
-
-```ruby
-# stree-ignore
-render do
-  h.div do
-    h.h1 "Page title"
-    h.ul do
-      3.times do |i|
-        h.li "Item #{i + 1}"
-      end
-    end.ul
-  end.div
+```
+def render
+  <div>
+    <p>Current time: {Time.now.to_s}</p>
+  <div>
 end
 ```
-
-I don't know why I made it so that tags have to be closed.
-I had some idea about static typing and I don't like having
-waterfalls with `end` I guess.
-
-There is some funky stuff going on with scoping due to `instance_eval`
-and while it works reasonably well, it's not very comfortable to use.
-
-Ideally I would want to use [Rux](https://github.com/camertron/rux),
-however I encountered some parsing issues and I don't know how to
-fix them. Sometimes it would interpret indentation as space (` `)
-and I don't know how to patch the ruby plugin for treesitter to
-support this syntax. It would be pretty awesome though.
-
-A nice thing with JSX is that it separates markup and logic.
-You can look at a React component and you can distinguish elements
-from logic very easily because the syntax is different from regular
-JavaScript.
 
 # Implementation notes
 
@@ -304,8 +293,8 @@ of `VNode` objects. It can also have a component, in that case it would call
 the appropriate lifecycle methods of that component and pass its descriptors'
 props to the component before rendering.
 
-The child diffing algorithm is a little bit inefficient. I have tried several
-times to implement the algorithm in snabbdom/preact/million, but they rely
+The child diffing algorithm is quite inefficient. I have tried to implement
+the algorithm in snabbdom/preact/million several times, but they rely
 on DOM-operations for ordering (`node.insertBefore`) and the algorithm has
 to take care of that and make sure that the order is exactly the same in the
 VDOM as in the DOM after all patch operations have been applied.
@@ -315,24 +304,24 @@ room for improvement, but at least the order is correct.
 
 ## Server
 
-The server logic is located in `lib/mayu/server`.
-Look at the `build` method to find all the endpoints.
+### Development server
 
-All requests are routed to the `InitSession` rack app, and then they get
-a session id and a session token back as a HTTPOnly cookie, and then they
-will use this cookie to connect to the SSE-endpoint to receive updates.
+There is a development server that enables hot reloading.
 
-It also serves some static files.
+### Production server
 
-I would like to rewrite the server in Go and have it basically just deal
-with connections, and then it would communicate to Ruby processes over
-[NATS](https://nats.io/).
+The production server depends on the output from a build step that
+parses all inputs and generates static files.
+
+This way the server doesn't have to do
+much to start in production mode...
 
 ## Static typing
 
 Most files are strictly typed with [Sorbet](https://sorbet.org/).
-Some aren't strictly typed yet, but the goal is to have `# typed: strict`
-everywhere, even in components.
+
+Some aren't strictly typed yet, but the goal is to enable
+strict typechecking everywhere.
 
 # Contributing
 
