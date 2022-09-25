@@ -146,7 +146,7 @@ module Mayu
           .delete_prefix("/")
           .split("/")
           .map do |part|
-            if part.match(/\A\[(?<var>\w+)\]\Z/)
+            if part.match(/\A:(?<var>\w+)\Z/)
               var = Regexp.escape($~[:var])
               "(?<#{var}>[^/]+)"
             else
