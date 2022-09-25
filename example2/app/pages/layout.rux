@@ -1,4 +1,5 @@
 Header = require('../components/Layout/Header')
+Footer = require('../components/Layout/Footer')
 
 def render
   <html>
@@ -30,13 +31,7 @@ def render
         </section>
       </main>
 
-      <footer class={styles.footer}>
-        <p class={styles.maxWidth}>
-          <a href="https://github.com/mayu-live">
-            github.com/mayu-live
-          </a>
-        </p>
-      </footer>
+      <Footer class={styles.footer} max-width={styles.maxWidth} />
     </body>
   </html>
 end
