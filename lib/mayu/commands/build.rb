@@ -14,14 +14,18 @@ module Mayu
         Console
           .logger
           .measure("Building") do
-            registry = Mayu::Resources::Registry.new(root: configuration.root)
-            filename = "registry.bundle"
-            puts "\e[34m#{registry.mermaid_url}\e[0m"
+            environment = Environment.new(configuration)
+            resources = environment.resources
+
+            environment.routes.each { |route| p route }
+
+            filename = "app.mayu-bundle"
+            puts "\e[34m#{resources.mermaid_url}\e[0m"
             puts "\e[33mGenerate assets\e[0m"
-            registry.generate_assets(File.join(__dir__, "assets"))
+            resources.generate_assets(File.join(__dir__, "assets"))
 
             puts "\e[33mWrite #{filename}\e[0m"
-            File.write(filename, registry.dump)
+            File.write(filename, resources.dump)
           end
       end
     end
