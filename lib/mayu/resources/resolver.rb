@@ -111,10 +111,10 @@ module Mayu
             absolute_path_with_extension = absolute_path + extension
 
             if File.file?(absolute_path_with_extension)
-              puts "\e[1m#{absolute_path_with_extension}\e[0m"
+              puts "\e[1mFound #{absolute_path_with_extension}\e[0m"
               yield extension
             else
-              puts "\e[2m#{absolute_path_with_extension}\e[0m"
+              puts "\e[2mTried #{absolute_path_with_extension}\e[0m"
             end
           end
         end

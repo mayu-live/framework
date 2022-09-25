@@ -20,6 +20,11 @@ module Mayu
           []
         end
 
+        sig { returns(String) }
+        def name
+          self.class.name.to_s.sub(/.*::/, "")
+        end
+
         sig { params(assets_dir: String).returns(T::Array[Asset]) }
         def generate_assets(assets_dir)
           []
