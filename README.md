@@ -1,4 +1,9 @@
-# Mayu Live ![Ruby build status](https://github.com/mayu-live/framework/actions/workflows/ruby.yml/badge.svg) ![Node.js build status](https://github.com/mayu-live/framework/actions/workflows/node.js.yml/badge.svg)
+# Mayu Live
+
+![Ruby Workflow Status (branch)](https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby&style=flat-square)
+![Node Workflow Status (branch)](https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript&style=flat-square)
+![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/w/mayu-live/framework/rewrite-stuff?style=flat-square)
+[![License AGPL-3.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING)
 
 Mayu is a live streaming server side component-based
 VirtualDOM rendering framework written in Ruby.
