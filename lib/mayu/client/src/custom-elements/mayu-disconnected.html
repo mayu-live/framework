@@ -1,11 +1,52 @@
 <style>
+  @keyframes show-dialog {
+    0% {
+      opacity: 0;
+      scale: 0;
+    }
+    90% {
+      scale: 1.1;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  @keyframes hide-dialog {
+    from {
+      scale: 1;
+    }
+    to {
+      scale: 0;
+    }
+  }
+
+  @keyframes show-backdrop {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes hide-backdrop {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
   dialog {
     border: 3px solid #c00;
     border-radius: 3px;
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    translate: -50% -50%;
     margin: 0;
     background: #fff;
     padding: 0 1em;
@@ -15,13 +56,48 @@
     font-size: 1.2rem;
     user-select: none;
   }
+  dialog[open] {
+    animation-delay: 0s;
+    animation-duration: 300ms;
+    animation-iteration-count: 1;
+    animation-name: show-dialog;
+    animation-play-state: running;
+    animation-timing-function: ease;
+  }
+  dialog:not([open]) {
+    animation-delay: 0s;
+    animation-duration: 300ms;
+    animation-iteration-count: 1;
+    animation-name: hide-dialog;
+    animation-play-state: running;
+    animation-timing-function: ease;
+  }
+
   dialog::backdrop {
     backdrop-filter: brightness(50%) blur(5px);
   }
+  dialog[open]::backdrop {
+    animation-delay: 0s;
+    animation-duration: 300ms;
+    animation-iteration-count: 1;
+    animation-name: show-backdrop;
+    animation-play-state: running;
+    animation-timing-function: ease;
+  }
+  dialog:not([open])::backdrop {
+    animation-delay: 0s;
+    animation-duration: 300ms;
+    animation-iteration-count: 1;
+    animation-name: hide-backdrop;
+    animation-play-state: running;
+    animation-timing-function: ease;
+  }
+
   h1 {
     font-family: system-ui;
-    font-size: 1.6em;
+    font-size: 1.5em;
   }
+
   p {
     font-family: system-ui;
     font-size: 1em;
