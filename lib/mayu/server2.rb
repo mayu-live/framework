@@ -398,8 +398,7 @@ module Mayu
       ssl_context = dev_ssl_context(config.host)
 
       uri = config.uri
-      endpoint =
-        Async::HTTP::Endpoint.new(config, ssl_context:, reuse_port: true)
+      endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
 
       Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
 
