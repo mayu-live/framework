@@ -17,8 +17,11 @@ export default async function init(encryptedState: string) {
   );
 
   const disconnectedElement = document.createElement("mayu-disconnected");
+  const progressBar = document.body.appendChild(
+    document.createElement("mayu-progress-bar") as MayuProgressBar
+  );
 
-  window.Mayu = setupGlobalObject(sessionId);
+  window.Mayu = setupGlobalObject(sessionId, { progressBar });
 
   let isUnloading = false;
 
@@ -61,7 +64,7 @@ export default async function init(encryptedState: string) {
     const path = JSON.parse(e.data);
     console.log("Navigating to", path);
     history.pushState({}, "", path);
-    //  progressBar.setAttribute("progress", "100");
+    progressBar.setAttribute("progress", "100");
   });
 
   es.addEventListener("exception", (e) => {
@@ -148,13 +151,10 @@ async function navigateTo(sessionId: string, url: string) {
   });
 }
 
-function setupGlobalObject(sessionId: string) {
-  const progressBar = document.createElement(
-    "mayu-progress-bar"
-  ) as MayuProgressBar;
-
-  document.body.appendChild(progressBar);
-
+function setupGlobalObject(
+  sessionId: string,
+  { progressBar }: { progressBar: MayuProgressBar }
+) {
   return {
     async handle(e: Event, handlerId: string) {
       e.preventDefault();
@@ -180,14 +180,13 @@ function setupGlobalObject(sessionId: string) {
 
       clearTimeout(timeout);
 
-      if (didRun) {
-        progressBar.setAttribute("progress", "100");
-      }
+      progressBar.setAttribute("progress", "100");
     },
 
     async navigate(e: MouseEvent) {
       e.preventDefault();
       const url = new URL((e.target as HTMLAnchorElement).href);
+      progressBar.setAttribute("progress", "0");
       return navigateTo(sessionId, url.pathname + url.search);
     },
   };
