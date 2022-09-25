@@ -1,0 +1,11 @@
+def render
+  <footer class={"#{props[:class]} #{styles.footer}"}>
+    <div class={props[:max_width]}>
+      <p>
+        <a href="https://github.com/mayu-live">
+          github.com/mayu-live
+        </a>
+      </p>
+    </div>
+  </footer>
+end
