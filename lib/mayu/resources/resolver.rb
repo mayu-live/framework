@@ -31,6 +31,7 @@ module Mayu
         def initialize(paths)
           super()
           @resolved_paths = paths
+          # Console.logger.info(self, *@resolved_paths.map { "#{_1} => #{_2}" })
         end
 
         sig do
@@ -38,7 +39,7 @@ module Mayu
         end
         def resolve(path, source_dir = "/")
           relative_to_root = File.absolute_path(path, source_dir)
-          @resolved_paths[relative_to_root] || super
+          @resolved_paths[relative_to_root] || relative_to_root
         end
       end
 

@@ -107,5 +107,7 @@ module Mayu
     const :paths, PathsConfig, default: PathsConfig.new
 
     const :region, String, default: ENV.fetch("FLY_REGION", "dev")
+
+    const :bundle_filename, String, default: "app.mayu-bundle"
   end
 end
