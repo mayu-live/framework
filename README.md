@@ -1,4 +1,4 @@
-# Mayu Live
+# <img alt="Mayu Live" width="337" src="https://user-images.githubusercontent.com/41148/192179194-f44aed92-74a3-4b59-a25e-bf2a8d313796.png">
 
 ![Ruby Workflow Status (branch)](https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby&style=flat-square)
 ![Node Workflow Status (branch)](https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript&style=flat-square)
