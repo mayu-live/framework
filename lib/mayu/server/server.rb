@@ -1,25 +1,10 @@
 # typed: strict
+# frozen_string_literal: true
 
-require "bundler/setup"
-require "sorbet-runtime"
-require "async"
-require "async/container"
-require "async/http/server"
-require "async/http/endpoint"
-require "protocol/http/body/file"
-require "async/io/host_endpoint"
-require "async/io/shared_endpoint"
-require "async/io/ssl_endpoint"
-require "async/io/trap"
-require "localhost"
-require "mime/types"
-require_relative "environment"
-require_relative "session"
-require_relative "configuration"
-require_relative "colors"
+require_relative "sessions"
 
 module Mayu
-  module Server2
+  module Server
     class Server
       extend T::Sig
 
@@ -53,26 +38,24 @@ module Mayu
         end
       ResponseArray = T.type_alias { [Status, Headers, Body] }
 
-      class SessionNotFoundError < StandardError
-      end
-
       sig { returns(Environment) }
       attr_reader :environment
 
       sig { params(environment: Environment).void }
       def initialize(environment)
         @environment = environment
-        @sessions = T.let({}, T::Hash[String, Session])
+        @sessions = T.let(Sessions.new, Sessions)
+        @timeouts = T.let({}, T::Hash[String, Async::Task])
       end
 
       sig { void }
       def rerender
-        @sessions.values.each(&:rerender)
+        @sessions.rerender
       end
 
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
-        Console.logger.info(self) { "#{request.method} #{request.path}" }
+        # Console.logger.info(self) { "#{request.method} #{request.path}" }
 
         case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]
@@ -102,7 +85,7 @@ module Mayu
         else
           respond(status: 400, body: ["Invalid request"])
         end
-      rescue SessionNotFoundError => e
+      rescue Sessions::NotFoundError => e
         Console.logger.error(self, e)
         respond(status: 404, body: ["Session not found"])
       end
@@ -141,7 +124,7 @@ module Mayu
         dumped = @environment.message_cipher.load(request.read)
         session = Session.restore(environment:, dumped:)
 
-        @sessions[session_key(session.id, session.token)] = session
+        @sessions.add(session)
 
         headers = {
           "content-type" => "text/plain",
@@ -162,7 +145,7 @@ module Mayu
         ).returns(ResponseArray)
       end
       def handle_session_post(request, session_id, args)
-        session = fetch_session(session_id, get_session_token_cookie(request))
+        session = @sessions.fetch(session_id, get_session_token_cookie(request))
 
         case args
         in ["ping"]
@@ -185,35 +168,50 @@ module Mayu
         )
       end
       sig do
-        params(request: Protocol::HTTP::Request, session_id: String).returns(
-          ResponseArray
-        )
+        params(
+          request: Protocol::HTTP::Request,
+          session_id: String,
+          task: Async::Task
+        ).returns(ResponseArray)
       end
-      def handle_session_sse(request, session_id)
-        session = fetch_session(session_id, get_session_token_cookie(request))
+      def handle_session_sse(request, session_id, task: Async::Task.current)
+        session = @sessions.fetch(session_id, get_session_token_cookie(request))
         body = Async::HTTP::Body::Writable.new
 
         body.write("retry: #{@environment.config.sse_retry}\n\n")
 
-        session.run do |msg|
-          case msg
-          in [:init, data]
-            body.write(format_event(:init, data))
-          in [:patch, patches]
-            body.write(format_event(:patch, patches))
-          in [:exception, data]
-            body.write(format_event(:exception, data))
-          in [:pong, data]
-            body.write(
-              format_event(
-                :pong,
-                { timestamp: data, region: environment.config.region }
-              )
-            )
-          in [:navigate, data]
-            body.write(format_event(:navigate, data))
-          else
-            Console.logger.error(self, "Unhandled message: #{msg.inspect}")
+        task.async do
+          @timeouts.delete(session_id)&.stop
+
+          session
+            .run do |msg|
+              case msg
+              in [:init, data]
+                body.write(format_event(:init, data))
+              in [:patch, patches]
+                body.write(format_event(:patch, patches))
+              in [:exception, data]
+                body.write(format_event(:exception, data))
+              in [:pong, data]
+                body.write(
+                  format_event(
+                    :pong,
+                    { timestamp: data, region: environment.config.region }
+                  )
+                )
+              in [:navigate, data]
+                body.write(format_event(:navigate, data))
+              else
+                Console.logger.error(self, "Unknown message: #{msg.inspect}")
+              end
+            end
+            .wait
+        ensure
+          @timeouts[session.id] = task.async do
+            sleep 5
+            @sessions.delete(session.id, session.token)
+          ensure
+            @timeouts.delete(session.id)
           end
         end
 
@@ -249,21 +247,6 @@ module Mayu
       sig { params(event: Symbol, data: T.untyped).returns(String) }
       def format_event(event, data)
         "event: #{event}\ndata: #{JSON.generate(data)}\n\n"
-      end
-
-      sig { params(id: String, token: String).returns(Session) }
-      def fetch_session(id, token)
-        @sessions.fetch(session_key(id, token)) do
-          raise SessionNotFoundError,
-                "Session not found or invalid token: #{id}"
-        end
-      end
-
-      sig { params(session_id: String, token: String).returns(String) }
-      def session_key(session_id, token)
-        Digest::SHA256.digest(
-          Digest::SHA256.digest(session_id) + Digest::SHA256.digest(token)
-        )
       end
 
       sig { params(request: Protocol::HTTP::Request).returns(String) }
@@ -302,162 +285,6 @@ module Mayu
       def respond(status: 200, headers: {}, body: [""])
         [status, headers, body]
       end
-    end
-
-    class Controller < Async::Container::Controller
-      extend T::Sig
-
-      sig do
-        params(
-          config: Configuration,
-          endpoint: Async::HTTP::Endpoint,
-          options: T.untyped
-        ).void
-      end
-      def initialize(config:, endpoint:, **options)
-        super(**options)
-        @config = config
-        @debug_trap = T.let(Async::IO::Trap.new(:USR1), Async::IO::Trap)
-        @endpoint = endpoint
-        @bound_endpoint = T.let(nil, T.nilable(Async::IO::SharedEndpoint))
-      end
-
-      sig { void }
-      def start
-        @bound_endpoint =
-          Async { Async::IO::SharedEndpoint.bound(@endpoint) }.wait
-
-        Console.logger.info(self) { "Starting server on #{@endpoint.to_url}" }
-
-        @debug_trap.ignore!
-        super
-      end
-
-      sig { params(args: T.untyped).void }
-      def stop(*args)
-        Console.logger.warn("Stop", args)
-        @bound_endpoint&.close
-        @debug_trap.default!
-        super
-      end
-
-      sig do
-        params(container: Async::Container::Generic).returns(
-          Async::Container::Generic
-        )
-      end
-      def setup(container)
-        container.run(
-          name: self.class.name,
-          restart: true,
-          count: @config.num_processes
-        ) do |instance|
-          Async do |task|
-            task.async do
-              if @debug_trap.install!
-                Console
-                  .logger
-                  .info(instance) do
-                    "- Per-process status: kill -USR1 #{Process.pid}"
-                  end
-              end
-
-              @debug_trap.trap do
-                Console
-                  .logger
-                  .info(self) { |buffer| task.reactor.print_hierarchy(buffer) }
-              end
-            end
-
-            endpoint = @bound_endpoint or raise "@bound_endpoint is not set"
-
-            run_server(endpoint:)
-
-            instance.ready!
-            task.children.each(&:wait)
-
-            Console.logger.warn("Ending server")
-          end
-        end
-      end
-
-      sig { params(endpoint: Async::IO::SharedEndpoint).void }
-      def run_server(endpoint:)
-        environment = Mayu::Environment.new(@config)
-        server = Server.new(environment)
-
-        if @config.hot_swap
-          Console.logger.info("Starting hot swap")
-
-          environment.resources.start_hot_swap do
-            Console.logger.info(
-              self,
-              Colors.rainbow("Detected code changes, rerendering.")
-            )
-            server.rerender
-          end
-        end
-
-        Async::HTTP::Server
-          .for(
-            endpoint,
-            protocol: Async::HTTP::Protocol::HTTP2,
-            scheme: @config.scheme
-          ) { |request| Protocol::HTTP::Response[*server.call(request)] }
-          .run
-      end
-    end
-
-    extend T::Sig
-
-    sig { params(config: Configuration).void }
-    def self.start_dev(config)
-      ssl_context = dev_ssl_context(config.host)
-      uri = config.uri
-      endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
-
-      Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
-
-      Controller.new(config:, endpoint:).run
-    end
-
-    sig { params(config: Configuration).void }
-    def self.start_prod(config)
-      uri = config.uri
-      endpoint = Async::HTTP::Endpoint.new(uri, reuse_port: true)
-      # Use the following to start a production server for debugging:
-      # ssl_context = dev_ssl_context(config.host)
-      # uri = config.uri
-      # endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
-      Controller.new(config:, endpoint:).run
-    end
-
-    sig { params(host: String).returns(OpenSSL::SSL::SSLContext) }
-    def self.dev_ssl_context(host)
-      authority = Localhost::Authority.fetch(host)
-
-      authority.server_context.tap do |context|
-        context.alpn_select_cb = lambda { |_| "h2" }
-        lambda { |protocols| protocols.include?("h2") ? "h2" : nil }
-
-        context.alpn_protocols = ["h2"]
-        context.session_id_context = "mayu"
-      end
-    end
-
-    sig { params(config: Configuration).returns(URI) }
-    def self.uri_from_config(config)
-      URI.for(
-        config.scheme,
-        nil,
-        config.host,
-        config.port,
-        nil,
-        "/",
-        nil,
-        nil,
-        nil
-      ).normalize
     end
   end
 end
