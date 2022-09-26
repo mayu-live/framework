@@ -7,7 +7,7 @@ require_relative "vdom/descriptor"
 require_relative "state"
 
 class TestState < Minitest::Test
-  class MyComponent < Mayu::VDOM::Component::Base
+  class MyComponent < Mayu::Component::Base
   end
 
   State = Mayu::State

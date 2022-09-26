@@ -60,7 +60,7 @@ module Mayu
         container.run(
           name: self.class.name,
           restart: true,
-          count: @config.num_processes
+          count: @config.server.processes
         ) do |instance|
           Async do |task|
             PrometheusServer.setup(@config)
@@ -98,7 +98,7 @@ module Mayu
         environment = Mayu::Environment.new(@config)
         server = Server.new(environment)
 
-        if @config.hot_swap
+        if @config.server.hot_swap
           Console.logger.info("Starting hot swap")
 
           environment.resources.start_hot_swap do
@@ -114,7 +114,7 @@ module Mayu
           .for(
             endpoint,
             protocol: Async::HTTP::Protocol::HTTP2,
-            scheme: @config.scheme
+            scheme: @config.server.scheme
           ) { |request| Protocol::HTTP::Response[*server.call(request)] }
           .run
       end

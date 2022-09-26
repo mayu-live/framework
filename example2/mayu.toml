@@ -1,16 +1,17 @@
-[base]
-  secret_key = "asd"
-  hot_swap = false
+[dev]
+  secret_key = "dev"
 
-[env.dev]
-  port = 9292
-  host = "localhost"
-  hot_swap = true
-  scheme = "https"
+  [dev.server]
+    scheme = "https"
+    host = "localhost"
+    port = 9292
+    hot_swap = true
 
-[env.prod]
-  host = "0.0.0.0"
-  port = 3000
-  num_processes = 4
-  max_sessions = 10
-  scheme = "http"
+[prod]
+  [prod.server]
+    scheme = "https"
+    host = "0.0.0.0"
+    port = 3000
+    hot_swap = true
+    processes = 4
+    event_source_retry_ms = 1000

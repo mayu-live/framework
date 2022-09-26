@@ -40,7 +40,7 @@ module Mayu
 
       sig { params(payload: T.untyped).void }
       def call(payload)
-        @component.send(@name, payload, *@args, **@kwargs)
+        T.unsafe(@component).send(@name, payload, *@args, **@kwargs)
       end
 
       sig { returns(String) }

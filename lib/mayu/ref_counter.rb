@@ -17,21 +17,21 @@ module Mayu
       @refs.sort_by { _2 }.map(&:first)
     end
 
+    sig { params(key: Elem).void }
+    def acquire!(key)
+      @refs[key] = @refs[key].to_i + 1
+    end
+
     sig do
       type_parameters(:R)
-        .params(
-          key: Elem,
-          block: T.nilable(T.proc.returns(T.type_parameter(:R)))
-        )
+        .params(key: Elem, block: T.proc.returns(T.type_parameter(:R)))
         .returns(T.type_parameter(:R))
     end
     def acquire(key, &block)
-      @refs[key] += 1
-
-      return unless block_given?
+      acquire!(key)
 
       begin
-        return yield
+        yield
       ensure
         release(key)
       end
@@ -43,7 +43,7 @@ module Mayu
       return unless count
 
       if count > 1
-        @refs[key] = count
+        @refs[key] = count - 1
       else
         @refs.delete(key)
       end

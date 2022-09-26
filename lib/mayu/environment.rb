@@ -66,7 +66,7 @@ module Mayu
             Resources::Registry.new(root: @root)
           when :prod
             Resources::Registry.load(
-              File.read(@config.bundle_filename, encoding: "binary"),
+              File.read(@config.paths.bundle_filename, encoding: "binary"),
               root:
             )
           else
