@@ -167,7 +167,10 @@ module Mayu
         StringIO.new.tap { write_html(_1) }.tap(&:rewind).read
       end
 
-      Writable = T.type_alias { T.any(Async::HTTP::Body::Writable, StringIO) }
+      Writable =
+        T.type_alias do
+          T.any(Async::HTTP::Body::Writable, Brotli::Writer, StringIO)
+        end
 
       sig { params(io: Writable, opts: T.untyped).void }
       def write_html(io, **opts)
@@ -175,16 +178,16 @@ module Mayu
 
         case type
         when Descriptor::TEXT
-          io << CGI.escape_html(descriptor.text)
+          io.write(CGI.escape_html(descriptor.text))
           return
         when Descriptor::COMMENT
-          io << "<!--mayu-id=#{@id}-->"
+          io.write("<!--mayu-id=#{@id}-->")
           return
         when :__mayu_links
-          io << opts[:links].to_s
+          io.write(opts[:links].to_s)
           return
         when :__mayu_scripts
-          io << opts[:scripts].to_s
+          io.write(opts[:scripts].to_s)
           return
         end
 
@@ -195,24 +198,24 @@ module Mayu
           return
         end
 
-        io << "<#{type}"
+        io.write("<#{type}")
 
-        io << %< data-mayu-id="#{@id.to_s}">
+        io.write(%< data-mayu-id="#{@id.to_s}">)
 
-        format_props { |formatted_prop| io << formatted_prop }
+        format_props { |formatted_prop| io.write(formatted_prop) }
 
-        io << ">"
+        io.write(">")
 
         return if type.is_a?(Symbol) && Mayu::HTML.void_tag?(type)
 
         if dangerously_set_inner_html =
              props.dig(:dangerously_set_inner_html, :__html)
-          io << dangerously_set_inner_html
+          io.write(dangerously_set_inner_html)
         else
           cleaned_children.each { _1.write_html(io, **opts) }
         end
 
-        io << "</#{type}>"
+        io.write("</#{type}>")
       end
 
       sig do

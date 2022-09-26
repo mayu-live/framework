@@ -84,7 +84,7 @@ module Mayu
         in ["GET", ["__mayu", "static", filename]]
           @environment.resources.generate_assets(@environment.path(:assets))
 
-          accept_encodings = request.headers["accept_encoding"].to_s.split(", ")
+          accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
 
           send_static_file(
             File.join(
@@ -112,17 +112,24 @@ module Mayu
         session = Session.new(environment:, path: request.path)
         body = Async::HTTP::Body::Writable.new
 
-        session.initial_render(body) => { stylesheets: }
+        headers = { "content-type" => "text/html; charset=utf-8" }
 
-        links = [
+        accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
+
+        writer =
+          if accept_encodings.include?("br")
+            headers["content-encoding"] = "br"
+            Brotli::Writer.new(body)
+          else
+            body
+          end
+
+        session.initial_render(writer) => { stylesheets: }
+
+        headers["link"] = [
           "</__mayu/static/#{environment.init_js}>; rel=preload; as=script; crossorigin=anonymous; fetchpriority=high",
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
-
-        headers = {
-          "content-type" => "text/html; charset=utf-8",
-          "link" => links
-        }
 
         respond(status: 200, headers:, body:)
       end

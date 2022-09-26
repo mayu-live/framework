@@ -69,8 +69,11 @@ module Mayu
       @app = T.let(environment.load_root(path), VDOM::Descriptor)
     end
 
+    Writable =
+      T.type_alias { T.any(Async::HTTP::Body::Writable, Brotli::Writer) }
+
     sig do
-      params(body: Async::HTTP::Body::Writable, task: Async::Task).returns(
+      params(body: Writable, task: Async::Task).returns(
         { stylesheets: T::Array[String] }
       )
     end
