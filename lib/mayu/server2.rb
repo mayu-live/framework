@@ -93,6 +93,8 @@ module Mayu
             ),
             accept_encodings:
           )
+        in ["GET", ["favicon.ico"]]
+          respond(status: 404, body: ["no favicon"])
         in ["GET", _path]
           handle_init_session(request)
         else
@@ -371,14 +373,16 @@ module Mayu
         environment = Mayu::Environment.new(@config)
         server = Server.new(environment)
 
-        Console.logger.info("Starting hot swap")
+        if @config.hot_swap
+          Console.logger.info("Starting hot swap")
 
-        environment.resources.start_hot_swap do
-          Console.logger.info(
-            self,
-            Colors.rainbow("Detected code changes, rerendering.")
-          )
-          server.rerender
+          environment.resources.start_hot_swap do
+            Console.logger.info(
+              self,
+              Colors.rainbow("Detected code changes, rerendering.")
+            )
+            server.rerender
+          end
         end
 
         Async::HTTP::Server
@@ -396,7 +400,6 @@ module Mayu
     sig { params(config: Configuration).void }
     def self.start_dev(config)
       ssl_context = dev_ssl_context(config.host)
-
       uri = config.uri
       endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
 
@@ -409,6 +412,10 @@ module Mayu
     def self.start_prod(config)
       uri = config.uri
       endpoint = Async::HTTP::Endpoint.new(uri, reuse_port: true)
+      # Use the following to start a production server for debugging:
+      # ssl_context = dev_ssl_context(config.host)
+      # uri = config.uri
+      # endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
       Controller.new(config:, endpoint:).run
     end
 

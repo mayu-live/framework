@@ -46,7 +46,7 @@ module Mayu
       @message_cipher =
         T.let(MessageCipher.new(key: config.secret_key), MessageCipher)
       # TODO: Reload routes when things change in /pages...
-      # probably have to set up an async task...
+      # Should probably make routes into a resource type.
       @routes =
         T.let(
           Routes.build_routes(File.join(@app_root, PAGES_DIR)),
@@ -59,7 +59,17 @@ module Mayu
         )
       @resources =
         T.let(
-          Resources::Registry.new(root: @root), #,, enable_code_reloader: hot_reload),
+          case @config.mode
+          when :dev
+            Resources::Registry.new(root: @root)
+          when :prod
+            Resources::Registry.load(
+              File.read(@config.bundle_filename, encoding: "binary"),
+              root:
+            )
+          else
+            raise
+          end,
           Resources::Registry
         )
       @prometheus_registry =
