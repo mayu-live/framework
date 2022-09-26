@@ -29,16 +29,6 @@ module Mayu
     module Middleware
       class Exporter < Prometheus::Middleware::Exporter
       end
-
-      class Collector < Prometheus::Middleware::Collector
-        extend T::Sig
-
-        sig { params(path: String).returns(String) }
-        def strip_ids_from_path(path)
-          # Strip sha256 hashes
-          super.gsub(%r{/[[:xdigit:]]{64}(?=\.|/|$)}, '/:hash\\1')
-        end
-      end
     end
   end
 end

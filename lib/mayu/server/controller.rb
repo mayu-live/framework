@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require_relative "server"
+require_relative "prometheus_server"
 
 module Mayu
   module Server
@@ -48,12 +49,22 @@ module Mayu
         )
       end
       def setup(container)
+        if @config.metrics.enabled
+          container.async do
+            PrometheusServer.setup(@config)
+            Metrics.new(config: @config)
+            PrometheusServer.start(@config)
+          end
+        end
+
         container.run(
           name: self.class.name,
           restart: true,
           count: @config.num_processes
         ) do |instance|
           Async do |task|
+            PrometheusServer.setup(@config)
+
             task.async do
               if @debug_trap.install!
                 Console

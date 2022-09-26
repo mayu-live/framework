@@ -37,6 +37,8 @@ module Mayu
     attr_reader :fetch
     sig { returns(MessageCipher) }
     attr_reader :message_cipher
+    sig { returns(Metrics) }
+    attr_reader :metrics
 
     sig { params(config: Configuration).void }
     def initialize(config)
@@ -74,6 +76,8 @@ module Mayu
         )
       @prometheus_registry =
         T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
+      @metrics =
+        T.let(Metrics.new(config:, prometheus: @prometheus_registry), Metrics)
       @fetch = T.let(Fetch.new, Fetch)
       @init_js = T.let(nil, T.nilable(String))
     end
