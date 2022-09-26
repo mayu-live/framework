@@ -98,16 +98,15 @@ module Mayu
 
     const :host, String, default: "0.0.0.0"
     const :port, Integer, default: 3000
+    const :region, String, default: ENV.fetch("FLY_REGION", "dev")
 
     const :num_processes, Integer, default: 1
     const :max_sessions, Integer, default: 50
+    const :sse_retry, Integer, default: 1000
 
     const :hot_swap, T::Boolean, default: false
 
     const :paths, PathsConfig, default: PathsConfig.new
-
-    const :region, String, default: ENV.fetch("FLY_REGION", "dev")
-
     const :bundle_filename, String, default: "app.mayu-bundle"
   end
 end

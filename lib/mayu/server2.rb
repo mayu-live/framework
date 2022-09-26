@@ -95,6 +95,8 @@ module Mayu
           )
         in ["GET", ["favicon.ico"]]
           respond(status: 404, body: ["no favicon"])
+        in ["GET", ["__mayu.serviceWorker.js"]]
+          respond(status: 404, body: ["no service worker"])
         in ["GET", _path]
           handle_init_session(request)
         else
@@ -191,7 +193,7 @@ module Mayu
         session = fetch_session(session_id, get_session_token_cookie(request))
         body = Async::HTTP::Body::Writable.new
 
-        body.write("retry: 1000\n\n")
+        body.write("retry: #{@environment.config.sse_retry}\n\n")
 
         session.run do |msg|
           case msg
