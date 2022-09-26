@@ -6,32 +6,15 @@ gemspec
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
 
-gem "pry"
-
-gem "rake"
-gem "rux"
-gem "crass"
-gem "toml-rb"
-gem "prometheus-client"
-
-gem "sorbet-runtime"
-gem "async-http"
-gem "nanoid"
-
 group :development do
   gem "guard", require: false
-  gem "guard-falcon", require: false
-  gem "sorbet", require: false
-  gem "tapioca", require: false
-  gem "prettier", require: false
-  gem "rack-test", require: false
-  gem "minitest", require: false
-  gem "rexml", require: false
-  gem "minitest-reporters", require: false
   gem "localhost", require: false
   gem "matrix", require: false
+  gem "minitest", require: false
+  gem "minitest-reporters", require: false
+  gem "prettier", require: false
+  gem "rexml", require: false
   gem "ruby-prof", require: false
+  gem "sorbet", require: false
+  gem "tapioca", require: false
 end
-
-gem "mime-types"
-gem "image_size"

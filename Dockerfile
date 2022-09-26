@@ -22,38 +22,59 @@ FROM base as build
 
 ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils nodejs npm
 
-RUN --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
+RUN \
+    --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
     --mount=type=cache,id=dev-apt-lib,sharing=locked,target=/var/lib/apt \
     apt-get update -qq && \
-    apt-get install --no-install-recommends -y ${DEV_PACKAGES} \
-    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    apt-get install --no-install-recommends -y ${DEV_PACKAGES} && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 RUN gem install -N bundler -v ${BUNDLER_VERSION}
 
-COPY Gemfile* ./
-RUN bundle install && rm -rf vendor/bundle/ruby/*/cache
+COPY mayu-live.gemspec Gemfile* ./
+COPY lib/mayu/version.rb /app/lib/mayu/version.rb
+RUN bundle && rm -rf vendor/bundle/ruby/*/cache
 
 COPY . .
 
-RUN cd lib/mayu/client && npm install && npm run build:production && rm -r node_modules
+# RUN rake build
+RUN \
+    cd lib/mayu/client && \
+    npm install && \
+    npm run build:production && \
+    rm -r node_modules
+RUN gem build
+RUN \
+    mkdir -p example2/vendor/cache && \
+    cp mayu-live-*.gem example2/vendor/cache
+
+RUN \
+    mkdir -p example2/vendor/mayu && \
+    cp lib/mayu/client/dist/live.js example2/vendor/mayu/live.js
+
+RUN \
+    cd example2 && \
+    bundle && \
+    rm -rf vendor/bundle/ruby/*/cache && \
+    bin/mayu build
 
 #######################################################
 
 FROM base
 
-ENV PACKAGES postgresql-client file vim curl gzip
-
-RUN --mount=type=cache,id=prod-apt-cache,sharing=locked,target=/var/cache/apt \
-    --mount=type=cache,id=prod-apt-lib,sharing=locked,target=/var/lib/apt \
-    apt-get update -qq && \
-    apt-get install --no-install-recommends -y \
-    ${PACKAGES} \
-    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+# ENV PACKAGES postgresql-client file vim curl gzip
+#
+# RUN --mount=type=cache,id=prod-apt-cache,sharing=locked,target=/var/cache/apt \
+#     --mount=type=cache,id=prod-apt-lib,sharing=locked,target=/var/lib/apt \
+#     apt-get update -qq && \
+#     apt-get install --no-install-recommends -y \
+#     ${PACKAGES} && \
+#     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 COPY --from=build /app /app
 
 ENV PORT 3000
 
-WORKDIR /app/example
+WORKDIR /app/example2
 
-CMD ["bundle", "exec", "falcon", "host"]
+CMD ["bin/mayu", "serve"]

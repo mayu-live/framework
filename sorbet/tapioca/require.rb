@@ -1,7 +1,7 @@
 # typed: true
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'vendor', 'patches'))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
 
 require "async/clock"
 require "async/container"
@@ -52,8 +52,8 @@ require "rake/clean"
 require "rake/dsl_definition"
 require "rake/tasklib"
 require "uri"
-require 'prometheus/middleware/collector'
-require 'prometheus/middleware/exporter'
+require "prometheus/middleware/collector"
+require "prometheus/middleware/exporter"
 require "mime/types"
 require "terminal-table"
 require "listen"
