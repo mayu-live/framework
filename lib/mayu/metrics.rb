@@ -20,9 +20,9 @@ module Mayu
     end
     def initialize(config:, prometheus: Prometheus::Client.registry)
       preset_labels = {
-        region: config.region,
-        alloc_id: config.alloc_id,
-        app_name: config.app_name
+        region: config.instance.region,
+        alloc_id: config.instance.alloc_id,
+        app_name: config.instance.app_name
       }
 
       @session_heartbeats =

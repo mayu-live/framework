@@ -402,7 +402,9 @@ module Mayu
       sig { params(ctx: UpdateContext, component: Component::Wrapper).void }
       def update_stylesheet(ctx, component)
         if stylesheet = component.stylesheet
-          stylesheet.assets.each { |asset| @asset_refs.acquire(asset.filename) }
+          stylesheet.assets.each do |asset|
+            @asset_refs.acquire!(asset.filename)
+          end
         end
 
         # TODO: Make this more generic..
@@ -601,7 +603,7 @@ module Mayu
         new_handlers = new_props.keys.select { _1.start_with?("on_") }
 
         # FIXME: If the same handler id is used somewhere else,
-        # it will be cleared too.
+        # it will be cleared too. Use RefCounter
         removed_handlers = old_handlers - new_handlers
 
         old_props

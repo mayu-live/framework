@@ -22,7 +22,7 @@ module Mayu
       const :template, String
     end
 
-    EXTENSIONS = %w[.rb .rux]
+    EXTENSIONS = T.let(%w[.rb .rux].freeze, T::Array[String])
 
     PAGE_FILENAME = "page"
     LAYOUT_FILENAME = "layout"

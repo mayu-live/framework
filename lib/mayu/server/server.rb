@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require_relative "sessions"
+require "protocol/http/body/file"
 
 module Mayu
   module Server
@@ -184,7 +185,9 @@ module Mayu
         session = @sessions.fetch(session_id, get_session_token_cookie(request))
         body = Async::HTTP::Body::Writable.new
 
-        body.write("retry: #{@environment.config.sse_retry}\n\n")
+        body.write(
+          "retry: #{@environment.config.server.event_source_retry_ms}\n\n"
+        )
 
         task.async do
           @timeouts.delete(session_id)&.stop
@@ -202,7 +205,10 @@ module Mayu
                 body.write(
                   format_event(
                     :pong,
-                    { timestamp: data, region: environment.config.region }
+                    {
+                      timestamp: data,
+                      region: environment.config.instance.region
+                    }
                   )
                 )
               in [:navigate, data]

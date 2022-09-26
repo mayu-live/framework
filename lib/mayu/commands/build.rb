@@ -51,7 +51,7 @@ module Mayu
             puts "\e[33mGenerate assets\e[0m"
             resources.generate_assets(assets_dir)
 
-            filename = configuration.bundle_filename
+            filename = configuration.paths.bundle_filename
             puts "\e[33mWrite #{filename}\e[0m"
             File.write(filename, resources.dump)
           end

@@ -96,22 +96,24 @@ module Mayu
       end
     end
 
+    sig { params(input: String).returns(String) }
     def prepend_hmac(input)
       hmac = Digest::SHA256.digest(input)
       input.prepend(hmac)
     end
 
+    sig { params(input: String).returns(String) }
     def validate_hmac(input)
       hmac, message = input.unpack("a32 a*")
 
       unless OpenSSL.fixed_length_secure_compare(
                hmac,
-               Digest::SHA256.digest(message)
+               Digest::SHA256.digest(message.to_s)
              )
         raise InvalidHMACError
       end
 
-      message
+      message.to_s
     end
 
     sig { params(message: { iss: Float, exp: Float, payload: String }).void }

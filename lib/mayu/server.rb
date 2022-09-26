@@ -25,8 +25,8 @@ module Mayu
 
     sig { params(config: Configuration).void }
     def self.start_dev(config)
-      ssl_context = dev_ssl_context(config.host)
-      uri = config.uri
+      ssl_context = dev_ssl_context(config.server.host)
+      uri = config.server.uri
       endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
 
       Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
@@ -36,7 +36,7 @@ module Mayu
 
     sig { params(config: Configuration).void }
     def self.start_prod(config)
-      uri = config.uri
+      uri = config.server.uri
       endpoint = Async::HTTP::Endpoint.new(uri, reuse_port: true)
       # Use the following to start a production server for debugging:
       # ssl_context = dev_ssl_context(config.host)
@@ -56,21 +56,6 @@ module Mayu
         context.alpn_protocols = ["h2"]
         context.session_id_context = "mayu"
       end
-    end
-
-    sig { params(config: Configuration).returns(URI) }
-    def self.uri_from_config(config)
-      URI.for(
-        config.scheme,
-        nil,
-        config.host,
-        config.port,
-        nil,
-        "/",
-        nil,
-        nil,
-        nil
-      ).normalize
     end
   end
 end

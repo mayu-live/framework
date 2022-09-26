@@ -12,17 +12,15 @@ require_relative "../session"
 class TestVTree < Minitest::Test
   include Mayu::VDOM::H
 
-  class MyComponent < Mayu::VDOM::Component::Base
+  class MyComponent < Mayu::Component::Base
     include Mayu::VDOM::H
 
     def render
       @lol ||= rand
-      h
-        .div do
-          h.h1 "Hola mundo#{@lol}"
-          h.h2 "Hello world"
-        end
-        .div
+      h.div do
+        h.h1 "Hola mundo#{@lol}"
+        h.h2 "Hello world"
+      end
     end
   end
 
@@ -31,12 +29,10 @@ class TestVTree < Minitest::Test
       vtree = setup_vtree
 
       vtree.render(
-        h
-          .div do
-            h.h1 "Title"
-            h[MyComponent]
-          end
-          .div
+        h.div do
+          h.h1 "Title"
+          h[MyComponent]
+        end
       )
 
       vtree.to_html.tap { |html| print_xml(html) }
@@ -44,14 +40,12 @@ class TestVTree < Minitest::Test
       puts
 
       vtree.render(
-        h
-          .div do
-            h.h1 "Title"
-            h[MyComponent]
-            h.div "foo"
-            h[MyComponent]
-          end
-          .div
+        h.div do
+          h.h1 "Title"
+          h[MyComponent]
+          h.div "foo"
+          h[MyComponent]
+        end
       )
 
       vtree.to_html.tap { |html| print_xml(html) }
@@ -72,13 +66,11 @@ class TestVTree < Minitest::Test
 
       number_lists.each do |numbers|
         vtree.render(
-          h
-            .div do
-              h.h1 "Hola mundo"
-              h.h2 "Hello world"
-              h.ul { numbers.each { |num| h.li num, key: num } }.ul
-            end
-            .div
+          h.div do
+            h.h1 "Hola mundo"
+            h.h2 "Hello world"
+            h.ul { numbers.each { |num| h.li num, key: num } }
+          end
         )
 
         html = vtree.to_html
@@ -93,7 +85,8 @@ class TestVTree < Minitest::Test
   private
 
   def setup_vtree
-    environment = Mayu::Environment.new(region: "test", root: "")
+    config = Mayu::Configuration.from_hash!({})
+    environment = Mayu::Environment.new(config)
 
     environment.instance_eval do
       def load_root(path)
