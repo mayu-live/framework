@@ -70,7 +70,11 @@ module Mayu
                 "#{str}-#{hash}"
               end
 
-          @source = T.let(source.freeze, String)
+          @source =
+            T.let(
+              source.to_s.prepend("/* #{resource.path} */\n").freeze,
+              String
+            )
           @classes = T.let(klasses.freeze, T::Hash[String, String])
         end
 
