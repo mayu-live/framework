@@ -47,6 +47,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "msgpack", "~> 1.5.5"
   spec.add_dependency "nanoid", "~> 2.0.0"
   spec.add_dependency "prometheus-client", "~> 4.0.0"
+  spec.add_dependency "protocol-http", "~> 0.23.12"
   spec.add_dependency "pry", "~> 0.14.0"
   spec.add_dependency "rack", "~> 3.0.0"
   spec.add_dependency "rake", "~> 13.0.6"

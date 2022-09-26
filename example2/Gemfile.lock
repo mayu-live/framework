@@ -14,6 +14,7 @@ PATH
       msgpack (~> 1.5.5)
       nanoid (~> 2.0.0)
       prometheus-client (~> 4.0.0)
+      protocol-http (~> 0.23.12)
       pry (~> 0.14.0)
       rack (~> 3.0.0)
       rake (~> 13.0.6)
