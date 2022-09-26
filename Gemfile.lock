@@ -5,6 +5,7 @@ PATH
       async (~> 2.0.3)
       async-container (~> 0.16.12)
       async-http (~> 0.59.1)
+      brotli (~> 0.4.0)
       crass (~> 1.0.6)
       image_size (~> 3.1.0)
       listen (~> 3.7.1)
@@ -14,7 +15,7 @@ PATH
       nanoid (~> 2.0.0)
       prometheus-client (~> 4.0.0)
       pry (~> 0.14.0)
-      rack-brotli (~> 1.2.0)
+      rack (~> 3.0.0)
       rake (~> 13.0.6)
       rux (~> 1.0.3)
       sorbet-runtime (~> 0.5.10148)
@@ -33,7 +34,7 @@ GEM
     async-container (0.16.12)
       async
       async-io
-    async-http (0.59.1)
+    async-http (0.59.2)
       async (>= 1.25)
       async-io (>= 1.28)
       async-pool (>= 0.2)
@@ -41,14 +42,11 @@ GEM
       protocol-http1 (~> 0.14.0)
       protocol-http2 (~> 0.14.0)
       traces (>= 0.4.0)
-    async-http-cache (0.4.3)
-      async-http (~> 0.56)
-    async-io (1.33.0)
+    async-io (1.34.0)
       async
-    async-pool (0.3.11)
+    async-pool (0.3.12)
       async (>= 1.25)
     brotli (0.4.0)
-    build-environment (1.13.0)
     builder (3.2.4)
     citrus (3.0.2)
     coderay (1.1.3)
@@ -56,19 +54,6 @@ GEM
       fiber-local
     crass (1.0.6)
     diff-lcs (1.5.0)
-    falcon (0.42.2)
-      async
-      async-container (~> 0.16.0)
-      async-http (~> 0.57)
-      async-http-cache (~> 0.4.0)
-      async-io (~> 1.22)
-      build-environment (~> 1.13)
-      bundler
-      localhost (~> 1.1)
-      openssl (~> 3.0)
-      process-metrics (~> 0.2.0)
-      protocol-rack (~> 0.1.4)
-      samovar (~> 2.1)
     ffi (1.15.5)
     fiber-local (1.0.0)
     formatador (1.1.0)
@@ -81,15 +66,9 @@ GEM
       pry (>= 0.13.0)
       shellany (~> 0.0)
       thor (>= 0.18.1)
-    guard-compat (1.2.1)
-    guard-falcon (0.13.1)
-      async-container (~> 0.16)
-      console (~> 1.0)
-      falcon (~> 0.35)
-      guard
-      guard-compat (~> 1.2)
-    haml (5.2.2)
-      temple (>= 0.8.0)
+    haml (6.0.1)
+      temple (>= 0.8.2)
+      thor
       tilt
     image_size (3.1.0)
     io-event (1.0.9)
@@ -98,7 +77,6 @@ GEM
       rb-inotify (~> 0.9, >= 0.9.10)
     localhost (1.1.9)
     lumberjack (1.2.8)
-    mapping (1.1.1)
     matrix (0.4.2)
     method_source (1.0.0)
     mime-types (3.4.1)
@@ -117,40 +95,28 @@ GEM
     notiffany (0.1.3)
       nenv (~> 0.1)
       shellany (~> 0.0)
-    openssl (3.0.0)
     parallel (1.22.1)
     parser (3.1.2.1)
       ast (~> 2.4.1)
-    prettier (3.2.0)
+    prettier (3.2.2)
       syntax_tree (>= 2.7.1)
       syntax_tree-haml (>= 1.1.0)
       syntax_tree-rbs (>= 0.2.0)
     prettier_print (0.1.0)
-    process-metrics (0.2.1)
-      console (~> 1.8)
-      samovar (~> 2.1)
     prometheus-client (4.0.0)
     protocol-hpack (1.4.2)
-    protocol-http (0.23.5)
-    protocol-http1 (0.14.4)
+    protocol-http (0.23.12)
+    protocol-http1 (0.14.6)
       protocol-http (~> 0.22)
     protocol-http2 (0.14.2)
       protocol-hpack (~> 1.4)
       protocol-http (~> 0.18)
-    protocol-rack (0.1.6)
-      protocol-http (~> 0.23.4)
-      rack (>= 1.0)
     pry (0.14.1)
       coderay (~> 1.1)
       method_source (~> 1.0)
-    rack (2.2.4)
-    rack-brotli (1.2.0)
-      brotli (>= 0.1.7)
-      rack (>= 1.4)
-    rack-test (2.0.2)
-      rack (>= 1.3)
+    rack (3.0.0)
     rake (13.0.6)
-    rb-fsevent (0.11.1)
+    rb-fsevent (0.11.2)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
     rbi (0.0.15)
@@ -165,32 +131,29 @@ GEM
     rux (1.0.3)
       parser (~> 3.0)
       unparser (~> 0.6)
-    samovar (2.1.4)
-      console (~> 1.0)
-      mapping (~> 1.0)
     shellany (0.0.1)
-    sorbet (0.5.10346)
-      sorbet-static (= 0.5.10346)
-    sorbet-runtime (0.5.10346)
-    sorbet-static (0.5.10346-universal-darwin-20)
-    sorbet-static-and-runtime (0.5.10346)
-      sorbet (= 0.5.10346)
-      sorbet-runtime (= 0.5.10346)
+    sorbet (0.5.10456)
+      sorbet-static (= 0.5.10456)
+    sorbet-runtime (0.5.10456)
+    sorbet-static (0.5.10456-universal-darwin-20)
+    sorbet-static-and-runtime (0.5.10456)
+      sorbet (= 0.5.10456)
+      sorbet-runtime (= 0.5.10456)
     spoom (1.1.12)
       sorbet (>= 0.5.9204)
       sorbet-runtime (>= 0.5.9204)
       thor (>= 0.19.2)
-    syntax_tree (3.4.0)
+    syntax_tree (3.6.0)
       prettier_print
-    syntax_tree-haml (1.3.1)
+    syntax_tree-haml (1.3.2)
       haml (>= 5.2)
       prettier_print
       syntax_tree (>= 2.0.1)
-    syntax_tree-rbs (0.5.0)
+    syntax_tree-rbs (0.5.1)
       prettier_print
       rbs
       syntax_tree (>= 2.0.1)
-    tapioca (0.9.4)
+    tapioca (0.10.1)
       bundler (>= 1.17.3)
       netrc (>= 0.11.0)
       parallel (>= 1.21.0)
@@ -205,18 +168,18 @@ GEM
       unicode-display_width (>= 1.1.1, < 3)
     thor (1.2.1)
     tilt (2.0.11)
-    timers (4.3.3)
+    timers (4.3.4)
     toml-rb (2.2.0)
       citrus (~> 3.0, > 3.0)
-    traces (0.6.1)
-    unicode-display_width (2.2.0)
+    traces (0.7.0)
+    unicode-display_width (2.3.0)
     unparser (0.6.5)
       diff-lcs (~> 1.3)
       parser (>= 3.1.0)
     webrick (1.7.0)
     yard (0.9.28)
       webrick (~> 1.7.0)
-    yard-sorbet (0.6.1)
+    yard-sorbet (0.7.0)
       sorbet-runtime (>= 0.5)
       yard (>= 0.9)
 
@@ -224,30 +187,17 @@ PLATFORMS
   x86_64-darwin-20
 
 DEPENDENCIES
-  async-http
-  crass
   guard
-  guard-falcon
-  image_size
   localhost
   matrix
   mayu-live!
-  mime-types
   minitest
   minitest-reporters
-  nanoid
   prettier
-  prometheus-client
-  pry
-  rack-test
-  rake
   rexml
   ruby-prof
-  rux
   sorbet
-  sorbet-runtime
   tapioca
-  toml-rb
 
 BUNDLED WITH
-   2.3.11
+   2.3.7

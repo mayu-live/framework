@@ -1,6 +1,10 @@
 Dockerfile
 vendor/bundle
+example/vendor
+example2/vendor
 lib/mayu/client/dist
 .git
 supervisor.ipc
 node_modules
+example/tmp
+*.gem
