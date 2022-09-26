@@ -6,14 +6,25 @@ module Mayu
       class Head < Component::Base
         sig { override.returns(T.nilable(VDOM::Descriptor)) }
         def render
-          h.create_element(:__mayu_head, [children].flatten.compact, props)
+          h.create_element(
+            :__mayu_head,
+            [children, h.create_element(:__mayu_links, [], {})].flatten.compact,
+            **props
+          )
         end
       end
 
       class Body < Component::Base
         sig { override.returns(T.nilable(VDOM::Descriptor)) }
         def render
-          h.create_element(:__mayu_body, [children].flatten.compact, **props)
+          h.create_element(
+            :__mayu_body,
+            [
+              children,
+              h.create_element(:__mayu_scripts, [], {})
+            ].flatten.compact,
+            **props
+          )
         end
       end
 
