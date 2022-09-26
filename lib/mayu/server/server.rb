@@ -55,8 +55,6 @@ module Mayu
 
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def call(request)
-        # Console.logger.info(self) { "#{request.method} #{request.path}" }
-
         case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]
           handle_resume_session(request)
@@ -83,6 +81,11 @@ module Mayu
         in ["GET", _path]
           handle_init_session(request)
         else
+          Console
+            .logger
+            .error(self) do
+              "Invalid request: #{request.method} #{request.path}"
+            end
           respond(status: 400, body: ["Invalid request"])
         end
       rescue Sessions::NotFoundError => e
@@ -94,6 +97,7 @@ module Mayu
 
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def handle_init_session(request)
+        Console.logger.info(self) { "Init session: #{request.path}" }
         session = Session.new(environment:, path: request.path)
         body = Async::HTTP::Body::Writable.new
 
@@ -208,7 +212,9 @@ module Mayu
             .wait
         ensure
           @timeouts[session.id] = task.async do
+            Console.logger.warn(self, "Disconnected: #{session.id}")
             sleep 5
+            Console.logger.warn(self, "Timed out: #{session.id}")
             @sessions.delete(session.id, session.token)
           ensure
             @timeouts.delete(session.id)
