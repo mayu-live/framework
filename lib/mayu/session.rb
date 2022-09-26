@@ -69,8 +69,12 @@ module Mayu
       @app = T.let(environment.load_root(path), VDOM::Descriptor)
     end
 
-    sig { returns({ html: String, stylesheets: T::Array[String] }) }
-    def initial_render
+    sig do
+      params(body: Async::HTTP::Body::Writable, task: Async::Task).returns(
+        { stylesheets: T::Array[String] }
+      )
+    end
+    def initial_render(body, task: Async::Task.current)
       @vtree.render(@app, lifecycles: false)
 
       root = @vtree.root or raise "There is no root"
@@ -89,22 +93,24 @@ module Mayu
           Marshal.dump(SerializedSession.new(marshal_dump))
         )
 
-      head = [
+      links = [
         %{<script type="module" src="/__mayu/static/#{environment.init_js}" crossorigin="anonymous"></script>},
         *stylesheets.map do |stylesheet|
           %{<link rel="stylesheet" href="#{stylesheet}">}
         end
       ].join
 
-      tail = %{<template id="mayu-init">#{encrypted_session}</template>}
+      scripts = %{<template id="mayu-init">#{encrypted_session}</template>}
+      body.write("<!doctype html>\n")
 
-      html =
-        html
-          .sub(%r{</head>}) { "#{head}#{_1}" }
-          .sub(%r{\K</body>}) { "#{tail}#{_1}" }
-          .prepend("<!doctype html>\n")
+      task.async do
+        @vtree.root&.write_html(body, links:, scripts:)
+        body.close
+      rescue => e
+        p e
+      end
 
-      { html:, stylesheets: }
+      { stylesheets: }
     end
 
     sig { returns(T::Array[T.untyped]) }

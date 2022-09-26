@@ -167,8 +167,10 @@ module Mayu
         StringIO.new.tap { write_html(_1) }.tap(&:rewind).read
       end
 
-      sig { params(io: StringIO).void }
-      def write_html(io)
+      Writable = T.type_alias { T.any(Async::HTTP::Body::Writable, StringIO) }
+
+      sig { params(io: Writable, opts: T.untyped).void }
+      def write_html(io, **opts)
         type = descriptor.type
 
         case type
@@ -178,12 +180,18 @@ module Mayu
         when Descriptor::COMMENT
           io << "<!--mayu-id=#{@id}-->"
           return
+        when :__mayu_links
+          io << opts[:links].to_s
+          return
+        when :__mayu_scripts
+          io << opts[:scripts].to_s
+          return
         end
 
         cleaned_children = children
 
         if descriptor.component?
-          cleaned_children.each { _1.write_html(io) }
+          cleaned_children.each { _1.write_html(io, **opts) }
           return
         end
 
@@ -201,7 +209,7 @@ module Mayu
              props.dig(:dangerously_set_inner_html, :__html)
           io << dangerously_set_inner_html
         else
-          cleaned_children.each { _1.write_html(io) }
+          cleaned_children.each { _1.write_html(io, **opts) }
         end
 
         io << "</#{type}>"

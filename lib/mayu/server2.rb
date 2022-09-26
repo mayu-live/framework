@@ -110,17 +110,21 @@ module Mayu
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
       def handle_init_session(request)
         session = Session.new(environment:, path: request.path)
-        session.initial_render => { html:, stylesheets: }
+        body = Async::HTTP::Body::Writable.new
+
+        session.initial_render(body) => { stylesheets: }
 
         links = [
           "</__mayu/static/#{environment.init_js}>; rel=preload; as=script; crossorigin=anonymous; fetchpriority=high",
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
+
         headers = {
           "content-type" => "text/html; charset=utf-8",
           "link" => links
         }
-        respond(status: 200, body: [html], headers:)
+
+        respond(status: 200, headers:, body:)
       end
 
       sig { params(request: Protocol::HTTP::Request).returns(ResponseArray) }
