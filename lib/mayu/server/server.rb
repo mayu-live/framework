@@ -159,6 +159,8 @@ module Mayu
           path = request.read
           session.handle_callback("navigate", { path: })
         in ["callback", Component::HandlerRef::ID_FORMAT => callback_id]
+          @environment.metrics.session_callbacks.increment()
+
           payload = JSON.parse(request.read)
           session.handle_callback(callback_id, payload)
         end

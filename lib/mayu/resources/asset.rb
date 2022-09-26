@@ -16,15 +16,20 @@ module Mayu
 
       sig { params(path: String, content: String, compress: T::Boolean).void }
       def generate(path, content, compress: false)
-        Console.logger.info(self, "Writing #{@filename}")
-        File.write(File.join(path, @filename), content)
+        file_path = File.join(path, @filename)
 
-        if compress
+        unless File.exists?(file_path)
+          Console.logger.info(self, "Writing #{@filename}")
+          File.write(file_path, content)
+        end
+
+        return unless compress
+
+        file_path += ".br"
+
+        unless File.exists?(file_path)
           Console.logger.info(self, "Compressing #{@filename}")
-          File.write(
-            File.join(path, @filename + ".br"),
-            Brotli.deflate(content)
-          )
+          File.write(file_path, Brotli.deflate(content))
         end
       end
 

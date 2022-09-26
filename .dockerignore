@@ -1,10 +1,11 @@
+*.gem
+.git
 Dockerfile
-vendor/bundle
+example/tmp
 example/vendor
+example2/tmp
 example2/vendor
 lib/mayu/client/dist
-.git
-supervisor.ipc
 node_modules
-example/tmp
-*.gem
+supervisor.ipc
+vendor/bundle
