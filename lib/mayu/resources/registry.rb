@@ -6,7 +6,6 @@ require "msgpack"
 require_relative "resolver"
 require_relative "dependency_graph"
 require_relative "resource"
-require_relative "file_watcher"
 require_relative "types"
 
 MessagePack::DefaultFactory.register_type(0x00, Symbol)
@@ -18,6 +17,8 @@ module Mayu
 
       extend T::Sig
 
+      sig { returns(String) }
+      attr_reader :root
       sig { returns(DependencyGraph) }
       attr_reader :dependency_graph
 
@@ -96,27 +97,6 @@ module Mayu
           resource.generate_assets(outdir).each { |asset| assets.push(asset) }
         end
         assets
-      end
-
-      sig { params(block: T.proc.void).returns(Async::Task) }
-      def start_hot_swap(&block)
-        FileWatcher.watch(@root, ["app"]) do |event|
-          puts "\e[33mDETECTED CHANGES\e[0m"
-
-          visited = T::Set[String].new
-
-          event.modified.each { |path| reload_resource(path, visited:) }
-          event.added.each do |path|
-            reload_resource(
-              path,
-              visited:,
-              add: path.start_with?("/app/pages/")
-            )
-          end
-          event.removed.each { |path| unload_resource(path, visited:) }
-
-          yield
-        end
       end
 
       sig do

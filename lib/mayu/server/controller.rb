@@ -99,9 +99,11 @@ module Mayu
         server = Server.new(environment)
 
         if @config.server.hot_swap
+          require_relative "../resources/hot_swap"
+
           Console.logger.info("Starting hot swap")
 
-          environment.resources.start_hot_swap do
+          Resources::HotSwap.start(environment.resources) do
             Console.logger.info(
               self,
               Colors.rainbow("Detected code changes, rerendering.")
