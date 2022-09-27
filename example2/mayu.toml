@@ -6,6 +6,7 @@
     host = "localhost"
     port = 9292
     hot_swap = true
+    self_signed_cert = true
 
 [prod]
   [prod.server]

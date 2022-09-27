@@ -12,15 +12,16 @@ module Mayu
     class Server < T::Struct
       extend T::Sig
 
+      const :scheme, String, default: "https"
       const :host, String, default: "127.0.0.1"
       const :port, Integer, default: 9292
-      const :scheme, String, default: "https"
 
       const :processes, Integer, default: 1
       const :event_source_retry_ms, Integer, default: 1000
       const :hot_swap, T::Boolean, default: false
+      const :self_signed_cert, T::Boolean, default: false
 
-      sig { returns(URI) }
+      sig { returns(URI::HTTP) }
       def uri
         URI.for(scheme, nil, host, port, nil, "/", nil, nil, nil).normalize
       end
