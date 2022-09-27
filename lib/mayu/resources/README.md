@@ -1,4 +1,4 @@
-# Mayu::Resources::
+# Mayu::Resources
 
 This module contains classes for loading resources.
 
