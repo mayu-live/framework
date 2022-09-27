@@ -9,7 +9,7 @@ module Mayu
     extend T::Sig
 
     Props = T.type_alias { T::Hash[Symbol, T.untyped] }
-    State = T.type_alias { T::Hash[String, T.untyped] }
+    State = T.type_alias { T::Hash[Symbol, T.untyped] }
 
     LambdaComponent =
       T.type_alias do

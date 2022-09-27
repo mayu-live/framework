@@ -33,6 +33,10 @@ module Mayu
 
       sig { params(vnode: VNode, blk: T.proc.void).void }
       def enter(vnode, &blk)
+        # Sleep so that the fiber yields,
+        # so that other things can run..
+        sleep(0)
+
         dom_parent_id =
           (vnode.descriptor.element? ? vnode.id : vnode.dom_parent_id)
 
