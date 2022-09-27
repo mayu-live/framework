@@ -49,8 +49,6 @@ class TestVTree < Minitest::Test
       )
 
       vtree.to_html.tap { |html| print_xml(html) }
-    ensure
-      vtree&.stop!
     end
   end
 
@@ -87,7 +85,7 @@ class TestVTree < Minitest::Test
   def setup_vtree
     config =
       Mayu::Configuration.from_hash!(
-        { "mode" => "test", "root" => "/laiehbaleihf" }
+        { "mode" => :test, "root" => "/laiehbaleihf", "secret_key" => "test" }
       )
     environment = Mayu::Environment.new(config)
 
