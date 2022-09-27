@@ -60,7 +60,7 @@ module Mayu
         params(
           type: ElementType,
           props: Component::Props,
-          children: T.any(Component::Children, Component::ChildType)
+          children: T.untyped
         ).void
       end
       def initialize(type, props = {}, children = [])
