@@ -5,7 +5,7 @@ require "test_helper"
 require_relative "descriptor"
 
 class TestDescriptor < Minitest::Test
-  class MyComponent < Mayu::VDOM::Component::Base
+  class MyComponent < Mayu::Component::Base
   end
 
   def test_initialize_descriptor
