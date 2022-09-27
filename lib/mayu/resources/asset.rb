@@ -18,7 +18,7 @@ module Mayu
       def generate(path, content, compress: false)
         file_path = File.join(path, @filename)
 
-        unless File.exists?(file_path)
+        unless File.exist?(file_path)
           Console.logger.info(self, "Writing #{@filename}")
           File.write(file_path, content)
         end
@@ -27,7 +27,7 @@ module Mayu
 
         file_path += ".br"
 
-        unless File.exists?(file_path)
+        unless File.exist?(file_path)
           Console.logger.info(self, "Compressing #{@filename}")
           File.write(file_path, Brotli.deflate(content))
         end

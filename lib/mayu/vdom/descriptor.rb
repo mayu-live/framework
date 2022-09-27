@@ -51,17 +51,8 @@ module Mayu
       def self.clean_children(children, parent_type: nil)
         Array(children)
           .flatten
-          .compact
-          .map do |child|
-            case
-            when child.is_a?(self)
-              child
-            when parent_type == :title
-              self.text(child)
-            when !child.to_s.empty?
-              self.text(child)
-            end
-          end
+          .select(&:itself) # Remove anything falsy
+          .map { |child| parent_type == :title ? text(child) : or_text(child) }
           .compact
       end
 
@@ -69,7 +60,7 @@ module Mayu
         params(
           type: ElementType,
           props: Component::Props,
-          children: Component::Children
+          children: T.any(Component::Children, Component::ChildType)
         ).void
       end
       def initialize(type, props = {}, children = [])

@@ -11,7 +11,7 @@ module Mayu
       sig do
         params(
           type: Descriptor::ElementType,
-          children: Component::Children,
+          children: T.any(Component::Children, Component::ChildType),
           props: T.untyped
         ).returns(Descriptor)
       end

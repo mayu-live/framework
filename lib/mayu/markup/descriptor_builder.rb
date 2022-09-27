@@ -1108,6 +1108,19 @@ module Mayu
         def track(**attributes) = void!(:track, **attributes)
         sig { params(attributes: T.untyped).void }
         def wbr(**attributes) = void!(:wbr, **attributes)
+        sig do
+          override
+            .params(
+              type: VDOM::Descriptor::ElementType,
+              children: T::Array[VDOM::Descriptor::ChildType],
+              props: T::Hash[Symbol, T.untyped],
+              block: T.nilable(T.proc.void)
+            )
+            .returns(VDOM::Descriptor)
+        end
+        def create_element(type, children, props, &block)
+          ::Kernel.raise ::NotImplementedError
+        end
 
         private
 

@@ -121,8 +121,8 @@ module Mayu
         @vtree.session.fetch(url, method:, headers:, body:)
       end
 
-      sig { returns(Mayu::State::Store) }
-      def store = @vtree.session.store
+      # sig { returns(Mayu::State::Store) }
+      # def store = @vtree.session.store
 
       sig { returns(T.nilable(Component::Wrapper)) }
       def init_component
@@ -164,7 +164,7 @@ module Mayu
 
       sig { returns(String) }
       def to_html
-        StringIO.new.tap { write_html(_1) }.tap(&:rewind).read
+        T.must(StringIO.new.tap { write_html(_1) }.tap(&:rewind).read)
       end
 
       Writable =
