@@ -85,7 +85,10 @@ class TestVTree < Minitest::Test
   private
 
   def setup_vtree
-    config = Mayu::Configuration.from_hash!({})
+    config =
+      Mayu::Configuration.from_hash!(
+        { "mode" => "test", "root" => "/laiehbaleihf" }
+      )
     environment = Mayu::Environment.new(config)
 
     environment.instance_eval do
@@ -96,7 +99,7 @@ class TestVTree < Minitest::Test
       end
     end
 
-    session = Mayu::Session.new(environment, request_path: "/")
+    session = Mayu::Session.new(environment:, path: "/")
     Mayu::VDOM::VTree.new(session:)
   end
 
@@ -108,11 +111,14 @@ class TestVTree < Minitest::Test
     formatter.write(doc, io)
     io.rewind
 
-    puts io
-           .read
-           .gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
-           .gsub(/(mayu-key='?)(\d+)/) { "#{$~[1]}\e[1;35m#{$~[2]}\e[0m" }
-           .gsub(/>(.*?)</) { ">\e[33m#{$~[1]}\e[0m<" }
+    puts(
+      io
+        .read
+        .to_s
+        .gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
+        .gsub(/(mayu-key='?)(\d+)/) { "#{$~[1]}\e[1;35m#{$~[2]}\e[0m" }
+        .gsub(/>(.*?)</) { ">\e[33m#{$~[1]}\e[0m<" }
+    )
   end
 
   def extract_numbers(source)

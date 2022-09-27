@@ -6,6 +6,8 @@ require_relative "descriptor"
 
 class TestDescriptor < Minitest::Test
   class MyComponent < Mayu::Component::Base
+    def render
+    end
   end
 
   def test_initialize_descriptor

@@ -27,10 +27,10 @@ module Mayu
         @vnode.navigate(path)
       end
 
-      sig { returns(Mayu::State::Store) }
-      def store
-        @vnode.store
-      end
+      # sig { returns(Mayu::State::Store) }
+      # def store
+      #   @vnode.store
+      # end
     end
   end
 end

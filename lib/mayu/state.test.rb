@@ -8,6 +8,8 @@ require_relative "state"
 
 class TestState < Minitest::Test
   class MyComponent < Mayu::Component::Base
+    def render
+    end
   end
 
   State = Mayu::State

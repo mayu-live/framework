@@ -249,7 +249,7 @@ module Mayu
         }
 
         if accept_encodings.include?("br")
-          if File.exists?(full_path + ".br")
+          if File.exist?(full_path + ".br")
             full_path += ".br"
             headers["content-encoding"] = "br"
           end

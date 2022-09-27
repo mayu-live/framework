@@ -9,7 +9,6 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
 group :development do
   gem "guard", require: false
   gem "localhost", require: false
-  gem "matrix", require: false
   gem "minitest", require: false
   gem "minitest-reporters", require: false
   gem "prettier", require: false
