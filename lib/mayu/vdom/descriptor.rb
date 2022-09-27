@@ -44,6 +44,28 @@ module Mayu
       attr_reader :key
 
       sig do
+        params(children: Component::Children, parent_type: T.untyped).returns(
+          T::Array[Descriptor]
+        )
+      end
+      def self.clean_children(children, parent_type: nil)
+        Array(children)
+          .flatten
+          .compact
+          .map do |child|
+            case
+            when child.is_a?(self)
+              child
+            when parent_type == :title
+              self.text(child)
+            when !child.to_s.empty?
+              self.text(child)
+            end
+          end
+          .compact
+      end
+
+      sig do
         params(
           type: ElementType,
           props: Component::Props,
@@ -53,29 +75,7 @@ module Mayu
       def initialize(type, props = {}, children = [])
         @type = T.let(convert_special_type(type), ElementType)
 
-        children =
-          Array(children)
-            .flatten
-            .compact
-            .map do |child|
-              case
-              when child.is_a?(Descriptor)
-                child
-              when type == :title
-                self.class.text(child)
-              when !child.to_s.empty?
-                self.class.text(child)
-              end
-            end
-            .compact
-
-        # children = children.map.with_index { |child, i|
-        #   if i > 0 && children[i - 1]&.text? && child.text?
-        #   else
-        #     child
-        #   end
-        # }.flatten
-
+        children = self.class.clean_children(children, parent_type: type)
         @props = T.let(props.merge(children:), Component::Props)
         @key = T.let(@props.delete(:key), T.untyped)
       end

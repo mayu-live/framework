@@ -30,6 +30,9 @@ module Mayu
 
       class A < Component::Base
         class NavigateHandler
+          extend T::Sig
+
+          sig { returns(String) }
           def to_s
             "Mayu.navigate(event)"
           end

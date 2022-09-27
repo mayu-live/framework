@@ -291,7 +291,9 @@ module Mayu
             component.props = descriptor.props
             component.state = component.next_state.clone
             descriptors =
-              add_comments_between_texts(Array(component.render).compact)
+              add_comments_between_texts(
+                Descriptor.clean_children(component.render)
+              )
 
             ctx.enter(vnode) do
               vnode.children =
