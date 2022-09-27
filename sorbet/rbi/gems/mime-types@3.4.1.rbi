@@ -6,7 +6,7 @@
 
 # The namespace for MIME applications, tools, and libraries.
 #
-# source://mime-types-3.4.1/lib/mime/types.rb:4
+# source://mime-types//lib/mime/types.rb#4
 module MIME; end
 
 # The definition of one MIME content-type.
@@ -70,7 +70,7 @@ module MIME; end
 #  puts xwingz.content_type        # => 'application/x-Wingz'
 #  puts xwingz.simplified          # => 'application/x-wingz'
 #
-# source://mime-types-3.4.1/lib/mime/type.rb:67
+# source://mime-types//lib/mime/type.rb#67
 class MIME::Type
   include ::Comparable
 
@@ -92,7 +92,7 @@ class MIME::Type
   # @yield [_self]
   # @yieldparam _self [MIME::Type] the object that the method was called on
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:125
+  # source://mime-types//lib/mime/type.rb#125
   def initialize(content_type); end
 
   # Compares the +other+ MIME::Type against the exact content type or the
@@ -100,13 +100,13 @@ class MIME::Type
   # something that can be treated as a String with #to_s). In comparisons, this
   # is done against the lowercase version of the MIME::Type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:165
+  # source://mime-types//lib/mime/type.rb#165
   def <=>(other); end
 
   # Merge the +extensions+ provided into this MIME::Type. The extensions added
   # will be merged uniquely.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:287
+  # source://mime-types//lib/mime/type.rb#287
   def add_extensions(*extensions); end
 
   # MIME types can be specified to be sent across a network in particular
@@ -115,7 +115,7 @@ class MIME::Type
   #
   # @return [Boolean]
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:441
+  # source://mime-types//lib/mime/type.rb#441
   def ascii?; end
 
   # MIME types can be specified to be sent across a network in particular
@@ -124,7 +124,7 @@ class MIME::Type
   #
   # @return [Boolean]
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:434
+  # source://mime-types//lib/mime/type.rb#434
   def binary?; end
 
   # Returns +true+ if the MIME::Type specifies an extension list,
@@ -132,7 +132,7 @@ class MIME::Type
   #
   # @return [Boolean]
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:451
+  # source://mime-types//lib/mime/type.rb#451
   def complete?; end
 
   # Returns the whole MIME content-type string.
@@ -145,22 +145,22 @@ class MIME::Type
   #   x-chemical/x-pdb  => x-chemical/x-pdb
   #   audio/QCELP       => audio/QCELP
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:236
+  # source://mime-types//lib/mime/type.rb#236
   def content_type; end
 
   # Returns the default encoding for the MIME::Type based on the media type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:340
+  # source://mime-types//lib/mime/type.rb#340
   def default_encoding; end
 
   # The documentation for this MIME::Type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:364
+  # source://mime-types//lib/mime/type.rb#364
   def docs; end
 
   # The documentation for this MIME::Type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:364
+  # source://mime-types//lib/mime/type.rb#364
   def docs=(_arg0); end
 
   # Populates the +coder+ with attributes about this record for
@@ -169,15 +169,15 @@ class MIME::Type
   #
   # This method should be considered a private implementation detail.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:485
+  # source://mime-types//lib/mime/type.rb#485
   def encode_with(coder); end
 
   # Returns the value of attribute encoding.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:326
+  # source://mime-types//lib/mime/type.rb#326
   def encoding; end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:329
+  # source://mime-types//lib/mime/type.rb#329
   def encoding=(enc); end
 
   # Returns +true+ if the +other+ object is a MIME::Type and the content types
@@ -185,7 +185,7 @@ class MIME::Type
   #
   # @return [Boolean]
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:223
+  # source://mime-types//lib/mime/type.rb#223
   def eql?(other); end
 
   # The list of extensions which are known to be used for this MIME::Type.
@@ -194,10 +194,10 @@ class MIME::Type
   #
   # :attr_accessor: extensions
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:275
+  # source://mime-types//lib/mime/type.rb#275
   def extensions; end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:280
+  # source://mime-types//lib/mime/type.rb#280
   def extensions=(value); end
 
   # A friendly short description for this MIME::Type.
@@ -206,7 +206,7 @@ class MIME::Type
   #   text_plain.friendly         # => "Text File"
   #   text_plain.friendly('en')   # => "Text File"
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:371
+  # source://mime-types//lib/mime/type.rb#371
   def friendly(lang = T.unsafe(nil)); end
 
   # A key suitable for use as a lookup key for translations, such as with
@@ -219,7 +219,7 @@ class MIME::Type
   #    x_msword.i18n_key   # => "application.word"
   #      # from application/x-msword
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:396
+  # source://mime-types//lib/mime/type.rb#396
   def i18n_key; end
 
   # Initialize an empty object from +coder+, which must contain the
@@ -227,10 +227,10 @@ class MIME::Type
   #
   # This method should be considered a private implementation detail.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:514
+  # source://mime-types//lib/mime/type.rb#514
   def init_with(coder); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:530
+  # source://mime-types//lib/mime/type.rb#530
   def inspect; end
 
   # Indicates that a MIME type is like another type. This differs from
@@ -238,7 +238,7 @@ class MIME::Type
   #
   # @return [Boolean]
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:151
+  # source://mime-types//lib/mime/type.rb#151
   def like?(other); end
 
   # Returns the media type of the simplified MIME::Type.
@@ -247,28 +247,28 @@ class MIME::Type
   #   x-chemical/x-pdb  => x-chemical
   #   audio/QCELP       => audio
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:249
+  # source://mime-types//lib/mime/type.rb#249
   def media_type; end
 
   # Returns +true+ if the media type is obsolete.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:360
+  # source://mime-types//lib/mime/type.rb#360
   def obsolete; end
 
   # Returns +true+ if the media type is obsolete.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:360
+  # source://mime-types//lib/mime/type.rb#360
   def obsolete=(_arg0); end
 
   # Returns +true+ if the media type is obsolete.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:360
+  # source://mime-types//lib/mime/type.rb#360
   def obsolete?; end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:301
+  # source://mime-types//lib/mime/type.rb#301
   def preferred_extension; end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:306
+  # source://mime-types//lib/mime/type.rb#306
   def preferred_extension=(value); end
 
   # Compares the +other+ MIME::Type based on how reliable it is before doing a
@@ -288,24 +288,24 @@ class MIME::Type
   # revision and simplification to ensure current registered content types sort
   # before unregistered or obsolete content types.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:195
+  # source://mime-types//lib/mime/type.rb#195
   def priority_compare(other); end
 
   # Indicates whether the MIME type's registration with IANA is provisional.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:424
+  # source://mime-types//lib/mime/type.rb#424
   def provisional; end
 
   # Indicates whether the MIME type's registration with IANA is provisional.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:424
+  # source://mime-types//lib/mime/type.rb#424
   def provisional=(_arg0); end
 
   # Indicates whether the MIME type's registration with IANA is provisional.
   #
   # @return [Boolean]
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:427
+  # source://mime-types//lib/mime/type.rb#427
   def provisional?; end
 
   # Returns the media type of the unmodified MIME::Type.
@@ -314,7 +314,7 @@ class MIME::Type
   #   x-chemical/x-pdb  => x-chemical
   #   audio/QCELP       => audio
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:255
+  # source://mime-types//lib/mime/type.rb#255
   def raw_media_type; end
 
   # Returns the media type of the unmodified MIME::Type.
@@ -323,37 +323,37 @@ class MIME::Type
   #   x-chemical/x-pdb  => x-pdb
   #   audio/QCELP       => qcelp
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:267
+  # source://mime-types//lib/mime/type.rb#267
   def raw_sub_type; end
 
   # Indicates whether the MIME type has been registered with IANA.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:420
+  # source://mime-types//lib/mime/type.rb#420
   def registered; end
 
   # Indicates whether the MIME type has been registered with IANA.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:420
+  # source://mime-types//lib/mime/type.rb#420
   def registered=(_arg0); end
 
   # Indicates whether the MIME type has been registered with IANA.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:420
+  # source://mime-types//lib/mime/type.rb#420
   def registered?; end
 
   # Indicateswhether the MIME type is declared as a signature type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:446
+  # source://mime-types//lib/mime/type.rb#446
   def signature; end
 
   # Indicateswhether the MIME type is declared as a signature type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:446
+  # source://mime-types//lib/mime/type.rb#446
   def signature=(_arg0); end
 
   # Indicateswhether the MIME type is declared as a signature type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:446
+  # source://mime-types//lib/mime/type.rb#446
   def signature?; end
 
   # A simplified form of the MIME content-type string, suitable for
@@ -363,7 +363,7 @@ class MIME::Type
   #   x-chemical/x-pdb  => x-chemical/x-pdb
   #   audio/QCELP       => audio/qcelp
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:243
+  # source://mime-types//lib/mime/type.rb#243
   def simplified; end
 
   # Returns the sub-type of the simplified MIME::Type.
@@ -372,23 +372,23 @@ class MIME::Type
   #   x-chemical/x-pdb  => pdb
   #   audio/QCELP       => QCELP
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:261
+  # source://mime-types//lib/mime/type.rb#261
   def sub_type; end
 
   # Converts the MIME::Type to a hash. The output of this method can also be
   # used to initialize a MIME::Type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:476
+  # source://mime-types//lib/mime/type.rb#476
   def to_h; end
 
   # Converts the MIME::Type to a JSON string.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:469
+  # source://mime-types//lib/mime/type.rb#469
   def to_json(*args); end
 
   # Returns the MIME::Type as a string.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:456
+  # source://mime-types//lib/mime/type.rb#456
   def to_s; end
 
   # Returns the MIME::Type as a string for implicit conversions. This allows
@@ -396,72 +396,72 @@ class MIME::Type
   #
   #   'text/plain' == MIME::Type.new('text/plain')
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:464
+  # source://mime-types//lib/mime/type.rb#464
   def to_str; end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:352
+  # source://mime-types//lib/mime/type.rb#352
   def use_instead; end
 
   # Sets the attribute use_instead
   #
   # @param value the value to set the attribute use_instead to.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:357
+  # source://mime-types//lib/mime/type.rb#357
   def use_instead=(_arg0); end
 
   # The decoded cross-reference URL list for this MIME::Type.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:412
+  # source://mime-types//lib/mime/type.rb#412
   def xref_urls; end
 
   # Returns the value of attribute xrefs.
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:404
+  # source://mime-types//lib/mime/type.rb#404
   def xrefs; end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:407
+  # source://mime-types//lib/mime/type.rb#407
   def xrefs=(xrefs); end
 
   private
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:583
+  # source://mime-types//lib/mime/type.rb#583
   def content_type=(type_string); end
 
   # MRI 2.2 and older don't have a method for string interning,
   # so we simply freeze them for keeping a similar interface
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:600
+  # source://mime-types//lib/mime/type.rb#600
   def intern_string(string); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:611
+  # source://mime-types//lib/mime/type.rb#611
   def xref_map(values, helper); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:619
+  # source://mime-types//lib/mime/type.rb#619
   def xref_url_for_draft(value); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:627
+  # source://mime-types//lib/mime/type.rb#627
   def xref_url_for_person(value); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:615
+  # source://mime-types//lib/mime/type.rb#615
   def xref_url_for_rfc(value); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:623
+  # source://mime-types//lib/mime/type.rb#623
   def xref_url_for_rfc_errata(value); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:631
+  # source://mime-types//lib/mime/type.rb#631
   def xref_url_for_template(value); end
 
   class << self
     # Converts a provided +content_type+ into a translation key suitable for
     # use with the I18n library.
     #
-    # source://mime-types-3.4.1/lib/mime/type.rb:550
+    # source://mime-types//lib/mime/type.rb#550
     def i18n_key(content_type); end
 
     # Return a +MatchData+ object of the +content_type+ against pattern of
     # media types.
     #
-    # source://mime-types-3.4.1/lib/mime/type.rb:558
+    # source://mime-types//lib/mime/type.rb#558
     def match(content_type); end
 
     # MIME media types are case-insensitive, but are typically presented in a
@@ -472,20 +472,20 @@ class MIME::Type
     # prefix (<tt>x-</tt>). This is no longer default behaviour, but may be
     # provided by providing a truth value to +remove_x_prefix+.
     #
-    # source://mime-types-3.4.1/lib/mime/type.rb:544
+    # source://mime-types//lib/mime/type.rb#544
     def simplified(content_type, remove_x_prefix: T.unsafe(nil)); end
 
     private
 
-    # source://mime-types-3.4.1/lib/mime/type.rb:569
+    # source://mime-types//lib/mime/type.rb#569
     def simplify_matchdata(matchdata, remove_x = T.unsafe(nil), joiner: T.unsafe(nil)); end
   end
 end
 
-# source://mime-types-3.4.1/lib/mime/type.rb:106
+# source://mime-types//lib/mime/type.rb#106
 MIME::Type::ASCII_ENCODINGS = T.let(T.unsafe(nil), Array)
 
-# source://mime-types-3.4.1/lib/mime/type.rb:105
+# source://mime-types//lib/mime/type.rb#105
 MIME::Type::BINARY_ENCODINGS = T.let(T.unsafe(nil), Array)
 
 # A version of MIME::Type that works hand-in-hand with a MIME::Types::Columnar
@@ -499,120 +499,120 @@ MIME::Type::BINARY_ENCODINGS = T.let(T.unsafe(nil), Array)
 # MIME::Type::Columnar is *not* intended to be created except by
 # MIME::Types::Columnar containers.
 #
-# source://mime-types-3.4.1/lib/mime/type/columnar.rb:15
+# source://mime-types//lib/mime/type/columnar.rb#15
 class MIME::Type::Columnar < ::MIME::Type
   # @return [Columnar] a new instance of Columnar
   #
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:16
+  # source://mime-types//lib/mime/type/columnar.rb#16
   def initialize(container, content_type, extensions); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def docs(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def docs=(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:43
+  # source://mime-types//lib/mime/type/columnar.rb#43
   def encode_with(coder); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def encoding(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def encoding=(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def friendly(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def obsolete(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def obsolete=(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def obsolete?(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def preferred_extension(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def preferred_extension=(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def provisional(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def provisional=(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def provisional?(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def registered(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def registered=(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def registered?(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def signature(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def signature=(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def signature?(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def use_instead(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def use_instead=(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def xref_urls(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def xrefs(*args); end
 
-  # source://mime-types-3.4.1/lib/mime/type/columnar.rb:27
+  # source://mime-types//lib/mime/type/columnar.rb#27
   def xrefs=(*args); end
 end
 
-# source://mime-types-3.4.1/lib/mime/type.rb:104
+# source://mime-types//lib/mime/type.rb#104
 MIME::Type::I18N_RE = T.let(T.unsafe(nil), Regexp)
 
 # Reflects a MIME content-type specification that is not correctly
 # formatted (it isn't +type+/+subtype+).
 #
-# source://mime-types-3.4.1/lib/mime/type.rb:71
+# source://mime-types//lib/mime/type.rb#71
 class MIME::Type::InvalidContentType < ::ArgumentError
   # :stopdoc:
   #
   # @return [InvalidContentType] a new instance of InvalidContentType
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:72
+  # source://mime-types//lib/mime/type.rb#72
   def initialize(type_string); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:76
+  # source://mime-types//lib/mime/type.rb#76
   def to_s; end
 end
 
 # Reflects an unsupported MIME encoding.
 #
-# source://mime-types-3.4.1/lib/mime/type.rb:84
+# source://mime-types//lib/mime/type.rb#84
 class MIME::Type::InvalidEncoding < ::ArgumentError
   # :stopdoc:
   #
   # @return [InvalidEncoding] a new instance of InvalidEncoding
   #
-  # source://mime-types-3.4.1/lib/mime/type.rb:85
+  # source://mime-types//lib/mime/type.rb#85
   def initialize(encoding); end
 
-  # source://mime-types-3.4.1/lib/mime/type.rb:89
+  # source://mime-types//lib/mime/type.rb#89
   def to_s; end
 end
 
@@ -620,12 +620,12 @@ end
 # TODO verify mime-type character restrictions; I am pretty sure that this is
 # too wide open.
 #
-# source://mime-types-3.4.1/lib/mime/type.rb:103
+# source://mime-types//lib/mime/type.rb#103
 MIME::Type::MEDIA_TYPE_RE = T.let(T.unsafe(nil), Regexp)
 
 # The released version of the mime-types library.
 #
-# source://mime-types-3.4.1/lib/mime/type.rb:96
+# source://mime-types//lib/mime/type.rb#96
 MIME::Type::VERSION = T.let(T.unsafe(nil), String)
 
 # MIME::Types is a registry of MIME types. It is both a class (created with
@@ -684,7 +684,7 @@ MIME::Type::VERSION = T.let(T.unsafe(nil), String)
 #  puts plaintext == 'text/plain'       # => true
 #  puts MIME::Type.simplified('x-appl/x-zip') # => 'appl/zip'
 #
-# source://mime-types-3.4.1/lib/mime/types.rb:6
+# source://mime-types//lib/mime/types.rb#6
 class MIME::Types
   include ::Enumerable
   extend ::Enumerable
@@ -693,7 +693,7 @@ class MIME::Types
   #
   # @return [Types] a new instance of Types
   #
-  # source://mime-types-3.4.1/lib/mime/types.rb:75
+  # source://mime-types//lib/mime/types.rb#75
   def initialize; end
 
   # Returns a list of MIME::Type objects, which may be empty. The optional
@@ -722,7 +722,7 @@ class MIME::Types
   #   5. Obsolete definitions use-instead clauses are compared.
   #   6. Sort on name.
   #
-  # source://mime-types-3.4.1/lib/mime/types.rb:125
+  # source://mime-types//lib/mime/types.rb#125
   def [](type_id, complete: T.unsafe(nil), registered: T.unsafe(nil)); end
 
   # Add one or more MIME::Type objects to the set of known types. If the
@@ -731,27 +731,27 @@ class MIME::Types
   # The last parameter may be the value <tt>:silent</tt> or +true+ which
   # will suppress duplicate MIME type warnings.
   #
-  # source://mime-types-3.4.1/lib/mime/types.rb:167
+  # source://mime-types//lib/mime/types.rb#167
   def add(*types); end
 
   # Add a single MIME::Type object to the set of known types. If the +type+ is
   # already known, a warning will be displayed. The +quiet+ parameter may be a
   # truthy value to suppress that warning.
   #
-  # source://mime-types-3.4.1/lib/mime/types.rb:188
+  # source://mime-types//lib/mime/types.rb#188
   def add_type(type, quiet = T.unsafe(nil)); end
 
   # Returns the number of known type variants.
   #
-  # source://mime-types-3.4.1/lib/mime/types.rb:81
+  # source://mime-types//lib/mime/types.rb#81
   def count; end
 
   # Iterates through the type variants.
   #
-  # source://mime-types-3.4.1/lib/mime/types.rb:90
+  # source://mime-types//lib/mime/types.rb#90
   def each; end
 
-  # source://mime-types-3.4.1/lib/mime/types.rb:85
+  # source://mime-types//lib/mime/types.rb#85
   def inspect; end
 
   # Return the list of MIME::Types which belongs to the file based on its
@@ -767,7 +767,7 @@ class MIME::Types
   #   puts MIME::Types.type_for(%w(citydesk.xml citydesk.gif))
   #     => [application/xml, image/gif, text/xml]
   #
-  # source://mime-types-3.4.1/lib/mime/types.rb:153
+  # source://mime-types//lib/mime/types.rb#153
   def of(filename); end
 
   # Return the list of MIME::Types which belongs to the file based on its
@@ -783,92 +783,92 @@ class MIME::Types
   #   puts MIME::Types.type_for(%w(citydesk.xml citydesk.gif))
   #     => [application/xml, image/gif, text/xml]
   #
-  # source://mime-types-3.4.1/lib/mime/types.rb:153
+  # source://mime-types//lib/mime/types.rb#153
   def type_for(filename); end
 
   private
 
-  # source://mime-types-3.4.1/lib/mime/types.rb:201
+  # source://mime-types//lib/mime/types.rb#201
   def add_type_variant!(mime_type); end
 
-  # source://mime-types-3.4.1/lib/mime/types.rb:211
+  # source://mime-types//lib/mime/types.rb#211
   def index_extensions!(mime_type); end
 
-  # source://mime-types-3.4.1/lib/mime/types.rb:221
+  # source://mime-types//lib/mime/types.rb#221
   def match(pattern); end
 
-  # source://mime-types-3.4.1/lib/mime/types.rb:215
+  # source://mime-types//lib/mime/types.rb#215
   def prune_matches(matches, complete, registered); end
 
-  # source://mime-types-3.4.1/lib/mime/types.rb:205
+  # source://mime-types//lib/mime/types.rb#205
   def reindex_extensions!(mime_type); end
 
   class << self
     # MIME::Types#[] against the default MIME::Types registry.
     #
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:14
+    # source://mime-types//lib/mime/types/registry.rb#14
     def [](type_id, complete: T.unsafe(nil), registered: T.unsafe(nil)); end
 
     # MIME::Types#add against the default MIME::Types registry.
     #
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:39
+    # source://mime-types//lib/mime/types/registry.rb#39
     def add(*types); end
 
     # MIME::Types#count against the default MIME::Types registry.
     #
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:19
+    # source://mime-types//lib/mime/types/registry.rb#19
     def count; end
 
     # MIME::Types#each against the default MIME::Types registry.
     #
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:24
+    # source://mime-types//lib/mime/types/registry.rb#24
     def each; end
 
     # Configure the MIME::Types logger. This defaults to an instance of a
     # logger that passes messages (unformatted) through to Kernel#warn.
     #
-    # source://mime-types-3.4.1/lib/mime/types/logger.rb:12
+    # source://mime-types//lib/mime/types/logger.rb#12
     def logger; end
 
     # Configure the MIME::Types logger. This defaults to an instance of a
     # logger that passes messages (unformatted) through to Kernel#warn.
     #
-    # source://mime-types-3.4.1/lib/mime/types/logger.rb:12
+    # source://mime-types//lib/mime/types/logger.rb#12
     def logger=(_arg0); end
 
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:7
+    # source://mime-types//lib/mime/types/registry.rb#7
     def new(*_arg0); end
 
     # MIME::Types#type_for against the default MIME::Types registry.
     #
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:33
+    # source://mime-types//lib/mime/types/registry.rb#33
     def of(filename); end
 
     # MIME::Types#type_for against the default MIME::Types registry.
     #
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:33
+    # source://mime-types//lib/mime/types/registry.rb#33
     def type_for(filename); end
 
     private
 
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:75
+    # source://mime-types//lib/mime/types/registry.rb#75
     def __instances__; end
 
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:55
+    # source://mime-types//lib/mime/types/registry.rb#55
     def __types__; end
 
     # @return [Boolean]
     #
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:45
+    # source://mime-types//lib/mime/types/registry.rb#45
     def lazy_load?; end
 
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:65
+    # source://mime-types//lib/mime/types/registry.rb#65
     def load_default_mime_types(mode = T.unsafe(nil)); end
 
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:60
+    # source://mime-types//lib/mime/types/registry.rb#60
     def load_mode; end
 
-    # source://mime-types-3.4.1/lib/mime/types/registry.rb:79
+    # source://mime-types//lib/mime/types/registry.rb#79
     def reindex_extensions(type); end
   end
 end
@@ -881,7 +881,7 @@ end
 # The cache is invalidated on a per-data-version basis; a cache file for
 # version 3.2015.1118 will not be reused with version 3.2015.1201.
 #
-# source://mime-types-3.4.1/lib/mime/types/cache.rb:3
+# source://mime-types//lib/mime/types/cache.rb#3
 class MIME::Types::Cache < ::Struct
   def data; end
   def data=(_); end
@@ -898,7 +898,7 @@ class MIME::Types::Cache < ::Struct
     # file does not exist, if the file cannot be loaded, or if the data in
     # the cache version is different than this version.
     #
-    # source://mime-types-3.4.1/lib/mime/types/cache.rb:17
+    # source://mime-types//lib/mime/types/cache.rb#17
     def load(cache_file = T.unsafe(nil)); end
 
     def members; end
@@ -914,7 +914,7 @@ class MIME::Types::Cache < ::Struct
     # +RUBY_MIME_TYPES_CACHE+. If there is no cache file specified either
     # directly or through the environment, this method will return +nil+
     #
-    # source://mime-types-3.4.1/lib/mime/types/cache.rb:46
+    # source://mime-types//lib/mime/types/cache.rb#46
     def save(types = T.unsafe(nil), cache_file = T.unsafe(nil)); end
   end
 end
@@ -927,58 +927,58 @@ end
 # to an instance of MIME::Types when it is loaded with
 # MIME::Types::Loader#load_columnar.
 #
-# source://mime-types-3.4.1/lib/mime/types/_columnar.rb:12
+# source://mime-types//lib/mime/types/_columnar.rb#12
 module MIME::Types::Columnar
   # Load the first column data file (type and extensions).
   #
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:22
+  # source://mime-types//lib/mime/types/_columnar.rb#22
   def load_base_data(path); end
 
   private
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:122
+  # source://mime-types//lib/mime/types/_columnar.rb#122
   def arr(line); end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:110
+  # source://mime-types//lib/mime/types/_columnar.rb#110
   def dict(line, array: T.unsafe(nil)); end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:41
+  # source://mime-types//lib/mime/types/_columnar.rb#41
   def each_file_line(name, lookup = T.unsafe(nil)); end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:134
+  # source://mime-types//lib/mime/types/_columnar.rb#134
   def flag(line); end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:70
+  # source://mime-types//lib/mime/types/_columnar.rb#70
   def load_docs; end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:63
+  # source://mime-types//lib/mime/types/_columnar.rb#63
   def load_encoding; end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:82
+  # source://mime-types//lib/mime/types/_columnar.rb#82
   def load_flags; end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:98
+  # source://mime-types//lib/mime/types/_columnar.rb#98
   def load_friendly; end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:76
+  # source://mime-types//lib/mime/types/_columnar.rb#76
   def load_preferred_extension; end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:104
+  # source://mime-types//lib/mime/types/_columnar.rb#104
   def load_use_instead; end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:92
+  # source://mime-types//lib/mime/types/_columnar.rb#92
   def load_xrefs; end
 
-  # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:130
+  # source://mime-types//lib/mime/types/_columnar.rb#130
   def opt(line); end
 
   class << self
-    # source://mime-types-3.4.1/lib/mime/types/_columnar.rb:15
+    # source://mime-types//lib/mime/types/_columnar.rb#15
     def extended(obj); end
   end
 end
 
-# source://mime-types-3.4.1/lib/mime/types/_columnar.rb:13
+# source://mime-types//lib/mime/types/_columnar.rb#13
 MIME::Types::Columnar::LOAD_MUTEX = T.let(T.unsafe(nil), Thread::Mutex)
 
 # MIME::Types requires a serializable keyed container that returns an empty Set
@@ -988,91 +988,91 @@ MIME::Types::Columnar::LOAD_MUTEX = T.let(T.unsafe(nil), Thread::Mutex)
 # Hash#default_proc cannot be used without a wrapper because it prevents
 # Marshal serialization (and doesn't survive the round-trip).
 #
-# source://mime-types-3.4.1/lib/mime/types/container.rb:12
+# source://mime-types//lib/mime/types/container.rb#12
 class MIME::Types::Container
   extend ::Forwardable
 
   # @return [Container] a new instance of Container
   #
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:15
+  # source://mime-types//lib/mime/types/container.rb#15
   def initialize(hash = T.unsafe(nil)); end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def ==(*args, **_arg1, &block); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:20
+  # source://mime-types//lib/mime/types/container.rb#20
   def [](key); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:24
+  # source://mime-types//lib/mime/types/container.rb#24
   def []=(key, value); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:61
+  # source://mime-types//lib/mime/types/container.rb#61
   def add(key, value); end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def count(*args, **_arg1, &block); end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def each(*args, **_arg1, &block); end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def each_value(*args, **_arg1, &block); end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def empty?(*args, **_arg1, &block); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:73
+  # source://mime-types//lib/mime/types/container.rb#73
   def encode_with(coder); end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def flat_map(*args, **_arg1, &block); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:77
+  # source://mime-types//lib/mime/types/container.rb#77
   def init_with(coder); end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def keys(*args, **_arg1, &block); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:65
+  # source://mime-types//lib/mime/types/container.rb#65
   def marshal_dump; end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:69
+  # source://mime-types//lib/mime/types/container.rb#69
   def marshal_load(hash); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:34
+  # source://mime-types//lib/mime/types/container.rb#34
   def merge(other); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:38
+  # source://mime-types//lib/mime/types/container.rb#38
   def merge!(other); end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def select(*args, **_arg1, &block); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:46
+  # source://mime-types//lib/mime/types/container.rb#46
   def to_hash; end
 
-  # source://RUBY_ROOT/forwardable.rb:229
+  # source://forwardable/1.3.2/forwardable.rb#229
   def values(*args, **_arg1, &block); end
 
   protected
 
   # Returns the value of attribute container.
   #
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:84
+  # source://mime-types//lib/mime/types/container.rb#84
   def container; end
 
   # Sets the attribute container
   #
   # @param value the value to set the attribute container to.
   #
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:84
+  # source://mime-types//lib/mime/types/container.rb#84
   def container=(_arg0); end
 
-  # source://mime-types-3.4.1/lib/mime/types/container.rb:86
+  # source://mime-types//lib/mime/types/container.rb#86
   def normalize; end
 end
 
-# source://mime-types-3.4.1/lib/mime/types/container.rb:94
+# source://mime-types//lib/mime/types/container.rb#94
 MIME::Types::Container::EMPTY_SET = T.let(T.unsafe(nil), Set)
 
 # This class is responsible for initializing the MIME::Types registry from
@@ -1087,20 +1087,20 @@ MIME::Types::Container::EMPTY_SET = T.let(T.unsafe(nil), Set)
 # (.yml or .yaml) files. By convention, there is one file for each media
 # type (application.yml, audio.yml, etc.), but this is not required.
 #
-# source://mime-types-3.4.1/lib/mime/types/loader.rb:22
+# source://mime-types//lib/mime/types/loader.rb#22
 class MIME::Types::Loader
   # Creates a Loader object that can be used to load MIME::Types registries
   # into memory, using YAML, JSON, or Columnar registry format loaders.
   #
   # @return [Loader] a new instance of Loader
   #
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:31
+  # source://mime-types//lib/mime/types/loader.rb#31
   def initialize(path = T.unsafe(nil), container = T.unsafe(nil)); end
 
   # The MIME::Types container instance that will be loaded. If not provided
   # at initialization, a new MIME::Types instance will be constructed.
   #
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:27
+  # source://mime-types//lib/mime/types/loader.rb#27
   def container; end
 
   # Loads a MIME::Types registry. Loads from JSON files by default
@@ -1109,13 +1109,13 @@ class MIME::Types::Loader
   # This will load from columnar files (#load_columnar) if <tt>columnar:
   # true</tt> is provided in +options+ and there are columnar files in +path+.
   #
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:82
+  # source://mime-types//lib/mime/types/loader.rb#82
   def load(options = T.unsafe(nil)); end
 
   # Loads a MIME::Types registry from columnar files recursively found in
   # +path+.
   #
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:69
+  # source://mime-types//lib/mime/types/loader.rb#69
   def load_columnar; end
 
   # Loads a MIME::Types registry from JSON files (<tt>*.json</tt>)
@@ -1125,7 +1125,7 @@ class MIME::Types::Loader
   # The JSON format is the registry format for the MIME types registry
   # shipped with the mime-types library.
   #
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:59
+  # source://mime-types//lib/mime/types/loader.rb#59
   def load_json; end
 
   # Loads a MIME::Types registry from YAML files (<tt>*.yml</tt> or
@@ -1138,29 +1138,29 @@ class MIME::Types::Loader
   #
   # NOTE: The purpose of this format is purely for maintenance reasons.
   #
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:46
+  # source://mime-types//lib/mime/types/loader.rb#46
   def load_yaml; end
 
   # The path that will be read for the MIME::Types files.
   #
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:24
+  # source://mime-types//lib/mime/types/loader.rb#24
   def path; end
 
   private
 
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:156
+  # source://mime-types//lib/mime/types/loader.rb#156
   def columnar_path; end
 
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:152
+  # source://mime-types//lib/mime/types/loader.rb#152
   def json_path; end
 
-  # source://mime-types-3.4.1/lib/mime/types/loader.rb:148
+  # source://mime-types//lib/mime/types/loader.rb#148
   def yaml_path; end
 
   class << self
     # Loads the default MIME::Type registry.
     #
-    # source://mime-types-3.4.1/lib/mime/types/loader.rb:92
+    # source://mime-types//lib/mime/types/loader.rb#92
     def load(options = T.unsafe(nil)); end
 
     # Loads MIME::Types from a single JSON file.
@@ -1169,7 +1169,7 @@ class MIME::Types::Loader
     # The JSON format is the registry format for the MIME types registry
     # shipped with the mime-types library.
     #
-    # source://mime-types-3.4.1/lib/mime/types/loader.rb:126
+    # source://mime-types//lib/mime/types/loader.rb#126
     def load_from_json(filename); end
 
     # Loads MIME::Types from a single YAML file.
@@ -1182,44 +1182,44 @@ class MIME::Types::Loader
     #
     # NOTE: The purpose of this format is purely for maintenance reasons.
     #
-    # source://mime-types-3.4.1/lib/mime/types/loader.rb:105
+    # source://mime-types//lib/mime/types/loader.rb#105
     def load_from_yaml(filename); end
 
     private
 
     # @return [Boolean]
     #
-    # source://mime-types-3.4.1/lib/mime/types/loader.rb:137
+    # source://mime-types//lib/mime/types/loader.rb#137
     def old_yaml?; end
 
-    # source://mime-types-3.4.1/lib/mime/types/loader.rb:133
+    # source://mime-types//lib/mime/types/loader.rb#133
     def read_file(filename); end
   end
 end
 
 # The release version of Ruby MIME::Types
 #
-# source://mime-types-3.4.1/lib/mime/types.rb:70
+# source://mime-types//lib/mime/types.rb#70
 MIME::Types::VERSION = T.let(T.unsafe(nil), String)
 
-# source://mime-types-3.4.1/lib/mime/types/logger.rb:15
+# source://mime-types//lib/mime/types/logger.rb#15
 class MIME::Types::WarnLogger < ::Logger
   # @return [WarnLogger] a new instance of WarnLogger
   #
-  # source://mime-types-3.4.1/lib/mime/types/logger.rb:28
+  # source://mime-types//lib/mime/types/logger.rb#28
   def initialize(_one, _two = T.unsafe(nil), _three = T.unsafe(nil)); end
 end
 
-# source://mime-types-3.4.1/lib/mime/types/logger.rb:16
+# source://mime-types//lib/mime/types/logger.rb#16
 class MIME::Types::WarnLogger::WarnLogDevice < ::Logger::LogDevice
   # @return [WarnLogDevice] a new instance of WarnLogDevice
   #
-  # source://mime-types-3.4.1/lib/mime/types/logger.rb:17
+  # source://mime-types//lib/mime/types/logger.rb#17
   def initialize(*_arg0); end
 
-  # source://mime-types-3.4.1/lib/mime/types/logger.rb:24
+  # source://mime-types//lib/mime/types/logger.rb#24
   def close; end
 
-  # source://mime-types-3.4.1/lib/mime/types/logger.rb:20
+  # source://mime-types//lib/mime/types/logger.rb#20
   def write(m); end
 end

@@ -94,53 +94,96 @@ end
 
 IO::EWOULDBLOCKWaitReadable = IO::EAGAINWaitReadable
 IO::EWOULDBLOCKWaitWritable = IO::EAGAINWaitWritable
+
+# source://io-event//lib/io/event/version.rb#21
 module IO::Event; end
+
+# source://io-event//lib/io/event/debug/selector.rb#22
 module IO::Event::Debug; end
 
 # Enforces the selector interface and delegates operations to a wrapped selector instance.
+#
+# source://io-event//lib/io/event/debug/selector.rb#24
 class IO::Event::Debug::Selector
   # @return [Selector] a new instance of Selector
+  #
+  # source://io-event//lib/io/event/debug/selector.rb#25
   def initialize(selector); end
 
+  # source://io-event//lib/io/event/debug/selector.rb#41
   def close; end
+
+  # source://io-event//lib/io/event/debug/selector.rb#84
   def io_read(fiber, io, buffer, length); end
+
+  # source://io-event//lib/io/event/debug/selector.rb#79
   def io_wait(fiber, io, events); end
+
+  # source://io-event//lib/io/event/debug/selector.rb#88
   def io_write(fiber, io, buffer, length); end
+
+  # source://io-event//lib/io/event/debug/selector.rb#75
   def process_wait(*arguments); end
+
+  # source://io-event//lib/io/event/debug/selector.rb#63
   def push(fiber); end
+
+  # source://io-event//lib/io/event/debug/selector.rb#67
   def raise(fiber, *arguments); end
 
   # @return [Boolean]
+  #
+  # source://io-event//lib/io/event/debug/selector.rb#71
   def ready?; end
 
+  # source://io-event//lib/io/event/debug/selector.rb#55
   def resume(*arguments); end
+
+  # source://io-event//lib/io/event/debug/selector.rb#93
   def select(duration = T.unsafe(nil)); end
 
   # Transfer from the calling fiber to the event loop.
+  #
+  # source://io-event//lib/io/event/debug/selector.rb#51
   def transfer; end
 
+  # source://io-event//lib/io/event/debug/selector.rb#37
   def wakeup; end
+
+  # source://io-event//lib/io/event/debug/selector.rb#59
   def yield; end
 end
 
 # A thread safe synchronisation primative.
+#
+# source://io-event//lib/io/event/interrupt.rb#23
 class IO::Event::Interrupt
   # @return [Interrupt] a new instance of Interrupt
+  #
+  # source://io-event//lib/io/event/interrupt.rb#28
   def initialize(selector); end
 
+  # source://io-event//lib/io/event/interrupt.rb#49
   def close; end
 
   # Send a sigle byte interrupt.
+  #
+  # source://io-event//lib/io/event/interrupt.rb#44
   def signal; end
 
   class << self
+    # source://io-event//lib/io/event/interrupt.rb#24
     def attach(selector); end
   end
 end
 
+# source://io-event//lib/io/event/selector/select.rb#24
 module IO::Event::Selector
   class << self
+    # source://io-event//lib/io/event/selector.rb#26
     def default(env = T.unsafe(nil)); end
+
+    # source://io-event//lib/io/event/selector.rb#44
     def new(loop, env = T.unsafe(nil)); end
   end
 end
@@ -164,53 +207,88 @@ class IO::Event::Selector::KQueue
   def yield; end
 end
 
+# source://io-event//lib/io/event/selector/select.rb#25
 class IO::Event::Selector::Select
   # @return [Select] a new instance of Select
+  #
+  # source://io-event//lib/io/event/selector/select.rb#26
   def initialize(loop); end
 
+  # source://io-event//lib/io/event/selector/select.rb#50
   def close; end
+
+  # source://io-event//lib/io/event/selector/select.rb#154
   def io_read(fiber, io, buffer, length); end
+
+  # source://io-event//lib/io/event/selector/select.rb#143
   def io_wait(fiber, io, events); end
+
+  # source://io-event//lib/io/event/selector/select.rb#188
   def io_write(fiber, io, buffer, length); end
 
   # Returns the value of attribute loop.
+  #
+  # source://io-event//lib/io/event/selector/select.rb#37
   def loop; end
 
+  # source://io-event//lib/io/event/selector/select.rb#219
   def process_wait(fiber, pid, flags); end
 
   # Append the given fiber into the ready list.
+  #
+  # source://io-event//lib/io/event/selector/select.rb#97
   def push(fiber); end
 
   # Transfer to the given fiber and raise an exception. Put the current fiber into the ready list.
+  #
+  # source://io-event//lib/io/event/selector/select.rb#102
   def raise(fiber, *arguments); end
 
   # @return [Boolean]
+  #
+  # source://io-event//lib/io/event/selector/select.rb#111
   def ready?; end
 
   # Transfer from the current fiber to the specified fiber. Put the current fiber into the ready list.
+  #
+  # source://io-event//lib/io/event/selector/select.rb#77
   def resume(fiber, *arguments); end
 
+  # source://io-event//lib/io/event/selector/select.rb#250
   def select(duration = T.unsafe(nil)); end
 
   # Transfer from the current fiber to the event loop.
+  #
+  # source://io-event//lib/io/event/selector/select.rb#72
   def transfer; end
 
   # If the event loop is currently blocked,
+  #
+  # source://io-event//lib/io/event/selector/select.rb#40
   def wakeup; end
 
   # Yield from the current fiber back to the event loop. Put the current fiber into the ready list.
+  #
+  # source://io-event//lib/io/event/selector/select.rb#87
   def yield; end
 
   private
 
+  # source://io-event//lib/io/event/selector/select.rb#293
   def blocking(&block); end
+
+  # source://io-event//lib/io/event/selector/select.rb#237
   def pop_ready; end
 end
 
+# source://io-event//lib/io/event/selector/select.rb#152
 IO::Event::Selector::Select::EAGAIN = T.let(T.unsafe(nil), Integer)
 
+# source://io-event//lib/io/event/selector/select.rb#57
 class IO::Event::Selector::Select::Optional < ::Struct
   # @return [Boolean]
+  #
+  # source://io-event//lib/io/event/selector/select.rb#62
   def alive?; end
 
   # Returns the value of attribute fiber
@@ -224,7 +302,10 @@ class IO::Event::Selector::Select::Optional < ::Struct
   # @return [Object] the newly set value
   def fiber=(_); end
 
+  # source://io-event//lib/io/event/selector/select.rb#66
   def nullify; end
+
+  # source://io-event//lib/io/event/selector/select.rb#58
   def transfer(*arguments); end
 
   class << self
@@ -236,10 +317,14 @@ class IO::Event::Selector::Select::Optional < ::Struct
   end
 end
 
+# source://io-event//lib/io/event/selector/select.rb#115
 class IO::Event::Selector::Select::Waiter < ::Struct
   # @return [Boolean]
+  #
+  # source://io-event//lib/io/event/selector/select.rb#116
   def alive?; end
 
+  # source://io-event//lib/io/event/selector/select.rb#134
   def each(&block); end
 
   # Returns the value of attribute events
@@ -264,6 +349,7 @@ class IO::Event::Selector::Select::Waiter < ::Struct
   # @return [Object] the newly set value
   def fiber=(_); end
 
+  # source://io-event//lib/io/event/selector/select.rb#130
   def invalidate; end
 
   # Returns the value of attribute tail
@@ -277,6 +363,7 @@ class IO::Event::Selector::Select::Waiter < ::Struct
   # @return [Object] the newly set value
   def tail=(_); end
 
+  # source://io-event//lib/io/event/selector/select.rb#120
   def transfer(events); end
 
   class << self
@@ -288,7 +375,9 @@ class IO::Event::Selector::Select::Waiter < ::Struct
   end
 end
 
+# source://io-event//lib/io/event/version.rb#22
 IO::Event::VERSION = T.let(T.unsafe(nil), String)
+
 IO::PRIORITY = T.let(T.unsafe(nil), Integer)
 IO::READABLE = T.let(T.unsafe(nil), Integer)
 IO::WRITABLE = T.let(T.unsafe(nil), Integer)
