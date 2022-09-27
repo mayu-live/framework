@@ -5,3 +5,7 @@
 # Please instead update this file by running `bin/tapioca gem msgpack`.
 
 Bignum = Integer
+
+class Symbol
+  include ::Comparable
+end

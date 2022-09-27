@@ -6,10 +6,11 @@
 
 # Guard is the main module for all Guard related modules and classes.
 # Also Guard plugins should use this namespace.
+#
+# source://guard//lib/guard/config.rb#3
 module Guard
   extend ::Guard::Deprecated::Guard::ClassMethods
   extend ::Guard::Internals::Helpers
-  extend ::Guard::Commander
 
   class << self
     # Asynchronously trigger changes
@@ -21,17 +22,26 @@ module Guard
     #
     #   @example New style signals with args:
     #     async_queue_add([:guard_pause, :unpaused ])
+    #
+    # source://guard//lib/guard.rb#87
     def async_queue_add(changes); end
 
+    # source://guard//lib/guard.rb#73
     def init(cmdline_options); end
 
     # Returns the value of attribute interactor.
+    #
+    # source://guard//lib/guard.rb#24
     def interactor; end
 
     # Returns the value of attribute listener.
+    #
+    # source://guard//lib/guard.rb#23
     def listener; end
 
     # Returns the value of attribute queue.
+    #
+    # source://guard//lib/guard.rb#22
     def queue; end
 
     # Initializes the Guard singleton:
@@ -48,216 +58,78 @@ module Guard
     # @option options
     # @param options [Hash] a customizable set of options
     # @return [Guard] the Guard singleton
+    #
+    # source://guard//lib/guard.rb#44
     def setup(cmdline_options = T.unsafe(nil)); end
 
     # Returns the value of attribute state.
+    #
+    # source://guard//lib/guard.rb#21
     def state; end
 
     private
 
+    # source://guard//lib/guard.rb#132
     def _evaluate(options); end
 
     # TODO: remove at some point
     # TODO: not tested because collides with ongoing refactoring
+    #
+    # source://guard//lib/guard.rb#152
     def _guardfile_deprecated_check(modified); end
 
+    # source://guard//lib/guard.rb#113
     def _listener_callback; end
 
     # TODO: obsoleted? (move to Dsl?)
     #
     # @return [Boolean]
+    #
+    # source://guard//lib/guard.rb#128
     def _pluginless_guardfile?; end
 
+    # source://guard//lib/guard.rb#109
     def _relative_pathnames(paths); end
 
     # Check if any of the changes are actually watched for
     # TODO: why iterate twice? reuse this info when running tasks
     #
     # @return [Boolean]
+    #
+    # source://guard//lib/guard.rb#99
     def _relevant_changes?(changes); end
   end
 end
 
-# Facade for the Guard command line interface managed by
-# [Thor](https://github.com/wycats/thor).
-#
-# This is the main interface to Guard that is called by the Guard binary
-# `bin/guard`. Do not put any logic in here, create a class and delegate
-# instead.
-class Guard::CLI < ::Thor
-  # Initializes the templates of all installed Guard plugins and adds them
-  # to the `Guardfile` when no Guard name is passed. When passing
-  # Guard plugin names it does the same but only for those Guard plugins.
-  #
-  # initialize
-  #
-  # @param plugin_names [Array<String>] the name of the Guard plugins to
-  # @see Guard::Guardfile.initialize_template
-  # @see Guard::Guardfile.initialize_all_templates
-  def init(*plugin_names); end
-
-  # List the Guard plugins that are available for use in your system and
-  # marks those that are currently used in your `Guardfile`.
-  #
-  # @see Guard::DslDescriber.list
-  def list; end
-
-  # List the Notifiers for use in your system.
-  #
-  # @see Guard::DslDescriber.notifiers
-  def notifiers; end
-
-  # Shows all Guard plugins and their options that are defined in
-  # the `Guardfile`
-  #
-  # @see Guard::DslDescriber.show
-  def show; end
-
-  # Start Guard by initializing the defined Guard plugins and watch the file
-  # system.
-  #
-  # This is the default task, so calling `guard` is the same as calling
-  # `guard start`.
-  #
-  # @see Guard.start
-  def start; end
-
-  # Shows the current version of Guard.
-  #
-  # @see Guard::VERSION
-  def version; end
-
-  class << self
-    def help(shell, subcommand = T.unsafe(nil)); end
-  end
-end
-
-module Guard::Cli; end
-module Guard::Cli::Environments; end
-
-class Guard::Cli::Environments::Bundler
-  def verify; end
-end
-
-class Guard::Cli::Environments::EvaluateOnly
-  # @return [EvaluateOnly] a new instance of EvaluateOnly
-  def initialize(options); end
-
-  def evaluate; end
-end
-
-class Guard::Cli::Environments::Valid
-  # @return [Valid] a new instance of Valid
-  def initialize(options); end
-
-  def initialize_guardfile(plugin_names = T.unsafe(nil)); end
-  def start_guard; end
-end
-
-# Commands supported by guard
-module Guard::Commander
-  # Pause Guard listening to file changes.
-  def pause(expected = T.unsafe(nil)); end
-
-  # Reload Guardfile and all Guard plugins currently enabled.
-  # If no scope is given, then the Guardfile will be re-evaluated,
-  # which results in a stop/start, which makes the reload obsolete.
-  #
-  # @param scopes [Hash] hash with a Guard plugin or a group scope
-  def reload(scopes = T.unsafe(nil)); end
-
-  # Trigger `run_all` on all Guard plugins currently enabled.
-  #
-  # @param scopes [Hash] hash with a Guard plugin or a group scope
-  def run_all(scopes = T.unsafe(nil)); end
-
-  def show; end
-
-  # Start Guard by evaluating the `Guardfile`, initializing declared Guard
-  # plugins and starting the available file change listener.
-  # Main method for Guard that is called from the CLI when Guard starts.
-  #
-  # - Setup Guard internals
-  # - Evaluate the `Guardfile`
-  # - Configure Notifiers
-  # - Initialize the declared Guard plugins
-  # - Start the available file change listener
-  #
-  # @option options
-  # @option options
-  # @option options
-  # @option options
-  # @option options
-  # @option options
-  # @param options [Hash] a customizable set of options
-  # @see CLI#start
-  def start(options = T.unsafe(nil)); end
-
-  def stop; end
-end
-
-module Guard::Commands; end
-
-class Guard::Commands::All
-  class << self
-    def import; end
-  end
-end
-
-class Guard::Commands::Change
-  class << self
-    def import; end
-  end
-end
-
-class Guard::Commands::Notification
-  class << self
-    def import; end
-  end
-end
-
-class Guard::Commands::Pause
-  class << self
-    def import; end
-  end
-end
-
-class Guard::Commands::Reload
-  class << self
-    def import; end
-  end
-end
-
-class Guard::Commands::Scope
-  class << self
-    def import; end
-  end
-end
-
-class Guard::Commands::Show
-  class << self
-    def import; end
-  end
-end
-
+# source://guard//lib/guard/config.rb#9
 class Guard::Config < ::Nenv::Environment
   # @return [Config] a new instance of Config
+  #
+  # source://guard//lib/guard/config.rb#10
   def initialize; end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/config.rb#14
   def silence_deprecations?; end
 end
 
 # @deprecated Every method in this module is deprecated
+#
+# source://guard//lib/guard/deprecated/watcher.rb#5
 module Guard::Deprecated; end
 
+# source://guard//lib/guard/deprecated/dsl.rb#6
 module Guard::Deprecated::Dsl
   class << self
+    # source://guard//lib/guard/deprecated/dsl.rb#7
     def add_deprecated(dsl_klass); end
   end
 end
 
+# source://guard//lib/guard/deprecated/dsl.rb#16
 module Guard::Deprecated::Dsl::ClassMethods
+  # source://guard//lib/guard/deprecated/dsl.rb#35
   def evaluate_guardfile(options = T.unsafe(nil)); end
 end
 
@@ -268,61 +140,124 @@ end
 #
 # @deprecated Use
 # @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How
+#
+# source://guard//lib/guard/deprecated/dsl.rb#24
 Guard::Deprecated::Dsl::ClassMethods::EVALUATE_GUARDFILE = T.let(T.unsafe(nil), String)
 
+# source://guard//lib/guard/deprecated/dsl.rb#11
 Guard::Deprecated::Dsl::MORE_INFO_ON_UPGRADING_TO_GUARD_2 = T.let(T.unsafe(nil), String)
 
+# source://guard//lib/guard/deprecated/evaluator.rb#8
 module Guard::Deprecated::Evaluator
+  # source://guard//lib/guard/deprecated/evaluator.rb#26
   def evaluate_guardfile; end
+
+  # source://guard//lib/guard/deprecated/evaluator.rb#31
   def reevaluate_guardfile; end
 
   class << self
+    # source://guard//lib/guard/deprecated/evaluator.rb#9
     def add_deprecated(klass); end
   end
 end
 
+# source://guard//lib/guard/deprecated/evaluator.rb#13
 Guard::Deprecated::Evaluator::EVALUATE_GUARDFILE = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/evaluator.rb#18
 Guard::Deprecated::Evaluator::REEVALUATE_GUARDFILE = T.let(T.unsafe(nil), String)
 
+# source://guard//lib/guard/deprecated/guard.rb#14
 module Guard::Deprecated::Guard
   class << self
+    # source://guard//lib/guard/deprecated/guard.rb#15
     def add_deprecated(klass); end
   end
 end
 
+# source://guard//lib/guard/deprecated/guard.rb#19
 module Guard::Deprecated::Guard::ClassMethods
+  # source://guard//lib/guard/deprecated/guard.rb#251
   def add_group(name, options = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#57
   def add_guard(*args); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#261
   def add_plugin(name, options = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#179
   def evaluate_guardfile; end
+
+  # source://guard//lib/guard/deprecated/guard.rb#152
   def evaluator; end
+
+  # source://guard//lib/guard/deprecated/guard.rb#79
   def get_guard_class(name, fail_gracefully = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#271
   def group(filter); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#291
   def groups(filter); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#116
   def guard_gem_names; end
+
+  # source://guard//lib/guard/deprecated/guard.rb#38
   def guards(filter = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#143
   def listener=(_); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#97
   def locate_guard(name); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#135
   def lock; end
+
+  # source://guard//lib/guard/deprecated/guard.rb#195
   def options; end
+
+  # source://guard//lib/guard/deprecated/guard.rb#281
   def plugin(filter); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#301
   def plugins(filter); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#162
   def reset_evaluator(_options); end
+
+  # source://guard//lib/guard/deprecated/guard.rb#170
   def runner; end
+
+  # source://guard//lib/guard/deprecated/guard.rb#126
   def running; end
+
+  # source://guard//lib/guard/deprecated/guard.rb#311
   def scope; end
+
+  # source://guard//lib/guard/deprecated/guard.rb#321
   def scope=(scope); end
 end
 
+# source://guard//lib/guard/deprecated/guard.rb#246
 Guard::Deprecated::Guard::ClassMethods::ADD_GROUP = T.let(T.unsafe(nil), String)
 
 # @deprecated Use `Guard.add_plugin(name, options = {})` instead.
 # @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
 #   upgrade for Guard 2.0
+#
+# source://guard//lib/guard/deprecated/guard.rb#48
 Guard::Deprecated::Guard::ClassMethods::ADD_GUARD = T.let(T.unsafe(nil), String)
 
+# source://guard//lib/guard/deprecated/guard.rb#256
 Guard::Deprecated::Guard::ClassMethods::ADD_PLUGIN = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#175
 Guard::Deprecated::Guard::ClassMethods::EVALUATE_GUARDFILE = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#148
 Guard::Deprecated::Guard::ClassMethods::EVALUATOR = T.let(T.unsafe(nil), String)
 
 # @deprecated Use
@@ -330,14 +265,21 @@ Guard::Deprecated::Guard::ClassMethods::EVALUATOR = T.let(T.unsafe(nil), String)
 #   fail_gracefully)` instead.
 # @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
 #   upgrade for Guard 2.0
+#
+# source://guard//lib/guard/deprecated/guard.rb#69
 Guard::Deprecated::Guard::ClassMethods::GET_GUARD_CLASS = T.let(T.unsafe(nil), String)
 
+# source://guard//lib/guard/deprecated/guard.rb#266
 Guard::Deprecated::Guard::ClassMethods::GROUP = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#286
 Guard::Deprecated::Guard::ClassMethods::GROUPS = T.let(T.unsafe(nil), String)
 
 # @deprecated Use `Guard.plugins(filter)` instead.
 # @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
 #   upgrade for Guard 2.0
+#
+# source://guard//lib/guard/deprecated/guard.rb#30
 Guard::Deprecated::Guard::ClassMethods::GUARDS = T.let(T.unsafe(nil), String)
 
 # Deprecator message for the `Guard.guard_gem_names` method
@@ -345,75 +287,67 @@ Guard::Deprecated::Guard::ClassMethods::GUARDS = T.let(T.unsafe(nil), String)
 # @deprecated Use `Guard::PluginUtil.plugin_names` instead.
 # @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
 #   upgrade for Guard 2.0
+#
+# source://guard//lib/guard/deprecated/guard.rb#108
 Guard::Deprecated::Guard::ClassMethods::GUARD_GEM_NAMES = T.let(T.unsafe(nil), String)
 
+# source://guard//lib/guard/deprecated/guard.rb#139
 Guard::Deprecated::Guard::ClassMethods::LISTENER_ASSIGN = T.let(T.unsafe(nil), String)
 
 # @deprecated Use `Guard::PluginUtil.new(name).plugin_location` instead.
 # @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
 #   upgrade for Guard 2.0
+#
+# source://guard//lib/guard/deprecated/guard.rb#89
 Guard::Deprecated::Guard::ClassMethods::LOCATE_GUARD = T.let(T.unsafe(nil), String)
 
+# source://guard//lib/guard/deprecated/guard.rb#131
 Guard::Deprecated::Guard::ClassMethods::LOCK = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#20
 Guard::Deprecated::Guard::ClassMethods::MORE_INFO_ON_UPGRADING_TO_GUARD_2 = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#188
 Guard::Deprecated::Guard::ClassMethods::OPTIONS = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#276
 Guard::Deprecated::Guard::ClassMethods::PLUGIN = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#296
 Guard::Deprecated::Guard::ClassMethods::PLUGINS = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#158
 Guard::Deprecated::Guard::ClassMethods::RESET_EVALUATOR = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#166
 Guard::Deprecated::Guard::ClassMethods::RUNNER = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#121
 Guard::Deprecated::Guard::ClassMethods::RUNNING = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#306
 Guard::Deprecated::Guard::ClassMethods::SCOPE = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/deprecated/guard.rb#316
 Guard::Deprecated::Guard::ClassMethods::SCOPE_ASSIGN = T.let(T.unsafe(nil), String)
 
-module Guard::Deprecated::Guardfile
-  class << self
-    def add_deprecated(dsl_klass); end
-  end
-end
-
-module Guard::Deprecated::Guardfile::ClassMethods
-  def create_guardfile(options = T.unsafe(nil)); end
-  def initialize_all_templates; end
-  def initialize_template(plugin_name); end
-end
-
-# upgrade for Guard 2.0
-#
-# @deprecated Use {Guardfile::Generator#create_guardfile} instead.
-# @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
-Guard::Deprecated::Guardfile::ClassMethods::CREATE_GUARDFILE = T.let(T.unsafe(nil), String)
-
-# instead.
-#
-# upgrade for Guard 2.0
-#
-# Deprecator message for the `Guardfile.initialize_all_templates` method
-#
-# @deprecated Use {Guardfile::Generator#initialize_all_templates}
-# @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
-Guard::Deprecated::Guardfile::ClassMethods::INITIALIZE_ALL_TEMPLATES = T.let(T.unsafe(nil), String)
-
-# upgrade for Guard 2.0
-#
-# Deprecator message for the `Guardfile.initialize_template` method
-#
-# @deprecated Use {Guardfile::Generator#initialize_template} instead.
-# @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
-Guard::Deprecated::Guardfile::ClassMethods::INITIALIZE_TEMPLATE = T.let(T.unsafe(nil), String)
-
-Guard::Deprecated::Guardfile::ClassMethods::MORE_INFO_ON_UPGRADING_TO_GUARD_2 = T.let(T.unsafe(nil), String)
-
+# source://guard//lib/guard/deprecated/watcher.rb#6
 module Guard::Deprecated::Watcher
   class << self
+    # source://guard//lib/guard/deprecated/watcher.rb#7
     def add_deprecated(klass); end
   end
 end
 
+# source://guard//lib/guard/deprecated/watcher.rb#11
 module Guard::Deprecated::Watcher::ClassMethods
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/deprecated/watcher.rb#16
   def match_guardfile?(files); end
 end
 
+# source://guard//lib/guard/deprecated/watcher.rb#12
 Guard::Deprecated::Watcher::ClassMethods::MATCH_GUARDFILE = T.let(T.unsafe(nil), String)
 
 # The Dsl class provides the methods that are used in each `Guardfile` to
@@ -453,6 +387,8 @@ Guard::Deprecated::Watcher::ClassMethods::MATCH_GUARDFILE = T.let(T.unsafe(nil),
 # found, it will be appended to the current project `Guardfile`.
 #
 # @see https://github.com/guard/guard/wiki/Guardfile-examples
+#
+# source://guard//lib/guard/dsl.rb#49
 class Guard::Dsl
   extend ::Guard::Deprecated::Dsl::ClassMethods
 
@@ -472,6 +408,8 @@ class Guard::Dsl
   #   callback(my_lambda, [:start_begin, :start_end])
   # @param args [Array] the callback arguments
   # @yield a callback block
+  #
+  # source://guard//lib/guard/dsl.rb#246
   def callback(*args, &block); end
 
   # Sets Guard to clear the screen before every task is run
@@ -479,6 +417,8 @@ class Guard::Dsl
   # @example switching clearing the screen on
   #   clearing(:on)
   # @param on [Symbol] ':on' to turn on, ':off' (default) to turn off
+  #
+  # source://guard//lib/guard/dsl.rb#408
   def clearing(on); end
 
   # Sets the directories to pass to Listen
@@ -486,9 +426,13 @@ class Guard::Dsl
   # @example watch only given directories
   #   directories %w(lib specs)
   # @param directories [Array] directories for Listen to watch
+  #
+  # source://guard//lib/guard/dsl.rb#394
   def directories(directories); end
 
   # :nodoc
+  #
+  # source://guard//lib/guard/dsl.rb#377
   def evaluate(contents, filename, lineno); end
 
   # Ignores certain paths globally.
@@ -497,6 +441,8 @@ class Guard::Dsl
   # @example Ignore some paths
   #   ignore %r{^ignored/path/}, /man/
   # @param regexps [Regexp] a pattern (or list of patterns) for ignoring paths
+  #
+  # source://guard//lib/guard/dsl.rb#267
   def filter(*regexps); end
 
   # Replaces ignored paths globally
@@ -505,6 +451,8 @@ class Guard::Dsl
   # @example Ignore only these paths
   #   ignore! %r{^ignored/path/}, /man/
   # @param regexps [Regexp] a pattern (or list of patterns) for ignoring paths
+  #
+  # source://guard//lib/guard/dsl.rb#282
   def filter!(*regexps); end
 
   # Declares a group of Guard plugins to be run with `guard start --group
@@ -527,6 +475,8 @@ class Guard::Dsl
   # @see Guard.add_group
   # @see #guard
   # @yield a block where you can declare several Guard plugins
+  #
+  # source://guard//lib/guard/dsl.rb#124
   def group(*args); end
 
   # Declares a Guard plugin to be used when running `guard start`.
@@ -549,6 +499,8 @@ class Guard::Dsl
   # @see #watch
   # @see #group
   # @yield a block where you can declare several watch patterns and actions
+  #
+  # source://guard//lib/guard/dsl.rb#176
   def guard(name, options = T.unsafe(nil)); end
 
   # Ignores certain paths globally.
@@ -556,6 +508,8 @@ class Guard::Dsl
   # @example Ignore some paths
   #   ignore %r{^ignored/path/}, /man/
   # @param regexps [Regexp] a pattern (or list of patterns) for ignoring paths
+  #
+  # source://guard//lib/guard/dsl.rb#267
   def ignore(*regexps); end
 
   # Replaces ignored paths globally
@@ -563,6 +517,8 @@ class Guard::Dsl
   # @example Ignore only these paths
   #   ignore! %r{^ignored/path/}, /man/
   # @param regexps [Regexp] a pattern (or list of patterns) for ignoring paths
+  #
+  # source://guard//lib/guard/dsl.rb#282
   def ignore!(*regexps); end
 
   # Sets the interactor options or disable the interactor.
@@ -573,6 +529,8 @@ class Guard::Dsl
   #   interactor :off
   # @param options [Symbol, Hash] either `:off` or a Hash with interactor
   #   options
+  #
+  # source://guard//lib/guard/dsl.rb#91
   def interactor(options); end
 
   # Configures the Guard logger.
@@ -600,6 +558,8 @@ class Guard::Dsl
   # @option options
   # @option options
   # @param options [Hash] the log options
+  #
+  # source://guard//lib/guard/dsl.rb#325
   def logger(options); end
 
   # Set notification options for the system notifications.
@@ -613,6 +573,8 @@ class Guard::Dsl
   # @param notifier [Symbol, String] the name of the notifier to use
   # @param opts [Hash] the notification library options
   # @see Guard::Notifier for available notifier and its options.
+  #
+  # source://guard//lib/guard/dsl.rb#76
   def notification(notifier, opts = T.unsafe(nil)); end
 
   # Sets the default scope on startup
@@ -626,6 +588,8 @@ class Guard::Dsl
   # @example Scope Guard to multiple plugins
   #   scope plugins: [:jasmine, :rspec]
   # @param scope [Hash] the scope for the groups and plugins
+  #
+  # source://guard//lib/guard/dsl.rb#372
   def scope(scope = T.unsafe(nil)); end
 
   # Defines a pattern to be watched in order to run actions on file
@@ -650,74 +614,77 @@ class Guard::Dsl
   # @yieldparam m [MatchData] matches of the pattern
   # @yieldreturn a directory, a filename, an array of
   #   directories / filenames, or nothing (can be an arbitrary command)
+  #
+  # source://guard//lib/guard/dsl.rb#218
   def watch(pattern, &action); end
 
   private
 
+  # source://guard//lib/guard/dsl.rb#414
   def _cleanup_backtrace(backtrace); end
 end
 
 # Wrap exceptions during parsing Guardfile
+#
+# source://guard//lib/guard/dsl.rb#53
 class Guard::Dsl::Error < ::RuntimeError; end
 
+# source://guard//lib/guard/dsl.rb#56
 Guard::Dsl::WARN_INVALID_LOG_LEVEL = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/dsl.rb#59
 Guard::Dsl::WARN_INVALID_LOG_OPTIONS = T.let(T.unsafe(nil), String)
 
-# The DslDescriber evaluates the Guardfile and creates an internal structure
-# of it that is used in some inspection utility methods like the CLI commands
-# `show` and `list`.
-#
-# @see Guard::Dsl
-# @see Guard::CLI
-class Guard::DslDescriber
-  # @return [DslDescriber] a new instance of DslDescriber
-  def initialize(options = T.unsafe(nil)); end
-
-  # List the Guard plugins that are available for use in your system and marks
-  # those that are currently used in your `Guardfile`.
-  #
-  # @see CLI#list
-  def list; end
-
-  # Shows all notifiers and their options that are defined in
-  # the `Guardfile`.
-  #
-  # @see CLI#show
-  def notifiers; end
-
-  # Shows all Guard plugins and their options that are defined in
-  # the `Guardfile`.
-  #
-  # @see CLI#show
-  def show; end
-
-  private
-
-  def _add_row(rows, name, available, used, option, value); end
-end
-
 # TODO: this should probably be a base class for Dsl instead (in Guard 3.x)
+#
+# source://guard//lib/guard/dsl_reader.rb#5
 class Guard::DslReader < ::Guard::Dsl
   # @return [DslReader] a new instance of DslReader
+  #
+  # source://guard//lib/guard/dsl_reader.rb#8
   def initialize; end
 
+  # source://guard//lib/guard/dsl_reader.rb#30
   def callback(*_args, &_block); end
+
+  # source://guard//lib/guard/dsl_reader.rb#48
   def clearing(_on); end
+
+  # source://guard//lib/guard/dsl_reader.rb#45
   def directories(_directories); end
+
+  # source://guard//lib/guard/dsl_reader.rb#24
   def group(*_args); end
+
+  # source://guard//lib/guard/dsl_reader.rb#13
   def guard(name, _options = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/dsl_reader.rb#33
   def ignore(*_regexps); end
+
+  # source://guard//lib/guard/dsl_reader.rb#36
   def ignore!(*_regexps); end
+
+  # source://guard//lib/guard/dsl_reader.rb#21
   def interactor(_options); end
+
+  # source://guard//lib/guard/dsl_reader.rb#39
   def logger(_options); end
 
   # Stub everything else
+  #
+  # source://guard//lib/guard/dsl_reader.rb#18
   def notification(_notifier, _opts = T.unsafe(nil)); end
 
   # Returns the value of attribute plugin_names.
+  #
+  # source://guard//lib/guard/dsl_reader.rb#6
   def plugin_names; end
 
+  # source://guard//lib/guard/dsl_reader.rb#42
   def scope(_scope = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/dsl_reader.rb#27
   def watch(_pattern, &_action); end
 end
 
@@ -741,6 +708,8 @@ end
 #   end
 #   end
 # @see Guard::CLI
+#
+# source://guard//lib/guard/group.rb#24
 class Guard::Group
   # Initializes a Group.
   #
@@ -748,22 +717,32 @@ class Guard::Group
   # @param name [String] the name of the group
   # @param options [Hash] the group options
   # @return [Group] a new instance of Group
+  #
+  # source://guard//lib/guard/group.rb#35
   def initialize(name, options = T.unsafe(nil)); end
 
   # Returns the value of attribute name.
+  #
+  # source://guard//lib/guard/group.rb#25
   def name; end
 
   # Sets the attribute name
   #
   # @param value the value to set the attribute name to.
+  #
+  # source://guard//lib/guard/group.rb#25
   def name=(_arg0); end
 
   # Returns the value of attribute options.
+  #
+  # source://guard//lib/guard/group.rb#25
   def options; end
 
   # Sets the attribute options
   #
   # @param value the value to set the attribute options to.
+  #
+  # source://guard//lib/guard/group.rb#25
   def options=(_arg0); end
 
   # Returns the group title.
@@ -772,6 +751,8 @@ class Guard::Group
   #   > Guard::Group.new('backend').title
   #   => "Backend"
   # @return [String]
+  #
+  # source://guard//lib/guard/group.rb#48
   def title; end
 
   # String representation of the group.
@@ -780,9 +761,12 @@ class Guard::Group
   #   > Guard::Group.new('backend').to_s
   #   => "#<Guard::Group @name=backend @options={}>"
   # @return [String] the string representation
+  #
+  # source://guard//lib/guard/group.rb#60
   def to_s; end
 end
 
+# source://guard//lib/guard/guardfile/evaluator.rb#11
 module Guard::Guardfile; end
 
 # This class is responsible for evaluating the Guardfile. It delegates to
@@ -791,6 +775,8 @@ module Guard::Guardfile; end
 # TODO: rename this to a Locator or Loader or something
 #
 # @see Guard::Dsl
+#
+# source://guard//lib/guard/guardfile/evaluator.rb#18
 class Guard::Guardfile::Evaluator
   include ::Guard::Deprecated::Evaluator
 
@@ -802,9 +788,13 @@ class Guard::Guardfile::Evaluator
   # @option opts
   # @param opts [Hash] a customizable set of options
   # @return [Evaluator] a new instance of Evaluator
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#57
   def initialize(opts = T.unsafe(nil)); end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#121
   def custom?; end
 
   # Evaluates the DSL methods in the `Guardfile`.
@@ -821,6 +811,8 @@ class Guard::Guardfile::Evaluator
   #
   #   options = { contents: 'guard :rspec' }
   #   Guard::Guardfile::Evaluator.new(options).evaluate
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#89
   def evaluate; end
 
   # Gets the content of the `Guardfile` concatenated with the global
@@ -830,6 +822,8 @@ class Guard::Guardfile::Evaluator
   #   Guard::Guardfile::Evaluator.new.guardfile_contents
   #   => "guard :rspec"
   # @return [String] the Guardfile content
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#134
   def guardfile_contents; end
 
   # Tests if the current `Guardfile` contains a specific Guard plugin.
@@ -847,97 +841,90 @@ class Guard::Guardfile::Evaluator
   # @example Programmatically test if a Guardfile contains a specific Guard
   # @param plugin_name [String] the name of the Guard
   # @return [Boolean] whether the Guard plugin has been declared
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#113
   def guardfile_include?(plugin_name); end
 
   # Returns the value of attribute guardfile_path.
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#30
   def guardfile_path; end
 
+  # source://guard//lib/guard/guardfile/evaluator.rb#47
   def guardfile_source; end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#139
   def inline?; end
 
   # Returns the value of attribute options.
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#30
   def options; end
 
   # Returns the value of attribute path.
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#119
   def path; end
 
   private
 
+  # source://guard//lib/guard/guardfile/evaluator.rb#156
   def _fetch_guardfile_contents; end
+
+  # source://guard//lib/guard/guardfile/evaluator.rb#223
   def _from_deprecated(opts); end
+
+  # source://guard//lib/guard/guardfile/evaluator.rb#212
   def _guardfile_contents; end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/guardfile/evaluator.rb#219
   def _guardfile_contents_usable?; end
 
+  # source://guard//lib/guard/guardfile/evaluator.rb#145
   def _guardfile_contents_without_user_config; end
+
+  # source://guard//lib/guard/guardfile/evaluator.rb#149
   def _instance_eval_guardfile(contents); end
+
+  # source://guard//lib/guard/guardfile/evaluator.rb#200
   def _read(path); end
+
+  # source://guard//lib/guard/guardfile/evaluator.rb#186
   def _use_default!; end
+
+  # source://guard//lib/guard/guardfile/evaluator.rb#165
   def _use_inline; end
+
+  # source://guard//lib/guard/guardfile/evaluator.rb#178
   def _use_provided; end
 end
 
+# source://guard//lib/guard/guardfile/evaluator.rb#21
 Guard::Guardfile::Evaluator::DEFAULT_GUARDFILES = T.let(T.unsafe(nil), Array)
+
+# source://guard//lib/guard/guardfile/evaluator.rb#27
 Guard::Guardfile::Evaluator::ERROR_NO_GUARDFILE = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/guardfile/evaluator.rb#32
 Guard::Guardfile::Evaluator::ERROR_NO_PLUGINS = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/guardfile/evaluator.rb#35
 class Guard::Guardfile::Evaluator::Error < ::RuntimeError; end
+
+# source://guard//lib/guard/guardfile/evaluator.rb#41
 class Guard::Guardfile::Evaluator::NoCustomGuardfile < ::Guard::Guardfile::Evaluator::Error; end
+
+# source://guard//lib/guard/guardfile/evaluator.rb#38
 class Guard::Guardfile::Evaluator::NoGuardfileError < ::Guard::Guardfile::Evaluator::Error; end
+
+# source://guard//lib/guard/guardfile/evaluator.rb#44
 class Guard::Guardfile::Evaluator::NoPluginsError < ::Guard::Guardfile::Evaluator::Error; end
 
-# This class is responsible for generating the Guardfile and adding Guard'
-# plugins' templates into it.
-#
-# @see Guard::CLI
-class Guard::Guardfile::Generator
-  # Creates the initial Guardfile template when it does not
-  # already exist.
-  #
-  # @see Guard::CLI#init
-  def create_guardfile; end
-
-  # Adds the templates of all installed Guard implementations to an
-  # existing Guardfile.
-  #
-  # @see Guard::CLI#init
-  def initialize_all_templates; end
-
-  # Adds the Guardfile template of a Guard plugin to an existing Guardfile.
-  #
-  # @param plugin_name [String] the name of the Guard plugin or template to
-  #   initialize
-  # @see Guard::CLI#init
-  def initialize_template(plugin_name); end
-
-  private
-
-  def _ui(*args); end
-end
-
-class Guard::Guardfile::Generator::Error < ::RuntimeError; end
-
-# The Guardfile template for `guard init`
-Guard::Guardfile::Generator::GUARDFILE_TEMPLATE = T.let(T.unsafe(nil), String)
-
-Guard::Guardfile::Generator::HOME_TEMPLATES = T.let(T.unsafe(nil), Pathname)
-Guard::Guardfile::Generator::INFO_TEMPLATE_ADDED = T.let(T.unsafe(nil), String)
-
-class Guard::Guardfile::Generator::NoSuchPlugin < ::Guard::Guardfile::Generator::Error
-  # @return [NoSuchPlugin] a new instance of NoSuchPlugin
-  def initialize(plugin_name); end
-
-  # Returns the value of attribute class_name.
-  def class_name; end
-
-  def message; end
-
-  # Returns the value of attribute plugin_name.
-  def plugin_name; end
-end
-
+# source://guard//lib/guard/interactor.rb#4
 class Guard::Interactor
   extend ::Forwardable
 
@@ -946,44 +933,67 @@ class Guard::Interactor
   # for Guard.
   #
   # @return [Interactor] a new instance of Interactor
+  #
+  # source://guard//lib/guard/interactor.rb#9
   def initialize(no_interaction = T.unsafe(nil)); end
 
+  # source://forwardable/1.3.2/forwardable.rb#229
   def background(*args, **_arg1, &block); end
+
+  # source://forwardable/1.3.2/forwardable.rb#229
   def foreground(*args, **_arg1, &block); end
+
+  # source://forwardable/1.3.2/forwardable.rb#229
   def handle_interrupt(*args, **_arg1, &block); end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/interactor.rb#20
   def interactive?; end
 
   private
 
   # Returns the value of attribute idle_job.
+  #
+  # source://guard//lib/guard/interactor.rb#51
   def idle_job; end
 
   class << self
     # TODO: allow custom user idle jobs, e.g. [:pry, :sleep, :exit, ...]
     #
     # @return [Boolean]
+    #
+    # source://guard//lib/guard/interactor.rb#39
     def enabled; end
 
     # TODO: handle switching interactors during runtime?
+    #
+    # source://guard//lib/guard/interactor.rb#46
     def enabled=(_arg0); end
 
     # TODO: allow custom user idle jobs, e.g. [:pry, :sleep, :exit, ...]
     #
     # @return [Boolean]
+    #
+    # source://guard//lib/guard/interactor.rb#39
     def enabled?; end
 
+    # source://guard//lib/guard/interactor.rb#31
     def options; end
 
     # Pass options to interactor's job when it's created
+    #
+    # source://guard//lib/guard/interactor.rb#36
     def options=(_arg0); end
   end
 end
 
 # @private api
+#
+# source://guard//lib/guard/internals/groups.rb#5
 module Guard::Internals; end
 
+# source://guard//lib/guard/internals/debugging.rb#12
 class Guard::Internals::Debugging
   class << self
     # Sets up debugging:
@@ -991,347 +1001,343 @@ class Guard::Internals::Debugging
     # * aborts on thread exceptions
     # * Set the logging level to `:debug`
     # * traces execution of Kernel.system and backtick calls
+    #
+    # source://guard//lib/guard/internals/debugging.rb#26
     def start; end
 
+    # source://guard//lib/guard/internals/debugging.rb#38
     def stop; end
 
     private
 
+    # source://guard//lib/guard/internals/debugging.rb#46
     def _notify(*args); end
 
     # reset singleton - called by tests
+    #
+    # source://guard//lib/guard/internals/debugging.rb#51
     def _reset; end
 
+    # source://guard//lib/guard/internals/debugging.rb#58
     def _trace(mod, meth, &block); end
+
+    # source://guard//lib/guard/internals/debugging.rb#62
     def _untrace(mod, meth); end
   end
 end
 
+# source://guard//lib/guard/internals/groups.rb#6
 class Guard::Internals::Groups
   # @return [Groups] a new instance of Groups
+  #
+  # source://guard//lib/guard/internals/groups.rb#9
   def initialize; end
 
+  # source://guard//lib/guard/internals/groups.rb#19
   def add(name, options = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/internals/groups.rb#13
   def all(filter = T.unsafe(nil)); end
 
   private
 
+  # source://guard//lib/guard/internals/groups.rb#28
   def matcher_for(filter); end
 end
 
+# source://guard//lib/guard/internals/groups.rb#7
 Guard::Internals::Groups::DEFAULT_GROUPS = T.let(T.unsafe(nil), Array)
 
+# source://guard//lib/guard/internals/helpers.rb#4
 module Guard::Internals::Helpers
+  # source://guard//lib/guard/internals/helpers.rb#5
   def _relative_pathname(path); end
 end
 
+# source://guard//lib/guard/internals/plugins.rb#8
 class Guard::Internals::Plugins
   # @return [Plugins] a new instance of Plugins
+  #
+  # source://guard//lib/guard/internals/plugins.rb#9
   def initialize; end
 
   # TODO: should it allow duplicates? (probably yes because of different
   # configs or groups)
+  #
+  # source://guard//lib/guard/internals/plugins.rb#25
   def add(name, options); end
 
+  # source://guard//lib/guard/internals/plugins.rb#13
   def all(filter = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/internals/plugins.rb#19
   def remove(plugin); end
 
   private
 
+  # source://guard//lib/guard/internals/plugins.rb#31
   def matcher_for(filter); end
 end
 
+# source://guard//lib/guard/internals/queue.rb#3
 class Guard::Internals::Queue
   # @return [Queue] a new instance of Queue
+  #
+  # source://guard//lib/guard/internals/queue.rb#4
   def initialize(commander); end
 
+  # source://guard//lib/guard/internals/queue.rb#31
   def <<(changes); end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/internals/queue.rb#27
   def pending?; end
 
   # Process the change queue, running tasks within the main Guard thread
+  #
+  # source://guard//lib/guard/internals/queue.rb#10
   def process; end
 
   private
 
+  # source://guard//lib/guard/internals/queue.rb#37
   def _run_actions(actions); end
 end
 
+# source://guard//lib/guard/internals/scope.rb#6
 class Guard::Internals::Scope
   # @return [Scope] a new instance of Scope
+  #
+  # source://guard//lib/guard/internals/scope.rb#7
   def initialize; end
 
+  # source://guard//lib/guard/internals/scope.rb#51
   def from_interactor(scope); end
 
   # TODO: refactor
+  #
+  # source://guard//lib/guard/internals/scope.rb#20
   def grouped_plugins(scope = T.unsafe(nil)); end
 
+  # source://guard//lib/guard/internals/scope.rb#56
   def titles(scope = T.unsafe(nil)); end
+
+  # source://guard//lib/guard/internals/scope.rb#12
   def to_hash; end
 
   private
 
+  # source://guard//lib/guard/internals/scope.rb#108
   def _find_non_empty_scope(type, local_scope); end
+
+  # source://guard//lib/guard/internals/scope.rb#112
   def _groups; end
 
   # TODO: let the Plugins and Groups classes handle this?
   # TODO: why even instantiate?? just to check if it exists?
+  #
+  # source://guard//lib/guard/internals/scope.rb#77
   def _hashify_scope(type); end
 
+  # source://guard//lib/guard/internals/scope.rb#102
   def _instantiate(meth, obj); end
+
+  # source://guard//lib/guard/internals/scope.rb#116
   def _plugins; end
 
   # TODO: move to session
+  #
+  # source://guard//lib/guard/internals/scope.rb#68
   def _scope_names(new_scope, name); end
 end
 
 # TODO: split into a commandline class and session (plugins, groups)
 # TODO: swap session and metadata
+#
+# source://guard//lib/guard/internals/session.rb#11
 class Guard::Internals::Session
   # @return [Session] a new instance of Session
+  #
+  # source://guard//lib/guard/internals/session.rb#51
   def initialize(new_options); end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/internals/session.rb#102
   def clear?; end
 
+  # source://guard//lib/guard/internals/session.rb#98
   def clearing(on); end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/internals/session.rb#102
   def clearing?; end
 
+  # source://guard//lib/guard/internals/session.rb#43
   def cmdline_groups; end
+
+  # source://guard//lib/guard/internals/session.rb#47
   def cmdline_plugins; end
 
   # TODO: call this from within action, not within interactor command
+  #
+  # source://guard//lib/guard/internals/session.rb#162
   def convert_scope(entries); end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/internals/session.rb#108
   def debug?; end
 
+  # source://guard//lib/guard/internals/session.rb#136
   def evaluator_options; end
 
   # Returns the value of attribute groups.
+  #
+  # source://guard//lib/guard/internals/session.rb#13
   def groups; end
 
   # TODO: create a EvaluatorResult class?
+  #
+  # source://guard//lib/guard/internals/session.rb#89
   def guardfile_group_scope; end
 
   # Returns the value of attribute guardfile_ignore.
+  #
+  # source://guard//lib/guard/internals/session.rb#93
   def guardfile_ignore; end
 
+  # source://guard//lib/guard/internals/session.rb#94
   def guardfile_ignore=(ignores); end
 
   # Returns the value of attribute guardfile_ignore_bang.
+  #
+  # source://guard//lib/guard/internals/session.rb#91
   def guardfile_ignore_bang; end
 
   # Sets the attribute guardfile_ignore_bang
   #
   # @param value the value to set the attribute guardfile_ignore_bang to.
+  #
+  # source://guard//lib/guard/internals/session.rb#91
   def guardfile_ignore_bang=(_arg0); end
 
+  # source://guard//lib/guard/internals/session.rb#155
   def guardfile_notification=(config); end
 
   # Returns the value of attribute guardfile_plugin_scope.
+  #
+  # source://guard//lib/guard/internals/session.rb#90
   def guardfile_plugin_scope; end
 
+  # source://guard//lib/guard/internals/session.rb#74
   def guardfile_scope(scope); end
 
   # Returns the value of attribute interactor_name.
+  #
+  # source://guard//lib/guard/internals/session.rb#159
   def interactor_name; end
 
+  # source://guard//lib/guard/internals/session.rb#123
   def listener_args; end
+
+  # source://guard//lib/guard/internals/session.rb#145
   def notify_options; end
 
   # Returns the value of attribute plugins.
+  #
+  # source://guard//lib/guard/internals/session.rb#12
   def plugins; end
 
+  # source://guard//lib/guard/internals/session.rb#112
   def watchdirs; end
 
   # set by Dsl with :directories() command
+  #
+  # source://guard//lib/guard/internals/session.rb#118
   def watchdirs=(dirs); end
 end
 
+# source://guard//lib/guard/internals/session.rb#15
 Guard::Internals::Session::DEFAULT_OPTIONS = T.let(T.unsafe(nil), Hash)
 
+# source://guard//lib/guard/internals/state.rb#10
 class Guard::Internals::State
   # Minimal setup for non-interactive commands (list, init, show, etc.)
   #
   # @return [State] a new instance of State
+  #
+  # source://guard//lib/guard/internals/state.rb#12
   def initialize(cmdline_opts); end
 
   # Returns the value of attribute scope.
+  #
+  # source://guard//lib/guard/internals/state.rb#21
   def scope; end
 
   # Returns the value of attribute session.
+  #
+  # source://guard//lib/guard/internals/state.rb#22
   def session; end
 end
 
+# source://guard//lib/guard/internals/tracing.rb#3
 module Guard::Internals::Tracing
   class << self
+    # source://guard//lib/guard/internals/tracing.rb#4
     def trace(mod, meth); end
+
+    # source://guard//lib/guard/internals/tracing.rb#19
     def untrace(mod, meth); end
   end
 end
 
+# source://guard//lib/guard/internals/traps.rb#3
 module Guard::Internals::Traps
   class << self
+    # source://guard//lib/guard/internals/traps.rb#4
     def handle(signal, &block); end
   end
 end
 
-module Guard::Jobs; end
-
-class Guard::Jobs::Base
-  # @return [Base] a new instance of Base
-  def initialize(_options); end
-
-  def background; end
-
-  # @return [Symbol] :stopped once job is finished
-  # @return [Symbol] :exit to tell Guard to terminate
-  def foreground; end
-
-  # Signal handler calls this, so avoid actually doing
-  # anything other than signaling threads
-  def handle_interrupt; end
-end
-
-class Guard::Jobs::PryWrapper < ::Guard::Jobs::Base
-  # @return [PryWrapper] a new instance of PryWrapper
-  def initialize(options); end
-
-  def background; end
-  def foreground; end
-  def handle_interrupt; end
-
-  private
-
-  # Add Pry hooks:
-  #
-  # * Load `~/.guardrc` within each new Pry session.
-  # * Load project's `.guardrc` within each new Pry session.
-  # * Restore prompt after each evaluation.
-  def _add_hooks(options); end
-
-  # Add a `when_started` hook that loads a global .guardrc if it exists.
-  def _add_load_guard_rc_hook(guard_rc); end
-
-  # Add a `when_started` hook that loads a project .guardrc if it exists.
-  def _add_load_project_guard_rc_hook(guard_rc); end
-
-  # Add a `after_eval` hook that restores visibility after a command is
-  # eval.
-  def _add_restore_visibility_hook; end
-
-  def _clip_name(target); end
-  def _configure_history_file(history_file); end
-
-  # Configures the pry prompt to see `guard` instead of
-  # `pry`.
-  def _configure_prompt; end
-
-  # Creates command aliases for the commands: `help`, `reload`, `change`,
-  # `scope`, `notification`, `pause`, `exit` and `quit`, which will be the
-  # first letter of the command.
-  def _create_command_aliases; end
-
-  # Create a shorthand command to run the `:run_all`
-  # action on a specific Guard group. For example,
-  # when you have a group `frontend`, then a command
-  # `frontend` is created that runs `all frontend`.
-  def _create_group_commands; end
-
-  # Create a shorthand command to run the `:run_all`
-  # action on a specific Guard plugin. For example,
-  # when guard-rspec is available, then a command
-  # `rspec` is created that runs `all rspec`.
-  def _create_guard_commands; end
-
-  # Creates a command that triggers the `:run_all` action
-  # when the command is empty (just pressing enter on the
-  # beginning of a line).
-  def _create_run_all_command; end
-
-  def _history(pry); end
-  def _kill_pry; end
-
-  # @return [Boolean]
-  def _killed?; end
-
-  # Returns a proc that will return itself a string ending with the given
-  # `ending_char` when called.
-  def _prompt(ending_char); end
-
-  def _pry_commands; end
-  def _pry_config; end
-
-  # Replaces reset defined inside of Pry with a reset that
-  # instead restarts guard.
-  def _replace_reset_command; end
-
-  # Returns the plugins scope, or the groups scope ready for display in the
-  # prompt.
-  def _scope_for_prompt; end
-
-  def _setup(options); end
-  def _setup_commands; end
-  def _switch_to_pry; end
-
-  # Returns the value of attribute thread.
-  def thread; end
-end
-
-# The default Ruby script to configure Guard Pry if the option `:guard_rc`
-# is not defined.
-Guard::Jobs::PryWrapper::GUARD_RC = T.let(T.unsafe(nil), String)
-
-# The default Guard Pry history file if the option `:history_file` is not
-# defined.
-Guard::Jobs::PryWrapper::HISTORY_FILE = T.let(T.unsafe(nil), String)
-
-# List of shortcuts for each interactor command
-Guard::Jobs::PryWrapper::SHORTCUTS = T.let(T.unsafe(nil), Hash)
-
-class Guard::Jobs::Sleep < ::Guard::Jobs::Base
-  def background; end
-  def foreground; end
-  def handle_interrupt; end
-end
-
-class Guard::Jobs::TerminalSettings
-  # @return [TerminalSettings] a new instance of TerminalSettings
-  def initialize; end
-
-  # @return [Boolean]
-  def configurable?; end
-
-  def echo; end
-  def restore; end
-  def save; end
-end
-
+# source://guard//lib/guard/notifier.rb#5
 class Guard::Notifier
   class << self
+    # source://guard//lib/guard/notifier.rb#6
     def connect(options = T.unsafe(nil)); end
 
     # Used by dsl describer
+    #
+    # source://guard//lib/guard/notifier.rb#65
     def detected; end
 
+    # source://guard//lib/guard/notifier.rb#18
     def disconnect; end
+
+    # source://guard//lib/guard/notifier.rb#27
     def notify(message, options = T.unsafe(nil)); end
 
     # Used by dsl describer
+    #
+    # source://guard//lib/guard/notifier.rb#60
     def supported; end
 
+    # source://guard//lib/guard/notifier.rb#44
     def toggle; end
+
+    # source://guard//lib/guard/notifier.rb#40
     def turn_on; end
   end
 end
 
+# source://guard//lib/guard/notifier.rb#23
 Guard::Notifier::DEPRECATED_IMPLICIT_CONNECT = T.let(T.unsafe(nil), String)
 
 # A class that holds options. Can be instantiated with default options.
+#
+# source://guard//lib/guard/options.rb#12
 class Guard::Options < ::Thor::CoreExt::HashWithIndifferentAccess
   # Initializes an Guard::Options object. `default_opts` is merged into
   # `opts`.
@@ -1339,9 +1345,13 @@ class Guard::Options < ::Thor::CoreExt::HashWithIndifferentAccess
   # @param opts [Hash] the options
   # @param default_opts [Hash] the default options
   # @return [Options] a new instance of Options
+  #
+  # source://guard//lib/guard/options.rb#13
   def initialize(opts = T.unsafe(nil), default_opts = T.unsafe(nil)); end
 
   # workaround for: https://github.com/erikhuda/thor/issues/504
+  #
+  # source://guard//lib/guard/options.rb#18
   def fetch(name); end
 end
 
@@ -1382,6 +1392,8 @@ end
 #   end
 #   end
 # @see Guard::Group
+#
+# source://guard//lib/guard/plugin.rb#44
 class Guard::Plugin
   # Initializes a Guard plugin.
   # Don't do any work here, especially as Guard plugins get initialized even
@@ -1392,22 +1404,32 @@ class Guard::Plugin
   # @option options
   # @param options [Hash] the Guard plugin options
   # @return [Plugin] a new instance of Plugin
+  #
+  # source://guard//lib/guard/plugin.rb#285
   def initialize(options = T.unsafe(nil)); end
 
   # Returns the value of attribute callbacks.
+  #
+  # source://guard//lib/guard/plugin.rb#129
   def callbacks; end
 
   # Sets the attribute callbacks
   #
   # @param value the value to set the attribute callbacks to.
+  #
+  # source://guard//lib/guard/plugin.rb#129
   def callbacks=(_arg0); end
 
   # Returns the value of attribute group.
+  #
+  # source://guard//lib/guard/plugin.rb#129
   def group; end
 
   # Sets the attribute group
   #
   # @param value the value to set the attribute group to.
+  #
+  # source://guard//lib/guard/plugin.rb#129
   def group=(_arg0); end
 
   # When event is a Symbol, {#hook} will generate a hook name
@@ -1436,6 +1458,8 @@ class Guard::Plugin
   # @param event [Symbol, String] the name of the Guard event
   # @param args [Array] the parameters are passed as is to the callbacks
   #   registered for the given event.
+  #
+  # source://guard//lib/guard/plugin.rb#116
   def hook(event, *args); end
 
   # Returns the plugin's name (without "guard-").
@@ -1444,14 +1468,20 @@ class Guard::Plugin
   #   Guard::RSpec.new.name
   #   #=> "rspec"
   # @return [String]
+  #
+  # source://guard//lib/guard/plugin.rb#240
   def name; end
 
   # Returns the value of attribute options.
+  #
+  # source://guard//lib/guard/plugin.rb#129
   def options; end
 
   # Sets the attribute options
   #
   # @param value the value to set the attribute options to.
+  #
+  # source://guard//lib/guard/plugin.rb#129
   def options=(_arg0); end
 
   # Returns the plugin's class name without the Guard:: namespace.
@@ -1460,6 +1490,8 @@ class Guard::Plugin
   #   Guard::RSpec.new.title
   #   #=> "RSpec"
   # @return [String]
+  #
+  # source://guard//lib/guard/plugin.rb#252
   def title; end
 
   # String representation of the plugin.
@@ -1471,20 +1503,28 @@ class Guard::Plugin
   #   @options={}> @watchers=[] @callbacks=[] @options={all_after_pass:
   #   true}>"
   # @return [String] the string representation
+  #
+  # source://guard//lib/guard/plugin.rb#267
   def to_s; end
 
   # Returns the value of attribute watchers.
+  #
+  # source://guard//lib/guard/plugin.rb#129
   def watchers; end
 
   # Sets the attribute watchers
   #
   # @param value the value to set the attribute watchers to.
+  #
+  # source://guard//lib/guard/plugin.rb#129
   def watchers=(_arg0); end
 
   private
 
   # Add all the Guard::Plugin's callbacks to the global @callbacks array
   # that's used by Guard to know which callbacks to notify.
+  #
+  # source://guard//lib/guard/plugin.rb#297
   def _register_callbacks; end
 
   class << self
@@ -1493,10 +1533,14 @@ class Guard::Plugin
     # @param listener [Block] the listener to notify
     # @param guard_plugin [Guard::Plugin] the Guard plugin to add the callback
     # @param events [Array<Symbol>] the events to register
+    #
+    # source://guard//lib/guard/plugin.rb#62
     def add_callback(listener, guard_plugin, events); end
 
     # Get all callbacks registered for all Guard plugins present in the
     # Guardfile.
+    #
+    # source://guard//lib/guard/plugin.rb#52
     def callbacks; end
 
     # Returns the non-namespaced class name of the plugin
@@ -1505,6 +1549,8 @@ class Guard::Plugin
     #   Guard::RSpec.non_namespaced_classname
     #   #=> "RSpec"
     # @return [String]
+    #
+    # source://guard//lib/guard/plugin.rb#140
     def non_namespaced_classname; end
 
     # Returns the non-namespaced name of the plugin
@@ -1513,6 +1559,8 @@ class Guard::Plugin
     #   Guard::RSpec.non_namespaced_name
     #   #=> "rspec"
     # @return [String]
+    #
+    # source://guard//lib/guard/plugin.rb#153
     def non_namespaced_name; end
 
     # Notify a callback.
@@ -1520,21 +1568,28 @@ class Guard::Plugin
     # @param guard_plugin [Guard::Plugin] the Guard plugin to add the callback
     # @param event [Symbol] the event to trigger
     # @param args [Array] the arguments for the listener
+    #
+    # source://guard//lib/guard/plugin.rb#74
     def notify(guard_plugin, event, *args); end
 
     # Reset all callbacks.
     #
     # TODO: remove (not used anywhere)
+    #
+    # source://guard//lib/guard/plugin.rb#83
     def reset_callbacks!; end
 
     # Specify the source for the Guardfile template.
     # Each Guard plugin can redefine this method to add its own logic.
     #
     # @param plugin_location [String] the plugin location
+    #
+    # source://guard//lib/guard/plugin.rb#162
     def template(plugin_location); end
   end
 end
 
+# source://guard//lib/guard/plugin.rb#45
 Guard::Plugin::TEMPLATE_FORMAT = T.let(T.unsafe(nil), String)
 
 # This class contains useful methods to:
@@ -1543,14 +1598,20 @@ Guard::Plugin::TEMPLATE_FORMAT = T.let(T.unsafe(nil), String)
 # * Initialize a plugin, get its location;
 # * Return its class name;
 # * Add its template to the Guardfile.
+#
+# source://guard//lib/guard/plugin_util.rb#11
 class Guard::PluginUtil
   # Initializes a new `Guard::PluginUtil` object.
   #
   # @param name [String] the name of the Guard plugin
   # @return [PluginUtil] a new instance of PluginUtil
+  #
+  # source://guard//lib/guard/plugin_util.rb#36
   def initialize(name); end
 
   # Adds a plugin's template to the Guardfile.
+  #
+  # source://guard//lib/guard/plugin_util.rb#126
   def add_to_guardfile; end
 
   # Initializes a new `Guard::Plugin` with the given `options` hash. This
@@ -1567,14 +1628,20 @@ class Guard::PluginUtil
   #   https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0
   # @see Guard::Plugin
   # @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
+  #
+  # source://guard//lib/guard/plugin_util.rb#55
   def initialize_plugin(options); end
 
   # Returns the value of attribute name.
+  #
+  # source://guard//lib/guard/plugin_util.rb#18
   def name; end
 
   # Sets the attribute name
   #
   # @param value the value to set the attribute name to.
+  #
+  # source://guard//lib/guard/plugin_util.rb#18
   def name=(_arg0); end
 
   # Tries to load the Guard plugin main class. This transforms the supplied
@@ -1594,11 +1661,15 @@ class Guard::PluginUtil
   # @option options
   # @param options [Hash] a customizable set of options
   # @return [Class, nil] the loaded class
+  #
+  # source://guard//lib/guard/plugin_util.rb#96
   def plugin_class(options = T.unsafe(nil)); end
 
   # Locates a path to a Guard plugin gem.
   #
   # @return [String] the full path to the plugin gem
+  #
+  # source://guard//lib/guard/plugin_util.rb#73
   def plugin_location; end
 
   private
@@ -1608,8 +1679,11 @@ class Guard::PluginUtil
   # @example Returns the most probable name for a plugin
   #   > Guard::PluginUtil.new('rspec').send(:_constant_name)
   #   => "Rspec"
+  #
+  # source://guard//lib/guard/plugin_util.rb#172
   def _constant_name; end
 
+  # source://guard//lib/guard/plugin_util.rb#177
   def _full_gem_path(name); end
 
   # Returns the constant for the current plugin.
@@ -1617,23 +1691,34 @@ class Guard::PluginUtil
   # @example Returns the constant for a plugin
   #   > Guard::PluginUtil.new('rspec').send(:_plugin_constant)
   #   => Guard::RSpec
+  #
+  # source://guard//lib/guard/plugin_util.rb#160
   def _plugin_constant; end
 
   class << self
     # @return [Boolean]
+    #
+    # source://guard//lib/guard/plugin_util.rb#182
     def _gem_valid?(gem); end
 
     # Returns a list of Guard plugin Gem names installed locally.
     #
     # @return [Array<String>] a list of Guard plugin gem names
+    #
+    # source://guard//lib/guard/plugin_util.rb#24
     def plugin_names; end
   end
 end
 
+# source://guard//lib/guard/plugin_util.rb#12
 Guard::PluginUtil::ERROR_NO_GUARD_OR_CLASS = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/plugin_util.rb#15
 Guard::PluginUtil::INFO_ADDED_GUARD_TO_GUARDFILE = T.let(T.unsafe(nil), String)
 
 # The runner is responsible for running all methods defined on each plugin.
+#
+# source://guard//lib/guard/runner.rb#9
 class Guard::Runner
   # Run a Guard plugin task, but remove the Guard plugin when his work leads
   # to a system failure.
@@ -1645,6 +1730,8 @@ class Guard::Runner
   # @param task [Symbol] the task to run
   # @param args [Array] the arguments for the task
   # @raise [:task_has_failed] when task has failed
+  #
+  # source://guard//lib/guard/runner.rb#78
   def _supervise(plugin, task, *args); end
 
   # Runs a Guard-task on all registered plugins.
@@ -1653,6 +1740,8 @@ class Guard::Runner
   #
   # @param task [Symbol] the task to run
   # @param scope_hash [Hash] either the Guard plugin or the group to run the task
+  #
+  # source://guard//lib/guard/runner.rb#17
   def run(task, scope_hash = T.unsafe(nil)); end
 
   # Runs the appropriate tasks on all registered plugins
@@ -1661,10 +1750,13 @@ class Guard::Runner
   # @param modified [Array<String>] the modified paths.
   # @param added [Array<String>] the added paths.
   # @param removed [Array<String>] the removed paths.
+  #
+  # source://guard//lib/guard/runner.rb#44
   def run_on_changes(modified, added, removed); end
 
   private
 
+  # source://guard//lib/guard/runner.rb#116
   def _run_group_plugins(plugins); end
 
   class << self
@@ -1675,17 +1767,28 @@ class Guard::Runner
     #   group level.
     # @param guard [Guard::Plugin] the Guard plugin to execute
     # @return [Symbol] the symbol to catch
+    #
+    # source://guard//lib/guard/runner.rb#110
     def stopping_symbol_for(guard); end
   end
 end
 
+# source://guard//lib/guard/runner.rb#34
 Guard::Runner::ADDITION_TASKS = T.let(T.unsafe(nil), Array)
+
+# source://guard//lib/guard/runner.rb#30
 Guard::Runner::MODIFICATION_TASKS = T.let(T.unsafe(nil), Array)
+
+# source://guard//lib/guard/runner.rb#28
 Guard::Runner::PLUGIN_FAILED = T.let(T.unsafe(nil), String)
+
+# source://guard//lib/guard/runner.rb#35
 Guard::Runner::REMOVAL_TASKS = T.let(T.unsafe(nil), Array)
 
+# source://guard//lib/guard/terminal.rb#4
 class Guard::Terminal
   class << self
+    # source://guard//lib/guard/terminal.rb#6
     def clear; end
   end
 end
@@ -1696,6 +1799,8 @@ end
 #
 # If your Guard plugin does some output that is piped into another process
 # for further processing, please just write it to STDOUT with `puts`.
+#
+# source://guard//lib/guard/ui/colors.rb#2
 module Guard::UI
   include ::Guard::UI::Colors
 
@@ -1704,12 +1809,18 @@ module Guard::UI
     #
     # @param action [String] the action to show
     # @param scope [Hash] hash with a guard or a group scope
+    #
+    # source://guard//lib/guard/ui.rb#161
     def action_with_scopes(action, scope); end
 
     # Clear the output if clearable.
+    #
+    # source://guard//lib/guard/ui.rb#131
     def clear(opts = T.unsafe(nil)); end
 
     # Allow the screen to be cleared again.
+    #
+    # source://guard//lib/guard/ui.rb#152
     def clearable; end
 
     # Show a debug message that is prefixed with DEBUG and a timestamp.
@@ -1718,6 +1829,8 @@ module Guard::UI
     # @option options
     # @param message [String] the message to show
     # @param options [Hash] a customizable set of options
+    #
+    # source://guard//lib/guard/ui.rb#119
     def debug(message, options = T.unsafe(nil)); end
 
     # Show a red deprecation message that is prefixed with DEPRECATION.
@@ -1727,6 +1840,8 @@ module Guard::UI
     # @option options
     # @param message [String] the message to show
     # @param options [Hash] a customizable set of options
+    #
+    # source://guard//lib/guard/ui.rb#105
     def deprecation(message, options = T.unsafe(nil)); end
 
     # Show a red error message that is prefixed with ERROR.
@@ -1735,6 +1850,8 @@ module Guard::UI
     # @option options
     # @param message [String] the message to show
     # @param options [Hash] a customizable set of options
+    #
+    # source://guard//lib/guard/ui.rb#94
     def error(message, options = T.unsafe(nil)); end
 
     # Show an info message.
@@ -1743,17 +1860,25 @@ module Guard::UI
     # @option options
     # @param message [String] the message to show
     # @param options [Hash] a customizable set of options
+    #
+    # source://guard//lib/guard/ui.rb#74
     def info(message, options = T.unsafe(nil)); end
 
     # Assigns a log level
+    #
+    # source://guard//lib/guard/ui.rb#63
     def level=(new_level); end
 
     # Get the Guard::UI logger instance
+    #
+    # source://guard//lib/guard/ui.rb#26
     def logger; end
 
     # Get the logger options
     #
     # @return [Hash] the logger options
+    #
+    # source://guard//lib/guard/ui.rb#46
     def options; end
 
     # Set the logger options
@@ -1764,20 +1889,28 @@ module Guard::UI
     # @option options
     # @option options
     # @param options [Hash] the logger options
+    #
+    # source://guard//lib/guard/ui.rb#58
     def options=(options); end
 
     # TODO: arguments: UI uses Guard::options anyway
     #
     # @private api
+    #
+    # source://guard//lib/guard/ui.rb#145
     def reset_and_clear; end
 
     # Reset a line.
+    #
+    # source://guard//lib/guard/ui.rb#125
     def reset_line; end
 
     # Since logger is global, for Aruba in-process to properly
     # separate output between calls, we need to reset
     #
     # We don't use logger=() since it's expected to be a Lumberjack instance
+    #
+    # source://guard//lib/guard/ui.rb#38
     def reset_logger; end
 
     # Show a yellow warning message that is prefixed with WARNING.
@@ -1786,6 +1919,8 @@ module Guard::UI
     # @option options
     # @param message [String] the message to show
     # @param options [Hash] a customizable set of options
+    #
+    # source://guard//lib/guard/ui.rb#84
     def warning(message, options = T.unsafe(nil)); end
 
     private
@@ -1795,6 +1930,8 @@ module Guard::UI
     #
     # @param depth [Integer] the stack depth
     # @return [String] the Guard plugin name
+    #
+    # source://guard//lib/guard/ui.rb#203
     def _calling_plugin_name; end
 
     # Filters log messages depending on either the
@@ -1803,9 +1940,13 @@ module Guard::UI
     # @param plugin [String] the calling plugin name
     # @yield When the message should be logged
     # @yieldparam param [String] the calling plugin name
+    #
+    # source://guard//lib/guard/ui.rb#175
     def _filter(plugin); end
 
     # @private
+    #
+    # source://guard//lib/guard/ui.rb#188
     def _filtered_logger_message(message, method, color_name, options = T.unsafe(nil)); end
 
     # Colorizes a text message. See the constant in the UI class for possible
@@ -1817,101 +1958,164 @@ module Guard::UI
     #   color('Hello World', :red, :bright)
     # @param text [String] the text to colorize
     # @param color_options [Array] the color options
+    #
+    # source://guard//lib/guard/ui.rb#247
     def color(text, *color_options); end
 
     # Checks if color output can be enabled.
     #
     # @return [Boolean] whether color is enabled or not
+    #
+    # source://guard//lib/guard/ui.rb#217
     def color_enabled?; end
   end
 end
 
+# source://guard//lib/guard/ui/colors.rb#3
 module Guard::UI::Colors; end
 
 # Black background color
+#
+# source://guard//lib/guard/ui/colors.rb#32
 Guard::UI::Colors::ANSI_ESCAPE_BGBLACK = T.let(T.unsafe(nil), String)
 
 # Blue background color
+#
+# source://guard//lib/guard/ui/colors.rb#44
 Guard::UI::Colors::ANSI_ESCAPE_BGBLUE = T.let(T.unsafe(nil), String)
 
 # Cyan background color
+#
+# source://guard//lib/guard/ui/colors.rb#50
 Guard::UI::Colors::ANSI_ESCAPE_BGCYAN = T.let(T.unsafe(nil), String)
 
 # Green background color
+#
+# source://guard//lib/guard/ui/colors.rb#38
 Guard::UI::Colors::ANSI_ESCAPE_BGGREEN = T.let(T.unsafe(nil), String)
 
 # Magenta background color
+#
+# source://guard//lib/guard/ui/colors.rb#47
 Guard::UI::Colors::ANSI_ESCAPE_BGMAGENTA = T.let(T.unsafe(nil), String)
 
 # Red background color
+#
+# source://guard//lib/guard/ui/colors.rb#35
 Guard::UI::Colors::ANSI_ESCAPE_BGRED = T.let(T.unsafe(nil), String)
 
 # White background color
+#
+# source://guard//lib/guard/ui/colors.rb#53
 Guard::UI::Colors::ANSI_ESCAPE_BGWHITE = T.let(T.unsafe(nil), String)
 
 # Yellow background color
+#
+# source://guard//lib/guard/ui/colors.rb#41
 Guard::UI::Colors::ANSI_ESCAPE_BGYELLOW = T.let(T.unsafe(nil), String)
 
 # Black foreground color
+#
+# source://guard//lib/guard/ui/colors.rb#8
 Guard::UI::Colors::ANSI_ESCAPE_BLACK = T.let(T.unsafe(nil), String)
 
 # Blue foreground color
+#
+# source://guard//lib/guard/ui/colors.rb#20
 Guard::UI::Colors::ANSI_ESCAPE_BLUE = T.let(T.unsafe(nil), String)
 
 # Brighten the color
+#
+# source://guard//lib/guard/ui/colors.rb#5
 Guard::UI::Colors::ANSI_ESCAPE_BRIGHT = T.let(T.unsafe(nil), String)
 
 # Cyan foreground color
+#
+# source://guard//lib/guard/ui/colors.rb#26
 Guard::UI::Colors::ANSI_ESCAPE_CYAN = T.let(T.unsafe(nil), String)
 
 # Green foreground color
+#
+# source://guard//lib/guard/ui/colors.rb#14
 Guard::UI::Colors::ANSI_ESCAPE_GREEN = T.let(T.unsafe(nil), String)
 
 # Magenta foreground color
+#
+# source://guard//lib/guard/ui/colors.rb#23
 Guard::UI::Colors::ANSI_ESCAPE_MAGENTA = T.let(T.unsafe(nil), String)
 
 # Red foreground color
+#
+# source://guard//lib/guard/ui/colors.rb#11
 Guard::UI::Colors::ANSI_ESCAPE_RED = T.let(T.unsafe(nil), String)
 
 # White foreground color
+#
+# source://guard//lib/guard/ui/colors.rb#29
 Guard::UI::Colors::ANSI_ESCAPE_WHITE = T.let(T.unsafe(nil), String)
 
 # Yellow foreground color
+#
+# source://guard//lib/guard/ui/colors.rb#17
 Guard::UI::Colors::ANSI_ESCAPE_YELLOW = T.let(T.unsafe(nil), String)
 
+# source://guard//lib/guard/ui/config.rb#6
 class Guard::UI::Config < ::Guard::Options
   # @return [Config] a new instance of Config
+  #
+  # source://guard//lib/guard/ui/config.rb#20
   def initialize(options = T.unsafe(nil)); end
 
+  # source://guard//lib/guard/ui/config.rb#48
   def [](name); end
+
+  # source://guard//lib/guard/ui/config.rb#35
   def device; end
+
+  # source://guard//lib/guard/ui/config.rb#44
   def except; end
 
   # Returns the value of attribute logger_config.
+  #
+  # source://guard//lib/guard/ui/config.rb#18
   def logger_config; end
 
+  # source://guard//lib/guard/ui/config.rb#40
   def only; end
+
+  # source://guard//lib/guard/ui/config.rb#59
   def with_progname(name); end
 end
 
+# source://guard//lib/guard/ui/config.rb#7
 Guard::UI::Config::DEFAULTS = T.let(T.unsafe(nil), Hash)
+
+# source://guard//lib/guard/ui/config.rb#16
 Guard::UI::Config::DEPRECATED_OPTS = T.let(T.unsafe(nil), Array)
+
+# source://guard//lib/guard/ui/logger.rb#5
 class Guard::UI::Logger; end
 
+# source://guard//lib/guard/ui/logger.rb#6
 class Guard::UI::Logger::Config < ::Guard::Options
   # @return [Config] a new instance of Config
+  #
+  # source://guard//lib/guard/ui/logger.rb#20
   def initialize(options = T.unsafe(nil)); end
 
+  # source://guard//lib/guard/ui/logger.rb#24
   def level=(value); end
 end
 
+# source://guard//lib/guard/ui/logger.rb#7
 Guard::UI::Logger::Config::DEFAULTS = T.let(T.unsafe(nil), Hash)
-Guard::VERSION = T.let(T.unsafe(nil), String)
 
 # The watcher defines a RegExp that will be matched against file system
 # modifications.
 # When a watcher matches a change, an optional action block is executed to
 # enable processing the file system change result.
+#
+# source://guard//lib/guard/watcher/pattern/match_result.rb#2
 class Guard::Watcher
   extend ::Guard::Deprecated::Watcher::ClassMethods
 
@@ -1922,20 +2126,28 @@ class Guard::Watcher
   # @param action [Block] the action to execute before passing the result to
   #   the Guard plugin
   # @return [Watcher] a new instance of Watcher
+  #
+  # source://guard//lib/guard/watcher.rb#24
   def initialize(pattern, action = T.unsafe(nil)); end
 
   # Compare with other watcher
   #
   # @param other [Guard::Watcher] other watcher for comparing
   # @return [true, false] equal or not
+  #
+  # source://guard//lib/guard/watcher.rb#32
   def ==(other); end
 
   # Returns the value of attribute action.
+  #
+  # source://guard//lib/guard/watcher.rb#15
   def action; end
 
   # Sets the attribute action
   #
   # @param value the value to set the attribute action to.
+  #
+  # source://guard//lib/guard/watcher.rb#15
   def action=(_arg0); end
 
   # Executes a watcher action.
@@ -1943,16 +2155,23 @@ class Guard::Watcher
   # @param matches [String, MatchData] the matched path or the match from the
   #   Regex
   # @return [String] the final paths
+  #
+  # source://guard//lib/guard/watcher.rb#81
   def call_action(matches); end
 
+  # source://guard//lib/guard/watcher.rb#70
   def match(string_or_pathname); end
 
   # Returns the value of attribute pattern.
+  #
+  # source://guard//lib/guard/watcher.rb#15
   def pattern; end
 
   # Sets the attribute pattern
   #
   # @param value the value to set the attribute pattern to.
+  #
+  # source://guard//lib/guard/watcher.rb#15
   def pattern=(_arg0); end
 
   class << self
@@ -1961,70 +2180,103 @@ class Guard::Watcher
     # @param guard [Guard::Plugin] the Guard plugin which watchers are used
     # @param files [Array<String>] the changed files
     # @return [Array<Object>] the matched watcher response
+    #
+    # source://guard//lib/guard/watcher.rb#42
     def match_files(guard, files); end
   end
 end
 
+# source://guard//lib/guard/watcher/pattern/match_result.rb#3
 class Guard::Watcher::Pattern
   class << self
+    # source://guard//lib/guard/watcher/pattern.rb#12
     def create(pattern); end
   end
 end
 
 # TODO: remove before Guard 3.x
+#
+# source://guard//lib/guard/watcher/pattern/deprecated_regexp.rb#7
 class Guard::Watcher::Pattern::DeprecatedRegexp
   # @return [DeprecatedRegexp] a new instance of DeprecatedRegexp
+  #
+  # source://guard//lib/guard/watcher/pattern/deprecated_regexp.rb#8
   def initialize(pattern); end
 
   # @return [Boolean]
+  #
+  # source://guard//lib/guard/watcher/pattern/deprecated_regexp.rb#16
   def deprecated?; end
 
   class << self
+    # source://guard//lib/guard/watcher/pattern/deprecated_regexp.rb#12
     def convert(pattern); end
+
+    # source://guard//lib/guard/watcher/pattern/deprecated_regexp.rb#21
     def show_deprecation(pattern); end
   end
 end
 
+# source://guard//lib/guard/watcher/pattern/match_result.rb#4
 class Guard::Watcher::Pattern::MatchResult
   # @return [MatchResult] a new instance of MatchResult
+  #
+  # source://guard//lib/guard/watcher/pattern/match_result.rb#5
   def initialize(match_result, original_value); end
 
+  # source://guard//lib/guard/watcher/pattern/match_result.rb#10
   def [](index); end
 end
 
+# source://guard//lib/guard/watcher/pattern/matcher.rb#4
 class Guard::Watcher::Pattern::Matcher
   # @return [Matcher] a new instance of Matcher
+  #
+  # source://guard//lib/guard/watcher/pattern/matcher.rb#7
   def initialize(obj); end
 
   # Compare with other matcher
   #
   # @param other [Guard::Watcher::Pattern::Matcher] other matcher for comparing
   # @return [true, false] equal or not
+  #
+  # source://guard//lib/guard/watcher/pattern/matcher.rb#15
   def ==(other); end
 
+  # source://guard//lib/guard/watcher/pattern/matcher.rb#19
   def match(string_or_pathname); end
 
   # Returns the value of attribute matcher.
+  #
+  # source://guard//lib/guard/watcher/pattern/matcher.rb#5
   def matcher; end
 
   private
 
+  # source://guard//lib/guard/watcher/pattern/matcher.rb#25
   def normalized(string_or_pathname); end
 end
 
+# source://guard//lib/guard/watcher/pattern/pathname_path.rb#6
 class Guard::Watcher::Pattern::PathnamePath < ::Guard::Watcher::Pattern::SimplePath
   protected
 
+  # source://guard//lib/guard/watcher/pattern/pathname_path.rb#9
   def normalize(string_or_pathname); end
 end
 
+# source://guard//lib/guard/watcher/pattern/simple_path.rb#4
 class Guard::Watcher::Pattern::SimplePath
   # @return [SimplePath] a new instance of SimplePath
+  #
+  # source://guard//lib/guard/watcher/pattern/simple_path.rb#5
   def initialize(string_or_pathname); end
 
+  # source://guard//lib/guard/watcher/pattern/simple_path.rb#9
   def match(string_or_pathname); end
 
   protected
 
+  # source://guard//lib/guard/watcher/pattern/simple_path.rb#17
   def normalize(string_or_pathname); end
 end

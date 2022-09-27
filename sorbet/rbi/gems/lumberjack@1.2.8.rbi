@@ -5,6 +5,8 @@
 # Please instead update this file by running `bin/tapioca gem lumberjack`.
 
 # frozen_string_literals: true
+#
+# source://lumberjack//lib/lumberjack.rb#8
 module Lumberjack
   class << self
     # Contexts can be used to store tags that will be attached to all log entries in the block.
@@ -15,17 +17,25 @@ module Lumberjack
     #
     # Otherwise, it will return the current context. If one doesn't exist, it will return a new one
     # but that context will not be in any scope.
+    #
+    # source://lumberjack//lib/lumberjack.rb#56
     def context(&block); end
 
     # Return true if inside a context block.
     #
     # @return [Boolean]
+    #
+    # source://lumberjack//lib/lumberjack.rb#77
     def context?; end
 
     # Return the tags from the current context or nil if there are no tags.
+    #
+    # source://lumberjack//lib/lumberjack.rb#82
     def context_tags; end
 
     # Set tags on the current context
+    #
+    # source://lumberjack//lib/lumberjack.rb#88
     def tag(tags); end
 
     # Define a unit of work within a block. Within the block supplied to this
@@ -37,62 +47,98 @@ module Lumberjack
     #
     # For the common use case of treating a single web request as a unit of work, see the
     # Lumberjack::Rack::UnitOfWork class.
+    #
+    # source://lumberjack//lib/lumberjack.rb#35
     def unit_of_work(id = T.unsafe(nil)); end
 
     # Get the UniqueIdentifier for the current unit of work.
+    #
+    # source://lumberjack//lib/lumberjack.rb#44
     def unit_of_work_id; end
 
     # Set the context to use within a block.
+    #
+    # source://lumberjack//lib/lumberjack.rb#66
     def use_context(context, &block); end
   end
 end
 
 # A context is used to store tags that are then added to all log entries within a block.
+#
+# source://lumberjack//lib/lumberjack/context.rb#5
 class Lumberjack::Context
   # @return [Context] a new instance of Context
+  #
+  # source://lumberjack//lib/lumberjack/context.rb#8
   def initialize(parent_context = T.unsafe(nil)); end
 
   # Get a context tag.
+  #
+  # source://lumberjack//lib/lumberjack/context.rb#21
   def [](key); end
 
   # Set a context tag.
+  #
+  # source://lumberjack//lib/lumberjack/context.rb#26
   def []=(key, value); end
 
   # Clear all the context data.
+  #
+  # source://lumberjack//lib/lumberjack/context.rb#31
   def reset; end
 
   # Set tags on the context.
+  #
+  # source://lumberjack//lib/lumberjack/context.rb#14
   def tag(tags); end
 
   # Returns the value of attribute tags.
+  #
+  # source://lumberjack//lib/lumberjack/context.rb#6
   def tags; end
 end
 
 # This is an abstract class for logging devices. Subclasses must implement the +write+ method and
 # may implement the +close+ and +flush+ methods if applicable.
+#
+# source://lumberjack//lib/lumberjack/device.rb#6
 class Lumberjack::Device
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#110
   def cleanup_files!; end
 
   # Subclasses may implement this method to close the device.
+  #
+  # source://lumberjack//lib/lumberjack/device.rb#21
   def close; end
 
   # Subclasses may implement this method to get the format for log timestamps.
+  #
+  # source://lumberjack//lib/lumberjack/device.rb#35
   def datetime_format; end
 
   # Subclasses may implement this method to set a format for log timestamps.
+  #
+  # source://lumberjack//lib/lumberjack/device.rb#39
   def datetime_format=(format); end
 
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#121
   def do_once(file); end
 
   # Subclasses may implement this method to flush any buffers used by the device.
+  #
+  # source://lumberjack//lib/lumberjack/device.rb#31
   def flush; end
 
   # Subclasses may implement this method to reopen the device.
+  #
+  # source://lumberjack//lib/lumberjack/device.rb#26
   def reopen(logdev = T.unsafe(nil)); end
 
   # Subclasses must implement this method to write a LogEntry.
   #
   # @raise [NotImplementedError]
+  #
+  # source://lumberjack//lib/lumberjack/device.rb#16
   def write(entry); end
 end
 
@@ -101,62 +147,99 @@ end
 # have the date appended to them in the format ".YYYY-MM-DD" for daily, ".week-of-YYYY-MM-DD" for weekly
 # and ".YYYY-MM" for monthly. It is not guaranteed that log messages will break exactly on the
 # roll period as buffered entries will always be written to the same file.
+#
+# source://lumberjack//lib/lumberjack/device/date_rolling_log_file.rb#15
 class Lumberjack::Device::DateRollingLogFile < ::Lumberjack::Device::RollingLogFile
   # Create a new logging device to the specified file. The period to roll the file is specified
   # with the :roll option which may contain a value of :daily, :weekly,
   # or :monthly.
   #
   # @return [DateRollingLogFile] a new instance of DateRollingLogFile
+  #
+  # source://lumberjack//lib/lumberjack/device/date_rolling_log_file.rb#16
   def initialize(path, options = T.unsafe(nil)); end
 
+  # source://lumberjack//lib/lumberjack/device/date_rolling_log_file.rb#28
   def archive_file_suffix; end
 
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/device/date_rolling_log_file.rb#39
   def roll_file?; end
 
   protected
 
+  # source://lumberjack//lib/lumberjack/device/date_rolling_log_file.rb#60
   def after_roll; end
 end
 
 # This is a logging device that appends log entries to a file.
+#
+# source://lumberjack//lib/lumberjack/device/log_file.rb#8
 class Lumberjack::Device::LogFile < ::Lumberjack::Device::Writer
   # Create a logger to the file at +path+. Options are passed through to the Writer constructor.
   #
   # @return [LogFile] a new instance of LogFile
+  #
+  # source://lumberjack//lib/lumberjack/device/log_file.rb#15
   def initialize(path, options = T.unsafe(nil)); end
 
   # The absolute path of the file being logged to.
+  #
+  # source://lumberjack//lib/lumberjack/device/log_file.rb#12
   def path; end
 
+  # source://lumberjack//lib/lumberjack/device/log_file.rb#21
   def reopen(logdev = T.unsafe(nil)); end
 
   private
 
+  # source://lumberjack//lib/lumberjack/device/log_file.rb#28
   def file_stream; end
 end
 
+# source://lumberjack//lib/lumberjack/device/log_file.rb#9
 Lumberjack::Device::LogFile::EXTERNAL_ENCODING = T.let(T.unsafe(nil), String)
 
 # This is a logging device that forward log entries to multiple other devices.
+#
+# source://lumberjack//lib/lumberjack/device/multi.rb#6
 class Lumberjack::Device::Multi < ::Lumberjack::Device
   # @return [Multi] a new instance of Multi
+  #
+  # source://lumberjack//lib/lumberjack/device/multi.rb#7
   def initialize(*devices); end
 
+  # source://lumberjack//lib/lumberjack/device/multi.rb#23
   def close; end
+
+  # source://lumberjack//lib/lumberjack/device/multi.rb#35
   def datetime_format; end
+
+  # source://lumberjack//lib/lumberjack/device/multi.rb#39
   def datetime_format=(format); end
+
+  # source://lumberjack//lib/lumberjack/device/multi.rb#17
   def flush; end
+
+  # source://lumberjack//lib/lumberjack/device/multi.rb#29
   def reopen(logdev = T.unsafe(nil)); end
+
+  # source://lumberjack//lib/lumberjack/device/multi.rb#11
   def write(entry); end
 end
 
 # This is a logging device that produces no output. It can be useful in
 # testing environments when log file output is not useful.
+#
+# source://lumberjack//lib/lumberjack/device/null.rb#7
 class Lumberjack::Device::Null < ::Lumberjack::Device
   # @return [Null] a new instance of Null
+  #
+  # source://lumberjack//lib/lumberjack/device/null.rb#8
   def initialize(*args); end
 
+  # source://lumberjack//lib/lumberjack/device/null.rb#11
   def write(entry); end
 end
 
@@ -169,48 +252,69 @@ end
 #
 # The :min_roll_check option can be used to specify the number of seconds between checking
 # the file to determine if it needs to be rolled. The default is to check at most once per second.
+#
+# source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#14
 class Lumberjack::Device::RollingLogFile < ::Lumberjack::Device::LogFile
   # @return [RollingLogFile] a new instance of RollingLogFile
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#18
   def initialize(path, options = T.unsafe(nil)); end
 
   # Returns a suffix that will be appended to the file name when it is archived.. The suffix should
   # change after it is time to roll the file. The log file will be renamed when it is rolled.
   #
   # @raise [NotImplementedError]
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#34
   def archive_file_suffix; end
 
   # Returns the value of attribute keep.
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#16
   def keep; end
 
   # Sets the attribute keep
   #
   # @param value the value to set the attribute keep to.
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#16
   def keep=(_arg0); end
 
   # Returns the value of attribute path.
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#15
   def path; end
 
   # Roll the log file by renaming it to the archive file name and then re-opening a stream to the log
   # file path. Rolling a file is safe in multi-threaded or multi-process environments.
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#45
   def roll_file!; end
 
   # Return +true+ if the file should be rolled.
   #
   # @raise [NotImplementedError]
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#39
   def roll_file?; end
 
   protected
 
   # This method will be called after a file has been rolled. Subclasses can
   # implement code to reset the state of the device. This method is thread safe.
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#73
   def after_roll; end
 
   # Handle rolling the file before flushing.
+  #
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#77
   def before_flush; end
 
   private
 
+  # source://lumberjack//lib/lumberjack/device/rolling_log_file.rb#96
   def reopen_file; end
 end
 
@@ -218,24 +322,35 @@ end
 # size threshold. When a file is rolled, it will have an number extension appended to the file name.
 # For example, if the log file is named production.log, the first time it is rolled it will be renamed
 # production.log.1, then production.log.2, etc.
+#
+# source://lumberjack//lib/lumberjack/device/size_rolling_log_file.rb#9
 class Lumberjack::Device::SizeRollingLogFile < ::Lumberjack::Device::RollingLogFile
   # Create an new log device to the specified file. The maximum size of the log file is specified with
   # the :max_size option. The unit can also be specified: "32K", "100M", "2G" are all valid.
   #
   # @return [SizeRollingLogFile] a new instance of SizeRollingLogFile
+  #
+  # source://lumberjack//lib/lumberjack/device/size_rolling_log_file.rb#14
   def initialize(path, options = T.unsafe(nil)); end
 
+  # source://lumberjack//lib/lumberjack/device/size_rolling_log_file.rb#38
   def archive_file_suffix; end
 
   # Returns the value of attribute max_size.
+  #
+  # source://lumberjack//lib/lumberjack/device/size_rolling_log_file.rb#10
   def max_size; end
 
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/device/size_rolling_log_file.rb#42
   def roll_file?; end
 
   protected
 
   # Calculate the next archive file name extension.
+  #
+  # source://lumberjack//lib/lumberjack/device/size_rolling_log_file.rb#51
   def next_archive_number; end
 end
 
@@ -244,6 +359,8 @@ end
 #
 # Subclasses can implement a +before_flush+ method if they have logic to execute before flushing the log.
 # If it is implemented, it will be called before every flush inside a mutex lock.
+#
+# source://lumberjack//lib/lumberjack/device/writer.rb#10
 class Lumberjack::Device::Writer < ::Lumberjack::Device
   # Create a new device to write log entries to a stream. Entries are converted to strings
   # using a Template. The template can be specified using the :template option. This can
@@ -262,56 +379,91 @@ class Lumberjack::Device::Writer < ::Lumberjack::Device
   # The size of the internal buffer in bytes can be set by providing :buffer_size (defaults to 32K).
   #
   # @return [Writer] a new instance of Writer
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#63
   def initialize(stream, options = T.unsafe(nil)); end
 
   # The size of the internal buffer. Defaults to 32K.
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#15
   def buffer_size; end
 
   # Set the buffer size in bytes. The device will only be physically written to when the buffer size
   # is exceeded.
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#80
   def buffer_size=(value); end
 
   # Close the underlying stream.
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#108
   def close; end
 
+  # source://lumberjack//lib/lumberjack/device/writer.rb#123
   def datetime_format; end
+
+  # source://lumberjack//lib/lumberjack/device/writer.rb#127
   def datetime_format=(format); end
 
   # Flush the underlying stream.
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#114
   def flush; end
 
   # Write an entry to the stream. The entry will be converted into a string using the defined template.
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#86
   def write(entry); end
 
   protected
 
   # Get the underlying stream.
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#139
   def stream; end
 
   # Set the underlying stream.
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#136
   def stream=(_arg0); end
 
   private
 
+  # source://lumberjack//lib/lumberjack/device/writer.rb#143
   def write_to_stream(lines); end
 end
 
 # Internal buffer to batch writes to the stream.
+#
+# source://lumberjack//lib/lumberjack/device/writer.rb#18
 class Lumberjack::Device::Writer::Buffer
   # @return [Buffer] a new instance of Buffer
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#21
   def initialize; end
 
+  # source://lumberjack//lib/lumberjack/device/writer.rb#26
   def <<(string); end
+
+  # source://lumberjack//lib/lumberjack/device/writer.rb#42
   def clear; end
 
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/device/writer.rb#31
   def empty?; end
 
+  # source://lumberjack//lib/lumberjack/device/writer.rb#35
   def pop!; end
+
+  # source://lumberjack//lib/lumberjack/device/writer.rb#19
   def size; end
 end
 
+# source://lumberjack//lib/lumberjack/device/writer.rb#12
 Lumberjack::Device::Writer::DEFAULT_ADDITIONAL_LINES_TEMPLATE = T.let(T.unsafe(nil), String)
+
+# source://lumberjack//lib/lumberjack/device/writer.rb#11
 Lumberjack::Device::Writer::DEFAULT_FIRST_LINE_TEMPLATE = T.let(T.unsafe(nil), String)
 
 # This class controls the conversion of log entry messages into a loggable format. This allows you
@@ -324,8 +476,12 @@ Lumberjack::Device::Writer::DEFAULT_FIRST_LINE_TEMPLATE = T.let(T.unsafe(nil), S
 # and Exceptions. Strings are not converted and Exceptions are converted using the ExceptionFormatter.
 #
 # Enumerable objects (including Hash and Array) will call the formatter recursively for each element.
+#
+# source://lumberjack//lib/lumberjack/formatter.rb#14
 class Lumberjack::Formatter
   # @return [Formatter] a new instance of Formatter
+  #
+  # source://lumberjack//lib/lumberjack/formatter.rb#34
   def initialize; end
 
   # Add a formatter for a class. The formatter can be specified as either an object
@@ -353,16 +509,24 @@ class Lumberjack::Formatter
   #
   #   # Add statements can be chained together
   #   formatter.add(MyClass, :pretty_print).add(YourClass){|obj| obj.humanize}
+  #
+  # source://lumberjack//lib/lumberjack/formatter.rb#69
   def add(klass, formatter = T.unsafe(nil), &block); end
 
   # Compatibility with the Logger::Formatter signature. This method will just convert the message
   # object to a string and ignores the other parameters.
+  #
+  # source://lumberjack//lib/lumberjack/formatter.rb#129
   def call(severity, timestamp, progname, msg); end
 
   # Remove all formatters including the default formatter. Can be chained to add method calls.
+  #
+  # source://lumberjack//lib/lumberjack/formatter.rb#111
   def clear; end
 
   # Format a message object as a string.
+  #
+  # source://lumberjack//lib/lumberjack/formatter.rb#118
   def format(message); end
 
   # Remove the formatter associated with a class. Remove statements can be chained together.
@@ -372,30 +536,43 @@ class Lumberjack::Formatter
   # You can also pass class names as strings instead of the classes themselves. This can
   # help avoid loading dependency issues. This applies only to classes; modules cannot be
   # passed in as strings.
+  #
+  # source://lumberjack//lib/lumberjack/formatter.rb#98
   def remove(klass); end
 
   private
 
   # Find the formatter for a class by looking it up using the class hierarchy.
+  #
+  # source://lumberjack//lib/lumberjack/formatter.rb#136
   def formatter_for(klass); end
 
   class << self
     # Returns a new empty formatter with no mapping. For historical reasons, a formatter
     # is initialized with mappings to help output objects as strings. This will return one
     # without the default mappings.
+    #
+    # source://lumberjack//lib/lumberjack/formatter.rb#29
     def empty; end
   end
 end
 
 # Format a Date, Time, or DateTime object. If you don't specify a format in the constructor,
 # it will use the ISO-8601 format.
+#
+# source://lumberjack//lib/lumberjack/formatter/date_time_formatter.rb#7
 class Lumberjack::Formatter::DateTimeFormatter
   # @return [DateTimeFormatter] a new instance of DateTimeFormatter
+  #
+  # source://lumberjack//lib/lumberjack/formatter/date_time_formatter.rb#10
   def initialize(format = T.unsafe(nil)); end
 
+  # source://lumberjack//lib/lumberjack/formatter/date_time_formatter.rb#14
   def call(obj); end
 
   # Returns the value of attribute format.
+  #
+  # source://lumberjack//lib/lumberjack/formatter/date_time_formatter.rb#8
   def format; end
 end
 
@@ -403,165 +580,253 @@ end
 # responds to `call` as a backtrace cleaner. The exception backtrace will be
 # passed to this object and the returned array is what will be logged. You can
 # use this to clean out superfluous lines.
+#
+# source://lumberjack//lib/lumberjack/formatter/exception_formatter.rb#9
 class Lumberjack::Formatter::ExceptionFormatter
   # @return [ExceptionFormatter] a new instance of ExceptionFormatter
+  #
+  # source://lumberjack//lib/lumberjack/formatter/exception_formatter.rb#12
   def initialize(backtrace_cleaner = T.unsafe(nil)); end
 
   # Returns the value of attribute backtrace_cleaner.
+  #
+  # source://lumberjack//lib/lumberjack/formatter/exception_formatter.rb#10
   def backtrace_cleaner; end
 
   # Sets the attribute backtrace_cleaner
   #
   # @param value the value to set the attribute backtrace_cleaner to.
+  #
+  # source://lumberjack//lib/lumberjack/formatter/exception_formatter.rb#10
   def backtrace_cleaner=(_arg0); end
 
+  # source://lumberjack//lib/lumberjack/formatter/exception_formatter.rb#16
   def call(exception); end
 
   private
 
+  # source://lumberjack//lib/lumberjack/formatter/exception_formatter.rb#28
   def clean_backtrace(trace); end
 end
 
 # Format an object that has an id as a hash with keys for class and id. This formatter is useful
 # as a default formatter for objects pulled from a data store. By default it will use :id as the
 # id attribute.
+#
+# source://lumberjack//lib/lumberjack/formatter/id_formatter.rb#8
 class Lumberjack::Formatter::IdFormatter
   # @return [IdFormatter] a new instance of IdFormatter
+  #
+  # source://lumberjack//lib/lumberjack/formatter/id_formatter.rb#9
   def initialize(id_attribute = T.unsafe(nil)); end
 
+  # source://lumberjack//lib/lumberjack/formatter/id_formatter.rb#13
   def call(obj); end
 end
 
 # Format an object by calling +inspect+ on it.
+#
+# source://lumberjack//lib/lumberjack/formatter/inspect_formatter.rb#6
 class Lumberjack::Formatter::InspectFormatter
+  # source://lumberjack//lib/lumberjack/formatter/inspect_formatter.rb#7
   def call(obj); end
 end
 
 # No-op formatter that just returns the object itself.
+#
+# source://lumberjack//lib/lumberjack/formatter/object_formatter.rb#6
 class Lumberjack::Formatter::ObjectFormatter
+  # source://lumberjack//lib/lumberjack/formatter/object_formatter.rb#7
   def call(obj); end
 end
 
 # Format an object with it's pretty print method.
+#
+# source://lumberjack//lib/lumberjack/formatter/pretty_print_formatter.rb#9
 class Lumberjack::Formatter::PrettyPrintFormatter
   # Create a new formatter. The maximum width of the message can be specified with the width
   # parameter (defaults to 79 characters).
   #
   # @return [PrettyPrintFormatter] a new instance of PrettyPrintFormatter
+  #
+  # source://lumberjack//lib/lumberjack/formatter/pretty_print_formatter.rb#14
   def initialize(width = T.unsafe(nil)); end
 
+  # source://lumberjack//lib/lumberjack/formatter/pretty_print_formatter.rb#18
   def call(obj); end
 
   # Returns the value of attribute width.
+  #
+  # source://lumberjack//lib/lumberjack/formatter/pretty_print_formatter.rb#10
   def width; end
 
   # Sets the attribute width
   #
   # @param value the value to set the attribute width to.
+  #
+  # source://lumberjack//lib/lumberjack/formatter/pretty_print_formatter.rb#10
   def width=(_arg0); end
 end
 
 # Format an object by calling `to_s` on it.
+#
+# source://lumberjack//lib/lumberjack/formatter/string_formatter.rb#6
 class Lumberjack::Formatter::StringFormatter
+  # source://lumberjack//lib/lumberjack/formatter/string_formatter.rb#7
   def call(obj); end
 end
 
 # Format an object by calling `to_s` on it and stripping leading and trailing whitespace.
+#
+# source://lumberjack//lib/lumberjack/formatter/strip_formatter.rb#6
 class Lumberjack::Formatter::StripFormatter
+  # source://lumberjack//lib/lumberjack/formatter/strip_formatter.rb#7
   def call(obj); end
 end
 
 # Dereference arrays and hashes and recursively call formatters on each element.
+#
+# source://lumberjack//lib/lumberjack/formatter/structured_formatter.rb#8
 class Lumberjack::Formatter::StructuredFormatter
   # @return [StructuredFormatter] a new instance of StructuredFormatter
+  #
+  # source://lumberjack//lib/lumberjack/formatter/structured_formatter.rb#12
   def initialize(formatter = T.unsafe(nil)); end
 
+  # source://lumberjack//lib/lumberjack/formatter/structured_formatter.rb#16
   def call(obj); end
 
   private
 
+  # source://lumberjack//lib/lumberjack/formatter/structured_formatter.rb#22
   def call_with_references(obj, references); end
+
+  # source://lumberjack//lib/lumberjack/formatter/structured_formatter.rb#48
   def with_object_reference(obj, references); end
 end
 
+# source://lumberjack//lib/lumberjack/formatter/structured_formatter.rb#9
 class Lumberjack::Formatter::StructuredFormatter::RecusiveReferenceError < ::StandardError; end
+
+# source://lumberjack//lib/lumberjack.rb#9
 Lumberjack::LINE_SEPARATOR = T.let(T.unsafe(nil), String)
 
 # An entry in a log is a data structure that captures the log message as well as
 # information about the system that logged the message.
+#
+# source://lumberjack//lib/lumberjack/log_entry.rb#6
 class Lumberjack::LogEntry
   # @return [LogEntry] a new instance of LogEntry
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#13
   def initialize(time, severity, message, progname, pid, tags); end
 
+  # source://lumberjack//lib/lumberjack/log_entry.rb#35
   def inspect; end
 
   # Returns the value of attribute message.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def message; end
 
   # Sets the attribute message
   #
   # @param value the value to set the attribute message to.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def message=(_arg0); end
 
   # Returns the value of attribute pid.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def pid; end
 
   # Sets the attribute pid
   #
   # @param value the value to set the attribute pid to.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def pid=(_arg0); end
 
   # Returns the value of attribute progname.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def progname; end
 
   # Sets the attribute progname
   #
   # @param value the value to set the attribute progname to.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def progname=(_arg0); end
 
   # Returns the value of attribute severity.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def severity; end
 
   # Sets the attribute severity
   #
   # @param value the value to set the attribute severity to.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def severity=(_arg0); end
 
+  # source://lumberjack//lib/lumberjack/log_entry.rb#27
   def severity_label; end
 
   # Return the tag with the specified name.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#54
   def tag(name); end
 
   # Returns the value of attribute tags.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def tags; end
 
   # Sets the attribute tags
   #
   # @param value the value to set the attribute tags to.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def tags=(_arg0); end
 
   # Returns the value of attribute time.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def time; end
 
   # Sets the attribute time
   #
   # @param value the value to set the attribute time to.
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#7
   def time=(_arg0); end
 
+  # source://lumberjack//lib/lumberjack/log_entry.rb#31
   def to_s; end
 
   # Deprecated - backward compatibility with 1.0 API
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#40
   def unit_of_work_id; end
 
   # Deprecated - backward compatibility with 1.0 API
+  #
+  # source://lumberjack//lib/lumberjack/log_entry.rb#45
   def unit_of_work_id=(value); end
 
   private
 
+  # source://lumberjack//lib/lumberjack/log_entry.rb#60
   def tags_to_s; end
 end
 
+# source://lumberjack//lib/lumberjack/log_entry.rb#9
 Lumberjack::LogEntry::TIME_FORMAT = T.let(T.unsafe(nil), String)
+
+# source://lumberjack//lib/lumberjack/log_entry.rb#11
 Lumberjack::LogEntry::UNIT_OF_WORK_ID = T.let(T.unsafe(nil), String)
 
 # Logger is a thread safe logging object. It has a compatible API with the Ruby
@@ -587,6 +852,8 @@ Lumberjack::LogEntry::UNIT_OF_WORK_ID = T.let(T.unsafe(nil), String)
 # program name, process id, and unit of work id. The message will be converted to a string, but
 # otherwise, it is up to the device how these values are recorded. Messages are converted to strings
 # using a Formatter associated with the logger.
+#
+# source://lumberjack//lib/lumberjack/logger.rb#27
 class Lumberjack::Logger
   include ::Lumberjack::Severity
 
@@ -613,11 +880,16 @@ class Lumberjack::Logger
   # All other options are passed to the device constuctor.
   #
   # @return [Logger] a new instance of Logger
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#66
   def initialize(device = T.unsafe(nil), options = T.unsafe(nil)); end
 
+  # source://lumberjack//lib/lumberjack/logger.rb#312
   def <<(msg); end
 
   # ::Logger compatible method to add a log entry.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#194
   def add(severity, message = T.unsafe(nil), progname = T.unsafe(nil), &block); end
 
   # Add a message to the log with a given severity. The message can be either
@@ -634,116 +906,181 @@ class Lumberjack::Logger
   #   logger.add_entry(Logger::INFO, "Request completed")
   #   logger.add_entry(:warn, "Request took a long time")
   #   logger.add_entry(Logger::DEBUG){"Start processing with options #{options.inspect}"}
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#158
   def add_entry(severity, message, progname = T.unsafe(nil), tags = T.unsafe(nil)); end
 
   # Close the logging device.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#216
   def close; end
 
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#222
   def closed?; end
 
   # Get the timestamp format on the device if it has one.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#86
   def datetime_format; end
 
   # Set the timestamp format on the device if it is supported.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#91
   def datetime_format=(format); end
 
   # Log a +DEBUG+ message. The message can be passed in either the +message+ argument or in a block.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#292
   def debug(message_or_progname_or_tags = T.unsafe(nil), progname_or_tags = T.unsafe(nil), &block); end
 
   # Set the log level to debug.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#302
   def debug!; end
 
   # Return +true+ if +DEBUG+ messages are being logged.
   #
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#297
   def debug?; end
 
   # The device being written to
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#40
   def device; end
 
   # The device being written to
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#40
   def device=(_arg0); end
 
   # Log an +ERROR+ message. The message can be passed in either the +message+ argument or in a block.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#247
   def error(message_or_progname_or_tags = T.unsafe(nil), progname_or_tags = T.unsafe(nil), &block); end
 
   # Set the log level to error.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#257
   def error!; end
 
   # Return +true+ if +ERROR+ messages are being logged.
   #
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#252
   def error?; end
 
   # Log a +FATAL+ message. The message can be passed in either the +message+ argument or in a block.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#232
   def fatal(message_or_progname_or_tags = T.unsafe(nil), progname_or_tags = T.unsafe(nil), &block); end
 
   # Set the log level to fatal.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#242
   def fatal!; end
 
   # Return +true+ if +FATAL+ messages are being logged.
   #
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#237
   def fatal?; end
 
   # Flush the logging device. Messages are not guaranteed to be written until this method is called.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#209
   def flush; end
 
   # Get the Lumberjack::Formatter used to format objects for logging as messages.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#123
   def formatter; end
 
   # Set the Lumberjack::Formatter used to format objects for logging as messages.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#118
   def formatter=(value); end
 
   # Log an +INFO+ message. The message can be passed in either the +message+ argument or in a block.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#277
   def info(message_or_progname_or_tags = T.unsafe(nil), progname_or_tags = T.unsafe(nil), &block); end
 
   # Set the log level to info.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#287
   def info!; end
 
   # Return +true+ if +INFO+ messages are being logged.
   #
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#282
   def info?; end
 
   # The time that the device was last flushed.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#31
   def last_flushed_at; end
 
   # Get the level of severity of entries that are logged. Entries with a lower
   # severity level will be ignored.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#99
   def level; end
 
   # Set the log level using either an integer level like Logger::INFO or a label like
   # :info or "info"
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#107
   def level=(value); end
 
   # ::Logger compatible method to add a log entry.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#194
   def log(severity, message = T.unsafe(nil), progname = T.unsafe(nil), &block); end
 
   # Get the program name associated with log messages.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#347
   def progname; end
 
   # Set the name of the program to attach to log entries.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#37
   def progname=(_arg0); end
 
   # Remove a tag from the current tag context. If this is called inside a block to a
   # call to `tag`, the tags will only be removed for the duration of that block. Otherwise
   # they will be removed from the global tags.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#374
   def remove_tag(*tag_names); end
 
+  # source://lumberjack//lib/lumberjack/logger.rb#226
   def reopen(logdev = T.unsafe(nil)); end
 
   # Set the program name that is associated with log messages. If a block
   # is given, the program name will be valid only within the block.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#338
   def set_progname(value, &block); end
 
   # Get the level of severity of entries that are logged. Entries with a lower
   # severity level will be ignored.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#99
   def sev_threshold; end
 
   # Set the log level using either an integer level like Logger::INFO or a label like
   # :info or "info"
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#107
   def sev_threshold=(value); end
 
   # Silence the logger by setting a new log level inside a block. By default, only +ERROR+ or +FATAL+
@@ -755,12 +1092,18 @@ class Lumberjack::Logger
   #   logger.silence do
   #     do_something   # Log level inside the block is +ERROR+
   #   end
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#325
   def silence(temporary_level = T.unsafe(nil), &block); end
 
   # Set +silencer+ to false to disable silencing the log.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#34
   def silencer; end
 
   # Set +silencer+ to false to disable silencing the log.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#34
   def silencer=(_arg0); end
 
   # Set a hash of tags on logger. If a block is given, the tags will only be set
@@ -768,12 +1111,18 @@ class Lumberjack::Logger
   # the tags will only be defined on the tags in that block. When the parent block
   # exits, all the tags will be reverted. If there is no block, then the tags will
   # be defined as global and apply to all log statements.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#356
   def tag(tags, &block); end
 
   # The TagFormatter used for formatting tags for output
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#43
   def tag_formatter; end
 
   # The TagFormatter used for formatting tags for output
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#43
   def tag_formatter=(_arg0); end
 
   # Enable this logger to function like an ActiveSupport::TaggedLogger. This will make the logger
@@ -783,100 +1132,161 @@ class Lumberjack::Logger
   # The tags added with this method are just strings so they are stored in the logger tags
   # in an array under the "tagged" tag. So calling `logger.tagged("foo", "bar")` will result
   # in tags `{"tagged" => ["foo", "bar"]}`.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#139
   def tagged_logger!; end
 
   # Return all tags in scope on the logger including global tags set on the Lumberjack
   # context, tags set on the logger, and tags set on the current block for the logger.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#385
   def tags; end
 
   # Log a message when the severity is not known. Unknown messages will always appear in the log.
   # The message can be passed in either the +message+ argument or in a block.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#308
   def unknown(message_or_progname_or_tags = T.unsafe(nil), progname_or_tags = T.unsafe(nil), &block); end
 
   # Remove all tags on the current logger and logging context within a block.
   # You can still set new block scoped tags within theuntagged block and provide
   # tags on individual log methods.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#398
   def untagged(&block); end
 
   # Log a +WARN+ message. The message can be passed in either the +message+ argument or in a block.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#262
   def warn(message_or_progname_or_tags = T.unsafe(nil), progname_or_tags = T.unsafe(nil), &block); end
 
   # Set the log level to warn.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#272
   def warn!; end
 
   # Return +true+ if +WARN+ messages are being logged.
   #
   # @return [Boolean]
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#267
   def warn?; end
 
   private
 
   # Dereference arguments to log calls so we can have methods with compatibility with ::Logger
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#416
   def call_add_entry(severity, message_or_progname_or_tags, progname_or_tags, &block); end
 
   # Create a thread that will periodically call flush.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#504
   def create_flusher_thread(flush_seconds); end
 
   # Open a logging device.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#473
   def open_device(device, options); end
 
   # Set a local value for a thread tied to this object within a block.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#462
   def push_thread_local_value(name, value); end
 
   # Set a local value for a thread tied to this object.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#441
   def set_thread_local_value(name, value); end
 
   # Get a local value for a thread tied to this object.
+  #
+  # source://lumberjack//lib/lumberjack/logger.rb#456
   def thread_local_value(name); end
 
+  # source://lumberjack//lib/lumberjack/logger.rb#494
   def write_to_device(entry); end
 end
 
+# source://lumberjack//lib/lumberjack/rack.rb#4
 module Lumberjack::Rack; end
 
 # Middleware to create a global context for Lumberjack for the scope of a rack request.
+#
+# source://lumberjack//lib/lumberjack/rack/context.rb#6
 class Lumberjack::Rack::Context
   # @return [Context] a new instance of Context
+  #
+  # source://lumberjack//lib/lumberjack/rack/context.rb#7
   def initialize(app); end
 
+  # source://lumberjack//lib/lumberjack/rack/context.rb#11
   def call(env); end
 end
 
 # Support for using the Rails ActionDispatch request id in the log.
 # The format is expected to be a random UUID and only the first chunk is used for terseness
 # if the abbreviated argument is true.
+#
+# source://lumberjack//lib/lumberjack/rack/request_id.rb#8
 class Lumberjack::Rack::RequestId
   # @return [RequestId] a new instance of RequestId
+  #
+  # source://lumberjack//lib/lumberjack/rack/request_id.rb#11
   def initialize(app, abbreviated = T.unsafe(nil)); end
 
+  # source://lumberjack//lib/lumberjack/rack/request_id.rb#16
   def call(env); end
 end
 
+# source://lumberjack//lib/lumberjack/rack/request_id.rb#9
 Lumberjack::Rack::RequestId::REQUEST_ID = T.let(T.unsafe(nil), String)
 
+# source://lumberjack//lib/lumberjack/rack/unit_of_work.rb#5
 class Lumberjack::Rack::UnitOfWork
   # @return [UnitOfWork] a new instance of UnitOfWork
+  #
+  # source://lumberjack//lib/lumberjack/rack/unit_of_work.rb#6
   def initialize(app); end
 
+  # source://lumberjack//lib/lumberjack/rack/unit_of_work.rb#10
   def call(env); end
 end
 
 # The standard severity levels for logging messages.
+#
+# source://lumberjack//lib/lumberjack/severity.rb#5
 module Lumberjack::Severity
   class << self
+    # source://lumberjack//lib/lumberjack/severity.rb#21
     def label_to_level(label); end
+
+    # source://lumberjack//lib/lumberjack/severity.rb#17
     def level_to_label(severity); end
   end
 end
 
 # Backward compatibilty with 1.0 API
+#
+# source://lumberjack//lib/lumberjack/severity.rb#7
 Lumberjack::Severity::DEBUG = T.let(T.unsafe(nil), Integer)
 
+# source://lumberjack//lib/lumberjack/severity.rb#10
 Lumberjack::Severity::ERROR = T.let(T.unsafe(nil), Integer)
+
+# source://lumberjack//lib/lumberjack/severity.rb#11
 Lumberjack::Severity::FATAL = T.let(T.unsafe(nil), Integer)
+
+# source://lumberjack//lib/lumberjack/severity.rb#8
 Lumberjack::Severity::INFO = T.let(T.unsafe(nil), Integer)
+
+# source://lumberjack//lib/lumberjack/severity.rb#14
 Lumberjack::Severity::SEVERITY_LABELS = T.let(T.unsafe(nil), Array)
+
+# source://lumberjack//lib/lumberjack/severity.rb#12
 Lumberjack::Severity::UNKNOWN = T.let(T.unsafe(nil), Integer)
+
+# source://lumberjack//lib/lumberjack/severity.rb#9
 Lumberjack::Severity::WARN = T.let(T.unsafe(nil), Integer)
 
 # Class for formatting tags. You can register a default formatter and tag
@@ -886,87 +1296,140 @@ Lumberjack::Severity::WARN = T.let(T.unsafe(nil), Integer)
 # tag_formatter = Lumberjack::TagFormatter.new.default(Lumberjack::Formatter.new)
 # tag_formatter.add(["password", "email"]) { |value| "***" }
 # tag_formatter.add("finished_at", Lumberjack::Formatter::DateTimeFormatter.new("%Y-%m-%dT%H:%m:%S%z"))
+#
+# source://lumberjack//lib/lumberjack/tag_formatter.rb#11
 class Lumberjack::TagFormatter
   # @return [TagFormatter] a new instance of TagFormatter
+  #
+  # source://lumberjack//lib/lumberjack/tag_formatter.rb#12
   def initialize; end
 
   # Add a formatter for specific tag names. This can either be a Lumberjack::Formatter
   # or an object that responds to `call` or a block. The default formatter will not be
   # applied.
+  #
+  # source://lumberjack//lib/lumberjack/tag_formatter.rb#35
   def add(names, formatter = T.unsafe(nil), &block); end
 
   # Remove all formatters.
+  #
+  # source://lumberjack//lib/lumberjack/tag_formatter.rb#57
   def clear; end
 
   # Add a default formatter applied to all tag values. This can either be a Lumberjack::Formatter
   # or an object that responds to `call` or a block.
+  #
+  # source://lumberjack//lib/lumberjack/tag_formatter.rb#19
   def default(formatter = T.unsafe(nil), &block); end
 
   # Format a hash of tags using the formatters
+  #
+  # source://lumberjack//lib/lumberjack/tag_formatter.rb#64
   def format(tags); end
 
   # Remove formatters for specific tag names. The default formatter will still be applied.
+  #
+  # source://lumberjack//lib/lumberjack/tag_formatter.rb#49
   def remove(names); end
 
   # Remove the default formatter.
+  #
+  # source://lumberjack//lib/lumberjack/tag_formatter.rb#27
   def remove_default; end
 
   private
 
+  # source://lumberjack//lib/lumberjack/tag_formatter.rb#85
   def dereference_formatter(formatter); end
 end
 
 # Methods to make Lumberjack::Logger API compatible with ActiveSupport::TaggedLogger.
+#
+# source://lumberjack//lib/lumberjack/tagged_logger_support.rb#8
 module Lumberjack::TaggedLoggerSupport
+  # source://lumberjack//lib/lumberjack/tagged_logger_support.rb#62
   def clear_tags!; end
+
+  # source://lumberjack//lib/lumberjack/tagged_logger_support.rb#56
   def pop_tags(size = T.unsafe(nil)); end
+
+  # source://lumberjack//lib/lumberjack/tagged_logger_support.rb#52
   def push_tags(*tags); end
 
   # Compatibility with ActiveSupport::TaggedLogging which only supports adding tags as strings.
   # If a tag looks like "key:value"  or "key=value", it will be added as a key value pair.
   # Otherwise it will be appended to a list named "tagged".
+  #
+  # source://lumberjack//lib/lumberjack/tagged_logger_support.rb#43
   def tagged(*tags, &block); end
 end
 
+# source://lumberjack//lib/lumberjack/tagged_logger_support.rb#9
 class Lumberjack::TaggedLoggerSupport::Formatter
   extend ::Forwardable
 
   # @return [Formatter] a new instance of Formatter
+  #
+  # source://lumberjack//lib/lumberjack/tagged_logger_support.rb#13
   def initialize(formatter:, logger:); end
 
+  # source://lumberjack//lib/lumberjack/tagged_logger_support.rb#35
   def __formatter; end
+
+  # source://forwardable/1.3.2/forwardable.rb#229
   def clear_tags!(*args, **_arg1, &block); end
+
+  # source://lumberjack//lib/lumberjack/tagged_logger_support.rb#19
   def current_tags; end
+
+  # source://forwardable/1.3.2/forwardable.rb#229
   def pop_tags(*args, **_arg1, &block); end
+
+  # source://forwardable/1.3.2/forwardable.rb#229
   def push_tags(*args, **_arg1, &block); end
+
+  # source://forwardable/1.3.2/forwardable.rb#229
   def tagged(*args, **_arg1, &block); end
+
+  # source://lumberjack//lib/lumberjack/tagged_logger_support.rb#28
   def tags_text; end
 end
 
 # Monkey patch for ActiveSupport::TaggedLogger so it doesn't blow up when
 # a Lumberjack logger is trying to be wrapped. This module will be automatically
 # included in ActiveSupport::TaggedLogger if activesupport is already loaded.
+#
+# source://lumberjack//lib/lumberjack/tagged_logging.rb#7
 module Lumberjack::TaggedLogging
   mixes_in_class_methods ::Lumberjack::TaggedLogging::ClassMethods
 
   class << self
     # @private
+    #
+    # source://lumberjack//lib/lumberjack/tagged_logging.rb#9
     def included(base); end
   end
 end
 
+# source://lumberjack//lib/lumberjack/tagged_logging.rb#14
 module Lumberjack::TaggedLogging::ClassMethods
+  # source://lumberjack//lib/lumberjack/tagged_logging.rb#15
   def new(logger); end
 end
 
+# source://lumberjack//lib/lumberjack/tags.rb#4
 class Lumberjack::Tags
   class << self
     # Ensure keys are strings and expand any values in a hash that are Proc's by calling them and replacing
     # the value with the result. This allows setting global tags with runtime values.
+    #
+    # source://lumberjack//lib/lumberjack/tags.rb#25
     def expand_runtime_values(hash); end
 
     # Transform hash keys to strings. This method exists for optimization and backward compatibility.
     # If a hash already has string keys, it will be returned as is.
+    #
+    # source://lumberjack//lib/lumberjack/tags.rb#8
     def stringify_keys(hash); end
   end
 end
@@ -983,6 +1446,8 @@ end
 # Any other words prefixed with a colon will be substituted with the value of the tag with that name.
 # If your tag name contains characters other than alpha numerics and the underscore, you must surround it
 # with curly brackets: `:{http.request-id}`.
+#
+# source://lumberjack//lib/lumberjack/template.rb#16
 class Lumberjack::Template
   # Create a new template from the markup. The +first_line+ argument is used to format only the first
   # line of a message. Additional lines will be added to the message unformatted. If you wish to format
@@ -997,23 +1462,40 @@ class Lumberjack::Template
   # Messages will have white space stripped from both ends.
   #
   # @return [Template] a new instance of Template
+  #
+  # source://lumberjack//lib/lumberjack/template.rb#33
   def initialize(first_line, options = T.unsafe(nil)); end
 
   # Convert an entry into a string using the template.
+  #
+  # source://lumberjack//lib/lumberjack/template.rb#56
   def call(entry); end
 
+  # source://lumberjack//lib/lumberjack/template.rb#51
   def datetime_format; end
+
+  # source://lumberjack//lib/lumberjack/template.rb#42
   def datetime_format=(format); end
 
   private
 
   # Compile the template string into a value that can be used with sprintf.
+  #
+  # source://lumberjack//lib/lumberjack/template.rb#106
   def compile(template); end
 
+  # source://lumberjack//lib/lumberjack/template.rb#86
   def tag_args(tags, tag_vars); end
 end
 
+# source://lumberjack//lib/lumberjack/template.rb#19
 Lumberjack::Template::MICROSECOND_TIME_FORMAT = T.let(T.unsafe(nil), String)
+
+# source://lumberjack//lib/lumberjack/template.rb#18
 Lumberjack::Template::MILLISECOND_TIME_FORMAT = T.let(T.unsafe(nil), String)
+
+# source://lumberjack//lib/lumberjack/template.rb#20
 Lumberjack::Template::PLACEHOLDER_PATTERN = T.let(T.unsafe(nil), Regexp)
+
+# source://lumberjack//lib/lumberjack/template.rb#17
 Lumberjack::Template::TEMPLATE_ARGUMENT_ORDER = T.let(T.unsafe(nil), Array)

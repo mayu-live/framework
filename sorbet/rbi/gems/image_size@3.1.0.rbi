@@ -6,147 +6,147 @@
 
 # Determine image format and size
 #
-# source://image_size-3.1.0/lib/image_size/reader.rb:6
+# source://image_size//lib/image_size/reader.rb#6
 class ImageSize
   # Given image as any class responding to read and eof? or data as String, finds its format and dimensions
   #
   # @return [ImageSize] a new instance of ImageSize
   #
-  # source://image_size-3.1.0/lib/image_size.rb:49
+  # source://image_size//lib/image_size.rb#49
   def initialize(data); end
 
   # Image format
   #
-  # source://image_size-3.1.0/lib/image_size.rb:57
+  # source://image_size//lib/image_size.rb#57
   def format; end
 
   # Image height
   #
-  # source://image_size-3.1.0/lib/image_size.rb:64
+  # source://image_size//lib/image_size.rb#64
   def h; end
 
   # Image height
   #
-  # source://image_size-3.1.0/lib/image_size.rb:64
+  # source://image_size//lib/image_size.rb#64
   def height; end
 
   # get image width and height as an array which to_s method returns "#{width}x#{height}"
   #
-  # source://image_size-3.1.0/lib/image_size.rb:68
+  # source://image_size//lib/image_size.rb#68
   def size; end
 
   # Image width
   #
-  # source://image_size-3.1.0/lib/image_size.rb:60
+  # source://image_size//lib/image_size.rb#60
   def w; end
 
   # Image width
   #
-  # source://image_size-3.1.0/lib/image_size.rb:60
+  # source://image_size//lib/image_size.rb#60
   def width; end
 
   private
 
-  # source://image_size-3.1.0/lib/image_size.rb:76
+  # source://image_size//lib/image_size.rb#76
   def detect_format(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:123
+  # source://image_size//lib/image_size.rb#123
   def detect_jpeg2000_type(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:101
+  # source://image_size//lib/image_size.rb#101
   def detect_png_type(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:114
+  # source://image_size//lib/image_size.rb#114
   def detect_pnm_type(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:146
+  # source://image_size//lib/image_size.rb#146
   def size_of_apng(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:180
+  # source://image_size//lib/image_size.rb#180
   def size_of_bmp(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:320
+  # source://image_size//lib/image_size.rb#320
   def size_of_cur(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:134
+  # source://image_size//lib/image_size.rb#134
   def size_of_gif(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:320
+  # source://image_size//lib/image_size.rb#320
   def size_of_ico(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:374
+  # source://image_size//lib/image_size.rb#374
   def size_of_j2c(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:338
+  # source://image_size//lib/image_size.rb#338
   def size_of_jp2(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:161
+  # source://image_size//lib/image_size.rb#161
   def size_of_jpeg(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:338
+  # source://image_size//lib/image_size.rb#338
   def size_of_jpx(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:138
+  # source://image_size//lib/image_size.rb#138
   def size_of_mng(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:204
+  # source://image_size//lib/image_size.rb#204
   def size_of_pam(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:195
+  # source://image_size//lib/image_size.rb#195
   def size_of_pbm(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:283
+  # source://image_size//lib/image_size.rb#283
   def size_of_pcx(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:195
+  # source://image_size//lib/image_size.rb#195
   def size_of_pgm(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:146
+  # source://image_size//lib/image_size.rb#146
   def size_of_png(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:195
+  # source://image_size//lib/image_size.rb#195
   def size_of_ppm(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:248
+  # source://image_size//lib/image_size.rb#248
   def size_of_psd(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:297
+  # source://image_size//lib/image_size.rb#297
   def size_of_svg(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:288
+  # source://image_size//lib/image_size.rb#288
   def size_of_swf(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:252
+  # source://image_size//lib/image_size.rb#252
   def size_of_tiff(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:325
+  # source://image_size//lib/image_size.rb#325
   def size_of_webp(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:231
+  # source://image_size//lib/image_size.rb#231
   def size_of_xbm(ir); end
 
-  # source://image_size-3.1.0/lib/image_size.rb:236
+  # source://image_size//lib/image_size.rb#236
   def size_of_xpm(ir); end
 
   class << self
     # Used for svg
     #
-    # source://image_size-3.1.0/lib/image_size.rb:39
+    # source://image_size//lib/image_size.rb#39
     def dpi; end
 
     # Used for svg
     #
-    # source://image_size-3.1.0/lib/image_size.rb:44
+    # source://image_size//lib/image_size.rb#44
     def dpi=(dpi); end
 
     # Given path to image finds its format, width and height
     #
-    # source://image_size-3.1.0/lib/image_size.rb:34
+    # source://image_size//lib/image_size.rb#34
     def path(path); end
   end
 end
 
-# source://image_size-3.1.0/lib/image_size/chunky_reader.rb:6
+# source://image_size//lib/image_size/chunky_reader.rb#6
 module ImageSize::ChunkyReader
   include ::ImageSize::Reader
 
@@ -159,120 +159,120 @@ module ImageSize::ChunkyReader
   #
   # @raise [ArgumentError]
   #
-  # source://image_size-3.1.0/lib/image_size/chunky_reader.rb:20
+  # source://image_size//lib/image_size/chunky_reader.rb#20
   def [](offset, length); end
 
   # Size of a chunk in which to read
   #
-  # source://image_size-3.1.0/lib/image_size/chunky_reader.rb:10
+  # source://image_size//lib/image_size/chunky_reader.rb#10
   def chunk_size; end
 end
 
-# source://image_size-3.1.0/lib/image_size.rb:11
+# source://image_size//lib/image_size.rb#11
 class ImageSize::FormatError < ::StandardError; end
 
-# source://image_size-3.1.0/lib/image_size.rb:155
+# source://image_size//lib/image_size.rb#155
 ImageSize::JPEG_CODE_CHECK = T.let(T.unsafe(nil), Array)
 
-# source://image_size-3.1.0/lib/image_size/reader.rb:7
+# source://image_size//lib/image_size/reader.rb#7
 module ImageSize::Reader
-  # source://image_size-3.1.0/lib/image_size/reader.rb:40
+  # source://image_size//lib/image_size/reader.rb#40
   def fetch(offset, length); end
 
-  # source://image_size-3.1.0/lib/image_size/reader.rb:50
+  # source://image_size//lib/image_size/reader.rb#50
   def unpack(offset, length, format); end
 
-  # source://image_size-3.1.0/lib/image_size/reader.rb:55
+  # source://image_size//lib/image_size/reader.rb#55
   def unpack1(offset, length, format); end
 
   class << self
-    # source://image_size-3.1.0/lib/image_size/reader.rb:9
+    # source://image_size//lib/image_size/reader.rb#9
     def open(input); end
 
     private
 
-    # source://image_size-3.1.0/lib/image_size/reader.rb:26
+    # source://image_size//lib/image_size/reader.rb#26
     def for_io(io); end
   end
 end
 
-# source://image_size-3.1.0/lib/image_size.rb:74
+# source://image_size//lib/image_size.rb#74
 ImageSize::SVG_R = T.let(T.unsafe(nil), Regexp)
 
-# source://image_size-3.1.0/lib/image_size/seekable_io_reader.rb:6
+# source://image_size//lib/image_size/seekable_io_reader.rb#6
 class ImageSize::SeekableIOReader
   include ::ImageSize::Reader
   include ::ImageSize::ChunkyReader
 
   # @return [SeekableIOReader] a new instance of SeekableIOReader
   #
-  # source://image_size-3.1.0/lib/image_size/seekable_io_reader.rb:9
+  # source://image_size//lib/image_size/seekable_io_reader.rb#9
   def initialize(io); end
 
   private
 
-  # source://image_size-3.1.0/lib/image_size/seekable_io_reader.rb:17
+  # source://image_size//lib/image_size/seekable_io_reader.rb#17
   def chunk(i); end
 end
 
 # Array joining with 'x'
 #
-# source://image_size-3.1.0/lib/image_size.rb:15
+# source://image_size//lib/image_size.rb#15
 class ImageSize::Size < ::Array
   # get second element
   #
-  # source://image_size-3.1.0/lib/image_size.rb:27
+  # source://image_size//lib/image_size.rb#27
   def h; end
 
   # get second element
   #
-  # source://image_size-3.1.0/lib/image_size.rb:27
+  # source://image_size//lib/image_size.rb#27
   def height; end
 
   # join using 'x'
   #
-  # source://image_size-3.1.0/lib/image_size.rb:16
+  # source://image_size//lib/image_size.rb#16
   def to_s; end
 
   # get first element
   #
-  # source://image_size-3.1.0/lib/image_size.rb:21
+  # source://image_size//lib/image_size.rb#21
   def w; end
 
   # get first element
   #
-  # source://image_size-3.1.0/lib/image_size.rb:21
+  # source://image_size//lib/image_size.rb#21
   def width; end
 end
 
-# source://image_size-3.1.0/lib/image_size/stream_io_reader.rb:6
+# source://image_size//lib/image_size/stream_io_reader.rb#6
 class ImageSize::StreamIOReader
   include ::ImageSize::Reader
   include ::ImageSize::ChunkyReader
 
   # @return [StreamIOReader] a new instance of StreamIOReader
   #
-  # source://image_size-3.1.0/lib/image_size/stream_io_reader.rb:9
+  # source://image_size//lib/image_size/stream_io_reader.rb#9
   def initialize(io); end
 
   private
 
-  # source://image_size-3.1.0/lib/image_size/stream_io_reader.rb:16
+  # source://image_size//lib/image_size/stream_io_reader.rb#16
   def chunk(i); end
 end
 
-# source://image_size-3.1.0/lib/image_size/string_reader.rb:6
+# source://image_size//lib/image_size/string_reader.rb#6
 class ImageSize::StringReader
   include ::ImageSize::Reader
 
   # @return [StringReader] a new instance of StringReader
   #
-  # source://image_size-3.1.0/lib/image_size/string_reader.rb:9
+  # source://image_size//lib/image_size/string_reader.rb#9
   def initialize(string); end
 
-  # source://image_size-3.1.0/lib/image_size/string_reader.rb:17
+  # source://image_size//lib/image_size/string_reader.rb#17
   def [](offset, length); end
 end
 
-# source://image_size-3.1.0/lib/image_size.rb:75
+# source://image_size//lib/image_size.rb#75
 ImageSize::XML_R = T.let(T.unsafe(nil), Regexp)
