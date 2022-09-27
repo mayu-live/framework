@@ -24,29 +24,28 @@ module Mayu
     extend T::Sig
 
     sig { params(config: Configuration).void }
-    def self.start_dev(config)
-      ssl_context = dev_ssl_context(config.server.host)
+    def self.start_dev(config) = start(config)
+
+    sig { params(config: Configuration).void }
+    def self.start_prod(config) = start(config)
+
+    sig { params(config: Configuration).void }
+    def self.start(config)
       uri = config.server.uri
+      ssl_context =
+        if config.server.self_signed_cert
+          setup_self_signed_cert(uri.host.to_s)
+        end
       endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
 
+      Configuration.log_config(config)
       Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
 
       Controller.new(config:, endpoint:).run
     end
 
-    sig { params(config: Configuration).void }
-    def self.start_prod(config)
-      uri = config.server.uri
-      endpoint = Async::HTTP::Endpoint.new(uri, reuse_port: true)
-      # Use the following to start a production server for debugging:
-      # ssl_context = dev_ssl_context(config.host)
-      # uri = config.uri
-      # endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
-      Controller.new(config:, endpoint:).run
-    end
-
     sig { params(host: String).returns(OpenSSL::SSL::SSLContext) }
-    def self.dev_ssl_context(host)
+    def self.setup_self_signed_cert(host)
       authority = Localhost::Authority.fetch(host)
 
       authority.server_context.tap do |context|

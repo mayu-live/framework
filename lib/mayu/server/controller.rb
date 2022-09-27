@@ -51,7 +51,7 @@ module Mayu
       def setup(container)
         if @config.metrics.enabled
           container.async do
-            PrometheusServer.setup(@config)
+            Metrics.setup(@config)
             Metrics.new(config: @config)
             PrometheusServer.start(@config)
           end
@@ -63,7 +63,7 @@ module Mayu
           count: @config.server.processes
         ) do |instance|
           Async do |task|
-            PrometheusServer.setup(@config)
+            Metrics.setup(@config)
 
             task.async do
               if @debug_trap.install!

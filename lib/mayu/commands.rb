@@ -16,14 +16,14 @@ module Mayu
 
       case argv
       in ["dev", *rest]
-        require_relative "commands/dev"
-        Commands::Dev.new(load_config(:dev)).call(rest)
+        require_relative "server"
+        Server.start(load_config(:dev))
       in ["build", *rest]
         require_relative "commands/build"
         Commands::Build.new(load_config(:prod)).call(rest)
       in ["serve", *rest]
-        require_relative "commands/serve"
-        Commands::Serve.new(load_config(:prod)).call(rest)
+        require_relative "server"
+        Server.start(load_config(:prod))
       else
         puts "Invalid args: #{argv.inspect}"
         exit 1

@@ -2,6 +2,7 @@
 
 require "prometheus/client"
 require_relative "metrics/prometheus"
+require "prometheus/client/data_stores/direct_file_store"
 
 module Mayu
   class Metrics
@@ -11,6 +12,16 @@ module Mayu
     attr_reader :session_callbacks
     sig { returns(Prometheus::Client::Gauge) }
     attr_reader :session_count
+
+    sig { params(config: Configuration).void }
+    def self.setup(config)
+      Prometheus::Client.config.data_store =
+        Prometheus::Client::DataStores::DirectFileStore.new(
+          dir: File.join(config.root, "tmp", "prometheus")
+        )
+
+      new(config:)
+    end
 
     sig do
       params(
@@ -47,6 +58,14 @@ module Mayu
           Prometheus::Client::Counter
         )
 
+      store_settings =
+        case Prometheus::Client.config.data_store
+        when Prometheus::Client::DataStores::DirectFileStore
+          { aggregation: :sum }
+        else
+          {}
+        end
+
       @session_count =
         T.let(
           prometheus.gauge(
@@ -54,9 +73,7 @@ module Mayu
             docstring: "Number of sessions",
             labels: [*preset_labels.keys],
             preset_labels:,
-            store_settings: {
-              aggregation: :sum
-            }
+            store_settings:
           ),
           Prometheus::Client::Gauge
         )

@@ -39,14 +39,6 @@ module Mayu
 
         server.run
       end
-
-      sig { params(config: Configuration).void }
-      def self.setup(config)
-        Prometheus::Client.config.data_store =
-          Prometheus::Client::DataStores::DirectFileStore.new(
-            dir: File.join(config.root, "tmp", "prometheus")
-          )
-      end
     end
   end
 end
