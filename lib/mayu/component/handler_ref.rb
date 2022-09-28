@@ -38,6 +38,16 @@ module Mayu
           )
       end
 
+      sig { void }
+      def marshal_dump
+        []
+      end
+
+      sig { params(a: T.untyped).void }
+      def marshal_load(a)
+        @id = "invalid"
+      end
+
       sig { params(payload: T.untyped).void }
       def call(payload)
         T.unsafe(@component).send(@name, payload, *@args, **@kwargs)
@@ -48,9 +58,9 @@ module Mayu
         "Mayu.handle(event,'#{@id}')"
       end
 
-      sig { params(other: HandlerRef).returns(T::Boolean) }
+      sig { params(other: T.untyped).returns(T::Boolean) }
       def ==(other)
-        @id == other.id
+        other.is_a?(self.class) ? @id == other.id : false
       end
     end
   end
