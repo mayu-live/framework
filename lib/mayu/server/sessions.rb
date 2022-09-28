@@ -27,7 +27,7 @@ module Mayu
         session_key = session_key(session.id, session.token)
 
         if @sessions.include?(session_key)
-          raise AlreadyRunningError, "Already running"
+          raise AlreadyRunningError, "Session #{session} has already been added"
         end
 
         @sessions.store(session_key, session)
@@ -41,7 +41,7 @@ module Mayu
       sig { params(id: String, token: String).returns(Session) }
       def fetch(id, token)
         @sessions.fetch(session_key(id, token)) do
-          raise NotFoundError, "Session not found or invalid token: #{id}"
+          raise NotFoundError, "Session #{id} not found (or invalid token)"
         end
       end
 

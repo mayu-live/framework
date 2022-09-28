@@ -7,6 +7,7 @@ module Mayu
   module VDOM
     module H
       extend T::Sig
+      extend self
 
       sig do
         params(

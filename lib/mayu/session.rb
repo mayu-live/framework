@@ -9,6 +9,9 @@ module Mayu
   class Session
     extend T::Sig
 
+    class InvalidTokenError < StandardError
+    end
+
     sig do
       params(environment: Environment, path: String).returns(T.attached_class)
     end
@@ -36,6 +39,24 @@ module Mayu
       )
     end
 
+    TOKEN_LENGTH = 64
+    TOKEN_RE = /\A\w{#{TOKEN_LENGTH}}\z/
+
+    sig { returns(String) }
+    def self.generate_token
+      SecureRandom.alphanumeric(TOKEN_LENGTH)
+    end
+
+    sig { params(token: String).returns(T::Boolean) }
+    def self.valid_token?(token)
+      token.match?(TOKEN_RE)
+    end
+
+    sig { params(token: String).void }
+    def self.validate_token!(token)
+      raise InvalidTokenError unless valid_token?(token)
+    end
+
     Marshaled = T.type_alias { [String, String, String, String, String] }
 
     sig { returns(String) }
@@ -58,7 +79,7 @@ module Mayu
     def initialize(environment:, path:, vtree: nil, store: nil)
       @environment = environment
       @id = T.let(SecureRandom.uuid, String)
-      @token = T.let(SecureRandom.alphanumeric(64), String)
+      @token = T.let(self.class.generate_token, String)
       @path = path
       @vtree = T.let(vtree || VDOM::VTree.new(session: self), VDOM::VTree)
       @store =

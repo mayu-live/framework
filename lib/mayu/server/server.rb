@@ -9,6 +9,9 @@ module Mayu
     class Server
       extend T::Sig
 
+      class CookieNotSetError < StandardError
+      end
+
       UUIDv4 =
         /
           \A
@@ -90,8 +93,24 @@ module Mayu
           respond(status: 400, body: ["Invalid request"])
         end
       rescue Sessions::NotFoundError => e
-        Console.logger.error(self, e)
+        Console.logger.error(e, e.message)
         respond(status: 404, body: ["Session not found"])
+      rescue Session::InvalidTokenError => e
+        respond(status: 400, body: ["Invalid token format"])
+      rescue CookieNotSetError => e
+        respond(status: 400, body: ["Missing cookie"])
+      rescue => e
+        Console.logger.error(self, e)
+
+        if @environment.config.mode == :dev
+          return respond(status: 500, body: [<<~EOF])
+            #{e.class.name}: #{e.message}
+
+            #{Array(e.backtrace).compact.join("\n")}
+          EOF
+        end
+
+        respond(status: 500, body: ["Unhandled error"])
       end
 
       private
@@ -265,10 +284,14 @@ module Mayu
 
       sig { params(request: Protocol::HTTP::Request).returns(String) }
       def get_session_token_cookie(request)
-        cookies = CGI::Cookie.parse(request.headers["cookie"].to_s)
-        cookies
-          .fetch("mayu-token") { raise "Cookie mayu-token is not set" }
+        CGI::Cookie
+          .parse(request.headers["cookie"].to_s)
+          .fetch("mayu-token") do
+            raise CookieNotSetError, "Cookie #{_1} is not set"
+          end
           .first
+          .to_s
+          .tap { Session.validate_token!(_1) }
       end
 
       sig do
