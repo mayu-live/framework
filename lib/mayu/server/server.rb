@@ -163,6 +163,8 @@ module Mayu
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
 
+        @environment.metrics.session_init_count.increment()
+
         respond(status: 200, headers:, body:)
       end
 

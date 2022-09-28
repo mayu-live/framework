@@ -70,7 +70,7 @@ module Mayu
         T.let(
           prometheus.counter(
             :mayu_session_navigate_count,
-            docstring: "Total number of inits",
+            docstring: "Total number of navigations",
             labels: [*preset_labels.keys],
             preset_labels:
           ),
