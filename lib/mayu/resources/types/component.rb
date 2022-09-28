@@ -76,6 +76,7 @@ module Mayu
               [*e.backtrace].reject { _1.include?("/gems/sorbet-runtime-") }
                 .join("\n")
             $stderr.puts "\e[31mError loading #{@resource.path}: #{e.message}\n\e[33m#{backtrace}\e[0m"
+            $stderr.puts "\e[33m#{@source}\e[0m"
             raise
           end
 
