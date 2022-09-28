@@ -79,7 +79,9 @@ module Mayu
 
               delta_time_ms = (Time.now - start_at) * 1000
 
-              if delta_time_ms > 10
+              # TODO: Make this configurable..
+              # should also be in the prometheus output
+              if delta_time_ms > 50
                 Console.logger.warn(
                   self,
                   "Rendering took %.3fms" % delta_time_ms
@@ -88,12 +90,13 @@ module Mayu
 
               sleep 1.0 / @updates_per_second
 
-              if update_queue_size = @vtree.update_queue.size.nonzero?
-                Console.logger.warn(
-                  self,
-                  "Update queue size: #{update_queue_size}"
-                )
-              end
+              # TODO: make configurable
+              # if update_queue_size = @vtree.update_queue.size.nonzero?
+              #   Console.logger.warn(
+              #     self,
+              #     "Update queue size: #{update_queue_size}"
+              #   )
+              # end
             end
           rescue => e
             puts e.message
