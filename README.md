@@ -60,6 +60,10 @@ Install node dependencies
 
     npm install
 
+Build browser runtime
+
+    npm run build
+
 ## Start the example app
 
     cd example
