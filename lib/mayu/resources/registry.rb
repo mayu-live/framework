@@ -109,7 +109,7 @@ module Mayu
         end
 
         reload_resources(
-          [path], #, *@dependency_graph.dependants_of(path)],
+          [path, *@dependency_graph.dependants_of(path)],
           visited:
         )
       end
