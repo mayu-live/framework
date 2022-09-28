@@ -3,9 +3,6 @@
 Dockerfile
 example/tmp
 example/vendor
-example2/tmp
-example2/vendor
 lib/mayu/client/dist
 node_modules
-supervisor.ipc
 vendor/bundle

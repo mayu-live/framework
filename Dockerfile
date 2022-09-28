@@ -45,15 +45,15 @@ RUN \
     rm -r node_modules
 RUN gem build
 RUN \
-    mkdir -p example2/vendor/cache && \
-    cp mayu-live-*.gem example2/vendor/cache
+    mkdir -p example/vendor/cache && \
+    cp mayu-live-*.gem example/vendor/cache
 
 RUN \
-    mkdir -p example2/vendor/mayu && \
-    cp lib/mayu/client/dist/live.js example2/vendor/mayu/live.js
+    mkdir -p example/vendor/mayu && \
+    cp lib/mayu/client/dist/live.js example/vendor/mayu/live.js
 
 RUN \
-    cd example2 && \
+    cd example && \
     bundle && \
     rm -rf vendor/bundle/ruby/*/cache && \
     bin/mayu build
@@ -75,6 +75,6 @@ COPY --from=build /app /app
 
 ENV PORT 3000
 
-WORKDIR /app/example2
+WORKDIR /app/example
 
 CMD ["bin/mayu", "serve"]

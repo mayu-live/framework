@@ -8,28 +8,28 @@
 ## Table of contents
 
 - [Mayu Live](#mayu-live)
-  * [Description](#description)
+  - [Description](#description)
 - [Getting started](#getting-started)
-  * [Install dependencies](#install-dependencies)
-  * [Start the example app](#start-the-example-app)
-  * [Run the tests](#run-the-tests)
+  - [Install dependencies](#install-dependencies)
+  - [Start the example app](#start-the-example-app)
+  - [Run the tests](#run-the-tests)
 - [Features](#features)
-  * [100% server side](#100-server-side)
-  * [100% async](#100-async)
-  * [Components](#components)
-  * [CSS modules](#css-modules)
-  * [State management](#state-management)
-  * [Simple routing](#simple-routing)
-  * [Hot reloading](#hot-reloading)
-  * [Small browser footprint](#small-browser-footprint)
-  * [Templating](#templating)
+  - [100% server side](#100-server-side)
+  - [100% async](#100-async)
+  - [Components](#components)
+  - [CSS modules](#css-modules)
+  - [State management](#state-management)
+  - [Simple routing](#simple-routing)
+  - [Hot reloading](#hot-reloading)
+  - [Small browser footprint](#small-browser-footprint)
+  - [Templating](#templating)
 - [Implementation notes](#implementation-notes)
-  * [Tests](#tests)
-  * [Virtual DOM](#virtual-dom)
-  * [Server](#server)
-    + [Development server](#development-server)
-    + [Production server](#production-server)
-  * [Static typing](#static-typing)
+  - [Tests](#tests)
+  - [Virtual DOM](#virtual-dom)
+  - [Server](#server)
+    - [Development server](#development-server)
+    - [Production server](#production-server)
+  - [Static typing](#static-typing)
 - [Contributing](#contributing)
 
 ## Description
@@ -62,7 +62,7 @@ Install node dependencies
 
 ## Start the example app
 
-    cd example2
+    cd example
     bundle install
     bin/mayu dev
 

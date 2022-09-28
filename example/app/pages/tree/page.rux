@@ -1,0 +1,13 @@
+Entry = require("./Entry")
+
+def render
+  <section>
+    <h2>App tree</h2>
+
+    <p>This page shows the file structure of the example app (this webpage).</p>
+
+    <ul>
+      <Entry path={File.expand_path("app")} initial-open={true} />
+    </ul>
+  </section>
+end
