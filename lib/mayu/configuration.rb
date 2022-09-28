@@ -52,7 +52,7 @@ module Mayu
 
     class Metrics < T::Struct
       const :enabled, T::Boolean, default: false
-      const :port, Integer, default: 9090
+      const :port, Integer, default: 9091
       const :host, String, default: "127.0.0.1"
       const :path, String, default: "/metrics"
     end

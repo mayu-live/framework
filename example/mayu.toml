@@ -13,7 +13,7 @@
 
 [prod]
   [prod.server]
-    scheme = "https"
+    scheme = "http"
     host = "0.0.0.0"
     port = 3000
 
@@ -21,3 +21,6 @@
     hot_swap = false
     processes = 4
     use_bundle = true
+
+  [prod.metrics]
+    enabled = true
