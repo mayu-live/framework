@@ -78,4 +78,4 @@ ENV PORT 3000
 
 WORKDIR /app/example
 
-CMD ["bin/mayu", "serve"]
+CMD ["bin/mayu", "serve", "--disable-sorbet"]

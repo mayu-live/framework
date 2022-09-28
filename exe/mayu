@@ -5,6 +5,14 @@ require "sorbet-runtime"
 MAYU_ROOT = File.join(File.dirname(__FILE__), "..")
 $LOAD_PATH.unshift(File.join(MAYU_ROOT, "..", "..", "lib"))
 
+if ARGV.include?("--disable-sorbet")
+  puts "\e[1mDisabling sorbet\e[0m"
+  require "mayu/disable_sorbet"
+  Mayu::DisableSorbet.disable_sorbet!
+else
+  puts "\e[2mDisable sorbet with --disable-sorbet\e[0m"
+end
+
 require "mayu/banner"
 require "mayu/commands"
 
