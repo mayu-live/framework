@@ -1,8 +1,8 @@
 # <img alt="Mayu Live" width="337" src="https://user-images.githubusercontent.com/41148/192179194-f44aed92-74a3-4b59-a25e-bf2a8d313796.png">
 
-[![Ruby Workflow Status](https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/ruby.yml?query=branch%3Arewrite-stuff)
-[![Node Workflow Status](https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/node.js.yml?query=branch%3Arewrite-stuff)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/w/mayu-live/framework/rewrite-stuff?style=flat-square)](https://github.com/mayu-live/framework/commits/rewrite-stuff)
+[![Ruby Workflow Status](https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/ruby.yml)
+[![Node Workflow Status](https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/node.js.yml)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/w/mayu-live/framework/main?style=flat-square)](https://github.com/mayu-live/framework/commits)
 [![License AGPL-3.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING)
 
 ## Table of contents
