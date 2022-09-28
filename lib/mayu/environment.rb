@@ -61,16 +61,13 @@ module Mayu
         )
       @resources =
         T.let(
-          case @config.mode
-          in :dev | :test
-            Resources::Registry.new(root: @root)
-          in :prod
+          if @config.use_bundle
             Resources::Registry.load(
               File.read(@config.paths.bundle_filename, encoding: "binary"),
               root:
             )
           else
-            raise NotImplementedError, "unknown mode #{@config.mode.inspect}"
+            Resources::Registry.new(root: @root)
           end,
           Resources::Registry
         )

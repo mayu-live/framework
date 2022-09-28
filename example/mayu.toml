@@ -5,7 +5,10 @@
     scheme = "https"
     host = "localhost"
     port = 9292
+
+    event_source_retry_ms = 1000
     hot_swap = true
+    render_exceptions = true
     self_signed_cert = true
 
 [prod]
@@ -13,6 +16,8 @@
     scheme = "https"
     host = "0.0.0.0"
     port = 3000
-    hot_swap = true
-    processes = 4
+
     event_source_retry_ms = 1000
+    hot_swap = false
+    processes = 4
+    use_bundle = true
