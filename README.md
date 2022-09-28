@@ -150,7 +150,7 @@ end
 render do
   h.div do
     h.p state[:time]
-  end.div
+  end
 end
 ```
 
