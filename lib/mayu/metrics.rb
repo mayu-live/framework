@@ -9,9 +9,17 @@ module Mayu
     extend T::Sig
 
     sig { returns(Prometheus::Client::Counter) }
-    attr_reader :session_callbacks
-    sig { returns(Prometheus::Client::Gauge) }
-    attr_reader :session_count
+    attr_reader :error_count
+    sig { returns(Prometheus::Client::Counter) }
+    attr_reader :session_init_count
+    sig { returns(Prometheus::Client::Counter) }
+    attr_reader :session_navigate_count
+    sig { returns(Prometheus::Client::Counter) }
+    attr_reader :session_ping_count
+    sig { returns(Prometheus::Client::Counter) }
+    attr_reader :session_callback_count
+    sig { returns(Prometheus::Client::Summary) }
+    attr_reader :vnode_patch_times
 
     sig { params(config: Configuration).void }
     def self.setup(config)
@@ -36,21 +44,54 @@ module Mayu
         app_name: config.instance.app_name
       }
 
-      @session_heartbeats =
+      @error_count =
         T.let(
           prometheus.counter(
-            :session_ping,
-            docstring: "Total number of heartbeats",
+            :mayu_error_count,
+            docstring: "Total number of errors",
+            labels: [:type, *preset_labels.keys],
+            preset_labels:
+          ),
+          Prometheus::Client::Counter
+        )
+
+      @session_init_count =
+        T.let(
+          prometheus.counter(
+            :mayu_session_init_count,
+            docstring: "Total number of inits",
             labels: [*preset_labels.keys],
             preset_labels:
           ),
           Prometheus::Client::Counter
         )
 
-      @session_callbacks =
+      @session_navigate_count =
         T.let(
           prometheus.counter(
-            :session_callbacks,
+            :mayu_session_navigate_count,
+            docstring: "Total number of inits",
+            labels: [*preset_labels.keys],
+            preset_labels:
+          ),
+          Prometheus::Client::Counter
+        )
+
+      @session_ping_count =
+        T.let(
+          prometheus.counter(
+            :mayu_session_ping_count,
+            docstring: "Total number of pings",
+            labels: [*preset_labels.keys],
+            preset_labels:
+          ),
+          Prometheus::Client::Counter
+        )
+
+      @session_callback_count =
+        T.let(
+          prometheus.counter(
+            :mayu_session_callback_count,
             docstring: "Number of callbacks called",
             labels: [*preset_labels.keys],
             preset_labels:
@@ -58,25 +99,36 @@ module Mayu
           Prometheus::Client::Counter
         )
 
-      store_settings =
-        case Prometheus::Client.config.data_store
-        when Prometheus::Client::DataStores::DirectFileStore
-          { aggregation: :sum }
-        else
-          {}
-        end
-
-      @session_count =
+      @vnode_patch_times =
         T.let(
-          prometheus.gauge(
-            :session_count,
-            docstring: "Number of sessions",
-            labels: [*preset_labels.keys],
-            preset_labels:,
-            store_settings:
+          prometheus.summary(
+            :mayu_vnode_patch_times,
+            docstring: "VNode patch times",
+            labels: [:vnode_type, *preset_labels.keys],
+            preset_labels:
           ),
-          Prometheus::Client::Gauge
+          Prometheus::Client::Summary
         )
+
+      # store_settings =
+      #   case Prometheus::Client.config.data_store
+      #   when Prometheus::Client::DataStores::DirectFileStore
+      #     { aggregation: :sum }
+      #   else
+      #     {}
+      #   end
+      #
+      # @session_count =
+      #   T.let(
+      #     prometheus.gauge(
+      #       :session_count,
+      #       docstring: "Number of sessions",
+      #       labels: [*preset_labels.keys],
+      #       preset_labels:,
+      #       store_settings:
+      #     ),
+      #     Prometheus::Client::Gauge
+      #   )
     end
   end
 end

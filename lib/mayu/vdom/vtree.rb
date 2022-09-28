@@ -32,11 +32,12 @@ module Mayu
 
         sig do
           params(
+            metrics: Metrics,
             task: Async::Task,
             block: T.proc.params(arg0: [Symbol, T.untyped]).void
           ).returns(Async::Task)
         end
-        def run(task: Async::Task.current, &block)
+        def run(metrics, task: Async::Task.current, &block)
           task.async(annotation: "VTree updater") do |task|
             assets = T::Set[String].new
 
@@ -59,9 +60,27 @@ module Mayu
                   yield [:pong, timestamp]
                 in VNode => vnode
                   next if vnode.removed?
-                  # puts "Patching #{vnode.component.inspect}"
                   next unless vnode.component&.dirty?
-                  @vtree.patch(ctx, vnode, vnode.descriptor, lifecycles: true)
+                  type = vnode.descriptor.type
+                  vnode_type =
+                    if type.respond_to?(:__mayu_resource)
+                      type.send(:__mayu_resource).path
+                    else
+                      type.inspect.first(10)
+                    end
+                  metrics.vnode_patch_times.observe(
+                    Benchmark.realtime do
+                      @vtree.patch(
+                        ctx,
+                        vnode,
+                        vnode.descriptor,
+                        lifecycles: true
+                      )
+                    end,
+                    labels: {
+                      vnode_type:
+                    }
+                  )
                 end
               end
 

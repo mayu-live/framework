@@ -93,13 +93,36 @@ module Mayu
           respond(status: 400, body: ["Invalid request"])
         end
       rescue Sessions::NotFoundError => e
+        @environment.metrics.error_count.increment(
+          labels: {
+            type: e.class.name
+          }
+        )
+
         Console.logger.error(e, e.message)
         respond(status: 404, body: ["Session not found"])
       rescue Session::InvalidTokenError => e
+        @environment.metrics.error_count.increment(
+          labels: {
+            type: e.class.name
+          }
+        )
+
         respond(status: 400, body: ["Invalid token format"])
       rescue CookieNotSetError => e
+        @environment.metrics.error_count.increment(
+          labels: {
+            type: e.class.name
+          }
+        )
+
         respond(status: 400, body: ["Missing cookie"])
       rescue => e
+        @environment.metrics.error_count.increment(
+          labels: {
+            type: e.class.name
+          }
+        )
         Console.logger.error(self, e)
 
         if @environment.config.server.render_exceptions
@@ -173,13 +196,17 @@ module Mayu
 
         case args
         in ["ping"]
+          @environment.metrics.session_ping_count.increment()
+
           timestamp = request.read.to_i
           session.handle_callback("ping", { timestamp: })
         in ["navigate"]
+          @environment.metrics.session_navigate_count.increment()
+
           path = request.read
           session.handle_callback("navigate", { path: })
         in ["callback", Component::HandlerRef::ID_FORMAT => callback_id]
-          @environment.metrics.session_callbacks.increment()
+          @environment.metrics.session_callback_count.increment()
 
           payload = JSON.parse(request.read)
           session.handle_callback(callback_id, payload)

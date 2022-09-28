@@ -50,9 +50,10 @@ module Mayu
       end
       def setup(container)
         if @config.metrics.enabled
+          FileUtils.rm_rf(File.join(@config.root, "tmp"))
+
           container.async do
             Metrics.setup(@config)
-            Metrics.new(config: @config)
             PrometheusServer.start(@config)
           end
         end

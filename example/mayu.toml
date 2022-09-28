@@ -11,6 +11,9 @@
     render_exceptions = true
     self_signed_cert = true
 
+  [dev.metrics]
+    enabled = true
+
 [prod]
   [prod.server]
     scheme = "http"
@@ -24,3 +27,5 @@
 
   [prod.metrics]
     enabled = true
+    port = 9091
+    host = "0.0.0.0"
