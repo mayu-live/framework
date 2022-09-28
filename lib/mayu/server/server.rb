@@ -102,7 +102,7 @@ module Mayu
       rescue => e
         Console.logger.error(self, e)
 
-        if @environment.config.mode == :dev
+        if @environment.config.server.render_exceptions
           return respond(status: 500, body: [<<~EOF])
             #{e.class.name}: #{e.message}
 

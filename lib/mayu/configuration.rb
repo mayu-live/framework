@@ -21,6 +21,8 @@ module Mayu
       const :hot_swap, T::Boolean, default: false
       const :self_signed_cert, T::Boolean, default: false
 
+      const :render_exceptions, T::Boolean, default: false
+
       sig { returns(URI::HTTP) }
       def uri
         URI.for(scheme, nil, host, port, nil, "/", nil, nil, nil).normalize
@@ -58,6 +60,7 @@ module Mayu
     const :mode, Symbol
     const :root, String
     const :secret_key, String
+    const :use_bundle, T::Boolean, default: false
 
     const :server, Server, default: Server.new
     const :metrics, Metrics, default: Metrics.new
