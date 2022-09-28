@@ -1,14 +1,20 @@
 .body {
-  background: #000;
+  --dark: #403f4c;
+  --bright: #fff;
+  --red: #e84855;
+  --yellow: #f9dc5c;
+  --blue: #3185fc;
+  --pink: #efbcd5;
+
+  background: var(--dark);
+  color: var(--bright);
   margin: 0;
   padding: 0;
-  font-family: "Open Sans", sans-serif;
-  font-size: 1.2em;
+  font-family: Helvetica, sans-serif;
   display: grid;
   min-height: 100vh;
   grid-template:
     "header" auto
-    "nav" auto
     "main" 1fr
     "footer" auto;
   overflow-y: scroll;
@@ -22,8 +28,7 @@
 
 .header {
   grid-area: header;
-  background: #09c;
-  color: #fff;
+  color: var(--yellow);
   display: flex;
   padding: 1em 0;
   overflow: hidden;
@@ -34,25 +39,11 @@
   margin-inline: auto;
 }
 
-.nav {
-  grid-area: nav;
-  background: #2ad;
-  overflow: hidden;
-}
-
-.menu {
-  /* TODO: Implement composes: maxWidth; */
-  width: min(100% - 2rem, 960px);
-  margin-inline: auto;
-  padding: 0;
-  list-style-type: none;
-  display: flex;
-  gap: 1em;
-}
-
 .main {
   grid-area: main;
-  background: #fff;
+  background: var(--bright);
+  color: var(--dark);
+  padding-bottom: 1rem;
 }
 
 .footer {

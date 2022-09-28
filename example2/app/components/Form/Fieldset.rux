@@ -1,0 +1,5 @@
+def render
+  <fieldset class={styles.fieldset}>
+    {props[:children]}
+  </fieldset>
+end

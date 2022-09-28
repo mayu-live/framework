@@ -1,0 +1,59 @@
+.buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+  align-items: center;
+}
+
+.button[href]:link,
+.button[href]:visited {
+  text-decoration: none;
+  color: var(--blue);
+}
+
+.button[href]:active,
+.button[href]:hover {
+  text-decoration: underline;
+}
+
+.perPage {
+  flex: 1;
+}
+
+.pages {
+  flex: 1;
+  list-style-type: none;
+  display: flex;
+  padding: 0;
+  margin: 0;
+  flex-direction: row;
+  justify-content: space-around;
+  gap: 0.5em;
+}
+
+.page {
+  padding: 0.5em;
+  display: inline-block;
+  width: 2em;
+  text-align: center;
+}
+
+.page[href]:link,
+.page[href]:visited {
+  text-decoration: none;
+  color: var(--blue);
+}
+
+.page[href]:active,
+.page[href]:hover {
+  color: var(--blue);
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.page:not([href]) {
+  background: var(--blue);
+  color: var(--bright);
+  font-weight: bold;
+  border-radius: 2px;
+}

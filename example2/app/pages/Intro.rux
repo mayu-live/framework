@@ -1,0 +1,15 @@
+def render
+  classname = "#{props[:class]} #{styles[:inner]}"
+
+  <div class={styles[:intro]}>
+    <div class={classname}>
+      <h1 class={styles[:title]}>
+        Reactive Server-Side component-based VirtualDOM framework for Ruby
+      </h1>
+
+      <h2 class={styles[:subtitle]}>
+        Mayu enables rich, real-time user experiences with server-rendered HTML.
+      </h2>
+    </div>
+  </div>
+end

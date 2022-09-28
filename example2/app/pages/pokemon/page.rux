@@ -4,8 +4,8 @@ def self.get_initial_state(**props)
   {
     result: nil,
     error: nil,
-    page: 0,
-    per_page: 20,
+    page: props.dig(:query, :page).to_i,
+    per_page: props.dig(:per_page).to_i.nonzero? || 20,
   }
 end
 
@@ -17,22 +17,6 @@ def mount
   update(result:)
 rescue => e
   update(error: e.message)
-end
-
-def handle_next_page(e)
-  update do |state|
-    per_page = state[:per_page]
-    total_pages = (state[:result][:results].length / per_page).floor
-    page = [state[:page].succ, total_pages].min
-    { page: }
-  end
-end
-
-def handle_prev_page(e)
-  update do |state|
-    page = [state[:page].pred, 0].max
-    { page: }
-  end
 end
 
 def handle_set_per_page(e)
@@ -52,11 +36,12 @@ def render
 
   per_page = state[:per_page]
   total_pages = (results.length / per_page).floor
-  results_on_this_page = results.slice(state[:page] * per_page, per_page) || []
+  page = props.dig(:query, :page).to_i.clamp(1, total_pages.succ)
+  results_on_this_page = results.slice(page.pred * per_page, per_page) || []
 
   <div>
     <Pagination
-      page={state[:page]}
+      page={page}
       per-page={per_page}
       total-pages={total_pages}
       on-click-prev={handler(:handle_prev_page)}
@@ -75,7 +60,7 @@ def render
     </ul>
 
     <Pagination
-      page={state[:page]}
+      page={page}
       per-page={per_page}
       total-pages={total_pages}
       on-click-prev={handler(:handle_prev_page)}

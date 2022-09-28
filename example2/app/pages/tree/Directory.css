@@ -1,0 +1,11 @@
+.dir {
+  padding-left: 0.5em;
+}
+
+.nonempty {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.name {
+}
