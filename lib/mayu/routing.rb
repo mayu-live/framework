@@ -10,7 +10,7 @@ module Mayu
   end
 end
 
-# root = Routing::Builder.build(File.join(__dir__, "example2", "app", "pages"))
+# root = Routing::Builder.build(File.join(__dir__, "example", "app", "pages"))
 # matcher = Routing::Matcher.new(root)
 # p matcher.match("/pokemon")
 # p matcher.match("/pokemon/123")
