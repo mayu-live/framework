@@ -2,7 +2,7 @@
 
 module Mayu
   module VDOM
-    module Hydration
+    module Marshalling
       extend T::Sig
 
       sig { params(vtree: VTree).returns(String) }

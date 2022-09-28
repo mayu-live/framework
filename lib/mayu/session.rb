@@ -3,7 +3,7 @@
 require "time"
 require_relative "environment"
 require_relative "vdom/vtree"
-require_relative "vdom/hydration"
+require_relative "vdom/marshalling"
 
 module Mayu
   class Session
@@ -143,7 +143,7 @@ module Mayu
         @id,
         @token,
         @path,
-        VDOM::Hydration.dump(@vtree),
+        VDOM::Marshalling.dump(@vtree),
         Marshal.dump(@store.state)
       ]
     end
@@ -181,7 +181,7 @@ module Mayu
     sig { params(a: T::Array[T.untyped]).void }
     def marshal_load(a)
       @id, @token, @path, dumped_vtree, state = a
-      @vtree = VDOM::Hydration.restore(dumped_vtree, session: self)
+      @vtree = VDOM::Marshalling.restore(dumped_vtree, session: self)
       @store = @environment.create_store(initial_state: Marshal.restore(state))
       @app = @environment.load_root(@path)
     end
