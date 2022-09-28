@@ -49,10 +49,13 @@ def render
       on-change-per-page={handler(:handle_set_per_page)}
     />
 
-    <ul>
+    <ul class={styles.list}>
       {results_on_this_page.map do |result|
-        <li key={result[:url]}>
-          <a href={"/pokemon/#{result[:url][/\/(\d+)\/$/, 1].to_i}"}>
+        id = result[:url][/\/(\d+)\/$/, 1].to_i
+
+        <li key={result[:url]} class={styles.item}>
+          {"#{id}. "}
+          <a href={"/pokemon/#{id}"}>
             {result[:name].capitalize}
           </a>
         </li>

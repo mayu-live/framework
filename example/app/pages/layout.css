@@ -1,11 +1,15 @@
-.body {
+:root {
+  /* TODO: Move these to root.css */
   --dark: #403f4c;
   --bright: #fff;
   --red: #e84855;
   --yellow: #f9dc5c;
   --blue: #3185fc;
+  --blue-bright: #e9f2ff;
   --pink: #efbcd5;
+}
 
+.body {
   background: var(--dark);
   color: var(--bright);
   margin: 0;

@@ -25,38 +25,42 @@ def render
   <Fieldset>
     <legend>Page {page} of {props[:total_pages].succ}</legend>
 
-    <div class={styles.buttons}>
-      <a href={prev_page_link} class={styles.button}>
-        Previous page
-      </a>
+    <div class={styles[:wrap]}>
+      <nav class={styles.buttons} aria-label="pagination">
+        {prev_page_link && <link rel="prev" href={prev_page_link} />}
+        <a href={prev_page_link} class={styles.button}>
+          Previous page
+        </a>
 
-      <ul class={styles[:pages]}>
-        {pagination_window(
-          current_page: page,
-          total_pages: props[:total_pages].succ,
-          window_size: props[:window_size] || 7,
-        ).map do |p|
-          href = p == page ? nil : "?page=#{p}"
+        <ul class={styles[:pages]}>
+          {pagination_window(
+            current_page: page,
+            total_pages: props[:total_pages].succ,
+            window_size: props[:window_size] || 7,
+          ).map do |p|
+            href = p == page ? nil : "?page=#{p}"
 
-          <li key={p}>
-            <a class={styles[:page]} href={href}>{p}</a>
-          </li>
-        end}
-      </ul>
+            <li key={p}>
+              <a class={styles[:page]} href={href}>{p}</a>
+            </li>
+          end}
+        </ul>
 
-      <a href={next_page_link} class={styles.button}>
-        Next page
-      </a>
-    </div>
+        {next_page_link && <link rel="next" href={next_page_link} />}
+        <a href={next_page_link} class={styles.button}>
+          Next page
+        </a>
+      </nav>
 
-    <div class={styles.perPage}>
-      Per page:
-      {" "}
-      <select on-change={props[:on_change_per_page]} value={props[:per_page]}>
-        {[20, 40, 80].map do |value|
-          <option key={value} value={value}>{value}</option>
-        end}
-      </select>
+      <div class={styles.perPage}>
+        Per page:
+        {" "}
+        <select on-change={props[:on_change_per_page]} value={props[:per_page]}>
+          {[20, 40, 80].map do |value|
+            <option key={value} value={value}>{value}</option>
+          end}
+        </select>
+      </div>
     </div>
   </Fieldset>
 rescue => e

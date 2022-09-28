@@ -1,8 +1,19 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  margin: 1em;
+  gap: 1em;
+}
+
 .buttons {
   display: flex;
   flex-direction: row;
   gap: 0.5em;
   align-items: center;
+  background: var(--blue-bright);
+  padding: 1em;
+  flex: 1;
+  border-radius: 2px;
 }
 
 .button[href]:link,
@@ -17,7 +28,8 @@
 }
 
 .perPage {
-  flex: 1;
+  flex: 0;
+  white-space: nowrap;
 }
 
 .pages {
