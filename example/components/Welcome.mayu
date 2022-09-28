@@ -1,3 +1,0 @@
-render do
-  <p>Welcome {props[:name]} {rand}</p>
-end
