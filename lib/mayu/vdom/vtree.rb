@@ -93,7 +93,7 @@ module Mayu
                 assets.add(asset)
               end
 
-              patches = ctx.patches + stylesheet_patch(stylesheets)
+              patches = [*stylesheet_patch(stylesheets), *ctx.patches]
               yield [:patch, patches] unless patches.empty?
 
               delta_time_ms = (Time.now - start_at) * 1000
