@@ -70,7 +70,7 @@ def render
 
       <section class={styles[:section]}>
         <h2 class={styles[:sectionTitle]}>Efficient</h2>
-        <p>HTTP/2 makes everything load in parallell.</p>
+        <p>HTTP/2 makes everything load in parallel.</p>
         <p>Designed to be deployed near users, either on fly.io or maybe even an on-premise Raspberry PI.</p>
         <p>Elements are interactive immediately as the page loads. No need to wait for a huge JS bundle to load for the page to become interactive.</p>
       </section>
