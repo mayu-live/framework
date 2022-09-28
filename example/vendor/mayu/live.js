@@ -1,0 +1,1 @@
+../../../lib/mayu/client/dist/live.js
