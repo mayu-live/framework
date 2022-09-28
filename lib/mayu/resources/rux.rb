@@ -30,14 +30,14 @@ module Mayu
       def visit_tag(node)
         "Mayu::VDOM.h2(%s)" %
           [
-            if node.name.start_with?(/[A-Z]/)
-              node.name
-            else
-              node.name.to_sym.inspect
-            end,
+            visit_tag_name(node.name),
             *node.children.compact.map { visit(_1).strip },
             *node.attrs.map { |k, v| Rux::Utils.attr_to_hash_elem(k, visit(v)) }
           ].join(", ")
+      end
+
+      def visit_tag_name(name)
+        name.start_with?(/[A-Z]/) ? name : name.to_sym.inspect
       end
 
       def visit_text(node)
