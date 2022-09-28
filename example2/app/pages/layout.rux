@@ -1,3 +1,4 @@
+Intro = require("./Intro")
 Header = require('../components/Layout/Header')
 Footer = require('../components/Layout/Footer')
 
@@ -11,21 +12,11 @@ def render
     <body class={styles.body}>
       <Header class={styles.header} max-width={styles.maxWidth} />
 
-      <nav class={styles.nav}>
-        <menu class={styles.menu}>
-          <li>
-            <a href="/">Start page</a>
-          </li>
-          <li>
-            <a href="/pokemon">Pokémon</a>
-          </li>
-          <li>
-            <a href="/about">About</a>
-          </li>
-        </menu>
-      </nav>
-
       <main class={styles.main}>
+        {props[:path] == "/app/pages/page.rux" && (
+          <Intro class={styles.maxWidth} />
+        )}
+
         <section class={styles.maxWidth}>
           {children}
         </section>

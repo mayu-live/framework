@@ -1,3 +1,23 @@
 .footer {
   min-height: 5em;
 }
+
+.link:link,
+.link:visited {
+  color: #fff;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.link:active,
+.link:hover {
+  text-decoration: underline;
+  color: #fff;
+  opacity: 1;
+}
+
+.badges {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+}

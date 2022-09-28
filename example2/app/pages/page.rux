@@ -1,4 +1,12 @@
-ITEMS = ["server side rendered apps", "very fast", "wow"]
+ITEMS = [
+  "Component-based, inspired by React",
+  "JSX-inspired syntax",
+  "100% server side",
+  "100% async",
+  "CSS-modules",
+  "Asset handling (image compression etc)",
+  "Hot-reloading",
+]
 
 def self.get_initial_state(**props)
   { index: 0 }
@@ -13,56 +21,66 @@ def mount
 end
 
 def render
-  <div class={styles.foo}>
-    <ul>
-      {ITEMS.each_with_index.map do |item, index|
-        active = index == state[:index]
-        <li class={active && styles.active}>
-          {item}
-        </li>
-      end}
-    </ul>
+  <div>
+    <article class={styles.features}>
+      <h2>Features</h2>
 
-    <section>
-      <h2>Interactive web apps without JavaScript</h2>
-      <p>
-        You write all logic in Ruby. Everything runs on the server.
-      </p>
-    </section>
+      <p>Here's a list of core features:</p>
 
-    <section>
-      <h2>But how does it work?</h2>
-      <p>
-        Mayu implements a Virtual DOM in Ruby.
-        All DOM updates are streamed to the browser via Server-Sent Events.
-      </p>
-      <p>
-        All callbacks run on the server.
-        You can write to the database securely directly in an onsubmit-handler.
-        There is no need to for an API.
-        Your callback handlers are your endpoints.
-      </p>
-      <p>
-        Mayu needs 10kB of JavaScript (before gzip) to be able to patch the DOM.
-        This loads before the page has been rendered.
-      </p>
-    </section>
+      <ul>
+        {ITEMS.each_with_index.map do |item, index|
+          active = index == state[:index]
+          <li class={active && styles.active}>
+            {item}
+          </li>
+        end}
+      </ul>
+    </article>
 
-    <section>
-      <h2>Efficient</h2>
-      <p>By utilizing async for Ruby to make things really fast. This also enables us to write async code without callbacks or promises.</p>
-      <p>Designed to be deployed near users, either on fly.io or maybe even an on-premise Raspberry PI.</p>
-      <p>HTTP/2 is supported out of the box. Actually only HTTP/2 is supported. This will make assets load in parallel (or will it? idk how this stuff works).</p>
-      <p>Elements are interactive immediately as the page loads. No need to wait for a huge JS bundle to load for the page to become interactive.</p>
-    </section>
+    <div class={styles[:sections]}>
+      <section class={styles[:section]}>
+        <h2 class={styles[:sectionTitle]}>Interactive web apps without JavaScript</h2>
+        <p>
+          You write all logic in Ruby. Everything runs on the server.
+        </p>
+      </section>
 
-    <section>
-      <h2>Smooth developer experience</h2>
-      <p>Hot-reloading reloads your components as you edit them and shows the updates in real-time.</p>
-      <p>Rubyists like Ruby because it's a very comfortable language to work with.</p>
-      <p>Mayu extends Ruby with a JSX-inspired syntax to you get the feeling of writing HTML. NO IT DOES NOT!!! It was going to, but unfortunately there were some issues, mostly due to it not being supported anywhere. Now we get a clunkier syntax, but it should work with static typing and syntax highlighting everywhere.</p>
-      <p>Asynchronous code without callbacks, again, thanks to the fantastic async library.</p>
-      <p>All dependencies are explicit, so things will break early.</p>
-    </section>
+      <section class={styles[:section]}>
+        <h2 class={styles[:sectionTitle]}>But how does it work?</h2>
+        <p>
+          Mayu implements a Virtual DOM in Ruby.
+          All DOM updates are streamed to the browser via Server-Sent Events.
+        </p>
+        <ul>
+          <li>
+            All callbacks run on the server.
+          </li>
+          <li>
+            Your callback handlers are your endpoints.
+          </li>
+          <li>
+            There is no need to for an API.
+          </li>
+        </ul>
+        <p>
+          Mayu needs 10kB of JavaScript (before gzip) to be able to patch the DOM.
+          This loads before the page has been rendered.
+        </p>
+      </section>
+
+      <section class={styles[:section]}>
+        <h2 class={styles[:sectionTitle]}>Efficient</h2>
+        <p>HTTP/2 makes everything load in parallell.</p>
+        <p>Designed to be deployed near users, either on fly.io or maybe even an on-premise Raspberry PI.</p>
+        <p>Elements are interactive immediately as the page loads. No need to wait for a huge JS bundle to load for the page to become interactive.</p>
+      </section>
+
+      <section class={styles[:section]}>
+        <h2 class={styles[:sectionTitle]}>Smooth developer experience</h2>
+        <p>Hot-reloading reloads your components as you edit them and shows the updates in real-time.</p>
+        <p>Ruby is pretty nice.</p>
+        <p>Asynchronous code without callbacks.</p>
+      </section>
+    </div>
   </div>
 end

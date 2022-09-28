@@ -1,9 +1,31 @@
-.foo {
-  background: #fcf;
+.features {
+  font-size: 1.2em;
 }
 
 .active {
   font-weight: bold;
   text-decoration: underline;
   font-style: italic;
+  color: var(--red);
+}
+
+.sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 2em 0em;
+  gap: 4em;
+}
+
+.section {
+  margin: 0em;
+  padding: 1em;
+  border-radius: 3px;
+  box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px,
+    rgba(17, 17, 26, 0.1) 0px 8px 24px, rgba(17, 17, 26, 0.1) 0px 16px 48px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.2em;
+  text-transform: uppercase;
 }

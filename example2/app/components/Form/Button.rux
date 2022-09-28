@@ -1,0 +1,5 @@
+def render
+  <button class={styles.button} on-click={props[:on_click]}>
+    {props[:children]}
+  </button>
+end

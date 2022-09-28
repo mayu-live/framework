@@ -1,14 +1,35 @@
 Logo = image("./logo.png")
 
 def render
+  classname = "#{props[:max_width]} #{styles.inner}"
+
   <header class={props[:class]}>
-    <div class={props[:max_width]}>
+    <div class={classname}>
       <img
         src={Logo.src}
         sizes={Logo.sizes}
-        width={200}
+        width={100}
+        class={styles.img}
       />
-      <h1 class={styles.title}>Mayu Live</h1>
+      <h1 class={styles.title}>
+        <a class={styles.titleLink} href="/" title="Start page">Mayu Live</a>
+      </h1>
+      <nav class={styles[:nav]}>
+        <menu class={styles[:menu]}>
+          <li>
+            <a class={styles[:navLink]} href="/">Start page</a>
+          </li>
+          <li>
+            <a class={styles[:navLink]} href="/pokemon">Pokémon</a>
+          </li>
+          <li>
+            <a class={styles[:navLink]} href="/tree">App tree</a>
+          </li>
+          <li>
+            <a class={styles[:navLink]} href="/about">About</a>
+          </li>
+        </menu>
+      </nav>
     </div>
   </header>
 end
