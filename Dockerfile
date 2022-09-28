@@ -56,6 +56,7 @@ RUN \
     cd example && \
     bundle && \
     rm -rf vendor/bundle/ruby/*/cache && \
+    MAYU_SECRET_KEY="nothing secret here, we just need to set something" \
     bin/mayu build
 
 #######################################################
