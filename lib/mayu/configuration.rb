@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "toml-rb"
+require "async/container"
 
 module Mayu
   class Configuration < T::Struct
@@ -16,12 +17,15 @@ module Mayu
       const :host, String, default: "127.0.0.1"
       const :port, Integer, default: 9292
 
-      const :processes, Integer, default: 1
       const :event_source_retry_ms, Integer, default: 1000
       const :hot_swap, T::Boolean, default: false
       const :self_signed_cert, T::Boolean, default: false
 
       const :render_exceptions, T::Boolean, default: false
+
+      const :count, Integer, default: Async::Container.processor_count
+      const :forks, T.nilable(Integer)
+      const :threads, T.nilable(Integer)
 
       sig { returns(URI::HTTP) }
       def uri
@@ -82,8 +86,14 @@ module Mayu
       resolve_config_file(parent)
     end
 
-    sig { params(mode: Symbol, pwd: String).returns(T.attached_class) }
-    def self.load_config(mode, pwd: Dir.pwd)
+    sig do
+      params(
+        mode: Symbol,
+        pwd: String,
+        overrides: T::Hash[String, T.untyped]
+      ).returns(T.attached_class)
+    end
+    def self.load_config(mode, pwd: Dir.pwd, overrides: {})
       file = resolve_config_file(pwd)
       root = File.dirname(file)
 
@@ -96,7 +106,7 @@ module Mayu
       base_config = config.dig("base") || {}
       env_config = config.dig(mode.to_s) || {}
 
-      merged_config = base_config.merge(env_config)
+      merged_config = base_config.merge(env_config).merge(overrides)
 
       secret_key =
         merged_config.fetch("secret_key") do

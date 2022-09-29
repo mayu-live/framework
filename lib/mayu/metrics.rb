@@ -23,6 +23,9 @@ module Mayu
 
     sig { params(config: Configuration).void }
     def self.setup(config)
+      return if $mayu_metrics_configured
+      $mayu_metrics_configured = true
+
       Prometheus::Client.config.data_store =
         Prometheus::Client::DataStores::DirectFileStore.new(
           dir: File.join(config.root, "tmp", "prometheus")

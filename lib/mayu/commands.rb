@@ -20,7 +20,15 @@ module Mayu
         Server.start(load_config(:dev))
       in ["build", *rest]
         require_relative "commands/build"
-        Commands::Build.new(load_config(:prod)).call(rest)
+        Commands::Build.new(
+          load_config(
+            :prod,
+            overrides: {
+              "use_bundle" => false,
+              "secret_key" => "not important, just needed to avoid an exception"
+            }
+          )
+        ).call(rest)
       in ["serve", *rest]
         require_relative "server"
         Server.start(load_config(:prod))
@@ -30,9 +38,13 @@ module Mayu
       end
     end
 
-    sig { params(env: Symbol).returns(Configuration) }
-    def self.load_config(env)
-      Mayu::Configuration.load_config(env, pwd: Dir.pwd)
+    sig do
+      params(env: Symbol, overrides: T::Hash[String, T.untyped]).returns(
+        Configuration
+      )
+    end
+    def self.load_config(env, overrides: {})
+      Mayu::Configuration.load_config(env, pwd: Dir.pwd, overrides:)
     end
   end
 end

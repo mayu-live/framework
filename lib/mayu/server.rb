@@ -32,21 +32,24 @@ module Mayu
     sig { params(config: Configuration).void }
     def self.start(config)
       uri = config.server.uri
-      ssl_context =
-        if config.server.self_signed_cert
-          setup_self_signed_cert(uri.host.to_s)
-        end
+      ssl_context = setup_self_signed_cert(config)
       endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
 
       Configuration.log_config(config)
       Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
 
+      #Metrics.setup(config) if config.metrics.enabled
+
       Controller.new(config:, endpoint:).run
     end
 
-    sig { params(host: String).returns(OpenSSL::SSL::SSLContext) }
-    def self.setup_self_signed_cert(host)
-      authority = Localhost::Authority.fetch(host)
+    sig do
+      params(config: Configuration).returns(T.nilable(OpenSSL::SSL::SSLContext))
+    end
+    def self.setup_self_signed_cert(config)
+      return unless config.server.self_signed_cert
+
+      authority = Localhost::Authority.fetch(config.server.host)
 
       authority.server_context.tap do |context|
         context.alpn_select_cb = lambda { |_| "h2" }
