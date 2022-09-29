@@ -21,7 +21,7 @@
   - [State management](#state-management)
   - [Simple routing](#simple-routing)
   - [Hot reloading](#hot-reloading)
-  - [Small browser footprint](#small-browser-footprint)
+  - [Optimized data transfer](#optimized-data-transfer)
   - [Templating](#templating)
 - [Implementation notes](#implementation-notes)
   - [Tests](#tests)
@@ -287,7 +287,7 @@ Look in `example/app` for examples.
 Components and styles update immediately in the browser as you edit files.
 No browser refresh needed.
 
-## Small browser footprint
+## Optimized data transfer
 
 Everything is minified and optimized and deliviered over HTTP/2.
 
