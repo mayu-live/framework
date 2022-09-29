@@ -1,3 +1,6 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
+Heading = require("/app/components/Layout/Heading")
+
 Entry = require("./Entry")
 FileContents = require("./FileContents")
 
@@ -10,8 +13,8 @@ end
 def render
   root = File.expand_path(".")
 
-  <section>
-    <h2>App tree</h2>
+  <MaxWidth>
+    <Heading level={2}>App tree</Heading>
 
     <p>This page shows the file structure of the example app (this webpage).</p>
 
@@ -24,5 +27,5 @@ def render
         <FileContents root={root} path={props.dig(:query, :file)} />
       </div>
     </div>
-  </section>
+  </MaxWidth>
 end

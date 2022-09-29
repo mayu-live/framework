@@ -1,3 +1,6 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
+Heading = require("/app/components/Layout/Heading")
+
 ITEMS = [
   "Component-based, inspired by React",
   "JSX-inspired syntax",
@@ -23,9 +26,9 @@ def mount
 end
 
 def render
-  <div>
+  <MaxWidth>
     <article class={styles.features}>
-      <h2>Features</h2>
+      <Heading level={2}>Features</Heading>
 
       <p>Here's a list of core features:</p>
 
@@ -41,14 +44,16 @@ def render
 
     <div class={styles[:sections]}>
       <section class={styles[:section]}>
-        <h2 class={styles[:sectionTitle]}>Interactive web apps without JavaScript</h2>
+        <Heading level={3}>Interactive web apps without JavaScript</Heading>
+
         <p>
           You write all logic in Ruby. Everything runs on the server.
         </p>
       </section>
 
       <section class={styles[:section]}>
-        <h2 class={styles[:sectionTitle]}>But how does it work?</h2>
+        <Heading level={3}>How does it work?</Heading>
+
         <p>
           Mayu implements a Virtual DOM in Ruby.
           All DOM updates are streamed to the browser via Server-Sent Events.
@@ -71,18 +76,20 @@ def render
       </section>
 
       <section class={styles[:section]}>
-        <h2 class={styles[:sectionTitle]}>Efficient</h2>
+        <Heading level={3}>Efficient</Heading>
+
         <p>HTTP/2 makes everything load in parallel.</p>
         <p>Designed to be deployed near users, either on fly.io or maybe even an on-premise Raspberry PI.</p>
         <p>Elements are interactive immediately as the page loads. No need to wait for a huge JS bundle to load for the page to become interactive.</p>
       </section>
 
       <section class={styles[:section]}>
-        <h2 class={styles[:sectionTitle]}>Smooth developer experience</h2>
+        <Heading level={3}>Smooth developer experience</Heading>
+
         <p>Hot-reloading reloads your components as you edit them and shows the updates in real-time.</p>
         <p>Ruby is pretty nice.</p>
         <p>Asynchronous code without callbacks.</p>
       </section>
     </div>
-  </div>
+  </MaxWidth>
 end

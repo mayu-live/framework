@@ -7,6 +7,7 @@
   --blue: #3185fc;
   --blue-bright: #e9f2ff;
   --pink: #efbcd5;
+  --page-max-width: 960px;
 }
 
 .body {
@@ -42,7 +43,7 @@
 }
 
 .maxWidth {
-  width: min(100% - 2rem, 960px);
+  width: min(100% - 2rem, var(--page-max-width));
   margin-inline: auto;
 }
 

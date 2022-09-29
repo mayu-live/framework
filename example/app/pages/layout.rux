@@ -19,9 +19,7 @@ def render
           <Intro class={styles.maxWidth} />
         )}
 
-        <section class={styles.maxWidth}>
-          {children}
-        </section>
+        {children}
       </main>
 
       <Footer class={styles.footer} max-width={styles.maxWidth} />

@@ -1,8 +1,11 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
+Heading = require("/app/components/Layout/Heading")
+
 def render
-  <div>
-    <h2>About</h2>
+  <MaxWidth>
+    <Heading level={2}>About</Heading>
     <p>
       Hello world
     </p>
-  </div>
+  </MaxWidth>
 end

@@ -1,9 +1,10 @@
-# typed: true
+MaxWidth = require("/app/components/Layout/MaxWidth")
+Heading = require("/app/components/Layout/Heading")
 
 def render
-  <div>
-    <h2>Pokémon</h2>
+  <MaxWidth>
+    <Heading level={2}>Pokémon</Heading>
 
     {props[:children]}
-  </div>
+  </MaxWidth>
 end

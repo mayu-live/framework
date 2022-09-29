@@ -1,0 +1,10 @@
+def render
+  level = props[:level].to_i.clamp(1, 6)
+  tag = :"h#{level}"
+
+  Mayu::VDOM::Descriptor.new(
+    tag,
+    props.merge(class: styles[tag]),
+    children,
+  )
+end

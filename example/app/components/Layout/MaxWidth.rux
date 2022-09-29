@@ -1,0 +1,5 @@
+def render
+  <div class={styles.maxWidth}>
+    {props[:children]}
+  </div>
+end
