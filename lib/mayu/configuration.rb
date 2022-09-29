@@ -144,7 +144,7 @@ module Mayu
                 in T::Struct => struct
                   make_table(struct, style: { border: :unicode_round })
                 in other
-                  other.inspect
+                  colorize_value(other)
                 end
               end
 
@@ -152,6 +152,35 @@ module Mayu
           end
         end
         .to_s
+    end
+
+    sig { params(value: T.untyped).returns(String) }
+    def self.colorize_value(value)
+      if color = value_color(value).nonzero?
+        "\e[#{color}m#{value.inspect}\e[0m"
+      else
+        value.inspect
+      end
+    end
+
+    sig { params(value: T.untyped).returns(Integer) }
+    def self.value_color(value)
+      case value
+      when FalseClass
+        31
+      when TrueClass
+        32
+      when String
+        33
+      when Numeric
+        34
+      when Symbol
+        36
+      when nil
+        2
+      else
+        0
+      end
     end
   end
 end
