@@ -13,6 +13,14 @@ else
   puts "\e[2mDisable sorbet with --disable-sorbet\e[0m"
 end
 
+if RubyVM::YJIT.enabled?
+  puts "\e[1mYJIT is enabled!\e[0m"
+end
+
+if RubyVM::MJIT.enabled?
+  puts "\e[1mMJIT is enabled!\e[0m"
+end
+
 require "mayu/banner"
 require "mayu/commands"
 
