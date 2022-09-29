@@ -24,7 +24,6 @@ class PingComponent extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-    console.log(name, oldValue, newValue);
     switch (name) {
       case "ping":
         this.ping!.textContent = newValue;

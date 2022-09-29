@@ -49,7 +49,7 @@ function cloneScriptElement(element: HTMLScriptElement) {
   const script = document.createElement("script");
   script.text = element.innerHTML;
   for (const attr of element.attributes) {
-    console.log("Setting attribute", attr.name, "to", attr.value);
+    // console.log("Setting attribute", attr.name, "to", attr.value);
     script.setAttribute(attr.name, attr.value);
   }
   return script;

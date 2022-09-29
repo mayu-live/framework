@@ -19,7 +19,6 @@ class ProgressBar extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-    console.log("attributeChangedCallback", name, newValue);
     if (name === "progress") {
       switch (Number(newValue)) {
         case 0:
@@ -27,7 +26,6 @@ class ProgressBar extends HTMLElement {
           break;
         case 100:
           this.progress!.setAttribute("hidden", "");
-          console.log("hiding", this.progress);
           break;
         default:
           this.progress!.removeAttribute("hidden");

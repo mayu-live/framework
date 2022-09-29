@@ -193,7 +193,7 @@ module Mayu
         in ["ping"]
           @environment.metrics.session_ping_count.increment()
 
-          timestamp = request.read.to_i
+          timestamp = JSON.parse(request.read)
           session.handle_callback("ping", { timestamp: })
         in ["navigate"]
           @environment.metrics.session_navigate_count.increment()

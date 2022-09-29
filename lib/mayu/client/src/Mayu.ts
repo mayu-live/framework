@@ -45,7 +45,7 @@ export default async function init(encryptedState: string) {
   };
 
   es.onerror = () => {
-    console.log({ isUnloading, readyState: document.readyState });
+    // console.log({ isUnloading, readyState: document.readyState });
     if (isUnloading) return;
 
     sessionStorage.removeItem(SESSION_ID_KEY);
@@ -55,7 +55,10 @@ export default async function init(encryptedState: string) {
     }
 
     if (errorCount++ > 5) {
-      console.log("Closing event source");
+      console.warn(
+        "Closing event source because of this many errors:",
+        errorCount
+      );
       es.close();
     }
   };
@@ -96,15 +99,10 @@ export default async function init(encryptedState: string) {
   es.addEventListener(
     "init",
     (e) => {
-      console.log(e);
       const { ids } = JSON.parse(e.data) as any;
       const nodeTree = new NodeTree(ids);
 
-      console.log("ids", ids);
-      console.log("nodeTree", nodeTree);
-
       es.addEventListener("patch", (e) => {
-        console.log("patch", e.data);
         nodeTree.apply(JSON.parse(e.data));
       });
     },
@@ -116,8 +114,6 @@ async function resume(state: string, storedSessionId: string | null) {
   const path = storedSessionId
     ? `/__mayu/session/resume/${storedSessionId}`
     : "/__mayu/session/resume";
-
-  console.log({ storedSessionId });
 
   const res = await fetch(path, {
     method: "POST",
@@ -203,7 +199,6 @@ async function startPing(es: EventSource, sessionId: string) {
   const pingTimer = new PingTimer();
 
   es.addEventListener("pong", (e) => {
-    console.log("pong", e.data);
     pingTimer.pong(JSON.parse(e.data));
   });
 
@@ -240,7 +235,6 @@ async function startPing(es: EventSource, sessionId: string) {
 
         await pingTimer.sleep(PingTimer.PING_FREQUENCY_MS);
       } catch (e) {
-        console.log(e);
         console.error("Error. Retrying in", PingTimer.RETRY_TIME_MS, "ms");
         await pingTimer.sleep(PingTimer.RETRY_TIME_MS);
       }

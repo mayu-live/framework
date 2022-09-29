@@ -17,17 +17,17 @@ class PingTimer {
 
   ping(callback: (time: number) => void): Promise<Result> {
     return new Promise(async (resolve, reject) => {
-      const now = new Date().getTime();
+      const now = performance.now();
 
       const timeout = setTimeout(async () => {
-        console.log("Timed out");
+        console.error("Timed out");
         this.#pingPromises.delete(now);
         reject("timeout");
       }, PingTimer.PING_TIMEOUT_MS);
 
       this.#pingPromises.set(now, ({ timestamp, region }) => {
         clearTimeout(timeout);
-        const ping = new Date().getTime() - timestamp;
+        const ping = performance.now() - timestamp;
         resolve({ ping, region });
       });
 
