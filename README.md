@@ -303,8 +303,8 @@ Mayu exposes a prometheus endpoint for metrics so you can see how your app perfo
 
 ## Templating
 
-Mayu uses [Rux](https://github.com/camertron/rux) provides a JSX-like syntax,
-so that you can write components like this:
+Mayu uses [Rux](https://github.com/camertron/rux) to provide a JSX-like syntax,
+so you can write components like this:
 
 ```
 def render
