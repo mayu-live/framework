@@ -25,6 +25,9 @@ def render
             <a class={styles[:navLink]} href="/tree">App tree</a>
           </li>
           <li>
+            <a class={styles[:navLink]} href="/form">Form demo</a>
+          </li>
+          <li>
             <a class={styles[:navLink]} href="/about">About</a>
           </li>
         </menu>
