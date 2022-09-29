@@ -22,6 +22,7 @@
   - [Simple routing](#simple-routing)
   - [Hot reloading](#hot-reloading)
   - [Optimized data transfer](#optimized-data-transfer)
+  - [Realtime metrics](#realtime-metrics)
   - [Templating](#templating)
 - [Implementation notes](#implementation-notes)
   - [Tests](#tests)
