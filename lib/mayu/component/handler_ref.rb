@@ -7,7 +7,8 @@ module Mayu
     class HandlerRef
       extend T::Sig
 
-      ID_FORMAT = /\A[[:graph:]]{44}\z/
+      ID_LENGTH = 16
+      ID_FORMAT = /\A[[:graph:]]{#{ID_LENGTH}}\z/
 
       sig { returns(String) }
       attr_reader :id
@@ -29,11 +30,10 @@ module Mayu
         @kwargs = kwargs
         @id =
           T.let(
-            Base64.urlsafe_encode64(
-              Digest::SHA256.digest(
-                [component.vnode_id, name, @args, @kwargs].inspect
-              )
-            ),
+            [component.vnode_id, name, @args, @kwargs].inspect
+              .then { Digest::SHA256.digest(_1) }
+              .then { Base64.urlsafe_encode64(_1) }
+              .then { _1[0, ID_LENGTH] },
             String
           )
       end
