@@ -294,6 +294,12 @@ Everything is minified and optimized and deliviered over HTTP/2.
 ![Request waterfall screenshot](https://quad.pe/e/h9BqRqnMwh.png)
 ![Request waterfall screenshot 22](https://quad.pe/e/OVWyi8tIRk.png)
 
+## Realtime metrics
+
+Mayu exposes a prometheus endpoint for metrics so you can see how your app performs.
+
+![Grafana screenshot](https://user-images.githubusercontent.com/41148/193156584-2cf77f01-bbb1-4509-aee8-1aec0cdf5fec.png)
+
 ## Templating
 
 Mayu uses [Rux](https://github.com/camertron/rux) provides a JSX-like syntax,
