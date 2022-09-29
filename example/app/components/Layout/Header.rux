@@ -1,19 +1,18 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
 Logo = image("./logo.png")
 
 def render
-  classname = "#{props[:max_width]} #{styles.inner}"
-
   <header class={props[:class]}>
-    <div class={classname}>
-      <img
-        src={Logo.src}
-        sizes={Logo.sizes}
-        width={100}
-        class={styles.img}
-      />
-      <h1 class={styles.title}>
-        <a class={styles.titleLink} href="/" title="Start page">Mayu Live</a>
-      </h1>
+    <MaxWidth class={styles.inner}>
+      <a href="/">
+        <img
+          src={Logo.src}
+          sizes={Logo.sizes}
+          width={100}
+          class={styles.img}
+          alt="Mayu Live"
+        />
+      </a>
       <nav class={styles[:nav]}>
         <menu class={styles[:menu]}>
           <li>
@@ -30,6 +29,6 @@ def render
           </li>
         </menu>
       </nav>
-    </div>
+    </MaxWidth>
   </header>
 end

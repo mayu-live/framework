@@ -1,5 +1,10 @@
 def render
-  <div class={styles.maxWidth}>
+  classnames =
+    [styles.maxWidth, props[:class]]
+    .compact
+    .join(" ")
+
+  <div class={classnames}>
     {props[:children]}
   </div>
 end
