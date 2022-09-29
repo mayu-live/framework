@@ -1,6 +1,7 @@
 # typed: strict
 
 require "time"
+require "nanoid"
 require_relative "environment"
 require_relative "vdom/vtree"
 require_relative "vdom/marshalling"
@@ -10,6 +11,9 @@ module Mayu
     extend T::Sig
 
     class InvalidTokenError < StandardError
+    end
+
+    class InvalidIdError < StandardError
     end
 
     sig do
@@ -39,8 +43,10 @@ module Mayu
       )
     end
 
+    ID_FORMAT = /\A[A-Za-z0-9_-]{21}\z/
+
     TOKEN_LENGTH = 64
-    TOKEN_RE = /\A\w{#{TOKEN_LENGTH}}\z/
+    TOKEN_FORMAT = /\A\w{#{TOKEN_LENGTH}}\z/
 
     sig { returns(String) }
     def self.generate_token
@@ -49,12 +55,22 @@ module Mayu
 
     sig { params(token: String).returns(T::Boolean) }
     def self.valid_token?(token)
-      token.match?(TOKEN_RE)
+      token.match?(TOKEN_FORMAT)
     end
 
     sig { params(token: String).void }
     def self.validate_token!(token)
       raise InvalidTokenError unless valid_token?(token)
+    end
+
+    sig { params(id: String).returns(T::Boolean) }
+    def self.valid_id?(id)
+      id.match?(ID_FORMAT)
+    end
+
+    sig { params(id: String).void }
+    def self.validate_id!(id)
+      raise InvalidIdError unless valid_id?(id)
     end
 
     Marshaled = T.type_alias { [String, String, String, String, String] }
@@ -78,7 +94,7 @@ module Mayu
     end
     def initialize(environment:, path:, vtree: nil, store: nil)
       @environment = environment
-      @id = T.let(SecureRandom.uuid, String)
+      @id = T.let(Nanoid.generate, String)
       @token = T.let(self.class.generate_token, String)
       @path = path
       @vtree = T.let(vtree || VDOM::VTree.new(session: self), VDOM::VTree)

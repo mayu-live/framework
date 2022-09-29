@@ -52,6 +52,8 @@ module Mayu
 
       sig { params(session_id: String, token: String).returns(String) }
       def session_key(session_id, token)
+        Session.validate_id!(session_id)
+
         Digest::SHA256.digest(
           Digest::SHA256.digest(session_id) + Digest::SHA256.digest(token)
         )

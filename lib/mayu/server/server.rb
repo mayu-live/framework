@@ -12,23 +12,6 @@ module Mayu
       class CookieNotSetError < StandardError
       end
 
-      UUIDv4 =
-        /
-          \A
-            [[:xdigit:]]{8}
-            -
-            [[:xdigit:]]{4}
-            -
-            4
-            [[:xdigit:]]{3}
-            -
-            [89ab]
-            [[:xdigit:]]{3}
-            -
-            [[:xdigit:]]{12}
-          \z
-        /x
-
       Status = T.type_alias { Integer }
       Headers =
         T.type_alias { T::Hash[String, T.any(String, T::Array[String])] }
@@ -62,9 +45,9 @@ module Mayu
         case [request.method, request.path.delete_prefix("/").split("/")]
         in ["POST", ["__mayu", "session", "resume", *_rest]]
           handle_resume_session(request)
-        in ["POST", ["__mayu", "session", UUIDv4 => session_id, *args]]
+        in ["POST", ["__mayu", "session", session_id, *args]]
           handle_session_post(request, session_id, args)
-        in ["GET", ["__mayu", "session", UUIDv4 => session_id, "events"]]
+        in ["GET", ["__mayu", "session", session_id, "events"]]
           handle_session_sse(request, session_id)
         in ["GET", ["__mayu", "static", filename]]
           @environment.resources.generate_assets(@environment.path(:assets))
@@ -82,6 +65,8 @@ module Mayu
           respond(status: 404, body: ["no favicon"])
         in ["GET", ["__mayu.serviceWorker.js"]]
           respond(status: 404, body: ["no service worker"])
+        in [*, ["__mayu", *]]
+          respond(status: 404, body: ["endpoint not found"])
         in ["GET", _path]
           handle_init_session(request)
         else
@@ -101,6 +86,14 @@ module Mayu
 
         Console.logger.error(e, e.message)
         respond(status: 404, body: ["Session not found"])
+      rescue Session::InvalidTokenError => e
+        @environment.metrics.error_count.increment(
+          labels: {
+            type: e.class.name
+          }
+        )
+
+        respond(status: 400, body: ["Invalid id format"])
       rescue Session::InvalidTokenError => e
         @environment.metrics.error_count.increment(
           labels: {
