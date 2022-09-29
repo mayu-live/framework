@@ -234,11 +234,6 @@ module Mayu
         @root&.to_html.to_s
       end
 
-      sig { params(exclude_components: T::Boolean).returns(String) }
-      def inspect_tree(exclude_components: false)
-        @root&.inspect_tree(exclude_components:).to_s
-      end
-
       sig { returns(T.untyped) }
       def id_tree
         @root&.id_tree

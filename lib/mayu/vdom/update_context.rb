@@ -64,7 +64,7 @@ module Mayu
         #   puts "\e[32minsert\e[0m #{vnode.dom_id} last"
         # end
         # p caller.grep(/markup/).first(5)
-        html = vnode.inspect_tree(exclude_components: true)
+        html = vnode.to_html
         ids = vnode.id_tree
 
         if before
