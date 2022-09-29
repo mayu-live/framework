@@ -1,15 +1,41 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
+
+def self.get_initial_state(**props)
+  { angle: 328, word: nil }
+end
+
+WORDS = %w[Mayu enables rich, real-time user experiences with server-rendered HTML.]
+
+def mount
+  loop do
+    sleep 15
+    update(angle: rand(360 * 2))
+
+    WORDS.length.times do |i|
+      update(word: i)
+      sleep 0.5
+    end
+
+    update(word: nil)
+  end
+end
+
 def render
-  classname = "#{props[:class]} #{styles[:inner]}"
+  <div class={styles.intro} style={{ "--angle": "#{state[:angle]}deg" }}>
+    <MaxWidth>
+      <div class={styles.inner}>
+        <h1 class={styles[:title]}>
+          Reactive Server-Side component-based VirtualDOM framework for Ruby
+        </h1>
 
-  <div class={styles[:intro]}>
-    <div class={classname}>
-      <h1 class={styles[:title]}>
-        Reactive Server-Side component-based VirtualDOM framework for Ruby
-      </h1>
-
-      <h2 class={styles[:subtitle]}>
-        Mayu enables rich, real-time user experiences with server-rendered HTML.
-      </h2>
-    </div>
+        <h2 class={styles[:subtitle]}>
+          {WORDS.map.with_index do |word, i|
+            <span class={styles[:word, active: i == state[:word]]}>
+              {word}{" "}
+            </span>
+          end}
+        </h2>
+      </div>
+    </MaxWidth>
   </div>
 end

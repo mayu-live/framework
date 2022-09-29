@@ -1,6 +1,15 @@
+@property --angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 10deg;
+}
+
 .intro {
+  filter: drop-shadow(0 0 15px rgb(0 0 0 / 50%));
+  --angle: 328deg;
+  transition: --angle 3s ease-in-out;
   background: linear-gradient(
-    328deg,
+    var(--angle),
     rgba(249, 220, 92, 1) 7%,
     rgba(242, 155, 89, 1) 25%,
     rgba(232, 72, 85, 1) 34%,
@@ -8,7 +17,6 @@
     rgba(27, 98, 201, 1) 82%,
     rgba(64, 63, 76, 1) 100%
   );
-  filter: drop-shadow(0 0 15px rgb(0 0 0 / 50%));
 }
 
 .inner {
@@ -28,4 +36,18 @@
   color: var(--bright);
   font-weight: 100;
   font-size: 1.5em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1ch;
+}
+
+.word {
+  display: inline-block;
+  transition: text-shadow 0.5s, transform 0.5s;
+  text-shadow: 0 0 0 #fff;
+}
+
+.active {
+  text-shadow: 0 0 10px #fff;
+  transform: scale(1.1);
 }

@@ -4,7 +4,7 @@ def render
 
   Mayu::VDOM::Descriptor.new(
     tag,
-    props.merge(class: styles[tag]),
+    props.except(:level).merge(class: styles[tag]),
     children,
   )
 end
