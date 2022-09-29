@@ -206,18 +206,30 @@ async function startPing(es: EventSource, sessionId: string) {
   document.body.appendChild(pingElement);
 
   async function pingLoop() {
-    while (true) {
+    let running = true;
+
+    while (running) {
       try {
         switch (es.readyState) {
           case EventSource.OPEN: {
-            const { ping, region } = await pingTimer.ping((now) => {
-              navigator.sendBeacon(
-                `/__mayu/session/${sessionId}/ping`,
-                JSON.stringify(now)
-              );
+            const { ping, region } = await pingTimer.ping(async (now) => {
+              const res = await fetch(`/__mayu/session/${sessionId}/ping`, {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify(now),
+              });
+
+              if (res.ok) return;
+
+              const text = await res.text();
+              console.error("Non-ok response from ping:", res.status, text);
+              es.close();
+              running = false;
+              alert("Got non-ok from ping.\n\nReloading page.");
+              window.location.reload();
             });
 
-            pingElement.setAttribute("ping", `${ping} ms`);
+            pingElement.setAttribute("ping", `${ping.toFixed(2)} ms`);
             pingElement.setAttribute("region", region);
             break;
           }

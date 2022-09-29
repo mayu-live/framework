@@ -17,7 +17,7 @@ class PingTimer {
 
   ping(callback: (time: number) => void): Promise<Result> {
     return new Promise(async (resolve, reject) => {
-      const now = performance.now();
+      const now = new Date().getTime();
 
       const timeout = setTimeout(async () => {
         console.error("Timed out");
@@ -27,7 +27,7 @@ class PingTimer {
 
       this.#pingPromises.set(now, ({ timestamp, region }) => {
         clearTimeout(timeout);
-        const ping = performance.now() - timestamp;
+        const ping = new Date().getTime() - timestamp;
         resolve({ ping, region });
       });
 
