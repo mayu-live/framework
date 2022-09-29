@@ -105,8 +105,7 @@ module Mayu
 
       sig { returns(String) }
       def text
-        text = @props[:text_content].to_s
-        text.empty? ? "&ZeroWidthSpace;" : text
+        @props[:text_content].to_s
       end
 
       sig { params(other: Descriptor).returns(T::Boolean) }

@@ -178,7 +178,13 @@ module Mayu
 
         case type
         when Descriptor::TEXT
-          io.write(CGI.escape_html(descriptor.text))
+          text = descriptor.text
+          if text.empty?
+            # A zero-width-space will generate a text node in the DOM.
+            io.write("&ZeroWidthSpace;")
+          else
+            io.write(CGI.escape_html(descriptor.text))
+          end
           return
         when Descriptor::COMMENT
           io.write("<!--mayu-id=#{@id}-->")
