@@ -177,12 +177,12 @@ module Mayu
 
       sig { params(vnode: VNode, name: String, value: String).void }
       def set_attribute(vnode, name, value)
-        add_patch(:attr, id: vnode.dom_id, name:, value:)
+        add_patch(:attr, id: vnode.dom_id, name: attr_name(name), value:)
       end
 
       sig { params(vnode: VNode, name: String).void }
       def remove_attribute(vnode, name)
-        add_patch(:attr, id: vnode.dom_id, name:)
+        add_patch(:attr, id: vnode.dom_id, name: attr_name(name))
       end
 
       private
@@ -191,6 +191,15 @@ module Mayu
       def add_patch(type, **args)
         # puts "\e[35;5mXXXXXX \e[33m#{type}:\e[0m #{args.inspect}"
         @patches.push(args.merge(type:))
+      end
+
+      sig { params(attr: T.any(String, Symbol)).returns(String) }
+      def attr_name(attr)
+        attr
+          .to_s
+          .sub(/^on_/, "on")
+          .sub(/\Ainitial_value\Z/, "value")
+          .tr("_", "-")
       end
     end
   end
