@@ -16,7 +16,9 @@ def mount
   loop do
     sleep 1
 
-    update { |state| { index: state[:index].succ % ITEMS.size } }
+    update do |state|
+      { index: state[:index].succ % ITEMS.size }
+    end
   end
 end
 

@@ -1,0 +1,15 @@
+.browser {
+  display: flex;
+  gap: 1em;
+}
+
+.list {
+  border: 1px solid #ccc;
+  padding: 1em;
+  margin: 0;
+}
+
+.right {
+  border: 1px solid #ccc;
+  flex: 1;
+}

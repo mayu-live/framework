@@ -1,13 +1,28 @@
 Entry = require("./Entry")
+FileContents = require("./FileContents")
+
+def self.get_initial_state(**props)
+  {
+    selected_path: nil
+  }
+end
 
 def render
+  root = File.expand_path(".")
+
   <section>
     <h2>App tree</h2>
 
     <p>This page shows the file structure of the example app (this webpage).</p>
 
-    <ul>
-      <Entry path={File.expand_path("app")} initial-open={true} />
-    </ul>
+    <div class={styles[:browser]}>
+      <ul class={styles[:list]}>
+        <Entry root={root} path={"app"} initial-open={true} />
+      </ul>
+
+      <div class={styles[:right]}>
+        <FileContents root={root} path={props.dig(:query, :file)} />
+      </div>
+    </div>
   </section>
 end

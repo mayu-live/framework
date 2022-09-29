@@ -1,11 +1,21 @@
 .dir {
   padding-left: 0.5em;
+  margin-left: 1em;
 }
 
 .nonempty {
-  font-weight: bold;
-  cursor: pointer;
 }
 
-.name {
+.nonempty > .name {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.nonempty > .name:hover {
+  text-decoration: underline;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
 }

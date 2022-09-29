@@ -9,16 +9,19 @@ def handle_toggle(_)
 end
 
 def render
-  props => { path:, entry: }
+  props => { root:, path:, entry: }
 
   entries =
     if state[:open]
       Dir
-        .entries(path)
+        .entries(File.join(root, path))
         .difference(%w[. ..])
         .sort
         .map do
-          Mayu::VDOM::H.h2(entry, path: File.join(path, _1))
+          Mayu::VDOM::H.h2(entry,
+          root:,
+          path: File.join(path, _1)
+        )
         end.compact
       else
         []
@@ -31,6 +34,6 @@ def render
     <span class={styles[:name]} on-click={handler(:handle_toggle)}>
       {File.basename(path)}/
     </span>
-    {entries.any? && <ul>{entries}</ul>}
+    {entries.any? && <ul class={styles[:list]}>{entries}</ul>}
   </li>
 end

@@ -10,13 +10,15 @@
 }
 
 .sections {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   margin: 2em 0em;
   gap: 4em;
+  flex-wrap: wrap;
 }
 
 .section {
+  flex: 1;
+  min-width: 300px;
   margin: 0em;
   padding: 1em;
   border-radius: 3px;

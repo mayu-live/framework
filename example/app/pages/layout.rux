@@ -6,6 +6,8 @@ def render
   <html>
     <head>
       <meta name="charset" value="utf-8" />
+      <meta name="generator" value="github.com/mayu-live/framework" />
+      <meta name="viewport" content="width=device-width" />
       <title>Mayu Live</title>
     </head>
 

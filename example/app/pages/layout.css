@@ -15,6 +15,7 @@
   margin: 0;
   padding: 0;
   font-family: Helvetica, sans-serif;
+  line-height: 1.5em;
   display: grid;
   min-height: 100vh;
   grid-template:
@@ -28,6 +29,8 @@
 .body *::before,
 .body *::after {
   box-sizing: border-box;
+  line-height: 1.5em;
+  font-size: inherit;
 }
 
 .header {

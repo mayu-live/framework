@@ -15,6 +15,6 @@ def render
   list_style_type = "'\\%s'" % icon.codepoints.first.to_s(16)
 
   <li class={styles[:file]} style={{ list_style_type: }}>
-    {File.basename(props[:path])}
+    <a href={"?file=#{props[:path]}"}>{File.basename(props[:path])}</a>
   </li>
 end

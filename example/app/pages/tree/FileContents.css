@@ -1,0 +1,15 @@
+.article {
+  padding: 1em;
+}
+
+.path {
+  font-family: monospace;
+  margin: 0;
+}
+
+.pre {
+  white-space: pre-wrap;
+  font-size: 1.2em;
+  background: var(--blue-bright);
+  padding: 1em;
+}

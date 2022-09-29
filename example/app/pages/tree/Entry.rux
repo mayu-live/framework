@@ -2,11 +2,13 @@ Directory = require("./Directory")
 FileEntry = require("./FileEntry")
 
 def render
-  props => {path:}
+  props => {root:, path:}
 
-  if File.directory?(path)
-    <Directory path={path} entry={self.class} initial-open={props[:initial_open]} />
+  absolute_path = File.join(root, path)
+
+  if File.directory?(absolute_path)
+    <Directory root={root} path={path} entry={self.class} initial-open={props[:initial_open]} />
   else
-    <FileEntry path={path} />
+    <FileEntry root={root} path={path} />
   end
 end
