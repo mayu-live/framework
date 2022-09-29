@@ -185,7 +185,14 @@ function setupGlobalObject(
 
     async navigate(e: MouseEvent) {
       e.preventDefault();
-      const url = new URL((e.target as HTMLAnchorElement).href);
+      const anchor = (e.target as HTMLElement).closest("a");
+
+      if (!anchor) {
+        console.error("Could not find anchor element for", e.target);
+        return;
+      }
+
+      const url = new URL((anchor as HTMLAnchorElement).href);
       progressBar.setAttribute("progress", "0");
       return navigateTo(sessionId, url.pathname + url.search);
     },
