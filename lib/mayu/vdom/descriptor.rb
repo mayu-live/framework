@@ -125,16 +125,20 @@ module Mayu
         case type
         when :head
           Component::SpecialComponents::Head
-        when :body
-          Component::SpecialComponents::Body
-        when :a
-          Component::SpecialComponents::A
         when :__mayu_head
           :head
+        when :body
+          Component::SpecialComponents::Body
         when :__mayu_body
           :body
+        when :a
+          Component::SpecialComponents::A
         when :__mayu_a
           :a
+        when :select
+          Component::SpecialComponents::Select
+        when :__mayu_select
+          :select
         else
           type
         end

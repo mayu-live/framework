@@ -31,11 +31,6 @@ module Mayu
       class A < Component::Base
         EXTERNAL_LINK_RE = T.let(%r{\A[a-z0-9]+://}, Regexp)
 
-        sig { params(_: T.untyped, href: String).void }
-        def handle_click(_, href)
-          helpers.navigate(href.to_s)
-        end
-
         sig { override.returns(T.nilable(VDOM::Descriptor)) }
         def render
           overridden_props =
@@ -50,6 +45,36 @@ module Mayu
             [children].flatten.compact,
             overridden_props
           )
+        end
+      end
+
+      class Select < Component::Base
+        class InvalidNestingError < StandardError
+        end
+
+        sig { override.returns(T.nilable(VDOM::Descriptor)) }
+        def render
+          value = props[:value]
+
+          options =
+            Array(children).flatten.compact.map do |descriptor|
+              unless descriptor.type == :option
+                raise InvalidNestingError,
+                      "Only option are valid children for select, you passed #{descriptor.type}"
+              end
+
+              h.create_element(
+                descriptor.type,
+                descriptor.props[:children],
+                {
+                  **descriptor.props,
+                  key: descriptor.key,
+                  selected: !value.nil? && value == descriptor.props[:value]
+                }
+              )
+            end
+
+          h.create_element(:__mayu_select, options, props.except(:value))
         end
       end
     end
