@@ -50,20 +50,20 @@
   text-align: center;
 }
 
-.page[href]:link,
-.page[href]:visited {
+.page:link,
+.page:visited {
   text-decoration: none;
   color: var(--blue);
 }
 
-.page[href]:active,
-.page[href]:hover {
+.page:active,
+.page:hover {
   color: var(--blue);
   font-weight: bold;
   text-decoration: underline;
 }
 
-.page:not([href]) {
+.page[aria-current="page"] {
   background: var(--blue);
   color: var(--bright);
   font-weight: bold;

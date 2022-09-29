@@ -27,8 +27,7 @@ def render
 
     <div class={styles[:wrap]}>
       <nav class={styles.buttons} aria-label="pagination">
-        {prev_page_link && <link rel="prev" href={prev_page_link} />}
-        <a href={prev_page_link} class={styles.button}>
+        <a href={prev_page_link} class={styles.button} rel="prev">
           Previous page
         </a>
 
@@ -37,17 +36,16 @@ def render
             current_page: page,
             total_pages: props[:total_pages].succ,
             window_size: props[:window_size] || 7,
-          ).map do |p|
-            href = p == page ? nil : "?page=#{p}"
-
-            <li key={p}>
-              <a class={styles[:page]} href={href}>{p}</a>
+          ).map do |num|
+            <li key={num}>
+              <a class={styles[:page]} href={"?page=#{num}"} aria-current={page == num && "page"}>
+                {num}
+              </a>
             </li>
           end}
         </ul>
 
-        {next_page_link && <link rel="next" href={next_page_link} />}
-        <a href={next_page_link} class={styles.button}>
+        <a href={next_page_link} class={styles.button} rel="next">
           Next page
         </a>
       </nav>
