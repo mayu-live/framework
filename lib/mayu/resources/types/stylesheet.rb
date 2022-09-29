@@ -63,11 +63,14 @@ module Mayu
                 hash =
                   Base64.urlsafe_encode64(
                     Digest::SHA256.digest(resource.content_hash + str)
-                  ).delete("=")
+                  )[
+                    0,
+                    16
+                  ]
 
                 name = str.delete_prefix(".")
                 klasses[name] = "#{name}-#{hash}"
-                "#{str}-#{hash}"
+                ".#{name}-#{hash}"
               end
 
           @source =
@@ -75,6 +78,7 @@ module Mayu
               source.to_s.prepend("/* #{resource.path} */\n").freeze,
               String
             )
+          @content_hash = T.let(Digest::SHA256.digest(@source), String)
           @classes = T.let(klasses.freeze, T::Hash[String, String])
         end
 
@@ -85,7 +89,7 @@ module Mayu
 
         sig { returns(T::Array[Asset]) }
         def assets
-          [Asset.new(Base64.urlsafe_encode64(@resource.content_hash) + ".css")]
+          [Asset.new(Base64.urlsafe_encode64(@content_hash) + ".css")]
         end
 
         sig { params(asset_dir: String).returns(T::Array[Asset]) }
