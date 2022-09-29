@@ -29,15 +29,6 @@ module Mayu
       end
 
       class A < Component::Base
-        class NavigateHandler
-          extend T::Sig
-
-          sig { returns(String) }
-          def to_s
-            "Mayu.navigate(event)"
-          end
-        end
-
         EXTERNAL_LINK_RE = T.let(%r{\A[a-z0-9]+://}, Regexp)
 
         sig { params(_: T.untyped, href: String).void }
@@ -51,7 +42,7 @@ module Mayu
             if EXTERNAL_LINK_RE.match?(props[:href] || nil)
               { rel: "noreferrer", external: true, **props }
             else
-              { **props, on_click: NavigateHandler.new }
+              { **props, on_click: "Mayu.navigate(event)" }
             end
 
           h.create_element(
