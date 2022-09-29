@@ -22,7 +22,7 @@
 
     event_source_retry_ms = 1000
     hot_swap = false
-    processes = 4
+    processes = 2
     use_bundle = true
 
   [prod.metrics]
