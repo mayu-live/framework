@@ -38,6 +38,29 @@ module Mayu
           )
       end
 
+      sig { returns(String) }
+      def inspect
+        "#<HandlerRef vnode_id=%d %s(%s)" %
+          [
+            @component.vnode_id,
+            @name,
+            [
+              *@args.map(&:inspect),
+              *@kwargs.map { |k, v| Rux::Utils.attr_to_hash_elem(k, v.inspect) }
+            ].join(", ")
+          ]
+      end
+
+      sig { params(args: T.untyped, kwargs: T.untyped).returns(HandlerRef) }
+      def bind_args(*args, **kwargs)
+        self.class.new(
+          @component,
+          @name,
+          [*@args, *args],
+          { **@kwargs, **kwargs }
+        )
+      end
+
       sig { void }
       def marshal_dump
         []
