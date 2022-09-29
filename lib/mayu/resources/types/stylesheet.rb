@@ -99,16 +99,17 @@ module Mayu
           end
         end
 
-        MarshalFormat = T.type_alias { [T::Hash[String, String], String] }
+        MarshalFormat =
+          T.type_alias { [T::Hash[String, String], String, String] }
 
         sig { returns(MarshalFormat) }
         def marshal_dump
-          [@classes, @source]
+          [@classes, @source, @content_hash]
         end
 
         sig { params(args: MarshalFormat).void }
         def marshal_load(args)
-          @classes, @source = args
+          @classes, @source, @content_hash = args
         end
       end
     end
