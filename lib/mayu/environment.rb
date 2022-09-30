@@ -54,6 +54,7 @@ module Mayu
           Routes.build_routes(File.join(@app_root, PAGES_DIR)),
           T::Array[Routes::Route]
         )
+      Routes.log_routes(@routes)
       @reducers =
         T.let(
           State::Loader.new(File.join(@app_root, STORE_DIR)).load,
