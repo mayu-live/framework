@@ -5,10 +5,34 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/w/mayu-live/framework/main?style=flat-square)](https://github.com/mayu-live/framework/commits)
 [![License AGPL-3.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING)
 
+# Description
+
+Mayu is a live streaming server side component-based
+VirtualDOM rendering framework written in Ruby.
+
+Everything runs on the server, except for a tiny little runtime that
+deals with the connection to the server and updates the DOM.
+
+It is very early in development and nothing is guaranteed to work.
+Still trying to figure out how to make a framework that is both
+easy to use and fun to work with.
+
+Some parts are quite messy and some files are very long.
+This is fine. I like to paint with a broad brush until
+things are put in place and things feel right.
+
+### Core features:
+
+* 100% server-side rendering 
+* 0% JavaScript required
+* Asynchroneous 
+* Reactive, component based Virtual DOM that runs on the server
+* Hot-reloading
+* Automatic asset handling
+
 ## Table of contents
 
-- [Mayu Live](#mayu-live)
-  - [Description](#description)
+- [Description](#description)
 - [Getting started](#getting-started)
   - [Install dependencies](#install-dependencies)
   - [Start the example app](#start-the-example-app)
@@ -32,22 +56,6 @@
     - [Production server](#production-server)
   - [Static typing](#static-typing)
 - [Contributing](#contributing)
-
-## Description
-
-Mayu is a live streaming server side component-based
-VirtualDOM rendering framework written in Ruby.
-
-Everything runs on the server, except for a tiny little runtime that
-deals with the connection to the server and updates the DOM.
-
-It is very early in development and nothing is guaranteed to work.
-Still trying to figure out how to make a framework that is both
-easy to use and fun to work with.
-
-Some parts are quite messy and some files are very long.
-This is fine. I like to paint with a broad brush until
-things are put in place and things feel right.
 
 # Getting started
 
