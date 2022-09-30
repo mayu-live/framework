@@ -36,6 +36,8 @@ module Mayu
           overridden_props =
             if EXTERNAL_LINK_RE.match?(props[:href] || nil)
               { rel: "noreferrer", external: true, **props }
+            elsif !props[:href] || props[:href].to_s.empty?
+              props
             else
               { **props, on_click: "Mayu.navigate(event)" }
             end
