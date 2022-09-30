@@ -72,7 +72,7 @@ module Mayu
         routes.push(
           Route.new(
             path: path.join("/"),
-            regexp: path_to_regexp((path + ["[anything]"]).join("/")),
+            regexp: path_to_regexp([*path, "*"].join("/")),
             layouts:,
             template: T.unsafe(File).join(*path, not_found)
           )
@@ -146,7 +146,10 @@ module Mayu
           .delete_prefix("/")
           .split("/")
           .map do |part|
-            if part.match(/\A:(?<var>\w+)\Z/)
+            case part
+            when "*"
+              ".+"
+            when /\A:(?<var>\w+)\Z/
               var = Regexp.escape($~[:var])
               "(?<#{var}>[^/]+)"
             else
