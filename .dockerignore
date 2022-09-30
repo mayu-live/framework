@@ -6,3 +6,4 @@ example/vendor
 lib/mayu/client/dist
 node_modules
 vendor/bundle
+.DS_Store
