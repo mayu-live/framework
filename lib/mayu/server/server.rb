@@ -50,7 +50,9 @@ module Mayu
         in ["GET", ["__mayu", "session", session_id, "events"]]
           handle_session_sse(request, session_id)
         in ["GET", ["__mayu", "static", filename]]
-          @environment.resources.generate_assets(@environment.path(:assets))
+          unless @environment.config.use_bundle
+            @environment.resources.generate_assets(@environment.path(:assets))
+          end
 
           accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
 
