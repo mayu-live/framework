@@ -23,12 +23,14 @@ things are put in place and things feel right.
 
 ### Core features:
 
-* 100% server-side rendering 
-* 0% JavaScript required
+* 100% server-side
+* 100% Ruby
+* No JavaScript required
 * Asynchroneous 
 * Reactive, component based Virtual DOM that runs on the server
 * Hot-reloading
 * Automatic asset handling
+* Built-in metrics
 
 ## Table of contents
 
