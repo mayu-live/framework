@@ -180,6 +180,8 @@ function setupGlobalObject(
     },
 
     async navigate(e: MouseEvent) {
+      if (e.metaKey || e.ctrlKey) return;
+
       e.preventDefault();
       const anchor = (e.target as HTMLElement).closest("a");
 
