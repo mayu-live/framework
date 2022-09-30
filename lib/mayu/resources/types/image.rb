@@ -11,6 +11,8 @@ module Mayu
       class Image < Base
         extend T::Sig
 
+        FORMATS = T.let([:webp], T::Array[Symbol])
+
         BREAKPOINTS =
           T.let(
             [120, 240, 320, 640, 768, 960, 1024, 1366, 1600, 1920, 3840].freeze,
@@ -28,6 +30,8 @@ module Mayu
         attr_reader :original
         sig { returns(T::Array[ImageDescriptor]) }
         attr_reader :versions
+        sig { returns(String) }
+        attr_reader :blur
 
         sig { params(resource: Resource).void }
         def initialize(resource)
@@ -37,7 +41,7 @@ module Mayu
           image_size = ImageSize.path(resource.absolute_path)
 
           extname = File.extname(resource.path)
-          filename = "#{content_hash}#{extname}"
+          filename = "#{content_hash}.#{image_size.format}"
 
           @original =
             T.let(
@@ -54,16 +58,38 @@ module Mayu
             BREAKPOINTS.select { _1 < image_size.width }.sort.reverse
           aspect_ratio = image_size.height / image_size.width.to_f
 
+          formats = [image_size.format, *FORMATS].uniq
+
+          @blur =
+            T.let(
+              [
+                "convert",
+                resource.absolute_path,
+                "-resize",
+                "16x16>",
+                "-strip",
+                "png:-"
+              ].then { Shellwords.shelljoin(_1) }
+                .then { `#{_1}` }
+                .then { Base64.strict_encode64(_1) }
+                .prepend("data:image/png;base64,"),
+              String
+            )
+
           @versions =
             T.let(
-              breakpoints.map do |width|
-                ImageDescriptor.new(
-                  format: image_size.format,
-                  width:,
-                  height: (width * aspect_ratio).to_i,
-                  filename: "#{content_hash}#{width}w#{extname}"
-                )
-              end,
+              formats
+                .map do |format|
+                  breakpoints.map do |width|
+                    ImageDescriptor.new(
+                      format: format,
+                      width:,
+                      height: (width * aspect_ratio).to_i,
+                      filename: "#{content_hash}#{width}w.#{format}"
+                    )
+                  end
+                end
+                .flatten,
               T::Array[ImageDescriptor]
             )
         end
@@ -80,19 +106,35 @@ module Mayu
             FileUtils.copy_file(@resource.absolute_path, path)
           end
 
-          @versions.reduce(path) do |previous_path, version|
+          @versions.map do |version|
             result.push(Asset.new(version.filename))
             path = File.join(asset_dir, version.filename)
             next path if File.exist?(path)
             puts "\e[35mGenerating #{path}\e[0m"
-            system(
-              "convert",
-              previous_path,
-              "-adaptive-resize",
-              "#{version.width}",
-              path
-            )
-            path
+
+            case version.format
+            when :webp
+              system(
+                "cwebp",
+                "-q",
+                "80", # typical quality
+                "-resize",
+                "#{version.width}",
+                "0",
+                @resource.absolute_path,
+                "-o",
+                path
+              )
+            else
+              system(
+                "convert",
+                @resource.absolute_path,
+                "-adaptive-resize",
+                "#{version.width}",
+                "-strip",
+                path
+              )
+            end
           end
 
           result
@@ -105,7 +147,7 @@ module Mayu
 
         sig { returns(String) }
         def srcset
-          [@original, *@versions].map do |version|
+          [@original, *@versions.filter { _1.format == :webp }].map do |version|
               "/__mayu/static/#{version.filename} #{version.width}w"
             end
             .reverse
@@ -116,23 +158,25 @@ module Mayu
         def sizes
           [
             "100vw",
-            *@versions.map do |version|
-              "(max-width: #{version.width}px) #{version.width}px"
-            end
+            *@versions
+              .filter { _1.format == :webp }
+              .map do |version|
+                "(max-width: #{version.width}px) #{version.width}px"
+              end
           ].reverse.join(", ")
         end
 
         MarshalFormat =
-          T.type_alias { [ImageDescriptor, T::Array[ImageDescriptor]] }
+          T.type_alias { [ImageDescriptor, T::Array[ImageDescriptor], String] }
 
         sig { returns(MarshalFormat) }
         def marshal_dump
-          [@original, @versions]
+          [@original, @versions, @blur]
         end
 
         sig { params(args: MarshalFormat).void }
         def marshal_load(args)
-          @original, @versions = args
+          @original, @versions, @blur = args
         end
       end
     end
