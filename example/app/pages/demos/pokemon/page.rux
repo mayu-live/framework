@@ -55,7 +55,7 @@ def render
 
         <li key={result[:url]} class={styles.item}>
           {"#{id}. "}
-          <a href={"/pokemon/#{id}"}>
+          <a href={"/demos/pokemon/#{id}"}>
             {result[:name].capitalize}
           </a>
         </li>

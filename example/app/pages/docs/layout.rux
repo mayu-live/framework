@@ -1,0 +1,25 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
+Heading = require("/app/components/Layout/Heading")
+
+def render
+  <MaxWidth>
+    <Heading level={1}>Documentation</Heading>
+
+    <p class={styles.underConstruction}>
+      <span class={styles.underConstructionText}>This page is under construction!</span>
+    </p>
+
+    <div class={styles.wrap}>
+      <menu class={styles.menu}>
+        <li class={styles.menuItem}><a href="/docs">Introduction</a></li>
+        <li class={styles.menuItem}><a href="/docs/getting-started">Getting started</a></li>
+        <li class={styles.menuItem}><a href="/docs/deployment">Deployment</a></li>
+        <li class={styles.menuItem}><a href="/docs/faq">Frequently asked questions</a></li>
+      </menu>
+
+      <div class={styles.content}>
+        {props[:children]}
+      </div>
+    </div>
+  </MaxWidth>
+end

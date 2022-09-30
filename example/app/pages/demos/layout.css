@@ -1,0 +1,22 @@
+.wrap {
+  gap: 1em;
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+  align-items: start;
+}
+
+.menu {
+  list-style-type: none;
+  border: 1px solid #ccc;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8em;
+}
+
+.menuItem {
+  padding: 0.5em;
+}
+
+.content {
+  margin-top: -1em;
+}

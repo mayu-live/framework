@@ -1,0 +1,9 @@
+Heading = require("/app/components/Layout/Heading")
+
+def render
+  <article>
+    <Heading level={2}>Introduction</Heading>
+
+    <p>Hello there.</p>
+  </article>
+end

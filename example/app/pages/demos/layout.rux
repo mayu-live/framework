@@ -1,0 +1,21 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
+Heading = require("/app/components/Layout/Heading")
+
+def render
+  <MaxWidth>
+    <Heading level={1}>Demos</Heading>
+
+    <div class={styles.wrap}>
+      <menu class={styles.menu}>
+        <li class={styles.menuItem}><a href="/demos">Index</a></li>
+        <li class={styles.menuItem}><a href="/demos/pokemon">Pokémon</a></li>
+        <li class={styles.menuItem}><a href="/demos/tree">Source tree</a></li>
+        <li class={styles.menuItem}><a href="/demos/form">CSS Form Validation</a></li>
+      </menu>
+
+      <div class={styles.content}>
+        {props[:children]}
+      </div>
+    </div>
+  </MaxWidth>
+end

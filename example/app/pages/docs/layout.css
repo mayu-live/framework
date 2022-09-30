@@ -1,0 +1,53 @@
+.wrap {
+  gap: 1em;
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+  align-items: start;
+}
+
+.underConstruction {
+  border: 2px solid #000;
+  color: #000;
+  border-radius: 2px;
+  padding: 0.5em;
+  width: max-content;
+  font-weight: bold;
+  text-transform: uppercase;
+  background: repeating-linear-gradient(
+    135deg,
+    #000,
+    #000 10px,
+    #ff0 10px,
+    #ff0 20px
+  );
+}
+
+.underConstructionText {
+  display: block;
+  padding: 0 0.5em;
+  margin: 0;
+  background: #fff9;
+  border: 2px solid #000;
+  border-radius: 2px;
+  backdrop-filter: blur(1px);
+  font-family: Impact;
+  font-size: 1.8em;
+}
+
+.menu {
+  list-style-type: none;
+  border: 1px solid #ccc;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8em;
+}
+
+.menuItem {
+  padding: 0.5em;
+}
+
+.content {
+  border: 1px solid #ccc;
+  padding: 0 1em;
+  margin: 0;
+}

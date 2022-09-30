@@ -1,0 +1,11 @@
+Heading = require("/app/components/Layout/Heading")
+
+def render
+  <article>
+    <Heading level={2}>Demos</Heading>
+
+    <p>This section demonstrates some of the capabilities of Mayu.</p>
+
+    <p>Use the menu to choose a demo.</p>
+  </article>
+end

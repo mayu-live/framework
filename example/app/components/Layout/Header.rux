@@ -21,16 +21,10 @@ def render
             <a class={styles[:navLink]} href="/">Start page</a>
           </li>
           <li>
-            <a class={styles[:navLink]} href="/pokemon">Pokémon</a>
+            <a class={styles[:navLink]} href="/demos">Demos</a>
           </li>
           <li>
-            <a class={styles[:navLink]} href="/tree">App tree</a>
-          </li>
-          <li>
-            <a class={styles[:navLink]} href="/form">Form demo</a>
-          </li>
-          <li>
-            <a class={styles[:navLink]} href="/about">About</a>
+            <a class={styles[:navLink]} href="/docs">Docs</a>
           </li>
         </menu>
       </nav>
