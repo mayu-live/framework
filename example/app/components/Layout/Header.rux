@@ -8,7 +8,9 @@ def render
         <img
           src={Logo.src}
           sizes={Logo.sizes}
-          width={100}
+          srcset={Logo.srcset}
+          width={Logo.original.width}
+          height={Logo.original.height}
           class={styles.img}
           alt="Mayu Live"
         />

@@ -6,6 +6,8 @@
 }
 
 .img {
+  height: 2em;
+  width: auto;
   flex: 0;
   filter: drop-shadow(0 0 3px #000);
   transition: filter 150ms, transform 150ms;
