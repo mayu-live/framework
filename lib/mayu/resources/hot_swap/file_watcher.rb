@@ -55,6 +55,8 @@ module Mayu
 
           listener.start
 
+          Console.logger.info("Watching directories for changes:", *paths)
+
           task.async do
             loop { block.call(queue.deq) }
           ensure
