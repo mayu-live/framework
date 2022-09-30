@@ -20,7 +20,7 @@ RUN mkdir -p tmp/pids
 
 FROM base as build
 
-ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils nodejs npm
+ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils nodejs npm webp imagemagick
 
 RUN \
     --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
