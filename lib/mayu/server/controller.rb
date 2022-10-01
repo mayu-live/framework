@@ -58,7 +58,7 @@ module Mayu
           Console.logger.info(self, "Setting up metrics")
 
           container.async do
-            Metrics.setup(@config)
+            Metrics.setup_prometheus_data_store(@config)
             PrometheusServer.start(@config)
           end
         end
@@ -71,7 +71,7 @@ module Mayu
           forks: @config.server.forks
         ) do |instance|
           Async do |task|
-            Metrics.setup(@config)
+            Metrics.setup_prometheus_data_store(@config)
 
             task.async do
               if @debug_trap.install!

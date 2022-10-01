@@ -27,13 +27,14 @@ module Mayu
         @sessions.count
       end
 
-      sig { params(task: Async::Task).returns(Async::Task) }
-      def start_cleanup_task(task: Async::Task.current)
+      sig { params(metrics: Metrics, task: Async::Task).returns(Async::Task) }
+      def start_cleanup_task(metrics:, task: Async::Task.current)
         task.async do
           cleanup_time = 5.0
 
           loop do
             keys = @sessions.keys
+            metrics.session_count.set(keys.size)
 
             Console.logger.warn(
               self,
@@ -53,6 +54,7 @@ module Mayu
                 if session.expired?
                   Console.logger.warn(self, "Expiring #{session.id}")
                   @sessions.delete(key)
+                  session.stop!
                 else
                   puts format(
                          "%s responded %.2fs ago",

@@ -33,7 +33,7 @@ module Mayu
         @environment = environment
         @sessions = T.let(Sessions.new, Sessions)
 
-        @sessions.start_cleanup_task
+        @sessions.start_cleanup_task(metrics: @environment.metrics)
       end
 
       sig { void }
@@ -170,9 +170,6 @@ module Mayu
         session = Session.restore(environment:, dumped:)
 
         @sessions.add(session)
-
-        @environment.metrics.session_count.set(@sessions.count)
-        Console.logger.warn(self, "Sessions count: #{@sessions.count}")
 
         headers = {
           "content-type" => "text/plain",

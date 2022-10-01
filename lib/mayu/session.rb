@@ -117,6 +117,12 @@ module Mayu
         )
       @app = T.let(environment.load_root(path), VDOM::Descriptor)
       @last_ping_at = T.let(0.0, Float)
+      @barrier = T.let(Async::Barrier.new, Async::Barrier)
+    end
+
+    sig { void }
+    def stop!
+      @barrier.stop
     end
 
     Writable =
@@ -214,6 +220,7 @@ module Mayu
       @store = @environment.create_store(initial_state: Marshal.restore(state))
       @app = @environment.load_root(@path)
       @last_ping_at = Time.now.to_f
+      @barrier = Async::Barrier.new
     end
 
     sig do
@@ -261,15 +268,18 @@ module Mayu
 
       raise "No root!" unless root
 
-      barrier = Async::Barrier.new
+      barrier = Async::Barrier.new(parent: @barrier)
 
       barrier.async do |subtask|
         yield [:init, { ids: root.id_tree }]
 
         root.traverse do |vnode|
           if c = vnode.component
+            # TODO: Make sure the component isn't already mounted..
+            # maybe can check that in the component wrapper?
+            # Also, shouldn't this be done once when resuming rather
+            # than when starting the event stream?
             c.mount
-            # @vtree.update_queue.enqueue(vnode)
           end
         end
 

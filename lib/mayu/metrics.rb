@@ -28,16 +28,28 @@ module Mayu
       return if $mayu_metrics_configured
       $mayu_metrics_configured = true
 
-      Dir[File.join(config.root, "tmp", "prometheus", "*.bin")].each do
-        File.unlink(_1)
-      end
+      remove_prometheus_data(config)
+      setup_prometheus_data_store(config)
 
+      new(config:)
+    end
+
+    sig { params(config: Configuration).void }
+    def self.remove_prometheus_data(config)
+      files = Dir[File.join(config.root, "tmp", "prometheus", "*.bin")]
+      return if files.empty?
+
+      Console.logger.warn("Removing prometheus data", *files)
+
+      files.each { File.unlink(_1) }
+    end
+
+    sig { params(config: Configuration).void }
+    def self.setup_prometheus_data_store(config)
       Prometheus::Client.config.data_store =
         Prometheus::Client::DataStores::DirectFileStore.new(
           dir: File.join(config.root, "tmp", "prometheus")
         )
-
-      new(config:)
     end
 
     sig do
