@@ -47,59 +47,67 @@ def render
     <div class={styles.sectionsOuter}>
       <div class={styles[:sections]}>
         <section class={styles[:section]}>
-          <Heading level={3} class={styles.sectionTitle}>
-            Interactive web apps without JavaScript
-          </Heading>
+          <div class={styles[:sectionInner]}>
+            <Heading level={3} class={styles.sectionTitle}>
+              Interactive web apps without JavaScript
+            </Heading>
 
-          <p>
-            You write all logic in Ruby. Everything runs on the server.
-          </p>
+            <p>
+              You write all logic in Ruby. Everything runs on the server.
+            </p>
+          </div>
         </section>
 
         <section class={styles[:section]}>
-          <Heading level={3} class={styles.sectionTitle}>
-            How does it work?
-          </Heading>
+          <div class={styles[:sectionInner]}>
+            <Heading level={3} class={styles.sectionTitle}>
+              How does it work?
+            </Heading>
 
-          <p>
-            Mayu implements a Virtual DOM in Ruby.
-            All DOM updates are streamed to the browser via Server-Sent Events.
-          </p>
-          <ul>
-            <li>
-              All callbacks run on the server.
-            </li>
-            <li>
-              Your callback handlers are your endpoints.
-            </li>
-            <li>
-              There is no need to for an API.
-            </li>
-          </ul>
-          <p>
-            Mayu needs 10kB of JavaScript (before gzip) to be able to patch the DOM.
-            This loads before the page has been rendered.
-          </p>
+            <p>
+              Mayu implements a Virtual DOM in Ruby.
+              All DOM updates are streamed to the browser via Server-Sent Events.
+            </p>
+            <ul>
+              <li>
+                All callbacks run on the server.
+              </li>
+              <li>
+                Your callback handlers are your endpoints.
+              </li>
+              <li>
+                There is no need to for an API.
+              </li>
+            </ul>
+            <p>
+              Mayu needs 10kB of JavaScript (before gzip) to be able to patch the DOM.
+              This loads before the page has been rendered.
+            </p>
+          </div>
         </section>
 
         <section class={styles[:section]}>
-          <Heading level={3} class={styles.sectionTitle}>
-            Efficient
-          </Heading>
+          <div class={styles[:sectionInner]}>
+            <Heading level={3} class={styles.sectionTitle}>
+              Efficient
+            </Heading>
 
-          <p>HTTP/2 makes everything load in parallel.</p>
-          <p>Designed to be deployed near users, either on fly.io or maybe even an on-premise Raspberry PI.</p>
-          <p>Elements are interactive immediately as the page loads. No need to wait for a huge JS bundle to load for the page to become interactive.</p>
+            <p>HTTP/2 makes everything load in parallel.</p>
+            <p>Designed to be deployed near users, either on fly.io or maybe even an on-premise Raspberry PI.</p>
+            <p>Elements are interactive immediately as the page loads. No need to wait for a huge JS bundle to load for the page to become interactive.</p>
+          </div>
         </section>
 
         <section class={styles[:section]}>
-          <Heading level={3} class={styles.sectionTitle}>
-            Smooth developer experience
-          </Heading>
+          <div class={styles[:sectionInner]}>
+            <Heading level={3} class={styles.sectionTitle}>
+              Smooth developer experience
+            </Heading>
 
-          <p>Hot-reloading reloads your components as you edit them and shows the updates in real-time.</p>
-          <p>Ruby is pretty nice.</p>
-          <p>Asynchronous code without callbacks.</p>
+            <p>Hot-reloading reloads your components as you edit them and shows the updates in real-time.</p>
+            <p>Ruby is pretty nice.</p>
+            <p>Asynchronous code without callbacks.</p>
+          </div>
         </section>
       </div>
     </div>

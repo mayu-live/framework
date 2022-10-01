@@ -32,7 +32,7 @@
   width: 100%;
   flex: 1;
   margin: 0;
-  padding: 1em;
+  padding: 0;
   font-size: 0.9em;
   border-radius: 2px;
   box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
@@ -40,9 +40,13 @@
   margin-inline: auto;
 }
 
+.sectionInner {
+  margin: 2em;
+}
+
 .sectionTitle {
   margin: 0;
-  font-size: 1.2em;
+  font-size: 1em;
   text-transform: uppercase;
 }
 
