@@ -27,6 +27,47 @@ module Mayu
         @sessions.count
       end
 
+      sig { params(task: Async::Task).returns(Async::Task) }
+      def start_cleanup_task(task: Async::Task.current)
+        task.async do
+          cleanup_time = 5.0
+
+          loop do
+            keys = @sessions.keys
+
+            Console.logger.warn(
+              self,
+              "Running expiration loop with #{keys.length} keys"
+            )
+
+            if keys.empty?
+              sleep(cleanup_time)
+            else
+              sleep_time = cleanup_time / keys.length
+
+              keys.each do |key|
+                session = @sessions[key]
+
+                next unless session
+
+                if session.expired?
+                  Console.logger.warn(self, "Expiring #{session.id}")
+                  @sessions.delete(key)
+                else
+                  puts format(
+                         "%s responded %.2fs ago",
+                         session.id,
+                         session.seconds_since_last_ping
+                       )
+                end
+              ensure
+                sleep(sleep_time)
+              end
+            end
+          end
+        end
+      end
+
       sig { params(session: Session).void }
       def add(session)
         session_key = session_key(session.id, session.token)

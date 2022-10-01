@@ -38,7 +38,7 @@ module Mayu
       Configuration.log_config(config)
       Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
 
-      #Metrics.setup(config) if config.metrics.enabled
+      Metrics.setup(config) if config.metrics.enabled
 
       Controller.new(config:, endpoint:).run
     end

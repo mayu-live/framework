@@ -32,7 +32,8 @@ module Mayu
       def initialize(environment)
         @environment = environment
         @sessions = T.let(Sessions.new, Sessions)
-        @timeouts = T.let({}, T::Hash[String, Async::Task])
+
+        @sessions.start_cleanup_task
       end
 
       sig { void }
@@ -169,7 +170,9 @@ module Mayu
         session = Session.restore(environment:, dumped:)
 
         @sessions.add(session)
+
         @environment.metrics.session_count.set(@sessions.count)
+        Console.logger.warn(self, "Sessions count: #{@sessions.count}")
 
         headers = {
           "content-type" => "text/plain",
@@ -234,11 +237,12 @@ module Mayu
         )
 
         task.async do
-          @timeouts.delete(session_id)&.stop
-
           session
             .run do |msg|
               case msg
+              in [:keep_alive, data]
+                # Send something regularly to detect that the connection has closed..
+                body.write(":\n")
               in [:init, data]
                 body.write(format_event(:init, data))
               in [:patch, patches]
@@ -260,18 +264,11 @@ module Mayu
               else
                 Console.logger.error(self, "Unknown message: #{msg.inspect}")
               end
+            rescue => e
+              Console.logger.error(self, e)
+              raise
             end
             .wait
-        ensure
-          @timeouts[session.id] = task.async do
-            Console.logger.warn(self, "Disconnected: #{session.id}")
-            sleep 5
-            Console.logger.warn(self, "Timed out: #{session.id}")
-            @sessions.delete(session.id, session.token)
-            @environment.metrics.session_count.set(@sessions.count)
-          ensure
-            @timeouts.delete(session.id)
-          end
         end
 
         headers = { "content-type" => "text/event-stream; charset=utf-8" }

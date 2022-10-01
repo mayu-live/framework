@@ -83,6 +83,18 @@ module Mayu
     attr_reader :path
     sig { returns(Environment) }
     attr_reader :environment
+    sig { returns(Float) }
+    attr_reader :last_ping_at
+
+    sig { params(timeout_seconds: T.any(Float, Integer)).returns(T::Boolean) }
+    def expired?(timeout_seconds = 5)
+      seconds_since_last_ping > timeout_seconds
+    end
+
+    sig { returns(Float) }
+    def seconds_since_last_ping
+      Time.now.to_f - last_ping_at
+    end
 
     sig do
       params(
@@ -104,6 +116,7 @@ module Mayu
           State::Store
         )
       @app = T.let(environment.load_root(path), VDOM::Descriptor)
+      @last_ping_at = T.let(0.0, Float)
     end
 
     Writable =
@@ -200,6 +213,7 @@ module Mayu
       @vtree = VDOM::Marshalling.restore(dumped_vtree, session: self)
       @store = @environment.create_store(initial_state: Marshal.restore(state))
       @app = @environment.load_root(@path)
+      @last_ping_at = Time.now.to_f
     end
 
     sig do
@@ -218,6 +232,7 @@ module Mayu
       params(callback_id: String, payload: T::Hash[Symbol, T.untyped]).void
     end
     def handle_callback(callback_id, payload = {})
+      @last_ping_at = Time.now.to_f
       @vtree.handle_callback(callback_id, payload)
     end
 
@@ -236,43 +251,65 @@ module Mayu
     end
 
     sig do
-      params(block: T.proc.params(msg: [Symbol, T.untyped]).void).returns(
-        Async::Task
-      )
+      params(
+        task: Async::Task,
+        block: T.proc.params(msg: [Symbol, T.untyped]).void
+      ).returns(Async::Barrier)
     end
-    def run(&block)
+    def run(task: Async::Task.current, &block)
       root = @vtree.root
 
       raise "No root!" unless root
 
-      yield [:init, { ids: root.id_tree }]
+      barrier = Async::Barrier.new
 
-      root.traverse do |vnode|
-        if c = vnode.component
-          c.mount
-          # @vtree.update_queue.enqueue(vnode)
+      barrier.async do |subtask|
+        yield [:init, { ids: root.id_tree }]
+
+        root.traverse do |vnode|
+          if c = vnode.component
+            c.mount
+            # @vtree.update_queue.enqueue(vnode)
+          end
         end
+
+        @vtree.render(@app, lifecycles: true)
+
+        updater = VDOM::VTree::Updater.new(@vtree)
+
+        updater
+          .run(environment.metrics, task: subtask) do |msg|
+            case msg
+            in [:patch, patches]
+              yield [:patch, patches]
+            in [:exception, error]
+              yield [:exception, error]
+            in [:pong, timestamp]
+              yield [:pong, timestamp]
+            in [:navigate, href]
+              navigate(href)
+              yield [:navigate, href]
+            else
+              puts "\e[31mUnknown event: #{msg.inspect}\e[0m"
+            end
+          end
+          .wait
+
+        barrier.stop
       end
 
-      @vtree.render(@app, lifecycles: true)
-
-      updater = VDOM::VTree::Updater.new(@vtree)
-
-      updater.run(environment.metrics) do |msg|
-        case msg
-        in [:patch, patches]
-          yield [:patch, patches]
-        in [:exception, error]
-          yield [:exception, error]
-        in [:pong, timestamp]
-          yield [:pong, timestamp]
-        in [:navigate, href]
-          navigate(href)
-          yield [:navigate, href]
-        else
-          puts "\e[31mUnknown event: #{msg.inspect}\e[0m"
+      barrier.async do
+        loop do
+          # puts "keep alive task"
+          sleep 1
+          yield [:keep_alive, nil]
         end
+      ensure
+        # puts "Stopped this task"
+        barrier.stop
       end
+
+      barrier
     end
   end
 end

@@ -57,8 +57,6 @@ module Mayu
         if @config.metrics.enabled
           Console.logger.info(self, "Setting up metrics")
 
-          FileUtils.rm_rf(File.join(@config.root, "tmp"))
-
           container.async do
             Metrics.setup(@config)
             PrometheusServer.start(@config)

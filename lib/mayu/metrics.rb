@@ -28,6 +28,10 @@ module Mayu
       return if $mayu_metrics_configured
       $mayu_metrics_configured = true
 
+      Dir[File.join(config.root, "tmp", "prometheus", "*.bin")].each do
+        File.unlink(_1)
+      end
+
       Prometheus::Client.config.data_store =
         Prometheus::Client::DataStores::DirectFileStore.new(
           dir: File.join(config.root, "tmp", "prometheus")
@@ -117,10 +121,12 @@ module Mayu
 
       store_settings =
         case Prometheus::Client.config.data_store
+        when Prometheus::Client::DataStores::Synchronized
+          {}
         when Prometheus::Client::DataStores::DirectFileStore
           { aggregation: :sum }
         else
-          {}
+          { aggregation: :sum }
         end
 
       @session_count =
