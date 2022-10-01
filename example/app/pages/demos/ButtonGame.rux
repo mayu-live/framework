@@ -1,5 +1,5 @@
 MESSAGES = [
-  "Click me!!",
+  "Click me!",
   "Click again!!",
   "One more time",
   "I am a banana",
@@ -25,7 +25,7 @@ def render
 
   <div class={styles.relative}>
     <button class={styles.button} style={{ transform: }} on-click={handler(:handle_click)}>
-      {count.zero? ? "Click here!" : MESSAGES[count.pred % MESSAGES.size]}
+      {MESSAGES[count % MESSAGES.size]}
     </button>
   </div>
 end

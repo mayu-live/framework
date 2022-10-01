@@ -18,13 +18,15 @@ def render
       <nav class={styles[:nav]}>
         <menu class={styles[:menu]}>
           <li>
-            <a class={styles[:navLink]} href="/">Start page</a>
-          </li>
-          <li>
             <a class={styles[:navLink]} href="/demos">Demos</a>
           </li>
           <li>
             <a class={styles[:navLink]} href="/docs">Docs</a>
+          </li>
+          <li>
+            <a class={styles[:navLink]} href="https://github.com/mayu-live/framework" target="_blank">
+              GitHub
+            </a>
           </li>
         </menu>
       </nav>

@@ -5,7 +5,9 @@
   --red: #e84855;
   --yellow: #f9dc5c;
   --yellow-bright: #fdf1be;
-  --green: #6fff80;
+  /* --green: #6fff80; */
+  --green: #25bc5f;
+  --green-bright: #caf4da;
   --blue: #3185fc;
   --blue-bright: #e9f2ff;
   --pink: #efbcd5;
@@ -54,7 +56,6 @@
   grid-area: main;
   background: var(--bright);
   color: var(--dark);
-  padding-bottom: 1rem;
 }
 
 .footer {

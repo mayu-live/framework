@@ -1,33 +1,56 @@
+.featuresOuter {
+  overflow: hidden;
+}
+
 .features {
-  font-size: 1.2em;
+  margin: 3em;
+}
+
+.featuresHeading {
+  margin: 0;
+  font-size: 2em;
+}
+
+.featureList {
+}
+
+.feature {
 }
 
 .active {
-  font-weight: bold;
-  text-decoration: underline;
-  font-style: italic;
   color: var(--red);
+  font-weight: bold;
+  font-style: italic;
 }
 
 .sections {
   display: flex;
-  margin: 2em 0em;
-  gap: 4em;
+  margin: 0em;
   flex-wrap: wrap;
+  padding: 3em;
+  gap: 3em;
 }
 
 .section {
   flex: 1;
   min-width: 300px;
-  margin: 0em;
+  margin: 0;
   padding: 1em;
+  font-size: 0.9em;
   border-radius: 3px;
   box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px,
     rgba(17, 17, 26, 0.1) 0px 8px 24px, rgba(17, 17, 26, 0.1) 0px 16px 48px;
+  background: #fff9;
 }
 
 .sectionTitle {
   margin: 0;
   font-size: 1.2em;
   text-transform: uppercase;
+}
+
+.sectionsOuter {
+  overflow: hidden;
+  background: var(--yellow);
+  color: var(--dark);
 }
