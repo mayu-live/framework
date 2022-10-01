@@ -32,6 +32,11 @@
   box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
 }
 
+.button:disabled {
+  filter: grayscale(100%);
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
+}
+
 .count {
   flex: 1;
   text-align: center;

@@ -4,7 +4,7 @@ end
 
 def handle_decrement(_)
   update do |state|
-    { count: state[:count].pred }
+    { count: [0, state[:count].pred].max }
   end
 end
 
@@ -16,7 +16,7 @@ end
 
 def render
   <div class={styles.counter}>
-    <button class={styles.button} title="Decrement" on-click={handler(:handle_decrement)}>-</button>
+    <button class={styles.button} title="Decrement" on-click={handler(:handle_decrement)} disabled={state[:count].zero?}>-</button>
     <span class={styles.count}>{state[:count]}</span>
     <button class={styles.button} title="Increment" on-click={handler(:handle_increment)}>+</button>
   </div>
