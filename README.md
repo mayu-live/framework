@@ -291,7 +291,8 @@ This would create the following routes:
 | `/posts/:id/` | `app/pages/posts/[id]/page.rb` | `app/pages/layout.rb` `app/pages/posts/layout.rb` |
 | `/*`          | `app/pages/404.rb`             | `app/pages/layout.rb`                             |
 
-Look in `example/app` for examples.
+For a real-world example, check out
+[`example/app/pages/`](https://github.com/mayu-live/framework/tree/main/example/app/pages).
 
 ## Hot reloading
 
