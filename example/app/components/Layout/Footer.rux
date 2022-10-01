@@ -1,47 +1,51 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
+
 def render
   <footer class={"#{props[:class]} #{styles.footer}"}>
-    <div class={props[:max_width]}>
-      <p>
-        <a href="https://github.com/mayu-live" class={styles.link}>
-          github.com/mayu-live
-        </a>
-      </p>
-      <p class={styles.badges}>
-        <a href="https://github.com/mayu-live/framework/search?l=Ruby&type=code">
-          <img
-            alt="top language"
-            src="https://img.shields.io/github/languages/top/mayu-live/framework"
-            loading="lazy"
-          />
-        </a>
-        <a href="https://github.com/mayu-live/framework/actions/workflows/ruby.yml">
-          <img
-            alt="Ruby build status"
-            src="https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby"
-            loading="lazy"
-          />
-        </a>
-        <a href="https://github.com/mayu-live/framework/actions/workflows/node.js.yml">
-          <img
-            alt="JavaScript build status"
-            src="https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript"
-            loading="lazy"
-          />
-        </a>
-        <a href="https://github.com/mayu-live/framework/blob/main/COPYING">
-          <img
-            alt="License: AGPL-3.0"
-            src="https://img.shields.io/github/license/mayu-live/framework"
-            loading="lazy"
-          />
-        </a>
-        <a href="https://github.com/mayu-live/framework/stargazers">
-          <img
-            alt="GitHub Stars"
-            src="https://img.shields.io/github/stars/mayu-live/framework?style=social"
-          />
-        </a>
-      </p>
-    </div>
-  </footer>
-end
+    <MaxWidth class={styles.inner}>
+        <p>
+          Copyright © {[2022, Time.now.year].uniq.join("—")}
+          {' '}
+          <a href="https://github.com/mayu-live" class={styles.link}>
+            github.com/mayu-live
+          </a>
+        </p>
+        <p class={styles.badges}>
+          <a href="https://github.com/mayu-live/framework/search?l=Ruby&type=code">
+            <img
+              alt="top language"
+              src="https://img.shields.io/github/languages/top/mayu-live/framework"
+              loading="lazy"
+            />
+          </a>
+          <a href="https://github.com/mayu-live/framework/actions/workflows/ruby.yml">
+            <img
+              alt="Ruby build status"
+              src="https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby"
+              loading="lazy"
+            />
+          </a>
+          <a href="https://github.com/mayu-live/framework/actions/workflows/node.js.yml">
+            <img
+              alt="JavaScript build status"
+              src="https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript"
+              loading="lazy"
+            />
+          </a>
+          <a href="https://github.com/mayu-live/framework/blob/main/COPYING">
+            <img
+              alt="License: AGPL-3.0"
+              src="https://img.shields.io/github/license/mayu-live/framework"
+              loading="lazy"
+            />
+          </a>
+          <a href="https://github.com/mayu-live/framework/stargazers">
+            <img
+              alt="GitHub Stars"
+              src="https://img.shields.io/github/stars/mayu-live/framework?style=social"
+            />
+          </a>
+        </p>
+      </MaxWidth>
+    </footer>
+  end
