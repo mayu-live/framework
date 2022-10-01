@@ -1,25 +1,24 @@
-MaxWidth = require("/app/components/Layout/MaxWidth")
-Heading = require("/app/components/Layout/Heading")
+PageLayout = require("/app/components/Layout/Page")
+Menu = require("/app/components/Layout/Menu")
+MenuItem = require("/app/components/Layout/MenuItem")
 
 def render
-  <MaxWidth>
-    <Heading level={1}>Documentation</Heading>
+  <PageLayout menu={render_menu} after_heading={render_under_construction}>
+    {props[:children]}
+  </PageLayout>
+end
 
-    <p class={styles.underConstruction}>
-      <span class={styles.underConstructionText}>This page is under construction!</span>
-    </p>
+def render_menu
+  <Menu>
+    <MenuItem href="/docs">Introduction</MenuItem>
+    <MenuItem href="/docs/getting-started">Getting started</MenuItem>
+    <MenuItem href="/docs/deployment">Deployment</MenuItem>
+    <MenuItem href="/docs/faq">Frequently asked questions</MenuItem>
+  </Menu>
+end
 
-    <div class={styles.wrap}>
-      <menu class={styles.menu}>
-        <li class={styles.menuItem}><a href="/docs">Introduction</a></li>
-        <li class={styles.menuItem}><a href="/docs/getting-started">Getting started</a></li>
-        <li class={styles.menuItem}><a href="/docs/deployment">Deployment</a></li>
-        <li class={styles.menuItem}><a href="/docs/faq">Frequently asked questions</a></li>
-      </menu>
-
-      <div class={styles.content}>
-        {props[:children]}
-      </div>
-    </div>
-  </MaxWidth>
+def render_under_construction
+  <p class={styles.underConstruction}>
+    <span class={styles.underConstructionText}>This page is under construction!</span>
+  </p>
 end

@@ -1,0 +1,31 @@
+MESSAGES = [
+  "Click me!!",
+  "Click again!!",
+  "One more time",
+  "I am a banana",
+  "LOL",
+]
+
+def self.get_initial_state(**)
+  { x: 0, y: 0, count: 0 }
+end
+
+def handle_click(_)
+  update(
+    count: state[:count].succ,
+    x: (rand * 2 - 1) * 200,
+    y: (rand * 2 - 1) * 200,
+  )
+end
+
+def render
+  state => { count:, x:, y: }
+
+  transform = "translate(#{x}px, #{y}px)"
+
+  <div class={styles.relative}>
+    <button class={styles.button} style={{ transform: }} on-click={handler(:handle_click)}>
+      {count.zero? ? "Click here!" : MESSAGES[count.pred % MESSAGES.size]}
+    </button>
+  </div>
+end

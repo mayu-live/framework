@@ -1,5 +1,6 @@
 MaxWidth = require("/app/components/Layout/MaxWidth")
 Heading = require("/app/components/Layout/Heading")
+ButtonGame = require("./ButtonGame")
 
 def render
   <MaxWidth>
@@ -7,6 +8,8 @@ def render
 
     <p>This section demonstrates some of the capabilities of Mayu.</p>
 
-    <p>Use the menu to choose a demo.</p>
+    <p>Use the menu to choose a demo, or if you can't choose, please click this button:</p>
+
+    <ButtonGame />
   </MaxWidth>
 end

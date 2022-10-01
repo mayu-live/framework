@@ -1,0 +1,5 @@
+def render
+  <menu class={styles.menu}>
+    {props[:children]}
+  </menu>
+end

@@ -1,0 +1,20 @@
+MaxWidth = require("/app/components/Layout/MaxWidth")
+Heading = require("/app/components/Layout/Heading")
+
+def render
+  <MaxWidth>
+    <div class={styles.page}>
+      {props[:title] && <Heading level={1}>{props[:title]}</Heading>}
+
+      {props[:after_heading]}
+
+      <div class={styles.wrap}>
+        {props[:menu]}
+
+        <div class={styles.content}>
+          {props[:children]}
+        </div>
+      </div>
+    </div>
+  </MaxWidth>
+end
