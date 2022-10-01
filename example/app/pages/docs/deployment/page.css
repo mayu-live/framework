@@ -1,0 +1,23 @@
+.data {
+  position: relative;
+  cursor: help;
+}
+
+.data:hover {
+  outline: 1px dotted var(--blue);
+  background: var(--blue-bright);
+  border-radius: 2px;
+}
+
+.data:hover::after {
+  content: attr(value);
+  background: var(--dark);
+  color: var(--bright);
+  font-size: 0.8em;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  padding: 0.5em;
+  border-radius: 2px;
+  translate: -50% 0;
+}

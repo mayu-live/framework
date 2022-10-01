@@ -1,4 +1,5 @@
 Heading = require("/app/components/Layout/Heading")
+MaxWidth = require("/app/components/Layout/MaxWidth")
 
 CLONE_INSTRUCTIONS = <<~EOF
   git clone https://github.com/mayu-live/framework.git mayu-live
@@ -20,7 +21,7 @@ CLONE_INSTRUCTIONS = <<~EOF
 EOF
 
 def render
-  <article>
+  <MaxWidth tag="article">
     <Heading level={2}>Getting started</Heading>
 
     <p>Hi! Here are some instructions to get started.</p>
@@ -32,5 +33,5 @@ def render
     <pre class={styles.pre}>{CLONE_INSTRUCTIONS}</pre>
 
     <p>If it worked, you should be able to open <code>https://localhost:9292/</code>. Have fun!</p>
-  </article>
+  </MaxWidth>
 end

@@ -1,19 +1,23 @@
 Heading = require("/app/components/Layout/Heading")
+MaxWidth = require("/app/components/Layout/MaxWidth")
 
 def render
-  <article>
+  <MaxWidth tag="article">
     <Heading level={2}>Deployment</Heading>
 
     <p>
       This page is deployed to <a href="https://fly.io/">Fly.io</a> using{' '}
       their <a href="https://fly.io/docs/about/pricing/#virtual-machines">free plan</a>.{' '}
+      They make it easy to deploy apps to different regions so that your app runs close{' '}
+      to your users, which makes latency really low.
     </p>
 
     <p>
       Let's say an instance that costs USD$1.94/month can handle 30 sessions.{' '}
       Then that would be something like{' '}
-      <span>1.94/30/30/24/60=0.0000014969135802469136425701338316551769480611255858093500137329</span>{' '}
-      USD$ for each minute a visitor is on the page. That's pretty cheap...{' '}
+      USD$<data class={styles.data} value={"%.64f" % (1.94/30/30/24/60)}>1.94/30/30/24/60</data>{' '}
+      for each minute a visitor is on the page.{' '}
+      That's pretty cheap...{' '}
       Or did I get something wrong?
     </p>
 
@@ -22,5 +26,5 @@ def render
       automatically depending on the traffic.{' '}
       I haven't tried this yet, but it would be interesting to see how it works.
     </p>
-  </article>
+  </MaxWidth>
 end

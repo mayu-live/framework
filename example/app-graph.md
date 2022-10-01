@@ -1,18 +1,26 @@
 ```mermaid
 graph TB
   subgraph routes
-    ROUTE____app__pages__tree__page.rux["/tree"]
-    ROUTE____app__pages__form__page.rux["/form"]
-    ROUTE____app__pages__pokemon__:id__page.rux["/pokemon/:id"]
-    ROUTE____app__pages__pokemon__page.rux["/pokemon"]
-    ROUTE____app__pages__about__page.rux["/about"]
+    ROUTE____app__pages__docs__faq__page.rux["/docs/faq"]
+    ROUTE____app__pages__docs__getting-started__page.rux["/docs/getting-started"]
+    ROUTE____app__pages__docs__deployment__page.rux["/docs/deployment"]
+    ROUTE____app__pages__docs__page.rux["/docs"]
+    ROUTE____app__pages__demos__tree__page.rux["/demos/tree"]
+    ROUTE____app__pages__demos__form__page.rux["/demos/form"]
+    ROUTE____app__pages__demos__pokemon__:id__page.rux["/demos/pokemon/:id"]
+    ROUTE____app__pages__demos__pokemon__page.rux["/demos/pokemon"]
+    ROUTE____app__pages__demos__page.rux["/demos"]
     ROUTE____app__pages__page.rux["/"]
   end
-  ROUTE____app__pages__tree__page.rux-->__app__pages__tree__page.rux
-  ROUTE____app__pages__form__page.rux-->__app__pages__form__page.rux
-  ROUTE____app__pages__pokemon__:id__page.rux-->__app__pages__pokemon__:id__page.rux
-  ROUTE____app__pages__pokemon__page.rux-->__app__pages__pokemon__page.rux
-  ROUTE____app__pages__about__page.rux-->__app__pages__about__page.rux
+  ROUTE____app__pages__docs__faq__page.rux-->__app__pages__docs__faq__page.rux
+  ROUTE____app__pages__docs__getting-started__page.rux-->__app__pages__docs__getting-started__page.rux
+  ROUTE____app__pages__docs__deployment__page.rux-->__app__pages__docs__deployment__page.rux
+  ROUTE____app__pages__docs__page.rux-->__app__pages__docs__page.rux
+  ROUTE____app__pages__demos__tree__page.rux-->__app__pages__demos__tree__page.rux
+  ROUTE____app__pages__demos__form__page.rux-->__app__pages__demos__form__page.rux
+  ROUTE____app__pages__demos__pokemon__:id__page.rux-->__app__pages__demos__pokemon__:id__page.rux
+  ROUTE____app__pages__demos__pokemon__page.rux-->__app__pages__demos__pokemon__page.rux
+  ROUTE____app__pages__demos__page.rux-->__app__pages__demos__page.rux
   ROUTE____app__pages__page.rux-->__app__pages__page.rux
   subgraph PATH__["/"]
     subgraph PATH__vendor["/vendor"]
@@ -41,37 +49,59 @@ graph TB
         end
       end
       subgraph PATH__app__pages["/app/pages"]
-        subgraph PATH__app__pages__tree["/app/pages/tree"]
-          __app__pages__tree__Directory.css["fab:fa-css3 Directory.css&nbsp;"]
-          __app__pages__tree__Directory.rux["Directory.rux"]
-          __app__pages__tree__FileEntry.css["fab:fa-css3 FileEntry.css&nbsp;"]
-          __app__pages__tree__FileEntry.rux["FileEntry.rux"]
-          __app__pages__tree__Entry.css["fab:fa-css3 Entry.css&nbsp;"]
-          __app__pages__tree__Entry.rux["Entry.rux"]
-          __app__pages__tree__FileContents.css["fab:fa-css3 FileContents.css&nbsp;"]
-          __app__pages__tree__FileContents.rux["FileContents.rux"]
-          __app__pages__tree__page.css["fab:fa-css3 page.css&nbsp;"]
-          __app__pages__tree__page.rux["page.rux"]
-        end
-        subgraph PATH__app__pages__form["/app/pages/form"]
-          __app__pages__form__page.css["fab:fa-css3 page.css&nbsp;"]
-          __app__pages__form__page.rux["page.rux"]
-        end
-        subgraph PATH__app__pages__pokemon["/app/pages/pokemon"]
-          subgraph PATH__app__pages__pokemon__:id["/app/pages/pokemon/:id"]
-            __app__pages__pokemon__:id__page.css["fab:fa-css3 page.css&nbsp;"]
-            __app__pages__pokemon__:id__page.rux["page.rux"]
+        subgraph PATH__app__pages__docs["/app/pages/docs"]
+          subgraph PATH__app__pages__docs__faq["/app/pages/docs/faq"]
+            __app__pages__docs__faq__page.css["fab:fa-css3 page.css&nbsp;"]
+            __app__pages__docs__faq__page.rux["page.rux"]
           end
-          __app__pages__pokemon__layout.css["fab:fa-css3 layout.css&nbsp;"]
-          __app__pages__pokemon__layout.rux["layout.rux"]
-          __app__pages__pokemon__Pagination.css["fab:fa-css3 Pagination.css&nbsp;"]
-          __app__pages__pokemon__Pagination.rux["Pagination.rux"]
-          __app__pages__pokemon__page.css["fab:fa-css3 page.css&nbsp;"]
-          __app__pages__pokemon__page.rux["page.rux"]
+          subgraph PATH__app__pages__docs__getting-started["/app/pages/docs/getting-started"]
+            __app__pages__docs__getting-started__page.css["fab:fa-css3 page.css&nbsp;"]
+            __app__pages__docs__getting-started__page.rux["page.rux"]
+          end
+          subgraph PATH__app__pages__docs__deployment["/app/pages/docs/deployment"]
+            __app__pages__docs__deployment__page.css["fab:fa-css3 page.css&nbsp;"]
+            __app__pages__docs__deployment__page.rux["page.rux"]
+          end
+          __app__pages__docs__layout.css["fab:fa-css3 layout.css&nbsp;"]
+          __app__pages__docs__layout.rux["layout.rux"]
+          __app__pages__docs__page.css["fab:fa-css3 page.css&nbsp;"]
+          __app__pages__docs__page.rux["page.rux"]
+          __app__pages__docs__404.css["fab:fa-css3 404.css&nbsp;"]
+          __app__pages__docs__404.rux["404.rux"]
         end
-        subgraph PATH__app__pages__about["/app/pages/about"]
-          __app__pages__about__page.css["fab:fa-css3 page.css&nbsp;"]
-          __app__pages__about__page.rux["page.rux"]
+        subgraph PATH__app__pages__demos["/app/pages/demos"]
+          subgraph PATH__app__pages__demos__tree["/app/pages/demos/tree"]
+            __app__pages__demos__tree__Directory.css["fab:fa-css3 Directory.css&nbsp;"]
+            __app__pages__demos__tree__Directory.rux["Directory.rux"]
+            __app__pages__demos__tree__FileEntry.css["fab:fa-css3 FileEntry.css&nbsp;"]
+            __app__pages__demos__tree__FileEntry.rux["FileEntry.rux"]
+            __app__pages__demos__tree__Entry.css["fab:fa-css3 Entry.css&nbsp;"]
+            __app__pages__demos__tree__Entry.rux["Entry.rux"]
+            __app__pages__demos__tree__FileContents.css["fab:fa-css3 FileContents.css&nbsp;"]
+            __app__pages__demos__tree__FileContents.rux["FileContents.rux"]
+            __app__pages__demos__tree__page.css["fab:fa-css3 page.css&nbsp;"]
+            __app__pages__demos__tree__page.rux["page.rux"]
+          end
+          subgraph PATH__app__pages__demos__form["/app/pages/demos/form"]
+            __app__pages__demos__form__page.css["fab:fa-css3 page.css&nbsp;"]
+            __app__pages__demos__form__page.rux["page.rux"]
+          end
+          subgraph PATH__app__pages__demos__pokemon["/app/pages/demos/pokemon"]
+            subgraph PATH__app__pages__demos__pokemon__:id["/app/pages/demos/pokemon/:id"]
+              __app__pages__demos__pokemon__:id__page.css["fab:fa-css3 page.css&nbsp;"]
+              __app__pages__demos__pokemon__:id__page.rux["page.rux"]
+            end
+            __app__pages__demos__pokemon__layout.css["fab:fa-css3 layout.css&nbsp;"]
+            __app__pages__demos__pokemon__layout.rux["layout.rux"]
+            __app__pages__demos__pokemon__Pagination.css["fab:fa-css3 Pagination.css&nbsp;"]
+            __app__pages__demos__pokemon__Pagination.rux["Pagination.rux"]
+            __app__pages__demos__pokemon__page.css["fab:fa-css3 page.css&nbsp;"]
+            __app__pages__demos__pokemon__page.rux["page.rux"]
+          end
+          __app__pages__demos__layout.css["fab:fa-css3 layout.css&nbsp;"]
+          __app__pages__demos__layout.rux["layout.rux"]
+          __app__pages__demos__page.css["fab:fa-css3 page.css&nbsp;"]
+          __app__pages__demos__page.rux["page.rux"]
         end
         __app__pages__Intro.css["fab:fa-css3 Intro.css&nbsp;"]
         __app__pages__Intro.rux["Intro.rux"]
@@ -80,7 +110,7 @@ graph TB
         __app__pages__page.css["fab:fa-css3 page.css&nbsp;"]
         __app__pages__page.rux["page.rux"]
         __app__pages__404.css["fab:fa-css3 404.css&nbsp;"]
-        __app__pages__404.rb["fa:fa-gem 404.rb&nbsp;"]
+        __app__pages__404.rux["404.rux"]
       end
     end
   end
@@ -99,36 +129,54 @@ graph TB
   __app__pages__page.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__page.rux-->__app__components__Layout__Heading.rux
   __app__pages__page.rux-->__app__pages__page.css
-  __app__pages__tree__Directory.rux-->__app__pages__tree__Directory.css
-  __app__pages__tree__FileEntry.rux-->__app__pages__tree__FileEntry.css
-  __app__pages__tree__Entry.rux-->__app__pages__tree__Directory.rux
-  __app__pages__tree__Entry.rux-->__app__pages__tree__FileEntry.rux
-  __app__pages__tree__Entry.rux-->__app__pages__tree__Entry.css
-  __app__pages__tree__FileContents.rux-->__app__pages__tree__FileContents.css
-  __app__pages__tree__page.rux-->__app__components__Layout__MaxWidth.rux
-  __app__pages__tree__page.rux-->__app__components__Layout__Heading.rux
-  __app__pages__tree__page.rux-->__app__pages__tree__Entry.rux
-  __app__pages__tree__page.rux-->__app__pages__tree__FileContents.rux
-  __app__pages__tree__page.rux-->__app__pages__tree__page.css
+  __app__pages__docs__layout.rux-->__app__components__Layout__MaxWidth.rux
+  __app__pages__docs__layout.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__layout.rux-->__app__pages__docs__layout.css
+  __app__pages__docs__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__page.rux-->__app__pages__docs__page.css
+  __app__pages__docs__faq__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__faq__page.rux-->__app__pages__docs__faq__page.css
+  __app__pages__docs__getting-started__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__getting-started__page.rux-->__app__pages__docs__getting-started__page.css
+  __app__pages__docs__deployment__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__deployment__page.rux-->__app__pages__docs__deployment__page.css
+  __app__pages__docs__404.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__404.rux-->__app__pages__docs__404.css
+  __app__pages__demos__layout.rux-->__app__components__Layout__MaxWidth.rux
+  __app__pages__demos__layout.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__layout.rux-->__app__pages__demos__layout.css
+  __app__pages__demos__page.rux-->__app__components__Layout__MaxWidth.rux
+  __app__pages__demos__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__page.rux-->__app__pages__demos__page.css
+  __app__pages__demos__tree__Directory.rux-->__app__pages__demos__tree__Directory.css
+  __app__pages__demos__tree__FileEntry.rux-->__app__pages__demos__tree__FileEntry.css
+  __app__pages__demos__tree__Entry.rux-->__app__pages__demos__tree__Directory.rux
+  __app__pages__demos__tree__Entry.rux-->__app__pages__demos__tree__FileEntry.rux
+  __app__pages__demos__tree__Entry.rux-->__app__pages__demos__tree__Entry.css
+  __app__pages__demos__tree__FileContents.rux-->__app__pages__demos__tree__FileContents.css
+  __app__pages__demos__tree__page.rux-->__app__components__Layout__MaxWidth.rux
+  __app__pages__demos__tree__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__tree__page.rux-->__app__pages__demos__tree__Entry.rux
+  __app__pages__demos__tree__page.rux-->__app__pages__demos__tree__FileContents.rux
+  __app__pages__demos__tree__page.rux-->__app__pages__demos__tree__page.css
   __app__components__Form__Fieldset.rux-->__app__components__Form__Fieldset.css
-  __app__pages__form__page.rux-->__app__components__Layout__MaxWidth.rux
-  __app__pages__form__page.rux-->__app__components__Layout__Heading.rux
-  __app__pages__form__page.rux-->__app__components__Form__Fieldset.rux
-  __app__pages__form__page.rux-->__app__pages__form__page.css
-  __app__pages__pokemon__layout.rux-->__app__components__Layout__MaxWidth.rux
-  __app__pages__pokemon__layout.rux-->__app__components__Layout__Heading.rux
-  __app__pages__pokemon__layout.rux-->__app__pages__pokemon__layout.css
+  __app__pages__demos__form__page.rux-->__app__components__Layout__MaxWidth.rux
+  __app__pages__demos__form__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__form__page.rux-->__app__components__Form__Fieldset.rux
+  __app__pages__demos__form__page.rux-->__app__pages__demos__form__page.css
+  __app__pages__demos__pokemon__layout.rux-->__app__components__Layout__MaxWidth.rux
+  __app__pages__demos__pokemon__layout.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__pokemon__layout.rux-->__app__pages__demos__pokemon__layout.css
   __app__components__Form__Button.rux-->__app__components__Form__Button.css
-  __app__pages__pokemon__Pagination.rux-->__app__components__Form__Fieldset.rux
-  __app__pages__pokemon__Pagination.rux-->__app__components__Form__Button.rux
-  __app__pages__pokemon__Pagination.rux-->__app__pages__pokemon__Pagination.css
-  __app__pages__pokemon__page.rux-->__app__pages__pokemon__Pagination.rux
-  __app__pages__pokemon__page.rux-->__app__pages__pokemon__page.css
-  __app__pages__pokemon__:id__page.rux-->__app__pages__pokemon__:id__page.css
-  __app__pages__about__page.rux-->__app__components__Layout__MaxWidth.rux
-  __app__pages__about__page.rux-->__app__components__Layout__Heading.rux
-  __app__pages__about__page.rux-->__app__pages__about__page.css
-  __app__pages__404.rb-->__app__pages__404.css
+  __app__pages__demos__pokemon__Pagination.rux-->__app__components__Form__Fieldset.rux
+  __app__pages__demos__pokemon__Pagination.rux-->__app__components__Form__Button.rux
+  __app__pages__demos__pokemon__Pagination.rux-->__app__pages__demos__pokemon__Pagination.css
+  __app__pages__demos__pokemon__page.rux-->__app__pages__demos__pokemon__Pagination.rux
+  __app__pages__demos__pokemon__page.rux-->__app__pages__demos__pokemon__page.css
+  __app__pages__demos__pokemon__:id__page.rux-->__app__pages__demos__pokemon__:id__page.css
+  __app__pages__404.rux-->__app__components__Layout__MaxWidth.rux
+  __app__pages__404.rux-->__app__components__Layout__Heading.rux
+  __app__pages__404.rux-->__app__pages__404.css
   class __app__components__Layout__MaxWidth.css CSS
   class __app__pages__Intro.css CSS
   class __app__components__Layout__logo.png Image
@@ -137,25 +185,34 @@ graph TB
   class __app__pages__layout.css CSS
   class __app__components__Layout__Heading.css CSS
   class __app__pages__page.css CSS
-  class __app__pages__tree__Directory.css CSS
-  class __app__pages__tree__FileEntry.css CSS
-  class __app__pages__tree__Entry.css NonExistant
-  class __app__pages__tree__Entry.css CSS
-  class __app__pages__tree__FileContents.css CSS
-  class __app__pages__tree__page.css CSS
+  class __app__pages__docs__layout.css CSS
+  class __app__pages__docs__page.css NonExistant
+  class __app__pages__docs__page.css CSS
+  class __app__pages__docs__faq__page.css CSS
+  class __app__pages__docs__getting-started__page.css CSS
+  class __app__pages__docs__deployment__page.css CSS
+  class __app__pages__docs__404.css NonExistant
+  class __app__pages__docs__404.css CSS
+  class __app__pages__demos__layout.css CSS
+  class __app__pages__demos__page.css NonExistant
+  class __app__pages__demos__page.css CSS
+  class __app__pages__demos__tree__Directory.css CSS
+  class __app__pages__demos__tree__FileEntry.css CSS
+  class __app__pages__demos__tree__Entry.css NonExistant
+  class __app__pages__demos__tree__Entry.css CSS
+  class __app__pages__demos__tree__FileContents.css CSS
+  class __app__pages__demos__tree__page.css CSS
   class __app__components__Form__Fieldset.css CSS
-  class __app__pages__form__page.css CSS
-  class __app__pages__pokemon__layout.css NonExistant
-  class __app__pages__pokemon__layout.css CSS
+  class __app__pages__demos__form__page.css CSS
+  class __app__pages__demos__pokemon__layout.css NonExistant
+  class __app__pages__demos__pokemon__layout.css CSS
   class __app__components__Form__Button.css CSS
-  class __app__pages__pokemon__Pagination.css CSS
-  class __app__pages__pokemon__page.css CSS
-  class __app__pages__pokemon__:id__page.css NonExistant
-  class __app__pages__pokemon__:id__page.css CSS
-  class __app__pages__about__page.css CSS
+  class __app__pages__demos__pokemon__Pagination.css CSS
+  class __app__pages__demos__pokemon__page.css CSS
+  class __app__pages__demos__pokemon__:id__page.css NonExistant
+  class __app__pages__demos__pokemon__:id__page.css CSS
   class __app__pages__404.css NonExistant
   class __app__pages__404.css CSS
-  class __app__pages__404.rb Ruby
   style routes stroke:#09c,stroke-width:5,fill:#f0f;
   classDef cluster fill:#0003;
   classDef Ruby fill:#600,stroke:#900,stroke-width:3px;

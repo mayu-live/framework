@@ -16,7 +16,11 @@ def render
   <MaxWidth>
     <Heading level={2}>App tree</Heading>
 
-    <p>This page shows the file structure of the example app (this webpage).</p>
+    <p>
+      This page shows the file structure of the example app.{' '}
+      <a href="https://github.com/mayu-live/framework/tree/main/example/app">Browse the source on GitHub</a>
+    </p>
+
 
     <div class={styles[:browser]}>
       <ul class={styles[:list]}>

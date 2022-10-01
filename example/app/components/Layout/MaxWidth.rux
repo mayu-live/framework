@@ -4,7 +4,7 @@ def render
     .compact
     .join(" ")
 
-  <div class={classnames}>
-    {props[:children]}
-  </div>
+  tag = props[:tag] || :div
+
+  Mayu::VDOM::Descriptor.new(tag.to_sym, {class: classnames}, props[:children])
 end

@@ -2,7 +2,7 @@ def render
   props => { root:, path: }
 
   unless path
-    return <p>No file selected</p>
+    return <p>Please choose a file</p>
   end
 
   path = File.expand_path(path, "/")

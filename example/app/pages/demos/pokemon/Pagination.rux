@@ -35,7 +35,7 @@ def render
           {pagination_window(
             current_page: page,
             total_pages: props[:total_pages].succ,
-            window_size: props[:window_size] || 7,
+            window_size: props[:window_size] || 5,
           ).map do |num|
             <li key={num}>
               <a class={styles[:page]} href={"?page=#{num}"} aria-current={page == num && "page"}>

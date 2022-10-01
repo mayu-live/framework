@@ -1,5 +1,6 @@
 .wrap {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   margin: 1em;
   gap: 1em;
