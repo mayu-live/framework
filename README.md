@@ -307,11 +307,11 @@ Everything is minified and optimized and deliviered over HTTP/2.
 
 ## Realtime metrics
 
-Mayu exposes a prometheus endpoint for metrics so you can see how your app performs. Screenshots from Grafana.
+Mayu exposes a [Prometheus](https://prometheus.io/)-endpoint for metrics so you can see how your app performs.
+Screenshots from [Grafana on Fly.io](https://fly.io/docs/reference/metrics/#managed-grafana-preview).
 
-
-![Grafana screenshot](https://user-images.githubusercontent.com/41148/193404404-9018c9d9-e575-48db-8845-3f56ced0c16f.png)
-![Grafana screenshot](https://user-images.githubusercontent.com/41148/193398411-cc5bf2d6-d353-42eb-bcf5-ccc1feb7099a.png)
+![Active sessions](https://user-images.githubusercontent.com/41148/193404404-9018c9d9-e575-48db-8845-3f56ced0c16f.png)
+![Patch times and counts](https://user-images.githubusercontent.com/41148/193398411-cc5bf2d6-d353-42eb-bcf5-ccc1feb7099a.png)
 
 ## Templating
 
