@@ -169,6 +169,7 @@ module Mayu
         session = Session.restore(environment:, dumped:)
 
         @sessions.add(session)
+        @environment.metrics.session_count.set(@sessions.count)
 
         headers = {
           "content-type" => "text/plain",
@@ -267,6 +268,7 @@ module Mayu
             sleep 5
             Console.logger.warn(self, "Timed out: #{session.id}")
             @sessions.delete(session.id, session.token)
+            @environment.metrics.session_count.set(@sessions.count)
           ensure
             @timeouts.delete(session.id)
           end

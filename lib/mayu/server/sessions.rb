@@ -22,6 +22,11 @@ module Mayu
         @sessions.values.each(&:rerender)
       end
 
+      sig { returns(Integer) }
+      def count
+        @sessions.count
+      end
+
       sig { params(session: Session).void }
       def add(session)
         session_key = session_key(session.id, session.token)

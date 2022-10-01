@@ -10,6 +10,8 @@ module Mayu
 
     sig { returns(Prometheus::Client::Counter) }
     attr_reader :error_count
+    sig { returns(Prometheus::Client::Gauge) }
+    attr_reader :session_count
     sig { returns(Prometheus::Client::Counter) }
     attr_reader :session_init_count
     sig { returns(Prometheus::Client::Counter) }
@@ -113,25 +115,25 @@ module Mayu
           Prometheus::Client::Summary
         )
 
-      # store_settings =
-      #   case Prometheus::Client.config.data_store
-      #   when Prometheus::Client::DataStores::DirectFileStore
-      #     { aggregation: :sum }
-      #   else
-      #     {}
-      #   end
-      #
-      # @session_count =
-      #   T.let(
-      #     prometheus.gauge(
-      #       :session_count,
-      #       docstring: "Number of sessions",
-      #       labels: [*preset_labels.keys],
-      #       preset_labels:,
-      #       store_settings:
-      #     ),
-      #     Prometheus::Client::Gauge
-      #   )
+      store_settings =
+        case Prometheus::Client.config.data_store
+        when Prometheus::Client::DataStores::DirectFileStore
+          { aggregation: :sum }
+        else
+          {}
+        end
+
+      @session_count =
+        T.let(
+          prometheus.gauge(
+            :mayu_session_count,
+            docstring: "Number of sessions",
+            labels: [*preset_labels.keys],
+            preset_labels:,
+            store_settings:
+          ),
+          Prometheus::Client::Gauge
+        )
     end
   end
 end
