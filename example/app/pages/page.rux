@@ -1,50 +1,20 @@
 MaxWidth = require("/app/components/Layout/MaxWidth")
 Heading = require("/app/components/Layout/Heading")
-
-ITEMS = [
-  "Component-based",
-  "JSX-inspired syntax",
-  "100% server side",
-  "100% async",
-  "CSS-modules",
-  "Asset handling",
-  "Hot-reloading",
-]
-
-def self.get_initial_state(**props)
-  { index: 0 }
-end
-
-def mount
-  loop do
-    sleep 1
-
-    update do |state|
-      { index: state[:index].succ % ITEMS.size }
-    end
-  end
-end
+Counter = require("./Counter")
+FeatureThing = require("./FeatureThing")
 
 def render
   <div>
     <div class={styles.featuresOuter}>
-      <MaxWidth tag="article">
+      <MaxWidth>
         <article class={styles.features}>
-          <Heading level={1} class={styles.featuresHeading}>
+          <Heading level={1} class={styles.featuresHeading} id="features">
             Features
           </Heading>
 
           <p>Here's a list of core features:</p>
 
-          <ul class={styles.featureList}>
-            {ITEMS.each_with_index.map do |item, index|
-              active = index == state[:index]
-
-              <li class={styles[:feature, active:]}>
-                {item}
-              </li>
-            end}
-          </ul>
+          <FeatureThing />
 
           <p>
             Read more on on <a href="https://github.com/mayu-live/framework#readme" target="_blank">GitHub</a>.
@@ -52,66 +22,86 @@ def render
         </article>
       </MaxWidth>
     </div>
-    <div class={styles.sectionsOuter}>
+
+    <div class={styles.exampleOuter}>
       <MaxWidth>
-        <div class={styles[:sections]}>
-          <section class={styles[:section]}>
-            <Heading level={3} class={styles.sectionTitle}>
-              Interactive web apps without JavaScript
-            </Heading>
-
-            <p>
-              You write all logic in Ruby. Everything runs on the server.
-            </p>
-          </section>
-
-          <section class={styles[:section]}>
-            <Heading level={3} class={styles.sectionTitle}>
-              How does it work?
-            </Heading>
-
-            <p>
-              Mayu implements a Virtual DOM in Ruby.
-              All DOM updates are streamed to the browser via Server-Sent Events.
-            </p>
-            <ul>
-              <li>
-                All callbacks run on the server.
-              </li>
-              <li>
-                Your callback handlers are your endpoints.
-              </li>
-              <li>
-                There is no need to for an API.
-              </li>
-            </ul>
-            <p>
-              Mayu needs 10kB of JavaScript (before gzip) to be able to patch the DOM.
-              This loads before the page has been rendered.
-            </p>
-          </section>
-
-          <section class={styles[:section]}>
-            <Heading level={3} class={styles.sectionTitle}>
-              Efficient
-            </Heading>
-
-            <p>HTTP/2 makes everything load in parallel.</p>
-            <p>Designed to be deployed near users, either on fly.io or maybe even an on-premise Raspberry PI.</p>
-            <p>Elements are interactive immediately as the page loads. No need to wait for a huge JS bundle to load for the page to become interactive.</p>
-          </section>
-
-          <section class={styles[:section]}>
-            <Heading level={3} class={styles.sectionTitle}>
-              Smooth developer experience
-            </Heading>
-
-            <p>Hot-reloading reloads your components as you edit them and shows the updates in real-time.</p>
-            <p>Ruby is pretty nice.</p>
-            <p>Asynchronous code without callbacks.</p>
-          </section>
-        </div>
+        <article class={styles.example}>
+          <Heading level={1} class={styles.exampleHeading} id="example">
+            Example
+          </Heading>
+          <p>
+            This text was rendered on the server at {Time.now.utc.to_s}.
+          </p>
+          <p>
+            The counter below was also rendered on the server.
+            {' '}
+            The only JavaScript required to make it interactive is a few
+            kilobytes that makes a connection to the server and updates
+            the DOM whenever state changes on the server.
+          </p>
+          <Counter />
+        </article>
       </MaxWidth>
+    </div>
+
+    <div class={styles.sectionsOuter}>
+      <div class={styles[:sections]}>
+        <section class={styles[:section]}>
+          <Heading level={3} class={styles.sectionTitle}>
+            Interactive web apps without JavaScript
+          </Heading>
+
+          <p>
+            You write all logic in Ruby. Everything runs on the server.
+          </p>
+        </section>
+
+        <section class={styles[:section]}>
+          <Heading level={3} class={styles.sectionTitle}>
+            How does it work?
+          </Heading>
+
+          <p>
+            Mayu implements a Virtual DOM in Ruby.
+            All DOM updates are streamed to the browser via Server-Sent Events.
+          </p>
+          <ul>
+            <li>
+              All callbacks run on the server.
+            </li>
+            <li>
+              Your callback handlers are your endpoints.
+            </li>
+            <li>
+              There is no need to for an API.
+            </li>
+          </ul>
+          <p>
+            Mayu needs 10kB of JavaScript (before gzip) to be able to patch the DOM.
+            This loads before the page has been rendered.
+          </p>
+        </section>
+
+        <section class={styles[:section]}>
+          <Heading level={3} class={styles.sectionTitle}>
+            Efficient
+          </Heading>
+
+          <p>HTTP/2 makes everything load in parallel.</p>
+          <p>Designed to be deployed near users, either on fly.io or maybe even an on-premise Raspberry PI.</p>
+          <p>Elements are interactive immediately as the page loads. No need to wait for a huge JS bundle to load for the page to become interactive.</p>
+        </section>
+
+        <section class={styles[:section]}>
+          <Heading level={3} class={styles.sectionTitle}>
+            Smooth developer experience
+          </Heading>
+
+          <p>Hot-reloading reloads your components as you edit them and shows the updates in real-time.</p>
+          <p>Ruby is pretty nice.</p>
+          <p>Asynchronous code without callbacks.</p>
+        </section>
+      </div>
     </div>
   </div>
 end

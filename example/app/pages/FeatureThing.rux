@@ -1,0 +1,35 @@
+ITEMS = [
+  "Component-based",
+  "JSX-inspired syntax",
+  "100% server side",
+  "100% async",
+  "CSS-modules",
+  "Asset handling",
+  "Hot-reloading",
+]
+
+def self.get_initial_state(**props)
+  { index: 0 }
+end
+
+def mount
+  loop do
+    sleep 1
+
+    update do |state|
+      { index: state[:index].succ % ITEMS.size }
+    end
+  end
+end
+
+def render
+  <ul class={styles.featureList}>
+    {ITEMS.each_with_index.map do |item, index|
+      active = index == state[:index]
+
+      <li class={styles[:feature, active:]}>
+        {item}
+      </li>
+    end}
+  </ul>
+end

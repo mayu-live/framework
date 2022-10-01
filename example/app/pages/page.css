@@ -11,36 +11,33 @@
   font-size: 2em;
 }
 
-.featureList {
-}
-
-.feature {
-}
-
-.active {
-  color: var(--red);
-  font-weight: bold;
-  font-style: italic;
+.sectionsOuter {
+  overflow: hidden;
+  background: var(--yellow);
+  color: var(--dark);
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset,
+    rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
 }
 
 .sections {
+  width: min(100%, var(--page-max-width));
+  margin-inline: auto;
   display: flex;
-  margin: 0em;
-  flex-wrap: wrap;
-  padding: 3em;
-  gap: 3em;
+  flex-direction: column;
+  padding: 4em;
+  gap: 4em;
 }
 
 .section {
+  width: 100%;
   flex: 1;
-  min-width: 300px;
   margin: 0;
   padding: 1em;
   font-size: 0.9em;
-  border-radius: 3px;
-  box-shadow: rgba(17, 17, 26, 0.1) 0px 1px 0px,
-    rgba(17, 17, 26, 0.1) 0px 8px 24px, rgba(17, 17, 26, 0.1) 0px 16px 48px;
+  border-radius: 2px;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
   background: #fff9;
+  margin-inline: auto;
 }
 
 .sectionTitle {
@@ -49,8 +46,21 @@
   text-transform: uppercase;
 }
 
-.sectionsOuter {
+.exampleOuter {
+  background: var(--green-bright);
   overflow: hidden;
-  background: var(--yellow);
-  color: var(--dark);
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset,
+    rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
+}
+
+.example {
+  width: min(100%, var(--page-max-width));
+  margin-inline: auto;
+  max-width: 40em;
+  margin: 4em auto;
+  padding: 0;
+}
+
+.exampleHeading {
+  font-size: 1.5rem;
 }

@@ -1,0 +1,23 @@
+def self.get_initial_state(initial_value: 3, **)
+  { count: initial_value }
+end
+
+def handle_decrement(_)
+  update do |state|
+    { count: state[:count].pred }
+  end
+end
+
+def handle_increment(_)
+  update do |state|
+    { count: state[:count].succ }
+  end
+end
+
+def render
+  <div class={styles.counter}>
+    <button class={styles.button} title="Decrement" on-click={handler(:handle_decrement)}>-</button>
+    <span class={styles.count}>{state[:count]}</span>
+    <button class={styles.button} title="Increment" on-click={handler(:handle_increment)}>+</button>
+  </div>
+end
