@@ -362,17 +362,30 @@ room for improvement, but at least the order is correct.
 
 ## Server
 
-### Development server
+The server is configured in [`mayu.toml`](https://github.com/mayu-live/framework/blob/main/example/mayu.toml)
+in the project root.
 
-There is a development server that enables hot reloading.
+### Development
 
-### Production server
+For development you probably want these settings:
+
+```toml
+[dev.server]
+count = 1
+hot_swap = true
+self_signed_cert = true
+```
+
+### Production
 
 The production server depends on the output from a build step that
 parses all inputs and generates static files.
 
-This way the server doesn't have to do
-much to start in production mode...
+```toml
+[dev.server]
+hot_swap = false
+self_signed_cert = false
+```
 
 ## Static typing
 
