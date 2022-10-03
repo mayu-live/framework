@@ -1,4 +1,5 @@
 # typed: strict
+# frozen_string_literal: true
 
 require_relative "../component"
 require_relative "component_marshaler"
@@ -69,6 +70,7 @@ module Mayu
         children = self.class.clean_children(children, parent_type: type)
         @props = T.let(props.merge(children:), Component::Props)
         @key = T.let(@props.delete(:key), T.untyped)
+        freeze
       end
 
       sig { returns(T::Array[T.untyped]) }
@@ -79,6 +81,7 @@ module Mayu
       sig { params(a: T::Array[T.untyped]).void }
       def marshal_load(a)
         @type, @props, @key = a
+        freeze
       end
 
       sig { returns(T::Boolean) }
