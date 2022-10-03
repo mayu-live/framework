@@ -162,6 +162,14 @@ function setupGlobalObject(
 
       if (e.target instanceof HTMLFormElement) {
         payload.formData = Object.fromEntries(new FormData(e.target).entries());
+
+        if (
+          e instanceof SubmitEvent &&
+          e.submitter instanceof HTMLButtonElement &&
+          e.submitter.name
+        ) {
+          payload.formData[e.submitter.name] = e.submitter.value;
+        }
       }
 
       progressBar.setAttribute("progress", "0");
