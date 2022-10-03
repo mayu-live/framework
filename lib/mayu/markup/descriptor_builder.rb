@@ -58,7 +58,7 @@ module Mayu
         def address(*children, **attributes, &block)
           tag!(:address, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def area(**attributes) = void!(:area, **attributes)
         sig do
           params(
@@ -100,7 +100,7 @@ module Mayu
         def b(*children, **attributes, &block)
           tag!(:b, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def base(**attributes) = void!(:base, **attributes)
         sig do
           params(
@@ -142,7 +142,7 @@ module Mayu
         def body(*children, **attributes, &block)
           tag!(:body, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def br(**attributes) = void!(:br, **attributes)
         sig do
           params(
@@ -194,7 +194,7 @@ module Mayu
         def code(*children, **attributes, &block)
           tag!(:code, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def col(**attributes) = void!(:col, **attributes)
         sig do
           params(
@@ -316,7 +316,7 @@ module Mayu
         def em(*children, **attributes, &block)
           tag!(:em, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def embed(**attributes) = void!(:embed, **attributes)
         sig do
           params(
@@ -458,7 +458,7 @@ module Mayu
         def hgroup(*children, **attributes, &block)
           tag!(:hgroup, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def hr(**attributes) = void!(:hr, **attributes)
         sig do
           params(
@@ -490,9 +490,9 @@ module Mayu
         def iframe(*children, **attributes, &block)
           tag!(:iframe, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def img(**attributes) = void!(:img, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def input(**attributes) = void!(:input, **attributes)
         sig do
           params(
@@ -544,7 +544,7 @@ module Mayu
         def li(*children, **attributes, &block)
           tag!(:li, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def link(**attributes) = void!(:link, **attributes)
         sig do
           params(
@@ -596,9 +596,9 @@ module Mayu
         def menu(*children, **attributes, &block)
           tag!(:menu, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def menuitem(**attributes) = void!(:menuitem, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def meta(**attributes) = void!(:meta, **attributes)
         sig do
           params(
@@ -690,7 +690,7 @@ module Mayu
         def p(*children, **attributes, &block)
           tag!(:p, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def param(**attributes) = void!(:param, **attributes)
         sig do
           params(
@@ -852,7 +852,7 @@ module Mayu
         def small(*children, **attributes, &block)
           tag!(:small, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def source(**attributes) = void!(:source, **attributes)
         sig do
           params(
@@ -1034,7 +1034,7 @@ module Mayu
         def tr(*children, **attributes, &block)
           tag!(:tr, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def track(**attributes) = void!(:track, **attributes)
         sig do
           params(
@@ -1076,37 +1076,37 @@ module Mayu
         def video(*children, **attributes, &block)
           tag!(:video, children, **attributes, &block)
         end
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def wbr(**attributes) = void!(:wbr, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def area(**attributes) = void!(:area, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def base(**attributes) = void!(:base, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def br(**attributes) = void!(:br, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def col(**attributes) = void!(:col, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def embed(**attributes) = void!(:embed, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def hr(**attributes) = void!(:hr, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def img(**attributes) = void!(:img, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def input(**attributes) = void!(:input, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def link(**attributes) = void!(:link, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def menuitem(**attributes) = void!(:menuitem, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def meta(**attributes) = void!(:meta, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def param(**attributes) = void!(:param, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def source(**attributes) = void!(:source, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def track(**attributes) = void!(:track, **attributes)
-        sig { params(attributes: T.untyped).void }
+        sig { params(attributes: T.untyped).returns(VDOM::Descriptor) }
         def wbr(**attributes) = void!(:wbr, **attributes)
         sig do
           override
@@ -1119,7 +1119,7 @@ module Mayu
             .returns(VDOM::Descriptor)
         end
         def create_element(type, children, props, &block)
-          ::Kernel.raise ::NotImplementedError
+          ::Kernel.raise NotImplementedError
         end
 
         private

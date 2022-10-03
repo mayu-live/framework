@@ -88,7 +88,7 @@ def generate_file(writer)
 
           Mayu::HTML::TAGS.each do |tag|
             Mayu::HTML.void_tag?(tag) ? writer << <<~EOF : writer << <<~EOF
-                sig {params(attributes: T.untyped).void}
+                sig {params(attributes: T.untyped).returns(VDOM::Descriptor)}
                 def #{tag}(**attributes) = void!(:#{tag}, **attributes)
 
               EOF
