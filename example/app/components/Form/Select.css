@@ -1,0 +1,47 @@
+.group {
+  position: relative;
+  margin: 1em 0;
+}
+
+.select {
+  font-size: inherit;
+  padding: 0.5em;
+  background: var(--white);
+
+  border: 1px solid var(--blue);
+  transition: outline 100ms;
+  border-radius: 2px;
+}
+
+.select:hover {
+  border-color: var(--dark);
+}
+
+.select:focus {
+  border: 1px solid var(--blue);
+  outline: 1px solid var(--blue);
+}
+
+.select:active {
+  border: 1px solid var(--blue);
+  outline: 1px solid var(--blue);
+}
+
+.select::placeholder {
+  color: transparent;
+}
+
+.label {
+  position: absolute;
+  top: 50%;
+  left: 0.5em;
+  transform: translate(0, -50%);
+  pointer-events: none;
+  transition: all 200ms ease-in-out;
+  opacity: 0.8;
+  padding: 0 0.2em;
+  top: 0;
+  background: #fff;
+  font-size: 0.9em;
+  opacity: 1;
+}

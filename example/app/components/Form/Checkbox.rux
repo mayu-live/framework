@@ -1,0 +1,13 @@
+def render
+  classname = [
+    styles[:checkbox],
+    props[:class],
+  ].compact.join(" ")
+
+  id = "checkbox-#{vnode_id}"
+
+  h.div class: styles.group do
+    h.input(type: "checkbox", class: classname, placeholder: props[:label], **props, id: id)
+    h.label props[:label], class: styles[:label], for: id
+  end
+end

@@ -1,0 +1,38 @@
+Heading = require("/app/components/Layout/Heading")
+Fieldset = require("/app/components/Form/Fieldset")
+Button = require("/app/components/Form/Button")
+Input = require("/app/components/Form/Input")
+Select = require("/app/components/Form/Select")
+Checkbox = require("/app/components/Form/Checkbox")
+
+def render
+  <div>
+    <Heading level={2}>Form elements</Heading>
+
+    <Fieldset>
+      <legend>Hello world</legend>
+      <div>
+        <Input type="text" />
+      </div>
+      <div>
+        <Input type="text" label="Required text field" required />
+      </div>
+      <div>
+        <Input type="number" label="Number" />
+      </div>
+      <div>
+        <Select label="Select" value={2}>
+          <option value={1}>Pink Floyd</option>
+          <option value={2}>Yes</option>
+          <option value={3}>Can</option>
+        </Select>
+      </div>
+      <div>
+        <Checkbox label="Foobar" />
+      </div>
+      <div>
+        <Button>Submit</Button>
+      </div>
+    </Fieldset>
+  </div>
+end

@@ -1,0 +1,111 @@
+/*
+This is based on this codepen: https://codepen.io/jh3y/pen/yLKMOBm
+Which I found via this video: https://www.youtube.com/watch?v=g-Y31Iswr2M
+Good channel, check it out if you haven't!
+*/
+
+.form {
+  display: grid;
+  grid-gap: 1rem;
+
+  --orange: #ffb300;
+  --grey: hsl(0 0% 45%);
+  --grey-1: hsl(0 0% 65%);
+  --grey-5: hsl(0 0% 75%);
+  --transition: 0.2s;
+  --valid: var(--green);
+  --invalid: var(--red);
+  --focus: var(--orange);
+  --blur: var(--blue);
+  --disabled: var(--grey);
+
+  max-width: 20em;
+}
+
+.input {
+  padding: 0.5em;
+  border: 2px solid var(--color);
+  border-radius: 2px;
+  font-size: inherit;
+  font-family: inherit;
+  transition: border-color var(--transition);
+  outline: 2px solid transparent;
+}
+
+.input:focus-visible {
+  outline-color: var(--color);
+}
+
+.input::placeholder {
+  color: transparent;
+}
+
+.formGroup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.label {
+  display: flex;
+  font-weight: bold;
+  padding-right: 1rem;
+  transition: color var(--transition);
+  color: var(--color);
+  font-size: inherit;
+}
+
+.button {
+  padding: 1em 2em;
+  font-family: inherit;
+  font-size: inherit;
+  border-radius: 2px;
+  border: 0;
+  cursor: pointer;
+  background: var(--disabled);
+  font-weight: bold;
+  transition: color var(--transition), background var(--transition);
+}
+
+.formGroup:has(:invalid) {
+  --color: var(--invalid);
+}
+
+.formGroup:has(:invalid:not(:focus)) {
+  animation: shake 0.25s;
+}
+
+.formGroup:has(:focus) {
+  --color: var(--focus);
+}
+
+.formGroup:has(:valid) {
+  --color: var(--valid);
+}
+
+.formGroup:has(:placeholder-shown) {
+  --color: var(--blur);
+}
+
+.formGroup:has(:placeholder-shown:not(:focus)) {
+  animation: none;
+}
+
+.form:valid [type="submit"] {
+  background: var(--valid);
+  color: var(--grey-1);
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  25%,
+  75% {
+    transform: translateX(-5px);
+  }
+}

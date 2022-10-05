@@ -1,0 +1,11 @@
+def render
+  classname = [
+    styles[:input],
+    props[:class],
+  ].compact.join(" ")
+
+  h.div class: styles.group do
+    h.input(type: "text", class: classname, placeholder: props[:label], **props)
+    h.label props[:label], class: styles[:label]
+  end
+end

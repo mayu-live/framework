@@ -1,0 +1,46 @@
+.group {
+  position: relative;
+  margin: 1em 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1em;
+}
+
+.checkbox {
+  appearance: none;
+  margin: 0;
+
+  font: inherit;
+  color: inherit;
+  width: 1.6em;
+  height: 1.6em;
+  border: 1px solid var(--blue);
+  border-radius: 2px;
+
+  display: grid;
+  place-content: center;
+  background: transparent;
+}
+
+.checkbox:checked {
+  background: var(--blue);
+}
+
+.checkbox::after {
+  width: 100%;
+  height: 100%;
+  margin-top: 15%;
+  content: "🞪";
+  display: block;
+  scale: 0;
+  color: var(--bright);
+  font-size: 2em;
+}
+
+.checkbox:checked::after {
+  scale: 1;
+}
+
+.label {
+}
