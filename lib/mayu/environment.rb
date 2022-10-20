@@ -31,17 +31,15 @@ module Mayu
     attr_reader :reducers
     sig { returns(Resources::Registry) }
     attr_reader :resources
-    sig { returns(Prometheus::Client::Registry) }
-    attr_reader :prometheus_registry
     sig { returns(Fetch) }
     attr_reader :fetch
     sig { returns(MessageCipher) }
     attr_reader :message_cipher
-    sig { returns(Metrics) }
+    sig { returns(AppMetrics) }
     attr_reader :metrics
 
-    sig { params(config: Configuration).void }
-    def initialize(config)
+    sig { params(config: Configuration, metrics: AppMetrics).void }
+    def initialize(config, metrics)
       @root = T.let(config.root, String)
       @app_root = T.let(File.join(config.root, "app"), String)
       @config = config
@@ -72,10 +70,7 @@ module Mayu
           end,
           Resources::Registry
         )
-      @prometheus_registry =
-        T.let(Metrics::PrometheusRegistry.new, Prometheus::Client::Registry)
-      @metrics =
-        T.let(Metrics.new(config:, prometheus: @prometheus_registry), Metrics)
+      @metrics = metrics
       @fetch = T.let(Fetch.new, Fetch)
       @init_js = T.let(nil, T.nilable(String))
     end

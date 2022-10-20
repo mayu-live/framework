@@ -12,8 +12,9 @@ module Mayu
 
     class InvalidTokenError < StandardError
     end
-
     class InvalidIdError < StandardError
+    end
+    class AlreadyRunningError < StandardError
     end
 
     sig do
@@ -85,6 +86,8 @@ module Mayu
     attr_reader :environment
     sig { returns(Float) }
     attr_reader :last_ping_at
+    sig { returns(Server::EventStream::Log) }
+    attr_reader :log
 
     sig { params(timeout_seconds: T.any(Float, Integer)).returns(T::Boolean) }
     def expired?(timeout_seconds = 5)
@@ -110,6 +113,7 @@ module Mayu
       @token = T.let(self.class.generate_token, String)
       @path = path
       @vtree = T.let(vtree || VDOM::VTree.new(session: self), VDOM::VTree)
+      @log = T.let(Server::EventStream::Log.new, Server::EventStream::Log)
       @store =
         T.let(
           store || environment.create_store(initial_state: {}),
@@ -221,6 +225,7 @@ module Mayu
       @app = @environment.load_root(@path)
       @last_ping_at = Time.now.to_f
       @barrier = Async::Barrier.new
+      @log = Server::EventStream::Log.new
     end
 
     sig do
@@ -235,11 +240,16 @@ module Mayu
       @environment.fetch.fetch(url, method:, headers:, body:)
     end
 
+    sig { void }
+    def activity!
+      @last_ping_at = Time.now.to_f
+    end
+
     sig do
       params(callback_id: String, payload: T::Hash[Symbol, T.untyped]).void
     end
     def handle_callback(callback_id, payload = {})
-      @last_ping_at = Time.now.to_f
+      activity!
       @vtree.handle_callback(callback_id, payload)
     end
 

@@ -27,7 +27,9 @@ module Mayu
         @sessions.count
       end
 
-      sig { params(metrics: Metrics, task: Async::Task).returns(Async::Task) }
+      sig do
+        params(metrics: AppMetrics, task: Async::Task).returns(Async::Task)
+      end
       def start_cleanup_task(metrics:, task: Async::Task.current)
         task.async do
           cleanup_time = 5.0
