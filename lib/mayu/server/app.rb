@@ -43,11 +43,6 @@ module Mayu
         @barrier = T.let(Async::Barrier.new, Async::Barrier)
         @stop = T.let(Async::Variable.new, Async::Variable)
         @sessions = T.let({}, T::Hash[String, Session])
-        @message_cipher =
-          T.let(
-            Mayu::MessageCipher.new(key: "abc123", ttl: 30),
-            Mayu::MessageCipher
-          )
       end
 
       sig { void }
@@ -355,7 +350,7 @@ module Mayu
           return @sessions.fetch(session_id) { raise SessionNotFoundError }
         end
 
-        @message_cipher.load(body) => String => dumped
+        @environment.message_cipher.load(body) => String => dumped
         session = Session.restore(environment: @environment, dumped:)
         @sessions.store(session.id, session)
       end
@@ -374,7 +369,7 @@ module Mayu
           EventStream::Message.new(
             :"session.transfer",
             EventStream::Blob.new(
-              @message_cipher.dump(
+              @environment.message_cipher.dump(
                 Session::SerializedSession.dump_session(session)
               )
             )
