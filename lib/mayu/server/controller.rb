@@ -94,12 +94,12 @@ module Mayu
                 scheme: @endpoint.scheme
               )
 
-            server.run
+            server_task = server.run
 
             task.async do
               loop do
                 sleep 1
-                # app.clear_timed_out_sessions!
+                app.clear_expired_sessions!
               end
             end
 
@@ -107,11 +107,8 @@ module Mayu
 
             interrupt.wait
             app.stop
-            task.stop
+            raise Interrupt
           end
-        rescue Interrupt
-          Console.logger.error(self, "Got interrupt")
-          retry
         rescue => e
           Console.logger.error(self, e)
         end

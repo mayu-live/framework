@@ -89,25 +89,18 @@ async function navigateTo(sessionId: string, url: string) {
   });
 }
 
-async function main() {
+function getSessionIdFromUrl() {
   const url = import.meta.url;
   const index = url.lastIndexOf("#");
   if (index === -1) {
     throw new Error("No # found in script url");
   }
-  const id = url.slice(index + 1);
-  console.log(import.meta.url);
+  return url.slice(index + 1);
+}
 
-  const status = document.createElement("pre");
-  document.body.appendChild(status);
-  status.style.background = "#ccc";
-  status.textContent = "Connecting..";
-  const state = document.createElement("pre");
-  document.body.appendChild(state);
-  state.style.background = "#ccc";
-  state.textContent = "";
-
-  const mayu = new MayuGlobal(id);
+async function main() {
+  const sessionId = getSessionIdFromUrl();
+  const mayu = new MayuGlobal(sessionId);
   window.Mayu = mayu;
 
   let nodeTree: NodeTree | undefined;
@@ -116,15 +109,16 @@ async function main() {
   const pingElement = document.createElement("mayu-ping") as MayuPingElement;
   document.body.appendChild(pingElement);
 
-  for await (const [event, payload] of sessionStream(id)) {
-    console.log({ event, payload });
+  for await (const [event, payload] of sessionStream(sessionId)) {
     switch (event) {
       case "system.connected":
+        console.info("Connected!");
         document.body
           .querySelectorAll("mayu-disconnected")
           .forEach((el) => el.remove());
         break;
       case "system.disconnected":
+        console.error("Disconnected");
         if (disconnectedElement.parentElement !== document.body) {
           document.body.appendChild(disconnectedElement);
         }
@@ -142,27 +136,24 @@ async function main() {
         history.pushState({}, "", path);
         // progressBar.setAttribute("progress", "100");
         break;
+      case "session.keep_alive":
+        break;
       case "session.transfer":
         console.info("Transferring!");
-        status.style.background = "#ffc";
-        status.textContent = "Transferring...";
         break;
       case "ping":
         const values = Object.values(payload.values) as number[];
         const mean = values.reduce((a, b) => a + b, 0.0) / values.length;
-        console.table({
-          client: { ping: payload.values.client },
-          server: { ping: payload.values.server },
-          mean: { ping: mean },
-        });
+        // console.table({
+        //   client: { ping: payload.values.client },
+        //   server: { ping: payload.values.server },
+        //   mean: { ping: mean },
+        // });
         pingElement.setAttribute("ping", `${mean.toFixed(2)} ms`);
         pingElement.setAttribute("region", payload.region);
         break;
-      case "session.state":
-        state.textContent = JSON.stringify(payload, null, 2);
-        break;
       default:
-        console.log(event, payload);
+        console.warn("Unhandled event:", event, payload);
         break;
     }
   }

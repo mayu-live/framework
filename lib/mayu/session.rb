@@ -130,7 +130,7 @@ module Mayu
           State::Store
         )
       @app = T.let(environment.load_root(path), VDOM::Descriptor)
-      @last_ping_at = T.let(0.0, Float)
+      @last_ping_at = T.let(Time.now.to_f, Float)
       @barrier = T.let(Async::Barrier.new, Async::Barrier)
     end
 
@@ -185,17 +185,6 @@ module Mayu
       { stylesheets: }
     end
 
-    sig { returns(T::Array[T.untyped]) }
-    def marshal_dump
-      [
-        @id,
-        @token,
-        @path,
-        VDOM::Marshalling.dump(@vtree),
-        Marshal.dump(@store.state)
-      ]
-    end
-
     class SerializedSession
       extend T::Sig
 
@@ -231,13 +220,24 @@ module Mayu
       end
     end
 
+    sig { returns(T::Array[T.untyped]) }
+    def marshal_dump
+      [
+        @id,
+        @token,
+        @path,
+        @last_ping_at,
+        VDOM::Marshalling.dump(@vtree),
+        Marshal.dump(@store.state)
+      ]
+    end
+
     sig { params(a: T::Array[T.untyped]).void }
     def marshal_load(a)
-      @id, @token, @path, dumped_vtree, state = a
+      @id, @token, @path, @last_ping_at, dumped_vtree, state = a
       @vtree = VDOM::Marshalling.restore(dumped_vtree, session: self)
       @store = @environment.create_store(initial_state: Marshal.restore(state))
       @app = @environment.load_root(@path)
-      @last_ping_at = Time.now.to_f
       @barrier = Async::Barrier.new
       @log = EventStream::Log.new
     end

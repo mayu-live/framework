@@ -68,6 +68,7 @@ module Mayu
       def stop
         @stop.resolve(true)
         @barrier.wait
+        Console.logger.info(self, "Stopped sessions")
       end
 
       sig { void }
@@ -289,7 +290,7 @@ module Mayu
         session.initial_render(writer) => { stylesheets: }
 
         headers["link"] = [
-          # "</__mayu/static/#{@environment.init_js}>; rel=preload; as=script; crossorigin=anonymous; fetchpriority=high",
+          "</__mayu/static/#{@environment.init_js}##{session.id}>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high",
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
 
@@ -367,9 +368,7 @@ module Mayu
         ).void
       end
       def perform_transfer(session, body, task: Async::Task.current)
-        Console.logger.info(self, "Session #{session.id}: Stopping EventStream")
-
-        Console.logger.warn(self, "Pausing session #{session.id}")
+        Console.logger.info(self, "Session #{session.id}: Transferring")
 
         body.write(
           EventStream::Message.new(
