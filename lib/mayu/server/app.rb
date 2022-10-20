@@ -280,9 +280,13 @@ module Mayu
         session.initial_render(writer) => { stylesheets: }
 
         headers["link"] = [
-          "</__mayu/static/#{@environment.init_js}>; rel=preload; as=script; crossorigin=anonymous; fetchpriority=high",
+          # "</__mayu/static/#{@environment.init_js}>; rel=preload; as=script; crossorigin=anonymous; fetchpriority=high",
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
+
+        headers["set-cookie"] = token_cookie(session)
+
+        @sessions.store(session.id, session)
 
         @environment.metrics.session_init_count.increment()
 
@@ -360,7 +364,11 @@ module Mayu
         body.write(
           EventStream::Message.new(
             :"session.transfer",
-            Blob.new(@message_cipher.dump(session))
+            Blob.new(
+              @message_cipher.dump(
+                Session::SerializedSession.dump_session(session)
+              )
+            )
           ).to_s
         )
       end
@@ -409,7 +417,7 @@ module Mayu
       def token_cookie(session, ttl_seconds: 60)
         expires = Time.now.utc + ttl_seconds
 
-        cookie = [
+        [
           "mayu-token=#{session.token}",
           "path=/__mayu/session/#{session.id}/",
           "expires=#{expires.httpdate}",

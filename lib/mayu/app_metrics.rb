@@ -61,7 +61,7 @@ module Mayu
           registry.summary(
             :mayu_vnode_patch_times,
             docstring: "VNode patch times",
-            labels: [*preset_labels.keys],
+            labels: [:vnode_type, *preset_labels.keys],
             preset_labels:
           )
       )

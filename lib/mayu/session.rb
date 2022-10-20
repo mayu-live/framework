@@ -74,6 +74,15 @@ module Mayu
       raise InvalidIdError unless valid_id?(id)
     end
 
+    sig { params(token: String).returns(T::Boolean) }
+    def authorized?(token)
+      if self.token.length == token.length
+        OpenSSL.fixed_length_secure_compare(self.token, token)
+      else
+        false
+      end
+    end
+
     Marshaled = T.type_alias { [String, String, String, String, String] }
 
     sig { returns(String) }
@@ -149,21 +158,20 @@ module Mayu
           .select { _1.end_with?(".css") }
           .map { "/__mayu/static/#{_1}" }
 
-      freeze
+      # freeze
 
       encrypted_session =
-        @environment.message_cipher.dump(
-          Marshal.dump(SerializedSession.new(marshal_dump))
-        )
+        @environment.message_cipher.dump(SerializedSession.dump_session(self))
 
       links = [
-        %{<script type="module" src="/__mayu/static/#{environment.init_js}" crossorigin="anonymous"></script>},
+        %{<script async type="module" src="/__mayu/static/#{environment.init_js}##{id}" crossorigin="same-origin"></script>},
         *stylesheets.map do |stylesheet|
           %{<link rel="stylesheet" href="#{stylesheet}">}
         end
       ].join
 
-      scripts = %{<template id="mayu-init">#{encrypted_session}</template>}
+      # scripts = %{<template id="mayu-init">#{encrypted_session}</template>}
+      scripts = ""
       body.write("<!doctype html>\n")
 
       task.async do
@@ -196,6 +204,11 @@ module Mayu
       sig { params(data: T::Array[T.untyped]).void }
       def initialize(data)
         @data = data
+      end
+
+      sig { params(session: Session).returns(SerializedSession) }
+      def self.dump_session(session)
+        SerializedSession.new(session.marshal_dump)
       end
 
       sig { params(environment: Environment).returns(Session) }
