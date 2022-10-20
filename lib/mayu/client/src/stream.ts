@@ -20,6 +20,23 @@ const MIME_TYPES = {
 
 import { sleep, stringifyJSON, retry } from "./utils";
 
+function inflateTransformStream() {
+  return new TransformStream({
+    transform(chunk, controller) {
+      const inflated = inflate(chunk);
+      console.log(
+        "Deflated size:",
+        chunk.length,
+        "Inflated size:",
+        inflated.length,
+        "Compression ratio:",
+        inflated.length / chunk.length
+      );
+      controller.enqueue(inflated);
+    },
+  });
+}
+
 async function startStream(res: Response) {
   if (!res.ok) {
     throw new Error("res is not ok");
@@ -29,7 +46,9 @@ async function startStream(res: Response) {
     throw new Error("body is null");
   }
 
-  const reader = res.body.getReader() as any;
+  const reader = res.body
+    .pipeThrough(inflateTransformStream())
+    .getReader() as any;
 
   return new ReadableStream({
     start(controller) {
@@ -47,7 +66,9 @@ async function startStream(res: Response) {
             return;
           }
 
-          const messages = unpackr.unpackMultiple(inflate(value));
+          const messages = unpackr.unpackMultiple(value);
+
+          console.log(`Stream got ${messages.length} messages`);
 
           for (const msg of messages) {
             controller.enqueue(msg);
