@@ -5,6 +5,7 @@ require "nanoid"
 require_relative "environment"
 require_relative "vdom/vtree"
 require_relative "vdom/marshalling"
+require_relative "event_stream"
 
 module Mayu
   class Session
@@ -95,7 +96,7 @@ module Mayu
     attr_reader :environment
     sig { returns(Float) }
     attr_reader :last_ping_at
-    sig { returns(Server::EventStream::Log) }
+    sig { returns(EventStream::Log) }
     attr_reader :log
 
     sig { params(timeout_seconds: T.any(Float, Integer)).returns(T::Boolean) }
@@ -122,7 +123,7 @@ module Mayu
       @token = T.let(self.class.generate_token, String)
       @path = path
       @vtree = T.let(vtree || VDOM::VTree.new(session: self), VDOM::VTree)
-      @log = T.let(Server::EventStream::Log.new, Server::EventStream::Log)
+      @log = T.let(EventStream::Log.new, EventStream::Log)
       @store =
         T.let(
           store || environment.create_store(initial_state: {}),
@@ -206,9 +207,9 @@ module Mayu
         @data = data
       end
 
-      sig { params(session: Session).returns(SerializedSession) }
+      sig { params(session: Session).returns(String) }
       def self.dump_session(session)
-        SerializedSession.new(session.marshal_dump)
+        Marshal.dump(self.new(session.marshal_dump))
       end
 
       sig { params(environment: Environment).returns(Session) }
@@ -238,7 +239,7 @@ module Mayu
       @app = @environment.load_root(@path)
       @last_ping_at = Time.now.to_f
       @barrier = Async::Barrier.new
-      @log = Server::EventStream::Log.new
+      @log = EventStream::Log.new
     end
 
     sig do
@@ -321,7 +322,7 @@ module Mayu
               yield [:pong, timestamp]
             in [:navigate, href]
               navigate(href)
-              yield [:navigate, href]
+              yield [:navigate, path: href.force_encoding("utf-8")]
             else
               puts "\e[31mUnknown event: #{msg.inspect}\e[0m"
             end

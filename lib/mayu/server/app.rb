@@ -5,8 +5,6 @@ require "async/variable"
 require_relative "session"
 require_relative "app"
 require_relative "session"
-require_relative "event_stream"
-require_relative "message_cipher"
 
 module Mayu
   module Server
@@ -121,7 +119,7 @@ module Mayu
             ),
             accept_encodings:
           )
-        in []
+        in [*] if request.method == "GET"
           raise_if_shutting_down!
 
           handle_session_init(request)
@@ -246,10 +244,21 @@ module Mayu
             "content-type": "application/json",
             "set-cookie": token_cookie(session)
           }
-          session.log.push(:pong, pong: ping, server: server_pong)
+          session.log.push(
+            :pong,
+            pong: ping,
+            server: server_pong,
+            region: @environment.config.instance.region
+          )
           Protocol::HTTP::Response[200, headers, [JSON.generate(ping)]]
+        in ["navigate"]
+          @environment.metrics.session_navigate_count.increment()
+
+          path = request.read
+          session.handle_callback("navigate", { path: })
+          Protocol::HTTP::Response[200, headers, ["ok"]]
         in ["callback", String => callback_id]
-          session.handle_callback($~[:callback_id], JSON.parse(request.read))
+          session.handle_callback(callback_id, JSON.parse(request.read))
           headers = { "set-cookie": token_cookie(session) }
           Protocol::HTTP::Response[200, headers, ["ok"]]
         end
@@ -345,7 +354,8 @@ module Mayu
           return @sessions.fetch(session_id) { raise SessionNotFoundError }
         end
 
-        @message_cipher.load(body) => Session => session
+        @message_cipher.load(body) => String => dumped
+        session = Session.restore(environment: @environment, dumped:)
         @sessions.store(session.id, session)
       end
 
@@ -364,7 +374,7 @@ module Mayu
         body.write(
           EventStream::Message.new(
             :"session.transfer",
-            Blob.new(
+            EventStream::Blob.new(
               @message_cipher.dump(
                 Session::SerializedSession.dump_session(session)
               )

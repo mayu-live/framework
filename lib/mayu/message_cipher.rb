@@ -1,10 +1,11 @@
 # typed: strict
+# frozen_string_literal: true
 
+require "sorbet-runtime"
 require "time"
 require "digest/sha2"
 require "openssl"
 require "securerandom"
-require "base64"
 require "brotli"
 
 module Mayu
@@ -12,7 +13,6 @@ module Mayu
     extend T::Sig
 
     DEFAULT_TTL_SECONDS = T.let(10, Integer)
-    DEFAULT_MESSAGE_PREFIX = T.let("mmc_", String)
 
     Message = T.type_alias { { iss: Float, exp: Float, payload: T.untyped } }
 
@@ -28,19 +28,12 @@ module Mayu
     end
     class InvalidHMACError < Error
     end
-    class InvalidPrefixError < Error
-    end
 
-    sig { params(key: String, prefix: String, ttl: Integer).void }
-    def initialize(
-      key:,
-      prefix: DEFAULT_MESSAGE_PREFIX,
-      ttl: DEFAULT_TTL_SECONDS
-    )
+    sig { params(key: String, ttl: Integer).void }
+    def initialize(key:, ttl: DEFAULT_TTL_SECONDS)
       raise ArgumentError, "ttl must be positive" unless ttl.positive?
       @default_ttl_seconds = ttl
       @key = T.let(Digest::SHA256.digest(key), String)
-      @prefix = prefix
     end
 
     sig do
@@ -69,31 +62,17 @@ module Mayu
         .then { prepend_hmac(_1) }
         .then { Brotli.deflate(_1) }
         .then { encrypt(_1, auth_data:) }
-        .then { Base64.urlsafe_encode64(_1) }
-        .prepend(@prefix)
     end
 
     sig { params(message: String, auth_data: String).returns(String) }
     def decode_message(message, auth_data: "")
       message
-        .then { parse_prefix(_1) }
-        .then { Base64.urlsafe_decode64(_1) }
         .then { decrypt(_1, auth_data:) }
         .then { Brotli.inflate(_1) }
         .then { validate_hmac(_1) }
         .then { Marshal.load(_1) }
         .tap { validate_times(_1) }
         .fetch(:payload)
-    end
-
-    sig { params(str: String).returns(String) }
-    def parse_prefix(str)
-      if str.start_with?(@prefix)
-        str.delete_prefix(@prefix)
-      else
-        raise InvalidPrefixError,
-              "The given message doesn't have the correct prefix"
-      end
     end
 
     sig { params(input: String).returns(String) }
@@ -172,6 +151,8 @@ module Mayu
       cipher.auth_data = auth_data
       cipher.auth_tag = auth_tag
       cipher.update(cipher_text) + cipher.final
+    rescue NoMatchingPatternError
+      raise DecryptError
     rescue OpenSSL::Cipher::CipherError
       raise DecryptError
     end

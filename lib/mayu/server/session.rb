@@ -1,7 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
-require_relative "event_stream"
+require_relative "../event_stream"
 
 module Mayu
   class Session2
@@ -18,7 +18,7 @@ module Mayu
     attr_reader :token
     sig { returns(T.untyped) }
     attr_reader :state
-    sig { returns(Server::EventStream::Log) }
+    sig { returns(EventStream::Log) }
     attr_reader :log
 
     MarshalFormat = T.type_alias { [String, String, T.untyped] }
@@ -33,7 +33,7 @@ module Mayu
       @id, @token, @state = a
       @last_activity = Time.now
       @run_task = nil
-      @log = Server::EventStream::Log.new
+      @log = EventStream::Log.new
     end
 
     sig { params(token: String).void }
@@ -50,7 +50,7 @@ module Mayu
       @state = T.let({ count: 0 }, T.untyped)
       @last_activity = T.let(Time.now, Time)
       @run_task = T.let(nil, T.nilable(Async::Task))
-      @log = T.let(Server::EventStream::Log.new, Server::EventStream::Log)
+      @log = T.let(EventStream::Log.new, EventStream::Log)
     end
 
     sig { void }

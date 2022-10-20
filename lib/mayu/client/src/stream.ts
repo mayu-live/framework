@@ -101,8 +101,11 @@ export async function* sessionStream(
               yield [
                 "ping",
                 {
-                  client: new Date().getTime() - Number(payload.pong),
-                  server: payload.server,
+                  values: {
+                    client: new Date().getTime() - Number(payload.pong),
+                    server: payload.server,
+                  },
+                  region: payload.region,
                 },
               ];
               break;

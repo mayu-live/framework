@@ -8,6 +8,7 @@ module Mayu
     const :session_init_count, Prometheus::Client::Counter
     const :session_timeout_count, Prometheus::Client::Counter
     const :session_callback_count, Prometheus::Client::Counter
+    const :session_navigate_count, Prometheus::Client::Counter
     const :session_count, Prometheus::Client::Gauge
     const :vnode_patch_times, Prometheus::Client::Summary
 
@@ -30,6 +31,13 @@ module Mayu
           registry.counter(
             :mayu_session_callback_count,
             docstring: "Total number of callbacks",
+            labels: [*preset_labels.keys],
+            preset_labels:
+          ),
+        session_navigate_count:
+          registry.counter(
+            :mayu_session_navigate_count,
+            docstring: "Total number of navigates",
             labels: [*preset_labels.keys],
             preset_labels:
           ),
