@@ -50,7 +50,7 @@ module Mayu
 
       sig { params(container: Async::Container::Generic).void }
       def setup(container)
-        collector_endpoint = Async::IO::Endpoint.unix("test.ipc")
+        collector_endpoint = Async::IO::Endpoint.unix("metrics.ipc")
         exporter_endpoint = Async::HTTP::Endpoint.parse("http://[::]:9092")
 
         Metrics.start_collect_and_export(

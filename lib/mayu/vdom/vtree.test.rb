@@ -8,6 +8,7 @@ require "stringio"
 require_relative "vtree"
 require_relative "h"
 require_relative "../session"
+require_relative "../app_metrics"
 
 class TestVTree < Minitest::Test
   include Mayu::VDOM::H
@@ -83,11 +84,12 @@ class TestVTree < Minitest::Test
   private
 
   def setup_vtree
+    metrics = Mayu::AppMetrics.setup(Prometheus::Client.registry)
     config =
       Mayu::Configuration.from_hash!(
         { "mode" => :test, "root" => "/laiehbaleihf", "secret_key" => "test" }
       )
-    environment = Mayu::Environment.new(config)
+    environment = Mayu::Environment.new(config, metrics)
 
     environment.instance_eval do
       def load_root(path)

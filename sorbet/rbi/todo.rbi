@@ -31,3 +31,8 @@ class RubyVM
     end
   end
 end
+
+module Kernel
+  class NoMatchingPatternError < StandardError
+  end
+end
