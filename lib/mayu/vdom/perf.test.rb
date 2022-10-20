@@ -87,12 +87,12 @@ class PerfTest < Minitest::Test
   end
 
   def setup_vtree
-    metrics = Mayu::AppMetrics.setup(Prometheus::Client.registry)
+    $metrics ||= Mayu::AppMetrics.setup(Prometheus::Client.registry)
     config =
       Mayu::Configuration.from_hash!(
         { "mode" => :test, "root" => "/laiehbaleihf", "secret_key" => "test" }
       )
-    environment = Mayu::Environment.new(config, metrics)
+    environment = Mayu::Environment.new(config, $metrics)
 
     environment.instance_eval do
       def load_root(path)
