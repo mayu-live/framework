@@ -68,14 +68,15 @@ module Mayu
 
       sig { void }
       def initialize
-        @log = T.let([], T::Array[Message])
+        @history = T.let([], T::Array[Message])
         @queue = T.let(Async::Queue.new, Async::Queue)
       end
 
       sig { returns(T::Boolean) }
-      def empty?
-        @queue.empty?
-      end
+      def empty? = @queue.empty?
+
+      sig { returns(Integer) }
+      def size = @queue.size
 
       sig { params(event: Symbol, data: T.untyped).void }
       def push(event, data = {})
@@ -84,22 +85,22 @@ module Mayu
 
       sig { params(id: String).void }
       def ack(id)
-        if index = @log.map(&:id).index(id)
-          @log.slice!(0..index)
+        if index = @history.map(&:id).index(id)
+          @history.slice!(0..index)
         end
       end
 
       sig { params(last_id: String).returns(T::Array[Message]) }
       def replay(last_id)
         ack(last_id)
-        @log.dup
+        @history.dup
       end
 
       sig { returns(Message) }
       def pop
         event = @queue.dequeue
         # There is no ack-functionality in the client so this will just grow anyways..
-        # @log.push(event)
+        # @history.push(event)
         event
       end
     end

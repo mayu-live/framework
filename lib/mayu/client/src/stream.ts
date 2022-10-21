@@ -71,6 +71,7 @@ async function startStream(res: Response) {
           console.log(`Stream got ${messages.length} messages`);
 
           for (const msg of messages) {
+            console.log(msg);
             controller.enqueue(msg);
           }
 

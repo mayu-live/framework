@@ -47,13 +47,19 @@ module Mayu
 
       sig { void }
       def clear_expired_sessions!
+        old_size = @sessions.size
+
         @sessions.delete_if do |id, session|
-          if session.expired?
-            Console.logger.info(self, "Session #{session.id} timed out")
-            session.stop!
-            @metrics.session_timeout_count.increment
-            true
-          end
+          next unless session.expired?(20)
+
+          Console.logger.warn(self, "Session #{session.id} timed out")
+          session.stop!
+          @metrics.session_timeout_count.increment
+          true
+        end
+
+        unless @sessions.size == old_size
+          Console.logger.warn(self, "Session count: #{@sessions.size}")
         end
 
         @metrics.session_count.set(@sessions.size)
@@ -305,39 +311,62 @@ module Mayu
       end
       def run_event_stream(session, body:)
         @barrier.async do |task|
+          session.activity!
+
           Console.logger.info(self, "Streaming events to session #{session.id}")
 
+          barrier = Async::Barrier.new
+          stop_notification = Async::Notification.new
+
+          task.async do
+            @stop.wait
+            stop_notification.signal
+          end
+
           session_task =
-            session.run do |message|
-              case message
-              in [event, payload]
-                session.log.push(:"session.#{event}", payload)
+            barrier.async do
+              session.run do |message|
+                case message
+                in [event, payload]
+                  session.log.push(:"session.#{event}", payload)
+                end
+              end
+
+              stop_notification.signal
+            end
+
+          ping_task =
+            barrier.async do
+              loop do
+                sleep PING_INTERVAL
+                session.log.push(:ping, time_ping_value)
               end
             end
 
-          task.async do
-            loop do
-              sleep PING_INTERVAL
-              session.log.push(:ping, time_ping_value)
+          message_task =
+            barrier.async do |subtask|
+              loop do
+                session.log.size.times do
+                  message = session.log.pop
+
+                  Console.logger.debug(
+                    self,
+                    "Sending #{message.event} to session #{session.id}"
+                  )
+
+                  body.write(message.to_s)
+                end
+
+                sleep 0.01
+              end
+            ensure
+              barrier.stop
             end
-          end
 
-          task.async do |subtask|
-            while message = session.log.pop
-              Console.logger.debug(
-                self,
-                "Sending #{message.event} to session #{session.id}"
-              )
-              session.activity!
-              body.write(message.to_s)
-            end
-          end
+          stop_notification.wait
 
-          @stop.wait
-
-          session_task.stop
+          barrier.stop
           perform_transfer(session, body)
-          body.close
           task.stop
         end
       end
@@ -363,6 +392,8 @@ module Mayu
         ).void
       end
       def perform_transfer(session, body, task: Async::Task.current)
+        return if body.closed?
+
         Console.logger.info(self, "Session #{session.id}: Transferring")
 
         body.write(
@@ -375,6 +406,12 @@ module Mayu
             )
           ).to_s
         )
+
+        # Sleep a little bit so that the message
+        # gets sent before the body closes...
+        # This is not ideal, heh..
+        sleep 0.1
+        body.close
       end
 
       sig do

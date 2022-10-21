@@ -100,7 +100,7 @@ module Mayu
     attr_reader :log
 
     sig { params(timeout_seconds: T.any(Float, Integer)).returns(T::Boolean) }
-    def expired?(timeout_seconds = 5)
+    def expired?(timeout_seconds = 30)
       seconds_since_last_ping > timeout_seconds
     end
 
@@ -226,7 +226,6 @@ module Mayu
         @id,
         @token,
         @path,
-        @last_ping_at,
         VDOM::Marshalling.dump(@vtree),
         Marshal.dump(@store.state)
       ]
@@ -234,7 +233,8 @@ module Mayu
 
     sig { params(a: T::Array[T.untyped]).void }
     def marshal_load(a)
-      @id, @token, @path, @last_ping_at, dumped_vtree, state = a
+      @id, @token, @path, dumped_vtree, state = a
+      @last_ping_at = Time.now.to_f
       @vtree = VDOM::Marshalling.restore(dumped_vtree, session: self)
       @store = @environment.create_store(initial_state: Marshal.restore(state))
       @app = @environment.load_root(@path)
