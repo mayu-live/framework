@@ -21,6 +21,11 @@
   display: grid;
   place-content: center;
   background: transparent;
+  position: relative;
+}
+
+.checkbox:hover {
+  border-color: var(--dark);
 }
 
 .checkbox:checked {
@@ -28,18 +33,26 @@
 }
 
 .checkbox::after {
-  width: 100%;
-  height: 100%;
-  margin-top: 15%;
-  content: "🞪";
   display: block;
-  scale: 0;
+  content: "🞪";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
   color: var(--bright);
   font-size: 2em;
+  transition: transform 0.2s, opacity 0.2s;
+  opacity: 0;
 }
 
 .checkbox:checked::after {
-  scale: 1;
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.checkbox:active::after {
+  transform: translate(-50%, -50%) scale(1.1);
+  opacity: 0.5;
 }
 
 .label {
