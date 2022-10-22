@@ -112,19 +112,21 @@ async function main() {
   for await (const [event, payload] of sessionStream(sessionId)) {
     switch (event) {
       case "system.connected":
-        console.info("Connected!");
-        pingElement.setAttribute("region", "Connected…");
+        pingElement.setAttribute("region", "Connected!");
+        pingElement.setAttribute("status", "connected");
         document.body
           .querySelectorAll("mayu-disconnected")
           .forEach((el) => el.remove());
         break;
       case "system.disconnected":
         if (payload.transferring) {
-          console.warn("Disconnected because of transfer");
           pingElement.setAttribute("region", "Transferring…");
-          pingElement.setAttribute("transferring", "transferring");
+          pingElement.setAttribute("status", "transferring");
           break;
         }
+
+        pingElement.setAttribute("region", "Disconnected");
+        pingElement.setAttribute("status", "disconnected");
 
         console.error("Disconnected");
         if (disconnectedElement.parentElement !== document.body) {
@@ -161,7 +163,7 @@ async function main() {
         // });
         pingElement.setAttribute("ping", `${mean.toFixed(2)} ms`);
         pingElement.setAttribute("region", payload.region);
-        pingElement.removeAttribute("transferring");
+        pingElement.setAttribute("status", "ping");
         break;
       default:
         console.warn("Unhandled event:", event, payload);

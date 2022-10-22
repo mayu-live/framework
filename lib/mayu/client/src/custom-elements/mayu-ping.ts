@@ -8,7 +8,7 @@ class PingComponent extends HTMLElement {
   ping?: HTMLSpanElement;
   region?: HTMLSpanElement;
 
-  static observedAttributes = ["ping", "region", "transferring"];
+  static observedAttributes = ["ping", "region", "status"];
 
   connectedCallback() {
     if (!this.shadowRoot) {
@@ -32,11 +32,12 @@ class PingComponent extends HTMLElement {
       case "region":
         this.region!.textContent = newValue;
         break;
-      case "transferring":
-        if (newValue === "transferring") {
-          this.div!.classList.add("transferring");
-        } else {
-          this.div!.classList.remove("transferring");
+      case "status":
+        if (oldValue && oldValue !== newValue) {
+          this.div!.classList.remove(`status-${oldValue}`);
+        }
+        if (newValue) {
+          this.div!.classList.add(`status-${newValue}`);
         }
         break;
     }
