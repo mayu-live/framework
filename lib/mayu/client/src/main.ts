@@ -150,8 +150,7 @@ async function main() {
         break;
       case "session.transfer":
         pingElement.setAttribute("region", "Transferring");
-        pingElement.setAttribute("transferring", "transferring");
-        console.info("Transferring!");
+        pingElement.setAttribute("status", "transferring");
         break;
       case "ping":
         const values = Object.values(payload.values) as number[];
