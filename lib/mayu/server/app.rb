@@ -89,7 +89,7 @@ module Mayu
         )
       end
       def call(request)
-        Console.logger.info(self, "#{request.method} #{request.path}")
+        # Console.logger.info(self, "#{request.method} #{request.path}")
 
         raise_if_shutting_down!
 
@@ -238,10 +238,10 @@ module Mayu
           ping = body["ping"]
           time = time_ping_value
           server_pong = time_ping_value - body["pong"].to_f
-          Console.logger.info(
-            self,
-            format("Session #{session.id} ping: %.2f ms", server_pong)
-          )
+          # Console.logger.info(
+          #   self,
+          #   format("Session #{session.id} ping: %.2f ms", server_pong)
+          # )
           headers = {
             "content-type": "application/json",
             "set-cookie": token_cookie(session)
@@ -255,8 +255,7 @@ module Mayu
           Protocol::HTTP::Response[200, headers, [JSON.generate(ping)]]
         in ["navigate"]
           @environment.metrics.session_navigate_count.increment()
-
-          path = request.read
+          path = request.read.force_encoding("utf-8")
           session.handle_callback("navigate", { path: })
           Protocol::HTTP::Response[200, headers, ["ok"]]
         in ["callback", String => callback_id]
@@ -325,13 +324,15 @@ module Mayu
 
           session_task =
             barrier.async do
-              session.run do |message|
-                case message
-                in [event, payload]
-                  session.log.push(:"session.#{event}", payload)
+              session
+                .run do |message|
+                  case message
+                  in [event, payload]
+                    session.log.push(:"session.#{event}", payload)
+                  end
                 end
-              end
-
+                .wait
+            ensure
               stop_notification.signal
             end
 
@@ -346,17 +347,7 @@ module Mayu
           message_task =
             barrier.async do |subtask|
               loop do
-                session.log.size.times do
-                  message = session.log.pop
-
-                  Console.logger.debug(
-                    self,
-                    "Sending #{message.event} to session #{session.id}"
-                  )
-
-                  body.write(message.to_s)
-                end
-
+                body.write(session.log.pack(session.log.pop))
                 sleep 0.01
               end
             ensure
@@ -397,14 +388,16 @@ module Mayu
         Console.logger.info(self, "Session #{session.id}: Transferring")
 
         body.write(
-          EventStream::Message.new(
-            :"session.transfer",
-            EventStream::Blob.new(
-              @environment.message_cipher.dump(
-                Session::SerializedSession.dump_session(session)
+          session.log.pack(
+            EventStream::Message.new(
+              :"session.transfer",
+              EventStream::Blob.new(
+                @environment.message_cipher.dump(
+                  Session::SerializedSession.dump_session(session)
+                )
               )
             )
-          ).to_s
+          )
         )
 
         # Sleep a little bit so that the message

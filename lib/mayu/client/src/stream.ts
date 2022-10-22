@@ -1,37 +1,55 @@
-import { addExtension, Unpackr } from "msgpackr";
+// import { addExtension, Unpackr } from "msgpackr";
 import { inflate } from "pako";
+import { decodeMulti, ExtensionCodec } from "@msgpack/msgpack";
 import "./polyfill-readableStreamAsyncGenerator";
 
-addExtension({
-  Class: Blob,
+const extensionCodec = new ExtensionCodec();
+
+extensionCodec.register({
   type: 0x01,
-  pack() {
+  encode() {
     throw new Error("Not implemented");
   },
-  unpack(buffer: Uint8Array) {
+  decode(buffer: Uint8Array) {
     return new Blob([buffer], { type: "application/vnd.mayu.session" });
   },
 });
+
+// addExtension({
+//   Class: Blob,
+//   type: 0x01,
+//   pack() {
+//     throw new Error("Not implemented");
+//   },
+//   unpack(buffer: Uint8Array) {
+//     return new Blob([buffer], { type: "application/vnd.mayu.session" });
+//   },
+// });
 
 const MIME_TYPES = {
   MAYU_SESSION: "application/vnd.mayu.session",
   MAYU_STREAM: "application/vnd.mayu.eventstream",
 };
 
-import { sleep, stringifyJSON, retry } from "./utils";
+import { stringifyJSON, retry } from "./utils";
 
 function inflateTransformStream() {
   return new TransformStream({
-    transform(chunk, controller) {
+    transform(chunk: Uint8Array, controller) {
       const inflated = inflate(chunk);
-      console.log(
-        "Deflated size:",
-        chunk.length,
-        "Inflated size:",
-        inflated.length,
-        "Compression ratio:",
-        inflated.length / chunk.length
-      );
+
+      if (!inflated) {
+        return;
+      }
+
+      // console.log(
+      //   "Deflated size:",
+      //   chunk.length,
+      //   "Inflated size:",
+      //   inflated.length,
+      //   "Compression ratio:",
+      //   inflated.length / chunk.length
+      // );
       controller.enqueue(inflated);
     },
   });
@@ -46,13 +64,12 @@ async function startStream(res: Response) {
     throw new Error("body is null");
   }
 
-  const reader = res.body
-    .pipeThrough(inflateTransformStream())
-    .getReader() as any;
+  const reader = res.body.pipeThrough(inflateTransformStream()).getReader();
 
   return new ReadableStream({
     start(controller) {
-      const unpackr = new Unpackr({ useRecords: false });
+      // const decoder = new Decoder();
+      // const unpackr = new Unpackr({ useRecords: false });
 
       async function push() {
         try {
@@ -66,18 +83,17 @@ async function startStream(res: Response) {
             return;
           }
 
-          const messages = unpackr.unpackMultiple(value);
+          const messages = decodeMulti(value, { extensionCodec });
 
-          console.log(`Stream got ${messages.length} messages`);
-
-          for (const msg of messages) {
-            console.log(msg);
-            controller.enqueue(msg);
+          for (const message of messages) {
+            // console.log(message)
+            controller.enqueue(message);
           }
 
           push();
         } catch (e) {
           console.error("Streaming error:", e);
+          console.error(e);
           // await sleep(1000);
           controller.close();
         }
@@ -110,6 +126,7 @@ export async function* sessionStream(
 
       yield ["system.connected", {}];
 
+      console.warn("Resetting encryptedState");
       encryptedState = undefined;
 
       for await (const [id, event, payload] of stream) {
@@ -118,6 +135,7 @@ export async function* sessionStream(
             case "session.transfer":
               yield ["session.transfer", {}];
               encryptedState = payload;
+              console.warn("Setting encryptedState", payload);
               break;
             case "pong":
               yield [

@@ -19,12 +19,14 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
+    "@msgpack/msgpack": "^2.8.0",
     "@rollup/plugin-commonjs": "^23.0.1",
     "@rollup/plugin-node-resolve": "^15.0.0",
     "@rollup/plugin-typescript": "^8.3.4",
     "@types/pako": "^2.0.0",
     "@types/serviceworker": "^0.0.48",
     "esbuild": "^0.14.48",
+    "fflate": "^0.7.4",
     "msgpackr": "^1.7.2",
     "pako": "^2.0.4",
     "rollup": "^2.77.2",

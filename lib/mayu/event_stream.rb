@@ -51,15 +51,11 @@ module Mayu
         @id = T.let(Nanoid.generate, String)
         @event = T.let(event.to_s, String)
         @data = data
-        @wrapper = T.let(Wrapper.new, Wrapper)
       end
 
-      sig { returns(String) }
-      def to_s = pack
-
-      sig { returns(String) }
-      def pack
-        Zlib.deflate(@wrapper.pack([@id, @event, @data]))
+      sig { returns([String, String, T.untyped]) }
+      def to_a
+        [@id, @event, @data]
       end
     end
 
@@ -70,6 +66,7 @@ module Mayu
       def initialize
         @history = T.let([], T::Array[Message])
         @queue = T.let(Async::Queue.new, Async::Queue)
+        @wrapper = T.let(Wrapper.new, Wrapper)
       end
 
       sig { returns(T::Boolean) }
@@ -98,10 +95,15 @@ module Mayu
 
       sig { returns(Message) }
       def pop
-        event = @queue.dequeue
+        message = @queue.dequeue
         # There is no ack-functionality in the client so this will just grow anyways..
-        # @history.push(event)
-        event
+        # @history.push(message)
+        message
+      end
+
+      sig { params(message: Message).returns(String) }
+      def pack(message)
+        Zlib.deflate(@wrapper.pack(message.to_a))
       end
     end
 
