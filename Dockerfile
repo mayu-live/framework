@@ -31,7 +31,7 @@ RUN \
 
 FROM base as build
 
-ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils npm webp imagemagick
+ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils npm webp imagemagick brotli
 
 RUN \
     --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
@@ -48,7 +48,8 @@ RUN bundle && rm -rf vendor/bundle/ruby/*/cache
 
 COPY . .
 
-COPY --from=build-js /build/dist/live.js /app/example/vendor/mayu/live.js
+COPY --from=build-js /build/dist lib/mayu/client/dist
+RUN brotli lib/mayu/client/dist/*.{js,map}
 
 # RUN rake build
 RUN gem build

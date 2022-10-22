@@ -1,8 +1,5 @@
-import { inflate } from "pako";
-import { Inflate } from "fflate";
 import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
-import "./polyfill-readableStreamAsyncGenerator";
-import { QuickReader, A } from "quickreader";
+// import "./polyfill-readableStreamAsyncGenerator";
 
 const MIME_TYPES = {
   MAYU_SESSION: "application/vnd.mayu.session",
@@ -10,48 +7,25 @@ const MIME_TYPES = {
 };
 
 import { stringifyJSON, retry } from "./utils";
+import DecompressionStreamPolyfill from "./DecompressionStream";
 
-function createPacketReadableStream(stream: ReadableStream) {
-  const reader = new QuickReader(stream);
+async function createDecompressionStream(): Promise<
+  DecompressionStream | TransformStream<Uint8Array, Uint8Array>
+> {
+  if (typeof DecompressionStream !== "undefined") {
+    console.warn("Using standard DecompressionStream");
+    return new DecompressionStream("deflate");
+  }
 
-  return new ReadableStream<Uint8Array>({
-    async pull(controller) {
-      if (reader.eof) {
-        controller.close();
-        return;
-      }
+  console.warn("Loading DecompressionStream polyfill");
 
-      console.time("Reading packet");
-      const length = reader.u32be() ?? (await A);
-      console.log("Packet length:", length);
-      const packet = reader.bytes(length) ?? (await A);
-      console.log("Packet read:", packet.byteLength);
-      console.timeEnd("Reading packet");
-      controller.enqueue(packet);
-    },
-  });
-}
+  const createDecompressionStreamPolyfill = (
+    await import("./createDecompressionStreamPolyfill")
+  ).default;
 
-function createInflateTransformStream() {
-  let decompressor: Inflate;
+  console.warn("Using DecompressionStream polyfill");
 
-  return new TransformStream<Uint8Array, Uint8Array>({
-    async start(controller) {
-      decompressor = new Inflate((chunk: Uint8Array, final: boolean) => {
-        if (final) {
-          controller.terminate();
-        } else {
-          controller.enqueue(chunk);
-        }
-      });
-    },
-    async transform(chunk) {
-      decompressor.push(chunk, false);
-    },
-    flush() {
-      decompressor.push(new Uint8Array(), true);
-    },
-  });
+  return createDecompressionStreamPolyfill();
 }
 
 function createExtensionCodec() {
@@ -79,8 +53,9 @@ async function startStream(res: Response) {
     throw new Error("body is null");
   }
 
-  // const decompressor = new DecompressionStream("deflate")
-  return res.body.pipeThrough(createInflateTransformStream());
+  const decompressionStream = await createDecompressionStream();
+
+  return res.body.pipeThrough(decompressionStream);
 }
 
 async function* startStream2(res: Response) {

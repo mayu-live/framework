@@ -107,6 +107,20 @@ module Mayu
           # body = File.read(File.join(__dir__, "favicon.png"))
           # Protocol::HTTP::Response[200, { "content-type": "image/png" }, [body]]
           Protocol::HTTP::Response[404, {}, ["no favicon"]]
+        in ["__mayu", "runtime", filename]
+          accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
+
+          if filename == "entries.json"
+            return Protocol::HTTP::Response[403, {}, ["forbidden"]]
+          end
+
+          send_static_file(
+            File.join(
+              @environment.js_runtime_path,
+              File.expand_path(filename, "/")
+            ),
+            accept_encodings:
+          )
         in ["__mayu", "static", filename]
           unless @environment.config.use_bundle
             @environment.resources.generate_assets(@environment.path(:assets))
@@ -290,7 +304,7 @@ module Mayu
         session.initial_render(writer) => { stylesheets: }
 
         headers["link"] = [
-          "</__mayu/static/#{@environment.init_js}##{session.id}>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high",
+          "</__mayu/runtime/#{@environment.init_js}##{session.id}>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high",
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
 

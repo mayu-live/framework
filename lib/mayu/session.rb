@@ -165,7 +165,7 @@ module Mayu
         @environment.message_cipher.dump(SerializedSession.dump_session(self))
 
       links = [
-        %{<script async type="module" src="/__mayu/static/#{environment.init_js}##{id}" crossorigin="same-origin"></script>},
+        %{<script async type="module" src="/__mayu/runtime/#{environment.init_js}##{id}" crossorigin="same-origin"></script>},
         *stylesheets.map do |stylesheet|
           %{<link rel="stylesheet" href="#{stylesheet}">}
         end

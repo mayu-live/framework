@@ -79,19 +79,19 @@ module Mayu
     sig { returns(String) }
     def init_js
       @init_js ||=
-        begin
-          @resources.add_resource(
-            File.join("/", "vendor", "mayu", "live.js")
-          ).type => Resources::Types::JavaScript => type
-          type.assets => [asset]
-          type.generate_assets(path(:assets)).first
-          asset.filename
-        end
+        JSON.parse(File.read(File.join(js_runtime_path, "entries.json"))).fetch(
+          "main"
+        )
     end
 
     sig { params(name: Symbol).returns(String) }
     def path(name)
       File.join(@root, @config.paths.send(name))
+    end
+
+    sig { returns(String) }
+    def js_runtime_path
+      File.join(__dir__, "client", "dist")
     end
 
     sig do

@@ -16,6 +16,10 @@ declare global {
     navigation?: Navigation;
   }
 
+  class DecompressionStream extends TransformStream<Uint8Array, Uint8Array> {
+    constructor(format: string);
+  }
+
   interface Document {
     adoptedStyleSheets: any[];
   }
