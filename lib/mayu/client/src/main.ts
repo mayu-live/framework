@@ -1,6 +1,7 @@
 import { sessionStream } from "./stream";
 import NodeTree from "./NodeTree";
 import type MayuPingElement from "./custom-elements/mayu-ping";
+import type MayuLogElement from "./custom-elements/mayu-log";
 import defineCustomElements from "./custom-elements";
 defineCustomElements();
 
@@ -119,8 +120,10 @@ async function main() {
   pingElement.setAttribute("region", "Connecting...");
   pingElement.setAttribute("status", "connecting");
   document.body.appendChild(pingElement);
+  const logElement = document.createElement("mayu-log") as MayuLogElement;
+  document.body.appendChild(logElement);
 
-  for await (const [event, payload] of sessionStream(sessionId)) {
+  for await (const [event, payload] of sessionStream(sessionId, logElement)) {
     switch (event) {
       case "system.connected":
         pingElement.setAttribute("region", "Connected!");

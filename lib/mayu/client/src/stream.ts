@@ -1,7 +1,7 @@
 import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
 import { stringifyJSON, retry, sleep } from "./utils";
-import DecompressionStreamPolyfill from "./DecompressionStream";
 import { MimeTypes } from "./MimeTypes";
+import type MayuLogElement from "./custom-elements/mayu-log";
 
 async function createDecompressionStream(): Promise<
   DecompressionStream | TransformStream<Uint8Array, Uint8Array>
@@ -56,7 +56,8 @@ type ServerMessage = [id: string, event: string, payload: any];
 type SessionStreamMessage = [string, any];
 
 export async function* sessionStream(
-  sessionId: string
+  sessionId: string,
+  logElement: MayuLogElement
 ): AsyncGenerator<SessionStreamMessage> {
   let isRunning = true;
   let encryptedState: Blob | undefined = undefined;
@@ -75,10 +76,13 @@ export async function* sessionStream(
         for await (const message of decodeMultiStream(stream, {
           extensionCodec,
         })) {
-          const [_id, event, payload] = message as ServerMessage;
+          const [id, event, payload] = message as ServerMessage;
+
+          logElement.addEntry(id, event, payload);
 
           if (!isConnected) {
             isConnected = true;
+            logElement.addEntry("system", "connected", {});
             yield ["system.connected", {}];
           }
 
