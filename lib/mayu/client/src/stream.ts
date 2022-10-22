@@ -1,13 +1,7 @@
 import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
-// import "./polyfill-readableStreamAsyncGenerator";
-
-const MIME_TYPES = {
-  MAYU_SESSION: "application/vnd.mayu.session",
-  MAYU_STREAM: "application/vnd.mayu.eventstream",
-};
-
-import { stringifyJSON, retry } from "./utils";
+import { stringifyJSON, retry, sleep } from "./utils";
 import DecompressionStreamPolyfill from "./DecompressionStream";
+import { MimeTypes } from "./MimeTypes";
 
 async function createDecompressionStream(): Promise<
   DecompressionStream | TransformStream<Uint8Array, Uint8Array>
@@ -58,15 +52,6 @@ async function startStream(res: Response) {
   return res.body.pipeThrough(decompressionStream);
 }
 
-async function* startStream2(res: Response) {
-  const stream = await retry(() => startStream(res));
-  const extensionCodec = createExtensionCodec();
-
-  for await (const msg of decodeMultiStream(stream, { extensionCodec })) {
-    yield msg as ServerMessage;
-  }
-}
-
 type ServerMessage = [id: string, event: string, payload: any];
 type SessionStreamMessage = [string, any];
 
@@ -75,66 +60,83 @@ export async function* sessionStream(
 ): AsyncGenerator<SessionStreamMessage> {
   let isRunning = true;
   let encryptedState: Blob | undefined = undefined;
+  let isConnected = false;
+  const extensionCodec = createExtensionCodec();
 
   let res = await fetch(`/__mayu/session/${sessionId}/init`, {
     method: "POST",
   });
 
-  try {
-    while (isRunning) {
-      const stream = startStream2(res);
+  while (isRunning) {
+    try {
+      const stream = await retry(() => startStream(res));
 
-      yield ["system.connected", {}];
+      try {
+        for await (const message of decodeMultiStream(stream, {
+          extensionCodec,
+        })) {
+          const [_id, event, payload] = message as ServerMessage;
 
-      console.warn("Resetting encryptedState");
-      encryptedState = undefined;
-
-      for await (const [_id, event, payload] of stream) {
-        try {
-          switch (event) {
-            case "session.transfer":
-              yield ["session.transfer", {}];
-              encryptedState = payload;
-              console.warn("Setting encryptedState", payload);
-              break;
-            case "pong":
-              yield [
-                "ping",
-                {
-                  values: {
-                    client: new Date().getTime() - Number(payload.pong),
-                    server: payload.server,
-                  },
-                  region: payload.region,
-                },
-              ];
-              break;
-            case "ping":
-              postCallback(sessionId, "ping", {
-                pong: payload,
-                ping: new Date().getTime(),
-              });
-              break;
-            default:
-              yield [event, payload];
+          if (!isConnected) {
+            isConnected = true;
+            yield ["system.connected", {}];
           }
-        } catch (e) {
-          console.error(e);
+
+          if (encryptedState) {
+            console.warn("Clearing encryptedState");
+            encryptedState = undefined;
+          }
+
+          try {
+            switch (event) {
+              case "session.transfer":
+                yield ["session.transfer", {}];
+                encryptedState = payload;
+                console.warn("Setting encryptedState", payload);
+                break;
+              case "pong":
+                yield [
+                  "ping",
+                  {
+                    values: {
+                      client: new Date().getTime() - Number(payload.pong),
+                      server: payload.server,
+                    },
+                    region: payload.region,
+                  },
+                ];
+                break;
+              case "ping":
+                postCallback(sessionId, "ping", {
+                  pong: payload,
+                  ping: new Date().getTime(),
+                });
+                break;
+              default:
+                yield [event, payload];
+            }
+          } catch (e) {
+            console.error(e);
+          }
         }
+      } catch (e) {
+        console.error(e);
       }
 
+      isConnected = false;
       yield ["system.disconnected", {}];
 
       res = await retry(() =>
         fetch(`/__mayu/session/${sessionId}/resume`, {
           method: "POST",
-          headers: { "content-type": MIME_TYPES.MAYU_SESSION },
+          headers: { "content-type": MimeTypes.MAYU_SESSION },
           body: encryptedState,
         })
       );
+    } catch (e) {
+      console.error(e);
+      await sleep(1000);
     }
-  } catch (e) {
-    console.error(e);
   }
 }
 

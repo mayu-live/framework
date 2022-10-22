@@ -8,6 +8,47 @@ require_relative "session"
 
 module Mayu
   module Server
+    class WritableStream
+      extend T::Sig
+
+      sig { params(body: Async::HTTP::Body::Writable).void }
+      def initialize(body)
+        @body = body
+        @deflate =
+          T.let(
+            Zlib::Deflate.new(
+              Zlib::BEST_COMPRESSION,
+              Zlib::MAX_WBITS,
+              Zlib::MAX_MEM_LEVEL,
+              Zlib::HUFFMAN_ONLY
+            ),
+            Zlib::Deflate
+          )
+
+        @wrapper = T.let(EventStream::Wrapper.new, EventStream::Wrapper)
+      end
+
+      sig { params(obj: T.untyped).void }
+      def write(obj)
+        obj
+          .then { @wrapper.pack(_1.to_a) }
+          .then { @deflate.deflate(_1, Zlib::SYNC_FLUSH) }
+          .then { @body.write(_1) }
+      end
+
+      sig { returns(T::Boolean) }
+      def closed?
+        @body.closed?
+      end
+
+      sig { void }
+      def close
+        @body.write(@deflate.flush(Zlib::FINISH))
+        @deflate.close
+        @body.close
+      end
+    end
+
     class App
       extend T::Sig
 
@@ -326,6 +367,8 @@ module Mayu
         @barrier.async do |task|
           session.activity!
 
+          writable_stream = WritableStream.new(body)
+
           Console.logger.info(self, "Streaming events to session #{session.id}")
 
           barrier = Async::Barrier.new
@@ -360,31 +403,7 @@ module Mayu
 
           message_task =
             barrier.async do |subtask|
-              deflate =
-                Zlib::Deflate.new(
-                  Zlib::BEST_COMPRESSION,
-                  Zlib::MAX_WBITS,
-                  Zlib::MAX_MEM_LEVEL,
-                  Zlib::HUFFMAN_ONLY
-                )
-
-              wrapper = EventStream::Wrapper.new
-
-              begin
-                loop do
-                  session
-                    .log
-                    .pop
-                    .then { wrapper.pack(_1.to_a) }
-                    .then { deflate.deflate(_1, Zlib::SYNC_FLUSH) }
-                    .then { body.write(_1) }
-                end
-              rescue => e
-                Console.logger.error(self, e)
-              ensure
-                body.write(deflate.flush(Zlib::FINISH))
-                deflate.close
-              end
+              loop { writable_stream.write(session.log.pop.to_a) }
             ensure
               barrier.stop
             end
@@ -392,7 +411,7 @@ module Mayu
           stop_notification.wait
 
           barrier.stop
-          perform_transfer(session, body)
+          perform_transfer(session, writable_stream)
           task.stop
         end
       end
@@ -413,33 +432,31 @@ module Mayu
       sig do
         params(
           session: Session,
-          body: Async::HTTP::Body::Writable,
+          writable_stream: WritableStream,
           task: Async::Task
         ).void
       end
-      def perform_transfer(session, body, task: Async::Task.current)
-        return if body.closed?
+      def perform_transfer(session, writable_stream, task: Async::Task.current)
+        return if writable_stream.closed?
 
         Console.logger.info(self, "Session #{session.id}: Transferring")
 
-        body.write(
-          session.log.pack(
-            EventStream::Message.new(
-              :"session.transfer",
-              EventStream::Blob.new(
-                @environment.message_cipher.dump(
-                  Session::SerializedSession.dump_session(session)
-                )
+        writable_stream.write(
+          EventStream::Message.new(
+            :"session.transfer",
+            EventStream::Blob.new(
+              @environment.message_cipher.dump(
+                Session::SerializedSession.dump_session(session)
               )
             )
-          )
+          ).to_a
         )
 
         # Sleep a little bit so that the message
         # gets sent before the body closes...
         # This is not ideal, heh..
         sleep 0.1
-        body.close
+        writable_stream.close
       end
 
       sig do
