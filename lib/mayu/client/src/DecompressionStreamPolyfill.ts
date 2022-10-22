@@ -10,12 +10,11 @@ class DecompressionStreamPolyfill extends TransformStream<
     super({
       async start(controller) {
         decompressor = new Inflate((chunk: Uint8Array, final: boolean) => {
-          if (chunk) {
-            controller.enqueue(chunk);
-          }
-
+          console.log(chunk);
           if (final) {
             controller.terminate();
+          } else {
+            controller.enqueue(chunk);
           }
         });
       },
