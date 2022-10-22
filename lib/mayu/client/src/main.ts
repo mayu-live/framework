@@ -113,11 +113,19 @@ async function main() {
     switch (event) {
       case "system.connected":
         console.info("Connected!");
+        pingElement.setAttribute("region", "Connected…");
         document.body
           .querySelectorAll("mayu-disconnected")
           .forEach((el) => el.remove());
         break;
       case "system.disconnected":
+        if (payload.transferring) {
+          console.warn("Disconnected because of transfer");
+          pingElement.setAttribute("region", "Transferring…");
+          pingElement.setAttribute("transferring", "transferring");
+          break;
+        }
+
         console.error("Disconnected");
         if (disconnectedElement.parentElement !== document.body) {
           document.body.appendChild(disconnectedElement);
@@ -139,6 +147,8 @@ async function main() {
       case "session.keep_alive":
         break;
       case "session.transfer":
+        pingElement.setAttribute("region", "Transferring");
+        pingElement.setAttribute("transferring", "transferring");
         console.info("Transferring!");
         break;
       case "ping":
@@ -151,6 +161,7 @@ async function main() {
         // });
         pingElement.setAttribute("ping", `${mean.toFixed(2)} ms`);
         pingElement.setAttribute("region", payload.region);
+        pingElement.removeAttribute("transferring");
         break;
       default:
         console.warn("Unhandled event:", event, payload);

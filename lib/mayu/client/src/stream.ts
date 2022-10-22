@@ -124,7 +124,8 @@ export async function* sessionStream(
       }
 
       isConnected = false;
-      yield ["system.disconnected", {}];
+
+      yield ["system.disconnected", { transferring: !!encryptedState }];
 
       res = await retry(() =>
         fetch(`/__mayu/session/${sessionId}/resume`, {

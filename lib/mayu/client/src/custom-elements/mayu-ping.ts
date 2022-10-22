@@ -8,7 +8,7 @@ class PingComponent extends HTMLElement {
   ping?: HTMLSpanElement;
   region?: HTMLSpanElement;
 
-  static observedAttributes = ["ping", "region"];
+  static observedAttributes = ["ping", "region", "transferring"];
 
   connectedCallback() {
     if (!this.shadowRoot) {
@@ -19,6 +19,7 @@ class PingComponent extends HTMLElement {
       template.content.cloneNode(true)
     ) as DocumentFragment;
 
+    this.div = this.shadowRoot!.querySelector(".mayu-ping") as HTMLDivElement;
     this.ping = this.shadowRoot!.querySelector(".ping") as HTMLSpanElement;
     this.region = this.shadowRoot!.querySelector(".region") as HTMLSpanElement;
   }
@@ -30,6 +31,13 @@ class PingComponent extends HTMLElement {
         break;
       case "region":
         this.region!.textContent = newValue;
+        break;
+      case "transferring":
+        if (newValue === "transferring") {
+          this.div!.classList.add("transferring");
+        } else {
+          this.div!.classList.remove("transferring");
+        }
         break;
     }
   }
