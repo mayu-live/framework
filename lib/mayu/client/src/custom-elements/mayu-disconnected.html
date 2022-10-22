@@ -112,9 +112,19 @@
   a {
     all: revert;
   }
+
+  #reason:empty {
+    display: none;
+  }
+
+  #reason::before {
+    content: "Reason: ";
+    font-weight: bold;
+  }
 </style>
 <dialog>
   <h1>Connection lost</h1>
+  <p id="reason"></p>
   <p>Please check your internet connection.</p>
   <p>
     <a href="javascript:document.location.reload()" autofocus

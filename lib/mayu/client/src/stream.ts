@@ -1,23 +1,24 @@
 import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
-import { stringifyJSON, retry, sleep } from "./utils";
+import { stringifyJSON, retry, FatalError, sleep } from "./utils";
 import { MimeTypes } from "./MimeTypes";
 import type MayuLogElement from "./custom-elements/mayu-log";
+import logger from "./logger";
 
 async function createDecompressionStream(): Promise<
   DecompressionStream | TransformStream<Uint8Array, Uint8Array>
 > {
   if (typeof DecompressionStream !== "undefined") {
-    console.warn("Using standard DecompressionStream");
+    logger.warn("Using standard DecompressionStream");
     return new DecompressionStream("deflate");
   }
 
-  console.warn("Loading DecompressionStream polyfill");
+  logger.success("Loading DecompressionStream polyfill");
 
   const createDecompressionStreamPolyfill = (
     await import("./createDecompressionStreamPolyfill")
   ).default;
 
-  console.warn("Using DecompressionStream polyfill");
+  logger.warn("Using DecompressionStream polyfill");
 
   return createDecompressionStreamPolyfill();
 }
@@ -38,13 +39,16 @@ function createExtensionCodec() {
   return extensionCodec;
 }
 
-async function startStream(res: Response) {
+async function startStream(sessionId: string, encryptedState?: Blob) {
+  const res = await resume(sessionId, encryptedState);
+
   if (!res.ok) {
-    throw new Error("res is not ok");
+    const text = await res.text();
+    throw new FatalError(`${res.status}: ${text}`);
   }
 
   if (!res.body) {
-    throw new Error("body is null");
+    throw new FatalError("body is null");
   }
 
   const decompressionStream = await createDecompressionStream();
@@ -55,22 +59,36 @@ async function startStream(res: Response) {
 type ServerMessage = [id: string, event: string, payload: any];
 type SessionStreamMessage = [string, any];
 
+function resume(sessionId, encryptedState?: Blob) {
+  if (!encryptedState) {
+    return retry(() =>
+      fetch(`/__mayu/session/${sessionId}/init`, {
+        method: "POST",
+      })
+    );
+  }
+
+  return retry(() =>
+    fetch(`/__mayu/session/${sessionId}/resume`, {
+      method: "POST",
+      headers: { "content-type": MimeTypes.MAYU_SESSION },
+      body: encryptedState,
+    })
+  );
+}
+
 export async function* sessionStream(
   sessionId: string,
   logElement: MayuLogElement
 ): AsyncGenerator<SessionStreamMessage> {
   let isRunning = true;
-  let encryptedState: Blob | undefined = undefined;
+  let encryptedState: Blob | undefined;
   let isConnected = false;
   const extensionCodec = createExtensionCodec();
 
-  let res = await fetch(`/__mayu/session/${sessionId}/init`, {
-    method: "POST",
-  });
-
   while (isRunning) {
     try {
-      const stream = await retry(() => startStream(res));
+      const stream = await retry(() => startStream(sessionId, encryptedState));
 
       try {
         for await (const message of decodeMultiStream(stream, {
@@ -78,7 +96,7 @@ export async function* sessionStream(
         })) {
           const [id, event, payload] = message as ServerMessage;
 
-          logElement.addEntry(id, event, payload);
+          // logElement.addEntry(id, event, payload);
 
           if (!isConnected) {
             isConnected = true;
@@ -87,7 +105,7 @@ export async function* sessionStream(
           }
 
           if (encryptedState) {
-            console.warn("Clearing encryptedState");
+            logger.info("Clearing encryptedState");
             encryptedState = undefined;
           }
 
@@ -96,7 +114,7 @@ export async function* sessionStream(
               case "session.transfer":
                 yield ["session.transfer", {}];
                 encryptedState = payload;
-                console.warn("Setting encryptedState", payload);
+                logger.info("Setting encryptedState", payload);
                 break;
               case "pong":
                 yield [
@@ -121,26 +139,26 @@ export async function* sessionStream(
                 yield [event, payload];
             }
           } catch (e) {
-            console.error(e);
+            logger.error(e);
           }
         }
       } catch (e) {
-        console.error(e);
+        logger.error(e);
       }
 
       isConnected = false;
 
       yield ["system.disconnected", { transferring: !!encryptedState }];
-
-      res = await retry(() =>
-        fetch(`/__mayu/session/${sessionId}/resume`, {
-          method: "POST",
-          headers: { "content-type": MimeTypes.MAYU_SESSION },
-          body: encryptedState,
-        })
-      );
     } catch (e) {
-      console.error(e);
+      logger.error(e);
+
+      if (e instanceof FatalError) {
+        isRunning = false;
+        isConnected = false;
+        yield ["system.disconnected", { reason: e.message }];
+        return;
+      }
+
       await sleep(1000);
     }
   }

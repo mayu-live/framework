@@ -183,6 +183,13 @@ module Mayu
         else
           Protocol::HTTP::Response[404, {}, ["not found"]]
         end
+      rescue Mayu::MessageCipher::DecryptError => e
+        Console.logger.error(self, e)
+        Protocol::HTTP::Response[
+          403,
+          { "content-type": "text/plain" },
+          ["decrypt error"]
+        ]
       rescue Mayu::MessageCipher::ExpiredError => e
         Console.logger.error(self, e)
         Protocol::HTTP::Response[

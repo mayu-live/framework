@@ -20,6 +20,8 @@ export async function sleep(ms = 1000) {
   });
 }
 
+export class FatalError extends Error {}
+
 export async function retry<T>(fn: () => Promise<T>): Promise<T> {
   const maxAttempts = 10;
   let attempts = 0;
@@ -28,6 +30,10 @@ export async function retry<T>(fn: () => Promise<T>): Promise<T> {
     try {
       return await fn();
     } catch (e) {
+      if (e instanceof FatalError) {
+        throw e;
+      }
+
       if (attempts >= maxAttempts) {
         console.error("Reached the maximum number of attempts!");
         throw e;

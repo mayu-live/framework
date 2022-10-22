@@ -120,7 +120,9 @@ async function main() {
   pingElement.setAttribute("region", "Connecting...");
   pingElement.setAttribute("status", "connecting");
   document.body.appendChild(pingElement);
+
   const logElement = document.createElement("mayu-log") as MayuLogElement;
+  logElement.hidden = true;
   document.body.appendChild(logElement);
 
   for await (const [event, payload] of sessionStream(sessionId, logElement)) {
@@ -145,6 +147,8 @@ async function main() {
         pingElement.setAttribute("status", "disconnected");
 
         logger.error("Disconnected");
+
+        disconnectedElement.setAttribute("reason", payload.reason);
 
         if (disconnectedElement.parentElement !== document.body) {
           document.body.appendChild(disconnectedElement);
