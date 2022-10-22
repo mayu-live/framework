@@ -346,9 +346,30 @@ module Mayu
 
           message_task =
             barrier.async do |subtask|
-              loop do
-                body.write(session.log.pack(session.log.pop))
-                # sleep 0.01
+              deflate =
+                Zlib::Deflate.new(
+                  Zlib::BEST_COMPRESSION,
+                  Zlib::MAX_WBITS,
+                  Zlib::MAX_MEM_LEVEL,
+                  Zlib::HUFFMAN_ONLY
+                )
+
+              wrapper = EventStream::Wrapper.new
+
+              begin
+                loop do
+                  session
+                    .log
+                    .pop
+                    .then { wrapper.pack(_1.to_a) }
+                    .then { deflate.deflate(_1, Zlib::SYNC_FLUSH) }
+                    .then { body.write(_1) }
+                end
+              rescue => e
+                Console.logger.error(self, e)
+              ensure
+                body.write(deflate.flush(Zlib::FINISH))
+                deflate.close
               end
             ensure
               barrier.stop

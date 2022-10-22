@@ -1,31 +1,8 @@
-// import { addExtension, Unpackr } from "msgpackr";
 import { inflate } from "pako";
-import { decode, ExtensionCodec } from "@msgpack/msgpack";
+import { Inflate } from "fflate";
+import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
 import "./polyfill-readableStreamAsyncGenerator";
 import { QuickReader, A } from "quickreader";
-
-const extensionCodec = new ExtensionCodec();
-
-extensionCodec.register({
-  type: 0x01,
-  encode() {
-    throw new Error("Not implemented");
-  },
-  decode(buffer: Uint8Array) {
-    return new Blob([buffer], { type: "application/vnd.mayu.session" });
-  },
-});
-
-// addExtension({
-//   Class: Blob,
-//   type: 0x01,
-//   pack() {
-//     throw new Error("Not implemented");
-//   },
-//   unpack(buffer: Uint8Array) {
-//     return new Blob([buffer], { type: "application/vnd.mayu.session" });
-//   },
-// });
 
 const MIME_TYPES = {
   MAYU_SESSION: "application/vnd.mayu.session",
@@ -56,20 +33,41 @@ function createPacketReadableStream(stream: ReadableStream) {
 }
 
 function createInflateTransformStream() {
+  let decompressor: Inflate;
+
   return new TransformStream<Uint8Array, Uint8Array>({
-    async transform(chunk, controller) {
-      controller.enqueue(inflate(chunk));
+    async start(controller) {
+      decompressor = new Inflate((chunk: Uint8Array, final: boolean) => {
+        if (final) {
+          controller.terminate();
+        } else {
+          controller.enqueue(chunk);
+        }
+      });
+    },
+    async transform(chunk) {
+      decompressor.push(chunk, false);
+    },
+    flush() {
+      decompressor.push(new Uint8Array(), true);
     },
   });
 }
 
-function createDecodeTransformStream() {
-  return new TransformStream<Uint8Array, ServerMessage>({
-    async transform(chunk, controller) {
-      const message = decode(chunk, { extensionCodec });
-      controller.enqueue(message as ServerMessage);
+function createExtensionCodec() {
+  const extensionCodec = new ExtensionCodec();
+
+  extensionCodec.register({
+    type: 0x01,
+    encode() {
+      throw new Error("Not implemented");
+    },
+    decode(buffer: Uint8Array) {
+      return new Blob([buffer], { type: "application/vnd.mayu.session" });
     },
   });
+
+  return extensionCodec;
 }
 
 async function startStream(res: Response) {
@@ -81,9 +79,17 @@ async function startStream(res: Response) {
     throw new Error("body is null");
   }
 
-  return createPacketReadableStream(res.body)
-    .pipeThrough(createInflateTransformStream())
-    .pipeThrough(createDecodeTransformStream());
+  // const decompressor = new DecompressionStream("deflate")
+  return res.body.pipeThrough(createInflateTransformStream());
+}
+
+async function* startStream2(res: Response) {
+  const stream = await retry(() => startStream(res));
+  const extensionCodec = createExtensionCodec();
+
+  for await (const msg of decodeMultiStream(stream, { extensionCodec })) {
+    yield msg as ServerMessage;
+  }
 }
 
 type ServerMessage = [id: string, event: string, payload: any];
@@ -101,7 +107,7 @@ export async function* sessionStream(
 
   try {
     while (isRunning) {
-      const stream = await startStream(res);
+      const stream = startStream2(res);
 
       yield ["system.connected", {}];
 
