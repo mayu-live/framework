@@ -33,12 +33,8 @@ class DisconnectedComponent extends HTMLElement {
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
     switch (name) {
       case "reason":
-        console.log("Updating reason", newValue);
-        console.log(this.reason);
-        console.log(this.dialog);
-        if (this.reason) {
-          this.reason.textContent = String(newValue);
-        }
+        if (!this.reason) break;
+        this.reason.textContent = String(newValue);
         break;
       default:
         break;

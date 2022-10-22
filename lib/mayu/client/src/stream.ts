@@ -44,6 +44,12 @@ async function startStream(sessionId: string, encryptedState?: Blob) {
 
   if (!res.ok) {
     const text = await res.text();
+
+    if (res.status == 503) {
+      // Server is shutting down, so retry..
+      throw new Error(`${res.status}: ${text}`);
+    }
+
     throw new FatalError(`${res.status}: ${text}`);
   }
 
@@ -59,7 +65,7 @@ async function startStream(sessionId: string, encryptedState?: Blob) {
 type ServerMessage = [id: string, event: string, payload: any];
 type SessionStreamMessage = [string, any];
 
-function resume(sessionId, encryptedState?: Blob) {
+function resume(sessionId: string, encryptedState?: Blob) {
   if (!encryptedState) {
     return retry(() =>
       fetch(`/__mayu/session/${sessionId}/init`, {
@@ -77,6 +83,18 @@ function resume(sessionId, encryptedState?: Blob) {
   );
 }
 
+function errorMessage(e: any) {
+  if (e instanceof Error) {
+    return e.message;
+  }
+
+  if (typeof e === "string") {
+    return e;
+  }
+
+  return String(e);
+}
+
 export async function* sessionStream(
   sessionId: string,
   logElement: MayuLogElement
@@ -85,6 +103,7 @@ export async function* sessionStream(
   let encryptedState: Blob | undefined;
   let isConnected = false;
   const extensionCodec = createExtensionCodec();
+  let reason: string | undefined;
 
   while (isRunning) {
     try {
@@ -139,16 +158,22 @@ export async function* sessionStream(
                 yield [event, payload];
             }
           } catch (e) {
+            reason = errorMessage(e);
             logger.error(e);
           }
         }
       } catch (e) {
+        reason = errorMessage(e);
         logger.error(e);
       }
 
       isConnected = false;
 
-      yield ["system.disconnected", { transferring: !!encryptedState }];
+      if (isRunning) {
+        reason ||= "Stream ended unexpectedly";
+      }
+
+      yield ["system.disconnected", { transferring: !!encryptedState, reason }];
     } catch (e) {
       logger.error(e);
 

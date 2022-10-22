@@ -27,12 +27,16 @@ class PingComponent extends HTMLElement {
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
     switch (name) {
       case "ping":
-        this.ping!.textContent = newValue;
+        if (!this.ping) break;
+        this.ping.textContent = newValue;
         break;
       case "region":
-        this.region!.textContent = newValue;
+        if (!this.region) break;
+        this.region.textContent = newValue;
         break;
       case "status":
+        if (!this.div) break;
+
         if (oldValue && oldValue !== newValue) {
           this.div!.classList.remove(`status-${oldValue}`);
         }

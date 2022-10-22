@@ -183,26 +183,63 @@ module Mayu
         else
           Protocol::HTTP::Response[404, {}, ["not found"]]
         end
+      rescue CookieNotSetError => e
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
+        Protocol::HTTP::Response[
+          403,
+          { "content-type": "text/plain" },
+          ["missing session cookie"]
+        ]
+      rescue SessionNotFoundError => e
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
+        Protocol::HTTP::Response[
+          404,
+          { "content-type": "text/plain" },
+          ["session not found"]
+        ]
       rescue Mayu::MessageCipher::DecryptError => e
-        Console.logger.error(self, e)
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
         Protocol::HTTP::Response[
           403,
           { "content-type": "text/plain" },
           ["decrypt error"]
         ]
       rescue Mayu::MessageCipher::ExpiredError => e
-        Console.logger.error(self, e)
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
         Protocol::HTTP::Response[
           403,
           { "content-type": "text/plain" },
           ["session expired"]
         ]
       rescue InvalidTokenError => e
-        Console.logger.error(self, e)
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
         Protocol::HTTP::Response[
           403,
           { "content-type": "text/plain" },
           ["invalid token"]
+        ]
+      rescue SessionAlreadyResumedError => e
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
+        Protocol::HTTP::Response[
+          409,
+          { "content-type": "text/plain" },
+          ["already resumed"]
+        ]
+      rescue Session::AlreadyRunningError
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
+        Protocol::HTTP::Response[
+          409,
+          { "content-type": "text/plain" },
+          ["already running"]
+        ]
+
+        # https://fly.io/docs/reference/fly-replay/#fly-replay
+      rescue ServerIsShuttingDownError
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
+        Protocol::HTTP::Response[
+          503,
+          { "fly-replay": "elsewhere=true" },
+          ["Server is shutting down"]
         ]
       rescue InvalidMethodError => e
         Console.logger.error(self, e)
@@ -210,26 +247,6 @@ module Mayu
           405,
           { "content-type": "text/plain" },
           ["method not allowed"]
-        ]
-      rescue SessionAlreadyResumedError => e
-        Console.logger.error(self, e)
-        Protocol::HTTP::Response[
-          409,
-          { "content-type": "text/plain" },
-          ["already resumed"]
-        ]
-      rescue Session::AlreadyRunningError
-        Console.logger.error(self, e)
-        Protocol::HTTP::Response[
-          409,
-          { "content-type": "text/plain" },
-          ["already running"]
-        ]
-      rescue ServerIsShuttingDownError
-        Protocol::HTTP::Response[
-          503,
-          { "fly-replay": "elsewhere" },
-          ["Server is shutting down"]
         ]
       rescue => e
         Console.logger.error(self, e)
@@ -429,7 +446,11 @@ module Mayu
       sig { params(session_id: String, body: String).returns(Session) }
       def load_session(session_id, body)
         if body.empty?
-          return @sessions.fetch(session_id) { raise SessionNotFoundError }
+          return(
+            @sessions.fetch(session_id) do
+              raise SessionNotFoundError, "Session not found: #{session_id}"
+            end
+          )
         end
 
         @environment.message_cipher.load(body) => String => dumped
