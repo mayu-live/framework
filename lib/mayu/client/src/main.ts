@@ -4,6 +4,14 @@ import type MayuPingElement from "./custom-elements/mayu-ping";
 import defineCustomElements from "./custom-elements";
 defineCustomElements();
 
+import logger from "./logger";
+
+logger.success("hello");
+logger.error("hello");
+logger.warn("hello");
+logger.info("hello");
+logger.log("hello");
+
 const onDOMContentLoaded = new Promise<void>((resolve) => {
   if (document.readyState !== "loading") {
     return resolve();
@@ -61,7 +69,7 @@ class MayuGlobal {
     const anchor = (e.target as HTMLElement).closest("a");
 
     if (!anchor) {
-      console.error("Could not find anchor element for", e.target);
+      logger.error("Could not find anchor element for", e.target);
       return;
     }
 
@@ -106,7 +114,10 @@ async function main() {
   let nodeTree: NodeTree | undefined;
 
   const disconnectedElement = document.createElement("mayu-disconnected");
+
   const pingElement = document.createElement("mayu-ping") as MayuPingElement;
+  pingElement.setAttribute("region", "Connecting...");
+  pingElement.setAttribute("status", "connecting");
   document.body.appendChild(pingElement);
 
   for await (const [event, payload] of sessionStream(sessionId)) {
@@ -114,6 +125,8 @@ async function main() {
       case "system.connected":
         pingElement.setAttribute("region", "Connected!");
         pingElement.setAttribute("status", "connected");
+        logger.success("Connected!");
+
         document.body
           .querySelectorAll("mayu-disconnected")
           .forEach((el) => el.remove());
@@ -128,7 +141,8 @@ async function main() {
         pingElement.setAttribute("region", "Disconnected");
         pingElement.setAttribute("status", "disconnected");
 
-        console.error("Disconnected");
+        logger.error("Disconnected");
+
         if (disconnectedElement.parentElement !== document.body) {
           document.body.appendChild(disconnectedElement);
         }
@@ -142,7 +156,7 @@ async function main() {
         break;
       case "session.navigate":
         const path = payload.path;
-        console.log("Navigating to", path);
+        logger.info("Navigating to", path);
         history.pushState({}, "", path);
         // progressBar.setAttribute("progress", "100");
         break;
@@ -163,7 +177,7 @@ async function main() {
         pingElement.setAttribute("status", "ping");
         break;
       default:
-        console.warn("Unhandled event:", event, payload);
+        logger.warn("Unhandled event:", event, payload);
         break;
     }
   }
