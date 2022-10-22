@@ -1,7 +1,8 @@
 // import { addExtension, Unpackr } from "msgpackr";
 import { inflate } from "pako";
-import { decodeMulti, ExtensionCodec } from "@msgpack/msgpack";
+import { decode, ExtensionCodec } from "@msgpack/msgpack";
 import "./polyfill-readableStreamAsyncGenerator";
+import { QuickReader, A } from "quickreader";
 
 const extensionCodec = new ExtensionCodec();
 
@@ -33,24 +34,40 @@ const MIME_TYPES = {
 
 import { stringifyJSON, retry } from "./utils";
 
-function inflateTransformStream() {
-  return new TransformStream({
-    transform(chunk: Uint8Array, controller) {
-      const inflated = inflate(chunk);
+function createPacketReadableStream(stream: ReadableStream) {
+  const reader = new QuickReader(stream);
 
-      if (!inflated) {
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      if (reader.eof) {
+        controller.close();
         return;
       }
 
-      // console.log(
-      //   "Deflated size:",
-      //   chunk.length,
-      //   "Inflated size:",
-      //   inflated.length,
-      //   "Compression ratio:",
-      //   inflated.length / chunk.length
-      // );
-      controller.enqueue(inflated);
+      console.time("Reading packet");
+      const length = reader.u32be() ?? (await A);
+      console.log("Packet length:", length);
+      const packet = reader.bytes(length) ?? (await A);
+      console.log("Packet read:", packet.byteLength);
+      console.timeEnd("Reading packet");
+      controller.enqueue(packet);
+    },
+  });
+}
+
+function createInflateTransformStream() {
+  return new TransformStream<Uint8Array, Uint8Array>({
+    async transform(chunk, controller) {
+      controller.enqueue(inflate(chunk));
+    },
+  });
+}
+
+function createDecodeTransformStream() {
+  return new TransformStream<Uint8Array, ServerMessage>({
+    async transform(chunk, controller) {
+      const message = decode(chunk, { extensionCodec });
+      controller.enqueue(message as ServerMessage);
     },
   });
 }
@@ -64,50 +81,12 @@ async function startStream(res: Response) {
     throw new Error("body is null");
   }
 
-  const reader = res.body.pipeThrough(inflateTransformStream()).getReader();
-
-  return new ReadableStream({
-    start(controller) {
-      // const decoder = new Decoder();
-      // const unpackr = new Unpackr({ useRecords: false });
-
-      async function push() {
-        try {
-          const { done, value } = (await reader.read()) as {
-            done: boolean;
-            value: Uint8Array;
-          };
-
-          if (done) {
-            controller.close();
-            return;
-          }
-
-          const messages = decodeMulti(value, { extensionCodec });
-
-          for (const message of messages) {
-            // console.log(message)
-            controller.enqueue(message);
-          }
-
-          push();
-        } catch (e) {
-          console.error("Streaming error:", e);
-          console.error(e);
-          // await sleep(1000);
-          controller.close();
-        }
-      }
-
-      push();
-    },
-
-    cancel(reason) {
-      console.error("Cancelled", reason);
-    },
-  });
+  return createPacketReadableStream(res.body)
+    .pipeThrough(createInflateTransformStream())
+    .pipeThrough(createDecodeTransformStream());
 }
 
+type ServerMessage = [id: string, event: string, payload: any];
 type SessionStreamMessage = [string, any];
 
 export async function* sessionStream(
@@ -122,14 +101,14 @@ export async function* sessionStream(
 
   try {
     while (isRunning) {
-      const stream = (await retry(() => startStream(res))) as any;
+      const stream = await startStream(res);
 
       yield ["system.connected", {}];
 
       console.warn("Resetting encryptedState");
       encryptedState = undefined;
 
-      for await (const [id, event, payload] of stream) {
+      for await (const [_id, event, payload] of stream) {
         try {
           switch (event) {
             case "session.transfer":

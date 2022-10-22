@@ -103,7 +103,10 @@ module Mayu
 
       sig { params(message: Message).returns(String) }
       def pack(message)
-        Zlib.deflate(@wrapper.pack(message.to_a))
+        data = Zlib.deflate(@wrapper.pack(message.to_a))
+        # N = 32-bit unsigned, network (big-endian) byte order
+        # a = arbitrary binary string (null padded, count is width)
+        [data.bytesize, data].pack("N a*")
       end
     end
 

@@ -348,7 +348,7 @@ module Mayu
             barrier.async do |subtask|
               loop do
                 body.write(session.log.pack(session.log.pop))
-                sleep 0.01
+                # sleep 0.01
               end
             ensure
               barrier.stop

@@ -1,7 +1,6 @@
 # typed: true
 
 require_relative "store"
-require_relative "../app"
 
 module Mayu
   module State

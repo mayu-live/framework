@@ -29,6 +29,7 @@
     "fflate": "^0.7.4",
     "msgpackr": "^1.7.2",
     "pako": "^2.0.4",
+    "quickreader": "^0.1.4",
     "rollup": "^2.77.2",
     "rollup-plugin-string": "^3.0.0",
     "rollup-plugin-terser": "^7.0.2",
