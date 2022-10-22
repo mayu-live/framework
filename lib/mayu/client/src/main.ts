@@ -84,7 +84,7 @@ function mayuCallback(sessionId: string, handlerId: string, payload: any) {
 async function navigateTo(sessionId: string, url: string) {
   return fetch(`/__mayu/session/${sessionId}/navigate`, {
     method: "POST",
-    headers: { "content-type": "text/plain" },
+    headers: { "content-type": "text/plain; charset=utf-8" },
     body: url,
   });
 }
@@ -155,13 +155,11 @@ async function main() {
       case "ping":
         const values = Object.values(payload.values) as number[];
         const mean = values.reduce((a, b) => a + b, 0.0) / values.length;
-        // console.table({
-        //   client: { ping: payload.values.client },
-        //   server: { ping: payload.values.server },
-        //   mean: { ping: mean },
-        // });
         pingElement.setAttribute("ping", `${mean.toFixed(2)} ms`);
-        pingElement.setAttribute("region", payload.region);
+        pingElement.setAttribute(
+          "region",
+          `${payload.instance} @ ${payload.region}`
+        );
         pingElement.setAttribute("status", "ping");
         break;
       default:

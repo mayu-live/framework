@@ -103,6 +103,7 @@ export async function* sessionStream(
                       server: payload.server,
                     },
                     region: payload.region,
+                    instance: payload.instance,
                   },
                 ];
                 break;

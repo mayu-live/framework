@@ -305,7 +305,8 @@ module Mayu
             :pong,
             pong: ping,
             server: server_pong,
-            region: @environment.config.instance.region
+            region: @environment.config.instance.region,
+            instance: @environment.config.instance.alloc_id.split("-", 2).first
           )
           Protocol::HTTP::Response[200, headers, [JSON.generate(ping)]]
         in ["navigate"]
