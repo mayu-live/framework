@@ -17,13 +17,17 @@ def pagination_window(current_page:, total_pages:, window_size: 5)
 end
 
 def render
-  props => { page: }
+  props => {
+    page:,
+    per_page:,
+    total_pages:,
+  }
 
   prev_page_link = page > 1 && "?page=#{page.pred}"
   next_page_link = page <= props[:total_pages] && "?page=#{page.succ}"
 
   <Fieldset>
-    <legend>Page {page} of {props[:total_pages].succ}</legend>
+    <legend>Page {page} of {total_pages.succ}, showing {per_page} per page</legend>
 
     <div class={styles[:wrap]}>
       <nav class={styles.buttons} aria-label="pagination">
@@ -53,7 +57,7 @@ def render
       <div class={styles.perPage}>
         Per page:
         {" "}
-        <select on-change={props[:on_change_per_page]} value={props[:per_page]}>
+        <select on-change={props[:on_change_per_page]} value={per_page}>
           {[20, 40, 80].map do |value|
             <option key={value} value={value}>{value}</option>
           end}

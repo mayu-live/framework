@@ -21,6 +21,8 @@ module Mayu
 
             components = []
 
+            components.push(File.join("/app", "root"))
+
             environment.routes.each do |route|
               route.layouts.each do |layout|
                 components.push(File.join("/app", "pages", layout))

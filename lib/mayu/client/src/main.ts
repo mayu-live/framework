@@ -5,6 +5,8 @@ import type MayuLogElement from "./custom-elements/mayu-log";
 import defineCustomElements from "./custom-elements";
 defineCustomElements();
 
+import serializeEvent from "./serializeEvent";
+
 import logger from "./logger";
 
 logger.success("hello");
@@ -31,23 +33,8 @@ class MayuGlobal {
   async handle(e: Event, handlerId: string) {
     e.preventDefault();
 
-    const payload = {
-      type: e.type,
-      value: (e.target as any).value,
-    } as Record<string, any>;
-
-    if (e.target instanceof HTMLFormElement) {
-      payload.formData = Object.fromEntries(new FormData(e.target).entries());
-
-      if (
-        e instanceof SubmitEvent &&
-        e.submitter instanceof HTMLButtonElement &&
-        e.submitter.name
-      ) {
-        payload.formData[e.submitter.name] = e.submitter.value;
-      }
-    }
-
+    const payload = serializeEvent(e);
+    console.log(payload);
     // progressBar.setAttribute("progress", "0");
 
     await mayuCallback(this.#sessionId, handlerId, payload);

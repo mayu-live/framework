@@ -20,7 +20,7 @@ rescue => e
 end
 
 def handle_set_per_page(e)
-  update(page: 0, per_page: e["value"].to_i)
+  update(page: 0, per_page: e.dig("target", "value").to_i)
 end
 
 def render
