@@ -1,7 +1,6 @@
 # typed: true
 
 require_relative "store"
-require_relative "../app"
 
 module Mayu
   module State
@@ -200,12 +199,6 @@ module Mayu
           .map do |path|
             data = ReducerBuilder.build(File.read(path), path)
             name = File.basename(path, ".*").capitalize.to_sym
-
-            Mayu::App.replace_module(
-              name,
-              Actions: data[:action_module],
-              Selectors: data[:selector_module]
-            )
 
             [
               name,

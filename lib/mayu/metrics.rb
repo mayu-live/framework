@@ -1,157 +1,79 @@
 # typed: strict
 
+require "bundler/setup"
+require "async"
+require "async/container"
+require "async/semaphore"
+require "async/http"
+require "async/io/unix_endpoint"
+require "async/io/shared_endpoint"
+require "msgpack"
+require "nanoid"
 require "prometheus/client"
-require_relative "metrics/prometheus"
-require "prometheus/client/data_stores/direct_file_store"
+require "prometheus/client/formats/text"
+
+require_relative "metrics/collector"
+require_relative "metrics/exporter"
+require_relative "metrics/reporter"
 
 module Mayu
-  class Metrics
+  module Metrics
+    InternalStore = T.type_alias { T::Hash[Symbol, MetricHash] }
+    MetricHash = T.type_alias { T::Hash[Symbol, ValueHash] }
+    ValueHash = T.type_alias { T::Hash[LabelsHash, Float] }
+    LabelsHash = T.type_alias { T::Hash[Symbol, T.untyped] }
+
+    class Wrapper < MessagePack::Factory
+      extend T::Sig
+
+      sig { void }
+      def initialize
+        super()
+
+        self.register_type(0x01, Symbol)
+      end
+    end
+
     extend T::Sig
-
-    sig { returns(Prometheus::Client::Counter) }
-    attr_reader :error_count
-    sig { returns(Prometheus::Client::Gauge) }
-    attr_reader :session_count
-    sig { returns(Prometheus::Client::Counter) }
-    attr_reader :session_init_count
-    sig { returns(Prometheus::Client::Counter) }
-    attr_reader :session_navigate_count
-    sig { returns(Prometheus::Client::Counter) }
-    attr_reader :session_ping_count
-    sig { returns(Prometheus::Client::Counter) }
-    attr_reader :session_callback_count
-    sig { returns(Prometheus::Client::Summary) }
-    attr_reader :vnode_patch_times
-
-    sig { params(config: Configuration).void }
-    def self.setup(config)
-      return if $mayu_metrics_configured
-      $mayu_metrics_configured = true
-
-      remove_prometheus_data(config)
-      setup_prometheus_data_store(config)
-
-      new(config:)
-    end
-
-    sig { params(config: Configuration).void }
-    def self.remove_prometheus_data(config)
-      files = Dir[File.join(config.root, "tmp", "prometheus", "*.bin")]
-      return if files.empty?
-
-      Console.logger.warn("Removing prometheus data", *files)
-
-      files.each { File.unlink(_1) }
-    end
-
-    sig { params(config: Configuration).void }
-    def self.setup_prometheus_data_store(config)
-      Prometheus::Client.config.data_store =
-        Prometheus::Client::DataStores::DirectFileStore.new(
-          dir: File.join(config.root, "tmp", "prometheus")
-        )
-    end
 
     sig do
       params(
-        config: Configuration,
-        prometheus: Prometheus::Client::Registry
+        container: Async::Container::Generic,
+        exporter_endpoint: Async::HTTP::Endpoint,
+        collector_endpoint: Async::IO::UNIXEndpoint,
+        block: T.proc.params(arg0: Prometheus::Client::Registry).void
       ).void
     end
-    def initialize(config:, prometheus: Prometheus::Client.registry)
-      preset_labels = {
-        region: config.instance.region,
-        alloc_id: config.instance.alloc_id,
-        app_name: config.instance.app_name
-      }
+    def self.start_collect_and_export(
+      container,
+      exporter_endpoint:,
+      collector_endpoint:,
+      &block
+    )
+      collector = Metrics::Collector::Server.new(collector_endpoint)
+      collector.start
 
-      @error_count =
-        T.let(
-          prometheus.counter(
-            :mayu_error_count,
-            docstring: "Total number of errors",
-            labels: [:type, *preset_labels.keys],
-            preset_labels:
-          ),
-          Prometheus::Client::Counter
-        )
+      container.spawn(name: "Metrics collector/exporter") do |instance|
+        Async do
+          internal_store = {}
 
-      @session_init_count =
-        T.let(
-          prometheus.counter(
-            :mayu_session_init_count,
-            docstring: "Total number of inits",
-            labels: [*preset_labels.keys],
-            preset_labels:
-          ),
-          Prometheus::Client::Counter
-        )
+          Prometheus::Client.config.data_store =
+            Metrics::Collector::DataStore.new(internal_store)
 
-      @session_navigate_count =
-        T.let(
-          prometheus.counter(
-            :mayu_session_navigate_count,
-            docstring: "Total number of navigations",
-            labels: [*preset_labels.keys],
-            preset_labels:
-          ),
-          Prometheus::Client::Counter
-        )
+          registry = Prometheus::Client::Registry.new
 
-      @session_ping_count =
-        T.let(
-          prometheus.counter(
-            :mayu_session_ping_count,
-            docstring: "Total number of pings",
-            labels: [*preset_labels.keys],
-            preset_labels:
-          ),
-          Prometheus::Client::Counter
-        )
+          yield registry
 
-      @session_callback_count =
-        T.let(
-          prometheus.counter(
-            :mayu_session_callback_count,
-            docstring: "Number of callbacks called",
-            labels: [*preset_labels.keys],
-            preset_labels:
-          ),
-          Prometheus::Client::Counter
-        )
+          Metrics::Exporter::Server.setup(
+            endpoint: exporter_endpoint,
+            registry:
+          ).run
 
-      @vnode_patch_times =
-        T.let(
-          prometheus.summary(
-            :mayu_vnode_patch_times,
-            docstring: "VNode patch times",
-            labels: [:vnode_type, *preset_labels.keys],
-            preset_labels:
-          ),
-          Prometheus::Client::Summary
-        )
+          collector.run(internal_store)
 
-      store_settings =
-        case Prometheus::Client.config.data_store
-        when Prometheus::Client::DataStores::Synchronized
-          {}
-        when Prometheus::Client::DataStores::DirectFileStore
-          { aggregation: :sum }
-        else
-          { aggregation: :sum }
+          instance.ready!
         end
-
-      @session_count =
-        T.let(
-          prometheus.gauge(
-            :mayu_session_count,
-            docstring: "Number of sessions",
-            labels: [*preset_labels.keys],
-            preset_labels:,
-            store_settings:
-          ),
-          Prometheus::Client::Gauge
-        )
+      end
     end
   end
 end

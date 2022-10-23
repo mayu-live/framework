@@ -9,6 +9,7 @@ graph TB
     ROUTE____app__pages__demos__form__page.rux["/demos/form"]
     ROUTE____app__pages__demos__pokemon__:id__page.rux["/demos/pokemon/:id"]
     ROUTE____app__pages__demos__pokemon__page.rux["/demos/pokemon"]
+    ROUTE____app__pages__demos__i18n__page.rux["/demos/i18n"]
     ROUTE____app__pages__demos__page.rux["/demos"]
     ROUTE____app__pages__page.rux["/"]
   end
@@ -20,6 +21,7 @@ graph TB
   ROUTE____app__pages__demos__form__page.rux-->__app__pages__demos__form__page.rux
   ROUTE____app__pages__demos__pokemon__:id__page.rux-->__app__pages__demos__pokemon__:id__page.rux
   ROUTE____app__pages__demos__pokemon__page.rux-->__app__pages__demos__pokemon__page.rux
+  ROUTE____app__pages__demos__i18n__page.rux-->__app__pages__demos__i18n__page.rux
   ROUTE____app__pages__demos__page.rux-->__app__pages__demos__page.rux
   ROUTE____app__pages__page.rux-->__app__pages__page.rux
   subgraph PATH__["/"]
@@ -40,12 +42,24 @@ graph TB
           __app__components__Layout__Footer.rux["Footer.rux"]
           __app__components__Layout__Heading.css["fab:fa-css3 Heading.css&nbsp;"]
           __app__components__Layout__Heading.rux["Heading.rux"]
+          __app__components__Layout__Page.css["fab:fa-css3 Page.css&nbsp;"]
+          __app__components__Layout__Page.rux["Page.rux"]
+          __app__components__Layout__Menu.css["fab:fa-css3 Menu.css&nbsp;"]
+          __app__components__Layout__Menu.rux["Menu.rux"]
+          __app__components__Layout__MenuItem.css["fab:fa-css3 MenuItem.css&nbsp;"]
+          __app__components__Layout__MenuItem.rux["MenuItem.rux"]
         end
         subgraph PATH__app__components__Form["/app/components/Form"]
           __app__components__Form__Fieldset.css["fab:fa-css3 Fieldset.css&nbsp;"]
           __app__components__Form__Fieldset.rux["Fieldset.rux"]
           __app__components__Form__Button.css["fab:fa-css3 Button.css&nbsp;"]
           __app__components__Form__Button.rux["Button.rux"]
+          __app__components__Form__Input.css["fab:fa-css3 Input.css&nbsp;"]
+          __app__components__Form__Input.rux["Input.rux"]
+          __app__components__Form__Select.css["fab:fa-css3 Select.css&nbsp;"]
+          __app__components__Form__Select.rux["Select.rux"]
+          __app__components__Form__Checkbox.css["fab:fa-css3 Checkbox.css&nbsp;"]
+          __app__components__Form__Checkbox.rux["Checkbox.rux"]
         end
       end
       subgraph PATH__app__pages["/app/pages"]
@@ -83,6 +97,12 @@ graph TB
             __app__pages__demos__tree__page.rux["page.rux"]
           end
           subgraph PATH__app__pages__demos__form["/app/pages/demos/form"]
+            __app__pages__demos__form__LogInForm.css["fab:fa-css3 LogInForm.css&nbsp;"]
+            __app__pages__demos__form__LogInForm.rux["LogInForm.rux"]
+            __app__pages__demos__form__Elements.css["fab:fa-css3 Elements.css&nbsp;"]
+            __app__pages__demos__form__Elements.rux["Elements.rux"]
+            __app__pages__demos__form__TransferList.css["fab:fa-css3 TransferList.css&nbsp;"]
+            __app__pages__demos__form__TransferList.rux["TransferList.rux"]
             __app__pages__demos__form__page.css["fab:fa-css3 page.css&nbsp;"]
             __app__pages__demos__form__page.rux["page.rux"]
           end
@@ -98,8 +118,14 @@ graph TB
             __app__pages__demos__pokemon__page.css["fab:fa-css3 page.css&nbsp;"]
             __app__pages__demos__pokemon__page.rux["page.rux"]
           end
+          subgraph PATH__app__pages__demos__i18n["/app/pages/demos/i18n"]
+            __app__pages__demos__i18n__page.css["fab:fa-css3 page.css&nbsp;"]
+            __app__pages__demos__i18n__page.rux["page.rux"]
+          end
           __app__pages__demos__layout.css["fab:fa-css3 layout.css&nbsp;"]
           __app__pages__demos__layout.rux["layout.rux"]
+          __app__pages__demos__ButtonGame.css["fab:fa-css3 ButtonGame.css&nbsp;"]
+          __app__pages__demos__ButtonGame.rux["ButtonGame.rux"]
           __app__pages__demos__page.css["fab:fa-css3 page.css&nbsp;"]
           __app__pages__demos__page.rux["page.rux"]
         end
@@ -107,6 +133,10 @@ graph TB
         __app__pages__Intro.rux["Intro.rux"]
         __app__pages__layout.css["fab:fa-css3 layout.css&nbsp;"]
         __app__pages__layout.rux["layout.rux"]
+        __app__pages__Counter.css["fab:fa-css3 Counter.css&nbsp;"]
+        __app__pages__Counter.rux["Counter.rux"]
+        __app__pages__FeatureThing.css["fab:fa-css3 FeatureThing.css&nbsp;"]
+        __app__pages__FeatureThing.rux["FeatureThing.rux"]
         __app__pages__page.css["fab:fa-css3 page.css&nbsp;"]
         __app__pages__page.rux["page.rux"]
         __app__pages__404.css["fab:fa-css3 404.css&nbsp;"]
@@ -120,33 +150,51 @@ graph TB
   __app__components__Layout__Header.rux-->__app__components__Layout__MaxWidth.rux
   __app__components__Layout__Header.rux-->__app__components__Layout__logo.png
   __app__components__Layout__Header.rux-->__app__components__Layout__Header.css
+  __app__components__Layout__Footer.rux-->__app__components__Layout__MaxWidth.rux
   __app__components__Layout__Footer.rux-->__app__components__Layout__Footer.css
   __app__pages__layout.rux-->__app__pages__Intro.rux
   __app__pages__layout.rux-->__app__components__Layout__Header.rux
   __app__pages__layout.rux-->__app__components__Layout__Footer.rux
   __app__pages__layout.rux-->__app__pages__layout.css
   __app__components__Layout__Heading.rux-->__app__components__Layout__Heading.css
+  __app__pages__Counter.rux-->__app__pages__Counter.css
+  __app__pages__FeatureThing.rux-->__app__pages__FeatureThing.css
   __app__pages__page.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__page.rux-->__app__pages__Counter.rux
+  __app__pages__page.rux-->__app__pages__FeatureThing.rux
   __app__pages__page.rux-->__app__pages__page.css
-  __app__pages__docs__layout.rux-->__app__components__Layout__MaxWidth.rux
-  __app__pages__docs__layout.rux-->__app__components__Layout__Heading.rux
+  __app__components__Layout__Page.rux-->__app__components__Layout__MaxWidth.rux
+  __app__components__Layout__Page.rux-->__app__components__Layout__Heading.rux
+  __app__components__Layout__Page.rux-->__app__components__Layout__Page.css
+  __app__components__Layout__Menu.rux-->__app__components__Layout__Menu.css
+  __app__components__Layout__MenuItem.rux-->__app__components__Layout__MenuItem.css
+  __app__pages__docs__layout.rux-->__app__components__Layout__Page.rux
+  __app__pages__docs__layout.rux-->__app__components__Layout__Menu.rux
+  __app__pages__docs__layout.rux-->__app__components__Layout__MenuItem.rux
   __app__pages__docs__layout.rux-->__app__pages__docs__layout.css
   __app__pages__docs__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__page.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__docs__page.rux-->__app__pages__docs__page.css
   __app__pages__docs__faq__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__faq__page.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__docs__faq__page.rux-->__app__pages__docs__faq__page.css
   __app__pages__docs__getting-started__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__getting-started__page.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__docs__getting-started__page.rux-->__app__pages__docs__getting-started__page.css
   __app__pages__docs__deployment__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__docs__deployment__page.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__docs__deployment__page.rux-->__app__pages__docs__deployment__page.css
   __app__pages__docs__404.rux-->__app__components__Layout__Heading.rux
   __app__pages__docs__404.rux-->__app__pages__docs__404.css
-  __app__pages__demos__layout.rux-->__app__components__Layout__MaxWidth.rux
-  __app__pages__demos__layout.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__layout.rux-->__app__components__Layout__Page.rux
+  __app__pages__demos__layout.rux-->__app__components__Layout__Menu.rux
+  __app__pages__demos__layout.rux-->__app__components__Layout__MenuItem.rux
   __app__pages__demos__layout.rux-->__app__pages__demos__layout.css
+  __app__pages__demos__ButtonGame.rux-->__app__pages__demos__ButtonGame.css
   __app__pages__demos__page.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__demos__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__page.rux-->__app__pages__demos__ButtonGame.rux
   __app__pages__demos__page.rux-->__app__pages__demos__page.css
   __app__pages__demos__tree__Directory.rux-->__app__pages__demos__tree__Directory.css
   __app__pages__demos__tree__FileEntry.rux-->__app__pages__demos__tree__FileEntry.css
@@ -160,20 +208,45 @@ graph TB
   __app__pages__demos__tree__page.rux-->__app__pages__demos__tree__FileContents.rux
   __app__pages__demos__tree__page.rux-->__app__pages__demos__tree__page.css
   __app__components__Form__Fieldset.rux-->__app__components__Form__Fieldset.css
+  __app__pages__demos__form__LogInForm.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__form__LogInForm.rux-->__app__components__Form__Fieldset.rux
+  __app__pages__demos__form__LogInForm.rux-->__app__pages__demos__form__LogInForm.css
+  __app__components__Form__Button.rux-->__app__components__Form__Button.css
+  __app__components__Form__Input.rux-->__app__components__Form__Input.css
+  __app__components__Form__Select.rux-->__app__components__Form__Select.css
+  __app__components__Form__Checkbox.rux-->__app__components__Form__Checkbox.css
+  __app__pages__demos__form__Elements.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__form__Elements.rux-->__app__components__Form__Fieldset.rux
+  __app__pages__demos__form__Elements.rux-->__app__components__Form__Button.rux
+  __app__pages__demos__form__Elements.rux-->__app__components__Form__Input.rux
+  __app__pages__demos__form__Elements.rux-->__app__components__Form__Select.rux
+  __app__pages__demos__form__Elements.rux-->__app__components__Form__Checkbox.rux
+  __app__pages__demos__form__Elements.rux-->__app__pages__demos__form__Elements.css
+  __app__pages__demos__form__TransferList.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__form__TransferList.rux-->__app__components__Form__Fieldset.rux
+  __app__pages__demos__form__TransferList.rux-->__app__components__Form__Button.rux
+  __app__pages__demos__form__TransferList.rux-->__app__components__Form__Input.rux
+  __app__pages__demos__form__TransferList.rux-->__app__components__Form__Select.rux
+  __app__pages__demos__form__TransferList.rux-->__app__components__Form__Checkbox.rux
+  __app__pages__demos__form__TransferList.rux-->__app__pages__demos__form__TransferList.css
   __app__pages__demos__form__page.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__demos__form__page.rux-->__app__components__Layout__Heading.rux
-  __app__pages__demos__form__page.rux-->__app__components__Form__Fieldset.rux
+  __app__pages__demos__form__page.rux-->__app__pages__demos__form__LogInForm.rux
+  __app__pages__demos__form__page.rux-->__app__pages__demos__form__Elements.rux
+  __app__pages__demos__form__page.rux-->__app__pages__demos__form__TransferList.rux
   __app__pages__demos__form__page.rux-->__app__pages__demos__form__page.css
   __app__pages__demos__pokemon__layout.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__demos__pokemon__layout.rux-->__app__components__Layout__Heading.rux
   __app__pages__demos__pokemon__layout.rux-->__app__pages__demos__pokemon__layout.css
-  __app__components__Form__Button.rux-->__app__components__Form__Button.css
   __app__pages__demos__pokemon__Pagination.rux-->__app__components__Form__Fieldset.rux
   __app__pages__demos__pokemon__Pagination.rux-->__app__components__Form__Button.rux
   __app__pages__demos__pokemon__Pagination.rux-->__app__pages__demos__pokemon__Pagination.css
   __app__pages__demos__pokemon__page.rux-->__app__pages__demos__pokemon__Pagination.rux
   __app__pages__demos__pokemon__page.rux-->__app__pages__demos__pokemon__page.css
   __app__pages__demos__pokemon__:id__page.rux-->__app__pages__demos__pokemon__:id__page.css
+  __app__pages__demos__i18n__page.rux-->__app__components__Layout__MaxWidth.rux
+  __app__pages__demos__i18n__page.rux-->__app__components__Layout__Heading.rux
+  __app__pages__demos__i18n__page.rux-->__app__pages__demos__i18n__page.css
   __app__pages__404.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__404.rux-->__app__components__Layout__Heading.rux
   __app__pages__404.rux-->__app__pages__404.css
@@ -184,7 +257,12 @@ graph TB
   class __app__components__Layout__Footer.css CSS
   class __app__pages__layout.css CSS
   class __app__components__Layout__Heading.css CSS
+  class __app__pages__Counter.css CSS
+  class __app__pages__FeatureThing.css CSS
   class __app__pages__page.css CSS
+  class __app__components__Layout__Page.css CSS
+  class __app__components__Layout__Menu.css CSS
+  class __app__components__Layout__MenuItem.css CSS
   class __app__pages__docs__layout.css CSS
   class __app__pages__docs__page.css NonExistant
   class __app__pages__docs__page.css CSS
@@ -193,7 +271,9 @@ graph TB
   class __app__pages__docs__deployment__page.css CSS
   class __app__pages__docs__404.css NonExistant
   class __app__pages__docs__404.css CSS
+  class __app__pages__demos__layout.css NonExistant
   class __app__pages__demos__layout.css CSS
+  class __app__pages__demos__ButtonGame.css CSS
   class __app__pages__demos__page.css NonExistant
   class __app__pages__demos__page.css CSS
   class __app__pages__demos__tree__Directory.css CSS
@@ -203,14 +283,23 @@ graph TB
   class __app__pages__demos__tree__FileContents.css CSS
   class __app__pages__demos__tree__page.css CSS
   class __app__components__Form__Fieldset.css CSS
+  class __app__pages__demos__form__LogInForm.css CSS
+  class __app__components__Form__Button.css CSS
+  class __app__components__Form__Input.css CSS
+  class __app__components__Form__Select.css CSS
+  class __app__components__Form__Checkbox.css CSS
+  class __app__pages__demos__form__Elements.css NonExistant
+  class __app__pages__demos__form__Elements.css CSS
+  class __app__pages__demos__form__TransferList.css CSS
   class __app__pages__demos__form__page.css CSS
   class __app__pages__demos__pokemon__layout.css NonExistant
   class __app__pages__demos__pokemon__layout.css CSS
-  class __app__components__Form__Button.css CSS
   class __app__pages__demos__pokemon__Pagination.css CSS
   class __app__pages__demos__pokemon__page.css CSS
   class __app__pages__demos__pokemon__:id__page.css NonExistant
   class __app__pages__demos__pokemon__:id__page.css CSS
+  class __app__pages__demos__i18n__page.css NonExistant
+  class __app__pages__demos__i18n__page.css CSS
   class __app__pages__404.css NonExistant
   class __app__pages__404.css CSS
   style routes stroke:#09c,stroke-width:5,fill:#f0f;

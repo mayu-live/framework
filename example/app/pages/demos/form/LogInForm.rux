@@ -57,7 +57,7 @@ def render
           <label class={styles.label}>
             <span>Password</span>
           </label>
-          <input class={styles.input} name="password" type="password" required pattern=".{8,}" placeholder="Enter password (8+ characters)" />
+          <input class={styles.input} name="password" type="password" required pattern=".{8,}" placeholder="Enter password (8+ characters)" autocomplete="off" />
         </div>
 
         <div>

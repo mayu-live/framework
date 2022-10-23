@@ -5,8 +5,13 @@ template.innerHTML = html;
 
 class DisconnectedComponent extends HTMLElement {
   dialog?: HTMLDialogElement;
+  reason?: HTMLParagraphElement;
 
-  connectedCallback() {
+  static observedAttributes = ["reason"];
+
+  constructor() {
+    super();
+
     if (!this.shadowRoot) {
       this.attachShadow({ mode: "open" });
     }
@@ -16,8 +21,24 @@ class DisconnectedComponent extends HTMLElement {
     ) as DocumentFragment;
 
     this.dialog = this.shadowRoot!.querySelector("dialog") as HTMLDialogElement;
+    this.reason = this.shadowRoot!.getElementById(
+      "reason"
+    ) as HTMLParagraphElement;
+  }
 
-    this.dialog?.showModal();
+  connectedCallback() {
+    this.dialog!.showModal();
+  }
+
+  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+    switch (name) {
+      case "reason":
+        if (!this.reason) break;
+        this.reason.textContent = String(newValue);
+        break;
+      default:
+        break;
+    }
   }
 
   disconnectedCallback() {

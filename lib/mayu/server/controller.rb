@@ -1,13 +1,22 @@
 # typed: strict
 # frozen_string_literal: true
 
-require_relative "server"
-require_relative "prometheus_server"
+require "async/container/controller"
+require "async/io/shared_endpoint"
+require "async/io/trap"
+require_relative "app"
+require_relative "../metrics"
+require_relative "../app_metrics"
 
 module Mayu
   module Server
     class Controller < Async::Container::Controller
       extend T::Sig
+
+      sig { returns(Async::Container::Generic) }
+      def create_container
+        Async::Container::Hybrid.new
+      end
 
       sig do
         params(
@@ -19,133 +28,115 @@ module Mayu
       def initialize(config:, endpoint:, **options)
         super(**options)
         @config = config
-        @debug_trap = T.let(Async::IO::Trap.new(:USR1), Async::IO::Trap)
         @endpoint = endpoint
+        @interrupt_trap = T.let(Async::IO::Trap.new(:INT), Async::IO::Trap)
         @bound_endpoint = T.let(nil, T.nilable(Async::IO::SharedEndpoint))
-      end
-
-      sig { returns(Async::Container::Generic) }
-      def create_container
-        Async::Container::Hybrid.new
       end
 
       sig { void }
       def start
+        Console.logger.info(self, "Binding to #{@endpoint.url}")
+
         @bound_endpoint =
           Async { Async::IO::SharedEndpoint.bound(@endpoint) }.wait
 
-        Console.logger.info(self) { "Starting server on #{@endpoint.to_url}" }
-
-        @debug_trap.ignore!
         super
       end
 
-      sig { params(args: T.untyped).void }
-      def stop(*args)
-        Console.logger.warn("Stop", args)
-        @bound_endpoint&.close
-        @debug_trap.default!
-        super
+      sig { params(timeout: T::Boolean).void }
+      def stop(timeout = true)
+        super(timeout && 5)
       end
 
-      sig do
-        params(container: Async::Container::Generic).returns(
-          Async::Container::Generic
-        )
-      end
+      sig { params(container: Async::Container::Generic).void }
       def setup(container)
-        if @config.metrics.enabled
-          Console.logger.info(self, "Setting up metrics")
+        collector_endpoint = Async::IO::Endpoint.unix("metrics.ipc")
+        exporter_endpoint = Async::HTTP::Endpoint.parse("http://[::]:9092")
 
-          container.async do
-            Metrics.setup_prometheus_data_store(@config)
-            PrometheusServer.start(@config)
-          end
-        end
+        Metrics.start_collect_and_export(
+          container,
+          collector_endpoint:,
+          exporter_endpoint:
+        ) { |registry| AppMetrics.setup(registry, instance_id: "Collector") }
+
+        # TODO: We're waiting for the collector to start.
+        # Better make start_collect_and_export block until started.
+        sleep 0.2
 
         container.run(
-          name: self.class.name,
-          restart: true,
+          name: "mayu-live server",
           count: @config.server.count,
           threads: @config.server.threads,
           forks: @config.server.forks
-        ) do |instance|
+        ) do |instance, asd|
           Async do |task|
-            Metrics.setup_prometheus_data_store(@config)
+            interrupt = Async::Notification.new
 
-            task.async do
-              if @debug_trap.install!
-                Console
-                  .logger
-                  .info(instance) do
-                    "- Per-process status: kill -USR1 #{Process.pid}"
-                  end
+            metrics =
+              Metrics::Reporter.run(collector_endpoint) do |registry|
+                AppMetrics.setup(registry)
               end
 
-              @debug_trap.trap do
-                Console
-                  .logger
-                  .info(self) { |buffer| task.reactor.print_hierarchy(buffer) }
+            task.async do
+              @interrupt_trap.install!
+
+              @interrupt_trap.trap { interrupt.signal }
+            end
+
+            environment = Environment.new(@config, metrics)
+            app = App.new(environment:)
+
+            server =
+              Async::HTTP::Server.new(
+                app,
+                @bound_endpoint,
+                protocol: Async::HTTP::Protocol::HTTP2,
+                scheme: @endpoint.scheme
+              )
+
+            start_hot_swap(environment, app) if @config.server.hot_swap
+
+            server_task = server.run
+
+            task.async do
+              loop do
+                sleep 1
+                app.clear_expired_sessions!
               end
             end
 
-            endpoint = @bound_endpoint or raise "@bound_endpoint is not set"
-
-            run_server(endpoint:)
-
             instance.ready!
-            task.children.each(&:wait)
 
-            Console.logger.warn("Ending server")
+            interrupt.wait
+            app.stop
+            raise Interrupt
           end
+        rescue => e
+          Console.logger.error(self, e)
         end
       end
 
-      sig { params(endpoint: Async::IO::SharedEndpoint).void }
-      def run_server(endpoint:)
-        environment = Mayu::Environment.new(@config)
-        server = Server.new(environment)
+      sig { params(environment: Environment, app: App, task: Async::Task).void }
+      def start_hot_swap(environment, app, task: Async::Task.current)
+        task.async do
+          if environment.config.use_bundle
+            Console.logger.error(
+              self,
+              "Disabling hot swap because bundle is used"
+            )
+            return
+          end
 
-        start_hot_swap(environment, server) if @config.server.hot_swap
+          require_relative "../resources/hot_swap"
 
-        Async::HTTP::Server
-          .for(
-            endpoint,
-            protocol: Async::HTTP::Protocol::HTTP2,
-            scheme: @config.server.scheme
-          ) { |request| Protocol::HTTP::Response[*server.call(request)] }
-          .run
-      end
+          Resources::HotSwap.start(environment.resources) do
+            Console.logger.info(
+              self,
+              Colors.rainbow("Detected code changes, rerendering.")
+            )
 
-      sig { params(environment: Environment, server: Server).void }
-      def start_hot_swap(environment, server)
-        if @config.server.count > 1
-          # It probably works, but it will be inefficient and pointless.
-          Console.logger.error(
-            self,
-            "Can't start hot swap with more than 1 server."
-          )
-          return
-        end
-
-        if @config.use_bundle
-          Console.logger.error(
-            self,
-            "Disabling hot swap because bundle is used"
-          )
-          return
-        end
-
-        require_relative "../resources/hot_swap"
-
-        Console.logger.info("Starting hot swap")
-
-        Resources::HotSwap.start(environment.resources) do
-          Console.logger.info(
-            self,
-            Colors.rainbow("Detected code changes, rerendering.")
-          )
-          server.rerender
+            app.rerender
+          end
         end
       end
     end

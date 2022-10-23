@@ -23,14 +23,14 @@ things are put in place and things feel right.
 
 ### Core features:
 
-* 100% server-side
-* 100% Ruby
-* No JavaScript required
-* Asynchroneous 
-* Reactive, component based Virtual DOM that runs on the server
-* Hot-reloading
-* Automatic asset handling
-* Built-in metrics
+- 100% server-side
+- 100% Ruby
+- No JavaScript required
+- Asynchroneous
+- Reactive, component based Virtual DOM that runs on the server
+- Hot-reloading
+- Automatic asset handling
+- Built-in metrics
 
 ## Table of contents
 
@@ -115,10 +115,6 @@ Depending on your system/browser you might need to do one of the following:
       for this certificate.
   </blockquote>
 </details>
-
-> ℹ️ Note about Firefox: I've never been able to inspect Server-Sent Events
-> in the Developer Tools. So if you're trying to debug them, try a
-> Chromium-based browser.
 
 ## Run the tests
 

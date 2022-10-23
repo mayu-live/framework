@@ -5,6 +5,7 @@ require "nanoid"
 require_relative "environment"
 require_relative "vdom/vtree"
 require_relative "vdom/marshalling"
+require_relative "event_stream"
 
 module Mayu
   class Session
@@ -12,8 +13,9 @@ module Mayu
 
     class InvalidTokenError < StandardError
     end
-
     class InvalidIdError < StandardError
+    end
+    class AlreadyRunningError < StandardError
     end
 
     sig do
@@ -73,6 +75,15 @@ module Mayu
       raise InvalidIdError unless valid_id?(id)
     end
 
+    sig { params(token: String).returns(T::Boolean) }
+    def authorized?(token)
+      if self.token.length == token.length
+        OpenSSL.fixed_length_secure_compare(self.token, token)
+      else
+        false
+      end
+    end
+
     Marshaled = T.type_alias { [String, String, String, String, String] }
 
     sig { returns(String) }
@@ -85,9 +96,11 @@ module Mayu
     attr_reader :environment
     sig { returns(Float) }
     attr_reader :last_ping_at
+    sig { returns(EventStream::Log) }
+    attr_reader :log
 
     sig { params(timeout_seconds: T.any(Float, Integer)).returns(T::Boolean) }
-    def expired?(timeout_seconds = 5)
+    def expired?(timeout_seconds = 30)
       seconds_since_last_ping > timeout_seconds
     end
 
@@ -110,13 +123,14 @@ module Mayu
       @token = T.let(self.class.generate_token, String)
       @path = path
       @vtree = T.let(vtree || VDOM::VTree.new(session: self), VDOM::VTree)
+      @log = T.let(EventStream::Log.new, EventStream::Log)
       @store =
         T.let(
           store || environment.create_store(initial_state: {}),
           State::Store
         )
       @app = T.let(environment.load_root(path), VDOM::Descriptor)
-      @last_ping_at = T.let(0.0, Float)
+      @last_ping_at = T.let(Time.now.to_f, Float)
       @barrier = T.let(Async::Barrier.new, Async::Barrier)
     end
 
@@ -145,21 +159,20 @@ module Mayu
           .select { _1.end_with?(".css") }
           .map { "/__mayu/static/#{_1}" }
 
-      freeze
+      # freeze
 
       encrypted_session =
-        @environment.message_cipher.dump(
-          Marshal.dump(SerializedSession.new(marshal_dump))
-        )
+        @environment.message_cipher.dump(SerializedSession.dump_session(self))
 
       links = [
-        %{<script type="module" src="/__mayu/static/#{environment.init_js}" crossorigin="anonymous"></script>},
+        %{<script async type="module" src="/__mayu/runtime/#{environment.init_js}##{id}" crossorigin="same-origin"></script>},
         *stylesheets.map do |stylesheet|
           %{<link rel="stylesheet" href="#{stylesheet}">}
         end
       ].join
 
-      scripts = %{<template id="mayu-init">#{encrypted_session}</template>}
+      # scripts = %{<template id="mayu-init">#{encrypted_session}</template>}
+      scripts = ""
       body.write("<!doctype html>\n")
 
       task.async do
@@ -172,17 +185,6 @@ module Mayu
       { stylesheets: }
     end
 
-    sig { returns(T::Array[T.untyped]) }
-    def marshal_dump
-      [
-        @id,
-        @token,
-        @path,
-        VDOM::Marshalling.dump(@vtree),
-        Marshal.dump(@store.state)
-      ]
-    end
-
     class SerializedSession
       extend T::Sig
 
@@ -192,6 +194,11 @@ module Mayu
       sig { params(data: T::Array[T.untyped]).void }
       def initialize(data)
         @data = data
+      end
+
+      sig { params(session: Session).returns(String) }
+      def self.dump_session(session)
+        Marshal.dump(self.new(session.marshal_dump))
       end
 
       sig { params(environment: Environment).returns(Session) }
@@ -213,14 +220,26 @@ module Mayu
       end
     end
 
+    sig { returns(T::Array[T.untyped]) }
+    def marshal_dump
+      [
+        @id,
+        @token,
+        @path,
+        VDOM::Marshalling.dump(@vtree),
+        Marshal.dump(@store.state)
+      ]
+    end
+
     sig { params(a: T::Array[T.untyped]).void }
     def marshal_load(a)
       @id, @token, @path, dumped_vtree, state = a
+      @last_ping_at = Time.now.to_f
       @vtree = VDOM::Marshalling.restore(dumped_vtree, session: self)
       @store = @environment.create_store(initial_state: Marshal.restore(state))
       @app = @environment.load_root(@path)
-      @last_ping_at = Time.now.to_f
       @barrier = Async::Barrier.new
+      @log = EventStream::Log.new
     end
 
     sig do
@@ -235,11 +254,16 @@ module Mayu
       @environment.fetch.fetch(url, method:, headers:, body:)
     end
 
+    sig { void }
+    def activity!
+      @last_ping_at = Time.now.to_f
+    end
+
     sig do
       params(callback_id: String, payload: T::Hash[Symbol, T.untyped]).void
     end
     def handle_callback(callback_id, payload = {})
-      @last_ping_at = Time.now.to_f
+      activity!
       @vtree.handle_callback(callback_id, payload)
     end
 
@@ -298,7 +322,7 @@ module Mayu
               yield [:pong, timestamp]
             in [:navigate, href]
               navigate(href)
-              yield [:navigate, href]
+              yield [:navigate, path: href.force_encoding("utf-8")]
             else
               puts "\e[31mUnknown event: #{msg.inspect}\e[0m"
             end

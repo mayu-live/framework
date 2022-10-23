@@ -2,6 +2,7 @@
 
 require "async/queue"
 require "nanoid"
+require "benchmark"
 require_relative "../component"
 require_relative "descriptor"
 require_relative "dom"
@@ -32,7 +33,7 @@ module Mayu
 
         sig do
           params(
-            metrics: Metrics,
+            metrics: AppMetrics,
             task: Async::Task,
             block: T.proc.params(arg0: [Symbol, T.untyped]).void
           ).returns(Async::Task)

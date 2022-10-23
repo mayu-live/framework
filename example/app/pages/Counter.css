@@ -7,6 +7,7 @@
   border-radius: 2px;
   padding: 1em;
   box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  user-select: none;
 }
 
 .button {
@@ -20,11 +21,13 @@
   font-weight: bold;
   padding: 0;
   color: #fff;
-  transition: filter 0.1s, box-shadow 0.1s;
+  transition: filter 0.1s, box-shadow 0.1s, transform 0.1s;
+  transform: scale(1);
 }
 
 .button:hover {
   filter: brightness(110%);
+  transform: scale(1.2);
 }
 
 .button:active {
@@ -38,7 +41,7 @@
 }
 
 .count {
-  flex: 1;
+  flex-basis: 3em;
   text-align: center;
   font-size: 1.2em;
   text-align: center;

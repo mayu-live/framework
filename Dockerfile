@@ -18,9 +18,20 @@ RUN mkdir -p tmp/pids
 
 #######################################################
 
+FROM node:19.0.0-alpine3.15 as build-js
+
+COPY lib/mayu/client /build
+
+WORKDIR /build
+
+RUN \
+    npm install && \
+    npm run build:production && \
+    rm -r node_modules
+
 FROM base as build
 
-ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils nodejs npm webp imagemagick
+ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils npm webp imagemagick brotli
 
 RUN \
     --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
@@ -37,20 +48,14 @@ RUN bundle && rm -rf vendor/bundle/ruby/*/cache
 
 COPY . .
 
+COPY --from=build-js /build/dist lib/mayu/client/dist
+RUN brotli lib/mayu/client/dist/*.{js,map}
+
 # RUN rake build
-RUN \
-    cd lib/mayu/client && \
-    npm install && \
-    npm run build:production && \
-    rm -r node_modules
 RUN gem build
 RUN \
     mkdir -p example/vendor/cache && \
     cp mayu-live-*.gem example/vendor/cache
-
-RUN \
-    mkdir -p example/vendor/mayu && \
-    cp lib/mayu/client/dist/live.js example/vendor/mayu/live.js
 
 RUN \
     cd example && \

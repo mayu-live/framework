@@ -14,7 +14,8 @@ module Mayu
         Console
           .logger
           .measure("Building") do
-            environment = Environment.new(configuration)
+            metrics = AppMetrics.setup(Prometheus::Client.registry)
+            environment = Environment.new(configuration, metrics)
             environment.init_js
             resources = environment.resources
 
