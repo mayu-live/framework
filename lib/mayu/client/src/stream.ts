@@ -3,19 +3,7 @@ import { stringifyJSON, retry, FatalError, sleep } from "./utils";
 import { MimeTypes } from "./MimeTypes";
 import type MayuLogElement from "./custom-elements/mayu-log";
 import logger from "./logger";
-
-const DecompressionStreamPromise = new Promise<typeof DecompressionStream>(
-  async (resolve) => {
-    if (typeof DecompressionStream !== "undefined") {
-      logger.success("Using standard DecompressionStream");
-      return resolve(DecompressionStream);
-    }
-
-    logger.warn("Using DecompressionStream polyfill");
-
-    resolve((await import("./DecompressionStreamPolyfill")).default);
-  }
-);
+import DecompressionStream from "./DecompressionStream";
 
 function createExtensionCodec() {
   const extensionCodec = new ExtensionCodec();
@@ -51,7 +39,7 @@ async function startStream(sessionId: string, encryptedState?: Blob) {
     throw new FatalError("body is null");
   }
 
-  const decompressionStream = new (await DecompressionStreamPromise)("deflate");
+  const decompressionStream = new DecompressionStream("deflate");
 
   return res.body.pipeThrough(decompressionStream);
 }
@@ -99,8 +87,6 @@ export async function* sessionStream(
   const extensionCodec = createExtensionCodec();
   let reason: string | undefined;
 
-  await DecompressionStreamPromise;
-
   while (isRunning) {
     try {
       const stream = await retry(() => startStream(sessionId, encryptedState));
@@ -109,6 +95,7 @@ export async function* sessionStream(
         for await (const message of decodeMultiStream(stream, {
           extensionCodec,
         })) {
+          console.log({ message });
           const [id, event, payload] = message as ServerMessage;
 
           // logElement.addEntry(id, event, payload);

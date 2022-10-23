@@ -60,3 +60,12 @@ export async function retry<T>(fn: () => Promise<T>): Promise<T> {
     }
   }
 }
+
+export function* splitChunk(chunk: Uint8Array) {
+  let offset = 0;
+
+  while (offset < chunk.byteLength) {
+    yield chunk.slice(offset, offset + 1024);
+    offset += 1024;
+  }
+}
