@@ -12,7 +12,7 @@ def render
     <Fieldset>
       <legend>Hello world</legend>
       <div>
-        <Input type="text" />
+        <Input type="text" label="Foobar" />
       </div>
       <div>
         <Input type="text" label="Required text field" required />
