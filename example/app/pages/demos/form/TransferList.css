@@ -12,11 +12,22 @@
   padding: 0.5em;
   list-style-type: none;
   overflow-y: scroll;
+  user-select: none;
+}
+
+.list .group {
+  margin: 0;
 }
 
 .item {
-  padding: 0;
+  padding: 0.5em;
   margin: 0;
+}
+
+.item:has(:checked) {
+  background: var(--accent-color);
+  color: #fff;
+  font-weight: bold;
 }
 
 .buttons {
@@ -33,5 +44,13 @@
   font: inherit;
   aspect-ratio: 1;
   display: block;
-  min-width: 2em;
+  overflow: hidden;
+  background: var(--accent-color);
+  color: #fff;
+  font-weight: bold;
+  width: 1.2em;
+  font-size: 1.4em;
+  line-height: 1em;
+  text-align: center;
+  padding: 0em;
 }

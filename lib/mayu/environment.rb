@@ -118,6 +118,9 @@ module Mayu
 
       page_component = mod_type.component
 
+      resources.load_resource(File.join("/", "app", "root")).type =>
+        Resources::Types::Component => root
+
       # Apply the layouts.
       # NOTE: Pages should probably be their own
       # resource type and load their layouts.
@@ -135,6 +138,7 @@ module Mayu
 
           VDOM.h2(layout.component, app, path:, params:, query:)
         end
+        .then { VDOM.h2(root.component, _1) }
     end
 
     sig { params(request_path: String).returns(Routes::RouteMatch) }

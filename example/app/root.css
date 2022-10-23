@@ -1,5 +1,25 @@
+:root {
+  --dark: #403f4c;
+  --bright: #fff;
+  --red: #e84855;
+  --yellow: #f9dc5c;
+  --yellow-bright: #fdf1be;
+  /* --green: #6fff80; */
+  --green: #25bc5f;
+  --green-bright: #caf4da;
+  --blue: #3185fc;
+  --blue-bright: #e9f2ff;
+  --pink: #efbcd5;
+  --pink-bright: #f9e5ef;
+  --page-max-width: 960px;
+  --accent-color: var(--blue);
+  accent-color: var(--accent-color);
+}
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  line-height: 1.5em;
+  font-size: inherit;
 }

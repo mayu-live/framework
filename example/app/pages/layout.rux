@@ -3,26 +3,17 @@ Header = require('../components/Layout/Header')
 Footer = require('../components/Layout/Footer')
 
 def render
-  <html>
-    <head>
-      <meta name="charset" value="utf-8" />
-      <meta name="generator" value="github.com/mayu-live/framework" />
-      <meta name="viewport" content="width=device-width" />
-      <title>Mayu Live</title>
-    </head>
+  <body class={styles.body}>
+    <Header class={styles.header} max-width={styles.maxWidth} />
 
-    <body class={styles.body}>
-      <Header class={styles.header} max-width={styles.maxWidth} />
+    <main class={styles.main}>
+      {props[:path] == "/app/pages/page.rux" && (
+        <Intro class={styles.maxWidth} />
+      )}
 
-      <main class={styles.main}>
-        {props[:path] == "/app/pages/page.rux" && (
-          <Intro class={styles.maxWidth} />
-        )}
+      {children}
+    </main>
 
-        {children}
-      </main>
-
-      <Footer class={styles.footer} max-width={styles.maxWidth} />
-    </body>
-  </html>
+    <Footer class={styles.footer} max-width={styles.maxWidth} />
+  </body>
 end

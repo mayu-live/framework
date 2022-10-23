@@ -56,22 +56,22 @@ def render
       <ul class={styles.list}>
         {state[:left].map do |item|
           <li key={item} class={styles.item}>
-            <Checkbox label={ITEMS[item]} name={"left-#{item}"} />
+            <Checkbox label={ITEMS[item]} name={"left-#{item}"} group-class={styles.group} />
           </li>
         end}
       </ul>
 
       <div class={styles.buttons}>
-        <button type="submit" class={styles.button} name="action" value="move_all_left">{"⟪"}</button>
-        <button type="submit" class={styles.button} name="action" value="move_selected_left">{"⟨"}</button>
-        <button type="submit" class={styles.button} name="action" value="move_all_right">{"⟫"}</button>
-        <button type="submit" class={styles.button} name="action" value="move_selected_right">{"⟩"}</button>
+        <button type="submit" class={styles.button} name="action" value="move_all_left" title="Move all left">{"⟪"}</button>
+        <button type="submit" class={styles.button} name="action" value="move_selected_left" title="Move selected left">{"⟨"}</button>
+        <button type="submit" class={styles.button} name="action" value="move_all_right" title="Move all right">{"⟫"}</button>
+        <button type="submit" class={styles.button} name="action" value="move_selected_right" title="Move selected right">{"⟩"}</button>
       </div>
 
       <ul class={styles.list}>
         {state[:right].map do |item|
           <li key={item} class={styles.item}>
-            <Checkbox label={ITEMS[item]} name={"right-#{item}"} />
+            <Checkbox label={ITEMS[item]} name={"right-#{item}"} group-class={styles.group} />
           </li>
         end}
       </ul>
