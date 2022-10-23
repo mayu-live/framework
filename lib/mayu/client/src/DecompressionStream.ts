@@ -8,9 +8,7 @@ const DecompressionStreamPromise = new Promise<typeof DecompressionStream>(
     }
 
     logger.warn("Using DecompressionStream polyfill");
-    await import("@stardazed/streams-polyfill");
-
-    return resolve(DecompressionStream);
+    resolve((await import("./DecompressionStreamPolyfill")).default);
   }
 );
 

@@ -4,12 +4,12 @@ class DecompressionStreamPolyfill extends TransformStream<
   Uint8Array,
   Uint8Array
 > {
-  constructor(_format: "deflate") {
+  constructor(_format: "deflate-raw") {
     let decompressor: AsyncInflate;
 
     super({
       start(controller) {
-        decompressor = new AsyncInflate({ consume: false });
+        decompressor = new AsyncInflate();
 
         decompressor.ondata = (err, chunk: Uint8Array, final: boolean) => {
           if (err) {
@@ -20,14 +20,12 @@ class DecompressionStreamPolyfill extends TransformStream<
           if (final) {
             controller.terminate();
           } else {
-            console.log("Inflated chunk:", chunk);
             controller.enqueue(chunk);
           }
         };
       },
       transform(chunk, controller) {
         try {
-          console.log("Inflating chunk:", chunk);
           decompressor.push(chunk, false);
         } catch (e) {
           controller.error(

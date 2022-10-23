@@ -39,7 +39,7 @@ async function startStream(sessionId: string, encryptedState?: Blob) {
     throw new FatalError("body is null");
   }
 
-  const decompressionStream = new DecompressionStream("deflate");
+  const decompressionStream = new DecompressionStream("deflate-raw");
 
   return res.body.pipeThrough(decompressionStream);
 }

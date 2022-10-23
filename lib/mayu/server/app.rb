@@ -18,7 +18,7 @@ module Mayu
           T.let(
             Zlib::Deflate.new(
               Zlib::BEST_COMPRESSION,
-              Zlib::MAX_WBITS,
+              -Zlib::MAX_WBITS,
               Zlib::MAX_MEM_LEVEL,
               Zlib::HUFFMAN_ONLY
             ),
