@@ -1,4 +1,4 @@
-function createSilentLogger() {
+export function createSilentLogger() {
   const noop = (..._args: any[]) => {};
 
   return {
@@ -23,13 +23,29 @@ function generateStyle(color: string) {
   ].join(";");
 }
 
-function createLogger() {
+export function createLogger(prefix = "mayu/") {
   return {
-    info: console.info.bind(console, "%cinfo", generateStyle("#2196f3")),
-    log: console.info.bind(console, "%clog", generateStyle("#ccc")),
-    error: console.error.bind(console, "%cerror", generateStyle("#f6685e")),
-    warn: console.warn.bind(console, "%cwarn", generateStyle("#ffc107")),
-    success: console.info.bind(console, "%csuccess", generateStyle("#a2cf6e")),
+    info: console.info.bind(
+      console,
+      `%c${prefix}info`,
+      generateStyle("#35baf6")
+    ),
+    log: console.info.bind(console, `%c${prefix}log`, generateStyle("#ccc")),
+    error: console.error.bind(
+      console,
+      `%c${prefix}error`,
+      generateStyle("#f6685e")
+    ),
+    warn: console.warn.bind(
+      console,
+      `%c${prefix}warn`,
+      generateStyle("#ffc107")
+    ),
+    success: console.info.bind(
+      console,
+      `%c${prefix}success`,
+      generateStyle("#a2cf6e")
+    ),
     group: console.group.bind(console),
     groupEnd: console.groupEnd.bind(console),
   };

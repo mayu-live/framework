@@ -1,4 +1,7 @@
-import logger from "./logger.js";
+import { createLogger, createSilentLogger } from "./logger";
+
+const SILENT = true;
+const logger = SILENT ? createSilentLogger() : createLogger("mayu/NodeTree/");
 
 export type IdNode = { id: number; ch?: [IdNode]; type: string };
 type CacheEntry = { node: Node; childIds: Set<number> };
