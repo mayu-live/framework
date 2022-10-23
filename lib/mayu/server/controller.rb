@@ -94,6 +94,8 @@ module Mayu
                 scheme: @endpoint.scheme
               )
 
+            start_hot_swap(environment, app) if @config.server.hot_swap
+
             server_task = server.run
 
             task.async do
@@ -111,6 +113,30 @@ module Mayu
           end
         rescue => e
           Console.logger.error(self, e)
+        end
+      end
+
+      sig { params(environment: Environment, app: App, task: Async::Task).void }
+      def start_hot_swap(environment, app, task: Async::Task.current)
+        task.async do
+          if environment.config.use_bundle
+            Console.logger.error(
+              self,
+              "Disabling hot swap because bundle is used"
+            )
+            return
+          end
+
+          require_relative "../resources/hot_swap"
+
+          Resources::HotSwap.start(environment.resources) do
+            Console.logger.info(
+              self,
+              Colors.rainbow("Detected code changes, rerendering.")
+            )
+
+            app.rerender
+          end
         end
       end
     end

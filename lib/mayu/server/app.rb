@@ -253,6 +253,11 @@ module Mayu
         Protocol::HTTP::Response[500, {}, "error"]
       end
 
+      sig { void }
+      def rerender
+        @sessions.values.each(&:rerender)
+      end
+
       sig do
         params(
           id: String,
