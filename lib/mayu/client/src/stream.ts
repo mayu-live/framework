@@ -95,7 +95,6 @@ export async function* sessionStream(
         for await (const message of decodeMultiStream(stream, {
           extensionCodec,
         })) {
-          console.log({ message });
           const [id, event, payload] = message as ServerMessage;
 
           // logElement.addEntry(id, event, payload);
