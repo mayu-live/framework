@@ -316,6 +316,48 @@ Mayu uses HAML, it's pretty convenient.
 
 <img width="451" alt="Screen Shot 2022-10-25 at 15 45 19" src="https://user-images.githubusercontent.com/41148/197878366-459f4a3c-f223-415a-b94a-f39e5719ecd5.png">
 
+That above code will be transformed into this:
+
+```ruby
+# ruby:
+def self.get_initial_state(initial_value: 3, **)
+  { count: initial_value }
+end
+
+def handle_decrement(_)
+  update do |state|
+    { count: [0, state[:count].pred].max }
+  end
+end
+
+def handle_increment(_)
+  update do |state|
+    { count: state[:count].succ }
+  end
+end
+
+def render
+  Mayu::VDOM.h(:div,
+    Mayu::VDOM.h(:button, ("-"),
+      **{
+        title: "Decrement",
+        on_click: handler(:handle_decrement),
+        disabled: state[:count].zero?
+      },
+      class: styles[:button]
+    ),
+    Mayu::VDOM.h(:span, (state[:count]),
+      class: styles[:count]
+    ),
+    Mayu::VDOM.h(:button, ("+"),
+      **{ title: "Increment", on_click: handler(:handle_increment) },
+      class: styles[:button]
+    ),
+    class: styles[:counter]
+  )
+end
+```
+
 # Implementation notes
 
 ## Tests
