@@ -49,7 +49,7 @@ things are put in place and things feel right.
   - [Hot reloading](#hot-reloading)
   - [Optimized data transfer](#optimized-data-transfer)
   - [Realtime metrics](#realtime-metrics)
-  - [Templating](#templating)
+  - [HAML](#haml)
 - [Implementation notes](#implementation-notes)
   - [Tests](#tests)
   - [Virtual DOM](#virtual-dom)
@@ -310,18 +310,11 @@ Screenshots from [Grafana on Fly.io](https://fly.io/docs/reference/metrics/#mana
 ![Active sessions](https://user-images.githubusercontent.com/41148/193404404-9018c9d9-e575-48db-8845-3f56ced0c16f.png)
 ![Patch times and counts](https://user-images.githubusercontent.com/41148/193398411-cc5bf2d6-d353-42eb-bcf5-ccc1feb7099a.png)
 
-## Templating
+## HAML
 
-Mayu uses [Rux](https://github.com/camertron/rux) to provide a JSX-like syntax,
-so you can write components like this:
+Mayu uses HAML, it's pretty convenient.
 
-```
-def render
-  <div>
-    <p>Current time: {Time.now.to_s}</p>
-  <div>
-end
-```
+<img width="451" alt="Screen Shot 2022-10-25 at 15 45 19" src="https://user-images.githubusercontent.com/41148/197878366-459f4a3c-f223-415a-b94a-f39e5719ecd5.png">
 
 # Implementation notes
 
