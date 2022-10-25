@@ -87,7 +87,6 @@ module Mayu
         sig { params(asset_dir: String).returns(T::Array[Asset]) }
         def generate_assets(asset_dir)
           source_map_link = "\n/*# sourceMappingURL=#{@filename}.map */\n"
-          Console.logger.info(self, "Generating assets")
 
           [
             Asset
