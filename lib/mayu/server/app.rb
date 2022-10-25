@@ -64,6 +64,8 @@ module Mayu
           T::Hash[Symbol, String]
         )
 
+      class NotFoundError < StandardError
+      end
       class CookieNotSetError < StandardError
       end
       class InvalidTokenError < StandardError
@@ -176,6 +178,9 @@ module Mayu
             ),
             accept_encodings:
           )
+        in ["__mayu", *]
+          raise NotFoundError,
+                "Resource not found at: #{request.method} #{request.path}"
         in [*] if request.method == "GET"
           raise_if_shutting_down!
 
@@ -183,6 +188,13 @@ module Mayu
         else
           Protocol::HTTP::Response[404, {}, ["not found"]]
         end
+      rescue NotFoundError => e
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
+        Protocol::HTTP::Response[
+          404,
+          { "content-type": "text/plain" },
+          [e.message.to_s]
+        ]
       rescue CookieNotSetError => e
         Console.logger.error(self, "#{e.class.name}: #{e.message}")
         Protocol::HTTP::Response[
