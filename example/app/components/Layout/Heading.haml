@@ -1,4 +1,7 @@
-def render
+:ruby
+  # class scope
+
+:ruby
   level = props[:level].to_i.clamp(1, 6)
   tag = :"h#{level}"
 
@@ -7,4 +10,3 @@ def render
     props.except(:level).merge(class: "#{props[:class]} #{styles[tag]}}".strip),
     children,
   )
-end

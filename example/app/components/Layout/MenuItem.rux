@@ -1,7 +1,0 @@
-def render
-  <li class={styles.li}>
-    <a href={props[:href]} class={styles.a}>
-      {props[:children]}
-    </a>
-  </li>
-end

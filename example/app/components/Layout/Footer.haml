@@ -1,0 +1,43 @@
+:ruby
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+
+%footer.footer{class: props[:class]}
+  %MaxWidth.inner
+    %p
+      Copyright ©
+      = " "
+      #{[2022, Time.now.year].uniq.join("—")}
+      = " "
+      %a.link(href="https://github.com/mayu-live")
+        github.com/mayu-live
+
+      %p.badges
+        %a{href: "https://github.com/mayu-live/framework/search?l=Ruby&type=code"}
+          %img{
+            alt: "top language",
+            loading: "lazy",
+            src: "https://img.shields.io/github/languages/top/mayu-live/framework"
+          }
+        %a{href: "https://github.com/mayu-live/framework/actions/workflows/ruby.yml"}
+          %img{
+            alt: "Ruby build status",
+            loading: "lazy",
+            src: "https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby"
+          }
+        %a{href: "https://github.com/mayu-live/framework/actions/workflows/node.js.yml"}
+          %img{
+            alt: "JavaScript build status",
+            loading: "lazy",
+            src: "https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript"
+          }
+        %a{href: "https://github.com/mayu-live/framework/blob/main/COPYING"}
+          %img{
+            alt: "License: AGPL-3.0",
+            loading: "lazy",
+            src: "https://img.shields.io/github/license/mayu-live/framework"
+          }
+        %a{href: "https://github.com/mayu-live/framework/stargazers"}
+          %img{
+            alt: "GitHub Stars",
+            src: "https://img.shields.io/github/stars/mayu-live/framework?style=social"
+          }

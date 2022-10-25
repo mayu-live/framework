@@ -1,4 +1,7 @@
-def render
+:ruby
+  # setup
+
+:ruby
   classnames =
     [styles.maxWidth, props[:class]]
     .compact
@@ -7,4 +10,3 @@ def render
   tag = props[:tag] || :div
 
   Mayu::VDOM::Descriptor.new(tag.to_sym, {class: classnames}, props[:children])
-end

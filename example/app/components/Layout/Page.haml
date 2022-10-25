@@ -1,0 +1,16 @@
+:ruby
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+  Heading = require("/app/components/Layout/Heading")
+
+%MaxWidth
+  .page
+    = if props[:title]
+      %Heading(level=1)= props[:title]
+
+    = props[:after_heading]
+
+    .wrap
+      = props[:menu]
+
+      .content
+        = children
