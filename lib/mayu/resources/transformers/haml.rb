@@ -103,6 +103,14 @@ module Mayu
                 indent { visit(child) }
               end
 
+            # TODO: Figure out a clever way to merge class names..
+            # They can be passed in like this:
+            #
+            # %div.foo(class=bar){class: props[:class]}
+            #
+            # It should somehow figure out how to combine all fo these classes
+            # in a convenient way...
+
             node.value[:attributes].each do |attr, value|
               @out << ",\n"
 
@@ -117,11 +125,21 @@ module Mayu
               end
             end
 
-            if dynamics = node.value[:dynamic_attributes].old
-              unless dynamics.empty?
+            if dynamic_attributes = node.value[:dynamic_attributes]
+              if dynamic_attributes.new
                 @out << ",\n"
+                indent do
+                  @out << indentation
+                  @out << "**#{dynamic_attributes.new}.transform_keys(&:to_sym)"
+                end
+              end
 
-                indent { @out << indentation << "**#{dynamics}" }
+              if dynamic_attributes.old
+                @out << ",\n"
+                indent do
+                  @out << indentation
+                  @out << "**#{dynamic_attributes.old}"
+                end
               end
             end
 
