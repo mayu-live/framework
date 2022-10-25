@@ -3,7 +3,8 @@
 
 require_relative "base"
 require_relative "../../component/base"
-require_relative "../rux"
+require_relative "../transformers/rux"
+require_relative "../transformers/haml"
 
 module Mayu
   module Resources
@@ -44,8 +45,11 @@ module Mayu
 
           source = T.let(resource.read(encoding: "utf-8"), String)
 
-          if resource.path.end_with?(".rux")
-            source = Rux.to_ruby(source, visitor: RuxVisitor.new)
+          case File.extname(resource.path)
+          when ".rux"
+            source = Transformers::Rux.to_ruby(source)
+          when ".haml"
+            source = Transformers::Haml.to_ruby(source)
           end
 
           @source = T.let(source, String)

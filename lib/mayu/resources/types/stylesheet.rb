@@ -1,7 +1,7 @@
 # typed: strict
 
 require "brotli"
-require_relative "../../css"
+require_relative "../transformers/css"
 
 module Mayu
   module Resources
@@ -58,7 +58,7 @@ module Mayu
           klasses = {}
 
           transform_result =
-            CSS.transform(
+            Transformers::CSS.transform(
               app_root: resource.app_root,
               source: resource.read(encoding: "utf-8"),
               source_path: resource.path

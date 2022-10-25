@@ -91,6 +91,8 @@ module Mayu
       sig { returns(ChildType) }
       def render
         @instance.render
+      rescue NotImplementedError => e
+        raise NotImplementedError, "#{@instance} should implement #render"
       ensure
         @dirty = false
       end
