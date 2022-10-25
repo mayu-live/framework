@@ -58,6 +58,12 @@ module Mayu
           end
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
+          def visit_haml_comment(node)
+            @out << "\n" << indentation
+            @out << "# comment\n"
+          end
+
+          sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_filter(node)
             case node.value[:name]
             when "ruby"
@@ -89,10 +95,13 @@ module Mayu
               @out << ", (#{value})" unless value.empty?
             end
 
-            node.children.each do |child|
-              @out << ",\n"
-              indent { visit(child) }
-            end
+            node
+              .children
+              .reject { _1.type == :haml_comment }
+              .each do |child|
+                @out << ",\n"
+                indent { visit(child) }
+              end
 
             node.value[:attributes].each do |attr, value|
               @out << ",\n"
