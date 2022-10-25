@@ -25,11 +25,6 @@ graph TB
   ROUTE____app__pages__demos__page.rux-->__app__pages__demos__page.rux
   ROUTE____app__pages__page.rux-->__app__pages__page.rux
   subgraph PATH__["/"]
-    subgraph PATH__vendor["/vendor"]
-      subgraph PATH__vendor__mayu["/vendor/mayu"]
-        __vendor__mayu__live.js["live.js"]
-      end
-    end
     subgraph PATH__app["/app"]
       subgraph PATH__app__components["/app/components"]
         subgraph PATH__app__components__Layout["/app/components/Layout"]
@@ -142,8 +137,11 @@ graph TB
         __app__pages__404.css["fab:fa-css3 404.css&nbsp;"]
         __app__pages__404.rux["404.rux"]
       end
+      __app__root.css["fab:fa-css3 root.css&nbsp;"]
+      __app__root.rux["root.rux"]
     end
   end
+  __app__root.rux-->__app__root.css
   __app__components__Layout__MaxWidth.rux-->__app__components__Layout__MaxWidth.css
   __app__pages__Intro.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__Intro.rux-->__app__pages__Intro.css
@@ -250,6 +248,7 @@ graph TB
   __app__pages__404.rux-->__app__components__Layout__MaxWidth.rux
   __app__pages__404.rux-->__app__components__Layout__Heading.rux
   __app__pages__404.rux-->__app__pages__404.css
+  class __app__root.css CSS
   class __app__components__Layout__MaxWidth.css CSS
   class __app__pages__Intro.css CSS
   class __app__components__Layout__logo.png Image

@@ -98,9 +98,10 @@ module Mayu
       end
 
       sig { returns(String) }
-      def absolute_path
-        @registry.absolute_path(@path)
-      end
+      def app_root = @registry.root
+
+      sig { returns(String) }
+      def absolute_path = @registry.absolute_path(@path)
 
       sig { returns(T.untyped) }
       def type
