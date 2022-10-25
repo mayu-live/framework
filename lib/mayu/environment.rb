@@ -127,18 +127,16 @@ module Mayu
       route_match
         .layouts
         .reverse
-        .reduce(
-          VDOM.h2(page_component, path:, params:, query:)
-        ) do |app, layout|
+        .reduce(VDOM.h(page_component, path:, params:, query:)) do |app, layout|
           Console.logger.info(self, "Applying layout #{layout.inspect}")
 
           resources.load_resource(
             File.join("/", "app", "pages", layout)
           ).type => Resources::Types::Component => layout
 
-          VDOM.h2(layout.component, app, path:, params:, query:)
+          VDOM.h(layout.component, app, path:, params:, query:)
         end
-        .then { VDOM.h2(root.component, _1) }
+        .then { VDOM.h(root.component, _1) }
     end
 
     sig { params(request_path: String).returns(Routes::RouteMatch) }

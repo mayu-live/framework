@@ -38,7 +38,7 @@ module Mayu
           end
 
           def visit_tag(node)
-            "Mayu::VDOM.h2(%s)" %
+            "Mayu::VDOM.h(%s)" %
               [
                 visit_tag_name(node.name),
                 *node.children.compact.map { visit(_1).strip },

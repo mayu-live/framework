@@ -20,30 +20,29 @@ module Mayu
             @stylesheet.classes[ident.to_s].to_s
           end
 
-          sig do
-            params(
-              args: T.any(String, Symbol),
-              kwargs: T.nilable(T::Boolean)
-            ).returns(String)
+          sig { params(args: T.untyped).returns(String) }
+          def [](*args)
+            args
+              .each_with_object(Set.new) { |arg, set| add_to_result(set, arg) }
+              .join(" ")
           end
-          def [](*args, **kwargs)
-            result = Set.new
 
-            args.each do |classname|
-              if klass = @stylesheet.classes[classname.to_s]
+          private
+
+          sig { params(result: T::Set[String], arg: T.untyped).void }
+          def add_to_result(result, arg)
+            case arg
+            when Symbol
+              if klass = @stylesheet.classes[arg.to_s]
                 result.add(klass)
               end
+            when String
+              result.add(arg)
+            when Array
+              arg.each { add_to_result(result, _1) }
+            when Hash
+              arg.each { add_to_result(result, _1) if _2 }
             end
-
-            kwargs.each do |classname, value|
-              next unless value
-
-              if klass = @stylesheet.classes[classname.to_s]
-                result.add(klass)
-              end
-            end
-
-            result.join(" ")
           end
         end
 
