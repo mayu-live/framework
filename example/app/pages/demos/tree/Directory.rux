@@ -18,7 +18,7 @@ def render
         .difference(%w[. ..])
         .sort
         .map do
-          Mayu::VDOM::H.h2(entry,
+          Mayu::VDOM.h(entry,
           root:,
           path: File.join(path, _1)
         )
