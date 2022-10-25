@@ -98,6 +98,7 @@ module Mayu
 
       sig { params(node: SyntaxTree::CSS::Node).void }
       def visit(node)
+        # puts node.class.name
         if node.respond_to?(:location)
           @mappings[node.send(:location).start_char] ||= @out.pos
         end
@@ -147,13 +148,23 @@ module Mayu
 
       sig { params(node: SyntaxTree::CSS::IdentToken).void }
       def visit_ident_token(node)
+        # NOTE: If we're inside a @media {}-block we get classes here sometimes..
+        # TODO: Fix the above thing by maybe keeping track of the previous node,
+        #       check if it is a dot or something..
+        # @out << encode_class(node.value).delete_prefix(".")
         @out << node.value
       end
 
       sig { params(node: SyntaxTree::CSS::DimensionToken).void }
       def visit_dimension_token(node)
-        # binding.pry if node.unit == "em"
-        @out << "#{node.value}#{node.unit}"
+        case node.value
+        when Rational, Float
+          @out << node.value.to_f.round(5).to_s.sub(/\A0./, ".")
+        else
+          @out << node.value.to_i
+        end
+
+        @out << node.unit
       end
 
       sig { params(node: SyntaxTree::CSS::WhitespaceToken).void }
@@ -178,6 +189,7 @@ module Mayu
       sig { params(node: SyntaxTree::CSS::AtRule).void }
       def visit_at_rule(node)
         @out << "@#{node.name}"
+
         node.child_nodes.each { visit(_1) }
       end
 

@@ -23,12 +23,22 @@ class TestCSS < Minitest::Test
   # end
 
   def test_transform2
+    source_path = "app/pages/Intro.css"
     source_path = "app/pages/demos/tree/page.css"
-    app_root = File.expand_path(File.join(__dir__, "..", "..", "example"))
-    source = File.read(File.join(app_root, source_path))
-    result = Mayu::CSS.transform(source:, source_path:, app_root:)
 
-    puts source
-    puts result.output
+    root = File.expand_path(File.join(__dir__, "..", "..", "example"))
+
+    puts transform_file(root:, path: "app/pages/demos/tree/page.css").output
+    puts transform_file(root:, path: "app/pages/Intro.css").output
+  end
+
+  private
+
+  def transform_file(root:, path:)
+    Mayu::CSS.transform(
+      source: File.read(File.join(root, path)),
+      app_root: root,
+      source_path: path
+    )
   end
 end
