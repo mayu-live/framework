@@ -1,0 +1,53 @@
+:ruby
+  Heading = require("/app/components/Layout/Heading")
+  Fieldset = require("/app/components/Form/Fieldset")
+
+  def self.get_initial_state(**props)
+    { user: nil }
+  end
+
+  def handle_submit(e)
+    update(user: {
+      email: e.dig("formData", "email"),
+      password: e.dig("formData", "password"),
+    })
+  end
+
+  def handle_log_out(e)
+    update(user: nil)
+  end
+
+- state => user:
+
+- if user
+  - return
+    %div
+      %p
+        Logged in as #{user[:email]}.
+        = " "
+
+        %button{on_click: handler(:handle_log_out)}
+          Log out
+
+%div
+  %Heading(level=2) Pure HTML/CSS validation
+
+  %p
+    Pure HTML/CSS validation experiment. Should work in Chrome.
+    %a(href="https://caniuse.com/css-has")Browser support
+
+    %Fieldset
+      %legend Fake log in form
+
+      %form.form{on_submit: handler(:handle_submit)}
+        .formGroup
+          %label.label
+            %span Email
+          %input.input(name="email" type="email" required placeholder="Please enter your email address")
+        .formGroup
+          %label.label
+            %span Password
+          %input.input(name="password" type="password" required pattern="{8,}" placeholder="Enter password (8+ characters)" autocomplete="off")
+
+        %div
+          %button.button(type="submit") Submit

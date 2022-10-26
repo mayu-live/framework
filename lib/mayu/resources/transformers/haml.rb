@@ -160,6 +160,8 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_filter(node)
+            return if node.value[:text].to_s.strip.empty?
+
             case node.value[:name]
             when "ruby"
               @out << indentation << "# ruby:\n"
@@ -311,6 +313,9 @@ module Mayu
           def visit_script(node)
             text = node.value[:text].strip
 
+            is_assignment = text.chomp.match?(/=\z/)
+            emit_end = !is_assignment
+
             @out << indentation << text
 
             unless node.children.empty?
@@ -321,9 +326,9 @@ module Mayu
                 child.value[:keyword] ? visit(child) : indent { visit(child) }
               end
 
-              @out << "\n" << indentation
-              @out << "end"
-              # @out << "# " + node.value[:keyword].inspect
+              @out << "\n"
+
+              @out << indentation << "end" if emit_end
             end
           end
 

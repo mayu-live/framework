@@ -7,6 +7,14 @@ require_relative "haml"
 require "rouge"
 
 class TestHaml < Minitest::Test
+  def test_transform
+    root =
+      File.expand_path(File.join(__dir__, "..", "..", "..", "..", "example"))
+    path = "app/pages/demos/tree/FileEntry.haml"
+
+    transform_and_format_file(root:, path:)
+  end
+
   def test_early_return
     assert_equal(transform_and_format(<<~HAML), <<~RUBY)
     - if true
@@ -69,14 +77,6 @@ class TestHaml < Minitest::Test
     RUBY
   end
 
-  def test_transform
-    root =
-      File.expand_path(File.join(__dir__, "..", "..", "..", "..", "example"))
-    path = "app/pages/demos/pokemon/Pagination.haml"
-
-    transform_and_format_file(root:, path:)
-  end
-
   private
 
   def transform_and_format_file(root:, path:)
@@ -90,13 +90,13 @@ class TestHaml < Minitest::Test
     puts prepend_line_numbers(
            colorize_source(haml, Rouge::Lexers::Haml.new).each_line
          )
-
     handle_parse_error(transformed) do
       formatted = SyntaxTree.format(transformed)
       puts "\e[1mOutput:\e[0m"
       puts prepend_line_numbers(
              colorize_source(formatted, Rouge::Lexers::Ruby).each_line
            )
+      puts
       formatted
     end
   end
@@ -105,15 +105,16 @@ class TestHaml < Minitest::Test
     yield
   rescue SyntaxTree::Parser::ParseError => e
     start_line = [0, 0].max
+    formatted_source =
+      prepend_line_numbers(
+        extract_lines(source.to_s, start_line, -1),
+        start_line: start_line + 1,
+        error_line: e.lineno
+      ).join
+
     puts <<~EOF
     #{e.message} on line #{e.lineno} col #{e.column}
-    #{
-           prepend_line_numbers(
-             extract_lines(source.to_s, start_line, -1),
-             start_line: start_line + 1,
-             error_line: e.lineno
-           ).join
-         }
+    #{formatted_source}
     EOF
     raise
   end

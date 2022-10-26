@@ -1,0 +1,30 @@
+:ruby
+  # setup
+:ruby
+- props => { root:, path: }
+
+- unless path
+  - return
+    %p Please choose a file
+
+- path = File.expand_path(path, "/")
+
+- unless path.start_with?("/app/")
+  - return
+    %p #{path} is not valid
+
+- absolute_path = File.join(root, path)
+- basename = File.basename(path)
+
+- unless File.file?(absolute_path)
+  - return
+    %p #{basename} is not a file
+
+- extname = File.extname(basename)
+- unless [".rb", ".css", ".rux"].include?(extname)
+  - return
+    %p #{path} is not a .rb/.rux/.css-file
+
+%article.article
+  %h3.path= path
+  %pre.pre= File.read(absolute_path)

@@ -1,0 +1,29 @@
+:ruby
+  MESSAGES = [
+    "Click me!",
+    "Click again!!",
+    "One more time",
+    "I am a banana",
+    "LOL",
+  ]
+
+  def self.get_initial_state(**)
+    { x: 0, y: 0, count: 0 }
+  end
+
+  def handle_click(_)
+    update(
+      count: state[:count].succ,
+      x: (rand * 2 - 1) * 200,
+      y: (rand * 2 - 1) * 200,
+    )
+  end
+
+:ruby
+  state => { count:, x:, y: }
+  transform = "translate(#{x}px, #{y}px)"
+  style = { transform: }
+
+.relative
+  %button.button{style:, on_click: handler(:handle_click)}
+    = MESSAGES[state[:count] % MESSAGES.size]
