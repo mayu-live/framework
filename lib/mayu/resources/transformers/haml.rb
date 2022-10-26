@@ -185,19 +185,19 @@ module Mayu
 
             old_pos = @out.pos
 
-            if value = node.value[:value]
-              unless value.empty?
-                @out << ",\n" << indentation
+            indent do
+              if value = node.value[:value]
+                unless value.empty?
+                  @out << ",\n" << indentation
 
-                if node.value[:parse]
-                  @out << "(#{value})"
-                else
-                  @out << "#{value.inspect}"
+                  if node.value[:parse]
+                    @out << "(#{value})"
+                  else
+                    @out << "#{value.inspect}"
+                  end
                 end
               end
-            end
 
-            indent do
               node
                 .children
                 .reject { _1.type == :haml_comment }
@@ -306,23 +306,20 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_script(node)
-            if node.children.empty?
-              @out << indentation
-              @out << "#{node.value[:text].strip}"
-            else
-              @out << indentation
-              @out << "(#{node.value[:text].strip}\n"
+            text = node.value[:text].strip
 
-              indent do
-                node.children.each_with_index do |child, i|
-                  @out << "\n" unless i.zero?
-                  visit(child)
-                end
+            @out << indentation << text
+
+            unless node.children.empty?
+              @out << " begin" if text == "return"
+
+              node.children.each_with_index do |child, i|
+                @out << "\n"
+                child.value[:keyword] ? visit(child) : indent { visit(child) }
               end
 
-              @out << "\n"
-              @out << indentation
-              @out << "end)"
+              @out << "\n" << indentation
+              @out << "end\n"
             end
           end
 

@@ -36,7 +36,7 @@ class TestHaml < Minitest::Test
       File.expand_path(File.join(__dir__, "..", "..", "..", "..", "example"))
 
     transformed =
-      transform_file(root:, path: "app/pages/demos/pokemon/Pagination.haml")
+      transform_file(root:, path: "app/pages/demos/pokemon/:id/page.haml")
     puts "Transformed:"
     puts transformed
     puts "Formatted:"
