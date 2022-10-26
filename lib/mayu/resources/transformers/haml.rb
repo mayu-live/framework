@@ -141,9 +141,12 @@ module Mayu
 
             @out << indentation << "def render\n"
 
-            node.children.each do |child|
-              indent { visit(child) }
-              @out << indentation
+            indent do
+              node.children.each_with_index do |child, i|
+                @out << "\n" unless i.zero?
+                @out << indentation
+                visit(child)
+              end
             end
 
             @out << "\nend\n"
@@ -319,7 +322,8 @@ module Mayu
               end
 
               @out << "\n" << indentation
-              @out << "end\n"
+              @out << "end"
+              # @out << "# " + node.value[:keyword].inspect
             end
           end
 
