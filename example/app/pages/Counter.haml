@@ -1,5 +1,5 @@
 :ruby
-  def self.get_initial_state(initial_value: 3, **)
+  def self.get_initial_state(initial_value: 0, **)
     { count: initial_value }
   end
 
@@ -20,11 +20,13 @@
     title: "Decrement",
     on_click: handler(:handle_decrement),
     disabled: state[:count].zero?,
-  }= "-"
+  } -
 
   %span.count= state[:count]
 
   %button.button{
     title: "Increment",
     on_click: handler(:handle_increment),
-  }= "+"
+  } +
+
+
