@@ -15,26 +15,32 @@ class TestHaml < Minitest::Test
     :ruby
       puts "hello"
       lol = "lolsan"
+      id = "check123"
+      props = { label: "label", asd: "asd" }
 
     %div.foo(class="bar" asdd=lol){class: "baz"}
       = "hello"
+      %input(id=id){
+        class: classname,
+        type: "checkbox",
+        placeholder: props[:label],
+        **props.except(:label),
+      }
     HAML
 
     puts result
-
-    assert(result == <<~RUBY)
-    RUBY
   end
 
   def test_transform2
     root =
       File.expand_path(File.join(__dir__, "..", "..", "..", "..", "example"))
 
-    transformed = transform_file(root:, path: "app/pages/Intro.haml")
+    transformed =
+      transform_file(root:, path: "app/components/Form/Checkbox.haml")
     puts "Transformed:"
     puts transformed
-    puts "Formatted:"
-    puts SyntaxTree.format(transformed)
+    # puts "Formatted:"
+    # puts SyntaxTree.format(transformed)
   end
 
   private

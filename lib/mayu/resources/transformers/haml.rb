@@ -5,6 +5,7 @@ require "bundler/setup"
 require "syntax_tree"
 require "syntax_tree/haml"
 require "haml"
+require "console"
 
 module Mayu
   module Resources
@@ -42,7 +43,7 @@ module Mayu
               node
                 .assocs
                 .delete_if do |child|
-                  return false unless child.respond_to?(:key)
+                  next false if child.is_a?(SyntaxTree::AssocSplat)
 
                   case child.key
                   when SyntaxTree::StringLiteral
@@ -71,6 +72,7 @@ module Mayu
                       false
                     end
                   else
+                    raise
                     false
                   end
                 end
@@ -184,14 +186,22 @@ module Mayu
             old_pos = @out.pos
 
             if value = node.value[:value]
-              @out << ", (#{value})" unless value.empty?
+              unless value.empty?
+                @out << ",\n" << indentation
+
+                if node.value[:parse]
+                  @out << "(#{value})"
+                else
+                  @out << "#{value.inspect}"
+                end
+              end
             end
 
             indent do
               node
                 .children
                 .reject { _1.type == :haml_comment }
-                .each do |child|
+                .each_with_index do |child, i|
                   @out << ",\n"
                   visit(child)
                 end
@@ -284,25 +294,41 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_plain(node)
-            @out << indentation << node.value[:text].inspect
+            if node.children.empty?
+              indent do
+                @out << indentation
+                @out << "#{node.value[:text].strip.inspect}"
+              end
+            else
+              raise "this should be handled"
+            end
           end
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_script(node)
             if node.children.empty?
               @out << indentation
-              @out << "(#{node.value[:text].strip})"
+              @out << "#{node.value[:text].strip}"
             else
               @out << indentation
               @out << "(#{node.value[:text].strip}\n"
-              node.children.each_with_index do |child, i|
-                @out << ",\n" unless i.zero?
-                indent { visit(child) }
+
+              indent do
+                node.children.each_with_index do |child, i|
+                  @out << "\n" unless i.zero?
+                  visit(child)
+                end
               end
+
               @out << "\n"
               @out << indentation
               @out << "end)"
             end
+          end
+
+          sig { params(node: ::Haml::Parser::ParseNode).void }
+          def visit_silent_script(node)
+            visit_script(node)
           end
 
           sig { params(method: Symbol, node: ::Haml::Parser::ParseNode).void }
