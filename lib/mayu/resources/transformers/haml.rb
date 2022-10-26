@@ -228,7 +228,7 @@ module Mayu
                 @out << ",\n"
                 @out << indentation
 
-                @out << "#{attr}: #{value.inspect}"
+                @out << "#{attr.tr("-", "_")}: #{value.inspect}"
               end
 
               if dynamic_attributes = node.value[:dynamic_attributes]
