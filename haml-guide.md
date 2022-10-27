@@ -141,9 +141,30 @@ and update state with `update`,
   %button(onclick=handle_reset) Reset
 ```
 
+## Early returns
+
+I don't think this is possible in regular HAML,
+but it makes sense to do it in Mayu.
+
+```haml
+:ruby
+  def self.get_initial_state(**)
+    { clicked: false }
+  end
+
+  def handle_click(_event)
+    update(clicked: true)
+  end
+- if state[:clicked]
+  - return
+    %p You clicked the button.
+%button(onclick=handle_click) Click me
+```
+
 ## Lifecycle
 
 There are a few lifecycle methods that can be useful.
+It's all asynchronous so you can create loops and fetch data without blocking.
 
 ```haml
 :ruby
@@ -152,9 +173,15 @@ There are a few lifecycle methods that can be useful.
   end
 
   def mount
-  end
+    loop do
+      sleep 1
 
-%
+      update do |state|
+        { count: state[:count] + 1 }
+      end
+    end
+  end
+%p Count: #{state[:count]}
 ```
 
 ## Whitespace
@@ -197,3 +224,95 @@ because the `>` operator was not used.
 
 - `<` adds a space before an element.
 - `>` adds a space after an element.
+
+## Data fetching
+
+This has nothing to do with HAML but I suppose this document will turn into
+some proper documentation at some point, so I'm writing it here...
+
+```haml
+:ruby
+  def self.get_initial_state(**)
+    {
+      result: nil,
+      error: nil,
+    }
+  end
+
+  def mount
+    sleep 1
+
+    res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{props[:id]}")
+    result = res.json(symbolize_names: true)
+    update(result:)
+  rescue => e
+    update(error: e.message)
+  end
+:ruby
+  state => { error:, result: }
+- if error
+  - return
+    %p.error= error
+- unless result
+  - return
+    %p Loading...
+%p= result[:name]
+```
+
+## CSS-filter
+
+Not supported yet!
+The plan is to allow defining CSS inside components, like this:
+
+```haml
+:ruby
+  def self.get_initial_state(**)
+    { count: 0 }
+  end
+
+  def handle_click(e)
+    update do |state|
+      state[:count].succ
+    end
+  end
+:css
+  .outer {
+    border: 1px solid #f0f;
+  }
+
+  .count {
+    font-weight: bold;
+  }
+
+  .button {
+    background: #0f0;
+  }
+.outer
+  %p.count= state[:count]
+  %button.button(onclick=handle_click) click me
+```
+
+Here's another idea, not sure if it's good or not, but maybe:
+
+```haml
+:css
+  .outer {
+    border: 1px solid #f0f;
+  }
+
+  button {
+    background: #0f0;
+  }
+.outer
+  %button click me
+```
+
+Matching by tag-names isn't allowed in Mayu because it wants to avoid surprises
+that sometimes happen when things are matched unexpectedly.
+In this example, it would be possible to generate a class name
+for the button-tag, and then for each button element that matches in the same
+component, it will just pull that class name from the component stylesheet.
+Not sure about this, but I think it would be a good feature.
+
+This means that tag name-selectors would be scoped to the current component,
+and it looks kinda ridiculous to do: `%button.button` vs just `%button`...
