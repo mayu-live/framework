@@ -93,7 +93,7 @@ end
 
 This component works the same as this React component:
 
-```javascriptreact
+```jsx
 export default function MyComponent() {
   function handleClick(e) {
     console.log('MyComponent', e)
