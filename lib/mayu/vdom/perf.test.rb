@@ -30,10 +30,11 @@ class PerfTest < Minitest::Test
       per_page = 150
       items = props[:items].slice(state[:page] * per_page, per_page)
 
-      # h(:div,
-      #   (h(:button, on_click: handler(:handle_next_page)) unless items.empty?),
-      #   h.ul { items.each { |item| h.li item, key: item } }
-      # )
+      h(
+        :div,
+        (h(:button, on_click: handler(:handle_next_page)) unless items.empty?),
+        h(:ul, items.map { h(:li, _1, key: _1) })
+      )
     end
   end
 
