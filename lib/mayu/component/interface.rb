@@ -1,7 +1,6 @@
 # typed: strict
 
 require_relative "handler_ref"
-require_relative "../markup"
 
 module Mayu
   module Component

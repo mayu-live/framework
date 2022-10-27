@@ -1,0 +1,69 @@
+:ruby
+  Pagination = require("./Pagination")
+
+  def self.get_initial_state(**props)
+    {
+      result: nil,
+      error: nil,
+      page: props.dig(:query, :page).to_i,
+      per_page: props.dig(:per_page).to_i.nonzero? || 20,
+    }
+  end
+
+  def mount
+    sleep 1
+
+    res = helpers.fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
+    result = res.json(symbolize_names: true)
+    update(result:)
+  rescue => e
+    update(error: e.message)
+  end
+
+  def handle_set_per_page(e)
+    update(page: 0, per_page: e.dig("target", "value").to_i)
+  end
+
+:ruby
+  state => result:
+
+- unless result
+  %p
+    Loading Pokémon from
+    %a(href="https://pokeapi.co/") PokéAPI
+- else
+  :ruby
+    result => results:
+
+    per_page = state[:per_page]
+    total_pages = (results.length / per_page).floor
+    page = props.dig(:query, :page).to_i.clamp(1, total_pages.succ)
+    results_on_this_page = results.slice(page.pred * per_page, per_page) || []
+
+  %div
+    %Pagination{
+      page:,
+      per_page:,
+      total_pages:,
+      on_click_prev: handler(:handle_prev_page),
+      on_click_next: handler(:handle_next_page),
+      on_change_per_page: handler(:handle_set_per_page),
+    }
+
+    %ul.list
+      = results_on_this_page.map do |result|
+        - id = result[:url][/\/(\d+)\/$/, 1].to_i
+
+        %li{key: result[:url], class: styles.item}
+          = "#{id}. "
+          %a(href="/demos/pokemon/#{id}")
+            = result[:name].capitalize
+
+    %Pagination{
+      page:,
+      per_page:,
+      total_pages:,
+      on_click_prev: handler(:handle_prev_page),
+      on_click_next: handler(:handle_next_page),
+      on_change_per_page: handler(:handle_set_per_page),
+    }

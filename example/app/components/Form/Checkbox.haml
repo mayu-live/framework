@@ -1,0 +1,25 @@
+:ruby
+  # noop
+
+:ruby
+  classname = [
+    styles[:checkbox],
+    props[:class],
+  ].compact.join(" ")
+
+  group_classname = [
+    styles.group,
+    props[:group_class],
+  ].compact.join(" ")
+
+  id = "checkbox-#{vnode_id}"
+
+%div(class=group_classname foo="hoppsan")
+  %input(id=id){
+    class: classname,
+    type: "checkbox",
+    placeholder: props[:label],
+    **props.except(:label),
+  }
+  %label.label(for=id)
+    = props[:label]

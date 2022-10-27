@@ -1,0 +1,21 @@
+:ruby
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+  Heading = require("/app/components/Layout/Heading")
+  LogInForm = require("./LogInForm")
+  Elements = require("./Elements")
+  TransferList = require("./TransferList")
+
+%MaxWidth
+  %Heading(level=1) Form demo
+
+  %hr
+  %Heading(level=2) Log in form
+  %LogInForm
+
+  %hr
+  %Heading(level=2) Elements
+  %Elements
+
+  %hr
+  %Heading(level=2) Transfer list
+  %TransferList

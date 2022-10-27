@@ -23,12 +23,12 @@ things are put in place and things feel right.
 
 ### Core features:
 
-- 100% server-side
 - 100% Ruby
-- No JavaScript required
-- Asynchroneous
-- Reactive, component based Virtual DOM that runs on the server
-- Hot-reloading
+- 100% server side
+- 100% asynchronous
+- No JavaScript necessary
+- Reactive components (server side Virtual DOM)
+- Hot-reloading in dev
 - Automatic asset handling
 - Built-in metrics
 
@@ -49,7 +49,7 @@ things are put in place and things feel right.
   - [Hot reloading](#hot-reloading)
   - [Optimized data transfer](#optimized-data-transfer)
   - [Realtime metrics](#realtime-metrics)
-  - [Templating](#templating)
+  - [HAML](#haml)
 - [Implementation notes](#implementation-notes)
   - [Tests](#tests)
   - [Virtual DOM](#virtual-dom)
@@ -144,21 +144,17 @@ Callbacks are just regular `POST` requests.
 [socketry/async](https://github.com/socketry/async) makes it possible
 to do all this without blocking.
 
-```ruby
-# components/Clock.rb
-mount do
-  loop do
-    update(time: Time.now.to_s)
-    sleep 0.5
-  end
-end
+### `app/components/Clock.haml`
 
-# stree-ignore
-render do
-  h.div do
-    h.p state[:time]
+```haml
+:ruby
+  mount do
+    loop do
+      update(time: Time.now.to_s)
+      sleep 0.5
+    end
   end
-end
+%p= state[:time]
 ```
 
 This will print the current server time.
@@ -180,8 +176,9 @@ rendering libraries. This is the same thing, but in Ruby.
 that all CSS class names are scoped locally.
 You can access styles in a component using the `styles` method.
 
+### `app/components/Example.css`
+
 ```css
-/* components/Example.css */
 .box {
   padding: 1px;
   border: 1px solid #000;
@@ -197,18 +194,12 @@ You can access styles in a component using the `styles` method.
 }
 ```
 
-```
-# components/Example.rux
-render do
-  <div class={styles.box}>
-    <p class={styles.hello}>
-      Hello world
-    </p>
-    <button class={styles.button}>
-      Click me
-    </button>
-  </div>
-end
+### `app/components/Example.haml`
+
+```haml
+.box
+  %p.hello Hello world
+  %button.button Click me!
 ```
 
 This would generate the following HTML:
@@ -260,44 +251,76 @@ Here's the structure of a blog app:
 
 ```
 app/pages
-├── page.rb
+├── page.haml
 ├── page.css
-├── layout.rb
+├── layout.haml
 ├── layout.css
 ├── about
-│   ├── page.rb
+│   ├── page.haml
 │   └── page.css
 └── posts
-    ├── page.rb
+    ├── page.haml
     ├── page.css
-    ├── layout.rb
+    ├── layout.haml
     ├── layout.css
     └── :id
-        ├── page.rb
+        ├── page.haml
         └── page.css
 ```
 
 This would create the following routes:
 
-| **path**      | **component**                  | **layouts**                                       |
-| ------------- | ------------------------------ | ------------------------------------------------- |
-| `/`           | `app/pages/page.rb`            | `app/pages/layout.rb`                             |
-| `/about/`     | `app/pages/about/page.rb`      | `app/pages/layout.rb`                             |
-| `/posts/`     | `app/pages/posts/page.rb`      | `app/pages/layout.rb` `app/pages/posts/layout.rb` |
-| `/posts/:id/` | `app/pages/posts/[id]/page.rb` | `app/pages/layout.rb` `app/pages/posts/layout.rb` |
-| `/*`          | `app/pages/404.rb`             | `app/pages/layout.rb`                             |
+| **path**      | **component**                    | **layouts**                                           |
+| ------------- | -------------------------------- | ----------------------------------------------------- |
+| `/`           | `app/pages/page.haml`            | `app/pages/layout.haml`                               |
+| `/about/`     | `app/pages/about/page.haml`      | `app/pages/layout.haml`                               |
+| `/posts/`     | `app/pages/posts/page.haml`      | `app/pages/layout.haml` `app/pages/posts/layout.haml` |
+| `/posts/:id/` | `app/pages/posts/[id]/page.haml` | `app/pages/layout.haml` `app/pages/posts/layout.haml` |
+| `/*`          | `app/pages/404.haml`             | `app/pages/layout.haml`                               |
 
 For a real-world example, check out
 [`example/app/pages/`](https://github.com/mayu-live/framework/tree/main/example/app/pages).
 
 ## Hot reloading
 
+There is a resource system inspired by JavaScript bundlers that loads all
+types of files.
+
+### Development mode
+
 Components and styles update immediately in the browser as you edit files.
 No browser refresh needed.
+
+## Production mode
+
+As soon as a server receives `SIGINT`, it will pause all sessions,
+serialize and encrypt the entire session, send it to the client and
+close the connection. The client will then reconnect and post the
+encrypted session which will be decrypted, verified, deserialized
+and resumed.
+
+I don't know how well this works in practice.
+Whenever [Issue #20](https://github.com/mayu-live/framework/issues/20)
+has been fixed, I believe that it would be quite easy to just serialize
+the DOM in the browser and send it along with the encrypted state when
+resuming, and then it would just diff the browser DOM against the DOM
+generated by the VDOM...
 
 ## Optimized data transfer
 
 Everything is minified and optimized and deliviered over HTTP/2.
+Images are scaled into different versions, non-binary assets are
+compressed with Brotli.
+
+The message stream uses [DecompressionStream](https://wicg.github.io/compression/#decompression-stream)
+with the [`deflate-raw`](https://wicg.github.io/compression/#supported-formats)
+format. Browsers that don't support DecompressionStream will download a
+replacement based on [fflate](https://github.com/101arrowz/fflate).
+
+Messages are packed with [MessagePack](https://msgpack.org/index.html),
+which is supposed to be very efficient, although it's also the largest
+dependency at the moment. A good thing with MessagePack is that it
+can send binary data, which is useful when transferring state.
 
 ![Request waterfall screenshot](https://quad.pe/e/h9BqRqnMwh.png)
 ![Request waterfall screenshot 22](https://quad.pe/e/OVWyi8tIRk.png)
@@ -310,18 +333,57 @@ Screenshots from [Grafana on Fly.io](https://fly.io/docs/reference/metrics/#mana
 ![Active sessions](https://user-images.githubusercontent.com/41148/193404404-9018c9d9-e575-48db-8845-3f56ced0c16f.png)
 ![Patch times and counts](https://user-images.githubusercontent.com/41148/193398411-cc5bf2d6-d353-42eb-bcf5-ccc1feb7099a.png)
 
-## Templating
+## HAML
 
-Mayu uses [Rux](https://github.com/camertron/rux) to provide a JSX-like syntax,
-so you can write components like this:
+Mayu uses HAML, it's pretty convenient.
 
-```
+Check out the [HAML Reference][https://haml.info/docs/yardoc/file.reference.html].
+Mayu has some differences with regular HAML to make it work better with a virtual DOM,
+some of these differences are documented in [./haml-guide.md].
+
+<img width="451" alt="Screen Shot 2022-10-25 at 15 45 19" src="https://user-images.githubusercontent.com/41148/197878366-459f4a3c-f223-415a-b94a-f39e5719ecd5.png">
+
+That above code will be transformed into this:
+
+```ruby
+def self.get_initial_state(initial_value: 3, **)
+  { count: initial_value }
+end
+
+def handle_decrement(_)
+  update { |state| { count: [0, state[:count].pred].max } }
+end
+
+def handle_increment(_)
+  update { |state| { count: state[:count].succ } }
+end
+
 def render
-  <div>
-    <p>Current time: {Time.now.to_s}</p>
-  <div>
+  Mayu::VDOM.h(
+    :div,
+    Mayu::VDOM.h(
+      :button,
+      ("-"),
+      **{
+        title: "Decrement",
+        on_click: handler(:handle_decrement),
+        disabled: state[:count].zero?
+      },
+      class: styles[:button]
+    ),
+    Mayu::VDOM.h(:span, (state[:count]), class: styles[:count]),
+    Mayu::VDOM.h(
+      :button,
+      ("+"),
+      **{ title: "Increment", on_click: handler(:handle_increment) },
+      class: styles[:button]
+    ),
+    class: styles[:counter]
+  )
 end
 ```
+
+(Check out the examples in the tests)[https://github.com/mayu-live/framework/blob/haml/lib/mayu/resources/transformers/haml.test.rb]
 
 # Implementation notes
 
@@ -335,7 +397,10 @@ I have always liked this convention in the JS-world.
 It's nice to have things that belong together in the same place,
 rather to have a separate tree for tests.
 
-There aren't many tests yet. Kinda painting with a broad brush at the moment.
+There aren't many tests. Some things should really be tested,
+but tests also add some overhead. I think it's better to test
+things implicitly on a higher level rather than locking down
+the implementation too much...
 
 ## Virtual DOM
 

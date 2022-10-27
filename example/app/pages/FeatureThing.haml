@@ -1,0 +1,29 @@
+:ruby
+  ITEMS = [
+    "Component-based",
+    "JSX-inspired syntax",
+    "100% server side",
+    "100% async",
+    "CSS-modules",
+    "Asset handling",
+    "Hot-reloading",
+  ]
+
+  def self.get_initial_state(**props)
+    { index: 0 }
+  end
+
+  def mount
+    loop do
+      sleep 1
+
+      update do |state|
+        { index: state[:index].succ % ITEMS.size }
+      end
+    end
+  end
+
+%ul.featureList
+  = ITEMS.map.with_index do |item, index|
+    - active = index == state[:index]
+    %li.feature{class: { active: }}= item

@@ -3,6 +3,7 @@
 
 require "sorbet-runtime"
 require "minitest/reporters"
+require "pry"
 
 Minitest::Reporters.use!(
   Minitest::Reporters::DefaultReporter.new,

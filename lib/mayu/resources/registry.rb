@@ -13,7 +13,7 @@ MessagePack::DefaultFactory.register_type(0x00, Symbol)
 module Mayu
   module Resources
     class Registry
-      EXTENSIONS = T.let(["", ".rb", ".rux"].freeze, T::Array[String])
+      EXTENSIONS = T.let(["", ".rb", ".rux", ".haml"].freeze, T::Array[String])
 
       extend T::Sig
 

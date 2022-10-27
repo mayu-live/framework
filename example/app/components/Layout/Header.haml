@@ -1,0 +1,25 @@
+:ruby
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+  Logo = image("./logo.png")
+
+%header{class: props[:class]}
+  %MaxWidth.inner
+    %a(href="/")
+      %img.img{
+        src: Logo.src,
+        sizes: Logo.sizes,
+        srcset: Logo.srcset,
+        width: Logo.original.width,
+        height: Logo.original.height,
+      }(alt="Mayu Live")
+    %nav.nav
+      %menu.menu
+        %li
+          %a.navLink(href="/demos")
+            Demos
+        %li
+          %a.navLink(href="/docs")
+            Docs
+        %li
+          %a.navLink(href="https://github.com/mayu-live/framework" target="_blank")
+            GitHub

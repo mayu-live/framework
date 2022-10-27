@@ -1,0 +1,8 @@
+.group
+  %select.select(type="text"){
+    class: props[:class],
+    placeholder: props[:label],
+    **props
+  }= children
+
+  %label.label= props[:label]

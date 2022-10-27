@@ -1,0 +1,28 @@
+:ruby
+  def self.get_initial_state(initial_value: 0, **)
+    { count: initial_value }
+  end
+
+  def handle_decrement(_)
+    update do |state|
+      { count: [0, state[:count].pred].max }
+    end
+  end
+
+  def handle_increment(_)
+    update do |state|
+      { count: state[:count].succ }
+    end
+  end
+
+.counter
+  %button.button(title="Decrement"){
+    on_click: handler(:handle_decrement),
+    disabled: state[:count].zero?,
+  } －
+
+  %span.count= state[:count]
+
+  %button.button(title="Increment"){
+    on_click: handler(:handle_increment),
+  } ＋

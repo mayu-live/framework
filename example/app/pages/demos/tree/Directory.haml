@@ -1,0 +1,39 @@
+:ruby
+  def self.get_initial_state(initial_open: false, **)
+    { open: initial_open }
+  end
+
+  def handle_toggle(_)
+    update do |state|
+      { open: !state[:open] }
+    end
+  end
+
+:ruby
+  props => { root:, path:, entry: }
+
+  entries =
+    if state[:open]
+      Dir
+        .entries(File.join(root, path))
+        .difference(%w[. ..])
+        .sort
+        .map do
+          Mayu::VDOM.h(entry,
+          root:,
+          path: File.join(path, _1)
+        )
+        end.compact
+      else
+        []
+      end
+
+  icon = state[:open] ? "📂" : "📁"
+  list_style_type = "'\\%s'" % icon.codepoints.first.to_s(16)
+  style = { list_style_type: }
+
+%li.dir{style:, class: { empty: entries.none?, nonempty: entries.any? }}
+  %span{class: styles[:name], on_click: handler(:handle_toggle)}
+    #{File.basename(path)}/
+  = unless entries.empty?
+    %ul.list= entries

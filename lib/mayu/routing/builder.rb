@@ -7,7 +7,7 @@ module Mayu
       extend T::Sig
 
       IGNORE = T.let(%w[. ..].freeze, T::Array[String])
-      EXTENSIONS = T.let(%w[.rb .rux].freeze, T::Array[String])
+      EXTENSIONS = T.let(%w[.rb .rux .haml].freeze, T::Array[String])
 
       sig { params(root: String).returns(Routes::Route) }
       def self.build(root)

@@ -16,6 +16,8 @@ require_relative "../app_metrics"
 
 class PerfTest < Minitest::Test
   class MyComponent < Mayu::Component::Base
+    include Mayu::VDOM::H
+
     def self.get_initial_state(**props)
       { page: 0 }
     end
@@ -25,15 +27,14 @@ class PerfTest < Minitest::Test
     end
 
     def render
-      h.div do
-        per_page = 150
+      per_page = 150
+      items = props[:items].slice(state[:page] * per_page, per_page)
 
-        items = props[:items].slice(state[:page] * per_page, per_page)
-
-        h.button on_click: handler(:handle_next_page) unless items.empty?
-
-        h.ul { items.each { |item| h.li item, key: item } }
-      end
+      h(
+        :div,
+        (h(:button, on_click: handler(:handle_next_page)) unless items.empty?),
+        h(:ul, items.map { h(:li, _1, key: _1) })
+      )
     end
   end
 
@@ -44,7 +45,7 @@ class PerfTest < Minitest::Test
 
     Async do
       vtree = setup_vtree
-      app = h[MyComponent, items:]
+      app = h(MyComponent, items:)
       vtree.render(app)
       vtree.to_html.tap { |html| print_xml(html) }
 

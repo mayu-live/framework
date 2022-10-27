@@ -1,0 +1,22 @@
+:ruby
+  def icon
+    case File.extname(props[:path])
+    when ".rb", ".rux"
+      "📝"
+    when ".css"
+      "🖨️"
+    when ".png"
+      "🖼️"
+    else
+      "📄"
+    end
+  end
+
+:ruby
+  list_style_type = "'\\%s'" % icon.codepoints.first.to_s(16)
+  style = { list_style_type: }
+  href = "?file=#{props[:path]}"
+  basename = File.basename(props[:path])
+
+%li.file{style:}
+  %a{href:}= basename

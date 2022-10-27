@@ -6,10 +6,10 @@ module Mayu
       class Head < Component::Base
         sig { override.returns(T.nilable(VDOM::Descriptor)) }
         def render
-          h.create_element(
+          VDOM::Descriptor.new(
             :__mayu_head,
-            [children, h.create_element(:__mayu_links, [], {})].flatten.compact,
-            **props
+            props,
+            [children, VDOM.h(:__mayu_links)].flatten.compact
           )
         end
       end
@@ -17,13 +17,10 @@ module Mayu
       class Body < Component::Base
         sig { override.returns(T.nilable(VDOM::Descriptor)) }
         def render
-          h.create_element(
+          VDOM::Descriptor.new(
             :__mayu_body,
-            [
-              children,
-              h.create_element(:__mayu_scripts, [], {})
-            ].flatten.compact,
-            **props
+            props,
+            [children, VDOM.h(:__mayu_scripts, [], {})].flatten.compact
           )
         end
       end
@@ -42,10 +39,10 @@ module Mayu
               { **props, on_click: "Mayu.navigate(event)" }
             end
 
-          h.create_element(
+          VDOM::Descriptor.new(
             :__mayu_a,
-            [children].flatten.compact,
-            overridden_props
+            overridden_props,
+            [children].flatten.compact
           )
         end
       end
@@ -65,18 +62,18 @@ module Mayu
                       "Only option are valid children for select, you passed #{descriptor.type}"
               end
 
-              h.create_element(
+              VDOM::Descriptor.new(
                 descriptor.type,
-                descriptor.props[:children],
                 {
                   **descriptor.props,
                   key: descriptor.key,
                   selected: !value.nil? && value == descriptor.props[:value]
-                }
+                },
+                descriptor.props[:children]
               )
             end
 
-          h.create_element(:__mayu_select, options, props.except(:value))
+          VDOM::Descriptor.new(:__mayu_select, props.except(:value), options)
         end
       end
     end

@@ -1,0 +1,76 @@
+:ruby
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+  Heading = require("/app/components/Layout/Heading")
+  Counter = require("./Counter")
+  FeatureThing = require("./FeatureThing")
+
+%div
+  .featuresOuter
+    %MaxWidth
+      %article.features
+        %Heading.featuresHeading#features(level=1)
+          Features
+
+        %p Here's a list of core features:
+
+        %FeatureThing
+
+        %p
+          Read more on
+          = " "
+          %a(href="https://github.com/mayu-live/framework#readme" target="_blank")
+            GitHub
+
+    .exampleOuter
+      %MaxWidth
+        .article.example
+          %Heading.exampleHeading#example(level=1)
+          %p This text was rendered on the server at #{Time.now.utc.to_s}.
+          %p
+            The counter below was also rendered on the server.
+            The only JavaScript required to make it interactive is a few
+            kilobytes that makes a connection to the server and updates
+            the DOM whenever state changes on the server.
+          %Counter(initial_value=7)
+
+    .sectionsOuter
+      .sections
+        %section.section
+          .sectionInner
+            %Heading.sectionTitle(level=3)
+              Interactive web apps without JavaScript
+            %ul
+              %li You write all logic in Ruby.
+              %li All logic runs on the server.
+              %li DOM-patches are streamed to the browser.
+
+        %section.section
+          .sectionInner
+            %Heading.sectionTitle(level=3)
+              How does it work?
+            %ul
+              %li Mayu implements a Virtual DOM in Ruby.
+              %li All HTML is rendered on the server.
+              %li
+                All DOM updates are streamed to the a small browser runtime
+                that takes care of updating the DOM.
+              %li Eventh handlers run on the server.
+              %li There is no need for an API.
+
+        %section.section
+          .sectionInner
+            %Heading.sectionTitle(level=3)
+              Efficient
+            %ul
+              %li HTTP/2 streams.
+              %li Designed to be deployed on the edge.
+              %li Pages are interactive before even reaching the browser.
+
+        %section.section
+          .sectionInner
+            %Heading.sectionTitle(level=3)
+              Smooth developer experience
+            %ul
+              %li Hot reloading updates your page as soon as you change files.
+              %li Asynchronous code without callbacks.
+              %li Ruby is pretty comfortable to work with.

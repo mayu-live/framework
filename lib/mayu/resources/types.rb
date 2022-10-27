@@ -19,6 +19,8 @@ module Mayu
           return Component
         when /\.rux\z/
           return Component
+        when /\.haml\z/
+          return Component
         when /\.js\z/
           return JavaScript
         when /\.css\z/

@@ -1,0 +1,30 @@
+:ruby
+  ALLOWED_EXTENSIONS = %w[.rb .css .rux .haml]
+:ruby
+- props => { root:, path: }
+
+- unless path
+  - return
+    %p Please choose a file
+
+- path = File.expand_path(path, "/")
+
+- unless path.start_with?("/app/")
+  - return
+    %p #{path} is not valid
+
+- absolute_path = File.join(root, path)
+- basename = File.basename(path)
+
+- unless File.file?(absolute_path)
+  - return
+    %p #{basename} is not a file
+
+- extname = File.extname(basename)
+- unless ALLOWED_EXTENSIONS.include?(extname)
+  - return
+    %p #{path} is not a #{ALLOWED_EXTENSIONS.join("/")}-file
+
+%article.article
+  %h3.path= path
+  %pre.pre= File.read(absolute_path)

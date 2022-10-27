@@ -1,0 +1,33 @@
+:ruby
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+  Heading = require("/app/components/Layout/Heading")
+
+  def self.get_initial_state(**props)
+    { angle: 328, word: nil }
+  end
+
+  WORDS = %w[Mayu enables rich, real-time user experiences with server-rendered HTML.]
+
+  def mount
+    loop do
+      sleep 15
+      update(angle: rand(360 * 2))
+
+      WORDS.length.times do |i|
+        update(word: i)
+        sleep 0.5
+      end
+
+      update(word: nil)
+    end
+  end
+
+.intro{style: { "--angle": "#{state[:angle]}deg" }}
+  %MaxWidth
+    .inner
+      %Heading.title(level=1)
+        Reactive Server-Side component-based VirtualDOM framework for Ruby
+      %Heading.subtitle(level=2)
+        = WORDS.map.with_index do |word, i|
+          %span.word{class: { active: i == state[:word] }}
+            = "#{word} "

@@ -1,9 +1,0 @@
-MaxWidth = require("/app/components/Layout/MaxWidth")
-Heading = require("/app/components/Layout/Heading")
-
-def render
-  <MaxWidth>
-    <Heading level={2}>Page not found!</Heading>
-    <p><a href="/">Go to the start page</a></p>
-  </MaxWidth>
-end

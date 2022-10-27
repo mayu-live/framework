@@ -1,0 +1,11 @@
+:ruby
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+  Heading = require("/app/components/Layout/Heading")
+
+  def t
+    "TODO: Implement me"
+  end
+
+%MaxWidth
+  %Heading(level=2)= t(:title)
+  = children
