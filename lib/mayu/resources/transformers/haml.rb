@@ -92,8 +92,9 @@ module Mayu
                       )
                       false
                     else
-                      # TODO: Is there a better way to transform the tree?
-                      # This is supposed to convert string keys into symbols
+                      # TODO: Is there a better way to transform the tree,
+                      # than with instance_variable_set?
+                      # This is supposed to convert string keys into symbols.
                       child.instance_variable_set(
                         :@key,
                         SyntaxTree::Label.new(
@@ -111,8 +112,7 @@ module Mayu
                       false
                     end
                   else
-                    raise
-                    false
+                    raise NotImplementedError, "This case needs to be handled"
                   end
                 end
                 .length

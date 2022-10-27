@@ -23,12 +23,12 @@ things are put in place and things feel right.
 
 ### Core features:
 
-- 100% server-side
 - 100% Ruby
-- No JavaScript required
-- Asynchroneous
-- Reactive, component based Virtual DOM that runs on the server
-- Hot-reloading
+- 100% server side
+- 100% asynchronous
+- No JavaScript necessary
+- Reactive components (server side Virtual DOM)
+- Hot-reloading in dev
 - Automatic asset handling
 - Built-in metrics
 
@@ -314,6 +314,10 @@ Screenshots from [Grafana on Fly.io](https://fly.io/docs/reference/metrics/#mana
 
 Mayu uses HAML, it's pretty convenient.
 
+Check out the [HAML Reference][https://haml.info/docs/yardoc/file.reference.html].
+Mayu has some differences with regular HAML to make it work better with a virtual DOM,
+some of these differences are documented in [./haml-guide.md].
+
 <img width="451" alt="Screen Shot 2022-10-25 at 15 45 19" src="https://user-images.githubusercontent.com/41148/197878366-459f4a3c-f223-415a-b94a-f39e5719ecd5.png">
 
 That above code will be transformed into this:
@@ -325,20 +329,19 @@ def self.get_initial_state(initial_value: 3, **)
 end
 
 def handle_decrement(_)
-  update do |state|
-    { count: [0, state[:count].pred].max }
-  end
+  update { |state| { count: [0, state[:count].pred].max } }
 end
 
 def handle_increment(_)
-  update do |state|
-    { count: state[:count].succ }
-  end
+  update { |state| { count: state[:count].succ } }
 end
 
 def render
-  Mayu::VDOM.h(:div,
-    Mayu::VDOM.h(:button, ("-"),
+  Mayu::VDOM.h(
+    :div,
+    Mayu::VDOM.h(
+      :button,
+      ("-"),
       **{
         title: "Decrement",
         on_click: handler(:handle_decrement),
@@ -346,10 +349,10 @@ def render
       },
       class: styles[:button]
     ),
-    Mayu::VDOM.h(:span, (state[:count]),
-      class: styles[:count]
-    ),
-    Mayu::VDOM.h(:button, ("+"),
+    Mayu::VDOM.h(:span, (state[:count]), class: styles[:count]),
+    Mayu::VDOM.h(
+      :button,
+      ("+"),
       **{ title: "Increment", on_click: handler(:handle_increment) },
       class: styles[:button]
     ),
@@ -357,6 +360,8 @@ def render
   )
 end
 ```
+
+(Check out the examples in the tests)[https://github.com/mayu-live/framework/blob/haml/lib/mayu/resources/transformers/haml.test.rb]
 
 # Implementation notes
 

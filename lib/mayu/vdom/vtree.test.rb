@@ -18,10 +18,7 @@ class TestVTree < Minitest::Test
 
     def render
       @lol ||= rand
-      h.div do
-        h.h1 "Hola mundo#{@lol}"
-        h.h2 "Hello world"
-      end
+      h(:div, h(:h1, "Hola mundo#{@lol}"), h(:h2, "Hello world"))
     end
   end
 
@@ -29,24 +26,14 @@ class TestVTree < Minitest::Test
     Async do |task|
       vtree = setup_vtree
 
-      vtree.render(
-        h.div do
-          h.h1 "Title"
-          h[MyComponent]
-        end
-      )
+      vtree.render(h(:div, h(:h1, "Title"), h(MyComponent)))
 
       vtree.to_html.tap { |html| print_xml(html) }
 
       puts
 
       vtree.render(
-        h.div do
-          h.h1 "Title"
-          h[MyComponent]
-          h.div "foo"
-          h[MyComponent]
-        end
+        h(:div, h(:h1, "Title"), h(MyComponent), h(:div, "foo"), h(MyComponent))
       )
 
       vtree.to_html.tap { |html| print_xml(html) }
@@ -65,11 +52,12 @@ class TestVTree < Minitest::Test
 
       number_lists.each do |numbers|
         vtree.render(
-          h.div do
-            h.h1 "Hola mundo"
-            h.h2 "Hello world"
-            h.ul { numbers.each { |num| h.li num, key: num } }
-          end
+          h(
+            :div,
+            h(:h1, "Hola mundo"),
+            h(:h2, "Hello world"),
+            h(:ul, numbers.each { |num| h(:li, num, key: num) })
+          )
         )
 
         html = vtree.to_html
