@@ -169,6 +169,8 @@ module Mayu
             when "css"
               @out << indentation << "# css:\n"
               @out << node.value[:text].gsub(/^/, indentation + "# ") + "\n"
+            when "plain"
+              @out << node.value[:text].inspect
             else
               @out << indentation << "# #{node.value[:name]}:\n"
               @out << node.value[:text].gsub(/^/, indentation + "# ")
@@ -367,7 +369,6 @@ module Mayu
               end
 
               @out << "\n"
-
               @out << indentation << "end" if emit_end
             end
           end
