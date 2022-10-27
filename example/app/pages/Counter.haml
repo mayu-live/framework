@@ -16,17 +16,13 @@
   end
 
 .counter
-  %button.button{
-    title: "Decrement",
+  %button.button(title="Decrement"){
     on_click: handler(:handle_decrement),
     disabled: state[:count].zero?,
-  } -
+  } －
 
   %span.count= state[:count]
 
-  %button.button{
-    title: "Increment",
+  %button.button(title="Increment"){
     on_click: handler(:handle_increment),
-  } +
-
-
+  } ＋
