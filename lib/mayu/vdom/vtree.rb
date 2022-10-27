@@ -619,8 +619,8 @@ module Mayu
         params(old_props: Component::Props, new_props: Component::Props).void
       end
       def update_handlers(old_props, new_props)
-        old_handlers = old_props.keys.select { _1.start_with?("on_") }
-        new_handlers = new_props.keys.select { _1.start_with?("on_") }
+        old_handlers = old_props.keys.select { _1.start_with?("on") }
+        new_handlers = new_props.keys.select { _1.start_with?("on") }
 
         # FIXME: If the same handler id is used somewhere else,
         # it will be cleared too. Use RefCounter
