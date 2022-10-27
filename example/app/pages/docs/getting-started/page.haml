@@ -1,0 +1,47 @@
+:ruby
+  Heading = require("/app/components/Layout/Heading")
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+
+  CLONE_INSTRUCTIONS = <<~EOF
+  EOF
+
+%MaxWidth(tag="article")
+  %Heading(level=2) Getting started
+
+  %p Hi! Here are some instructions to get started.
+  %p
+    Make sure you have the latest stable versions of
+    %a(href="https://www.ruby-lang.org/en/downloads/")<> Ruby
+    and
+    %a(href="https://www.ruby-lang.org/en/downloads/")< NodeJS
+    \.
+
+  %p
+    NodeJS is only used to build the browser runtime and will be packaged into the gem.
+    Mayu does not depend on Node during runtime.
+
+  %p
+    No packages have been released yet, so if you want to try this out, follow these instructions:
+  %pre.pre
+    :plain
+      git clone https://github.com/mayu-live/framework.git mayu-live
+      cd mayu-live
+
+      # Install dependencies
+      bundle install
+      npm install
+
+      # Build browser runtime
+      npm run build
+
+      # Setup the example app
+      cd example/
+      bundle install
+
+      # Start the example app
+      bin/mayu dev
+
+  %p
+    If it worked, you should be able to open
+    %code< https://localhost:9292/
+    \. Have fun!
