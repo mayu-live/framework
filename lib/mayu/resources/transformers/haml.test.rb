@@ -7,10 +7,32 @@ require_relative "haml"
 require "rouge"
 
 class TestHaml < Minitest::Test
+  def test_spacing
+    assert_equal(transform_and_format(<<~HAML), <<~RUBY)
+      %p
+        There should be no space on the left of this text.
+        But there should be one between this line and the previous line.
+        %a(href="/")< And there should be spaces before this link
+        \\. Was there?
+    HAML
+      def render
+        Mayu::VDOM.h(
+          :p,
+          "There should be no space on the left of this text. But there should be one between this line and the previous line.",
+          " ",
+          Mayu::VDOM.h(:a, "And there should be spaces before this link", href: "/"),
+          ". Was there?"
+        )
+      end
+    RUBY
+  end
+
   def test_transform
+    return
+
     root =
       File.expand_path(File.join(__dir__, "..", "..", "..", "..", "example"))
-    path = "app/pages/demos/tree/FileEntry.haml"
+    path = "app/pages/docs/deployment/page.haml"
 
     transform_and_format_file(root:, path:)
   end

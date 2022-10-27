@@ -203,22 +203,61 @@ module Mayu
                 end
               end
 
+              new_children = []
+
               node
                 .children
                 .reject { _1.type == :haml_comment }
-                .each_with_index do |child, i|
-                  @out << ",\n"
-                  visit(child)
-                end
-            end
+                .chunk(&:type)
+                .each do |type, children|
+                  if type == :plain
+                    text = children.map { _1.value[:text].strip }.join(" ")
+                    new_children.push(
+                      ::Haml::Parser::ParseNode.new(
+                        :plain,
+                        children.first.line,
+                        { text: },
+                        node,
+                        []
+                      )
+                    )
+                    next
+                  end
 
-            # TODO: Figure out a clever way to merge class names..
-            # They can be passed in like this:
-            #
-            # %div.foo(class=bar){class: props[:class]}
-            #
-            # It should somehow figure out how to combine all fo these classes
-            # in a convenient way...
+                  children.each do |child|
+                    if child.value[:nuke_inner_whitespace]
+                      new_children.push(
+                        ::Haml::Parser::ParseNode.new(
+                          :plain,
+                          child.line,
+                          { text: " " },
+                          node,
+                          []
+                        )
+                      )
+                    end
+
+                    new_children.push(child)
+
+                    if child.value[:nuke_outer_whitespace]
+                      new_children.push(
+                        ::Haml::Parser::ParseNode.new(
+                          :plain,
+                          child.line,
+                          { text: " " },
+                          node,
+                          []
+                        )
+                      )
+                    end
+                  end
+                end
+
+              new_children.each do |child|
+                @out << ",\n"
+                visit(child)
+              end
+            end
 
             classes =
               T.let([], T::Array[T.any(String, Symbol, SyntaxTree::Node)])
@@ -299,13 +338,14 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_plain(node)
-            if node.children.empty?
-              indent do
-                @out << indentation
+            indent do
+              @out << indentation
+              case node.value
+              in text: " "
+                @out << '" "'
+              in text:
                 @out << "#{node.value[:text].strip.inspect}"
               end
-            else
-              raise "this should be handled"
             end
           end
 
