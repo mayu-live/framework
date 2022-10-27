@@ -49,9 +49,48 @@ module Mayu
                   when SyntaxTree::StringLiteral
                     key = child.key.parts.first.value
 
-                    if key == "class"
+                    case key
+                    when "class"
                       set_klass(child.value)
                       true
+                    when /\Aon/
+                      child.instance_variable_set(
+                        :@key,
+                        SyntaxTree::Label.new(
+                          value: "#{key.tr("-", "_")}:",
+                          location: child.key.location
+                        )
+                      )
+                      child.instance_variable_set(
+                        :@value,
+                        SyntaxTree::FCall.new(
+                          value:
+                            SyntaxTree::Ident.new(
+                              value: "handler",
+                              location: child.value.location
+                            ),
+                          arguments:
+                            SyntaxTree::ArgParen.new(
+                              location: child.value.location,
+                              comments: [],
+                              arguments:
+                                SyntaxTree::Args.new(
+                                  location: child.value.location,
+                                  comments: [],
+                                  parts: [
+                                    SyntaxTree::SymbolLiteral.new(
+                                      value: child.value,
+                                      location: child.value.location,
+                                      comments: []
+                                    )
+                                  ]
+                                )
+                            ),
+                          location: child.value.location,
+                          comments: []
+                        )
+                      )
+                      false
                     else
                       # TODO: Is there a better way to transform the tree?
                       # This is supposed to convert string keys into symbols
@@ -162,18 +201,14 @@ module Mayu
           def visit_filter(node)
             return if node.value[:text].to_s.strip.empty?
 
-            case node.value[:name]
-            when "ruby"
-              @out << indentation << "# ruby:\n"
-              @out << node.value[:text].gsub(/^/, indentation)
-            when "css"
-              @out << indentation << "# css:\n"
-              @out << node.value[:text].gsub(/^/, indentation + "# ") + "\n"
-            when "plain"
-              @out << node.value[:text].inspect
-            else
-              @out << indentation << "# #{node.value[:name]}:\n"
-              @out << node.value[:text].gsub(/^/, indentation + "# ")
+            case node.value
+            in { name: "ruby", text: }
+              @out << text.gsub(/^/, indentation)
+            in { name: "plain", text: }
+              @out << text.inspect
+            in { name: "css", text: }
+              # TODO: Fix this!
+              raise NotImplementedError, "Inline CSS is not yet supported"
             end
           end
 

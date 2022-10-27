@@ -27,9 +27,51 @@ class TestHaml < Minitest::Test
     RUBY
   end
 
-  def test_transform
-    return
+  def test_spacing2
+    assert_equal(transform_and_format(<<~HAML), <<~RUBY)
+      %div
+        %p Hello World
+        %p
+          Hello World
+        %p
+          Hello
+          World
+        %p
 
+          Hello World
+    HAML
+      def render
+        Mayu::VDOM.h(
+          :div,
+          Mayu::VDOM.h(:p, "Hello World"),
+          Mayu::VDOM.h(:p, "Hello World"),
+          Mayu::VDOM.h(:p, "Hello World"),
+          Mayu::VDOM.h(:p, "Hello World")
+        )
+      end
+    RUBY
+  end
+
+  def test_handlers
+    assert_equal(transform_and_format(<<~HAML), <<~RUBY)
+      :ruby
+        def handle_click(e)
+          Console.logger.info(self, e)
+        end
+
+      %button(onclick=handle_click) Click me
+    HAML
+      def handle_click(e)
+        Console.logger.info(self, e)
+      end
+
+      def render
+        Mayu::VDOM.h(:button, "Click me", **{ onclick: handler(:handle_click) })
+      end
+    RUBY
+  end
+
+  def test_transform
     root =
       File.expand_path(File.join(__dir__, "..", "..", "..", "..", "example"))
     path = "app/pages/docs/deployment/page.haml"
@@ -73,7 +115,6 @@ class TestHaml < Minitest::Test
         **props.except(:label),
       }
     HAML
-    # ruby:
     lol = "lol"
     id = "check123"
     props = { label: "label", asd: "asd" }
