@@ -1,6 +1,6 @@
-# Mayu HAML guide
+# Mayu Haml guide
 
-Mayu customizes HAML a little bit to make it more convenient.
+Mayu customizes Haml a little bit to make it more convenient.
 Most things should work the same.
 
 Fundamentally, it's all just syntactic sugar for
@@ -96,14 +96,10 @@ This component works the same as this React component:
 ```jsx
 export default function MyComponent() {
   function handleClick(e) {
-    console.log('MyComponent', e)
+    console.log("MyComponent", e);
   }
 
-  return (
-    <button on-click={handleClick}>
-      Click me
-    </button>
-  )
+  return <button on-click={handleClick}>Click me</button>;
 }
 ```
 
@@ -143,7 +139,7 @@ and update state with `update`,
 
 ## Early returns
 
-I don't think this is possible in regular HAML,
+I don't think this is possible in regular Haml,
 but it makes sense to do it in Mayu.
 
 ```haml
@@ -186,13 +182,13 @@ It's all asynchronous so you can create loops and fetch data without blocking.
 
 ## Whitespace
 
-Here comes the biggest difference between Mayu HAML and regular HAML.
+Here comes the biggest difference between Mayu Haml and regular Haml.
 Whitespace is significant in HTML in some cases, and it's very important
 for the patching algorithm that the DOM and the VDOM are in sync,
 and every time there has been issues with it, it has been because
 of unwanted whitespace.
 
-Therefore, Mayu strips whitespaces in places where regular HAML doesn't,
+Therefore, Mayu strips whitespaces in places where regular Haml doesn't,
 and the operators for inserting whitespace work somewhat differently.
 
 ```haml
@@ -227,7 +223,7 @@ because the `>` operator was not used.
 
 ## Data fetching
 
-This has nothing to do with HAML but I suppose this document will turn into
+This has nothing to do with Haml but I suppose this document will turn into
 some proper documentation at some point, so I'm writing it here...
 
 ```haml

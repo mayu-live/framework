@@ -49,7 +49,7 @@ things are put in place and things feel right.
   - [Hot reloading](#hot-reloading)
   - [Optimized data transfer](#optimized-data-transfer)
   - [Realtime metrics](#realtime-metrics)
-  - [HAML](#haml)
+  - [Haml](#haml)
 - [Implementation notes](#implementation-notes)
   - [Tests](#tests)
   - [Virtual DOM](#virtual-dom)
@@ -333,12 +333,12 @@ Screenshots from [Grafana on Fly.io](https://fly.io/docs/reference/metrics/#mana
 ![Active sessions](https://user-images.githubusercontent.com/41148/193404404-9018c9d9-e575-48db-8845-3f56ced0c16f.png)
 ![Patch times and counts](https://user-images.githubusercontent.com/41148/193398411-cc5bf2d6-d353-42eb-bcf5-ccc1feb7099a.png)
 
-## HAML
+## Haml
 
-Mayu uses HAML, it's pretty convenient.
+Mayu uses [Haml](https://haml.info/), it's pretty convenient.
 
-Check out the [HAML Reference][https://haml.info/docs/yardoc/file.reference.html].
-Mayu has some differences with regular HAML to make it work better with a virtual DOM,
+Check out the [Haml Reference][https://haml.info/docs/yardoc/file.reference.html].
+Mayu has some differences with regular Haml to make it work better with a virtual DOM,
 some of these differences are documented in [./haml-guide.md].
 
 <img width="451" alt="Screen Shot 2022-10-25 at 15 45 19" src="https://user-images.githubusercontent.com/41148/197878366-459f4a3c-f223-415a-b94a-f39e5719ecd5.png">
