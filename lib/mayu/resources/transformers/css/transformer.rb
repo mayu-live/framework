@@ -28,6 +28,7 @@ module Mayu
           sig { params(source_path: String, out: StringIO).void }
           def initialize(source_path, out)
             @out = out
+            class_prefix = File.expand_path(source_path, "/").delete_prefix("/")
 
             @classes =
               T.let(
@@ -36,7 +37,7 @@ module Mayu
                     Base64.urlsafe_encode64(
                       Digest::SHA256.digest([source_path, k].inspect)
                     ).slice(0, 7)
-                  h[k] = "#{source_path}.#{k}?#{hash}"
+                  h[k] = "#{class_prefix}.#{k}?#{hash}"
                 end,
                 T::Hash[String, String]
               )
@@ -100,7 +101,6 @@ module Mayu
 
           sig { params(node: SyntaxTree::CSS::Node).void }
           def visit(node)
-            # puts node.class.name
             if node.respond_to?(:location)
               @mappings[node.send(:location).start_char] ||= @out.pos
             end
@@ -122,9 +122,9 @@ module Mayu
           def visit_type_selector(node)
             case node.value
             when String
-              encode_class(node.value)
+              @out << encode_class(node.value)
             when SyntaxTree::CSS::DelimToken
-              node.value.value
+              @out << node.value.value
             else
               raise
             end
@@ -247,7 +247,11 @@ module Mayu
             params(node: SyntaxTree::CSS::Selectors::CompoundSelector).void
           end
           def visit_compound_selector(node)
-            node.subclasses.each_with_index { |subclass, i| visit(subclass) }
+            visit(node.type) if node.type
+            node.subclasses.each { |subclass| visit(subclass) }
+            node.pseudo_elements.flatten.each do |pseudo_element|
+              visit(pseudo_element)
+            end
           end
 
           sig { params(node: SyntaxTree::CSS::Selectors::ClassSelector).void }
@@ -261,11 +265,28 @@ module Mayu
           end
 
           sig do
+            params(node: SyntaxTree::CSS::Selectors::PseudoElementSelector).void
+          end
+          def visit_pseudo_element_selector(node)
+            @out << ":"
+            visit(node.value)
+          end
+
+          sig do
             params(node: SyntaxTree::CSS::Selectors::PseudoClassSelector).void
           end
           def visit_pseudo_class_selector(node)
             @out << ":"
             visit(node.value)
+          end
+
+          sig do
+            params(node: SyntaxTree::CSS::Selectors::PseudoClassFunction).void
+          end
+          def visit_pseudo_class_function(node)
+            @out << "#{node.name}("
+            super
+            @out << ")"
           end
 
           sig { params(klass: String).returns(String) }
