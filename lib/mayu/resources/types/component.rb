@@ -160,16 +160,19 @@ module Mayu
           impl
         end
 
-        MarshalFormat = T.type_alias { [String] }
+        MarshalFormat =
+          T.type_alias do
+            [String, T.nilable(Transformers::CSS::TransformResult)]
+          end
 
         sig { returns(MarshalFormat) }
         def marshal_dump
-          [@source]
+          [@source, @inline_css]
         end
 
         sig { params(args: MarshalFormat).void }
         def marshal_load(args)
-          @source = args.first
+          @source, @inline_css = args
         end
       end
     end
