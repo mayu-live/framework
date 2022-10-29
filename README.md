@@ -3,7 +3,7 @@
 [![Ruby Workflow Status](https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/ruby.yml)
 [![Node Workflow Status](https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=js&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/node.js.yml)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/w/mayu-live/framework/main?style=flat-square)](https://github.com/mayu-live/framework/commits)
-[![License AGPL-3.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING)
+[![License AGPL-3.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING) ![Status: Experimental](https://img.shields.io/badge/status-experimental-critical?style=flat-square)
 
 # Description
 
