@@ -52,6 +52,22 @@ class TestHaml < Minitest::Test
     RUBY
   end
 
+  def test_css
+    assert_equal(transform_and_format(<<~HAML), <<~RUBY)
+      :css
+        .button { color: #f0f; }
+      %button.button Click me
+    HAML
+      def handle_click(e)
+        Console.logger.info(self, e)
+      end
+
+      def render
+        Mayu::VDOM.h(:button, "Click me", **{ onclick: handler(:handle_click) })
+      end
+    RUBY
+  end
+
   def test_handlers
     assert_equal(transform_and_format(<<~HAML), <<~RUBY)
       :ruby
@@ -87,12 +103,18 @@ class TestHaml < Minitest::Test
     .bar
     HAML
     def render
-      if true
-        return(
+      begin
+        if true
           begin
-            Mayu::VDOM.h(:div, class: styles[:foo])
+            return(
+              begin
+                Mayu::VDOM.h(:div, class: styles[:foo])
+              end
+            )
+            nil
           end
-        )
+        end
+        nil
       end
       Mayu::VDOM.h(:div, class: styles[:bar])
     end
