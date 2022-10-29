@@ -6,19 +6,56 @@ require "syntax_tree"
 require "syntax_tree/haml"
 require "haml"
 require "console"
+require_relative "css"
 
 module Mayu
   module Resources
     module Transformers
       module Haml
+        class TransformResult < T::Struct
+          const :filename, String
+          const :output, String
+          const :content_hash, String
+          const :css, T.nilable(CSS::TransformResult)
+          const :source_map, T::Hash[String, T.untyped]
+        end
+
         extend T::Sig
 
-        sig { params(source: String).returns(String) }
-        def self.to_ruby(source)
+        sig do
+          params(
+            source: String,
+            source_path: String,
+            source_line: Integer,
+            content_hash: T.nilable(String)
+          ).returns(TransformResult)
+        end
+        def self.transform(
+          source:,
+          source_path:,
+          source_line: 1,
+          content_hash: nil
+        )
+          source_path_without_extension =
+            File.join(
+              File.dirname(source_path),
+              File.basename(source_path, ".*")
+            ).delete_prefix("./")
+
           ast = SyntaxTree::Haml.parse(source)
           out = StringIO.new
-          Transformer.new(out).visit(ast)
-          out.tap(&:rewind).read.to_s
+          transformer = Transformer.new(out, source_path_without_extension)
+          transformer.visit(ast)
+          output = out.tap(&:rewind).read.to_s
+
+          TransformResult.new(
+            output:,
+            filename: source_path,
+            css: transformer.css,
+            content_hash: Digest::SHA256.digest(output),
+            source_map: {
+            }
+          )
         end
 
         class HashParserVisitor < SyntaxTree::Visitor
@@ -155,10 +192,15 @@ module Mayu
 
           CREATE_ELEMENT_FN = T.let("Mayu::VDOM.h", String)
 
-          sig { params(out: StringIO).void }
-          def initialize(out)
+          sig { returns(T.nilable(CSS::TransformResult)) }
+          attr_reader :css
+
+          sig { params(out: StringIO, path: String).void }
+          def initialize(out, path)
             @out = out
+            @path = path
             @level = T.let(0, Integer)
+            @css = T.let(nil, T.nilable(CSS::TransformResult))
           end
 
           sig { params(block: T.proc.void).void }
@@ -176,7 +218,15 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_root(node)
-            visit(node.children.shift) if node.children[0].type == :filter
+            if node.children[0].type == :filter &&
+                 node.children[0].value[:name] == "ruby"
+              visit(node.children.shift)
+            end
+
+            if node.children[0].type == :filter &&
+                 node.children[0].value[:name] == "css"
+              visit(node.children.shift)
+            end
 
             @out << indentation << "def render\n"
 
@@ -207,8 +257,14 @@ module Mayu
             in { name: "plain", text: }
               @out << text.inspect
             in { name: "css", text: }
-              # TODO: Fix this!
-              raise NotImplementedError, "Inline CSS is not yet supported"
+              raise "CSS has already been set" if @css
+
+              @css =
+                CSS.transform(
+                  source: text,
+                  source_path: @path,
+                  content_hash: Digest::SHA256.hexdigest(text)[0..7].to_s
+                )
             end
           end
 
@@ -410,9 +466,12 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_silent_script(node)
-            @out << "("
-            visit_script(node)
-            @out << ";nil)"
+            @out << "begin\n"
+            indent do
+              visit_script(node)
+              @out << "\n" << indentation << "nil"
+            end
+            @out << "\n" << indentation << "end"
           end
 
           sig { params(method: Symbol, node: ::Haml::Parser::ParseNode).void }

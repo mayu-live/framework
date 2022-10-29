@@ -49,11 +49,51 @@ module Mayu
           when ".rux"
             source = Transformers::Rux.to_ruby(source)
           when ".haml"
-            source = Transformers::Haml.to_ruby(source)
+            transform_result =
+              Transformers::Haml.transform(source:, source_path: resource.path)
+            source = transform_result.output
+
+            @inline_css =
+              T.let(
+                transform_result.css,
+                T.nilable(Transformers::CSS::TransformResult)
+              )
           end
 
           @source = T.let(source, String)
           @component = T.let(nil, T.nilable(T.class_of(ComponentBase)))
+        end
+
+        sig { returns(T::Array[Asset]) }
+        def assets
+          [@inline_css && Asset.new(@inline_css.filename)].compact.tap do
+            puts "\e[35m#{_1}\e[0m" unless _1.empty?
+          end
+        end
+
+        sig { params(asset_dir: String).returns(T::Array[Asset]) }
+        def generate_assets(asset_dir)
+          return [] unless @inline_css
+
+          source_map_link =
+            "\n/*# sourceMappingURL=#{@inline_css.filename}.map */\n"
+
+          asset = Asset.new(@inline_css.filename)
+          asset.generate(
+            asset_dir,
+            @inline_css.output + source_map_link,
+            compress: true
+          )
+
+          map = Asset.new(@inline_css.filename + ".map")
+
+          map.generate(
+            asset_dir,
+            JSON.generate(@inline_css.source_map),
+            compress: true
+          )
+
+          [asset, map]
         end
 
         sig { returns(T.class_of(ComponentBase)) }
@@ -72,6 +112,8 @@ module Mayu
           LoaderUtils.define_require(impl, @resource)
 
           impl.__mayu_resource = @resource
+
+          impl.const_set(:INLINE_CSS_ASSETS, assets)
 
           begin
             # $stderr.puts "\e[33m#{@source}\e[0m"
@@ -95,11 +137,21 @@ module Mayu
             styles.path
           )
 
+          classes = T.let(Hash.new, T::Hash[String, String])
+
           if styles.type.is_a?(Types::Stylesheet)
-            impl.const_set(:Styles, styles)
+            classes.merge!(styles.type.classes)
             impl.instance_exec(styles) do |styles|
               define_singleton_method(:stylesheet) { styles.type }
-              classname_proxy = styles.type.classname_proxy
+            end
+          end
+
+          classes.merge!(@inline_css.classes) if @inline_css
+
+          unless classes.empty?
+            classname_proxy =
+              Resources::Types::Stylesheet::ClassnameProxy.new(classes)
+            impl.instance_exec(classname_proxy) do |classname_proxy|
               define_singleton_method(:styles) { classname_proxy }
               define_method(:styles) { classname_proxy }
             end

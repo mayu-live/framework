@@ -58,12 +58,8 @@ class TestHaml < Minitest::Test
         .button { color: #f0f; }
       %button.button Click me
     HAML
-      def handle_click(e)
-        Console.logger.info(self, e)
-      end
-
       def render
-        Mayu::VDOM.h(:button, "Click me", **{ onclick: handler(:handle_click) })
+        Mayu::VDOM.h(:button, "Click me", class: styles[:button])
       end
     RUBY
   end
@@ -169,7 +165,12 @@ class TestHaml < Minitest::Test
   end
 
   def transform_and_format(haml)
-    transformed = Mayu::Resources::Transformers::Haml.to_ruby(haml)
+    transformed =
+      Mayu::Resources::Transformers::Haml.transform(
+        source: haml,
+        source_path: "app/components/MyComponent.haml",
+        content_hash: "abc123"
+      ).output
 
     puts "\e[1mInput:\e[0m"
     puts prepend_line_numbers(

@@ -230,6 +230,32 @@ so that they can load even before the browser starts parsing the HTML.
     content-type: text/html; charset=utf-8
     link: </__mayu/static/jkA-D11H90ChVHYqIOKn8I_A4w2MJ4nG-UEVP19UGqg=.js>; rel=preload; as=script; crossorigin=anonymous; fetchpriority=high, </__mayu/static/NtXGjOdgHqDJUnAhmk3NwuzFnkk8Z1NlBCE_XykVE-8=.css>; rel=preload; as=style, </__mayu/static/u6rK2NKHRcFKribL1sMcDdr1gXHbgYIVznfN5RJEKCA=.css>; rel=preload; as=style, </__mayu/static/shJPApqH5hptQERL4DivMTX42leUQRht9vGW4X_Rr84=.css>; rel=preload; as=style, </__mayu/static/ZStAGN7uGe7CU3cxSgAIOL550d1VDqVDUzdiQuFOXo8=.css>; rel=preload; as=style
 
+### Inline CSS
+
+You can also write CSS inside the `.haml` file, like this:
+
+### `app/components/Example.haml`
+
+```haml
+:css
+  .box {
+    padding: 1px;
+    border: 1px solid #000;
+  }
+
+  .hello {
+    font-weight: bold;
+  }
+
+  .button {
+    background: #0f0;
+    color: #fff;
+  }
+.box
+  %p.hello Hello world
+  %button.button Click me!
+```
+
 ## State management
 
 Mayu comes with some basic state management inspired by

@@ -10,14 +10,14 @@ module Mayu
         class ClassnameProxy
           extend T::Sig
 
-          sig { params(stylesheet: Stylesheet).void }
-          def initialize(stylesheet)
-            @stylesheet = stylesheet
+          sig { params(classes: T::Hash[String, String]).void }
+          def initialize(classes)
+            @classes = classes
           end
 
           sig { params(ident: Symbol).returns(String) }
           def method_missing(ident)
-            @stylesheet.classes[ident.to_s].to_s
+            @classes[ident.to_s].to_s
           end
 
           sig { params(args: T.untyped).returns(String) }
@@ -33,7 +33,7 @@ module Mayu
           def add_to_result(result, arg)
             case arg
             when Symbol
-              if klass = @stylesheet.classes[arg.to_s]
+              if klass = @classes[arg.to_s]
                 result.add(klass)
               end
             when String
@@ -74,7 +74,7 @@ module Mayu
 
         sig { returns(ClassnameProxy) }
         def classname_proxy
-          ClassnameProxy.new(self)
+          ClassnameProxy.new(self.classes)
         end
 
         sig { returns(T::Array[Asset]) }

@@ -102,7 +102,7 @@ module Mayu
           result.push(Asset.new(@original.filename))
 
           unless File.exist?(path)
-            puts "\e[35mCreating #{path} from copy\e[0m"
+            Console.logger.info(self, "Creating #{path} from copy")
             FileUtils.copy_file(@resource.absolute_path, path)
           end
 
@@ -110,7 +110,7 @@ module Mayu
             result.push(Asset.new(version.filename))
             path = File.join(asset_dir, version.filename)
             next path if File.exist?(path)
-            puts "\e[35mGenerating #{path}\e[0m"
+            Console.logger.info(self, "Generating #{path}")
 
             case version.format
             when :webp

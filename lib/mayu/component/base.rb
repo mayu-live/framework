@@ -86,6 +86,15 @@ module Mayu
       def did_update(prev_props, prev_state)
       end
 
+      INLINE_CSS_ASSETS = T.let([], T::Array[String])
+
+      sig { returns(T::Array[String]) }
+      def self.assets
+        [self.stylesheet&.assets, const_get(:INLINE_CSS_ASSETS)].flatten
+          .compact
+          .map(&:filename)
+      end
+
       # TODO: Could probably clean this up...
       sig { returns(T.nilable(Resources::Types::Stylesheet)) }
       def self.stylesheet = nil
@@ -94,8 +103,9 @@ module Mayu
         stylesheet ||
           raise(RuntimeError, "There is no stylesheet for this component!")
       sig { returns(Resources::Types::Stylesheet::ClassnameProxy) }
-      def self.styles =
-        Resources::Types::Stylesheet::ClassnameProxy.new(stylesheet!)
+      def self.styles
+        Resources::Types::Stylesheet::ClassnameProxy.new({})
+      end
       sig { returns(Resources::Types::Stylesheet::ClassnameProxy) }
       def styles = self.class.styles
 

@@ -421,23 +421,11 @@ module Mayu
 
       sig { params(ctx: UpdateContext, component: Component::Wrapper).void }
       def update_stylesheet(ctx, component)
-        if stylesheet = component.stylesheet
-          stylesheet.assets.each do |asset|
-            @asset_refs.acquire!(asset.filename)
-          end
-        end
-
         # TODO: Make this more generic..
-        # Would be great if we could ask the dependency graph
-        # of what direct dependencies this component has, and
-        # get their assets...
-        # Images for example, could be preloaded:
+        # This only works with CSS right now.
+        # Images could also be preloaded.
         # https://web.dev/preload-responsive-images/
-        # Resources::Resource has to implement #assets.
-        #
-        # component.resource.assets.each do |asset|
-        #   @asset_refs.acquire(asset.filename)
-        # end
+        component.assets.each { |asset| @asset_refs.acquire!(asset) }
       end
 
       sig do
