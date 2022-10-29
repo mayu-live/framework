@@ -57,7 +57,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "sorbet-runtime", "~> 0.5.10148"
   spec.add_dependency "source_map", "~> 3.0"
   spec.add_dependency "syntax_tree", "~> 3.6"
-  spec.add_dependency "syntax_tree-css", "~> 0.1.0"
   spec.add_dependency "syntax_tree-haml", "~> 1.3"
   spec.add_dependency "terminal-table", "~> 3.0.1"
   spec.add_dependency "toml-rb", "~> 2.2.0"

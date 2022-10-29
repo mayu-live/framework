@@ -74,7 +74,7 @@ module Mayu
           impl.__mayu_resource = @resource
 
           begin
-            $stderr.puts "\e[33m#{@source}\e[0m"
+            # $stderr.puts "\e[33m#{@source}\e[0m"
             impl.class_eval(@source, @resource.path, 1)
           rescue => e
             backtrace =

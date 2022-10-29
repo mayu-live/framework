@@ -3,7 +3,9 @@
 
 require "base64"
 require "digest/sha2"
+require "crass"
 require_relative "css/transformer"
+require_relative "css/formatter"
 
 module Mayu
   module Resources
@@ -23,25 +25,42 @@ module Mayu
           params(
             source: String,
             source_path: String,
-            app_root: String,
-            source_line: Integer
+            source_line: Integer,
+            content_hash: T.nilable(String)
           ).returns(TransformResult)
         end
-        def self.transform(source:, source_path:, app_root:, source_line: 1)
+        def self.transform(
+          source:,
+          source_path:,
+          source_line: 1,
+          content_hash: nil
+        )
           source_path_without_extension =
             File.join(
               File.dirname(source_path),
               File.basename(source_path, ".*")
+            ).delete_prefix("./")
+
+          content_hash ||=
+            Digest::SHA256.hexdigest(
+              [source_path_without_extension, source].inspect
+            )[
+              0..7
+            ]
+
+          transformer =
+            CSS::Transformer.new(
+              path: source_path_without_extension,
+              content_hash: content_hash
             )
 
-          ast = SyntaxTree::CSS.parse(source)
-          out = StringIO.new
-          transformer = Transformer.new(source_path_without_extension, out)
-          transformer.visit(ast)
+          output =
+            source
+              .then { Crass.parse(_1) }
+              .then { transformer.transform(_1) }
+              .then { Formatter.format_ast(_1) }
 
           header = "/* #{source_path} */\n"
-
-          output = out.tap(&:rewind).read.to_s.prepend(header)
 
           content_hash = Digest::SHA256.digest(output)
           filename = Base64.urlsafe_encode64(content_hash) + ".css"
@@ -49,16 +68,15 @@ module Mayu
           TransformResult.new(
             filename:,
             output:,
-            classes: { **transformer.classes }.freeze,
+            classes: transformer.classes,
             content_hash:,
-            source_map:
-              transformer.generate_source_map(
-                source:,
-                source_path:,
-                app_root:,
-                offset: header.length,
-                filename:
-              ).merge("sourcesContent" => [source])
+            source_map: {
+              "version" => 3,
+              "file" => filename,
+              "sourceRoot" => "mayu://",
+              "sources" => [source_path],
+              "sourcesContent" => [source]
+            }
           )
         end
       end

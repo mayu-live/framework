@@ -58,7 +58,6 @@ module Mayu
 
           transform_result =
             Transformers::CSS.transform(
-              app_root: resource.app_root,
               source: resource.read(encoding: "utf-8"),
               source_path: resource.path
             )

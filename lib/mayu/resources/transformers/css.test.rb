@@ -14,8 +14,27 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
       *::before,
       *::after { box-sizing: border-box; }
     CSS
-      /* MyComponent */
-      *,*::before,*::after{box-sizing:border-box;}
+      *,
+      *::before,
+      *::after { box-sizing: border-box; }
+    CSS
+  end
+
+  def test_composes
+    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
+      .foo {
+        color: #f0f;
+      }
+      .bar {
+        composes: foo;
+      }
+    CSS
+      .app\\/components\\/MyComponent\\.foo\\?abc123 {
+        color: #f0f;
+      }
+      .app\\/components\\/MyComponent\\.bar\\?abc123 {
+
+      }
     CSS
   end
 
@@ -29,32 +48,58 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
         animation: shake 0.25s;
       }
     CSS
-      /* MyComponent */
-      .MyComponent\\.formGroup\\?55MG8VU:has(:invalid){--color:var(--invalid);}.MyComponent\\.formGroup\\?55MG8VU:has(:invalid:not(:focus)){animation:shake .25s;}
+      .app\\/components\\/MyComponent\\.formGroup\\?abc123:has(:invalid) {
+        --color: var(--invalid);
+      }
+
+      .app\\/components\\/MyComponent\\.formGroup\\?abc123:has(:invalid:not(:focus)) {
+        animation: shake 0.25s;
+      }
+    CSS
+  end
+
+  def test_attributes
+    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
+      .page[aria-current="page"] {
+        background: var(--blue);
+      }
+    CSS
+      .app\\/components\\/MyComponent\\.page\\?abc123[aria-current=\"page\"] {
+        background: var(--blue);
+      }
     CSS
   end
 
   def test_adjacent_selectors
-    skip("https://github.com/ruby-syntax-tree/syntax_tree-css/issues/25")
-
     assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
       .a + .b { color: #fff; }
     CSS
-      /* MyComponent */
+      .app\\/components\\/MyComponent\\.a\\?abc123 + .app\\/components\\/MyComponent\\.b\\?abc123 { color: #fff; }
     CSS
   end
 
   private
 
   def transform(source)
-    app_root = File.expand_path(File.join(__dir__, "..", "..", "example"))
-    source_path = "MyComponent"
-    Mayu::Resources::Transformers::CSS.transform(
-      source:,
-      source_path:,
-      app_root:
-    ).output
-    # .tap { puts "\e[1mTransformed:\e[0m\n#{_1}" }
+    source_path = "app/components/MyComponent"
+
+    Mayu::Resources::Transformers::CSS
+      .transform(source:, source_path:, content_hash: "abc123")
+      .output
+      .each_line
+      .map(&:rstrip)
+      .join("\n")
+      .tap do
+        puts(
+          "\e[1mTransformed:\e[0m",
+          prepend_line_numbers(
+            colorize_source(
+              _1.strip,
+              Mayu::Resources::Transformers::CSS::RougeLexer.new
+            ).each_line
+          )
+        )
+      end
   end
 
   def prepend_line_numbers(lines, start_line: 1, error_line: nil)
@@ -75,7 +120,6 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
   def transform_file(root:, path:)
     Mayu::Resources::Transformers::CSS.transform(
       source: File.read(File.join(root, path)),
-      app_root: root,
       source_path: path
     )
   end

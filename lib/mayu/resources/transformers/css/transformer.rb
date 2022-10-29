@@ -1,302 +1,164 @@
 # typed: strict
 # frozen_string_literal: true
 
-require "pry"
-require "syntax_tree/css"
-require "source_map"
-
-class SyntaxTree::CSS::Node
-  extend T::Sig
-
-  sig { returns(Symbol) }
-  def type = self.class.to_s.to_sym
-end
+require "crass"
+require "base64"
+require "digest/sha2"
+require "set"
 
 module Mayu
   module Resources
     module Transformers
       module CSS
-        class Transformer < SyntaxTree::CSS::Visitor
+        class Transformer
+          class ClassMap
+            extend T::Sig
+
+            sig { params(path: String, content_hash: String).void }
+            def initialize(path:, content_hash:)
+              @names =
+                T.let(
+                  Hash.new do |hash, key|
+                    hash[key] = "#{path}.#{key}?#{content_hash}"
+                  end,
+                  T::Hash[String, String]
+                )
+
+              @composes =
+                T.let(
+                  Hash.new { |h, k| h[k] = Set.new },
+                  T::Hash[String, T::Set[String]]
+                )
+            end
+
+            sig { params(source: String, target: String).void }
+            def compose(source, target)
+              T.must(@composes[source]).add(target)
+            end
+
+            sig { returns(T::Hash[String, String]) }
+            def to_h
+              @names
+                .each_with_object({}) do |(key, value), obj|
+                  obj[key] = [
+                    value,
+                    *T.must(@composes[key]).map { @names[_1] }
+                  ].join(" ")
+                end
+                .freeze
+            end
+
+            sig { params(str: String).returns(String) }
+            def escape_string(str)
+              str.gsub(/[^\w-]/, '\\\\\0')
+            end
+
+            sig { params(name: String).returns(String) }
+            def [](name)
+              T.must(@names[name])
+            end
+          end
+
           extend T::Sig
 
-          SourceMappingValue =
-            T.type_alias { T.any(Integer, { pos: Integer, name: String }) }
+          sig { params(path: String, content_hash: String).void }
+          def initialize(path:, content_hash:)
+            @classes = T.let(ClassMap.new(path:, content_hash:), ClassMap)
+          end
 
           sig { returns(T::Hash[String, String]) }
-          attr_reader :classes
-
-          sig { params(source_path: String, out: StringIO).void }
-          def initialize(source_path, out)
-            @out = out
-            class_prefix = File.expand_path(source_path, "/").delete_prefix("/")
-
-            @classes =
-              T.let(
-                Hash.new do |h, k|
-                  hash =
-                    Base64.urlsafe_encode64(
-                      Digest::SHA256.digest([source_path, k].inspect)
-                    ).slice(0, 7)
-                  h[k] = "#{class_prefix}.#{k}?#{hash}"
-                end,
-                T::Hash[String, String]
-              )
-
-            @mappings = T.let({}, T::Hash[Integer, SourceMappingValue])
-          end
+          def classes = @classes.to_h
 
           sig do
             params(
-              source: String,
-              source_path: String,
-              app_root: String,
-              filename: String,
-              offset: Integer,
-              source_line: Integer
-            ).returns(T::Hash[String, T.untyped])
+              token: T.untyped,
+              prev: T.untyped,
+              selectors: T::Array[String]
+            ).returns(T.untyped)
           end
-          def generate_source_map(
-            source:,
-            source_path:,
-            app_root:,
-            filename:,
-            offset: 0,
-            source_line: 1
-          )
-            map = SourceMap.new(file: filename, source_root: "mayu://")
 
-            source
-              .each_line
-              .with_index(source_line) do |line, source_line|
-                length = line.length
+          # stree-ignore
+          def transform(token, prev = nil, selectors: [])
+            case token
+            in Array
+              [nil, *token].each_cons(2)
+                .map { |prev, curr| transform(curr, prev, selectors:) }
+                .flatten
+                .compact
+            in { node: :property, name: "composes", value: }
+              selectors.each { |selector| @classes.compose(selector, value) }
+              nil
+            in { node: :style_rule, selector:, children: }
+              found_selectors = extract_class_names(selector)
+              {
+                **token,
+                selector: transform(selector),
+                children:
+                  transform(
+                    children,
+                    selectors: found_selectors
+                  ).flatten.compact
+              }
+            in node: :semicolon
+              if prev in { node: :property, name: "composes" }
+                nil
+              else
+                token
+              end
+            in { node: :selector, tokens: }
+              { **token, tokens: transform_selector_tokens(tokens) }
+            in { node: :simple_block, value: }
+              { **token, value: transform(value) }
+            in { node: :at_rule, name: "media", block: }
+              { **token, block: transform_selector_tokens(block) }
+            else
+              token
+            end
+          end
 
-                @mappings.each do |source_pos, target|
-                  case target
-                  in Integer => pos
-                    target_pos = pos
-                    name = nil
-                  in { pos:, name: asd }
-                    target_pos = pos
-                    name = asd
+          private
+
+          sig { params(tokens: T::Array[T.untyped]).returns(T.untyped) }
+          def transform_selector_tokens(tokens)
+            [nil, *tokens].each_cons(2)
+              .map do |prev, curr|
+                if prev in { node: :delim, value: "." }
+                  if curr in { node: :ident, value: }
+                    raw = @classes[value]
+                    next { **curr, raw:, value: @classes.escape_string(raw) }
                   end
-
-                  next if source_pos < offset
-                  next if source_pos - length < offset
-
-                  map.add_mapping(
-                    generated_line: 1,
-                    generated_col: target_pos,
-                    source_line: source_line,
-                    source_col: source_pos - offset,
-                    source: source_path,
-                    name:
-                  )
                 end
 
-                offset += length
+                if curr in { node: :function, name: "has", value: }
+                  next { **curr, value: transform_selector_tokens(value) }
+                end
+
+                curr
               end
-
-            map.as_json
+              .flatten
+              .compact
           end
 
-          sig { params(node: SyntaxTree::CSS::Node).void }
-          def visit(node)
-            if node.respond_to?(:location)
-              @mappings[node.send(:location).start_char] ||= @out.pos
+          sig { params(tokens: T.untyped).returns(T.untyped) }
+          def extract_class_names(tokens)
+            if tokens in { node: :selector, tokens: }
+              return extract_class_names(tokens)
             end
 
-            super(node)
-          end
+            [nil, *tokens].each_cons(2)
+              .map do |prev, curr|
+                next extract_class_names(curr) if curr.is_a?(Array)
 
-          sig { params(node: SyntaxTree::CSS::CSSStyleSheet).void }
-          def visit_css_stylesheet(node)
-            node.rules.each { visit(_1) }
-          end
-
-          sig { params(node: SyntaxTree::CSS::HashToken).void }
-          def visit_hash_token(node)
-            @out << "##{node.value}"
-          end
-
-          sig { params(node: SyntaxTree::CSS::Selectors::TypeSelector).void }
-          def visit_type_selector(node)
-            case node.value
-            when String
-              @out << encode_class(node.value)
-            when SyntaxTree::CSS::DelimToken
-              @out << node.value.value
-            else
-              raise
-            end
-          end
-
-          sig { params(node: SyntaxTree::CSS::StyleRule).void }
-          def visit_style_rule(node)
-            node.selectors.each_with_index do |selector, i|
-              @out << "," unless i.zero?
-
-              case selector
-              when SyntaxTree::CSS::Selectors::CompoundSelector
-                visit_compound_selector(selector)
-              else
-                visit(selector)
+                # stree-ignore
+                if prev in { node: :delim, value: "." }
+                  if curr in { node: :ident, value: }
+                    value
+                  end
+                end
               end
-            end
-
-            @out << "{"
-            node.declarations.each { visit(_1) }
-            @out << "}"
-          end
-
-          sig { params(node: SyntaxTree::CSS::IdentToken).void }
-          def visit_ident_token(node)
-            # NOTE: If we're inside a @media {}-block we get classes here sometimes..
-            # TODO: Fix the above thing by maybe keeping track of the previous node,
-            #       check if it is a dot or something..
-            # @out << encode_class(node.value).delete_prefix(".")
-            @out << node.value
-          end
-
-          sig { params(node: SyntaxTree::CSS::DimensionToken).void }
-          def visit_dimension_token(node)
-            case node.value
-            when Rational, Float
-              @out << node.value.to_f.round(5).to_s.sub(/\A0./, ".")
-            else
-              @out << node.value.to_i
-            end
-
-            @out << node.unit
-          end
-
-          sig { params(node: SyntaxTree::CSS::WhitespaceToken).void }
-          def visit_whitespace_token(node)
-            node.value.include?("\n") ? @out << "\n" : @out << " "
-          end
-
-          sig { params(node: SyntaxTree::CSS::SimpleBlock).void }
-          def visit_simple_block(node)
-            @out << node.token
-            node.child_nodes.each { visit(_1) }
-            @out << case node.token
-            when "{"
-              "}"
-            when "("
-              ")"
-            when "["
-              "]"
-            end
-          end
-
-          sig { params(node: SyntaxTree::CSS::AtRule).void }
-          def visit_at_rule(node)
-            @out << "@#{node.name}"
-
-            node.child_nodes.each { visit(_1) }
-          end
-
-          sig { params(node: SyntaxTree::CSS::DelimToken).void }
-          def visit_delim_token(node)
-            @out << node.value
-          end
-
-          sig { params(node: SyntaxTree::CSS::CommaToken).void }
-          def visit_comma_token(node)
-            @out << ","
-          end
-
-          sig { params(node: SyntaxTree::CSS::ColonToken).void }
-          def visit_colon_token(node)
-            @out << ":"
-          end
-
-          sig { params(node: SyntaxTree::CSS::SemicolonToken).void }
-          def visit_semicolon_token(node)
-            @out << ";"
-          end
-
-          sig { params(node: SyntaxTree::CSS::PercentageToken).void }
-          def visit_percentage_token(node)
-            @out << "#{node.value}%"
-          end
-
-          sig { params(node: SyntaxTree::CSS::StringToken).void }
-          def visit_string_token(node)
-            @out << node.value.to_s.inspect
-          end
-
-          sig { params(node: SyntaxTree::CSS::NumberToken).void }
-          def visit_number_token(node)
-            @out << node.value
-          end
-
-          sig { params(node: SyntaxTree::CSS::Function).void }
-          def visit_function(node)
-            @out << "#{node.name}("
-            node.value.map { visit(_1) }
-            @out << ")"
-          end
-
-          sig { params(node: SyntaxTree::CSS::Declaration).void }
-          def visit_declaration(node)
-            @out << "#{node.name}:"
-            node.value.each { |value| visit(value) }
-          end
-
-          sig do
-            params(node: SyntaxTree::CSS::Selectors::CompoundSelector).void
-          end
-          def visit_compound_selector(node)
-            visit(node.type) if node.type
-            node.subclasses.each { |subclass| visit(subclass) }
-            node.pseudo_elements.flatten.each do |pseudo_element|
-              visit(pseudo_element)
-            end
-          end
-
-          sig { params(node: SyntaxTree::CSS::Selectors::ClassSelector).void }
-          def visit_class_selector(node)
-            @mappings[node.value.location.start_char] = {
-              pos: @out.pos,
-              name: node.value.value
-            }
-
-            @out << encode_class(node.value.value)
-          end
-
-          sig do
-            params(node: SyntaxTree::CSS::Selectors::PseudoElementSelector).void
-          end
-          def visit_pseudo_element_selector(node)
-            @out << ":"
-            visit(node.value)
-          end
-
-          sig do
-            params(node: SyntaxTree::CSS::Selectors::PseudoClassSelector).void
-          end
-          def visit_pseudo_class_selector(node)
-            @out << ":"
-            visit(node.value)
-          end
-
-          sig do
-            params(node: SyntaxTree::CSS::Selectors::PseudoClassFunction).void
-          end
-          def visit_pseudo_class_function(node)
-            @out << "#{node.name}("
-            super
-            @out << ")"
-          end
-
-          sig { params(klass: String).returns(String) }
-          def encode_class(klass)
-            ".#{@classes[klass].to_s.gsub(/[^a-zA-Z0-9_-]/, '\\\\\0')}"
-          end
-
-          sig { params(method: Symbol, node: SyntaxTree::CSS::Node).void }
-          def method_missing(method, node)
-            Console.logger.error(self, "method_missing: #{method}")
+              .flatten
+              .compact
+              .uniq
           end
         end
       end
