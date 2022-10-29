@@ -369,7 +369,7 @@ some of these differences are documented in [./haml-guide.md](./haml-guide.md).
 
 Look at this example:
 
-https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml
+[`./example/app/pages/Counter.haml`](https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml)
 
 That above code will be transformed into something like this:
 
