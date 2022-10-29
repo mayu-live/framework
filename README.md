@@ -365,14 +365,16 @@ Mayu uses [Haml](https://haml.info/), it's pretty convenient.
 
 Check out the [Haml Reference][https://haml.info/docs/yardoc/file.reference.html].
 Mayu has some differences with regular Haml to make it work better with a virtual DOM,
-some of these differences are documented in [./haml-guide.md].
+some of these differences are documented in [./haml-guide.md](./haml-guide.md).
 
-<img width="451" alt="Screen Shot 2022-10-25 at 15 45 19" src="https://user-images.githubusercontent.com/41148/197878366-459f4a3c-f223-415a-b94a-f39e5719ecd5.png">
+Look at this example:
 
-That above code will be transformed into this:
+https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml
+
+That above code will be transformed into something like this:
 
 ```ruby
-def self.get_initial_state(initial_value: 3, **)
+def self.get_initial_state(initial_value: 0, **)
   { count: initial_value }
 end
 
@@ -409,7 +411,7 @@ def render
 end
 ```
 
-(Check out the examples in the tests)[https://github.com/mayu-live/framework/blob/haml/lib/mayu/resources/transformers/haml.test.rb]
+[Check out more examples in the tests](https://github.com/mayu-live/framework/blob/main/lib/mayu/resources/transformers/haml.test.rb)
 
 # Implementation notes
 
