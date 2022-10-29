@@ -269,8 +269,28 @@ module Mayu
           end
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
+          def visit_slot(node)
+            @out << indentation
+
+            @out << "Mayu::VDOM.slot(children"
+
+            node.value[:attributes].each do |attr, value|
+              unless attr == "name"
+                raise ArgumentError,
+                      "The slot tag only accepts the attribute name, given: #{attr.inspect}"
+              end
+
+              @out << ", " << value.inspect
+            end
+
+            @out << ")"
+          end
+
+          sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_tag(node)
             name = node.value.fetch(:name)
+
+            return visit_slot(node) if name == "slot"
 
             @out << indentation
             @out << "#{CREATE_ELEMENT_FN}("

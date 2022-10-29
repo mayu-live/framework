@@ -3,17 +3,15 @@
   Menu = require("/app/components/Layout/Menu")
   MenuItem = require("/app/components/Layout/MenuItem")
 
-- def render_menu
-  %Menu
+%PageLayout
+  %slot
+
+  %Menu(slot="menu")
     %MenuItem(href="/docs") Introduction
     %MenuItem(href="/docs/getting-started") Getting started
     %MenuItem(href="/docs/deployment") Deployment
     %MenuItem(href="/docs/faq") Frequently asked questions
 
-- def render_under_construction
-  %p.underConstruction
+  %p.underConstruction(slot="after_heading")
     %span.underConstructionText
       This page is under construction!
-
-%PageLayout(menu=render_menu after_heading=render_under_construction)
-  = children

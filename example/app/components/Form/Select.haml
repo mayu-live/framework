@@ -3,6 +3,7 @@
     class: props[:class],
     placeholder: props[:label],
     **props
-  }= children
+  }
+    %slot
 
   %label.label= props[:label]

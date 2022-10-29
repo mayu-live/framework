@@ -103,6 +103,38 @@ export default function MyComponent() {
 }
 ```
 
+## Slots
+
+Here's a complex example inspired by the
+[Astro docs](https://docs.astro.build/en/core-concepts/astro-components/#slots).
+
+### ``app/components/Wrapper.haml
+
+```haml
+:ruby
+  Header = require("./Header")
+  Footer = require("./Footer")
+%div
+  %Header
+  %slot(name="after-header")
+  %h1= props[:title]
+  %slot
+    Optional fallback content, if no child is passed in
+  %Footer
+  %slot(name="after-footer")
+```
+
+### ``src/pages/hello/page.haml
+
+```haml
+:ruby
+  Wrapper = require("/app/components/Wrapper")
+%Wrapper(title="Hello world")
+  %h2 hello
+  %p hello world hola mundo hej världen
+  %p(slot="after-footer") Copyright #{Time.now.year}
+```
+
 ## State
 
 Set up state with `get_initial_state`,
@@ -257,8 +289,7 @@ some proper documentation at some point, so I'm writing it here...
 
 ## CSS-filter
 
-Not supported yet!
-The plan is to allow defining CSS inside components, like this:
+You can write CSS directly inside components, like this:
 
 ```haml
 :ruby

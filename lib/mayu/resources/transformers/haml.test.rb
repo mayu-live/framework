@@ -52,6 +52,24 @@ class TestHaml < Minitest::Test
     RUBY
   end
 
+  def test_slots
+    assert_equal(transform_and_format(<<~HAML), <<~RUBY)
+      %body
+        %main
+          %slot
+        %footer
+          %slot(name="footer")
+    HAML
+      def render
+        Mayu::VDOM.h(
+          :body,
+          Mayu::VDOM.h(:main, Mayu::VDOM.slot(children)),
+          Mayu::VDOM.h(:footer, Mayu::VDOM.slot(children, "footer"))
+        )
+      end
+    RUBY
+  end
+
   def test_css
     assert_equal(transform_and_format(<<~HAML), <<~RUBY)
       :css

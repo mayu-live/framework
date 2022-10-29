@@ -7,10 +7,8 @@
     = if props[:title]
       %Heading(level=1)= props[:title]
 
-    = props[:after_heading]
-
+    %slot(name="after_heading")
     .wrap
-      = props[:menu]
-
+      %slot(name="menu")
       .content
-        = children
+        %slot

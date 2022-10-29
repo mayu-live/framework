@@ -3,11 +3,10 @@
   Menu = require("/app/components/Layout/Menu")
   MenuItem = require("/app/components/Layout/MenuItem")
 
-- menu =
-  %Menu
+%PageLayout
+  %slot
+  %Menu(slot="menu")
     %MenuItem(href="/demos") Index
     %MenuItem(href="/demos/pokemon") Pokémon
     %MenuItem(href="/demos/tree") Source tree
     %MenuItem(href="/demos/form") CSS Form Validation
-
-%PageLayout{menu:}= children
