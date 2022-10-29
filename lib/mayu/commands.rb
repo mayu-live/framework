@@ -18,6 +18,9 @@ module Mayu
       in ["dev", *rest]
         require_relative "server"
         Server.start(load_config(:dev))
+      in ["devbundle", *rest]
+        require_relative "server"
+        Server.start(load_config(:devbundle))
       in ["build", *rest]
         require_relative "commands/build"
         Commands::Build.new(
