@@ -4,7 +4,6 @@ function load() {
     import("./mayu-disconnected"),
     import("./mayu-progress-bar"),
     import("./mayu-exception"),
-    import("./mayu-log"),
   ]);
 }
 

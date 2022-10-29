@@ -1,7 +1,6 @@
 import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
 import { stringifyJSON, retry, FatalError, sleep } from "./utils";
 import { MimeTypes } from "./MimeTypes";
-import type MayuLogElement from "./custom-elements/mayu-log";
 import logger from "./logger";
 import DecompressionStream from "./DecompressionStream";
 
@@ -78,8 +77,7 @@ function errorMessage(e: any) {
 }
 
 export async function* sessionStream(
-  sessionId: string,
-  logElement: MayuLogElement
+  sessionId: string
 ): AsyncGenerator<SessionStreamMessage> {
   let isRunning = true;
   let encryptedState: Blob | undefined;
@@ -97,11 +95,8 @@ export async function* sessionStream(
         })) {
           const [id, event, payload] = message as ServerMessage;
 
-          // logElement.addEntry(id, event, payload);
-
           if (!isConnected) {
             isConnected = true;
-            // logElement.addEntry("system", "connected", {});
             yield ["system.connected", {}];
           }
 

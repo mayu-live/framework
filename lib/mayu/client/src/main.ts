@@ -101,11 +101,7 @@ async function main(url: string) {
   pingElement.setAttribute("status", "connecting");
   document.body.appendChild(pingElement);
 
-  const logElement = document.createElement("mayu-log") as MayuLogElement;
-  logElement.hidden = true;
-  document.body.appendChild(logElement);
-
-  for await (const [event, payload] of sessionStream(sessionId, logElement)) {
+  for await (const [event, payload] of sessionStream(sessionId)) {
     switch (event) {
       case "system.connected":
         pingElement.setAttribute("region", "Connected!");
