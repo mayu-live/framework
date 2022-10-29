@@ -410,7 +410,9 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_silent_script(node)
+            @out << "("
             visit_script(node)
+            @out << ";nil)"
           end
 
           sig { params(method: Symbol, node: ::Haml::Parser::ParseNode).void }
