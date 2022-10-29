@@ -3,7 +3,7 @@ import html from "./mayu-progress-bar.html";
 const template = document.createElement("template");
 template.innerHTML = html;
 
-class ProgressBar extends HTMLElement {
+class MayuProgressBar extends HTMLElement {
   progress: HTMLDivElement | null = null;
 
   static observedAttributes = ["progress"];
@@ -35,4 +35,6 @@ class ProgressBar extends HTMLElement {
   }
 }
 
-export default ProgressBar;
+window.customElements.define("mayu-progress-bar", MayuProgressBar);
+
+export default MayuProgressBar;

@@ -150,20 +150,22 @@ module Mayu
           # body = File.read(File.join(__dir__, "favicon.png"))
           # Protocol::HTTP::Response[200, { "content-type": "image/png" }, [body]]
           Protocol::HTTP::Response[404, {}, ["no favicon"]]
-        in ["__mayu", "runtime", filename]
+        in ["__mayu", "runtime", *path]
           accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
+
+          filename = File.join(*path)
 
           if filename == "entries.json"
             return Protocol::HTTP::Response[403, {}, ["forbidden"]]
           end
 
-          send_static_file(
+          absolute_path =
             File.join(
               @environment.js_runtime_path,
               File.expand_path(filename, "/")
-            ),
-            accept_encodings:
-          )
+            )
+
+          send_static_file(absolute_path, accept_encodings:)
         in ["__mayu", "static", filename]
           unless @environment.config.use_bundle
             @environment.resources.generate_assets(@environment.path(:assets))

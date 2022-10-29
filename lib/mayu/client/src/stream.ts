@@ -101,7 +101,7 @@ export async function* sessionStream(
 
           if (!isConnected) {
             isConnected = true;
-            logElement.addEntry("system", "connected", {});
+            // logElement.addEntry("system", "connected", {});
             yield ["system.connected", {}];
           }
 

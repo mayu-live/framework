@@ -3,7 +3,7 @@ import html from "./mayu-exception.html";
 const template = document.createElement("template");
 template.innerHTML = html;
 
-class ExceptionComponent extends HTMLElement {
+class MayuException extends HTMLElement {
   dialog?: HTMLDialogElement;
 
   connectedCallback() {
@@ -23,4 +23,6 @@ class ExceptionComponent extends HTMLElement {
   }
 }
 
-export default ExceptionComponent;
+window.customElements.define("mayu-exception", MayuException);
+
+export default MayuException;

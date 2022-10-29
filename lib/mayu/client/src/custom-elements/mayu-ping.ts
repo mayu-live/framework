@@ -3,7 +3,7 @@ import html from "./mayu-ping.html";
 const template = document.createElement("template");
 template.innerHTML = html;
 
-class PingComponent extends HTMLElement {
+class MayuPing extends HTMLElement {
   div?: HTMLDivElement;
   ping?: HTMLSpanElement;
   region?: HTMLSpanElement;
@@ -48,4 +48,6 @@ class PingComponent extends HTMLElement {
   }
 }
 
-export default PingComponent;
+window.customElements.define("mayu-ping", MayuPing);
+
+export default MayuPing;

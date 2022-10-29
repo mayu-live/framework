@@ -1,13 +1,11 @@
-import MayuDisconnected from "./mayu-disconnected";
-import MayuException from "./mayu-exception";
-import MayuPing from "./mayu-ping";
-import MayuProgressBar from "./mayu-progress-bar";
-import MayuLog from "./mayu-log";
-
-export default function defineCustomElements() {
-  window.customElements.define("mayu-disconnected", MayuDisconnected);
-  window.customElements.define("mayu-exception", MayuException);
-  window.customElements.define("mayu-ping", MayuPing);
-  window.customElements.define("mayu-progress-bar", MayuProgressBar);
-  window.customElements.define("mayu-log", MayuLog);
+function load() {
+  return Promise.all([
+    import("./mayu-ping"),
+    import("./mayu-disconnected"),
+    import("./mayu-progress-bar"),
+    import("./mayu-exception"),
+    import("./mayu-log"),
+  ]);
 }
+
+export default load();

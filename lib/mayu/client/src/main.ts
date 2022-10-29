@@ -2,18 +2,10 @@ import { sessionStream } from "./stream";
 import NodeTree from "./NodeTree";
 import type MayuPingElement from "./custom-elements/mayu-ping";
 import type MayuLogElement from "./custom-elements/mayu-log";
-import defineCustomElements from "./custom-elements";
-defineCustomElements();
 
 import serializeEvent from "./serializeEvent";
 
 import logger from "./logger";
-
-logger.success("hello");
-logger.error("hello");
-logger.warn("hello");
-logger.info("hello");
-logger.log("hello");
 
 const onDOMContentLoaded = new Promise<void>((resolve) => {
   if (document.readyState !== "loading") {
@@ -85,17 +77,18 @@ async function navigateTo(sessionId: string, url: string) {
   });
 }
 
-function getSessionIdFromUrl() {
-  const url = import.meta.url;
+function getSessionIdFromUrl(url: string) {
   const index = url.lastIndexOf("#");
   if (index === -1) {
-    throw new Error("No # found in script url");
+    throw new Error(`No # found in script url: ${url}`);
   }
   return url.slice(index + 1);
 }
 
-async function main() {
-  const sessionId = getSessionIdFromUrl();
+async function main(url: string) {
+  import("./custom-elements");
+
+  const sessionId = getSessionIdFromUrl(url);
   const mayu = new MayuGlobal(sessionId);
   window.Mayu = mayu;
 
@@ -177,4 +170,4 @@ async function main() {
   }
 }
 
-export default main();
+export default main(import.meta.url);

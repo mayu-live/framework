@@ -3,7 +3,7 @@ import html from "./mayu-disconnected.html";
 const template = document.createElement("template");
 template.innerHTML = html;
 
-class DisconnectedComponent extends HTMLElement {
+class MayuDisconnected extends HTMLElement {
   dialog?: HTMLDialogElement;
   reason?: HTMLParagraphElement;
 
@@ -46,4 +46,6 @@ class DisconnectedComponent extends HTMLElement {
   }
 }
 
-export default DisconnectedComponent;
+window.customElements.define("mayu-disconnected", MayuDisconnected);
+
+export default MayuDisconnected;
