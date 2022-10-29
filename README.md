@@ -363,7 +363,7 @@ Screenshots from [Grafana on Fly.io](https://fly.io/docs/reference/metrics/#mana
 
 Mayu uses [Haml](https://haml.info/), it's pretty convenient.
 
-Check out the [Haml Reference][https://haml.info/docs/yardoc/file.reference.html].
+Check out the [Haml Reference](https://haml.info/docs/yardoc/file.reference.html).
 Mayu has some differences with regular Haml to make it work better with a virtual DOM,
 some of these differences are documented in [./haml-guide.md](./haml-guide.md).
 
