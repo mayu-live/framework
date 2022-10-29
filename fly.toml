@@ -9,7 +9,7 @@ processes = []
 [env]
 
 [metrics]
-  port = 9091
+  port = 9092
   path = "/metrics"
 
 [experimental]
