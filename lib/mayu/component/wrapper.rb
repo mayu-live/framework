@@ -27,11 +27,6 @@ module Mayu
         @helpers = T.let(Helpers.new(vnode), Helpers)
       end
 
-      sig { returns(T.nilable(Resources::Types::Stylesheet)) }
-      def stylesheet
-        @instance.class.stylesheet
-      end
-
       sig { returns(T::Array[String]) }
       def assets
         @instance.class.assets
