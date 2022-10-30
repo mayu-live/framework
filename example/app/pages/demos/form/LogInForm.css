@@ -8,10 +8,8 @@ Good channel, check it out if you haven't!
   display: grid;
   grid-gap: 1rem;
 
-  --orange: #ffb300;
-  --grey: hsl(0 0% 45%);
-  --grey-1: hsl(0 0% 65%);
-  --grey-5: hsl(0 0% 75%);
+  --grey: #666;
+  --grey-1: #999;
   --transition: 0.2s;
   --valid: var(--green);
   --invalid: var(--red);
@@ -41,6 +39,7 @@ Good channel, check it out if you haven't!
 }
 
 .formGroup {
+  --color: var(--accent-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -62,7 +61,6 @@ Good channel, check it out if you haven't!
   border-radius: 2px;
   border: 0;
   cursor: pointer;
-  background: var(--disabled);
   font-weight: bold;
   transition: color var(--transition), background var(--transition);
 }
@@ -93,7 +91,6 @@ Good channel, check it out if you haven't!
 
 .form:valid [type="submit"] {
   background: var(--valid);
-  color: var(--grey-1);
 }
 
 @keyframes shake {
