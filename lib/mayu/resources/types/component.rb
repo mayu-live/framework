@@ -114,7 +114,7 @@ module Mayu
           impl.const_set(:INLINE_CSS_ASSETS, assets)
 
           begin
-            $stderr.puts "\e[33m#{@source}\e[0m"
+            # $stderr.puts "\e[33m#{@source}\e[0m"
             impl.class_eval(@source, @resource.path, 1)
           rescue => e
             backtrace =
