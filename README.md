@@ -348,8 +348,14 @@ which is supposed to be very efficient, although it's also the largest
 dependency at the moment. A good thing with MessagePack is that it
 can send binary data, which is useful when transferring state.
 
-![Request waterfall screenshot](https://quad.pe/e/h9BqRqnMwh.png)
-![Request waterfall screenshot 22](https://quad.pe/e/OVWyi8tIRk.png)
+First page load with Slow 3G throttling (no cache):
+
+![Request waterfall](https://user-images.githubusercontent.com/41148/198865376-5382a538-44a3-4058-8ba6-6d178cc78b37.png)
+
+Second page load with Slow 3G throttling (cache):
+
+![Request waterfall](https://user-images.githubusercontent.com/41148/198865399-d4d428ec-89c6-4469-bec1-964040c41c2c.png)
+
 
 ## Realtime metrics
 
