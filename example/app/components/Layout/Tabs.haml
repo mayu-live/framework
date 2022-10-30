@@ -1,0 +1,84 @@
+:ruby
+  def self.get_initial_state(children:, **)
+    { active: extract_slot_names(children).first }
+  end
+
+  def self.extract_slot_names(children)
+    children.map { _1.props[:slot] }.compact.uniq
+  end
+
+  def handle_change(e)
+    value = e.dig("target", "value")
+    update(active: value)
+  end
+
+  private
+
+  def id(*args)
+    [:id, *args, vnode_id].flatten.join("-")
+  end
+
+:css
+  .tabs {
+    border-radius: 2px;
+    border: 1px solid #0006;
+  }
+
+  .buttons {
+    display: flex;
+    border-bottom: 1px solid #0006;
+    background: #0001;
+  }
+
+  .button {
+    border: none;
+    padding: .5em 1em;
+    background: transparent;
+    cursor: pointer;
+    color: #000;
+    background: var(--bright);
+    z-index: 0;
+  }
+
+  .button:hover {
+    filter: brightness(120%);
+  }
+
+  .button:active {
+    filter: brightness(90%);
+  }
+
+  .button:focus {
+    z-index: 1;
+  }
+
+  .button[aria-selected="true"] {
+    background: var(--blue-bright);
+    color: #000;
+    font-weight: bold;
+  }
+
+  .panel {
+    margin: 1em;
+  }
+
+- state => active:
+- names = self.class.extract_slot_names(children)
+
+.tabs
+  .buttons(role="tablist")
+    = names.map.with_index do |name, i|
+      %button.button(key=name value=name onclick=handle_change role="tab" tabindex="0"){
+        id: id(:tab, i),
+        aria_selected: (name == active).to_s,
+        aria_controls: id(:panel, i)
+      }= name
+
+  = names.map.with_index do |name, i|
+    .panel(role="tabpanel" tabindex="0"){
+      id: id(:panel, i),
+      hidden: name != active,
+      aria_labelledby: id(:tab, i),
+      aria_expanded: (name == active).to_s,
+    }
+      %slot(name=name)

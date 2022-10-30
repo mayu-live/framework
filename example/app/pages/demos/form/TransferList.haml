@@ -1,5 +1,4 @@
 :ruby
-  Heading = require("/app/components/Layout/Heading")
   Fieldset = require("/app/components/Form/Fieldset")
   Button = require("/app/components/Form/Button")
   Input = require("/app/components/Form/Input")
@@ -49,9 +48,8 @@
     end
   end
 
-%div
-  %Heading(level=2) Transfer list
-
+%Fieldset
+  %legend Transfer list
   %form.container{on_submit: handler(:handle_submit)}
     %ul.list
       = state[:left].map do |item|
@@ -61,6 +59,7 @@
             name: "left-#{item}",
             group_class: styles[:group],
           }
+
     .buttons
       %button.button(type="submit" name="action" value="move_all_left" title="Move all left") ⟪
       %button.button(type="submit" name="action" value="move_selected_left" title="Move selected left") ⟨

@@ -1,28 +1,24 @@
 :ruby
-  Heading = require("/app/components/Layout/Heading")
   Fieldset = require("/app/components/Form/Fieldset")
   Button = require("/app/components/Form/Button")
   Input = require("/app/components/Form/Input")
   Select = require("/app/components/Form/Select")
   Checkbox = require("/app/components/Form/Checkbox")
 
-%div
-  %Heading(level=2) Form elements
-
-  %Fieldset
-    %legend Hello world
-    %div
-      %Input(type="text" label="Foobar")
-    %div
-      %Input(type="text" label="Required text field" required)
-    %div
-      %Input(type="number" label="Number")
-    %div
-      %Select(label="Select" value=2)
-        %option(value=1) Pink Floyd
-        %option(value=2) Yes
-        %option(value=3) Can
-    %div
-      %Checkbox(label="Foobar")
-    %div
-      %Button Submit
+%Fieldset
+  %legend Hello world
+  %div
+    %Input(type="text" label="Foobar")
+  %div
+    %Input(type="text" label="Required text field" required)
+  %div
+    %Input(type="number" label="Number")
+  %div
+    %Select(label="Select" value=2)
+      %option(value=1) Pink Floyd
+      %option(value=2) Yes
+      %option(value=3) Can
+  %div
+    %Checkbox(label="Foobar")
+  %div
+    %Button Submit
