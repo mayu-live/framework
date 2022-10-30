@@ -228,7 +228,7 @@ module Mayu
               visit(node.children.shift)
             end
 
-            @out << indentation << "def render\n"
+            @out << indentation << "public def render\n"
 
             indent do
               node.children.each_with_index do |child, i|

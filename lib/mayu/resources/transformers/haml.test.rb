@@ -15,7 +15,7 @@ class TestHaml < Minitest::Test
         %a(href="/")< And there should be spaces before this link
         \\. Was there?
     HAML
-      def render
+      public def render
         Mayu::VDOM.h(
           :p,
           "There should be no space on the left of this text. But there should be one between this line and the previous line.",
@@ -40,7 +40,7 @@ class TestHaml < Minitest::Test
 
           Hello World
     HAML
-      def render
+      public def render
         Mayu::VDOM.h(
           :div,
           Mayu::VDOM.h(:p, "Hello World"),
@@ -60,7 +60,7 @@ class TestHaml < Minitest::Test
         %footer
           %slot(name="footer")
     HAML
-      def render
+      public def render
         Mayu::VDOM.h(
           :body,
           Mayu::VDOM.h(:main, Mayu::VDOM.slot(children)),
@@ -76,7 +76,7 @@ class TestHaml < Minitest::Test
         %slot
           %p Fallback content
     HAML
-      def render
+      public def render
         Mayu::VDOM.h(
           :div,
           Mayu::VDOM.slot(children) ||
@@ -94,7 +94,7 @@ class TestHaml < Minitest::Test
         .button { color: #f0f; }
       %button.button Click me
     HAML
-      def render
+      public def render
         Mayu::VDOM.h(:button, "Click me", class: styles[:button])
       end
     RUBY
@@ -113,7 +113,7 @@ class TestHaml < Minitest::Test
         Console.logger.info(self, e)
       end
 
-      def render
+      public def render
         Mayu::VDOM.h(:button, "Click me", **{ onclick: handler(:handle_click) })
       end
     RUBY
@@ -129,68 +129,68 @@ class TestHaml < Minitest::Test
 
   def test_early_return
     assert_equal(transform_and_format(<<~HAML), <<~RUBY)
-    - if true
-      - return
-        .foo
-    .bar
+      - if true
+        - return
+          .foo
+      .bar
     HAML
-    def render
-      begin
-        if true
-          begin
-            return(
-              begin
-                Mayu::VDOM.h(:div, class: styles[:foo])
-              end
-            )
-            nil
+      public def render
+        begin
+          if true
+            begin
+              return(
+                begin
+                  Mayu::VDOM.h(:div, class: styles[:foo])
+                end
+              )
+              nil
+            end
           end
+          nil
         end
-        nil
+        Mayu::VDOM.h(:div, class: styles[:bar])
       end
-      Mayu::VDOM.h(:div, class: styles[:bar])
-    end
     RUBY
   end
 
   def test_class_names
     assert_equal(transform_and_format(<<~HAML), <<~RUBY)
-    :ruby
+      :ruby
+        lol = "lol"
+        id = "check123"
+        props = { label: "label", asd: "asd" }
+
+      %div.foo(class="bar" asdd=lol){class: "baz"}
+        = "hello"
+        %input(id=id){
+          class: classname,
+          type: "checkbox",
+          placeholder: props[:label],
+          **props.except(:label),
+        }
+    HAML
       lol = "lol"
       id = "check123"
       props = { label: "label", asd: "asd" }
 
-    %div.foo(class="bar" asdd=lol){class: "baz"}
-      = "hello"
-      %input(id=id){
-        class: classname,
-        type: "checkbox",
-        placeholder: props[:label],
-        **props.except(:label),
-      }
-    HAML
-    lol = "lol"
-    id = "check123"
-    props = { label: "label", asd: "asd" }
-
-    def render
-      Mayu::VDOM.h(
-        :div,
-        "hello",
+      public def render
         Mayu::VDOM.h(
-          :input,
-          **{ id: id },
-          **{
-            type: "checkbox",
-            placeholder: props[:label],
-            **props.except(:label)
-          },
-          class: styles[classname]
-        ),
-        **{ asdd: lol },
-        class: styles[:foo, :bar, "baz"]
-      )
-    end
+          :div,
+          "hello",
+          Mayu::VDOM.h(
+            :input,
+            **{ id: id },
+            **{
+              type: "checkbox",
+              placeholder: props[:label],
+              **props.except(:label)
+            },
+            class: styles[classname]
+          ),
+          **{ asdd: lol },
+          class: styles[:foo, :bar, "baz"]
+        )
+      end
     RUBY
   end
 
@@ -234,10 +234,11 @@ class TestHaml < Minitest::Test
         error_line: e.lineno
       ).join
 
-    puts <<~EOF
-    #{e.message} on line #{e.lineno} col #{e.column}
-    #{formatted_source}
-    EOF
+    Console.logger.error(self, <<~ERROR)
+      #{e.message} on line #{e.lineno} col #{e.column}
+      #{formatted_source}
+    ERROR
+
     raise
   end
 

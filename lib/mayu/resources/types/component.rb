@@ -66,9 +66,7 @@ module Mayu
 
         sig { returns(T::Array[Asset]) }
         def assets
-          [@inline_css && Asset.new(@inline_css.filename)].compact.tap do
-            puts "\e[35m#{_1}\e[0m" unless _1.empty?
-          end
+          [@inline_css && Asset.new(@inline_css.filename)].compact
         end
 
         sig { params(asset_dir: String).returns(T::Array[Asset]) }

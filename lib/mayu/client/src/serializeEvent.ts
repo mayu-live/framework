@@ -30,6 +30,16 @@ function serializeObject(obj: any) {
     };
   }
 
+  if (obj instanceof HTMLButtonElement) {
+    return {
+      tagName: obj.tagName,
+      id: obj.id,
+      type: obj.type,
+      name: obj.name,
+      value: obj.value,
+    };
+  }
+
   if (obj instanceof Window) {
     return { type: "window" };
   }
