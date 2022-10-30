@@ -15,15 +15,12 @@
     margin-left: 1em;
   }
 
-  .nonempty {
-  }
-
-  .nonempty > .name {
-    cursor: pointer;
+  .name {
     font-weight: bold;
+    cursor: pointer;
   }
 
-  .nonempty > .name:hover {
+  .name:hover {
     text-decoration: underline;
   }
 
@@ -55,7 +52,7 @@
   list_style_type = "'\\%s'" % icon.codepoints.first.to_s(16)
   style = { list_style_type: }
 
-%li.dir{style:, class: { empty: entries.none?, nonempty: entries.any? }}
+%li.dir{style:, class: { nonempty: entries.any? }}
   %span{class: styles[:name], on_click: handler(:handle_toggle)}
     #{File.basename(path)}/
   = unless entries.empty?
