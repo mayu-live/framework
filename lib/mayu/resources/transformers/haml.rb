@@ -58,6 +58,44 @@ module Mayu
           )
         end
 
+        class ExtractNameParserVisitor < SyntaxTree::Visitor
+          extend T::Sig
+
+          sig { returns(T.nilable(String)) }
+          attr_reader :name
+
+          sig { void }
+          def initialize
+            @name = T.let(nil, T.nilable(String))
+          end
+
+          sig { params(node: SyntaxTree::HashLiteral).void }
+          def visit_hash(node)
+            node.assocs.each do |child|
+              case child.key
+              when SyntaxTree::StringLiteral
+                key = child.key.parts.first.value
+
+                case key
+                when "name"
+                  @name = child.value.value.value
+                else
+                  raise "Invalid attribute #{key.inspect}"
+                end
+              when SyntaxTree::Label
+                case key = child.key.value
+                when "name:"
+                  @name = child.value.value.value
+                else
+                  raise "Invalid attribute #{key.inspect}"
+                end
+              else
+                raise "Invalid key type: #{child.key.inspect}"
+              end
+            end
+          end
+        end
+
         class HashParserVisitor < SyntaxTree::Visitor
           extend T::Sig
 
@@ -283,6 +321,18 @@ module Mayu
               @out << ", " << value.inspect
             end
 
+            if dynamic_attributes = node.value[:dynamic_attributes]
+              if new = dynamic_attributes.new
+                # TODO: Better parse new as Ruby..
+                ast = SyntaxTree.parse(new)
+                visitor = ExtractNameParserVisitor.new
+                visitor.visit(ast)
+                if name = visitor.name
+                  @out << ", #{name}"
+                end
+              end
+            end
+
             @out << ")"
 
             children = node.children.reject { _1.type == :haml_comment }
@@ -460,6 +510,9 @@ module Mayu
               @out << indentation
               @out << "**#{format_ruby_ast(ast)}"
             end
+          rescue => e
+            # TODO: Print a helpful error message
+            raise
           end
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
