@@ -24,6 +24,16 @@
     update(page: 0, per_page: e.dig("target", "value").to_i)
   end
 
+:css
+  .list {
+    list-style-type: none;
+  }
+
+  .item {
+    list-style-type: none;
+    margin: 0.5em 0;
+  }
+
 :ruby
   state => result:, error:
 
@@ -35,7 +45,7 @@
   - return
     %p
       Loading Pokémon from
-      %a(href="https://pokeapi.co/") PokéAPI
+      %a(href="https://pokeapi.co/")< PokéAPI
 :ruby
   result => results:
 

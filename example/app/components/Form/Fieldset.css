@@ -1,8 +1,0 @@
-.fieldset {
-  border: 3px solid var(--blue);
-  border-radius: 3px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-  font-size: 0.9em;
-}

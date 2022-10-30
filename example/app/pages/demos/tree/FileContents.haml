@@ -1,5 +1,25 @@
 :ruby
   ALLOWED_EXTENSIONS = %w[.rb .css .rux .haml]
+
+:css
+  .article {
+  }
+
+  .path {
+    font-family: monospace;
+    font-size: 1em;
+    margin: 0;
+  }
+
+  .pre {
+    white-space: pre-wrap;
+    font-size: 1em;
+    background: var(--blue-bright);
+    border: 1px solid var(--blue);
+    border-radius: 2px;
+    padding: 1em;
+  }
+
 :ruby
 - props => { root:, path: }
 

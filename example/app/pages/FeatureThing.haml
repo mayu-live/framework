@@ -23,6 +23,15 @@
     end
   end
 
+:css
+  .featureList {}
+  .feature {}
+  .active {
+    color: var(--red);
+    font-weight: bold;
+    font-style: italic;
+  }
+
 %ul.featureList
   = ITEMS.map.with_index do |item, index|
     - active = index == state[:index]

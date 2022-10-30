@@ -9,6 +9,29 @@
     end
   end
 
+:css
+  .dir {
+    padding-left: 0.5em;
+    margin-left: 1em;
+  }
+
+  .nonempty {
+  }
+
+  .nonempty > .name {
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .nonempty > .name:hover {
+    text-decoration: underline;
+  }
+
+  .list {
+    margin: 0;
+    padding: 0;
+  }
+
 :ruby
   props => { root:, path:, entry: }
 

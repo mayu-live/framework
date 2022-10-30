@@ -1,2 +1,16 @@
+:css
+  .menu {
+    list-style-type: none;
+    padding: 1em;
+    margin: 0;
+    font-size: 0.8em;
+    background: var(--blue-bright);
+    border: 1px solid var(--blue);
+    border-radius: 2px;
+    display: flex;
+    gap: 1em;
+    padding: 1em;
+    flex-direction: var(--menu-direction, column);
+  }
 %menu.menu
   %slot

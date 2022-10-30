@@ -1,3 +1,21 @@
+:css
+  .li {
+  }
+
+  .a {
+  }
+
+  .a:link,
+  .a:visited {
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .a:active,
+  .a:hover {
+    text-decoration: underline;
+  }
+
 %li.li
   %a.a{href: props[:href]}
     %slot
