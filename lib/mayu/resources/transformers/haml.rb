@@ -284,6 +284,19 @@ module Mayu
             end
 
             @out << ")"
+
+            children = node.children.reject { _1.type == :haml_comment }
+
+            case children
+            in []
+              # noop
+            in [child]
+              @out << " || begin\n"
+              indent { visit(child) }
+              @out << "\n" << indentation << "end"
+            else
+              raise "<slot> only allows 0 or 1 children"
+            end
           end
 
           sig { params(node: ::Haml::Parser::ParseNode).void }

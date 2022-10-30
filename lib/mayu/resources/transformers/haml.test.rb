@@ -70,6 +70,24 @@ class TestHaml < Minitest::Test
     RUBY
   end
 
+  def test_slots_fallback
+    assert_equal(transform_and_format(<<~HAML), <<~RUBY)
+      %div
+        %slot
+          %p Fallback content
+    HAML
+      def render
+        Mayu::VDOM.h(
+          :div,
+          Mayu::VDOM.slot(children) ||
+            begin
+              Mayu::VDOM.h(:p, "Fallback content")
+            end
+        )
+      end
+    RUBY
+  end
+
   def test_css
     assert_equal(transform_and_format(<<~HAML), <<~RUBY)
       :css
