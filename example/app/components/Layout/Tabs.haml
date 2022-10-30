@@ -1,6 +1,7 @@
 :ruby
   def self.get_initial_state(children:, **)
-    { active: extract_slot_names(children).first }
+    active = extract_slot_names(children).first
+    { active:, enabled: [active] }
   end
 
   def self.extract_slot_names(children)
@@ -8,8 +9,22 @@
   end
 
   def handle_change(e)
+    active = e.dig("target", "value")
+
+    update do |state|
+      {
+        active:,
+        enabled: [*state[:enabled], active].uniq
+      }
+    end
+  end
+
+  def handle_enable(e)
     value = e.dig("target", "value")
-    update(active: value)
+
+    update do |state|
+      { enabled: [*state[:enabled], value].uniq }
+    end
   end
 
   private
@@ -62,16 +77,19 @@
     margin: 1em;
   }
 
-- state => active:
+- state => active:, enabled:
 - names = self.class.extract_slot_names(children)
 
 .tabs
   .buttons(role="tablist")
     = names.map.with_index do |name, i|
+      - handle_enable = enabled.include?(name) ? nil : handler(:handle_enable)
       %button.button(key=name value=name onclick=handle_change role="tab" tabindex="0"){
         id: id(:tab, i),
         aria_selected: (name == active).to_s,
-        aria_controls: id(:panel, i)
+        aria_controls: id(:panel, i),
+        onmouseenter: handle_enable,
+        ontouchstart: handle_enable,
       }= name
 
   = names.map.with_index do |name, i|
@@ -81,4 +99,5 @@
       aria_labelledby: id(:tab, i),
       aria_expanded: (name == active).to_s,
     }
-      %slot(name=name)
+      = if enabled.include?(name)
+        %slot(name=name)
