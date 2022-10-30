@@ -4,6 +4,27 @@ module Mayu
   module Utils
     extend T::Sig
 
+    sig do
+      params(
+        hash: T::Hash[T.untyped, T.untyped],
+        path: T::Array[String]
+      ).returns(T::Hash[Symbol, T.untyped])
+    end
+    def self.flatten_props(hash, path = [])
+      hash.reduce({}) do |obj, (k, v)|
+        current_path = [*path, k]
+
+        obj.merge(
+          case v
+          when Hash
+            flatten_props(v, current_path)
+          else
+            { current_path.join("_").to_sym => v }
+          end
+        )
+      end
+    end
+
     class DeepFreezer
       extend T::Sig
       extend T::Generic

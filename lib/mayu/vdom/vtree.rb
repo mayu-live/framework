@@ -13,6 +13,7 @@ require_relative "id_generator"
 require_relative "../session"
 require_relative "../ref_counter"
 require_relative "indexes"
+require_relative "../utils"
 
 module Mayu
   module VDOM
@@ -400,7 +401,13 @@ module Mayu
         end
 
         update_handlers(vnode.props, descriptor.props)
-        update_attributes(ctx, vnode, vnode.props, descriptor.props)
+
+        update_attributes(
+          ctx,
+          vnode,
+          Utils.flatten_props(vnode.props),
+          Utils.flatten_props(descriptor.props)
+        )
 
         vnode.descriptor = descriptor
 

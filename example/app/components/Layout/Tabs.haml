@@ -88,18 +88,22 @@
       - handle_enable = enabled.include?(name) ? nil : handler(:handle_enable)
       %button.button(key=name value=name onclick=handle_change role="tab" tabindex="0"){
         id: id(:tab, i),
-        aria_selected: (name == active).to_s,
-        aria_controls: id(:panel, i),
         onmouseenter: handle_enable,
         ontouchstart: handle_enable,
+        aria: {
+          selected: (name == active).to_s,
+          controls: id(:panel, i)
+        }
       }= name
 
   = names.map.with_index do |name, i|
     .panel(role="tabpanel" tabindex="0"){
       id: id(:panel, i),
       hidden: name != active,
-      aria_labelledby: id(:tab, i),
-      aria_expanded: (name == active).to_s,
+      aria: {
+        labelledby: id(:tab, i),
+        expanded: (name == active).to_s,
+      }
     }
       = if enabled.include?(name)
         %slot(name=name)

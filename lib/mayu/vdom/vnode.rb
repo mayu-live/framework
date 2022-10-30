@@ -225,6 +225,31 @@ module Mayu
         io.write("</#{type}>")
       end
 
+      sig { params(block: T.proc.params(arg0: String).void).void }
+      def format_props(&block)
+        props
+          .reject do |prop, value|
+            next true unless value
+            next true if prop == :children
+            next true if prop == :dangerously_set_inner_html
+            false
+          end
+          .each do |prop, value|
+            if value.is_a?(Hash)
+              if prop == :style
+                yield format_attr(prop, CSSAttributes.new(**value).to_s)
+              else
+                Utils
+                  .flatten_props(value, [prop.to_s])
+                  .each { yield format_prop(_1, _2) }
+              end
+              next
+            end
+
+            yield format_prop(prop, value)
+          end
+      end
+
       sig do
         params(attr: T.any(String, Symbol), value: T.untyped).returns(String)
       end
@@ -236,35 +261,17 @@ module Mayu
         )
       end
 
-      sig { params(block: T.proc.params(arg0: String).void).void }
-      def format_props(&block)
-        props
-          .reject do |prop, value|
-            next true unless value
-            next true if prop == :children
-            next true if prop == :dangerously_set_inner_html
-            false
-          end
-          .each do |prop, value|
-            if prop == :style && value.is_a?(Hash)
-              yield format_attr(prop, CSSAttributes.new(**value).to_s)
-              next
-            end
+      sig { params(prop: Symbol, value: T.untyped).returns(T.untyped) }
+      def format_prop(prop, value)
+        if HTML.boolean_attribute?(prop) || value in TrueClass | FalseClass
+          value = prop.to_s
+        end
 
-            if HTML.boolean_attribute?(prop) || value.is_a?(TrueClass) ||
-                 value.is_a?(FalseClass)
-              value = prop.to_s
-            end
+        prop = :value if prop == :initial_value
 
-            attr =
-              prop
-                .to_s
-                .sub(/^on_/, "on")
-                .sub(/\Ainitial_value\Z/, "value")
-                .tr("_", "-")
+        attr = prop.to_s.sub(/^on_/, "on").tr("_", "-")
 
-            yield format_attr(attr, value)
-          end
+        format_attr(attr, value)
       end
     end
   end

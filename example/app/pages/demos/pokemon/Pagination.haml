@@ -48,7 +48,7 @@
           %li(key=num)
             %a.page{
               href: "?page=#{num}",
-              aria_current: page == num && "page"
+              aria: { current: page == num && "page" }
             }= num
 
       %a.button(href=next_page_link rel="prev")
