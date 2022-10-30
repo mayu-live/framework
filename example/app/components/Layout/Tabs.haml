@@ -77,8 +77,10 @@
     margin: 1em;
   }
 
-- state => active:, enabled:
-- names = self.class.extract_slot_names(children)
+
+:ruby
+  state => active:, enabled:
+  names = self.class.extract_slot_names(children)
 
 .tabs
   .buttons(role="tablist")
