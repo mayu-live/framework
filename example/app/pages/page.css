@@ -4,14 +4,37 @@
 
 .features {
   margin: 3em;
+  display: flex;
+  gap: 1em;
 }
 
-.featuresHeading {
+.features-col {
+  flex: 1 0 50%;
+}
+
+.clock {
+  flex: 1 1 30%;
+}
+
+.clock-figure {
+  border: 1px solid var(--pink);
+  border-radius: 2px;
+  background: var(--pink-bright);
+  margin: 0;
+  padding: 0.5em;
+}
+
+.clock-figcaption {
+  font-size: 0.8em;
+  margin: 0;
+}
+
+.features-heading {
   margin: 0;
   font-size: 2em;
 }
 
-.sectionsOuter {
+.sections-outer {
   overflow: hidden;
   background: var(--yellow);
   color: var(--dark);
@@ -40,17 +63,17 @@
   margin-inline: auto;
 }
 
-.sectionInner {
+.section-inner {
   margin: 2em;
 }
 
-.sectionTitle {
+.section-title {
   margin: 0;
   font-size: 1em;
   text-transform: uppercase;
 }
 
-.exampleOuter {
+.example-outer {
   background: var(--green-bright);
   overflow: hidden;
   box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset,
@@ -65,6 +88,6 @@
   padding: 0;
 }
 
-.exampleHeading {
+.example-heading {
   font-size: 1.5rem;
 }

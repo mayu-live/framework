@@ -5,27 +5,36 @@
   Details = require("/app/components/Layout/Details")
   Counter = require("./Counter")
   FeatureThing = require("./FeatureThing")
+  Clock = require("/app/components/Clock")
+
+:css
 
 %div
   .featuresOuter
     %MaxWidth
-      %article.features
-        %Heading.featuresHeading#features(level=1)
-          Features
+      .features
+        %article.features-col
+          %Heading.features-heading#features(level=1)
+            Features
 
-        %p Here's a list of core features:
+          %p Here's a list of core features:
 
-        %FeatureThing
+          %FeatureThing
 
-        %p
-          Read more on
-          %a(href="https://github.com/mayu-live/framework#readme" target="_blank")<
-            GitHub
+          %p
+            Read more on
+            %a(href="https://github.com/mayu-live/framework#readme" target="_blank")<
+              GitHub
+        %article.clock
+          %figure.clock-figure
+            %Clock(stroke="var(--dark)" fill="var(--yellow-bright)")
+            %figcaption.clock-figcaption
+              Current UTC-time
 
-    .exampleOuter
+    .example-outer
       %MaxWidth
         .article.example
-          %Heading.exampleHeading#example(level=1)
+          %Heading.example-heading#example(level=1)
           %p This text was rendered on the server at #{Time.now.utc.to_s}.
           %p
             The counter below was also rendered on the server.
@@ -39,11 +48,11 @@
           %Details(summary="Show source")
             %Highlight(language="haml")= File.read('app/pages/Counter.haml')
 
-    .sectionsOuter
+    .sections-outer
       .sections
         %section.section
-          .sectionInner
-            %Heading.sectionTitle(level=3)
+          .section-inner
+            %Heading.section-title(level=3)
               Interactive web apps without JavaScript
             %ul
               %li You write all logic in Ruby.
@@ -51,8 +60,8 @@
               %li DOM-patches are streamed to the browser.
 
         %section.section
-          .sectionInner
-            %Heading.sectionTitle(level=3)
+          .section-inner
+            %Heading.section-title(level=3)
               How does it work?
             %ul
               %li
@@ -68,8 +77,8 @@
               %li Forget about REST and GraphQL.
 
         %section.section
-          .sectionInner
-            %Heading.sectionTitle(level=3)
+          .section-inner
+            %Heading.section-title(level=3)
               Efficient
             %ul
               %li
@@ -83,8 +92,8 @@
               %li Pages are interactive immediately when loaded.
 
         %section.section
-          .sectionInner
-            %Heading.sectionTitle(level=3)
+          .section-inner
+            %Heading.section-title(level=3)
               Smooth developer experience
             %ul
               %li Hot reloading updates your page as soon as you change files.
