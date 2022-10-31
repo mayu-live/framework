@@ -41,9 +41,11 @@ class Mayu::VDOM::Test < Minitest::Test
     Mayu::TestHelper.test_component(MyComponent) do |page|
       button = page.find_by_css("[name=increment]")
       page.fire_event(button, :click)
-      page.debug!
+      assert_equal(page.find_by_css("output")&.inner_text, "3")
+      # page.debug!
       page.wait_for_update
-      page.debug!
+      assert_equal(page.find_by_css("output")&.inner_text, "4")
+      # page.debug!
 
       assert_equal(page.to_html, <<~HTML)
         <div class="lib/mayu/vdom.foo">
