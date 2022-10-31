@@ -162,6 +162,14 @@ This will print the current server time.
 The component will render once every second even though it updates
 twice per second, since the time string only changes once per second.
 
+### Async loading
+
+It's also easy to defer rendering until some action has happened,
+for example, the [form demo](https://mayu.live/demos/form) loads
+tab content asynchronously when the mouse enters the tab header,
+so when the user clicks the tab, the content is already loaded.
+[Tabs implementation](https://github.com/mayu-live/framework/blob/main/example/app/components/Layout/Tabs.haml)
+
 ## Components
 
 Components are the building blocks of a Mayu application.
@@ -355,7 +363,6 @@ First page load with Slow 3G throttling (no cache):
 Second page load with Slow 3G throttling (cache):
 
 ![Request waterfall](https://user-images.githubusercontent.com/41148/198865399-d4d428ec-89c6-4469-bec1-964040c41c2c.png)
-
 
 ## Realtime metrics
 
