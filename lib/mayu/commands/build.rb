@@ -11,6 +11,8 @@ module Mayu
 
       sig { params(argv: T::Array[String]).void }
       def call(argv)
+        require "fileutils"
+
         Console
           .logger
           .measure("Building") do
@@ -44,6 +46,7 @@ module Mayu
             puts "\e[34m#{resources.mermaid_url}\e[0m"
 
             assets_dir = environment.path(:assets)
+            FileUtils.mkdir_p(assets_dir)
             files_to_remove = Dir.glob(File.join(assets_dir, "*"))
 
             unless files_to_remove.empty?
