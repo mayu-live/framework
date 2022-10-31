@@ -323,8 +323,10 @@ module Mayu
             in [:navigate, href]
               navigate(href)
               yield [:navigate, path: href.force_encoding("utf-8")]
+            in [:update_finished, *]
+              # noop
             else
-              puts "\e[31mUnknown event: #{msg.inspect}\e[0m"
+              Console.logger.error(self, "Unknown event: #{msg.inspect}")
             end
           end
           .wait
