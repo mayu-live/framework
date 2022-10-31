@@ -35,11 +35,9 @@
 %footer.footer{class: props[:class]}
   %MaxWidth.inner
     %p
-      Copyright ©
-      = " "
-      #{[2022, Time.now.year].uniq.join("—")}
-      = " "
-      %a.link(href="https://github.com/mayu-live")
+      - year = [2022, Time.now.year].uniq.join("—")
+      Copyright © #{year}
+      %a.link(href="https://github.com/mayu-live")<
         github.com/mayu-live
 
     %p.badges

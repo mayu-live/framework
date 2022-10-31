@@ -19,8 +19,7 @@
 
         %p
           Read more on
-          = " "
-          %a(href="https://github.com/mayu-live/framework#readme" target="_blank")
+          %a(href="https://github.com/mayu-live/framework#readme" target="_blank")<
             GitHub
 
     .exampleOuter
@@ -33,7 +32,7 @@
             The only JavaScript required to make it interactive is a small
             runtime that makes a connection to the server and updates
             the DOM whenever the state changes on the server.
-            %a(href="https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml" target="_blank")<
+            %a(href="https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml" target="_blank")<>
               Show source on GitHub
           %Counter(initial_value=7)
 
@@ -56,22 +55,32 @@
             %Heading.sectionTitle(level=3)
               How does it work?
             %ul
-              %li Mayu implements a Virtual DOM in Ruby.
-              %li All HTML is rendered on the server.
+              %li
+                Mayu implements a
+                %a(href="https://en.wikipedia.org/wiki/Virtual_DOM" target="_blank")<>
+                  Virtual DOM
+                in Ruby.
+              %li HTML is rendered on the server.
               %li
                 All DOM updates are streamed to the a small browser runtime
                 that takes care of updating the DOM.
-              %li Eventh handlers run on the server.
-              %li There is no need for an API.
+              %li Callback handlers run on the server.
+              %li Forget about REST and GraphQL.
 
         %section.section
           .sectionInner
             %Heading.sectionTitle(level=3)
               Efficient
             %ul
-              %li HTTP/2 streams.
+              %li
+                HTTP/2 Streams with
+                %a(href="https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API" target="_blank")<>
+                  compression
+                and
+                %a(href="https://msgpack.org/index.html" target="_blank")<>
+                  MessagePack
               %li Designed to be deployed on the edge.
-              %li Pages are interactive before even reaching the browser.
+              %li Pages are interactive immediately when loaded.
 
         %section.section
           .sectionInner
@@ -81,3 +90,6 @@
               %li Hot reloading updates your page as soon as you change files.
               %li Asynchronous code without callbacks.
               %li Ruby is pretty comfortable to work with.
+              %li
+                %a(href="https://github.com/mayu-live/framework/blob/main/lib/mayu/vdom.test.rb" target="_blank")<
+                  Integration test example
