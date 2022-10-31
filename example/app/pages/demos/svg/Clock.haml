@@ -1,0 +1,43 @@
+:ruby
+  def mount
+    loop do
+      time = Time.now.utc
+      update(hour: time.hour, min: time.min, sec: time.sec)
+      sleep 0.5
+    end
+  end
+
+  def calculate_pos(value, length)
+    offset = 15
+    [
+      Math.cos((value + offset) / 60.0 * Math::PI * 2),
+      Math.sin((value + offset) / 60.0 * Math::PI * 2),
+    ].map { _1 * length }.map { _1.round(5) }
+  end
+:css
+  .clock {
+    border: 5px solid fuchsia;
+  }
+
+  .svg {
+    width: 100%;
+    height: auto;
+    margin: 1em 0;
+  }
+.clock
+  %svg.svg(width="100" height="100" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg")
+    %circle(cx="0" cy="0" r="95" fill="transparent" stroke="#000" stroke-width="2")
+    %g
+      - x1, y1 = [0, 0]
+      - x2, y2 = calculate_pos(state[:hour].to_f, 50.0)
+      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke="#000" stroke-width="6")
+      - x2, y2 = calculate_pos(state[:min].to_f, 60.0)
+      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke="#000" stroke-width="3")
+      - x2, y2 = calculate_pos(state[:sec].to_f, 80.0)
+      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke="#000" stroke-width="1")
+    %circle(cx="0" cy="0" r="3" fill="#000")
+    %g
+      = 12.times.map do |i|
+        - x1, y1 = calculate_pos(i * 5, 60.0)
+        - x2, y2 = calculate_pos(i * 5, 80.0)
+        %line(x1=x1 y1=y1 x2=x2 y2=y2 stroke="#000" stroke-width=2)

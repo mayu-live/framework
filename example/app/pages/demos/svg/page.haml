@@ -1,0 +1,54 @@
+:ruby
+  Heading = require("/app/components/Layout/Heading")
+  MaxWidth = require("/app/components/Layout/MaxWidth")
+  Clock = require("./Clock")
+
+  PATHS = [
+    "M 10 10 C 20 20, 40 20, 50 10",
+    "M 70 10 C 70 20, 110 20, 110 10",
+    "M 130 10 C 120 20, 180 20, 170 10",
+    "M 10 60 C 20 80, 40 80, 50 60",
+    "M 70 60 C 70 80, 110 80, 110 60",
+    "M 130 60 C 120 80, 180 80, 170 60",
+    "M 10 110 C 20 140, 40 140, 50 110",
+    "M 70 110 C 70 140, 110 140, 110 110",
+    "M 130 110 C 120 140, 180 140, 170 110",
+  ]
+
+:css
+  .svg {
+    border: 5px solid fuchsia;
+    width: 100%;
+    height: auto;
+  }
+
+  .text {
+    font-size: 30px;
+  }
+
+  .flex {
+    display: flex;
+    gap: 1em;
+  }
+
+  .col {
+    flex-basis: 50%;
+  }
+
+%MaxWidth
+  %Heading(level=2) SVG demo
+  %p
+    This example shows some SVGs.
+    The time is updated on the server.
+  .flex
+    .col
+      %Clock
+    .col
+      %svg.svg(width="190" height="160" viewBox="0 0 190 160" xmlns="http://www.w3.org/2000/svg")
+        %circle(cx="95" cy="80" r="80" fill="#0c09")
+        %g
+          - stroke = "black"
+          - fill = "#f0f9"
+          = PATHS.map do |d|
+            %path(stroke=stroke fill=fill d=d)
+        %text.text(x="95" y="50" text-anchor="middle" fill="white") SVG
