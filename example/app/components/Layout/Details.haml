@@ -1,21 +1,22 @@
 :ruby
-  def self.get_initial_state(initial_open: false, **)
-    { open: initial_open }
+  Card = require("/app/components/Layout/Card")
+
+  def self.get_initial_state(initial_open: false, lazy: true, **)
+    {
+      open: initial_open,
+      loaded: initial_open || !lazy
+    }
   end
 
   def handle_toggle(e)
     if e.dig("target", "open")
-      update(open: true)
+      update(loaded: true)
     end
   end
 
 :css
   .details {
-    background: var(--bright);
-    border-radius: 2px;
     padding: 0.5em 0.5em 0;
-    margin: 1em;
-    box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
   }
 
   .summary {
@@ -42,10 +43,11 @@
 
 - state => open:
 
-%details.details(ontoggle=handle_toggle open=open)
-  %summary.summary= props[:summary]
-  %div.content
-    = if state[:open]
-      %slot
-    = unless state[:open]
-      %p.loading Loading…
+%Card
+  %details.details(ontoggle=handle_toggle open=open)
+    %summary.summary= props[:summary]
+    %div.content
+      = if state[:loaded]
+        %slot
+      = unless state[:loaded]
+        %p.loading Loading…

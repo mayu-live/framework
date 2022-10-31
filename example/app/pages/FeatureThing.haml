@@ -1,7 +1,7 @@
 :ruby
   ITEMS = [
     "Component-based",
-    "JSX-inspired syntax",
+    "HAML templates",
     "100% server side",
     "100% async",
     "CSS-modules",
@@ -15,7 +15,7 @@
 
   def mount
     loop do
-      sleep 1
+      sleep 2.2
 
       update do |state|
         { index: state[:index].succ % ITEMS.size }
@@ -34,5 +34,4 @@
 
 %ul.featureList
   = ITEMS.map.with_index do |item, index|
-    - active = index == state[:index]
-    %li.feature{class: { active: }}= item
+    %li.feature{class: { active: index == state[:index] }}= item

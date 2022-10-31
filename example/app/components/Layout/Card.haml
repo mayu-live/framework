@@ -1,0 +1,12 @@
+:css
+  .card {
+    background: var(--bright);
+    box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
+    border-radius: 2px;
+  }
+
+  .flex {
+    display: flex;
+  }
+.card{class: [props[:class], flex: props[:flex]]}
+  %slot

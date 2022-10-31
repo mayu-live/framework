@@ -1,4 +1,6 @@
 :ruby
+  Card = require("/app/components/Layout/Card")
+
   def self.get_initial_state(initial_value: 0, **)
     { count: initial_value }
   end
@@ -20,13 +22,10 @@
 :css
   .counter {
     display: flex;
+    padding: 1em;
+    align-items: center;
     margin: 4em auto;
     max-width: 10em;
-    align-items: center;
-    background: var(--bright);
-    border-radius: 2px;
-    padding: 1em;
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
     user-select: none;
   }
 
@@ -67,7 +66,7 @@
     box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
   }
 
-.counter
+%Card.counter
   - decrement_disabled = state[:count].zero?
 
   %button.button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
