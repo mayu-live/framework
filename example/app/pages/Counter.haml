@@ -3,15 +3,17 @@
     { count: initial_value }
   end
 
-  def handle_decrement(_)
+  def handle_decrement(event)
     update do |state|
-      { count: [0, state[:count].pred].max }
+      count = [0, state[:count] - 1].max
+      { count: }
     end
   end
 
-  def handle_increment(_)
+  def handle_increment(event)
     update do |state|
-      { count: state[:count].succ }
+      count = state[:count] + 1
+      { count: }
     end
   end
 
@@ -68,8 +70,10 @@
 .counter
   - decrement_disabled = state[:count].zero?
 
-  %button.button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled) －
+  %button.button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
+    －
 
   %span.count= state[:count]
 
-  %button.button(title="Increment" onclick=handle_increment) ＋
+  %button.button(title="Increment" onclick=handle_increment)
+    ＋
