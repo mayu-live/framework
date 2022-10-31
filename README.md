@@ -434,14 +434,18 @@ Tests are located in the `lib/`-directory next to their implementation.
 So for `lib/mayu/state.rb` the test would be located in
 `lib/mayu/state.test.rb`.
 
-I have always liked this convention in the JS-world.
-It's nice to have things that belong together in the same place,
-rather to have a separate tree for tests.
+This pattern is quite common in JavaScript
+([Jest does this](https://jestjs.io/docs/configuration#testmatch-arraystring),
+and it's quite convenient to have things that belong together close to each
+other, rather than to have a separate tree for tests.
 
-There aren't many tests. Some things should really be tested,
-but tests also add some overhead. I think it's better to test
-things implicitly on a higher level rather than locking down
-the implementation too much...
+It's also preferred to test things on a higher level, and only write unit
+tests for specific edge cases and trickier situations.
+[Sorbet](https://sorbet.org/) is pretty good at finding errors.
+If the higher level tests pass, then everything works as expected.
+
+The example app could also be considered to be a test.
+It should always work and be updated to use the latest features.
 
 ## Virtual DOM
 
