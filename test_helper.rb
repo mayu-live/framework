@@ -22,6 +22,7 @@ module Mayu
 
     autoload :Components, "test_helper/components"
     autoload :Formatting, "test_helper/formatting"
+    autoload :Page, "test_helper/page"
     autoload :VDOM, "test_helper/vdom"
 
     sig { returns(Mayu::AppMetrics) }
