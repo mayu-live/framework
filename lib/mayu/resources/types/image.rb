@@ -178,6 +178,11 @@ module Mayu
         def marshal_load(args)
           @original, @versions, @blur = args
         end
+
+        sig { returns(String) }
+        def inspect
+          "#<Image src=#{src.inspect}>"
+        end
       end
     end
   end

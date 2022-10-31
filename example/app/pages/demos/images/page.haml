@@ -1,0 +1,32 @@
+:ruby
+  Heading = require("/app/components/Layout/Heading")
+  Comuna13 = image("./comuna-13.jpeg")
+
+:css
+  .wrapper {
+    margin: 1em;
+  }
+
+  .img {
+    width: 100%;
+    height: auto;
+    border-radius: 2px;
+  }
+
+.wrapper
+  %Heading(level=2) Images
+  %p
+    This demo shows an image.
+    Right click and choose Inspect to see all the versions that get generated.
+  %figure
+    %img.img{
+      src: Comuna13.src,
+      sizes: Comuna13.sizes,
+      srcset: Comuna13.srcset,
+      width: Comuna13.original.width,
+      height: Comuna13.original.height,
+    }(alt="Comuna 13, Medellín, Colombia")
+    %figcaption
+      Comuna 13, Medellín, Colombia.
+      %a(href="https://www.google.com/maps?q=loc:6.2487861,-75.62455" target="_blank")<
+        Google Maps
