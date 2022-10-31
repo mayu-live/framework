@@ -50,17 +50,19 @@
     padding: .5em 1em;
     background: transparent;
     cursor: pointer;
-    color: #000;
+    color: var(--accent-color);
     background: var(--bright);
     z-index: 0;
+    flex: 1;
+    transition: color 100ms, background 100ms;
   }
 
   .button:hover {
-    filter: brightness(120%);
+    font-weight: bold;
   }
 
   .button:active {
-    filter: brightness(90%);
+    background: var(--blue-bright);
   }
 
   .button:focus {
@@ -68,9 +70,9 @@
   }
 
   .button[aria-selected="true"] {
-    background: var(--blue-bright);
-    color: #000;
+    background: var(--accent-color);
     font-weight: bold;
+    color: #fff;
   }
 
   .panel {
