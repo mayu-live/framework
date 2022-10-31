@@ -37,8 +37,6 @@ class Mayu::VDOM::Test < Minitest::Test
       %output= state[:count]
     HAML
 
-  MOVE_TO_HOME_AND_CLEAR_SCREEN = "\e[H\e[2J"
-
   def test_vdom
     Mayu::TestHelper.test_component(MyComponent) do |page|
       button = page.find_by_css("[name=increment]")
