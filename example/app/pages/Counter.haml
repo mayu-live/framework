@@ -47,7 +47,8 @@
     font-weight: bold;
     padding: 0;
     color: #fff;
-    transition: filter 0.1s, box-shadow 0.1s, transform 0.1s;
+    --transition-length: 100ms;
+    transition: filter var(--transition-length), box-shadow var(--transition-length), transform var(--transition-length);
     transform: scale(1);
   }
 

@@ -1,14 +1,14 @@
 :ruby
   Heading = require("/app/components/Layout/Heading")
   MaxWidth = require("/app/components/Layout/MaxWidth")
-  Details = require("./Details")
+  Details = require("/app/components/Layout/Details")
 
 %MaxWidth(tag="article")
   %Heading(level=2) Frequently asked questions
 
   %p Here's a collection of frequently asked questions.
 
-  %Details(summary="Has anyone asked anything yet?")
+  %Details(summary="Has anyone asked anything yet?" lazy=false)
     %p
       No, but I will try to come up with some questions and answers that
       I think can be helpful to anyone who might be interested in this...

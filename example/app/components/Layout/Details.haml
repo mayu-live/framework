@@ -1,7 +1,19 @@
 :ruby
+  # Usage:
+  #
+  #   %Details(summary="What is guaba?")
+  #     %p
+  #       Inga edulis, known as ice-cream bean, joaquiniquil, cuaniquil,
+  #       guama or guaba, is a fruit native to South America.
+  #
+  #  To lazily load content, add the lazy prop:
+  #
+  #    %Details(summary="What is guaba?" lazy)
+  #      %HeavyComponent
+
   Card = require("/app/components/Layout/Card")
 
-  def self.get_initial_state(initial_open: false, lazy: true, **)
+  def self.get_initial_state(initial_open: false, lazy: false, **)
     {
       open: initial_open,
       loaded: initial_open || !lazy

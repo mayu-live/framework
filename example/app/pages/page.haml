@@ -25,6 +25,7 @@
             Read more on
             %a(href="https://github.com/mayu-live/framework#readme" target="_blank")<
               GitHub
+
         %article.clock
           %figure.clock-figure
             %Clock(stroke="var(--dark)" fill="var(--yellow-bright)")
@@ -45,7 +46,7 @@
               Show source on GitHub
           %Counter(initial_value=7)
 
-          %Details(summary="Show source")
+          %Details(summary="Show source" lazy)
             %Highlight(language="haml")= File.read('app/pages/Counter.haml')
 
     .sections-outer
