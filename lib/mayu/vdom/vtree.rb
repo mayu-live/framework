@@ -34,69 +34,23 @@ module Mayu
 
         sig do
           params(
-            metrics: AppMetrics,
+            metrics: T.nilable(AppMetrics),
             task: Async::Task,
             block: T.proc.params(arg0: [Symbol, T.untyped]).void
           ).returns(Async::Task)
         end
-        def run(metrics, task: Async::Task.current, &block)
+        def run(metrics: nil, task: Async::Task.current, &block)
           task.async(annotation: "VTree updater") do |task|
             assets = T::Set[String].new
 
             loop do
               @vtree.update_queue.wait while @vtree.update_queue.empty?
 
-              ctx = UpdateContext.new
-
               start_at = Time.now
 
-              @vtree.update_queue.size.times do
-                case @vtree.update_queue.dequeue
-                in [:replace_root, descriptor]
-                  @vtree.render(descriptor, ctx:)
-                in [:navigate, path]
-                  yield [:navigate, path]
-                in [:exception, error]
-                  yield [:exception, error]
-                in [:pong, timestamp]
-                  yield [:pong, timestamp]
-                in VNode => vnode
-                  next if vnode.removed?
-                  next unless vnode.component&.dirty?
-                  type = vnode.descriptor.type
-                  vnode_type =
-                    if type.respond_to?(:__mayu_resource)
-                      type.send(:__mayu_resource).path
-                    else
-                      type.inspect.first(10)
-                    end
-                  metrics.vnode_patch_times.observe(
-                    Benchmark.realtime do
-                      @vtree.patch(
-                        ctx,
-                        vnode,
-                        vnode.descriptor,
-                        lifecycles: true
-                      )
-                    end,
-                    labels: {
-                      vnode_type:
-                    }
-                  )
-                end
+              update(assets:, metrics:) do |event, payload|
+                yield [event, payload]
               end
-
-              stylesheets = []
-
-              @vtree.assets.each do |asset|
-                next if assets.include?(asset)
-                next unless asset.end_with?(".css")
-                stylesheets.push(asset)
-                assets.add(asset)
-              end
-
-              patches = [*stylesheet_patch(stylesheets), *ctx.patches]
-              yield [:patch, patches] unless patches.empty?
 
               delta_time_ms = (Time.now - start_at) * 1000
 
@@ -109,15 +63,9 @@ module Mayu
                 )
               end
 
-              sleep 1.0 / @updates_per_second
+              yield [:update_finished, delta_time_ms:]
 
-              # TODO: make configurable
-              # if update_queue_size = @vtree.update_queue.size.nonzero?
-              #   Console.logger.warn(
-              #     self,
-              #     "Update queue size: #{update_queue_size}"
-              #   )
-              # end
+              sleep 1.0 / @updates_per_second
             end
           rescue => e
             puts e.message
@@ -141,6 +89,67 @@ module Mayu
           paths = stylesheets.map { "/__mayu/static/#{_1}" }
 
           [{ type: :stylesheet, paths: }]
+        end
+
+        sig do
+          params(
+            assets: T::Set[String],
+            metrics: T.nilable(AppMetrics),
+            block: T.proc.params(arg0: [Symbol, T.untyped]).void
+          ).void
+        end
+        def update(assets: T::Set[String].new, metrics: nil, &block)
+          ctx = UpdateContext.new
+
+          @vtree.update_queue.size.times do
+            case @vtree.update_queue.dequeue
+            in [:replace_root, descriptor]
+              @vtree.render(descriptor, ctx:)
+            in [:navigate, path]
+              yield [:navigate, path]
+            in [:exception, error]
+              yield [:exception, error]
+            in [:pong, timestamp]
+              yield [:pong, timestamp]
+            in VNode => vnode
+              next if vnode.removed?
+              next unless vnode.component&.dirty?
+
+              if metrics
+                type = vnode.descriptor.type
+                vnode_type =
+                  if type.respond_to?(:__mayu_resource) &&
+                       resource = type.__mayu_resource
+                    resource.path
+                  else
+                    type.inspect[0..10].to_s
+                  end
+
+                metrics.vnode_patch_times.observe(
+                  Benchmark.realtime do
+                    @vtree.patch(ctx, vnode, vnode.descriptor, lifecycles: true)
+                  end,
+                  labels: {
+                    vnode_type:
+                  }
+                )
+              else
+                @vtree.patch(ctx, vnode, vnode.descriptor, lifecycles: true)
+              end
+            end
+          end
+
+          stylesheets = []
+
+          @vtree.assets.each do |asset|
+            next if assets.include?(asset)
+            next unless asset.end_with?(".css")
+            stylesheets.push(asset)
+            assets.add(asset)
+          end
+
+          patches = [*stylesheet_patch(stylesheets), *ctx.patches]
+          yield [:patch, patches] unless patches.empty?
         end
       end
 

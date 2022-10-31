@@ -40,7 +40,7 @@ class TestVTree < Minitest::Test
     end
   end
 
-  def testx_foo
+  def test_foo
     Async do |task|
       vtree = setup_vtree
 
@@ -65,7 +65,7 @@ class TestVTree < Minitest::Test
         assert_equal(numbers, extract_numbers(html))
       end
     ensure
-      vtree&.stop!
+      vtree&.stop
     end
   end
 

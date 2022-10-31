@@ -312,7 +312,7 @@ module Mayu
         updater = VDOM::VTree::Updater.new(@vtree)
 
         updater
-          .run(environment.metrics, task: subtask) do |msg|
+          .run(metrics: environment.metrics, task: subtask) do |msg|
             case msg
             in [:patch, patches]
               yield [:patch, patches]

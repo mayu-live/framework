@@ -27,9 +27,19 @@ module Mayu
         sig { params(__mayu_resource: Resources::Resource).void }
         attr_writer :__mayu_resource
 
-        sig { returns(Resources::Resource) }
+        sig { returns(T.nilable(Resources::Resource)) }
         def __mayu_resource
+          @__mayu_resource
+        end
+
+        sig { returns(Resources::Resource) }
+        def __mayu_resource!
           @__mayu_resource or raise "__mayu_resource is not set"
+        end
+
+        sig { returns(T::Boolean) }
+        def __mayu_resource?
+          !!@__mayu_resource
         end
       end
 

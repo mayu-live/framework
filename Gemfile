@@ -16,4 +16,5 @@ group :development do
   gem "ruby-prof", require: false
   gem "sorbet", require: false
   gem "tapioca", require: false
+  gem "nokogiri", require: false
 end

@@ -41,7 +41,7 @@ class PerfTest < Minitest::Test
   include Mayu::VDOM::H
 
   def test_perf
-    items = 5000.times.map { SecureRandom.alphanumeric(5 + rand(10)) }
+    items = 500.times.map { SecureRandom.alphanumeric(5 + rand(10)) }
 
     Async do
       vtree = setup_vtree
