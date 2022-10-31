@@ -23,7 +23,9 @@ class MayuGlobal {
   }
 
   async handle(e: Event, handlerId: string) {
-    e.preventDefault();
+    if (!(e instanceof TouchEvent)) {
+      e.preventDefault();
+    }
 
     const payload = serializeEvent(e);
     console.log(payload);
