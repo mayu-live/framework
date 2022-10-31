@@ -25,6 +25,22 @@ module Mayu
     autoload :Page, "test_helper/page"
     autoload :VDOM, "test_helper/vdom"
 
+    sig do
+      params(
+        component: T.class_of(Mayu::Component::Base),
+        props: T.untyped,
+        block: T.proc.params(arg0: Page).void
+      ).void
+    end
+    def self.test_component(component, **props, &block)
+      Async do
+        Page.run do |page|
+          page.render(Mayu::VDOM.h(component, **props))
+          yield page
+        end
+      end
+    end
+
     sig { returns(Mayu::AppMetrics) }
     def self.metrics
       $metrics ||= Mayu::AppMetrics.setup(Prometheus::Client.registry)

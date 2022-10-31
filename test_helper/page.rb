@@ -103,18 +103,28 @@ module Mayu
         Mayu::TestHelper.format_source(@doc.to_html, :html)
       end
 
+      sig { params(target: T.nilable(Nokogiri::XML::Element)).void }
+      def click(target)
+        fire_event(target, :click)
+      end
+
       sig do
         params(
-          element: T.nilable(Nokogiri::XML::Element),
+          target: T.nilable(Nokogiri::XML::Element),
           type: Symbol,
           payload: T::Hash[String, String]
         ).void
       end
-      def fire_event(element, type, payload = {})
-        raise ArgumentError, "element is nil" unless element
+      def fire_event(target, type, payload = {})
+        raise ArgumentError, "target is nil" unless target
 
-        event = UserEvent.new(type.to_s, payload)
-        callback_id = callback_id_from_attr(element, "on#{type}")
+        event =
+          UserEvent.new(
+            type.to_s,
+            { "target" => serialize_element(target), **payload }
+          )
+
+        callback_id = callback_id_from_attr(target, "on#{type}")
         @vtree.handle_callback(callback_id, event.payload)
       end
 
@@ -126,6 +136,18 @@ module Mayu
       sig { params(rule: String).returns(T.nilable(Nokogiri::XML::Element)) }
       def find_by_css(rule)
         @doc.at_css(rule)
+      end
+
+      private
+
+      sig do
+        params(element: Nokogiri::XML::Element).returns(
+          T::Hash[String, T.untyped]
+        )
+      end
+      def serialize_element(element)
+        # todo: fill these up with whatever we need
+        { "name" => element.name.to_s, "value" => element["value"] }
       end
 
       sig do

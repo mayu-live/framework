@@ -56,7 +56,7 @@ class TestVTree < Minitest::Test
             :div,
             h(:h1, "Hola mundo"),
             h(:h2, "Hello world"),
-            h(:ul, numbers.each { |num| h(:li, num, key: num) })
+            h(:ul, numbers.map { |num| h(:li, num, key: num) })
           )
         )
 
@@ -64,8 +64,6 @@ class TestVTree < Minitest::Test
         print_xml(html)
         assert_equal(numbers, extract_numbers(html))
       end
-    ensure
-      vtree&.stop
     end
   end
 
