@@ -11,9 +11,7 @@ require_relative "vdom/vtree"
 
 class Mayu::VDOM::Test < Minitest::Test
   def test_vdom
-    component =
-      Mayu::TestHelper.haml_to_component(
-        <<~HAML,
+    component = Mayu::TestHelper.haml_to_component(__FILE__, __LINE__, <<~HAML)
       :ruby
         def self.get_initial_state(initial_count: 3, **)
           { count: initial_count }
@@ -42,10 +40,7 @@ class Mayu::VDOM::Test < Minitest::Test
         %button.decrement(data-test-id="decrement" onclick=handle_click_decrement)
           Increment
         %output= state[:count]
-    HAML
-        file: __FILE__,
-        line: __LINE__
-      )
+      HAML
 
     Async do |task|
       vtree = Mayu::TestHelper.setup_vtree
@@ -68,7 +63,7 @@ class Mayu::VDOM::Test < Minitest::Test
         end
 
       doc = render_document(vtree)
-      puts Mayu::TestHelper.format_html(doc.to_html)
+      puts Mayu::TestHelper.format_source(doc.to_html, :html)
 
       button = doc.at_css("[data-test-id=increment]")
       trigger_event(vtree, button, :click, { type: "click" })
@@ -77,7 +72,7 @@ class Mayu::VDOM::Test < Minitest::Test
 
       doc = render_document(vtree)
 
-      assert_equal(Mayu::TestHelper.format_xml(doc.to_html), <<~HTML)
+      assert_equal(Mayu::TestHelper.format_xml_plain(doc.to_html), <<~HTML)
         <div class="lib/mayu/vdom.foo">
           <button
             data-test-id=\"increment\"
@@ -145,7 +140,7 @@ class Mayu::VDOM::Test < Minitest::Test
     else
       $stderr.puts <<~EOF
         \e[7;31mCould not find an #{attr}-handler:\e[0m
-        #{Mayu::TestHelper.format_xml(element.to_html)}
+        #{Mayu::TestHelper.format_source(element.to_html, :html)}
       EOF
       raise "Element does not have an #{attr}-handler: #{element.to_s}"
     end
