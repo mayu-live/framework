@@ -13,99 +13,55 @@ require_relative "../app_metrics"
 class TestVTree < Minitest::Test
   include Mayu::VDOM::H
 
-  class MyComponent < Mayu::Component::Base
-    include Mayu::VDOM::H
+  MyComponent = Mayu::TestHelper.haml_to_component(__FILE__, __LINE__, <<~HAML)
+    %div
+      %h1 Hola mundo #{@lol ||= rand}
+      %pre= props[:count]
+  HAML
 
-    def render
-      @lol ||= rand
-      h(:div, h(:h1, "Hola mundo#{@lol}"), h(:h2, "Hello world"))
+  def test_component_reuse
+    Mayu::TestHelper.test_component(MyComponent, count: 0) do |page|
+      # page.debug!
+      original_text = page.find_by_css("h1")&.inner_text
+
+      page.render(Mayu::VDOM.h(MyComponent, count: 1))
+      page.wait_for_update
+      # page.debug!
+      assert_equal(page.find_by_css("h1")&.inner_text, original_text)
+
+      page.render(Mayu::VDOM.h(MyComponent, count: 2))
+      page.wait_for_update
+
+      # page.debug!
+      assert_equal(page.find_by_css("h1")&.inner_text, original_text)
     end
   end
 
-  def test_yolo
-    Async do |task|
-      vtree = setup_vtree
+  def test_list_ordering
+    component = Mayu::TestHelper.haml_to_component(__FILE__, __LINE__, <<~HAML)
+      %div
+        %h1 Hello world
+        %ul
+          = props[:numbers].map do |num|
+            %li(key=num)= num
+    HAML
 
-      vtree.render(h(:div, h(:h1, "Title"), h(MyComponent)))
+    number_lists = [
+      [0, 2, 1, 6, 7, 8, 4, 3, 5],
+      [1, 7, 6, 5, 3, 0, 2, 4],
+      [1, 3, 123, 0, 4, 2, 9, 32, 455]
+    ]
 
-      vtree.to_html.tap { |html| print_xml(html) }
-
-      puts
-
-      vtree.render(
-        h(:div, h(:h1, "Title"), h(MyComponent), h(:div, "foo"), h(MyComponent))
-      )
-
-      vtree.to_html.tap { |html| print_xml(html) }
-    end
-  end
-
-  def test_foo
-    Async do |task|
-      vtree = setup_vtree
-
-      number_lists = [
-        [0, 2, 1, 6, 7, 8, 4, 3, 5],
-        [1, 7, 6, 5, 3, 0, 2, 4],
-        [1, 3, 123, 0, 4, 2, 9, 32, 455]
-      ]
-
+    Mayu::TestHelper.test_component(component, numbers: []) do |page|
       number_lists.each do |numbers|
-        vtree.render(
-          h(
-            :div,
-            h(:h1, "Hola mundo"),
-            h(:h2, "Hello world"),
-            h(:ul, numbers.map { |num| h(:li, num, key: num) })
-          )
-        )
-
-        html = vtree.to_html
-        print_xml(html)
-        assert_equal(numbers, extract_numbers(html))
+        page.render(Mayu::VDOM.h(component, numbers:))
+        assert_equal(numbers, extract_numbers(page.to_html))
+        # page.debug!
       end
     end
   end
 
   private
-
-  def setup_vtree
-    $metrics ||= Mayu::AppMetrics.setup(Prometheus::Client.registry)
-    config =
-      Mayu::Configuration.from_hash!(
-        { "mode" => :test, "root" => "/laiehbaleihf", "secret_key" => "test" }
-      )
-    environment = Mayu::Environment.new(config, $metrics)
-
-    environment.instance_eval do
-      def load_root(path)
-        Mayu::VDOM::Descriptor.new(:div)
-      end
-      def match_route(path)
-      end
-    end
-
-    session = Mayu::Session.new(environment:, path: "/")
-    Mayu::VDOM::VTree.new(session:)
-  end
-
-  def print_xml(source)
-    io = StringIO.new
-    doc = REXML::Document.new(source)
-    formatter = REXML::Formatters::Pretty.new
-    formatter.compact = true
-    formatter.write(doc, io)
-    io.rewind
-
-    puts(
-      io
-        .read
-        .to_s
-        .gsub(/(mayu-id='?)(\d+)/) { "#{$~[1]}\e[1;34m#{$~[2]}\e[0m" }
-        .gsub(/(mayu-key='?)(\d+)/) { "#{$~[1]}\e[1;35m#{$~[2]}\e[0m" }
-        .gsub(/>(.*?)</) { ">\e[33m#{$~[1]}\e[0m<" }
-    )
-  end
 
   def extract_numbers(source)
     REXML::Document.new(source).get_elements("//li").map(&:text).map(&:to_i)
