@@ -1,0 +1,27 @@
+:ruby
+  ::Kernel.require("rouge")
+
+  def get_tokens
+    lexer&.lex(children.join)
+  end
+
+  def lexer
+    case props[:language].to_sym
+    when :haml
+      Rouge::Lexers::Haml.new
+    when :css
+      Rouge::Lexers::CSS.new
+    end
+  end
+
+:ruby
+  tokens = get_tokens
+
+- unless tokens
+  - return
+    %pre.highlight= children.join
+.wrapper
+  %pre.highlight
+    = tokens.map do |token, str|
+      - classname = token.shortname.to_sym
+      %span(class=classname)= str

@@ -1,4 +1,6 @@
 :ruby
+  Highlight = require("/app/components/Layout/Highlight")
+
   ALLOWED_EXTENSIONS = %w[.rb .css .rux .haml]
 
 :css
@@ -45,6 +47,10 @@
   - return
     %p #{path} is not a #{ALLOWED_EXTENSIONS.join("/")}-file
 
+:ruby
+  source = File.read(absolute_path)
+  language = extname.delete_prefix(".").to_sym
+
 %article.article
   %h3.path= path
-  %pre.pre= File.read(absolute_path)
+  %Highlight(language=language)= source

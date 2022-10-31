@@ -1,6 +1,8 @@
 :ruby
   MaxWidth = require("/app/components/Layout/MaxWidth")
   Heading = require("/app/components/Layout/Heading")
+  Highlight = require("/app/components/Layout/Highlight")
+  Details = require("/app/components/Layout/Details")
   Counter = require("./Counter")
   FeatureThing = require("./FeatureThing")
 
@@ -34,6 +36,9 @@
             %a(href="https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml" target="_blank")<
               Show source on GitHub
           %Counter(initial_value=7)
+
+          %Details(summary="Show source")
+            %Highlight(language="haml")= File.read('app/pages/Counter.haml')
 
     .sectionsOuter
       .sections

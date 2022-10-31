@@ -1,0 +1,51 @@
+:ruby
+  def self.get_initial_state(initial_open: false, **)
+    { open: initial_open }
+  end
+
+  def handle_toggle(e)
+    if e.dig("target", "open")
+      update(open: true)
+    end
+  end
+
+:css
+  .details {
+    background: var(--bright);
+    border-radius: 2px;
+    padding: 0.5em 0.5em 0;
+    margin: 1em;
+    box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
+  }
+
+  .summary {
+    font-weight: bold;
+    margin: -0.5em -0.5em 0;
+    padding: 0.5em;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .details[open] {
+    padding: 0.5em;
+  }
+
+  .details[open] .summary {
+    border-bottom: 1px solid #0003;
+    margin-bottom: 0.5em;
+  }
+
+  .loading {
+    margin: 0;
+    padding: 0;
+  }
+
+- state => open:
+
+%details.details(ontoggle=handle_toggle open=open)
+  %summary.summary= props[:summary]
+  %div.content
+    = if state[:open]
+      %slot
+    = unless state[:open]
+      %p.loading Loading…
