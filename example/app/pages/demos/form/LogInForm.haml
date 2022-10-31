@@ -1,5 +1,6 @@
 :ruby
   Fieldset = require("/app/components/Form/Fieldset")
+  Details = require("/app/components/Layout/Details")
 
   def self.get_initial_state(**props)
     { user: nil }
@@ -29,17 +30,30 @@
 
 %div
   %p
-    Pure HTML/CSS validation experiment. Should work in Chrome.
-    %a(href="https://caniuse.com/css-has")Browser support
+    Pure HTML/CSS validation demo.
+    This shows that JavaScript is not necessary for validations.
+    By utilizing standard browser features instead of custom JavaScript,
+    web pages can be faster, use less resources and be more accessible.
+  %p
+    It should work in browsers that
+    %a(href="https://caniuse.com/css-has")<
+      support the
+      %code< :has()
+      —pseudo-class
+    = "."
 
   %Fieldset
     %legend Fake log in form
+
+    %p
+      This is a fake form. Don't enter any real credentials.
+      Any combination of email and password will work.
 
     %form.form{on_submit: handler(:handle_submit)}
       .formGroup
         %label.label
           %span Email
-        %input.input(name="email" type="email" required placeholder="Please enter your email address")
+        %input.input(name="email" type="email" required placeholder="Please enter your email address" autocomplete="off")
       .formGroup
         %label.label
           %span Password
@@ -47,3 +61,10 @@
 
       %div
         %button.button(type="submit") Submit
+
+  %p
+    This is based on the following YouTube video by
+    %a(href="https://www.youtube.com/kepowob" target="_blank")< Kevin Powell
+    , who has a great channel about HTML and CSS. Check it out!
+  %Details(summary="Video: How is this possible with CSS only?!")
+    %iframe(allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="" frameborder="0" height="315" src="https://www.youtube.com/embed/g-Y31Iswr2M" title="YouTube video player" width="560")
