@@ -20,6 +20,14 @@ function serializeObject(obj: any) {
     };
   }
 
+  if (obj instanceof HTMLDetailsElement) {
+    return {
+      tagName: obj.tagName,
+      id: obj.id,
+      open: obj.open,
+    };
+  }
+
   if (obj instanceof HTMLInputElement) {
     return {
       tagName: obj.tagName,
