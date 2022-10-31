@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "syntax_tree/xml"
+require "rouge"
 
 module Mayu
   module TestHelper
