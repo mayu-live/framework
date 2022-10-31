@@ -107,6 +107,13 @@ module Mayu
       end
 
       sig { returns(String) }
+      def to_s
+        return text if text?
+        return "" if comment?
+        "#<Descriptor type=#{type.inspect}>"
+      end
+
+      sig { returns(String) }
       def text
         @props[:text_content].to_s
       end
