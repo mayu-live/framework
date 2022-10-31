@@ -45,7 +45,7 @@ things are put in place and things feel right.
   - [Components](#components)
   - [CSS modules](#css-modules)
   - [State management](#state-management)
-  - [Simple routing](#simple-routing)
+  - [Path based routing](#path-based-routing)
   - [Hot reloading](#hot-reloading)
   - [Optimized data transfer](#optimized-data-transfer)
   - [Realtime metrics](#realtime-metrics)
@@ -276,7 +276,7 @@ This is implemented but not yet integrated into the VDOM logic.
 Ideally I would want something like [XState](https://xstate.js.org/),
 but I'm not experienced with it so I can't make anything like it.
 
-## Simple routing
+## Path based routing
 
 Routing is inspired by the
 [Next.js Layouts RFC](https://nextjs.org/blog/layouts-rfc).
@@ -284,22 +284,21 @@ Routing is inspired by the
 Here's the structure of a blog app:
 
 ```
-app/pages
-├── page.haml
-├── page.css
-├── layout.haml
-├── layout.css
-├── about
-│   ├── page.haml
-│   └── page.css
-└── posts
+app
+├── root.haml
+├── root.css
+└── pages
     ├── page.haml
-    ├── page.css
     ├── layout.haml
     ├── layout.css
-    └── :id
+    ├── about
+    │   ├── page.haml
+    │   └── page.css
+    └── posts
         ├── page.haml
-        └── page.css
+        ├── layout.haml
+        └── :id
+            └── page.haml
 ```
 
 This would create the following routes:
