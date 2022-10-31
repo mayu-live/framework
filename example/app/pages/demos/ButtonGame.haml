@@ -34,5 +34,5 @@
   style = { transform: }
 
 .relative
-  %button.button{style:, on_click: handler(:handle_click)}
+  %button.button(style=style onclick=handle_click)
     = MESSAGES[state[:count] % MESSAGES.size]
