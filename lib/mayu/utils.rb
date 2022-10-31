@@ -12,6 +12,8 @@ module Mayu
     end
     def self.flatten_props(hash, path = [])
       hash.reduce({}) do |obj, (k, v)|
+        next obj.merge(style: v) if k == :style && path.empty?
+
         current_path = [*path, k]
 
         obj.merge(
