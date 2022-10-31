@@ -43,22 +43,30 @@ module Mayu
         def initialize(resource)
           @resource = resource
 
-          source = T.let(resource.read(encoding: "utf-8"), String)
+          original_source = T.let(resource.read(encoding: "utf-8"), String)
 
-          case File.extname(resource.path)
-          when ".rux"
-            source = Transformers::Rux.to_ruby(source)
-          when ".haml"
-            transform_result =
-              Transformers::Haml.transform(source:, source_path: resource.path)
-            source = transform_result.output
+          source =
+            case File.extname(resource.path)
+            when ".rux"
+              source = Transformers::Rux.to_ruby(original_source)
+            when ".haml"
+              transform_result =
+                Transformers::Haml.transform(
+                  source: original_source,
+                  source_path: resource.path
+                )
+              source = transform_result.output
 
-            @inline_css =
-              T.let(
-                transform_result.css,
-                T.nilable(Transformers::CSS::TransformResult)
-              )
-          end
+              @inline_css =
+                T.let(
+                  transform_result.css,
+                  T.nilable(Transformers::CSS::TransformResult)
+                )
+
+              source
+            else
+              original_source
+            end
 
           @source = T.let(source, String)
           @component = T.let(nil, T.nilable(T.class_of(ComponentBase)))
@@ -73,25 +81,32 @@ module Mayu
         def generate_assets(asset_dir)
           return [] unless @inline_css
 
+          # Would be pretty cool if we could emit the source map
+          # for the component here.
+
           source_map_link =
             "\n/*# sourceMappingURL=#{@inline_css.filename}.map */\n"
 
-          asset = Asset.new(@inline_css.filename)
-          asset.generate(
-            asset_dir,
-            @inline_css.output + source_map_link,
-            compress: true
-          )
-
-          map = Asset.new(@inline_css.filename + ".map")
-
-          map.generate(
-            asset_dir,
-            JSON.generate(@inline_css.source_map),
-            compress: true
-          )
-
-          [asset, map]
+          [
+            Asset
+              .new(@inline_css.filename)
+              .tap do
+                _1.generate(
+                  asset_dir,
+                  @inline_css.output + source_map_link,
+                  compress: true
+                )
+              end,
+            Asset
+              .new(@inline_css.filename + ".map")
+              .tap do
+                _1.generate(
+                  asset_dir,
+                  JSON.generate(@inline_css.source_map),
+                  compress: true
+                )
+              end
+          ]
         end
 
         sig { returns(T.class_of(ComponentBase)) }
