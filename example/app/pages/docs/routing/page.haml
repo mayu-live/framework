@@ -1,0 +1,48 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Routing
+
+      Routing is path based and inspired by
+      [Next.js](https://beta.nextjs.org/docs/routing/fundamentals).
+
+      Here's the basic structure of a potential blog application:
+
+      * `app/`
+        * `root.css`
+        * `root.haml`
+        * `components/`
+          * `Layout/`
+            * `Footer.haml`
+            * `Header.haml`
+            * `Layout.haml`
+            * `Page.haml`
+          * `UI/`
+            * `Button.haml`
+            * `Heading.haml`
+            * `Hr.haml`
+            * `Link.haml`
+        * `pages/`
+          * `about/`
+            * `page.haml`
+          * `posts/`
+            * `:id/`
+              * `page.haml`
+            * `page.haml`
+            * `layout.haml`
+          * `page.haml`
+          * `layout.haml`
+
+      `app/root.haml` contains the `<html>` tag, and all pages are wrapped in
+      the layouts of their parent directories.
+
+      This tree would generate the following routes:
+
+      * `/posts/:id`
+      * `/posts`
+      * `/about`
+      * `/`

@@ -1,0 +1,13 @@
+:css
+  .details {
+  }
+
+  .summary {
+    user-select: none;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+%details.details{open: props[:open]}
+  %summary.summary= props[:summary]
+  %slot

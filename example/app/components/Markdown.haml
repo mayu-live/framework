@@ -70,11 +70,15 @@
   }
 
   .code {
-    padding: .25em;
-    background: #0001;
-    border: 1px solid #0002;
+    padding: .1em;
+    background: var(--pink-bright);
+    border: 1px solid var(--pink);
     border-radius: 2px;
-    box-shadow: 0 2px 5px #0002;
+    font-size: .9em;
+  }
+
+  .li > .p {
+    margin: .25em 0;
   }
 
 = visit_node(Kramdown::Document.new(children.join).to_hash_ast)

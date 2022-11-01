@@ -3,6 +3,7 @@
   Heading = import("/app/components/Layout/Heading")
   Menu = import("/app/components/Layout/Menu")
   MenuItem = import("/app/components/Layout/MenuItem")
+  Details = import("./Details")
 
 :css
   .menu {
@@ -14,23 +15,27 @@
 %PageLayout(title="Documentation")
   %slot
 
-  .menu(slot="menu")
-    %Menu
-      %MenuItem(href="/docs") Introduction
-      %MenuItem(href="/docs/getting-started") Getting started
-    %Menu
-      %MenuItem(href="/docs/components") Components
-      %MenuItem(href="/docs/callbacks") Callbacks
-      %MenuItem(href="/docs/lifecycle-methods") Lifecycle
-      %MenuItem(href="/docs/whitespace") Whitespace
-      %MenuItem(href="/docs/early-returns") Early returns
-      %MenuItem(href="/docs/stylesheets") Stylesheets
-      %MenuItem(href="/docs/slots") Slots
-      %MenuItem(href="/docs/state") State
-      %MenuItem(href="/docs/data-fetching") Data fetching
-    %Menu
-      %MenuItem(href="/docs/deployment") Deployment
-      %MenuItem(href="/docs/faq") Frequently asked questions
+  %nav.menu(slot="menu")
+    %Details(open summary="Intro")
+      %Menu
+        %MenuItem(href="/docs") Introduction
+        %MenuItem(href="/docs/getting-started") Getting started
+    %Details(open summary="Components")
+      %Menu
+        %MenuItem(href="/docs/components") Components
+        %MenuItem(href="/docs/callbacks") Callbacks
+        %MenuItem(href="/docs/lifecycle-methods") Lifecycle
+        %MenuItem(href="/docs/whitespace") Whitespace
+        %MenuItem(href="/docs/early-returns") Early returns
+        %MenuItem(href="/docs/stylesheets") Stylesheets
+        %MenuItem(href="/docs/slots") Slots
+        %MenuItem(href="/docs/state") State
+        %MenuItem(href="/docs/routing") Routing
+        %MenuItem(href="/docs/data-fetching") Data fetching
+    %Details(open summary="Other")
+      %Menu
+        %MenuItem(href="/docs/deployment") Deployment
+        %MenuItem(href="/docs/faq") Frequently asked questions
 
   %p.underConstruction(slot="after_heading")
     %span.underConstructionText
