@@ -122,7 +122,7 @@ module Mayu
       end
 
       sig { params(path: String).returns(T.untyped) }
-      def require(path)
+      def import(path)
         resource = self.registry.load_resource(path, File.dirname(self.path))
         self.registry.dependency_graph.add_dependency(self.path, resource.path)
         resource.type

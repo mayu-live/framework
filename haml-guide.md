@@ -112,8 +112,8 @@ Here's a complex example inspired by the
 
 ```haml
 :ruby
-  Header = require("./Header")
-  Footer = require("./Footer")
+  Header = import("./Header")
+  Footer = import("./Footer")
 %div
   %Header
   %slot(name="after-header")
@@ -128,7 +128,7 @@ Here's a complex example inspired by the
 
 ```haml
 :ruby
-  Wrapper = require("/app/components/Wrapper")
+  Wrapper = import("/app/components/Wrapper")
 %Wrapper(title="Hello world")
   %h2 hello
   %p hello world hola mundo hej världen

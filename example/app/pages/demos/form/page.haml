@@ -1,10 +1,10 @@
 :ruby
-  Heading = require("/app/components/Layout/Heading")
-  Tabs = require("/app/components/Layout/Tabs")
-  Hr = require("/app/components/Layout/Hr")
-  LogInForm = require("./LogInForm")
-  Elements = require("./Elements")
-  TransferList = require("./TransferList")
+  Heading = import("/app/components/Layout/Heading")
+  Tabs = import("/app/components/Layout/Tabs")
+  Hr = import("/app/components/Layout/Hr")
+  LogInForm = import("./LogInForm")
+  Elements = import("./Elements")
+  TransferList = import("./TransferList")
 
 %article
   %Heading(level=2) Form demo

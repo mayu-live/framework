@@ -1,8 +1,8 @@
 :ruby
-  Heading = require("/app/components/Layout/Heading")
+  Heading = import("/app/components/Layout/Heading")
 
-  Entry = require("./Entry")
-  FileContents = require("./FileContents")
+  Entry = import("./Entry")
+  FileContents = import("./FileContents")
 
   def self.get_initial_state(**props)
     {

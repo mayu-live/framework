@@ -1,11 +1,12 @@
 :ruby
-  MaxWidth = require("/app/components/Layout/MaxWidth")
-  Heading = require("/app/components/Layout/Heading")
-  Highlight = require("/app/components/Layout/Highlight")
-  Details = require("/app/components/Layout/Details")
-  Counter = require("./Counter")
-  FeatureThing = require("./FeatureThing")
-  Clock = require("/app/components/Clock")
+  MaxWidth = import("/app/components/Layout/MaxWidth")
+  Heading = import("/app/components/Layout/Heading")
+  Highlight = import("/app/components/Layout/Highlight")
+  Details = import("/app/components/Layout/Details")
+  Counter = import("./Counter")
+  FeatureThing = import("./FeatureThing")
+  Clock = import("/app/components/Clock")
+  Card = import("/app/components/Layout/Card")
 
 :css
 
@@ -26,7 +27,7 @@
               %a(href="https://github.com/mayu-live/framework#readme" target="_blank")<
                 GitHub
 
-          .clock
+          %Card.clock
             %figure.clock-figure
               %Clock(stroke="var(--dark)" fill="var(--yellow-bright)")
               %figcaption.clock-figcaption

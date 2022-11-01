@@ -1,7 +1,7 @@
 :ruby
-  PageLayout = require("/app/components/Layout/Page")
-  Menu = require("/app/components/Layout/Menu")
-  MenuItem = require("/app/components/Layout/MenuItem")
+  PageLayout = import("/app/components/Layout/Page")
+  Menu = import("/app/components/Layout/Menu")
+  MenuItem = import("/app/components/Layout/MenuItem")
 
 %PageLayout(title="Demos")
   %slot

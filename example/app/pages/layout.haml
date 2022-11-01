@@ -1,7 +1,7 @@
 :ruby
-  Intro = require("./Intro")
-  Header = require('../components/Layout/Header')
-  Footer = require('../components/Layout/Footer')
+  Intro = import("./Intro")
+  Header = import('../components/Layout/Header')
+  Footer = import('../components/Layout/Footer')
 
 %body.body
   %Header.header{max_width: styles.maxWidth}

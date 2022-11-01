@@ -14,21 +14,21 @@ module Mayu
           extend T::Sig
 
           sig { params(mod: Module, resource: Resources::Resource).void }
-          def self.define_require(mod, resource)
+          def self.define_import(mod, resource)
             mod.instance_exec(resource) do |resource|
               define_singleton_method(:__resource) { resource }
 
               sig do
                 params(path: String).returns(T.class_of(Mayu::Component::Base))
               end
-              def self.require(path)
-                __resource.require(path) => Component => impl
+              def self.import(path)
+                __resource.import(path) => Component => impl
                 impl.component
               end
 
               sig { params(path: String).returns(Image) }
               def self.image(path)
-                __resource.require(path) => Image => impl
+                __resource.import(path) => Image => impl
                 impl
               end
             end
@@ -122,7 +122,7 @@ module Mayu
               T.class_of(Mayu::Component::Base)
             )
 
-          LoaderUtils.define_require(impl, @resource)
+          LoaderUtils.define_import(impl, @resource)
 
           impl.__mayu_resource = @resource
 
