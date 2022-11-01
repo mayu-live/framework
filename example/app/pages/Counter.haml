@@ -20,12 +20,15 @@
   end
 
 :css
+  .card {
+    margin: 4em auto;
+    max-width: 10em;
+  }
+
   .counter {
     display: flex;
     padding: 1em;
     align-items: center;
-    margin: 4em auto;
-    max-width: 10em;
     user-select: none;
   }
 
@@ -67,13 +70,14 @@
     box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
   }
 
-%Card.counter
-  - decrement_disabled = state[:count].zero?
+%Card.card
+  .counter
+    - decrement_disabled = state[:count].zero?
 
-  %button.button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
-    －
+    %button.button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
+      －
 
-  %span.count= state[:count]
+    %span.count= state[:count]
 
-  %button.button(title="Increment" onclick=handle_increment)
-    ＋
+    %button.button(title="Increment" onclick=handle_increment)
+      ＋

@@ -4,13 +4,10 @@
     border: 1px solid var(--card-border, #0002);
     box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
     border-radius: 2px;
-  }
-
-  .flex {
-    display: flex;
+    display: grid;
   }
 .card{
-  class: [props[:class], flex: props[:flex]],
+  class: props[:class],
   style: {
     :"--card-background" => props[:background] || "var(--bright)",
     :"--card-border" => props[:border] || "#0002",
