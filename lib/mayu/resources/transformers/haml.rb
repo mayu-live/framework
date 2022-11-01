@@ -300,7 +300,7 @@ module Mayu
               @css =
                 CSS.transform(
                   source: text,
-                  source_path: @path,
+                  source_path: @path + ".haml (inline)",
                   content_hash: Digest::SHA256.hexdigest(text)[0..7].to_s
                 )
             end
