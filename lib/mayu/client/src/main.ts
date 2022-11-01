@@ -145,6 +145,7 @@ async function main(url: string) {
         const path = payload.path;
         logger.info("Navigating to", path);
         history.pushState({}, "", path);
+        window.scrollTo({ top: 0, behavior: "smooth" });
         // progressBar.setAttribute("progress", "100");
         break;
       case "session.keep_alive":
