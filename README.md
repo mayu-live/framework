@@ -183,7 +183,7 @@ rendering libraries. This is the same thing, but in Ruby.
 [CSS Modules](https://github.com/css-modules/css-modules) makes sure
 that all CSS class names are scoped locally.
 
-Class names are applied automatically in Haml.
+Class names are applied automatically by Haml.
 
 ### `app/components/Example.haml`
 
@@ -272,6 +272,12 @@ This does the same thing as the previous example:
 ```
 
 You can also mix the two styles.
+
+### Source maps
+
+You can debug the sources of your CSS using source maps.
+
+![Source maps screenshot](https://user-images.githubusercontent.com/41148/199131855-d6159b68-649c-4c7a-baf1-e1ad2c9bd281.png)
 
 ## State management
 
