@@ -4,6 +4,9 @@
 
 .features {
   margin: 3em;
+}
+
+.features-flex {
   display: flex;
   gap: 1em;
 }

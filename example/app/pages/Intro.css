@@ -20,25 +20,28 @@
 }
 
 .inner {
-  min-height: 50vh;
-  padding: 2em 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  color: var(--bright);
+  gap: 2em;
+  padding: 2em;
 }
 
 .title {
-  color: var(--bright);
-  font-size: 2em;
+  font-size: min(5vw, 2em);
+  margin: 0;
+  padding: 0;
 }
 
 .subtitle {
-  color: var(--bright);
+  margin: 0;
+  padding: 0;
   font-weight: 100;
-  font-size: 1.5em;
+  font-size: min(3vw, 1.5em);
   display: flex;
   flex-wrap: wrap;
-  gap: 1ch;
+  gap: 0.8ch;
 }
 
 .word {

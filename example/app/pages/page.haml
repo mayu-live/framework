@@ -12,27 +12,27 @@
 %div
   .featuresOuter
     %MaxWidth
-      .features
-        %article.features-col
-          %Heading.features-heading#features(level=1)
-            Features
+      %article.features
+        %Heading.features-heading#features(level=1)
+          Features
+        .features-flex
+          .features-col
+            %p Here's a list of core features:
 
-          %p Here's a list of core features:
+            %FeatureThing
 
-          %FeatureThing
+            %p
+              Read more on
+              %a(href="https://github.com/mayu-live/framework#readme" target="_blank")<
+                GitHub
 
-          %p
-            Read more on
-            %a(href="https://github.com/mayu-live/framework#readme" target="_blank")<
-              GitHub
-
-        %article.clock
-          %figure.clock-figure
-            %Clock(stroke="var(--dark)" fill="var(--yellow-bright)")
-            %figcaption.clock-figcaption
-              Current UTC-time.
-              %a(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml" target="_blank")<
-                Show source
+          .clock
+            %figure.clock-figure
+              %Clock(stroke="var(--dark)" fill="var(--yellow-bright)")
+              %figcaption.clock-figcaption
+                Current UTC-time.
+                %a(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml" target="_blank")<
+                  Show source
 
     .example-outer
       %MaxWidth

@@ -4,10 +4,10 @@
 :ruby
   level = props[:level].to_i.clamp(1, 6)
   tag = :"h#{level}"
-  classname = "#{props[:class]} #{styles[tag]}}".strip
+  classname = styles[tag, styles[:class]]
 
-  Mayu::VDOM::Descriptor.new(
+  Mayu::VDOM::h(
     tag,
-    props.except(:level).merge(class: classname),
-    children,
+    *children,
+    **props.except(:level).merge(class: classname),
   )
