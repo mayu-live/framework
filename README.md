@@ -5,6 +5,8 @@
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/w/mayu-live/framework/main?style=flat-square)](https://github.com/mayu-live/framework/commits)
 [![License AGPL-3.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING) ![Status: Experimental](https://img.shields.io/badge/status-experimental-critical?style=flat-square)
 
+[https://mayu.live/docs](Documentation)
+
 # Description
 
 Mayu is a live streaming server side component-based
@@ -419,7 +421,7 @@ Mayu uses [Haml](https://haml.info/), it's pretty convenient.
 
 Check out the [Haml Reference](https://haml.info/docs/yardoc/file.reference.html).
 Mayu has some differences with regular Haml to make it work better with a virtual DOM,
-some of these differences are documented in [./haml-guide.md](./haml-guide.md).
+[you can read more about that in the documentation](https://mayu.live/docs/components).
 
 Look at this example:
 

@@ -1,6 +1,16 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
 
 %article
-  %Heading(level=2) Introduction
-  %p Hello world.
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Introduction
+
+      Welcome to the documentation!
+
+      This is all work in progress. Contributions are welcome.
+
+      Check out the
+      [README](https://github.com/mayu-live/framework/blob/main/README.md#description)
+      if you haven't!
