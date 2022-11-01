@@ -12,6 +12,8 @@
     case props[:language].to_sym
     when :haml
       Rouge::Lexers::Haml.new
+    when :shell
+      Rouge::Lexers::Shell.new
     when :jsx
       Rouge::Lexers::JSX.new
     when :ruby
@@ -25,7 +27,7 @@
 
 :css
   .wrapper {
-    font-size: 1.2em;
+    font-size: 0.9em;
     margin: 1em;
   }
 
