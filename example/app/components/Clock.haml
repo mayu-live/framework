@@ -8,7 +8,7 @@
   end
 
   def calculate_pos(value, length)
-    offset = 15
+    offset = 45
     [
       Math.cos((value + offset) / 60.0 * Math::PI * 2),
       Math.sin((value + offset) / 60.0 * Math::PI * 2),
@@ -28,16 +28,16 @@
 
 %div(class=classname)
   %svg.svg(width="100" height="100" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg")
-    %circle(cx="0" cy="0" r="95" fill=fill stroke=stroke stroke-width="2")
+    %circle(cx=0 cy=0 r=99 fill=fill stroke=stroke stroke-width="2")
     %g
       - x1, y1 = [0, 0]
-      - x2, y2 = calculate_pos(state[:hour].to_f, 50.0)
+      - x2, y2 = calculate_pos(state[:hour].to_f * 5, 50.0)
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="6")
       - x2, y2 = calculate_pos(state[:min].to_f, 60.0)
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="3")
       - x2, y2 = calculate_pos(state[:sec].to_f, 80.0)
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="1")
-    %circle(cx="0" cy="0" r="3" fill=stroke)
+    %circle(cx=0 cy=0 r=3 fill=stroke)
     %g
       = 12.times.map do |i|
         - x1, y1 = calculate_pos(i * 5, 60.0)
