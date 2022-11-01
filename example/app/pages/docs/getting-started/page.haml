@@ -1,5 +1,6 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
 
 :css
   .pre {
@@ -13,42 +14,54 @@
   }
 
 %article
-  %Heading(level=2) Getting started
-
-  %p Hi! Here are some instructions to get started.
-  %p
-    Make sure you have the latest stable versions of
-    %a(href="https://www.ruby-lang.org/en/downloads/")<> Ruby
-    and
-    %a(href="https://www.ruby-lang.org/en/downloads/")< NodeJS
-    \.
-
-  %p
-    NodeJS is only used to build the browser runtime and will be packaged into the gem.
-    Mayu does not depend on Node during runtime.
-
-  %p
-    No packages have been released yet, so if you want to try this out, follow these instructions:
-  %pre.pre
+  %Markdown{elems: { header: Heading }}
     :plain
+      # Getting started
+
+      Here are some instructions to get started.
+      Note that no package has been released yet,
+      and that there are bugs. Do not use in production.
+
+      Make sure you have the latest stable versions of
+      [Ruby](https://www.ruby-lang.org/en/downloads/)
+      and
+      [NodeJS](https://nodejs.org/en/).
+
+      NodeJS is only used to build the browser runtime and will be packaged into the gem.
+      Mayu does not depend on Node during runtime.
+
+      ```shell
+      # Clone repository
       git clone https://github.com/mayu-live/framework.git mayu-live
       cd mayu-live
+      ```
 
+      ```shell
       # Install dependencies
       bundle install
       npm install
+      ```
 
+      ```shell
       # Build browser runtime
       npm run build
+      ```
 
+      ```shell
       # Setup the example app
       cd example/
       bundle install
+      ```
 
+      ```shell
       # Start the example app
       bin/mayu dev
+      ```
 
-  %p
-    If it worked, you should be able to open
-    %code< https://localhost:9292/
-    \. Have fun!
+      If it worked, you should be able to open
+      [`https://localhost:9292/`](https://localhost:9292/).
+      Have fun!
+
+      If you have any issues, feel free to open an
+      [issue on GitHub](https://github.com/mayu-live/framework/issues),
+      or submit a Pull Request if you fix or improve something.
