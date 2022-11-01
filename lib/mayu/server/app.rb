@@ -146,10 +146,11 @@ module Mayu
             { "content-type": "application/javascript" },
             [body]
           ]
-        in ["favicon.ico"]
-          # body = File.read(File.join(__dir__, "favicon.png"))
-          # Protocol::HTTP::Response[200, { "content-type": "image/png" }, [body]]
-          Protocol::HTTP::Response[404, {}, ["no favicon"]]
+        in ["favicon.ico" | "robots.txt" => filename]
+          # Idea: Maybe it would be possible to create an asset from the favicon and redirect?
+          absolute_path =
+            File.join(@environment.root, "app", filename.sub(/\.ico$/, ".png"))
+          send_static_file(absolute_path, cache: false)
         in ["__mayu", "runtime", *path]
           accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
 
@@ -508,18 +509,23 @@ module Mayu
       end
 
       sig do
-        params(full_path: String, accept_encodings: T::Array[String]).returns(
-          Protocol::HTTP::Response
-        )
+        params(
+          full_path: String,
+          accept_encodings: T::Array[String],
+          cache: T::Boolean
+        ).returns(Protocol::HTTP::Response)
       end
-      def send_static_file(full_path, accept_encodings: [])
+      def send_static_file(full_path, accept_encodings: [], cache: true)
+        unless File.exist?(full_path)
+          return Protocol::HTTP::Response[404, {}, ["not found"]]
+        end
+
         mime_type = MIME::Types.type_for(full_path).first
         content_type = mime_type.to_s
 
-        headers = {
-          "content-type" => content_type,
-          "cache-control" => "public, max-age=604800"
-        }
+        headers = { "content-type" => content_type }
+
+        headers["cache-control"] = "public, max-age=604800" if cache
 
         if accept_encodings.include?("br")
           if File.exist?(full_path + ".br")
