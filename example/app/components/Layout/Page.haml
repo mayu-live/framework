@@ -2,7 +2,7 @@
   MaxWidth = import("/app/components/Layout/MaxWidth")
   Heading = import("/app/components/Layout/Heading")
 
-%MaxWidth
+%MaxWidth(jd)
   .page
     = if props[:title]
       %Heading(level=1)= props[:title]

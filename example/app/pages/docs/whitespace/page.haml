@@ -1,0 +1,51 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Highlight = import("/app/components/Layout/Highlight")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Whitespace
+
+      Here comes the biggest difference between Mayu Haml and regular Haml.
+      Whitespace is significant in HTML in some cases, and it's very important
+      for the patching algorithm that the DOM and the VDOM are in sync,
+      and every time there has been issues with it, it has been because
+      of unwanted whitespace.
+
+      Therefore, Mayu strips whitespaces in places where regular Haml doesn't,
+      and the operators for inserting whitespace work somewhat differently.
+
+      All these paragraphs will turn into `<p>Hello world</p>`.
+
+  %Highlight(language="haml")
+    :plain
+      %p Hello world
+      %p
+        Hello world
+      %p
+        Hello
+        world
+      %p
+
+        Hello world
+  %Markdown{elems: { header: Heading }}
+    :plain
+      If you want to include whitespace between text and elements,
+      you need to use the `<` and `>` operators.
+
+      ```haml
+      %p
+        Read more on
+        %a(href="https://github.com/mayu-live/framework")< GitHub
+        \.
+      ```
+
+      Notice the `<` after the link.
+      That operator will add a space before the element.
+      There will be no space between the link and the dot,
+      because the `>` operator was not used.
+
+      - `<` adds a space before an element.
+      - `>` adds a space after an element.

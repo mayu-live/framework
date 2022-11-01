@@ -5,11 +5,8 @@
   }
 
 :ruby
-  classnames =
-    [styles.maxWidth, props[:class]]
-    .compact
-    .join(" ")
-
-  tag = props[:tag] || :div
-
-  Mayu::VDOM::Descriptor.new(tag.to_sym, {class: classnames}, props[:children])
+  Mayu::VDOM.h(
+    props[:tag] || :div,
+    *children,
+    class: styles[:maxWidth, props[:class]]
+  )

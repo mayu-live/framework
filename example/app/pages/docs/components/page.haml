@@ -1,0 +1,63 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Components
+
+      Mayu components are written in a dialect of
+      [Haml](https://haml.info/)
+
+      This is the basic structure of a component:
+
+      ```haml
+      :ruby
+        # optional ruby block
+      :css
+        /* optional css block */
+      %p Haml goes here
+      ```
+
+      In the `:ruby` block, which has to come first,
+      you can import other components and load resources.
+      More about that later.
+
+      ## A basic component
+
+      Here is the most basic component
+
+      ```haml
+      %p Hello world
+      ```
+
+      It compiles into:
+
+      ```ruby
+      Mayu::VDOM.h(:p, "Hello world")
+      ```
+
+      ## Multiple children
+
+      Only the last child is returned, so if you want to return
+      more than one element you need to group them.
+
+      ```haml
+      %div
+        %p Hello world
+        %button Click me
+      ```
+
+      ## Interpolation
+
+      You can perform string interpolation in a lot of places:
+
+      ```haml
+      %ruby
+        text = "hello world"
+      %div
+        %p Contents of text: #{text.inspect}
+        %button(title=text) Button with a title
+        %button{title: "text: #{text}"} Button with a title
+      ```

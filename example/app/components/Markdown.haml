@@ -1,0 +1,80 @@
+:ruby
+  require "kramdown"
+  Highlight = import("./Layout/Highlight")
+
+  SYMBOLS = {
+    lsquo: "‘",
+    ldquo: "“",
+    rsquo: "’",
+    rdquo: "”",
+    hellip: "…",
+  }
+
+  def visit_node(node)
+    # print "\e[35m" if node.has_key?(:children)
+    # p node.except(:children)
+    # print "\e[0m" if node.has_key?(:children)
+    case node
+    in type: :root, children:
+      Mayu::VDOM.h(:div, *visit_nodes(children))
+    in type: :header, children:, options: { level: }
+      build(:header, :"h#{level}", *visit_nodes(children), level:)
+    in type: :text | :blank, value:
+      value
+    in type: :smart_quote | :typographic_sym, value:
+      SYMBOLS.fetch(value) { "&#{value};" }
+    in type: :a, attr:, children:
+      attrs = attr.transform_keys(&:to_sym)
+
+      if attrs[:href].to_s.match(/\A(?:[a-z]+:)\/\//)
+        attrs[:target] = "_blank"
+      end
+
+      build(:a, :a, *visit_nodes(children), **attrs) do
+        Mayu::VDOM.h(:a, *visit_nodes(children), **attrs)
+      end
+    in type: :codeblock, value:
+      Mayu::VDOM.h(:code, value)
+    in type: :codespan, value:, options: { codespan_delimiter: "```" }
+      header, code = value.sub(/\A`+/, '').split(/\s/, 2).map(&:strip)
+      Mayu::VDOM.h(Highlight, code, language: header)
+    in type: :codespan, value:, options: { codespan_delimiter: "`" }
+      build(:code, :code, value.strip)
+    in type:, children:, **rest
+      build(type, type, *visit_nodes(children))
+    in type:
+      Console.logger.error(self, "Unsupported node", JSON.pretty_generate(node))
+      Mayu::VDOM.h(:pre, "Unsupported node:\n\n#{JSON.pretty_generate(node)}")
+    end
+  end
+
+  def visit_nodes(nodes)
+    nodes.map { visit_node(_1) }
+  end
+
+  def build(type, default, *children, **props, &block)
+    if elems = self.props[:elems]
+      if elem = elems[type]
+        return Mayu::VDOM.h(elem, *children, **props)
+      end
+    end
+
+    return yield if block_given?
+    Mayu::VDOM.h(default, *children, class: styles[default])
+  end
+
+:css
+  .unsupported {
+    font-family: monospace;
+    color: red;
+  }
+
+  .code {
+    padding: .25em;
+    background: #0001;
+    border: 1px solid #0002;
+    border-radius: 2px;
+    box-shadow: 0 2px 5px #0002;
+  }
+
+= visit_node(Kramdown::Document.new(children.join).to_hash_ast)

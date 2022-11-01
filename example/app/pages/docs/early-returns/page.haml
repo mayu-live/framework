@@ -1,0 +1,38 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Early returns
+
+      I don't think this is possible in regular Haml,
+      but it makes sense to do it in Mayu.
+
+      ```haml
+      :ruby
+        def self.get_initial_state(**)
+          { clicked: false }
+        end
+        def handle_click(_event)
+          update(clicked: true)
+        end
+      - if state[:clicked]
+        - return
+          %p You clicked the button.
+      %button(onclick=handle_click) Click me
+      ```
+
+      ## Future ideas
+
+      It would definitely be possible to extend the syntax a little bit more,
+      something like this would be cool:
+
+      ```haml
+      - return unless props[:data]
+        %p Loading…
+      %pre= props[:data]
+      ```
+
+      Note that it doesn't work yet.

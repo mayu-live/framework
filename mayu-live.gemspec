@@ -42,6 +42,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "brotli", "~> 0.4.0"
   spec.add_dependency "crass", "~> 1.0.6"
   spec.add_dependency "image_size", "~> 3.1.0"
+  spec.add_dependency "kramdown", "~> 2.4.0"
   spec.add_dependency "listen", "~> 3.7.1"
   spec.add_dependency "localhost", "~> 1.1.9"
   spec.add_dependency "mime-types", "~> 3.4.1"

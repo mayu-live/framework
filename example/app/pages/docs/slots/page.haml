@@ -1,0 +1,38 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Slots
+
+      Here's a complex example inspired by the
+      [Astro docs](https://docs.astro.build/en/core-concepts/astro-components/#slots).
+
+      ### `app/components/Wrapper.haml`
+
+      ```haml
+      :ruby
+        Header = import("./Header")
+        Footer = import("./Footer")
+      %div
+        %Header
+        %slot(name="after-header")
+        %h1= props[:title]
+        %slot
+          %p Optional fallback content, if no child is passed in
+        %Footer
+        %slot(name="after-footer")
+      ```
+
+      ### `src/pages/hello/page.haml`
+
+      ```haml
+      :ruby
+        Wrapper = import("/app/components/Wrapper")
+      %Wrapper(title="Hello world")
+        %h2 hello
+        %p hello world hola mundo hej världen
+        %p(slot="after-footer") Copyright #{Time.now.year}
+      ```

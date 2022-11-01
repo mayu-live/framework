@@ -1,6 +1,7 @@
 :css
   .card {
-    background: var(--bright);
+    background: var(--card-background, var(--bright));
+    border: 1px solid var(--card-border, #0002);
     box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
     border-radius: 2px;
   }
@@ -8,5 +9,11 @@
   .flex {
     display: flex;
   }
-.card{class: [props[:class], flex: props[:flex]]}
+.card{
+  class: [props[:class], flex: props[:flex]],
+  style: {
+    :"--card-background" => props[:background] || "var(--bright)",
+    :"--card-border" => props[:border] || "#0002",
+  }
+}
   %slot

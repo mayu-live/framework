@@ -8,6 +8,7 @@
 
 .features-flex {
   display: flex;
+  align-items: flex-start;
   gap: 1em;
 }
 

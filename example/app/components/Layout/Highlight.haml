@@ -1,26 +1,42 @@
 :ruby
   ::Kernel.require("rouge")
 
+  Card = import("/app/components/Layout/Card")
+
   def get_tokens
     lexer&.lex(children.join)
   end
 
   def lexer
+    return unless props[:language]
     case props[:language].to_sym
     when :haml
       Rouge::Lexers::Haml.new
+    when :jsx
+      Rouge::Lexers::JSX.new
+    when :ruby
+      Rouge::Lexers::Ruby.new
+    when :html
+      Rouge::Lexers::HTML.new
     when :css
       Rouge::Lexers::CSS.new
     end
   end
+
+:css
+  .wrapper {
+    font-size: 1.2em;
+    margin: 1em;
+  }
 
 :ruby
   tokens = get_tokens
 
 - unless tokens
   - return
-    %pre.highlight= children.join
-.wrapper
+    %Card.wrapper
+      %pre.highlight= children.join
+%Card.wrapper(background="var(--pink-bright)" border="var(--pink)")
   %pre.highlight
     = tokens.map do |token, str|
       - classname = token.shortname.to_sym

@@ -1,0 +1,56 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Callbacks
+
+      The first `:ruby`-filter block will be executed
+      in class scope of the component.
+
+      This is where you would set up state, lifecycle methods and callback handlers.
+
+      Attributes starting with `on` will automatically be bound to handlers.
+
+      ```haml
+      :ruby
+        def handle_click(event)
+          Console.logger.info(self, event)
+        end
+      %div
+        %p Hello world
+        %button(onclick=handle_click) Click me
+      ```
+
+      The above code will be transformed into the following Ruby code.
+
+      ```ruby
+      def handle_click(e)
+        Console.logger.info(self, e)
+      end
+      def render
+        Mayu::VDOM.h(:button, "Click me", **{ onclick: handler(:handle_click) })
+      end
+      ```
+
+      Here is the equivalent React implementation.
+      Note that it is a class component.
+      Mayu components are classes.
+
+      ```jsx
+      import { Component } from 'react'
+      export default class MyComponent extends Component {
+        constructor(props) {
+          super(props)
+          this.handleClick = this.handleClick.bind(this)
+        }
+        handleClick(e) {
+          console.log("MyComponent", e)
+        }
+        render() {
+          <button onClick={this.handleClick}>Click me</button>
+        }
+      }
+      ```

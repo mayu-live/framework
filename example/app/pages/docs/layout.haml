@@ -4,14 +4,33 @@
   Menu = import("/app/components/Layout/Menu")
   MenuItem = import("/app/components/Layout/MenuItem")
 
+:css
+  .menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+  }
+
 %PageLayout(title="Documentation")
   %slot
 
-  %Menu(slot="menu")
-    %MenuItem(href="/docs") Introduction
-    %MenuItem(href="/docs/getting-started") Getting started
-    %MenuItem(href="/docs/deployment") Deployment
-    %MenuItem(href="/docs/faq") Frequently asked questions
+  .menu(slot="menu")
+    %Menu
+      %MenuItem(href="/docs") Introduction
+      %MenuItem(href="/docs/getting-started") Getting started
+    %Menu
+      %MenuItem(href="/docs/components") Components
+      %MenuItem(href="/docs/callbacks") Callbacks
+      %MenuItem(href="/docs/lifecycle-methods") Lifecycle
+      %MenuItem(href="/docs/whitespace") Whitespace
+      %MenuItem(href="/docs/early-returns") Early returns
+      %MenuItem(href="/docs/stylesheets") Stylesheets
+      %MenuItem(href="/docs/slots") Slots
+      %MenuItem(href="/docs/state") State
+      %MenuItem(href="/docs/data-fetching") Data fetching
+    %Menu
+      %MenuItem(href="/docs/deployment") Deployment
+      %MenuItem(href="/docs/faq") Frequently asked questions
 
   %p.underConstruction(slot="after_heading")
     %span.underConstructionText

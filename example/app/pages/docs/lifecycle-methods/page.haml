@@ -1,0 +1,70 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Lifecycle methods
+
+      There are a few lifecycle methods that can be useful.
+      It's all asynchronous so you can create loops and fetch data without blocking.
+
+      ```haml
+      :ruby
+        def self.get_initial_state(**)
+          { count: 0 }
+        end
+        def mount
+          loop do
+            sleep 1
+            update do |state|
+              { count: state[:count] + 1 }
+            end
+          end
+        end
+      %p Count: {state[:count]}
+      ```
+
+      ## `def self.get_initial_state(**props)`
+
+      Called when initializing the component.
+
+      It has to return a Hash with the initial state.
+
+      ## `def mount`
+
+      Called when the component gets mounted.
+
+      You can start a loop in here and update state periodically.
+
+      ```haml
+      :ruby
+        def mount
+          loop do
+            update(time: Time.now.to_s)
+            sleep 1
+          end
+        end
+      %p= state[:time]
+      ```
+
+      This component will update the current time every second.
+
+      ## `def unmount`
+
+      Called when the component gets unmounted.
+      It has never been used.
+
+      ## `def should_update?(next_props, next_state)`
+
+      By default, components will re-render on every change,
+      but in some cases you might want to skip rendering to
+      improve performance.
+
+      Usually you don't need to override the default behavior.
+
+      ## `def did_update(prev_props, prev_state)`
+
+      The `did_update` method is called right
+      after a component has been updated.

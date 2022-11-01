@@ -1,0 +1,37 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # State
+
+      Set up state with `self.get_initial_state`,
+      read state with `state`,
+      and update state with `update`,
+
+      ```haml
+      :ruby
+        def self.get_initial_state(initial_count: 0, **props)
+          { count: initial_count }
+        end
+        def handle_reset(_event)
+          update(count: 0)
+        end
+        def handle_decrement(_event)
+          update do |state|
+            { count: state[:count] + 1 }
+          end
+        end
+        def handle_decrement(_event)
+          update do |state|
+            { count: state[:count] - 1 }
+          end
+        end
+      %div
+        %p Count: {state[:count]}
+        %button(onclick=handle_increment) Increment
+        %button(onclick=handle_decrement) Decrement
+        %button(onclick=handle_reset) Reset
+      ```
