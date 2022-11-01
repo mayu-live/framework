@@ -10,6 +10,8 @@ module Mayu
     class MermaidExporter
       extend T::Sig
 
+      GRAPH_DIRECTION = "LR" # Left to right
+
       sig { params(graph: DependencyGraph).void }
       def initialize(graph)
         @graph = graph
@@ -44,7 +46,7 @@ module Mayu
       def write_source(out)
         entries = @graph.overall_order(only_leaves: false)
         tree = make_tree(entries.map { _1.split("/") })
-        out.puts "graph TB"
+        out.puts "graph #{GRAPH_DIRECTION}"
 
         out.puts "  subgraph routes"
         print_routes(out, tree.dig("", "app", "pages") || {})
