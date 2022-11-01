@@ -1,0 +1,93 @@
+:ruby
+  require "fuzzy_match"
+
+  Heading = import("/app/components/Layout/Heading")
+  Fieldset = import("/app/components/Form/Fieldset")
+  Input = import("/app/components/Form/Input")
+
+  FUZZY_MATCHER = FuzzyMatch.new(%w[
+    Accordion
+    Bamboo\ Flute
+    Bass\ Guitar
+    Bongos
+    Crystal\ Glasses
+    Drums
+    Harmonica
+    Harp
+    Kazoo
+    Keyboard
+    Organ
+    Piccolo
+    Saxophone
+    Shakers
+    Slide\ Whistle
+    Snare\ Drum
+    Spoons
+    Steel\ Drums
+    Steel\ Pan
+    Tambourine
+    Triangle
+    Trombone
+    Trumpet
+    Tuba
+    Ukulele
+    Vibraphone
+    Viola
+    Violin
+    Vocals
+    Wooden Flute
+    Xylophone
+    Zither
+  ])
+
+  def self.get_initial_state(**)
+    {
+      value: "",
+      suggestions: []
+    }
+  end
+
+  def handle_change(event)
+    p event
+    value = event["target"]["value"].to_s
+    update(
+      value:,
+      suggestions: FUZZY_MATCHER.find_all(value)
+    )
+  end
+
+:css
+  .suggestions {
+    list-style-type: none;
+    background: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-items: flex-start;
+    flex-wrap: wrap;
+    gap: .5em;
+    font-size: .8em;
+  }
+
+  .suggestions:empty {
+    display: none;
+  }
+
+  .suggestion {
+    display: inline-block;
+    margin: 0;
+    padding: .25em;
+    background: var(--green-bright);
+    border: 1px solid var(--green);
+    border-radius: 3px;
+  }
+
+%article
+  %Heading(level=2) Fuzzy-matcher example
+  %Fieldset
+    %legend Search instrument
+
+    %Input(label="Instrument name" oninput=handle_change onchange=handle_change autocomplete="off")
+    %ul.suggestions
+      = state[:suggestions].map do |suggestion|
+        %li.suggestion= suggestion

@@ -18,3 +18,5 @@ group :development do
   gem "tapioca", require: false
   gem "nokogiri", require: false
 end
+
+gem "fuzzy_match"
