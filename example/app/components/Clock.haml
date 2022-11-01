@@ -16,9 +16,6 @@
   end
 
 :css
-  .clock {
-  }
-
   .svg {
     width: 100%;
     height: auto;
@@ -27,8 +24,9 @@
 :ruby
   stroke = props[:stroke] || "#000"
   fill = props[:fill] || "transparent"
+  classname = props[:class]
 
-.clock{class: props[:class]}
+%div(class=classname)
   %svg.svg(width="100" height="100" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg")
     %circle(cx="0" cy="0" r="95" fill=fill stroke=stroke stroke-width="2")
     %g
