@@ -1,6 +1,5 @@
 :ruby
   Heading = require("/app/components/Layout/Heading")
-  MaxWidth = require("/app/components/Layout/MaxWidth")
   Clock = require("/app/components/Clock")
 
   PATHS = [
@@ -35,7 +34,7 @@
     flex-basis: 50%;
   }
 
-%MaxWidth
+%article
   %Heading(level=2) SVG demo
   %p
     This example shows some SVGs.

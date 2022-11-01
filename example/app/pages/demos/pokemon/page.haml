@@ -54,7 +54,7 @@
   page = props.dig(:query, :page).to_i.clamp(1, total_pages.succ)
   results_on_this_page = results.slice(page.pred * per_page, per_page) || []
 
-%div
+%article
   %Pagination{
     page:,
     per_page:,

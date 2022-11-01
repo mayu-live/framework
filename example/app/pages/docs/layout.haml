@@ -1,9 +1,10 @@
 :ruby
   PageLayout = require("/app/components/Layout/Page")
+  Heading = require("/app/components/Layout/Heading")
   Menu = require("/app/components/Layout/Menu")
   MenuItem = require("/app/components/Layout/MenuItem")
 
-%PageLayout
+%PageLayout(title="Documentation")
   %slot
 
   %Menu(slot="menu")
