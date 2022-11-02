@@ -166,6 +166,11 @@ module Mayu
           ].reverse.join(", ")
         end
 
+        sig { returns(Float) }
+        def aspect_ratio
+          original.width / original.height.to_f
+        end
+
         MarshalFormat =
           T.type_alias { [ImageDescriptor, T::Array[ImageDescriptor], String] }
 
