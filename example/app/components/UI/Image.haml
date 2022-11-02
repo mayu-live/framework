@@ -1,3 +1,13 @@
+:ruby
+  def inline_style
+    return {} if props[:blur] == false
+
+    {
+      background_image: "url('#{props[:image].blur}')",
+      background_size: "cover",
+    }
+  end
+
 :css
   .img {
     width: 100%;
@@ -7,24 +17,15 @@
 :ruby
   image = props.fetch(:image)
 
-  style = {
-    background_image: "url('#{image.blur}')",
-    background_size: "cover",
-  }
-
   loading = props[:lazy] && "lazy"
 
   alt = props.fetch(:alt) do
     Console.logger.warn(self, "Missing alt-attribute!")
   end
 
-  classname = styles[:img, props[:class]]
+  classname = props[:class]
 
-%img{
-  style:,
-  loading:,
-  alt:,
-  class: classname,
+%img.img(style=inline_style loading=loading alt=alt class=classname){
   src: image.src,
   sizes: image.sizes,
   srcset: image.srcset,

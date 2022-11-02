@@ -2,16 +2,30 @@
   Heading = import("/app/components/Layout/Heading")
   Image = import("/app/components/UI/Image")
   Comuna13 = image("./comuna-13.jpeg")
+  ColombiaMap = image("./colombia-map-flag.png")
 
+:css
+  .figure {
+    margin: 0;
+  }
+
+  .green-bg {
+    background: var(--green);
+  }
 
 %article
   %Heading(level=2) Images
   %p
-    This demo shows an image.
-    Right click and choose Inspect to see all the versions that get generated.
-  %figure
-    %Image(lazy image=Comuna13 alt="Comuna 13, Medellín, Colombia")
+    This demo shows some images.
+  %figure.figure
+    %Image(image=Comuna13 alt="Comuna 13, Medellín, Colombia")
     %figcaption
       Comuna 13, Medellín, Colombia.
       %a(href="https://www.google.com/maps?q=loc:6.2487861,-75.62455" target="_blank")<
         Google Maps
+  %figure.figure
+    %Image.green-bg(false image=ColombiaMap alt="Colombia Flag Map from openclipart.org" blur=false)
+    %figcaption
+      Colombia Flag Map, found on
+      %a(href="https://openclipart.org/detail/223690/colombia-map-flag" target="_blank")<
+        openclipart.com
