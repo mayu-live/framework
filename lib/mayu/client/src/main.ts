@@ -15,6 +15,15 @@ const onDOMContentLoaded = new Promise<void>((resolve) => {
   window.addEventListener("DOMContentLoaded", () => resolve());
 });
 
+function shouldPreventDefault(e: Event) {
+  if (typeof TouchEvent !== "undefined") {
+    if (e instanceof TouchEvent) {
+      return false;
+    }
+  }
+  return true;
+}
+
 class MayuGlobal {
   #sessionId: string;
 
@@ -23,10 +32,8 @@ class MayuGlobal {
   }
 
   async handle(e: Event, handlerId: string) {
-    if (typeof TouchEvent !== "undefined") {
-      if (e instanceof TouchEvent) {
-        e.preventDefault();
-      }
+    if (shouldPreventDefault(e)) {
+      e.preventDefault();
     }
 
     const payload = serializeEvent(e);
