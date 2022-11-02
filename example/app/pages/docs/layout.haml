@@ -5,6 +5,12 @@
   MenuItem = import("/app/components/Layout/MenuItem")
   Details = import("./Details")
 
+  def did_update(prev_props, prev_state)
+    unless prev_props[:path] == props[:path]
+      helpers.scroll_into_view("#page")
+    end
+  end
+
 :css
   .menu {
     display: flex;
@@ -13,7 +19,8 @@
   }
 
 %PageLayout(title="Documentation")
-  %slot
+  #page
+    %slot
 
   %nav.menu(slot="menu")
     %Details(open summary="Intro")

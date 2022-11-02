@@ -27,6 +27,11 @@ module Mayu
         @vnode.navigate(path)
       end
 
+      sig { params(selector: String).void }
+      def scroll_into_view(selector)
+        @vnode.scroll_into_view(selector)
+      end
+
       # sig { returns(Mayu::State::Store) }
       # def store
       #   @vnode.store

@@ -323,6 +323,9 @@ module Mayu
             in [:navigate, href]
               navigate(href)
               yield [:navigate, path: href.force_encoding("utf-8")]
+            in [:scroll_into_view, id]
+              Console.logger.info(self, "scroll into view #{id.inspect}")
+              yield [:scroll_into_view, id]
             in [:update_finished, *]
               # noop
             else

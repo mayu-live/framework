@@ -145,8 +145,22 @@ async function main(url: string) {
         const path = payload.path;
         logger.info("Navigating to", path);
         history.pushState({}, "", path);
-        window.scrollTo({ top: 0, behavior: "smooth" });
         // progressBar.setAttribute("progress", "100");
+        break;
+      case "session.scroll_into_view":
+        const elem = document.querySelector(payload);
+        if (elem) {
+          elem.scrollIntoView({
+            block: "start",
+            inline: "nearest",
+            behavior: "auto",
+          });
+        } else {
+          console.error(
+            "Could not find element to scrollIntoView, selector:",
+            payload
+          );
+        }
         break;
       case "session.keep_alive":
         break;

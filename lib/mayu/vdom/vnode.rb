@@ -135,6 +135,11 @@ module Mayu
         @vtree.navigate(path)
       end
 
+      sig { params(selector: String).void }
+      def scroll_into_view(selector)
+        @vtree.scroll_into_view(selector)
+      end
+
       sig { void }
       def enqueue_update!
         @vtree.enqueue_update!(self)
