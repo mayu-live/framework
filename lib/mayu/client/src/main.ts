@@ -160,7 +160,7 @@ async function main(url: string) {
           elem.scrollIntoView({
             block: "start",
             inline: "nearest",
-            behavior: "auto",
+            behavior: "smooth",
           });
         } else {
           console.error(
