@@ -1,0 +1,47 @@
+:css
+  .layout {
+    display: grid;
+    height: 100%;
+    overflow: hidden;
+    grid-template-rows: min-content auto;
+  }
+
+  .menu {
+    background: var(--blue-bright);
+    color: var(--dark);
+    position: relative;
+    --menu-direction: row;
+  }
+
+  .scroll {
+    padding: 1em;
+  }
+
+  .page {
+    padding: 1em 2em 2em 2em;
+  }
+
+  @media (min-width: 50em) {
+    .layout {
+      grid-template-columns: 15em auto;
+      grid-template-rows: auto;
+    }
+
+    .scroll {
+      position: absolute;
+      inset: 0;
+      max-height: 100%;
+      overflow-y: auto;
+    }
+
+    .menu {
+      --menu-direction: column;
+    }
+  }
+
+.layout
+  %nav.menu
+    .scroll
+      %slot(name="menu")
+  #page.page
+    %slot

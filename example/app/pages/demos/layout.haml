@@ -1,17 +1,22 @@
 :ruby
-  PageLayout = import("/app/components/Layout/Page")
+  PageLayout = import("/app/components/Layout/FullWidthPageWithMenu")
   Menu = import("/app/components/Layout/Menu")
   MenuItem = import("/app/components/Layout/MenuItem")
 
-%PageLayout(title="Demos")
+:css
+  .nav {
+    margin: 1em;
+  }
+
+%PageLayout
   %slot
 
-  %Menu(slot="menu")
-    %MenuItem(href="/demos") Index
-    %MenuItem(href="/demos/pokemon") Pokémon
-    %MenuItem(href="/demos/tree") App tree
-    %MenuItem(href="/demos/form") Forms
-    %MenuItem(href="/demos/grid") onmouseenter grid
-    %MenuItem(href="/demos/images") Images
-    %MenuItem(href="/demos/svg") SVG
-    %MenuItem(href="/demos/fuzzy-matcher") Fuzzy matcher
+  %nav.nav(slot="menu")
+    %Menu
+      %MenuItem(href="/demos") Index
+      %MenuItem(href="/demos/pokemon") Pokémon
+      %MenuItem(href="/demos/tree") App tree
+      %MenuItem(href="/demos/form") Form elements
+      %MenuItem(href="/demos/images") Images
+      %MenuItem(href="/demos/svg") SVGs
+      %MenuItem(href="/demos/fuzzy-matcher") Fuzzy matcher

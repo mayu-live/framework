@@ -1,9 +1,8 @@
 :ruby
-  MaxWidth = import("/app/components/Layout/MaxWidth")
   Logo = image("./logo.png")
 
 %header{class: props[:class]}
-  %MaxWidth.inner
+  .inner
     %a(href="/")
       %img.img{
         src: Logo.src,

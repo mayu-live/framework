@@ -13,7 +13,7 @@
     #ff0 10px,
     #ff0 20px
   );
-  width: 100%;
+  margin: 0 auto;
   text-align: center;
   box-shadow: 0 2px 5px -2px #000;
 }
@@ -29,7 +29,7 @@
   border: 2px solid #000;
   border-radius: 2px;
 
-  font-family: Impact;
+  font-family: monospace;
   font-weight: lighter;
-  font-size: min(5vw, 2em);
+  font-size: 2em;
 }
