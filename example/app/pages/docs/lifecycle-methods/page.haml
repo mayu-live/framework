@@ -23,7 +23,7 @@
             end
           end
         end
-      %p Count: {state[:count]}
+      %p Count: #{state[:count]}
       ```
 
       ## `def self.get_initial_state(**props)`
@@ -53,8 +53,7 @@
 
       ## `def unmount`
 
-      Called when the component gets unmounted.
-      It has never been used.
+      Called after the component has been unmounted.
 
       ## `def should_update?(next_props, next_state)`
 

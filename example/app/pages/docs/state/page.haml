@@ -1,6 +1,15 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
+  Card = import("/app/components/Layout/Card")
   Markdown = import("/app/components/Markdown")
+  Example = import("./Example")
+
+:css
+  .card {
+    margin: 1em;
+    margin-top: 2em;
+    padding: 1em;
+  }
 
 %article
   %Markdown{elems: { header: Heading }}
@@ -19,7 +28,7 @@
         def handle_reset(_event)
           update(count: 0)
         end
-        def handle_decrement(_event)
+        def handle_increment(_event)
           update do |state|
             { count: state[:count] + 1 }
           end
@@ -30,8 +39,12 @@
           end
         end
       %div
-        %p Count: {state[:count]}
+        %p Count: #{state[:count]}
         %button(onclick=handle_increment) Increment
         %button(onclick=handle_decrement) Decrement
         %button(onclick=handle_reset) Reset
       ```
+
+      This will result in the following component:
+  %Card.card
+    %Example

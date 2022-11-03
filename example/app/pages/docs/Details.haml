@@ -12,19 +12,24 @@
     padding: .25em 0;
   }
 
+  .summary:hover {
+    text-decoration: underline;
+  }
+
   .summary::marker {
     display: none;
   }
 
   .details > .summary::after {
     display: inline-block;
-    content: "⮞";
+    content: "▲";
     transition: transform 250ms;
-    transform: translateX(.5em) rotateZ(0);
+    transform: translateX(.5em) rotateZ(.25turn);
+    scale: 1.0;
   }
 
   .details[open] > .summary::after {
-    transform: translateX(.5em) rotateZ(.25turn);
+    transform: translateX(.5em) rotateZ(.5turn);
   }
 
 %details.details{open: props[:open]}

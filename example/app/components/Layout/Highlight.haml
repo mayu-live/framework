@@ -1,8 +1,6 @@
 :ruby
   ::Kernel.require("rouge")
 
-  Card = import("/app/components/Layout/Card")
-
   def get_tokens
     lexer&.lex(children.join)
   end
@@ -26,9 +24,17 @@
   end
 
 :css
-  .wrapper {
-    font-size: 0.9em;
+  .container {
+    display: grid;
+  }
+
+  .card {
+    display: grid;
+    background: #282828;
+    border-radius: 2px;
+    box-shadow: rgba(50, 50, 93, 0.55) 0px 13px 27px -5px, rgba(0, 0, 0, 0.9) 0px 8px 16px -8px;
     margin: 1em;
+    overflow-y: auto;
   }
 
 :ruby
@@ -36,10 +42,12 @@
 
 - unless tokens
   - return
-    %Card.wrapper
-      %pre.highlight= children.join
-%Card.wrapper(background="var(--pink-bright)" border="var(--pink)")
-  %pre.highlight
-    = tokens.map do |token, str|
-      - classname = token.shortname.to_sym
-      %span(class=classname)= str
+    .container
+      .card
+        %pre.highlight= children.join
+.container
+  .card
+    %pre.highlight
+      = tokens.map do |token, str|
+        - classname = token.shortname.to_sym
+        %span(class=classname)= str
