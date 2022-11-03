@@ -1,11 +1,30 @@
 :css
   .details {
+    margin: 1em;
+    padding: 1em;
   }
 
   .summary {
     user-select: none;
     cursor: pointer;
     font-weight: bold;
+    list-style: none;
+    font-size: 1em;
+  }
+
+  .summary::marker {
+    display: none;
+  }
+
+  .details > .summary::after {
+    display: inline-block;
+    content: "⮞";
+    transition: transform 250ms;
+    transform: translateX(.5em) rotateZ(0);
+  }
+
+  .details[open] > .summary::after {
+    transform: translateX(.5em) rotateZ(.25turn);
   }
 
 %details.details{open: props[:open]}

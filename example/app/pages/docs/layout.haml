@@ -12,39 +12,57 @@
   end
 
 :css
-  .menu {
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
+  .layout {
+    display: grid;
+    height: 100%;
+    grid-template-columns: 15em auto;
+    overflow: hidden;
   }
 
-%PageLayout(title="Documentation")
-  #page
-    %slot
+  .menu {
+    background: var(--blue-bright);
+    color: var(--dark);
+    position: relative;
+  }
 
+  .menu-scroll {
+    position: absolute;
+    inset: 0;
+    padding: 1em;
+    max-height: 100%;
+    overflow-y: scroll;
+  }
+
+  .page {
+    padding: 1em;
+  }
+
+.layout
   %nav.menu(slot="menu")
-    %Details(open summary="Intro")
-      %Menu
-        %MenuItem(href="/docs") Introduction
-        %MenuItem(href="/docs/getting-started") Getting started
-    %Details(open summary="Components")
-      %Menu
-        %MenuItem(href="/docs/components") Components
-        %MenuItem(href="/docs/callbacks") Callbacks
-        %MenuItem(href="/docs/lifecycle-methods") Lifecycle
-        %MenuItem(href="/docs/whitespace") Whitespace
-        %MenuItem(href="/docs/early-returns") Early returns
-        %MenuItem(href="/docs/stylesheets") Stylesheets
-        %MenuItem(href="/docs/slots") Slots
-        %MenuItem(href="/docs/state") State
-        %MenuItem(href="/docs/routing") Routing
-        %MenuItem(href="/docs/data-fetching") Data fetching
-        %MenuItem(href="/docs/resources") Resources
-    %Details(open summary="Other")
-      %Menu
-        %MenuItem(href="/docs/deployment") Deployment
-        %MenuItem(href="/docs/faq") Frequently asked questions
-
-  %p.underConstruction(slot="after_heading")
-    %span.underConstructionText
-      This page is under construction!
+    .menu-scroll
+      %Details(open summary="Intro")
+        %Menu
+          %MenuItem(href="/docs") Introduction
+          %MenuItem(href="/docs/getting-started") Getting started
+      %Details(open summary="Components")
+        %Menu
+          %MenuItem(href="/docs/components") Components
+          %MenuItem(href="/docs/callbacks") Callbacks
+          %MenuItem(href="/docs/lifecycle-methods") Lifecycle
+          %MenuItem(href="/docs/whitespace") Whitespace
+          %MenuItem(href="/docs/early-returns") Early returns
+          %MenuItem(href="/docs/stylesheets") Stylesheets
+          %MenuItem(href="/docs/slots") Slots
+          %MenuItem(href="/docs/state") State
+          %MenuItem(href="/docs/routing") Routing
+          %MenuItem(href="/docs/data-fetching") Data fetching
+          %MenuItem(href="/docs/resources") Resources
+      %Details(open summary="Other")
+        %Menu
+          %MenuItem(href="/docs/deployment") Deployment
+          %MenuItem(href="/docs/faq") Frequently asked questions
+  #page.page
+    %p.underConstruction(slot="after_heading")
+      %span.underConstructionText
+        This page is under construction!
+    %slot
