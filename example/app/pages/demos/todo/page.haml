@@ -1,0 +1,151 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Fieldset = import("/app/components/Form/Fieldset")
+  Input = import("/app/components/Form/Input")
+  Button = import("/app/components/Form/Button")
+
+  def self.get_initial_state(**)
+    {
+      items: [],
+      fieldset_key: "fieldset-0",
+      items_key: "items-0",
+    }
+  end
+
+  def handle_add(e)
+    text = e.dig("formData", "item").to_s
+
+    return if text.empty?
+
+    item = {
+      id: Nanoid.generate(),
+      completed: false,
+      text:,
+    }
+
+    update do |state|
+      {
+        items: [item, *state[:items]],
+        fieldset_key: state[:fieldset_key].succ,
+      }
+    end
+  end
+
+  def handle_move_up(e)
+    id = e.dig("target", "value")
+
+    update do |state|
+      items = state[:items].dup
+      index = items.find_index { _1[:id] == id }
+
+      if index > 0
+        { items: items.insert(index - 1, items.delete_at(index)).compact }
+      end
+    end
+  end
+
+  def handle_move_down(e)
+    id = e.dig("target", "value")
+
+    update do |state|
+      items = state[:items].dup
+      index = items.find_index { _1[:id] == id }
+
+      if index <= items.length.pred
+        { items: items.insert(index + 1, items.delete_at(index)).compact }
+      end
+    end
+  end
+
+  def handle_complete(e)
+    id = e.dig("target", "value")
+    checked = e.dig("target", "checked")
+
+    update do |state|
+      {
+        items: state[:items].map do |item|
+          if item[:id] == id
+            { **item, completed: checked }
+          else
+            item
+          end
+        end
+      }
+    end
+  end
+
+  def handle_clear_completed(e)
+    update do |state|
+      {
+        items: state[:items].reject { _1[:completed] },
+        items_key: state[:items_key].succ
+      }
+    end
+  end
+:css
+  .todo-app {
+  }
+
+  .items {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    margin: 1em;
+    padding: 0;
+    gap: 1em;
+  }
+
+  .item {
+    display: grid;
+    gap: 1em;
+    grid-template-columns: 2em auto min-content;
+    margin: 0;
+    padding: 0;
+  }
+
+  .item-text {
+  }
+
+  .completed {
+    text-decoration: line-through;
+  }
+
+  .move-buttons {
+    display: flex;
+    gap: .5em;
+    font-size: .5em;
+  }
+
+:ruby
+  state => items:
+  completed_items = items.select { _1[:completed] }
+
+%article.todo-app
+  %Heading(level=2) Todo app
+
+  %form(onsubmit=handle_add)
+    %Fieldset{key: state[:fieldset_key]}
+      %legend Add new item
+      %Input(type="text" name="item" required)
+      %Button(type="submit") Add item
+
+  %ul.items{key: state[:items_key]}
+    = items.map.with_index do |item, i|
+      - item => id:, text:, completed:
+      %li.item(key=id)
+        %input(type="checkbox" onchange=handle_complete checked=completed value=id)
+        %h3.item-text{class: { completed: }}= text
+
+        .move-buttons
+          %Button(onclick=handle_move_up value=id){
+            disabled: i.zero?
+          } Up
+          %Button(onclick=handle_move_down value=id){
+            disabled: i == items.length.pred
+          } Down
+
+  %Button(onclick=handle_clear_completed){
+    disabled: completed_items.empty?
+  } Clear completed
+
+  %pre= JSON.pretty_generate(state)
