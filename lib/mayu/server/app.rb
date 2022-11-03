@@ -4,6 +4,7 @@
 require "async/variable"
 require_relative "../event_stream"
 require_relative "file_server"
+require_relative "errors"
 
 module Mayu
   module Server
@@ -21,21 +22,6 @@ module Mayu
           },
           T::Hash[Symbol, String]
         )
-
-      class NotFoundError < StandardError
-      end
-      class CookieNotSetError < StandardError
-      end
-      class InvalidTokenError < StandardError
-      end
-      class InvalidMethodError < StandardError
-      end
-      class SessionAlreadyResumedError < StandardError
-      end
-      class SessionNotFoundError < StandardError
-      end
-      class ServerIsShuttingDownError < StandardError
-      end
 
       sig { params(environment: Environment).void }
       def initialize(environment:)
@@ -99,6 +85,37 @@ module Mayu
         # but can be useful when debugging.
         # Console.logger.info(self, "#{request.method} #{request.path}")
 
+        Errors.handle_exceptions { handle_request(request) }
+      end
+
+      sig { void }
+      def rerender
+        @sessions.values.each(&:rerender)
+      end
+
+      sig do
+        params(
+          id: String,
+          request: Protocol::HTTP::Request,
+          resume: T::Boolean
+        ).returns(Session)
+      end
+      def get_session(id, request, resume: false)
+        session = load_session(id, resume ? request.read.to_s : "")
+
+        if session.authorized?(get_token_cookie(request))
+          session
+        else
+          raise Errors::InvalidToken
+        end
+      end
+
+      sig do
+        params(request: Protocol::HTTP::Request).returns(
+          Protocol::HTTP::Response
+        )
+      end
+      def handle_request(request)
         # FIXME: raise_if_shutting_down! should only prevent the following:
         # * starting new sessions
         # * updating sessions that have been transferred
@@ -154,7 +171,7 @@ module Mayu
 
           @static_assets.serve(filename, accept_encodings:)
         in ["__mayu", *]
-          raise NotFoundError,
+          raise Errors::FileNotFound,
                 "Resource not found at: #{request.method} #{request.path}"
         in [*] if request.method == "GET"
           raise_if_shutting_down!
@@ -163,115 +180,11 @@ module Mayu
         else
           Protocol::HTTP::Response[404, {}, ["not found"]]
         end
-      rescue Errno::ENOENT => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          404,
-          { "content-type": "text/plain" },
-          ["file not found"]
-        ]
-      rescue NotFoundError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          404,
-          { "content-type": "text/plain" },
-          [e.message.to_s]
-        ]
-      rescue CookieNotSetError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          403,
-          { "content-type": "text/plain" },
-          ["missing session cookie"]
-        ]
-      rescue SessionNotFoundError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          404,
-          { "content-type": "text/plain" },
-          ["session not found"]
-        ]
-      rescue Mayu::MessageCipher::DecryptError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          403,
-          { "content-type": "text/plain" },
-          ["decrypt error"]
-        ]
-      rescue Mayu::MessageCipher::ExpiredError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          403,
-          { "content-type": "text/plain" },
-          ["session expired"]
-        ]
-      rescue InvalidTokenError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          403,
-          { "content-type": "text/plain" },
-          ["invalid token"]
-        ]
-      rescue SessionAlreadyResumedError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          409,
-          { "content-type": "text/plain" },
-          ["already resumed"]
-        ]
-      rescue Session::AlreadyRunningError
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          409,
-          { "content-type": "text/plain" },
-          ["already running"]
-        ]
-
-        # https://fly.io/docs/reference/fly-replay/#fly-replay
-      rescue ServerIsShuttingDownError
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          503,
-          { "fly-replay": "elsewhere=true" },
-          ["Server is shutting down"]
-        ]
-      rescue InvalidMethodError => e
-        Console.logger.error(self, e)
-        Protocol::HTTP::Response[
-          405,
-          { "content-type": "text/plain" },
-          ["method not allowed"]
-        ]
-      rescue => e
-        Console.logger.error(self, e)
-        Protocol::HTTP::Response[500, {}, "error"]
-      end
-
-      sig { void }
-      def rerender
-        @sessions.values.each(&:rerender)
-      end
-
-      sig do
-        params(
-          id: String,
-          request: Protocol::HTTP::Request,
-          resume: T::Boolean
-        ).returns(Session)
-      end
-      def get_session(id, request, resume: false)
-        session = load_session(id, resume ? request.read.to_s : "")
-
-        if session.authorized?(get_token_cookie(request))
-          session
-        else
-          raise InvalidTokenError
-        end
       end
 
       sig { void }
       def raise_if_shutting_down!
-        raise ServerIsShuttingDownError if @stop.resolved?
+        raise Errors::ServerIsShuttingDown if @stop.resolved?
       end
 
       sig do
@@ -282,7 +195,7 @@ module Mayu
         ).returns(Protocol::HTTP::Response)
       end
       def handle_session_post(request, session_id, path)
-        raise InvalidMethodError unless request.method == "POST"
+        raise Errors::InvalidMethod unless request.method == "POST"
 
         if ["resume"] === path
           body = Async::HTTP::Body::Writable.new
@@ -447,7 +360,7 @@ module Mayu
         if body.empty?
           return(
             @sessions.fetch(session_id) do
-              raise SessionNotFoundError, "Session not found: #{session_id}"
+              raise Errors::SessionNotFound, "Session not found: #{session_id}"
             end
           )
         end
@@ -494,7 +407,7 @@ module Mayu
         CGI::Cookie
           .parse(request.headers["cookie"].to_s)
           .fetch("mayu-token") do
-            raise CookieNotSetError, "Cookie #{_1} is not set"
+            raise Errors::CookieNotSet, "Cookie #{_1} is not set"
           end
           .first
           .to_s
