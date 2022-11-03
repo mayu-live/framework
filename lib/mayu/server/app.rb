@@ -2,9 +2,7 @@
 # frozen_string_literal: true
 
 require "async/variable"
-require_relative "session"
-require_relative "app"
-require_relative "session"
+require_relative "../event_stream"
 
 module Mayu
   module Server
