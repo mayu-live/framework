@@ -35,6 +35,7 @@ function serializeObject(obj: any) {
       type: obj.type,
       name: obj.name,
       value: obj.value,
+      checked: obj.checked,
     };
   }
 
