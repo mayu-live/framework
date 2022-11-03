@@ -3,50 +3,10 @@
 
 require "async/variable"
 require_relative "../event_stream"
+require_relative "file_server"
 
 module Mayu
   module Server
-    class WritableStream
-      extend T::Sig
-
-      sig { params(body: Async::HTTP::Body::Writable).void }
-      def initialize(body)
-        @body = body
-        @deflate =
-          T.let(
-            Zlib::Deflate.new(
-              Zlib::BEST_COMPRESSION,
-              -Zlib::MAX_WBITS,
-              Zlib::MAX_MEM_LEVEL,
-              Zlib::HUFFMAN_ONLY
-            ),
-            Zlib::Deflate
-          )
-
-        @wrapper = T.let(EventStream::Wrapper.new, EventStream::Wrapper)
-      end
-
-      sig { params(obj: T.untyped).void }
-      def write(obj)
-        obj
-          .then { @wrapper.pack(_1.to_a) }
-          .then { @deflate.deflate(_1, Zlib::SYNC_FLUSH) }
-          .then { @body.write(_1) }
-      end
-
-      sig { returns(T::Boolean) }
-      def closed?
-        @body.closed?
-      end
-
-      sig { void }
-      def close
-        @body.write(@deflate.flush(Zlib::FINISH))
-        @deflate.close
-        @body.close
-      end
-    end
-
     class App
       extend T::Sig
 
@@ -84,6 +44,11 @@ module Mayu
         @barrier = T.let(Async::Barrier.new, Async::Barrier)
         @stop = T.let(Async::Variable.new, Async::Variable)
         @sessions = T.let({}, T::Hash[String, Session])
+
+        @runtime_assets =
+          T.let(FileServer.new(@environment.js_runtime_path), FileServer)
+        @static_assets =
+          T.let(FileServer.new(@environment.path(:assets)), FileServer)
       end
 
       sig { void }
@@ -130,8 +95,14 @@ module Mayu
         )
       end
       def call(request)
+        # The following line generates very noisy logs,
+        # but can be useful when debugging.
         # Console.logger.info(self, "#{request.method} #{request.path}")
 
+        # FIXME: raise_if_shutting_down! should only prevent the following:
+        # * starting new sessions
+        # * updating sessions that have been transferred
+        # * updating sessions that have been paused for transferring
         raise_if_shutting_down!
 
         case request.path.delete_prefix("/").split("/")
@@ -144,11 +115,22 @@ module Mayu
             { "content-type": "application/javascript" },
             [body]
           ]
-        in ["favicon.ico" | "robots.txt" => filename]
-          # Idea: Maybe it would be possible to create an asset from the favicon and redirect?
-          absolute_path =
-            File.join(@environment.root, "app", filename.sub(/\.ico$/, ".png"))
-          send_static_file(absolute_path, cache: false)
+        in ["robots.txt"]
+          Protocol::HTTP::Response[
+            200,
+            { "content-type" => "text/plain; charset=utf-8" },
+            File.read(File.join(@environment.root, "app", "robots.txt"))
+          ]
+        in ["favicon.ico"]
+          # Idea: Maybe it would be possible to create
+          # an asset from the favicon and redirect to the asset?
+          Protocol::HTTP::Response[
+            200,
+            { "content-type" => "image/png" },
+            Protocol::HTTP::Body::File.open(
+              File.join(@environment.root, "app", "favicon.png")
+            )
+          ]
         in ["__mayu", "runtime", *path]
           accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
 
@@ -158,27 +140,19 @@ module Mayu
             return Protocol::HTTP::Response[403, {}, ["forbidden"]]
           end
 
-          absolute_path =
-            File.join(
-              @environment.js_runtime_path,
-              File.expand_path(filename, "/")
-            )
-
-          send_static_file(absolute_path, accept_encodings:)
+          @runtime_assets.serve(filename, accept_encodings:)
         in ["__mayu", "static", filename]
           unless @environment.config.use_bundle
+            # TODO: This will generate the same assets over and over.
+            # It would be good if it was possible to figure out if an
+            # asset exists here and wait for it to be generated if it
+            # hasn't been generated yet.
             @environment.resources.generate_assets(@environment.path(:assets))
           end
 
           accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
 
-          send_static_file(
-            File.join(
-              @environment.path(:assets),
-              File.expand_path(filename, "/")
-            ),
-            accept_encodings:
-          )
+          @static_assets.serve(filename, accept_encodings:)
         in ["__mayu", *]
           raise NotFoundError,
                 "Resource not found at: #{request.method} #{request.path}"
@@ -189,6 +163,13 @@ module Mayu
         else
           Protocol::HTTP::Response[404, {}, ["not found"]]
         end
+      rescue Errno::ENOENT => e
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
+        Protocol::HTTP::Response[
+          404,
+          { "content-type": "text/plain" },
+          ["file not found"]
+        ]
       rescue NotFoundError => e
         Console.logger.error(self, "#{e.class.name}: #{e.message}")
         Protocol::HTTP::Response[
@@ -410,7 +391,7 @@ module Mayu
         @barrier.async do |task|
           session.activity!
 
-          writable_stream = WritableStream.new(body)
+          stream = EventStream::Writable.new(body)
 
           Console.logger.info(self, "Streaming events to session #{session.id}")
 
@@ -446,7 +427,7 @@ module Mayu
 
           message_task =
             barrier.async do |subtask|
-              loop { writable_stream.write(session.log.pop.to_a) }
+              loop { stream.write(session.log.pop.to_a) }
             ensure
               barrier.stop
             end
@@ -454,7 +435,7 @@ module Mayu
           stop_notification.wait
 
           barrier.stop
-          perform_transfer(session, writable_stream)
+          perform_transfer(session, stream)
           task.stop
         end
       end
@@ -479,16 +460,16 @@ module Mayu
       sig do
         params(
           session: Session,
-          writable_stream: WritableStream,
+          stream: EventStream::Writable,
           task: Async::Task
         ).void
       end
-      def perform_transfer(session, writable_stream, task: Async::Task.current)
-        return if writable_stream.closed?
+      def perform_transfer(session, stream, task: Async::Task.current)
+        return if stream.closed?
 
         Console.logger.info(self, "Session #{session.id}: Transferring")
 
-        writable_stream.write(
+        stream.write(
           EventStream::Message.new(
             :"session.transfer",
             EventStream::Blob.new(
@@ -501,42 +482,11 @@ module Mayu
 
         # Sleep a little bit so that the message
         # gets sent before the body closes...
-        # This is not ideal, heh..
+        # This is not ideal though, it would be better
+        # maybe if the client would acknowledge that they
+        # have received it?
         sleep 0.1
-        writable_stream.close
-      end
-
-      sig do
-        params(
-          full_path: String,
-          accept_encodings: T::Array[String],
-          cache: T::Boolean
-        ).returns(Protocol::HTTP::Response)
-      end
-      def send_static_file(full_path, accept_encodings: [], cache: true)
-        unless File.exist?(full_path)
-          return Protocol::HTTP::Response[404, {}, ["not found"]]
-        end
-
-        mime_type = MIME::Types.type_for(full_path).first
-        content_type = mime_type.to_s
-
-        headers = { "content-type" => content_type }
-
-        headers["cache-control"] = "public, max-age=604800" if cache
-
-        if accept_encodings.include?("br")
-          if File.exist?(full_path + ".br")
-            full_path += ".br"
-            headers["content-encoding"] = "br"
-          end
-        end
-
-        Protocol::HTTP::Response[
-          200,
-          headers,
-          Protocol::HTTP::Body::File.open(full_path)
-        ]
+        stream.close
       end
 
       sig { params(request: Protocol::HTTP::Request).returns(String) }

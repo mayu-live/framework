@@ -3,9 +3,51 @@
 
 require "nanoid"
 require "msgpack"
+require "zlib"
 
 module Mayu
   module EventStream
+    class Writable
+      extend T::Sig
+
+      sig { params(body: Async::HTTP::Body::Writable).void }
+      def initialize(body)
+        @body = body
+        @deflate =
+          T.let(
+            Zlib::Deflate.new(
+              Zlib::BEST_COMPRESSION,
+              -Zlib::MAX_WBITS,
+              Zlib::MAX_MEM_LEVEL,
+              Zlib::HUFFMAN_ONLY
+            ),
+            Zlib::Deflate
+          )
+
+        @wrapper = T.let(EventStream::Wrapper.new, EventStream::Wrapper)
+      end
+
+      sig { params(obj: T.untyped).void }
+      def write(obj)
+        obj
+          .then { @wrapper.pack(_1.to_a) }
+          .then { @deflate.deflate(_1, Zlib::SYNC_FLUSH) }
+          .then { @body.write(_1) }
+      end
+
+      sig { returns(T::Boolean) }
+      def closed?
+        @body.closed?
+      end
+
+      sig { void }
+      def close
+        @body.write(@deflate.flush(Zlib::FINISH))
+        @deflate.close
+        @body.close
+      end
+    end
+
     class Blob
       extend T::Sig
 
