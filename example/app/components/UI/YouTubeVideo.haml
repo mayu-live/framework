@@ -1,0 +1,23 @@
+:css
+  .wrapper {
+    position: relative;
+    aspect-ratio: 1.7777777;
+  }
+
+  .iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+:ruby
+  props => video_id:
+.wrapper
+  %iframe.iframe(allowfullscreen){
+    allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+    frameborder: 0,
+    loading: "lazy",
+    title: props[:title] || "YouTube video player",
+    src: "https://www.youtube.com/embed/#{video_id}",
+  }

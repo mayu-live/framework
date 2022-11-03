@@ -1,6 +1,7 @@
 :ruby
   Fieldset = import("/app/components/Form/Fieldset")
   Details = import("/app/components/Layout/Details")
+  YouTubeVideo = import("/app/components/UI/YouTubeVideo")
 
   def self.get_initial_state(**props)
     { user: nil }
@@ -67,4 +68,4 @@
     %a(href="https://www.youtube.com/kepowob" target="_blank")< Kevin Powell
     , who has a great channel about HTML and CSS. Check it out!
   %Details(summary="Video: How is this possible with CSS only?!")
-    %iframe(allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="" frameborder="0" height="315" src="https://www.youtube.com/embed/g-Y31Iswr2M" title="YouTube video player" width="560")
+    %YouTubeVideo(video_id="g-Y31Iswr2M")
