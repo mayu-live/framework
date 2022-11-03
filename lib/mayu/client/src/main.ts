@@ -29,6 +29,12 @@ class MayuGlobal {
 
   constructor(sessionId: string) {
     this.#sessionId = sessionId;
+
+    onDOMContentLoaded.then(() => {
+      window.addEventListener("popstate", () => {
+        return navigateTo(this.#sessionId, location.pathname);
+      });
+    });
   }
 
   async handle(e: Event, handlerId: string) {
@@ -150,9 +156,12 @@ async function main(url: string) {
         break;
       case "session.navigate":
         const path = payload.path;
-        logger.info("Navigating to", path);
-        history.pushState({}, "", path);
-        // progressBar.setAttribute("progress", "100");
+
+        if (path !== location.pathname) {
+          logger.info("Navigating to", path);
+          history.pushState({}, "", path);
+          // progressBar.setAttribute("progress", "100");
+        }
         break;
       case "session.scroll_into_view":
         const elem = document.querySelector(payload);
