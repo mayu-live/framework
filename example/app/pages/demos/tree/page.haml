@@ -47,6 +47,6 @@
 
   .browser
     %ul.list
-      %Entry(initial_open root=root){root:, path: "app"}
+      %Entry(initial_open root=root){path: "app"}
     .right
       %FileContents(root=root){path: props.dig(:query, :file)}

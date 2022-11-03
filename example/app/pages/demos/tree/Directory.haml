@@ -13,6 +13,11 @@
   .dir {
     padding-left: 0.5em;
     margin-left: 1em;
+    list-style-type: "📁";
+  }
+
+  .open {
+    list-style-type: "📂";
   }
 
   .name {
@@ -48,11 +53,7 @@
         []
       end
 
-  icon = state[:open] ? "📂" : "📁"
-  list_style_type = "'\\%s'" % icon.codepoints.first.to_s(16)
-  style = { list_style_type: }
-
-%li.dir{style:, class: { nonempty: entries.any? }}
+%li.dir{class: { nonempty: entries.any?, open: state[:open] }}
   %span{class: styles[:name], on_click: handler(:handle_toggle)}
     #{File.basename(path)}/
   = unless entries.empty?
