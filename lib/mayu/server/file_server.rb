@@ -26,7 +26,7 @@ module Mayu
         )
       end
       def serve(filename, accept_encodings: [])
-        found_file = find_file(filename)
+        found_file = get_file(filename)
 
         if accept_encodings.include?("br") && found_file.has_brotli
           Protocol::HTTP::Response[
@@ -49,17 +49,20 @@ module Mayu
       private
 
       sig { params(filename: String).returns(FoundFile) }
-      def find_file(filename)
+      def get_file(filename)
         absolute_path = get_absolute_path(filename)
 
-        @found_files[absolute_path] ||= begin
-          raise Errors::FileNotFound unless File.exist?(absolute_path)
+        @found_files[absolute_path] ||= find_file(absolute_path)
+      end
 
-          has_brotli = File.exist?(absolute_path + ".br")
-          content_type = MIME::Types.type_for(filename).first.to_s
+      sig { params(absolute_path: String).returns(FoundFile) }
+      def find_file(absolute_path)
+        raise Errors::FileNotFound unless File.exist?(absolute_path)
 
-          FoundFile.new(absolute_path:, has_brotli:, content_type:)
-        end
+        has_brotli = File.exist?(absolute_path + ".br")
+        content_type = MIME::Types.type_for(absolute_path).first.to_s
+
+        FoundFile.new(absolute_path:, has_brotli:, content_type:)
       end
 
       sig { params(filename: String).returns(String) }
