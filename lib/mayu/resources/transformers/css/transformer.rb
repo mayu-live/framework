@@ -16,6 +16,8 @@ module Mayu
 
             sig { params(path: String, content_hash: String).void }
             def initialize(path:, content_hash:)
+              @layer_name = T.let("#{path}?#{content_hash}", String)
+
               @names =
                 T.let(
                   Hash.new do |hash, key|
@@ -30,6 +32,9 @@ module Mayu
                   T::Hash[String, T::Set[String]]
                 )
             end
+
+            sig { returns(String) }
+            attr_reader :layer_name
 
             sig { params(source: String, target: String).void }
             def compose(source, target)
@@ -65,6 +70,9 @@ module Mayu
           def initialize(path:, content_hash:)
             @classes = T.let(ClassMap.new(path:, content_hash:), ClassMap)
           end
+
+          sig { returns(String) }
+          def layer_name = @classes.layer_name
 
           sig { returns(T::Hash[String, String]) }
           def classes = @classes.to_h

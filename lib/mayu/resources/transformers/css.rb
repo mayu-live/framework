@@ -15,6 +15,7 @@ module Mayu
           const :filename, String
           const :output, String
           const :content_hash, String
+          const :layer_name, String
           const :classes, T::Hash[String, String]
           const :source_map, T::Hash[String, T.untyped]
         end
@@ -63,11 +64,16 @@ module Mayu
           header = "/* #{source_path} */\n"
 
           content_hash = Digest::SHA256.digest(output)
-          filename = Base64.urlsafe_encode64(content_hash) + ".css"
+          urlsafe_hash = Base64.urlsafe_encode64(content_hash)
+          filename = "#{urlsafe_hash}.css"
+          layer_name = "mayu-#{urlsafe_hash.gsub(/[^A-Za-z0-9-_]/, "")}"
+          output =
+            "@layer #{escape_string(transformer.layer_name)} {\n#{output}\n}"
 
           TransformResult.new(
             filename:,
             output:,
+            layer_name: transformer.layer_name,
             classes: transformer.classes,
             content_hash:,
             source_map: {
@@ -78,6 +84,11 @@ module Mayu
               "sourcesContent" => [source]
             }
           )
+        end
+
+        sig { params(str: String).returns(String) }
+        def self.escape_string(str)
+          str.gsub(/[^\w-]/, '\\\\\0')
         end
       end
     end
