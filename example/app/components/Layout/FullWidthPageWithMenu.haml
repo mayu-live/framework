@@ -2,16 +2,14 @@
   MaxWidth = import("./MaxWidth")
 :css
   .layout {
-    display: grid;
     height: 100%;
     overflow: hidden;
-    grid-template-rows: min-content auto;
+    position: relative;
   }
 
   .menu {
     background: var(--blue-bright);
     color: var(--dark);
-    position: relative;
     --menu-direction: row;
   }
 
@@ -23,7 +21,8 @@
     padding: 1em 0;
   }
 
-  @media (min-width: 50em) {
+  /* 46em * 2 - 14em - 2em = 76em */
+  @media (min-width: 76em) {
     .layout {
       grid-template-columns: 15em auto;
       grid-template-rows: auto;
@@ -38,6 +37,11 @@
 
     .menu {
       --menu-direction: column;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: var(--menu-width);
+      height: 100%;
     }
   }
 

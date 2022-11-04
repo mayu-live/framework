@@ -12,9 +12,10 @@
   --blue-bright: #e9f2ff;
   --pink: #efbcd5;
   --pink-bright: #f9e5ef;
-  --page-max-width: 960px;
   --accent-color: var(--blue);
   accent-color: var(--accent-color);
+  --page-max-width: 46em;
+  --menu-width: 14em;
 }
 
 *,

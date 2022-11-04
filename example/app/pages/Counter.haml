@@ -51,7 +51,10 @@
     padding: 0;
     color: #fff;
     --transition-length: 100ms;
-    transition: filter var(--transition-length), box-shadow var(--transition-length), transform var(--transition-length);
+    transition:
+      filter var(--transition-length),
+      box-shadow var(--transition-length),
+      transform var(--transition-length);
     transform: scale(1);
   }
 
@@ -73,11 +76,8 @@
 %Card.card
   .counter
     - decrement_disabled = state[:count].zero?
-
     %button.button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
       －
-
     %span.count= state[:count]
-
     %button.button(title="Increment" onclick=handle_increment)
       ＋
