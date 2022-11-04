@@ -662,7 +662,6 @@ module Mayu
         new_props.each do |attr, value|
           next if attr == :children
           next if attr == :slot
-          next if attr == :dangerously_set_inner_html
 
           old_value = old_props[attr]
           next if value == old_props[attr]

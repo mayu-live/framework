@@ -220,12 +220,7 @@ module Mayu
 
         return if type.is_a?(Symbol) && Mayu::HTML.void_tag?(type)
 
-        if dangerously_set_inner_html =
-             props.dig(:dangerously_set_inner_html, :__html)
-          io.write(dangerously_set_inner_html)
-        else
-          cleaned_children.each { _1.write_html(io, **opts) }
-        end
+        cleaned_children.each { _1.write_html(io, **opts) }
 
         io.write("</#{type}>")
       end
@@ -236,7 +231,6 @@ module Mayu
           next unless value
           next if prop == :children
           next if prop == :slot
-          next if prop == :dangerously_set_inner_html
 
           if value.is_a?(Hash)
             if prop == :style
