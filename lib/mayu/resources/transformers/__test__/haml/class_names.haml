@@ -1,0 +1,13 @@
+:ruby
+  lol = "lol"
+  id = "check123"
+  props = { label: "label", asd: "asd" }
+
+%div.foo(class="bar" asdd=lol){class: "baz"}
+  = "hello"
+  %input(id=id){
+    class: classname,
+    type: "checkbox",
+    placeholder: props[:label],
+    **props.except(:label),
+  }
