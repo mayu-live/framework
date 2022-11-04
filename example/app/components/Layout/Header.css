@@ -43,27 +43,31 @@
   list-style-type: none;
   display: flex;
   align-items: center;
-  gap: 1em;
+  gap: 1.5em;
 }
 
-.navLink {
-  padding: 0.5em;
-  display: block;
-  white-space: nowrap;
-}
-
-.navLink:first-child {
-  padding-left: 0;
-}
-
-.navLink:link,
-.navLink:visited {
+.link:link,
+.link:visited {
   color: var(--yellow);
   text-decoration: none;
 }
 
-.navLink:active,
-.navLink:hover {
+.link:active,
+.link:hover {
   text-decoration: underline;
   filter: brightness(120%);
+}
+
+.titleLink {
+  composes: link;
+  font-weight: bold;
+  font-family: monospace;
+  font-size: 1.4em;
+  padding: 0;
+}
+
+.navLink {
+  composes: link;
+  display: block;
+  white-space: nowrap;
 }

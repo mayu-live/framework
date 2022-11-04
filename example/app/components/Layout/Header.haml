@@ -1,16 +1,7 @@
-:ruby
-  Logo = image("./logo.png")
-
 %header{class: props[:class]}
   .inner
-    %a(href="/")
-      %img.img{
-        src: Logo.src,
-        sizes: Logo.sizes,
-        srcset: Logo.srcset,
-        width: Logo.original.width,
-        height: Logo.original.height,
-      }(alt="Mayu Live")
+    %a.titleLink(href="/" title="Start page")
+      Mayu Live
     %nav.nav
       %menu.menu
         %li
