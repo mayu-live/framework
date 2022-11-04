@@ -232,27 +232,25 @@ module Mayu
 
       sig { params(block: T.proc.params(arg0: String).void).void }
       def format_props(&block)
-        props
-          .reject do |prop, value|
-            next true unless value
-            next true if prop == :children
-            next true if prop == :dangerously_set_inner_html
-            false
-          end
-          .each do |prop, value|
-            if value.is_a?(Hash)
-              if prop == :style
-                yield format_attr(prop, CSSAttributes.new(**value).to_s)
-              else
-                Utils
-                  .flatten_props(value, [prop.to_s])
-                  .each { yield format_prop(_1, _2) }
-              end
-              next
-            end
+        props.each do |prop, value|
+          next unless value
+          next if prop == :children
+          next if prop == :slot
+          next if prop == :dangerously_set_inner_html
 
-            yield format_prop(prop, value)
+          if value.is_a?(Hash)
+            if prop == :style
+              yield format_attr(prop, CSSAttributes.new(**value).to_s)
+            else
+              Utils
+                .flatten_props(value, [prop.to_s])
+                .each { yield format_prop(_1, _2) }
+            end
+            next
           end
+
+          yield format_prop(prop, value)
+        end
       end
 
       sig do
