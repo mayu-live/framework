@@ -172,6 +172,52 @@ class TestHaml < Minitest::Test
     RUBY
   end
 
+  def test_early_return2
+    skip "This hasn't been implemented yet."
+
+    assert_equal(transform_and_format(<<~HAML), <<~RUBY)
+      - return if true
+        .foo
+      .bar
+    HAML
+      public def render
+        begin
+          if true
+            begin
+              return(
+                begin
+                  Mayu::VDOM.h(:div, class: styles[:foo])
+                end
+              )
+              nil
+            end
+          end
+          nil
+        end
+        Mayu::VDOM.h(:div, class: styles[:bar])
+      end
+    RUBY
+  end
+
+  def test_if_else
+    skip "This is a bug that needs to be fixed."
+
+    assert_equal(transform_and_format(<<~HAML), <<~RUBY)
+      = if true
+        .foo
+      = else
+        .bar
+    HAML
+      public def render
+        if true
+          Mayu::VDOM.h(:div, class: styles[:foo])
+        else
+          Mayu::VDOM.h(:div, class: styles[:bar])
+        end
+      end
+    RUBY
+  end
+
   def test_class_names
     assert_equal(transform_and_format(<<~HAML), <<~RUBY)
       :ruby

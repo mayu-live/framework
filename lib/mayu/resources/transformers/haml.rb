@@ -229,6 +229,8 @@ module Mayu
           extend T::Sig
 
           CREATE_ELEMENT_FN = T.let("Mayu::VDOM.h", String)
+          ADD_SPACE_LEFT = :nuke_inner_whitespace
+          ADD_SPACE_RIGHT = :nuke_outer_whitespace
 
           sig { returns(T.nilable(CSS::TransformResult)) }
           attr_reader :css
@@ -252,6 +254,11 @@ module Mayu
           sig { returns(String) }
           def indentation
             "  " * @level
+          end
+
+          sig { params(node: T.untyped).returns(T.untyped) }
+          def visit(node)
+            super
           end
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
@@ -379,107 +386,120 @@ module Mayu
                 end
               end
 
-              new_children = []
-
-              node
-                .children
-                .reject { _1.type == :haml_comment }
-                .chunk(&:type)
-                .each do |type, children|
-                  if type == :plain
-                    text = children.map { _1.value[:text].strip }.join(" ")
-                    new_children.push(
-                      ::Haml::Parser::ParseNode.new(
-                        :plain,
-                        children.first.line,
-                        { text: },
-                        node,
-                        []
-                      )
-                    )
-                    next
-                  end
-
-                  children.each do |child|
-                    if child.value[:nuke_inner_whitespace]
-                      new_children.push(
-                        ::Haml::Parser::ParseNode.new(
-                          :plain,
-                          child.line,
-                          { text: " " },
-                          node,
-                          []
-                        )
-                      )
-                    end
-
-                    new_children.push(child)
-
-                    if child.value[:nuke_outer_whitespace]
-                      new_children.push(
-                        ::Haml::Parser::ParseNode.new(
-                          :plain,
-                          child.line,
-                          { text: " " },
-                          node,
-                          []
-                        )
-                      )
-                    end
-                  end
-                end
-
-              new_children.each do |child|
+              transform_children(node, node.children).each do |child|
                 @out << ",\n"
                 visit(child)
               end
             end
 
-            classes =
-              T.let([], T::Array[T.any(String, Symbol, SyntaxTree::Node)])
+            indent { visit_node_attributes(node) }
 
-            indent do
-              node.value[:attributes].each do |attr, value|
-                if attr == "class"
-                  classes.push(*value.split.map(&:to_sym))
-                  next
-                end
-
-                @out << ",\n"
-                @out << indentation
-
-                @out << "#{attr.tr("-", "_")}: #{value.inspect}"
-              end
-
-              if dynamic_attributes = node.value[:dynamic_attributes]
-                if new = dynamic_attributes.new
-                  visit_dynamic_attribute(new) { |klass| classes << klass }
-                end
-
-                if old = dynamic_attributes.old
-                  visit_dynamic_attribute(old) { |klass| classes << klass }
-                end
-              end
-
-              unless classes.empty?
-                @out << ",\n"
-                @out << indentation
-                @out << "class: styles["
-                classes.each_with_index do |klass, i|
-                  @out << ", " unless i.zero?
-                  case klass
-                  when SyntaxTree::Node
-                    @out << format_ruby_ast(klass)
-                  else
-                    @out << klass.inspect
-                  end
-                end
-                @out << "]"
-              end
-            end
             @out << "\n" << indentation unless @out.pos == old_pos
 
             @out << ")"
+          end
+
+          sig { params(node: ::Haml::Parser::ParseNode).void }
+          def visit_node_attributes(node)
+            classes =
+              T.let([], T::Array[T.any(String, Symbol, SyntaxTree::Node)])
+
+            node.value[:attributes].each do |attr, value|
+              if attr == "class"
+                classes.push(*value.split.map(&:to_sym))
+                next
+              end
+
+              @out << ",\n"
+              @out << indentation
+
+              @out << "#{attr.tr("-", "_")}: #{value.inspect}"
+            end
+
+            if dynamic_attributes = node.value[:dynamic_attributes]
+              if new = dynamic_attributes.new
+                visit_dynamic_attribute(new) { |klass| classes << klass }
+              end
+
+              if old = dynamic_attributes.old
+                visit_dynamic_attribute(old) { |klass| classes << klass }
+              end
+            end
+
+            unless classes.empty?
+              @out << ",\n"
+              @out << indentation
+              @out << "class: styles["
+              classes.each_with_index do |klass, i|
+                @out << ", " unless i.zero?
+                case klass
+                when SyntaxTree::Node
+                  @out << format_ruby_ast(klass)
+                else
+                  @out << klass.inspect
+                end
+              end
+              @out << "]"
+            end
+          end
+
+          sig do
+            params(
+              parent: ::Haml::Parser::ParseNode,
+              old_children: T::Array[::Haml::Parser::ParseNode]
+            ).returns(T::Array[::Haml::Parser::ParseNode])
+          end
+          def transform_children(parent, old_children)
+            new_children = []
+
+            old_children
+              .reject { _1.type == :haml_comment }
+              .chunk(&:type)
+              .each do |type, children|
+                if type == :plain
+                  text = children.map { _1.value[:text].strip }.join(" ")
+                  new_children.push(
+                    ::Haml::Parser::ParseNode.new(
+                      :plain,
+                      children.first&.line || 1,
+                      { text: },
+                      parent,
+                      []
+                    )
+                  )
+                  next
+                end
+
+                children.each do |child|
+                  if child.value[ADD_SPACE_LEFT]
+                    new_children.push(
+                      ::Haml::Parser::ParseNode.new(
+                        :plain,
+                        child.line,
+                        { text: " " },
+                        parent,
+                        []
+                      )
+                    )
+                  end
+
+                  new_children.push(child)
+
+                  if child.value[ADD_SPACE_RIGHT]
+                    new_children.push(
+                      ::Haml::Parser::ParseNode.new(
+                        :plain,
+                        child.line,
+                        { text: " " },
+                        parent,
+                        []
+                      )
+                    )
+                  end
+                end
+              end
+
+            new_children
           end
 
           sig { params(ast: SyntaxTree::Node).returns(String) }
@@ -535,14 +555,18 @@ module Mayu
             is_assignment = text.chomp.match?(/=\z/)
             emit_end = !is_assignment
 
-            @out << indentation << text
+            # @out << indentation
+            @out << text
 
             unless node.children.empty?
               @out << " begin" if text == "return"
 
-              node.children.each_with_index do |child, i|
-                @out << "\n"
-                child.value[:keyword] ? visit(child) : indent { visit(child) }
+              indent do
+                node.children.each_with_index do |child, i|
+                  @out << "\n"
+                  # child.valu[:keyword] ? visit(child) : indent { visit(child) }
+                  visit(child)
+                end
               end
 
               @out << "\n"
