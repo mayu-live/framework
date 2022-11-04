@@ -8,7 +8,13 @@
       # Components
 
       Mayu components are written in a dialect of
-      [Haml](https://haml.info/)
+      [Haml](https://haml.info/).
+      Mayu parses Haml code and transforms it into Ruby.
+
+      To see how these transformations are made, see the
+      [Haml transformer test examples](https://github.com/mayu-live/framework/tree/main/lib/mayu/resources/transformers/__test__/haml).
+
+      ## Component structure
 
       This is the basic structure of a component:
 
@@ -22,7 +28,6 @@
 
       In the `:ruby` block, which has to come first,
       you can import other components and load resources.
-      More about that later.
 
       ## A basic component
 

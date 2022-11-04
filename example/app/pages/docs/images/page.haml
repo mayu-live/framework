@@ -1,0 +1,31 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Markdown = import("/app/components/Markdown")
+
+%article
+  %Markdown{elems: { header: Heading }}
+    :plain
+      # Images
+
+      To load an image, you use the `image()`-method which
+      validates that the resource is an image.
+
+      ```haml
+      :ruby
+        Image = image("./río_amazonas.jpeg")
+      %img{src: Image.src}
+      ```
+
+      A more complete example:
+
+      ```haml
+      :ruby
+        Image = image("./río_amazonas.jpeg")
+      %img.img{
+        src: Image.src,
+        sizes: Image.sizes,
+        srcset: Image.srcset,
+        width: Image.original.width,
+        height: Image.original.height,
+      }(alt="Amazon river")
+      ```

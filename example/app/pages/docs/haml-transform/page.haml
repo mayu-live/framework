@@ -1,0 +1,35 @@
+:ruby
+  Details = import("/app/components/Layout/Details")
+  Highlight = import("/app/components/Layout/Highlight")
+
+  EXAMPLES_ROOT =
+    File.join(
+      Gem.loaded_specs.fetch('mayu-live').full_gem_path,
+      "lib/mayu/resources/transformers/__test__/haml"
+    )
+
+  EXAMPLES = Dir[File.join(EXAMPLES_ROOT, "*")]
+    .group_by { File.basename(_1, ".*") }
+    .except("README")
+    .each_with_object({}) do |(basename, files), obj|
+      obj[basename] = files.each_with_object({}) do |file, obj2|
+        obj2[File.extname(file)] = File.read(file)
+      end
+    end
+
+:css
+  .details {
+    margin: 2em 1em;
+  }
+
+%article
+  %p
+    This page shows test examples from the Haml transformer.
+  = EXAMPLES.sort_by(&:first).map do |name, files|
+    %Details.details(summary=name)
+      = if skip = files[".skip"]
+        %p Skipped: #{skip}
+      %h3 Input
+      %Highlight(language="haml")= files[".haml"].to_s
+      %h3 Output
+      %Highlight(language="ruby")= files[".rb"].to_s

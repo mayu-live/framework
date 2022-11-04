@@ -8,5 +8,6 @@
   Mayu::VDOM.h(
     props[:tag] || :div,
     *children,
+    **props,
     class: styles[:maxWidth, props[:class]]
   )

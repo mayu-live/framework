@@ -1,3 +1,5 @@
+:ruby
+  MaxWidth = import("./MaxWidth")
 :css
   .layout {
     display: grid;
@@ -18,7 +20,7 @@
   }
 
   .page {
-    padding: 1em 2em 2em 2em;
+    padding: 1em 0;
   }
 
   @media (min-width: 50em) {
@@ -43,5 +45,5 @@
   %nav.menu
     .scroll
       %slot(name="menu")
-  #page.page
+  %MaxWidth#page.page
     %slot

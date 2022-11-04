@@ -10,41 +10,58 @@
       You can write CSS directly inside components, like this:
 
       ```haml
-      :ruby
-        def self.get_initial_state(**)
-          { count: 0 }
-        end
-        def handle_click(e)
-          update do |state|
-            state[:count].succ
-          end
-        end
       :css
-        .outer {
-          border: 1px solid #f0f;
-        }
-        .count {
-          font-weight: bold;
-        }
-        .button {
-          background: #0f0;
-        }
-      .outer
-        %p.count= state[:count]
-        %button.button(onclick=handle_click) click me
+        .button { color: #f0f; }
+      %button.button Click me
       ```
 
-      Here's another idea, not sure if it's good or not, but maybe:
+      This will be transformed into:
+
+      ```haml
+      public def render
+        Mayu::VDOM.h(:button, "Click me", class: styles[:button])
+      end
+      ```
+
+      The `styles`-object implments `#[]` which works kinda like the
+      [classnames](https://www.npmjs.com/package/classnames) library
+      for JS. You can use it like this:
+
+      ```ruby
+      styles[:button]
+      #=> "/app/components/MyComponent.button"
+      styles[:button, active: false]
+      #=> "/app/components/MyComponent.button"
+      styles[:button, active: true]
+      #=> "/app/components/MyComponent.button /app/components/MyComponent.active"
+      styles[:button, "foobar"]
+      #=> "/app/components/MyComponent.button foobar"
+      ```
+
+      Note that you can only use class names.
+
+      ## Root stylesheet
+
+      You can write styles for the root document in ´app/root.css´.
+      This is a good place to set up CSS variables and global overrides
+      for your document.
+      [Example](https://github.com/mayu-live/framework/blob/main/example/app/root.css)
+
+      ## Future ideas
+
+      This doesn't work yet, but there is
+      [an issue](https://github.com/mayu-live/framework/issues/25)
+      for implementing something like this:
 
       ```haml
       :css
-        .outer {
+        article {
           border: 1px solid #f0f;
         }
         button {
           background: #0f0;
         }
-      .outer
+      %article
         %button click me
       ```
 
@@ -53,7 +70,6 @@
       In this example, it would be possible to generate a class name
       for the button-tag, and then for each button element that matches in the same
       component, it will just pull that class name from the component stylesheet.
-      Not sure about this, but I think it would be a good feature.
 
       This means that tag name-selectors would be scoped to the current component,
       and it looks kinda ridiculous to do: `%button.button` vs just `%button`...

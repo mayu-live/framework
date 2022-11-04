@@ -7,10 +7,25 @@
     :plain
       # Introduction
 
-      Welcome to the documentation!
+      Welcome to the Mayu documentation!
 
       This is all work in progress. Contributions are welcome.
 
       Check out the
       [README](https://github.com/mayu-live/framework/blob/main/README.md#description)
       if you haven't!
+
+      ## What is Mayu?
+
+      Mayu is a live streaming server side component-based VirtualDOM rendering framework written in Ruby.
+
+      Everything runs on the server, except for a
+      [tiny JavaScript runtime](https://github.com/mayu-live/framework/tree/main/lib/mayu/client)
+      that handles the connection and updates the DOM.
+
+      Mayu has a server side [Virtual DOM](https://en.wikipedia.org/wiki/Virtual_DOM).
+      Virtual DOMs are usually made to be run in browsers, while Mayu runs on
+      a server and streams DOM-patches to the browser.
+
+      By running application logic on the server, you don't need an API
+      for your frontend app to communicate with your backend.

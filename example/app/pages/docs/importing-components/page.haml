@@ -5,12 +5,10 @@
 %article
   %Markdown{elems: { header: Heading }}
     :plain
-      # Resources
+      # Importing components
 
       Mayu has a resource system which builds a dependency graph
       of everything that the application consists of.
-
-      ## Importing components
 
       If you want to import another component:
 
@@ -31,30 +29,4 @@
       :ruby
         Button = import("/app/components/Button")
       %Button Click here!
-      ```
-
-      ## Images
-
-      To load an image, you do basically the same thing,
-      but you use the `image()`-method which validates that
-      the file is an image.
-
-      ```haml
-      :ruby
-        Image = image("./río_amazonas.jpeg")
-      %img{src: Image.src}
-      ```
-
-      A more complete example:
-
-      ```haml
-      :ruby
-        Image = image("./río_amazonas.jpeg")
-      %img.img{
-        src: Image.src,
-        sizes: Image.sizes,
-        srcset: Image.srcset,
-        width: Image.original.width,
-        height: Image.original.height,
-      }(alt="Amazon river")
       ```
