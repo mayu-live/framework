@@ -12,6 +12,7 @@
     color: var(--dark);
     --menu-direction: row;
   }
+  .layout { border: 5px solid #00c; }
 
   .scroll {
     padding: 1em;
@@ -21,13 +22,9 @@
     padding: 1em 0;
   }
 
-  /* 46em * 2 - 14em - 2em = 76em */
-  @media (min-width: 76em) {
-    .layout {
-      grid-template-columns: 15em auto;
-      grid-template-rows: auto;
-    }
-
+  /* 46em * 2 - 14em = 78em */
+  @media (min-width: 78em) {
+    .layout { border: 5px solid #00c; }
     .scroll {
       position: absolute;
       inset: 0;
@@ -45,6 +42,28 @@
     }
   }
 
+  /* 46em + 14em + 4em = 64em */
+  @media (min-width: 64em) and (max-width: 78em) {
+    .layout {
+      border: 5px solid #c00;
+      display: grid;
+      grid-template-columns: min-content auto;
+    }
+
+    .scroll {
+      position: absolute;
+      inset: 0;
+      max-height: 100%;
+      overflow-y: auto;
+    }
+
+    .menu {
+      --menu-direction: column;
+      width: var(--menu-width);
+      position: relative;
+      height: 100vh;
+    }
+  }
 .layout
   %nav.menu
     .scroll
