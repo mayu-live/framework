@@ -61,7 +61,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency "syntax_tree-xml", '~> 0.1.0'
   spec.add_dependency "terminal-table", "~> 3.0.1"
   spec.add_dependency "toml-rb", "~> 2.2.0"
-
-  # For more information and examples about making a new gem, check out our
-  # guide at: https://bundler.io/guides/creating_gem.html
 end
