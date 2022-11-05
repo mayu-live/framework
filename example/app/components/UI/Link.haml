@@ -1,0 +1,13 @@
+:css
+  .link:link,
+  .link:visited {
+    color: var(--link-color);
+    text-decoration: none;
+  }
+
+  .link:active,
+  .link:hover {
+    text-decoration: underline;
+  }
+%a.link{**props}
+  %slot

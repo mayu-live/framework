@@ -1,10 +1,8 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
   Highlight = import("/app/components/Layout/Highlight")
-  Markdown = import("/app/components/Markdown")
-
+  Markdown = import("../Markdown")
 %article
-  %Markdown{elems: { header: Heading }}
+  %Markdown
     :plain
       # Whitespace
 
@@ -30,7 +28,7 @@
       %p
 
         Hello world
-  %Markdown{elems: { header: Heading }}
+  %Markdown
     :plain
       If you want to include whitespace between text and elements,
       you need to use the `<` and `>` operators.

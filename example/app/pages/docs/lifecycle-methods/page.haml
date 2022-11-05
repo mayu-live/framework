@@ -1,14 +1,11 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
-  Markdown = import("/app/components/Markdown")
-
+  Markdown = import("../Markdown")
 %article
-  %Markdown{elems: { header: Heading }}
+  %Markdown
     :plain
       # Lifecycle methods
 
       There are a few lifecycle methods that can be useful.
-      It's all asynchronous so you can create loops and fetch data without blocking.
 
       ```haml
       :ruby
@@ -36,7 +33,8 @@
 
       Called when the component gets mounted.
 
-      You can start a loop in here and update state periodically.
+      This is a good place to start async task or periodic updates.
+      All tasks will be stopped when the component unmounts.
 
       ```haml
       :ruby
@@ -62,6 +60,8 @@
       improve performance.
 
       Usually you don't need to override the default behavior.
+
+      Should return `true` or `false`.
 
       ## `def did_update(prev_props, prev_state)`
 

@@ -16,6 +16,7 @@
   accent-color: var(--accent-color);
   --page-max-width: 46em;
   --menu-width: 14em;
+  --link-color: var(--accent-color);
 }
 
 *,

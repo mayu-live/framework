@@ -1,7 +1,7 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
   Card = import("/app/components/Layout/Card")
-  Markdown = import("/app/components/Markdown")
+  Markdown = import("../Markdown")
   Example = import("./Example")
 
 :css
@@ -12,7 +12,7 @@
   }
 
 %article
-  %Markdown{elems: { header: Heading }}
+  %Markdown
     :plain
       # State
 

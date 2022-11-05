@@ -1,0 +1,68 @@
+:ruby
+  Markdown = import("../Markdown")
+%article
+  %Markdown
+    :plain
+      # Reusing components
+
+      Mayu has a resource system which builds a dependency graph
+      of everything that the application consists of.
+
+      You can use `import()` in the first `:ruby`-filter to import
+      other components.
+
+      To render child elements passed to a component, use `%slot`.
+
+      Example:
+
+      ### `app/components/Button.haml`
+      ```haml
+      :css
+        .button {
+          border: none;
+          background: var(--blue);
+          color: var(--white);
+        }
+      %button.button{**props}
+        %slot
+      ```
+
+      ### `app/pages/my-page/page.haml`
+      ```haml
+      :ruby
+        Button = import("/app/components/Button")
+      %Button Click here!
+      ```
+
+      This would replace `%slot` with the string `Click here!`.
+
+      ## Named slots
+
+      Slots can also be named, here's an example:
+
+      ### `app/components/Wrapper.haml`
+
+      ```haml
+      :ruby
+        Header = import("./Header")
+        Footer = import("./Footer")
+      %div
+        %Header
+        %slot(name="after-header")
+        %h1= props[:title]
+        %slot
+          %p Optional fallback content, if no children are passed in.
+        %Footer
+        %slot(name="after-footer")
+      ```
+
+      ### `src/pages/hello/page.haml`
+
+      ```haml
+      :ruby
+        Wrapper = import("/app/components/Wrapper")
+      %Wrapper(title="Hello world")
+        %h2 Hello world
+        %p Hello to the world and welcome to my webpage.
+        %p(slot="after-footer") Copyright #{Time.now.year}
+      ```

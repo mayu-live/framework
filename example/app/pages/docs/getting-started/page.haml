@@ -1,6 +1,5 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
-  Markdown = import("/app/components/Markdown")
+  Markdown = import("../Markdown")
 
 :css
   .pre {
@@ -14,7 +13,7 @@
   }
 
 %article
-  %Markdown{elems: { header: Heading }}
+  %Markdown
     :plain
       # Getting started
 
