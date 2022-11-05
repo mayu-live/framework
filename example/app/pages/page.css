@@ -3,7 +3,7 @@
 }
 
 .features {
-  margin: 3em;
+  margin: 4em 0;
 }
 
 .features-flex {
@@ -51,7 +51,7 @@
   margin-inline: auto;
   display: flex;
   flex-direction: column;
-  padding: 4em;
+  padding: 4em 2em;
   gap: 4em;
 }
 
@@ -85,11 +85,7 @@
 }
 
 .example {
-  width: min(100%, var(--page-max-width));
-  margin-inline: auto;
-  max-width: 40em;
-  margin: 4em auto;
-  padding: 0;
+  padding: 4em 0;
 }
 
 .example-heading {

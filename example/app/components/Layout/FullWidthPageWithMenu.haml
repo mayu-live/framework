@@ -21,27 +21,8 @@
     padding: 1em 0;
   }
 
-  /* 46em * 2 - 14em = 78em */
-  @media (min-width: 78em) {
-    .scroll {
-      position: absolute;
-      inset: 0;
-      max-height: 100%;
-      overflow-y: auto;
-    }
-
-    .menu {
-      --menu-direction: column;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: var(--menu-width);
-      height: 100%;
-    }
-  }
-
   /* 46em + 14em + 4em = 64em */
-  @media (min-width: 64em) and (max-width: 78em) {
+  @media (min-width: 64em) {
     .layout {
       display: grid;
       grid-template-columns: min-content auto;
@@ -58,7 +39,7 @@
       --menu-direction: column;
       width: var(--menu-width);
       position: relative;
-      height: 100vh;
+      height: 100%;
     }
   }
 .layout

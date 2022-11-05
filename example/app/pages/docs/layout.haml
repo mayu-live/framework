@@ -1,6 +1,7 @@
 :ruby
   PageLayout = import("/app/components/Layout/FullWidthPageWithMenu")
   Heading = import("/app/components/Layout/Heading")
+  Card = import("/app/components/Layout/Card")
   Menu = import("/app/components/Layout/Menu")
   MenuItem = import("/app/components/Layout/MenuItem")
   Details = import("./Details")
@@ -19,11 +20,23 @@
     overflow: hidden;
   }
 
+  .under-construction {
+    margin: 1em;
+    font-size: .8em;
+  }
+
+  .icon {
+    display: inline-block;
+    scale: 2;
+    margin: 0 1em 0 .5em;
+  }
+
 %PageLayout
   #page
-    %p.underConstruction(slot="after_heading")
-      %span.underConstructionText
-        This page is under construction!
+    %Card(slot="after_heading" border="var(--yellow)" background="var(--yellow-bright)")
+      %p.under-construction
+        %span.icon> ⚠️
+        %span This page is under construction!
     %slot
 
   %div(slot="menu")
