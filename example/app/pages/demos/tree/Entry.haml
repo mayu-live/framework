@@ -6,13 +6,12 @@
   props => {root:, path:}
   absolute_path = File.join(root, path)
 
-- if File.directory?(absolute_path)
-  - return
-    %Directory{
-      root:,
-      path:,
-      entry: self.class,
-      initial_open: props[:initial_open],
-    }
-
-%FileEntry{root:, path:}
+= if File.directory?(absolute_path)
+  %Directory{
+    root:,
+    path:,
+    entry: self.class,
+    initial_open: props[:initial_open],
+  }
+= else
+  %FileEntry{root:, path:}

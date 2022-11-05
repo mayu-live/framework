@@ -550,12 +550,17 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_script(node)
+            next_sibling =
+              node.parent.children[node.parent.children.index(node).succ]
             text = node.value[:text].strip
 
-            is_assignment = text.chomp.match?(/=\z/)
-            emit_end = !is_assignment
+            next_continues =
+              next_sibling && next_sibling.type == :script &&
+                next_sibling.value[:keyword] == "else"
 
-            # @out << indentation
+            is_assignment = text.chomp.match?(/=\z/)
+            emit_end = !(is_assignment || next_continues)
+
             @out << text
 
             unless node.children.empty?
@@ -564,7 +569,6 @@ module Mayu
               indent do
                 node.children.each_with_index do |child, i|
                   @out << "\n"
-                  # child.valu[:keyword] ? visit(child) : indent { visit(child) }
                   visit(child)
                 end
               end
