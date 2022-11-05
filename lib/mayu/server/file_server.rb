@@ -28,19 +28,21 @@ module Mayu
       def serve(filename, accept_encodings: [])
         found_file = get_file(filename)
 
-        if accept_encodings.include?("br") && found_file.has_brotli
+        headers = {
+          "cache-control" => "public, max-age=604800",
+          "content-type" => found_file.content_type
+        }
+
+        if found_file.has_brotli && accept_encodings.include?("br")
           Protocol::HTTP::Response[
             200,
-            {
-              "content-type" => found_file.content_type,
-              "content-encoding" => "br"
-            },
+            { **headers, "content-encoding" => "br" },
             Protocol::HTTP::Body::File.open(found_file.absolute_path + ".br")
           ]
         else
           Protocol::HTTP::Response[
             200,
-            { "content-type" => found_file.content_type },
+            headers,
             Protocol::HTTP::Body::File.open(found_file.absolute_path)
           ]
         end
