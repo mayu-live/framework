@@ -14,9 +14,11 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
       *::before,
       *::after { box-sizing: border-box; }
     CSS
+      @layer app\\/components\\/MyComponent\\?abc123 {
       *,
       *::before,
       *::after { box-sizing: border-box; }
+      }
     CSS
   end
 
@@ -29,11 +31,13 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
         composes: foo;
       }
     CSS
+      @layer app\\/components\\/MyComponent\\?abc123 {
       .app\\/components\\/MyComponent\\.foo\\?abc123 {
         color: #f0f;
       }
       .app\\/components\\/MyComponent\\.bar\\?abc123 {
 
+      }
       }
     CSS
   end
@@ -48,12 +52,14 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
         animation: shake 0.25s;
       }
     CSS
+      @layer app\\/components\\/MyComponent\\?abc123 {
       .app\\/components\\/MyComponent\\.formGroup\\?abc123:has(:invalid) {
         --color: var(--invalid);
       }
 
       .app\\/components\\/MyComponent\\.formGroup\\?abc123:has(:invalid:not(:focus)) {
         animation: shake 0.25s;
+      }
       }
     CSS
   end
@@ -64,8 +70,10 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
         background: var(--blue);
       }
     CSS
+      @layer app\\/components\\/MyComponent\\?abc123 {
       .app\\/components\\/MyComponent\\.page\\?abc123[aria-current=\"page\"] {
         background: var(--blue);
+      }
       }
     CSS
   end
@@ -74,7 +82,9 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
     assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
       .a + .b { color: #fff; }
     CSS
+      @layer app\\/components\\/MyComponent\\?abc123 {
       .app\\/components\\/MyComponent\\.a\\?abc123 + .app\\/components\\/MyComponent\\.b\\?abc123 { color: #fff; }
+      }
     CSS
   end
 
