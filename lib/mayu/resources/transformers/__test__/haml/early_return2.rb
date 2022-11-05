@@ -1,16 +1,10 @@
 public def render
-  begin
-    if true
+  if true
+    return(
       begin
-        return(
-          begin
-            Mayu::VDOM.h(:div, class: styles[:foo])
-          end
-        )
-        nil
+        Mayu::VDOM.h(:div, class: styles[:foo])
       end
-    end
-    nil
+    )
   end
   Mayu::VDOM.h(:div, class: styles[:bar])
 end

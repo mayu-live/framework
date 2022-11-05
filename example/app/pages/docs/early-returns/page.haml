@@ -8,6 +8,10 @@
       I don't think this is possible in regular Haml,
       but it makes sense to do it in Mayu.
 
+      The following snippet will show a button, and
+      once it has been clicked, the component will
+      instead show a paragraph.
+
       ```haml
       :ruby
         def self.get_initial_state(**)
@@ -16,21 +20,15 @@
         def handle_click(_event)
           update(clicked: true)
         end
-      - if state[:clicked]
-        - return
-          %p You clicked the button.
+      - return if state[:clicked]
+        %p You clicked the button.
       %button(onclick=handle_click) Click me
       ```
 
-      ## Future ideas
-
-      It would definitely be possible to extend the syntax a little bit more,
-      something like this would be cool:
+      You can also use `return unless`.
 
       ```haml
       - return unless props[:data]
         %p Loading…
       %pre= props[:data]
       ```
-
-      Note that it doesn't work yet.

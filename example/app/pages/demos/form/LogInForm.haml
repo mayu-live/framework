@@ -20,14 +20,13 @@
 
 - state => user:
 
-- if user
-  - return
+- return if user
+  %div
+    %p
+      Logged in as #{user[:email]}.
     %div
-      %p
-        Logged in as #{user[:email]}.
-      %div
-        %button{on_click: handler(:handle_log_out)}
-          Log out
+      %button{on_click: handler(:handle_log_out)}
+        Log out
 
 %div
   %p

@@ -40,11 +40,10 @@
 :ruby
   tokens = get_tokens
 
-- unless tokens
-  - return
-    .container
-      .card
-        %pre.highlight= children.join
+- return unless tokens
+  .container
+    .card
+      %pre.highlight= children.join
 .container
   .card
     %pre.highlight

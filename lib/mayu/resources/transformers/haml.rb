@@ -550,10 +550,28 @@ module Mayu
 
           sig { params(node: ::Haml::Parser::ParseNode).void }
           def visit_script(node)
-            next_sibling =
-              node.parent.children[node.parent.children.index(node).succ]
             text = node.value[:text].strip
 
+            if match = text.match(/\Areturn\s+(if|unless)\s+(.+)/)
+              @out << "#{match[1]} #{match[2]}\n"
+              indent do
+                @out << indentation << "return("
+                indent do
+                  @out << indentation << "begin"
+                  node.children.each_with_index do |child, i|
+                    @out << "\n"
+                    visit(child)
+                  end
+                  @out << "\n" << indentation << "end"
+                end
+                @out << "\n" << indentation << ")"
+              end
+              @out << "\n" << indentation << "end"
+              return
+            end
+
+            next_sibling =
+              node.parent.children[node.parent.children.index(node).succ]
             next_continues =
               next_sibling && next_sibling.type == :script &&
                 next_sibling.value[:keyword] == "else"

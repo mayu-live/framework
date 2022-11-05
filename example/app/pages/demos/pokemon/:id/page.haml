@@ -18,9 +18,8 @@
 :ruby
   pokemon = state[:result]
 
-- unless pokemon
-  - return
-    %p Loading pokémon #{props.inspect}
+- return unless pokemon
+  %p Loading pokémon #{props.inspect}
 
 %article
   %h1= pokemon[:name]

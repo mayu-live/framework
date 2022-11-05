@@ -37,15 +37,14 @@
 :ruby
   state => result:, error:
 
-- if error
-  - return
-    %p Error: #{error}
+- return if error
+  %p Error: #{error}
 
-- unless result
-  - return
-    %p
-      Loading Pokémon from
-      %a(href="https://pokeapi.co/")< PokéAPI
+- return unless result
+  %p
+    Loading Pokémon from
+    %a(href="https://pokeapi.co/")< PokéAPI
+
 :ruby
   result => results:
 
