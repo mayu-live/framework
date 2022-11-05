@@ -11,6 +11,8 @@ module Mayu
     class App
       extend T::Sig
 
+      DEV_ASSETS_TIMEOUT_SECONDS = 4
+      DEV_ASSETS_RETRY_AFTER_SECONDS = 2
       PING_INTERVAL = 2 # seconds
       NANOID_RE = /[\w-]{21}/
 
@@ -161,7 +163,10 @@ module Mayu
         in ["__mayu", "static", filename]
           if @environment.config.server.generate_assets
             begin
-              @environment.resources.wait_for_asset(filename, timeout: 4)
+              @environment.resources.wait_for_asset(
+                filename,
+                timeout: DEV_ASSETS_TIMEOUT_SECONDS
+              )
             rescue Async::TimeoutError => e
               Console.logger.warn(
                 self,
@@ -170,7 +175,7 @@ module Mayu
               return(
                 Protocol::HTTP::Response[
                   503,
-                  { "retry-after" => 2 },
+                  { "retry-after" => DEV_ASSETS_RETRY_AFTER_SECONDS },
                   ["asset could not be generated in time"]
                 ]
               )
