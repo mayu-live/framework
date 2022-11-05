@@ -1,3 +1,4 @@
+*.ipc
 *.gem
 .DS_Store
 .git

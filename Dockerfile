@@ -16,7 +16,9 @@ RUN mkdir /app
 WORKDIR /app
 RUN mkdir -p tmp/pids
 
-#######################################################
+######################
+## build js runtime ##
+######################
 
 FROM node:19.0.0-alpine3.15 as build-js
 
@@ -29,7 +31,13 @@ RUN \
     npm run build:production && \
     rm -r node_modules
 
-FROM base as build
+################
+## build base ##
+################
+
+FROM base as build-base
+
+WORKDIR /build
 
 ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils npm webp imagemagick brotli
 
@@ -42,45 +50,60 @@ RUN \
 
 RUN gem install -N bundler -v ${BUNDLER_VERSION}
 
+####################
+## build mayu gem ##
+####################
+
+FROM build-base as build-gem
+
 COPY mayu-live.gemspec Gemfile* ./
-COPY lib/mayu/version.rb /app/lib/mayu/version.rb
+COPY lib/mayu/version.rb lib/mayu/version.rb
 RUN bundle && rm -rf vendor/bundle/ruby/*/cache
 
-COPY . .
+COPY COPYING README.md .
+COPY exe ./exe
+COPY sorbet ./sorbet
+COPY lib ./lib
 
 COPY --from=build-js /build/dist lib/mayu/client/dist
 RUN brotli lib/mayu/client/dist/*.{js,map}
 
-# RUN rake build
 RUN gem build
-RUN \
-    mkdir -p example/vendor/cache && \
-    cp mayu-live-*.gem example/vendor/cache
 
+#######################
+## build example app ##
+#######################
+
+FROM build-base as build-app
+
+WORKDIR /app
+
+COPY example/Gemfile* ./
+COPY --from=build-gem /build/mayu-live-*.gem vendor/cache/
 RUN \
-    cd example && \
-    bundle && \
+    sed -i 's/, path: "\.\."//' Gemfile && \
+    ls -l vendor/cache && \
+    bundle install && \
+    bundle binstubs mayu-live && \
     rm -rf vendor/bundle/ruby/*/cache && \
-    MAYU_SECRET_KEY="nothing secret here, we just need to set something" \
-    bin/mayu build
+    rm -rf vendor/cache
 
-#######################################################
+COPY example/mayu.toml .
+COPY example/app ./app
+
+ENV MAYU_SECRET_KEY "nothing secret here, we just need to set something"
+RUN bin/mayu build
+
+#######################
+## build final image ##
+#######################
 
 FROM base
 
-# ENV PACKAGES postgresql-client file vim curl gzip
-#
-# RUN --mount=type=cache,id=prod-apt-cache,sharing=locked,target=/var/cache/apt \
-#     --mount=type=cache,id=prod-apt-lib,sharing=locked,target=/var/lib/apt \
-#     apt-get update -qq && \
-#     apt-get install --no-install-recommends -y \
-#     ${PACKAGES} && \
-#     rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-COPY --from=build /app /app
+COPY --from=build-app /app /app
 
 ENV PORT 3000
 
-WORKDIR /app/example
+WORKDIR /app
 
 CMD ["bin/mayu", "serve", "--disable-sorbet"]

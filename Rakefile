@@ -18,9 +18,6 @@ unless ENV['BUNDLE_WITHOUT'].to_s.split(":").include?("test")
 end
 
 task :build do
-  Dir.chdir("lib/mayu/client") do
-    system("npm", "run", "build:production")
-  end
-
+  system("npm", "-w", "lib/mayu/client", "run", "build:production")
   system("gem", "build")
 end
