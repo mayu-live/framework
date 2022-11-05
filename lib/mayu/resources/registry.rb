@@ -111,6 +111,17 @@ module Mayu
       end
 
       sig do
+        params(asset_dir: String, concurrency: Integer).returns(Async::Task)
+      end
+      def generate_assets(asset_dir, concurrency:)
+        if @assets
+          @assets.run_until_empty(asset_dir, concurrency:)
+        else
+          raise "Assets can't be generated in production"
+        end
+      end
+
+      sig do
         params(path: String, visited: T::Set[String], add: T::Boolean).void
       end
       def reload_resource(path, visited: T::Set[String].new, add: false)

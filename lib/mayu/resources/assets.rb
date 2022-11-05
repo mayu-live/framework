@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 # typed: strict
 
+require "async/variable"
+require "async/queue"
+require "async/semaphore"
+
 module Mayu
   module Resources
     class Assets
@@ -31,23 +35,47 @@ module Mayu
           task: Async::Task
         ).returns(Async::Task)
       end
+      def run_until_empty(asset_dir, concurrency: 4, task: Async::Task.current)
+        task.async do
+          semaphore = Async::Semaphore.new(concurrency)
+
+          process(@queue.dequeue, asset_dir, semaphore) until @queue.empty?
+        end
+      end
+
+      sig do
+        params(
+          asset_dir: String,
+          concurrency: Integer,
+          task: Async::Task
+        ).returns(Async::Task)
+      end
       def run(asset_dir, concurrency: 4, task: Async::Task.current)
         task.async do
           semaphore = Async::Semaphore.new(concurrency)
 
-          loop do
-            semaphore.async do
-              asset = @queue.dequeue
+          loop { process(@queue.dequeue, asset_dir, semaphore) }
+        end
+      end
 
-              if asset.process(asset_dir)
-                var = (@results[asset.filename] ||= Async::Variable.new)
-                var.resolve unless var.resolved?
-              end
-            rescue => e
-              Console.logger.error(self, e)
-              raise
-            end
+      private
+
+      sig do
+        params(
+          asset: Asset,
+          asset_dir: String,
+          semaphore: Async::Semaphore
+        ).void
+      end
+      def process(asset, asset_dir, semaphore)
+        semaphore.async do
+          if asset.process(asset_dir)
+            var = (@results[asset.filename] ||= Async::Variable.new)
+            var.resolve unless var.resolved?
           end
+        rescue => e
+          Console.logger.error(self, e)
+          raise
         end
       end
     end

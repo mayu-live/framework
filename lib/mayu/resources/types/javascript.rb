@@ -21,34 +21,32 @@ module Mayu
               String
             )
           @source = T.let(resource.read(encoding: "utf-8").freeze, String)
-          @assets = T.let([Asset.new(@filename)], T::Array[Asset])
         end
 
         sig { returns(T::Array[Asset]) }
-        attr_reader :assets
-
-        sig { params(asset: Asset, path: String).void }
-        def generate_asset(asset, path)
-          asset.generate(path, @source, compress: true)
+        def assets
+          [
+            Asset.new(
+              filename,
+              Generators::WriteFile.new(
+                filename:,
+                contents: @source,
+                compress: true
+              )
+            )
+          ]
         end
 
-        sig { params(asset_dir: String).returns(T::Array[Asset]) }
-        def generate_assets(asset_dir)
-          @assets.each do |asset|
-            asset.generate(asset_dir, @source, compress: true)
-          end
-        end
-
-        MarshalFormat = T.type_alias { [String, String, T::Array[Asset]] }
+        MarshalFormat = T.type_alias { [String, String] }
 
         sig { returns(MarshalFormat) }
         def marshal_dump
-          [@filename, @source, @assets]
+          [@filename, @source]
         end
 
         sig { params(args: MarshalFormat).void }
         def marshal_load(args)
-          @filename, @source, @assets = args
+          @filename, @source = args
         end
       end
     end
