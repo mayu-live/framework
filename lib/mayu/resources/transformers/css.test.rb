@@ -92,9 +92,10 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
 
   def transform(source)
     source_path = "app/components/MyComponent"
+    content_hash = "abc123"
 
     Mayu::Resources::Transformers::CSS
-      .transform(source:, source_path:, content_hash: "abc123")
+      .transform(source:, source_path:, content_hash:)
       .output
       .each_line
       .map(&:rstrip)
