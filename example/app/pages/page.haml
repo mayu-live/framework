@@ -3,6 +3,7 @@
   Heading = import("/app/components/Layout/Heading")
   Highlight = import("/app/components/Layout/Highlight")
   Details = import("/app/components/Layout/Details")
+  Link = import("/app/components/UI/Link")
   Counter = import("./Counter")
   FeatureThing = import("./FeatureThing")
   Clock = import("/app/components/Clock")
@@ -45,7 +46,7 @@
             The only JavaScript required to make it interactive is a small
             runtime that makes a connection to the server and updates
             the DOM whenever the state changes on the server.
-            %a(href="https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml" target="_blank")<
+            %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml" target="_blank" color="var(--green-dark)")<
               Show source on GitHub
           %Counter(initial_value=7)
 

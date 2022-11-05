@@ -87,7 +87,7 @@
   %Fieldset
     %legend Search instrument
 
-    %Input(label="Instrument name" oninput=handle_change onchange=handle_change autocomplete="off")
+    %Input(label="Name" oninput=handle_change onchange=handle_change autocomplete="off")
     %ul.suggestions
       = state[:suggestions].map do |suggestion|
         %li.suggestion= suggestion

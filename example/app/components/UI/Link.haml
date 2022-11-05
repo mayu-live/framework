@@ -9,5 +9,7 @@
   .link:hover {
     text-decoration: underline;
   }
-%a.link{**props}
+:ruby
+  style = props[:color] && { __link_color: props[:color] }
+%a.link(style=style){**props.except(:color)}
   %slot

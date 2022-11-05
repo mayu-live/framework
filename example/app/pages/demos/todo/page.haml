@@ -1,5 +1,6 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
+  Highlight = import("/app/components/Layout/Highlight")
   Fieldset = import("/app/components/Form/Fieldset")
   Input = import("/app/components/Form/Input")
   Button = import("/app/components/Form/Button")
@@ -108,12 +109,19 @@
 
   .completed {
     text-decoration: line-through;
+    color: var(--red);
   }
 
   .move-buttons {
     display: flex;
     gap: .5em;
-    font-size: .5em;
+  }
+
+  .move-button {
+    display: block;
+    width: 2em;
+    aspect-ratio: 1;
+    font-size: 1em;
   }
 
 :ruby
@@ -126,7 +134,7 @@
   %form(onsubmit=handle_add)
     %Fieldset{key: state[:fieldset_key]}
       %legend Add new item
-      %Input(type="text" name="item" required)
+      %Input(label="Item" type="text" name="item" required)
       %Button(type="submit") Add item
 
   %ul.items{key: state[:items_key]}
@@ -137,15 +145,17 @@
         %h3.item-text{class: { completed: }}= text
 
         .move-buttons
-          %Button(onclick=handle_move_up value=id){
+          %Button.move-button(onclick=handle_move_up value=id title="Move up"){
             disabled: i.zero?
-          } Up
-          %Button(onclick=handle_move_down value=id){
+          } ▲
+          %Button.move-button(onclick=handle_move_down value=id title="Move down"){
             disabled: i == items.length.pred
-          } Down
+          } ▼
 
   %Button(onclick=handle_clear_completed){
     disabled: completed_items.empty?
   } Clear completed
 
-  %pre= JSON.pretty_generate(state)
+  %Heading(level=3) State
+
+  %Highlight(language="json")= JSON.pretty_generate(state)
