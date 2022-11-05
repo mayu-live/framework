@@ -94,50 +94,28 @@ module Mayu
             )
         end
 
-        sig { params(asset_dir: String).returns(T::Array[Asset]) }
-        def generate_assets(asset_dir)
-          result = []
-          path = File.join(asset_dir, @original.filename)
-
-          result.push(Asset.new(@original.filename))
-
-          unless File.exist?(path)
-            Console.logger.info(self, "Creating #{path} from copy")
-            FileUtils.copy_file(@resource.absolute_path, path)
-          end
-
-          @versions.map do |version|
-            result.push(Asset.new(version.filename))
-            path = File.join(asset_dir, version.filename)
-            next path if File.exist?(path)
-            Console.logger.info(self, "Generating #{path}")
-
-            case version.format
-            when :webp
-              system(
-                "cwebp",
-                "-q",
-                "80", # typical quality
-                "-resize",
-                "#{version.width}",
-                "0",
+        sig { returns(T::Array[Asset]) }
+        def assets
+          [
+            Asset.new(
+              @original.filename,
+              Generators::CopyFile.new(
                 @resource.absolute_path,
-                "-o",
-                path
+                @original.filename
               )
-            else
-              system(
-                "convert",
-                @resource.absolute_path,
-                "-adaptive-resize",
-                "#{version.width}",
-                "-strip",
-                path
+            ),
+            *@versions.map do |version|
+              Asset.new(
+                version.filename,
+                Generators::Image.new(@resource.absolute_path, version)
               )
             end
-          end
+          ]
+        end
 
-          result
+        sig { params(asset_dir: String).returns(T::Array[Asset]) }
+        def generate_assets(asset_dir)
+          assets.each { |asset| asset.process(asset_dir) }
         end
 
         sig { returns(String) }

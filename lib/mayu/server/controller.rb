@@ -96,6 +96,13 @@ module Mayu
 
             start_hot_swap(environment, app) if @config.server.hot_swap
 
+            if @config.server.generate_assets
+              environment.resources.run_asset_generator(
+                environment.path(:assets),
+                concurrency: 4
+              )
+            end
+
             server_task = server.run
 
             task.async do

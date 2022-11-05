@@ -6,8 +6,8 @@ module Mayu
     class Assets
       extend T::Sig
 
-      sig { params(concurrency: Integer).void }
-      def initialize(concurrency: 4)
+      sig { void }
+      def initialize
         @queue = T.let(Async::Queue.new, Async::Queue)
         @results = T.let({}, T::Hash[String, Async::Variable])
         @assets = T.let({}, T::Hash[String, Asset])
@@ -24,9 +24,27 @@ module Mayu
         @queue.enqueue(asset)
       end
 
-      sig { params(task: Async::Task).void }
-      def process(task: Async::Task.current)
-        task.async { loop { @queue.dequeue.process } }
+      sig do
+        params(
+          asset_dir: String,
+          concurrency: Integer,
+          task: Async::Task
+        ).returns(Async::Task)
+      end
+      def run(asset_dir, concurrency: 4, task: Async::Task.current)
+        task.async do
+          loop do
+            asset = @queue.dequeue
+
+            if asset.process(asset_dir)
+              var = (@results[asset.filename] ||= Async::Variable.new)
+              var.resolve unless var.resolved?
+            end
+          rescue => e
+            Console.logger.error(self, e)
+            raise
+          end
+        end
       end
     end
   end
