@@ -66,7 +66,7 @@ module Mayu
           content_hash = Digest::SHA256.digest(output)
           urlsafe_hash = Base64.urlsafe_encode64(content_hash)
           filename = "#{urlsafe_hash}.css"
-          layer_name = "mayu-#{urlsafe_hash.gsub(/[^A-Za-z0-9-_]/, "")}"
+
           output =
             "@layer #{escape_string(transformer.layer_name)} {\n#{output}\n}"
 
