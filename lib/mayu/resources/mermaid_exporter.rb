@@ -133,7 +133,7 @@ module Mayu
           path2 = path + [key]
 
           if value.is_a?(String)
-            if key == "page.rb" || key == "page.rux" || key == "page.haml"
+            if key == "page.rb" || key == "page.haml"
               pathstr = path.flatten.join("/").sub(%r{\A/?}, "/")
               out.puts "    ROUTE__#{encode(value)}[#{pathstr.inspect}]"
             end
@@ -151,7 +151,7 @@ module Mayu
           path2 = path + [key]
 
           if value.is_a?(String)
-            if key == "page.rb" || key == "page.rux" || key == "page.haml"
+            if key == "page.rb" || key == "page.haml"
               pathstr = path.flatten.join("/").sub(%r{\A/?}, "/")
               out.puts "  ROUTE__#{encode(value)}-->#{encode(value)}"
             end

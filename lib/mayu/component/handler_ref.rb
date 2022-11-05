@@ -44,10 +44,7 @@ module Mayu
           [
             @component.vnode_id,
             @name,
-            [
-              *@args.map(&:inspect),
-              *@kwargs.map { |k, v| Rux::Utils.attr_to_hash_elem(k, v.inspect) }
-            ].join(", ")
+            [*@args.map(&:inspect), *@kwargs.inspect].join(", ")
           ]
       end
 

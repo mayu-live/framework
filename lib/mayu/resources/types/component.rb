@@ -3,7 +3,6 @@
 
 require_relative "base"
 require_relative "../../component/base"
-require_relative "../transformers/rux"
 require_relative "../transformers/haml"
 
 module Mayu
@@ -47,8 +46,6 @@ module Mayu
 
           source =
             case File.extname(resource.path)
-            when ".rux"
-              source = Transformers::Rux.to_ruby(original_source)
             when ".haml"
               transform_result =
                 Transformers::Haml.transform(

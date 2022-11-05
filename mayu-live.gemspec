@@ -54,14 +54,13 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rack", "~> 3.0.0"
   spec.add_dependency "rake", "~> 13.0.6"
   spec.add_dependency "rouge", "~> 4.0"
-  spec.add_dependency "rux", "~> 1.0.3"
   spec.add_dependency "sorbet-runtime", "~> 0.5.10148"
   spec.add_dependency "source_map", "~> 3.0"
   spec.add_dependency "syntax_tree", "~> 3.6"
   spec.add_dependency "syntax_tree-haml", "~> 1.3"
+  spec.add_dependency "syntax_tree-xml", '~> 0.1.0'
   spec.add_dependency "terminal-table", "~> 3.0.1"
   spec.add_dependency "toml-rb", "~> 2.2.0"
-  spec.add_dependency "syntax_tree-xml", '~> 0.1.0'
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html

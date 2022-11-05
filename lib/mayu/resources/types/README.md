@@ -23,7 +23,7 @@ The generated files could be named like this:
 
 ## Resources::Types::Component
 
-Loads a `.rb`-file or `.rux`-file and transpiles the latter,
+Loads a `.rb`-file or `.haml`-file and transpiles the latter,
 then evaluates the code in the scope of a new class that inherits
 `Mayu::Component::Base`.
 

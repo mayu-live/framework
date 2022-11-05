@@ -17,8 +17,6 @@ module Mayu
         case path
         when /\.rb\z/
           return Component
-        when /\.rux\z/
-          return Component
         when /\.haml\z/
           return Component
         when /\.js\z/
