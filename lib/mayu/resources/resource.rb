@@ -82,10 +82,7 @@ module Mayu
 
       sig { returns(T::Array[Asset]) }
       def assets
-        # TODO: Traverse the dependency graph from this node,
-        # stop at every component node, get all other assets...
-        # or something...
-        []
+        self.type&.assets || []
       end
 
       sig { params(assets_dir: String).returns(T::Array[Asset]) }

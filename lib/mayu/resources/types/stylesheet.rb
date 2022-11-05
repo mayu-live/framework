@@ -79,32 +79,25 @@ module Mayu
 
         sig { returns(T::Array[Asset]) }
         def assets
-          [Asset.new(@filename)]
-        end
-
-        sig { params(asset_dir: String).returns(T::Array[Asset]) }
-        def generate_assets(asset_dir)
           source_map_link = "\n/*# sourceMappingURL=#{@filename}.map */\n"
 
           [
-            Asset
-              .new(@filename)
-              .tap do
-                _1.generate(
-                  asset_dir,
-                  @source + source_map_link,
-                  compress: true
-                )
-              end,
-            Asset
-              .new(@filename + ".map")
-              .tap do
-                _1.generate(
-                  asset_dir,
-                  JSON.generate(@source_map),
-                  compress: true
-                )
-              end
+            Asset.new(
+              @filename,
+              Generators::WriteFile.new(
+                filename: @filename,
+                contents: @source + source_map_link,
+                compress: true
+              )
+            ),
+            Asset.new(
+              @filename,
+              Generators::WriteFile.new(
+                filename: @filename + ".map",
+                contents: JSON.generate(@source_map),
+                compress: true
+              )
+            )
           ]
         end
 

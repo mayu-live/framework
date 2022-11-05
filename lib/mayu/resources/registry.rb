@@ -7,6 +7,7 @@ require_relative "resolver"
 require_relative "dependency_graph"
 require_relative "resource"
 require_relative "types"
+require_relative "assets"
 
 MessagePack::DefaultFactory.register_type(0x00, Symbol)
 
@@ -28,6 +29,7 @@ module Mayu
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
         @resolver =
           T.let(Resolver::FS.new(@root, extensions: EXTENSIONS), Resolver::Base)
+        @assets = T.let(Assets.new, T.nilable(Assets))
       end
 
       sig { params(dumped: String, root: String).returns(Registry) }
@@ -90,13 +92,33 @@ module Mayu
         @dependency_graph.to_mermaid_url
       end
 
-      sig { params(outdir: String).returns(T::Array[Asset]) }
-      def generate_assets(outdir)
-        assets = []
-        @dependency_graph.each_resource do |resource|
-          resource.generate_assets(outdir).each { |asset| assets.push(asset) }
+      sig { params(filename: String, timeout: Integer, task: Async::Task).void }
+      def wait_for_asset(filename, timeout: 2, task: Async::Task.current)
+        return unless @assets
+
+        task.with_timeout(timeout) { @assets.wait_for(filename) }
+      end
+
+      sig do
+        params(asset_dir: String, concurrency: Integer).returns(Async::Task)
+      end
+      def run_asset_generator(asset_dir, concurrency: 4)
+        if @assets
+          @assets.run(asset_dir, concurrency:)
+        else
+          raise "Assets can't be generated in production"
         end
-        assets
+      end
+
+      sig do
+        params(asset_dir: String, concurrency: Integer).returns(Async::Task)
+      end
+      def generate_assets(asset_dir, concurrency:)
+        if @assets
+          @assets.run_until_empty(asset_dir, concurrency:)
+        else
+          raise "Assets can't be generated in production"
+        end
       end
 
       sig do
@@ -142,6 +164,8 @@ module Mayu
         resource = Resource.new(registry: self, path:)
 
         @dependency_graph.add_node(resource.path, resource)
+
+        resource.assets.each { |asset| @assets.add(asset) } if @assets
 
         Console.logger.info(
           self,

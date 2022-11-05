@@ -71,38 +71,28 @@ module Mayu
 
         sig { returns(T::Array[Asset]) }
         def assets
-          [@inline_css && Asset.new(@inline_css.filename)].compact
-        end
-
-        sig { params(asset_dir: String).returns(T::Array[Asset]) }
-        def generate_assets(asset_dir)
           return [] unless @inline_css
-
-          # Would be pretty cool if we could emit the source map
-          # for the component here.
 
           source_map_link =
             "\n/*# sourceMappingURL=#{@inline_css.filename}.map */\n"
 
           [
-            Asset
-              .new(@inline_css.filename)
-              .tap do
-                _1.generate(
-                  asset_dir,
-                  @inline_css.output + source_map_link,
-                  compress: true
-                )
-              end,
-            Asset
-              .new(@inline_css.filename + ".map")
-              .tap do
-                _1.generate(
-                  asset_dir,
-                  JSON.generate(@inline_css.source_map),
-                  compress: true
-                )
-              end
+            Asset.new(
+              @inline_css.filename,
+              Generators::WriteFile.new(
+                filename: @inline_css.filename,
+                contents: @inline_css.output + source_map_link,
+                compress: true
+              )
+            ),
+            Asset.new(
+              @inline_css.filename,
+              Generators::WriteFile.new(
+                filename: @inline_css.filename + ".map",
+                contents: JSON.generate(@inline_css.source_map),
+                compress: true
+              )
+            )
           ]
         end
 

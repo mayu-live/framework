@@ -13,6 +13,8 @@
     render_exceptions = true
     self_signed_cert = true
 
+    generate_assets = true
+
   [dev.metrics]
     enabled = true
 
