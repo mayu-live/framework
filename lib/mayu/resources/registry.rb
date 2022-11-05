@@ -186,6 +186,7 @@ module Mayu
             Console.logger.info(self, "Reloading resource: #{resource.path}")
             @dependency_graph.delete_connections(resource.path)
             resource.load_type
+            resource.assets.each { |asset| @assets.add(asset) } if @assets
           end
       end
     end
