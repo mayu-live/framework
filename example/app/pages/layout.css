@@ -1,17 +1,11 @@
-.body {
-  background: var(--dark);
-  color: var(--bright);
-  margin: 0;
-  padding: 0;
-  font-family: Helvetica, sans-serif;
-  line-height: 1.5em;
+.layout {
+  height: 100%;
   display: grid;
   min-height: 100vh;
   grid-template:
     "header" auto
     "main" 1fr
     "footer" auto;
-  overflow-y: scroll;
 }
 
 .header {
