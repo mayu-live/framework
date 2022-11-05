@@ -13,9 +13,9 @@
       %button.button Click me
       ```
 
-      This will be transformed into:
+      This will be transformed into the following Ruby code:
 
-      ```haml
+      ```ruby
       public def render
         Mayu::VDOM.h(:button, "Click me", class: styles[:button])
       end
