@@ -26,11 +26,9 @@
         end
       :ruby
         state => { error:, result: }
-      - if error
-        - return
-          %p.error= error
-      - unless result
-        - return
-          %p Loading...
+      - return if error
+        %p.error= error
+      - return unless result
+        %p Loading...
       %p= result[:name]
       ```
