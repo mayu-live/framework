@@ -21,6 +21,8 @@ module Mayu
       const :hot_swap, T::Boolean, default: false
       const :self_signed_cert, T::Boolean, default: false
 
+      const :generate_assets, T::Boolean, default: false
+
       const :render_exceptions, T::Boolean, default: false
 
       const :count, Integer, default: Async::Container.processor_count

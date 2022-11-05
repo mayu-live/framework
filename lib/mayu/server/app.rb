@@ -159,13 +159,9 @@ module Mayu
 
           @runtime_assets.serve(filename, accept_encodings:)
         in ["__mayu", "static", filename]
-          unless @environment.config.use_bundle
-            # TODO: This will generate the same assets over and over.
-            # It would be good if it was possible to figure out if an
-            # asset exists here and wait for it to be generated if it
-            # hasn't been generated yet.
+          if @environment.config.server.generate_assets
             begin
-              @environment.resources.wait_for_asset(filename)
+              @environment.resources.wait_for_asset(filename, timeout: 4)
             rescue Async::TimeoutError => e
               Console.logger.warn(
                 self,

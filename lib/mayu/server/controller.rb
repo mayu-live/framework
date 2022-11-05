@@ -99,7 +99,7 @@ module Mayu
             if @config.server.generate_assets
               environment.resources.run_asset_generator(
                 environment.path(:assets),
-                concurrency: 4
+                concurrency: 8
               )
             end
 

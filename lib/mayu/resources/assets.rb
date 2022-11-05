@@ -33,16 +33,20 @@ module Mayu
       end
       def run(asset_dir, concurrency: 4, task: Async::Task.current)
         task.async do
-          loop do
-            asset = @queue.dequeue
+          semaphore = Async::Semaphore.new(concurrency)
 
-            if asset.process(asset_dir)
-              var = (@results[asset.filename] ||= Async::Variable.new)
-              var.resolve unless var.resolved?
+          loop do
+            semaphore.async do
+              asset = @queue.dequeue
+
+              if asset.process(asset_dir)
+                var = (@results[asset.filename] ||= Async::Variable.new)
+                var.resolve unless var.resolved?
+              end
+            rescue => e
+              Console.logger.error(self, e)
+              raise
             end
-          rescue => e
-            Console.logger.error(self, e)
-            raise
           end
         end
       end
