@@ -12,6 +12,8 @@ module Mayu
         const :has_brotli, T::Boolean
       end
 
+      CACHE_MAX_AGE = T.let(60 * 60 * 24 * 7, Integer)
+
       extend T::Sig
 
       sig { params(root_dir: String).void }
@@ -29,7 +31,7 @@ module Mayu
         found_file = get_file(filename)
 
         headers = {
-          "cache-control" => "public, max-age=604800",
+          "cache-control" => "public, max-age=#{CACHE_MAX_AGE}, immutable",
           "content-type" => found_file.content_type
         }
 
