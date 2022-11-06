@@ -100,22 +100,15 @@ module Mayu
       end
 
       sig do
-        params(asset_dir: String, concurrency: Integer).returns(Async::Task)
+        params(
+          asset_dir: String,
+          concurrency: Integer,
+          forever: T::Boolean
+        ).returns(Async::Task)
       end
-      def run_asset_generator(asset_dir, concurrency: 4)
+      def generate_assets(asset_dir, concurrency:, forever:)
         if @assets
-          @assets.run(asset_dir, concurrency:)
-        else
-          raise "Assets can't be generated in production"
-        end
-      end
-
-      sig do
-        params(asset_dir: String, concurrency: Integer).returns(Async::Task)
-      end
-      def generate_assets(asset_dir, concurrency:)
-        if @assets
-          @assets.run_until_empty(asset_dir, concurrency:)
+          @assets.run(asset_dir, concurrency:, forever:)
         else
           raise "Assets can't be generated in production"
         end

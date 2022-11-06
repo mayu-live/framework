@@ -56,7 +56,11 @@ module Mayu
               end
 
               puts "\e[33mGenerate assets\e[0m"
-              resources.generate_assets(assets_dir, concurrency: 8)
+              resources.generate_assets(
+                assets_dir,
+                concurrency: 8,
+                forever: false
+              )
 
               filename = configuration.paths.bundle_filename
               puts "\e[33mWrite #{filename}\e[0m"

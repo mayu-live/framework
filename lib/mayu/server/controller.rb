@@ -97,9 +97,10 @@ module Mayu
             start_hot_swap(environment, app) if @config.server.hot_swap
 
             if @config.server.generate_assets
-              environment.resources.run_asset_generator(
+              environment.resources.generate_assets(
                 environment.path(:assets),
-                concurrency: 8
+                concurrency: 8,
+                forever: true
               )
             end
 

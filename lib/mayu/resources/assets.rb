@@ -32,29 +32,22 @@ module Mayu
         params(
           asset_dir: String,
           concurrency: Integer,
+          forever: T::Boolean,
           task: Async::Task
         ).returns(Async::Task)
       end
-      def run_until_empty(asset_dir, concurrency: 4, task: Async::Task.current)
+      def run(
+        asset_dir,
+        concurrency: 4,
+        forever: false,
+        task: Async::Task.current
+      )
         task.async do
           semaphore = Async::Semaphore.new(concurrency)
 
-          process(@queue.dequeue, asset_dir, semaphore) until @queue.empty?
-        end
-      end
-
-      sig do
-        params(
-          asset_dir: String,
-          concurrency: Integer,
-          task: Async::Task
-        ).returns(Async::Task)
-      end
-      def run(asset_dir, concurrency: 4, task: Async::Task.current)
-        task.async do
-          semaphore = Async::Semaphore.new(concurrency)
-
-          loop { process(@queue.dequeue, asset_dir, semaphore) }
+          while forever || !@queue.empty?
+            process(@queue.dequeue, asset_dir, semaphore)
+          end
         end
       end
 
