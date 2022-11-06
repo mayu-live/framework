@@ -173,7 +173,7 @@ module Mayu
 
       # scripts = %{<template id="mayu-init">#{encrypted_session}</template>}
       scripts = ""
-      body.write("<!doctype html>\n")
+      body.write("<!DOCTYPE html>\n")
 
       task.async do
         @vtree.root&.write_html(body, links:, scripts:)
