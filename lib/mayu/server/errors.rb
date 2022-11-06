@@ -87,7 +87,7 @@ module Mayu
           { "content-type": "text/plain" },
           ["already resumed"]
         ]
-      rescue Session::AlreadyRunningError
+      rescue Session::AlreadyRunningError => e
         Console.logger.error(self, "#{e.class.name}: #{e.message}")
         Protocol::HTTP::Response[
           409,
@@ -96,7 +96,7 @@ module Mayu
         ]
 
         # https://fly.io/docs/reference/fly-replay/#fly-replay
-      rescue ServerIsShuttingDown
+      rescue ServerIsShuttingDown => e
         Console.logger.error(self, "#{e.class.name}: #{e.message}")
         Protocol::HTTP::Response[
           503,
