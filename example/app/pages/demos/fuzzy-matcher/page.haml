@@ -47,9 +47,9 @@
     }
   end
 
-  def handle_change(event)
-    p event
-    value = event["target"]["value"].to_s
+  def handle_change(e)
+    e => { target: { value: } }
+
     update(
       value:,
       suggestions: FUZZY_MATCHER.find_all(value)

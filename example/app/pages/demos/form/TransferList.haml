@@ -16,27 +16,27 @@
 
   def get_selected(form_data, prefix)
     form_data
-      .select { |k, v| k.start_with?(prefix) && v == "on" }
+      .select { |k, v| k.to_s.start_with?(prefix) && v == "on" }
       .keys
-      .map { _1.split("-").last.to_i }
+      .map { _1.to_s.split("-").last.to_i }
   end
 
   def handle_submit(e)
     update do |state|
-      case e["formData"]["action"]
-      when "move_all_left"
+      case e
+      in { submitter: { name: "action", value: "move_all_left" } }
         { left: state[:left] + state[:right], right: [] }
-      when "move_all_right"
+      in { submitter: { name: "action", value: "move_all_right" } }
         { left: [], right: state[:right] + state[:left] }
-      when "move_selected_left"
-        selected = get_selected(e["formData"], "right-")
+      in { submitter: { name: "action", value: "move_selected_left" }, target: { formData: } }
+        selected = get_selected(formData, "right-")
 
         {
           left: state[:left].union(selected),
           right: state[:right].difference(selected),
         }
-      when "move_selected_right"
-        selected = get_selected(e["formData"], "left-")
+      in { submitter: { name: "action", value: "move_selected_right" }, target: { formData: } }
+        selected = get_selected(formData, "left-")
 
         {
           left: state[:left].difference(selected),

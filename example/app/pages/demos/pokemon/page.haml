@@ -21,7 +21,8 @@
   end
 
   def handle_set_per_page(e)
-    update(page: 0, per_page: e.dig("target", "value").to_i)
+    e => { target: { value: } }
+    update(page: 0, per_page: value.to_i)
   end
 
 :css

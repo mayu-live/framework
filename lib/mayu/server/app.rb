@@ -266,7 +266,10 @@ module Mayu
           session.handle_callback("navigate", { path: })
           Protocol::HTTP::Response[200, headers, ["ok"]]
         in ["callback", String => callback_id]
-          session.handle_callback(callback_id, JSON.parse(request.read))
+          session.handle_callback(
+            callback_id,
+            JSON.parse(request.read, symbolize_names: true)
+          )
           headers = { "set-cookie": token_cookie(session) }
           Protocol::HTTP::Response[200, headers, ["ok"]]
         end

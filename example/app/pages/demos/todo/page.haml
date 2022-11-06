@@ -14,7 +14,7 @@
   end
 
   def handle_add(e)
-    text = e.dig("formData", "item").to_s
+    e => { target: { formData: { item: text } } }
 
     return if text.empty?
 
@@ -33,7 +33,7 @@
   end
 
   def handle_move_up(e)
-    id = e.dig("target", "value")
+    e => { target: { value: id } }
 
     update do |state|
       items = state[:items].dup
@@ -46,7 +46,7 @@
   end
 
   def handle_move_down(e)
-    id = e.dig("target", "value")
+    e => { target: { value: id } }
 
     update do |state|
       items = state[:items].dup
@@ -59,8 +59,7 @@
   end
 
   def handle_complete(e)
-    id = e.dig("target", "value")
-    checked = e.dig("target", "checked")
+    e => { target: { value: id, checked: } }
 
     update do |state|
       {

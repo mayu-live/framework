@@ -8,10 +8,9 @@
   end
 
   def handle_submit(e)
-    update(user: {
-      email: e.dig("formData", "email"),
-      password: e.dig("formData", "password"),
-    })
+    e => { target: { formData: { email:, password: } } }
+
+    update(user: { email:, password: })
   end
 
   def handle_log_out(e)

@@ -9,18 +9,18 @@
   end
 
   def handle_change(e)
-    active = e.dig("target", "value")
+    e => { target: { value: }}
 
     update do |state|
       {
-        active:,
-        enabled: [*state[:enabled], active].uniq
+        active: value,
+        enabled: [*state[:enabled], value].uniq
       }
     end
   end
 
   def handle_enable(e)
-    value = e.dig("target", "value")
+    e => { target: { value: }}
 
     update do |state|
       { enabled: [*state[:enabled], value].uniq }

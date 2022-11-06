@@ -21,7 +21,7 @@
   end
 
   def handle_toggle(e)
-    if e.dig("target", "open")
+    if e in { target: { open: true } }
       update(loaded: true)
     end
   end
