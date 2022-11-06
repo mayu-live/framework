@@ -285,7 +285,10 @@ module Mayu
         session = Session.new(environment: @environment, path: request.path)
         body = Async::HTTP::Body::Writable.new
 
-        headers = { "content-type" => "text/html; charset=utf-8" }
+        headers = {
+          "content-type" => "text/html; charset=utf-8",
+          "cache" => "no-cache"
+        }
 
         accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
 
