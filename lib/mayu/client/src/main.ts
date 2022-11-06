@@ -1,7 +1,9 @@
 import { sessionStream } from "./stream";
 import NodeTree from "./NodeTree";
+import h from "./h";
 import type MayuPingElement from "./custom-elements/mayu-ping";
 import type MayuLogElement from "./custom-elements/mayu-log";
+import type MayuExceptionElement from "./custom-elements/mayu-exception";
 
 import serializeEvent from "./serializeEvent";
 
@@ -22,6 +24,29 @@ function shouldPreventDefault(e: Event) {
     }
   }
   return true;
+}
+
+async function showException({
+  type,
+  message,
+  backtrace,
+}: {
+  type: string;
+  message: string;
+  backtrace: string[];
+}) {
+  await import("./custom-elements/mayu-exception");
+
+  const cleanedBacktrace = backtrace
+    .filter((line) => !/\/vendor\/bundle\//.test(line))
+    .join("\n");
+
+  const el = h("mayu-exception", [
+    h("span", [`${type}: ${message}`], { slot: "title" }),
+    h("span", [cleanedBacktrace], { slot: "backtrace" }),
+  ]);
+
+  document.body.appendChild(el);
 }
 
 class MayuGlobal {
@@ -183,6 +208,9 @@ async function main(url: string) {
       case "session.transfer":
         pingElement.setAttribute("region", "Transferring");
         pingElement.setAttribute("status", "transferring");
+        break;
+      case "session.exception":
+        showException(payload);
         break;
       case "ping":
         const values = Object.values(payload.values) as number[];
