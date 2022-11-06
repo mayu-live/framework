@@ -1,0 +1,33 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Highlight = import("/app/components/Layout/Highlight")
+  Card = import("/app/components/Layout/Card")
+  Details = import("/app/components/Layout/Details")
+
+  def self.get_initial_state(**) = {
+    count: 0
+  }
+
+  def handle_click(e) =
+    case e
+    in { target: { name: "increment" } }
+      update do |state|
+        { count: state[:count] + 1 }
+      end
+    end
+
+%article
+  %Heading(level=2) Exceptions
+  %p This demo shows how exceptions are handled.
+  %p
+    %a(href="https://github.com/mayu-live/framework/issues/6")
+      Issue for implementing error boundaries
+  %p
+    Count:
+    %output<= state[:count]
+  %p
+    %button(onclick=handle_click name="increment") Increment
+    %button(onclick=handle_click name="error") Error
+    %Details(summary="Show source")
+      %Highlight(language="haml")
+        = File.read("app/pages/demos/exceptions/page.haml")
