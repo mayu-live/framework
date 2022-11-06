@@ -99,10 +99,7 @@ module Mayu
           [
             Asset.new(
               @original.filename,
-              Generators::CopyFile.new(
-                @resource.absolute_path,
-                @original.filename
-              )
+              Generators::CopyFile.new(@resource.absolute_path)
             ),
             *@versions.map do |version|
               Asset.new(

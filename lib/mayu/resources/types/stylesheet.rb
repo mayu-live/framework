@@ -85,7 +85,6 @@ module Mayu
             Asset.new(
               @filename,
               Generators::WriteFile.new(
-                filename: @filename,
                 contents: @source + source_map_link,
                 compress: true
               )
@@ -93,7 +92,6 @@ module Mayu
             Asset.new(
               @filename + ".map",
               Generators::WriteFile.new(
-                filename: @filename + ".map",
                 contents: JSON.generate(@source_map),
                 compress: true
               )

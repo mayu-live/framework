@@ -46,32 +46,13 @@ module Mayu
       def process(asset_dir)
         return false unless pending?
         @status = Status::Processing
-        @generator.process(asset_dir)
+        @generator.process(File.join(asset_dir, filename))
       rescue StandardError
         @status = Status::Failed
         raise
       else
         @status = Status::Done
         true
-      end
-
-      sig { params(path: String, content: String, compress: T::Boolean).void }
-      def write(path, content, compress: false)
-        file_path = File.join(path, @filename)
-
-        unless File.exist?(file_path)
-          Console.logger.info(self, "Writing #{@filename}")
-          File.write(file_path, content)
-        end
-
-        return unless compress
-
-        file_path += ".br"
-
-        unless File.exist?(file_path)
-          Console.logger.info(self, "Compressing #{@filename}")
-          File.write(file_path, Brotli.deflate(content))
-        end
       end
 
       MarshalFormat = T.type_alias { [String] }

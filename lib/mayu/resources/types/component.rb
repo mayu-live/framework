@@ -80,7 +80,6 @@ module Mayu
             Asset.new(
               @inline_css.filename,
               Generators::WriteFile.new(
-                filename: @inline_css.filename,
                 contents: @inline_css.output + source_map_link,
                 compress: true
               )
@@ -88,7 +87,6 @@ module Mayu
             Asset.new(
               @inline_css.filename + ".map",
               Generators::WriteFile.new(
-                filename: @inline_css.filename + ".map",
                 contents: JSON.generate(@inline_css.source_map),
                 compress: true
               )

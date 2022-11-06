@@ -28,11 +28,7 @@ module Mayu
           [
             Asset.new(
               filename,
-              Generators::WriteFile.new(
-                filename:,
-                contents: @source,
-                compress: true
-              )
+              Generators::WriteFile.new(contents: @source, compress: true)
             )
           ]
         end

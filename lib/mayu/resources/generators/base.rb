@@ -9,8 +9,8 @@ module Mayu
         extend T::Helpers
         abstract!
 
-        sig { abstract.params(asset_dir: String).void }
-        def process(asset_dir)
+        sig { abstract.params(target_path: String).void }
+        def process(target_path)
         end
       end
     end

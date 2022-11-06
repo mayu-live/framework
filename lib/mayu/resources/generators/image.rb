@@ -22,9 +22,8 @@ module Mayu
           @version = version
         end
 
-        sig { override.params(asset_dir: String).void }
-        def process(asset_dir)
-          target_path = File.join(asset_dir, @version.filename)
+        sig { override.params(target_path: String).void }
+        def process(target_path)
           return if File.exist?(target_path)
 
           case @version.format

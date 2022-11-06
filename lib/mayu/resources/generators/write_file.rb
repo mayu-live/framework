@@ -10,19 +10,14 @@ module Mayu
       class WriteFile < Base
         extend T::Sig
 
-        sig do
-          params(filename: String, contents: String, compress: T::Boolean).void
-        end
-        def initialize(filename:, contents:, compress:)
-          @filename = filename
+        sig { params(contents: String, compress: T::Boolean).void }
+        def initialize(contents:, compress:)
           @contents = contents
           @compress = compress
         end
 
-        sig { override.params(asset_dir: String).void }
-        def process(asset_dir)
-          target_path = File.join(asset_dir, @filename)
-
+        sig { override.params(target_path: String).void }
+        def process(target_path)
           write_file(target_path, @contents)
 
           if @compress
