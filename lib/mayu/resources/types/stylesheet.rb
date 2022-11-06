@@ -91,7 +91,7 @@ module Mayu
               )
             ),
             Asset.new(
-              @filename,
+              @filename + ".map",
               Generators::WriteFile.new(
                 filename: @filename + ".map",
                 contents: JSON.generate(@source_map),

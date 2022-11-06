@@ -86,7 +86,7 @@ module Mayu
               )
             ),
             Asset.new(
-              @inline_css.filename,
+              @inline_css.filename + ".map",
               Generators::WriteFile.new(
                 filename: @inline_css.filename + ".map",
                 contents: JSON.generate(@inline_css.source_map),
