@@ -1,11 +1,7 @@
 :ruby
   def self.get_initial_state(children:, **)
-    active = extract_slot_names(children).first
+    active = Mayu::VDOM.slots(children).keys.first
     { active:, enabled: [active] }
-  end
-
-  def self.extract_slot_names(children)
-    children.map { _1.props[:slot] }.compact.uniq
   end
 
   def handle_change(e)
@@ -83,7 +79,7 @@
 
 :ruby
   state => active:, enabled:
-  names = self.class.extract_slot_names(children)
+  names = Mayu::VDOM.slots(children).keys
 
 .tabs
   .buttons(role="tablist")

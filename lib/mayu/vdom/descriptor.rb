@@ -43,6 +43,8 @@ module Mayu
       attr_reader :props
       sig { returns(T.untyped) }
       attr_reader :key
+      sig { returns(T.nilable(String)) }
+      attr_reader :slot
 
       sig do
         params(children: Component::Children, parent_type: T.untyped).returns(
@@ -70,6 +72,7 @@ module Mayu
         children = self.class.clean_children(children, parent_type: type)
         @props = T.let(props.merge(children:), Component::Props)
         @key = T.let(@props.delete(:key), T.untyped)
+        @slot = T.let(@props.delete(:slot)&.to_s, T.nilable(String))
         freeze
       end
 
