@@ -664,6 +664,7 @@ module Mayu
           next if attr == :slot
 
           old_value = old_props[attr]
+
           next if value == old_props[attr]
 
           removed.push(attr) and next unless value
@@ -677,7 +678,7 @@ module Mayu
             next
           end
 
-          if HTML.boolean_attribute?(attr) || value == true
+          if value == true
             ctx.set_attribute(vnode, attr.to_s, attr.to_s)
           else
             ctx.set_attribute(vnode, attr.to_s, value.to_s)

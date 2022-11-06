@@ -260,9 +260,7 @@ module Mayu
 
       sig { params(prop: Symbol, value: T.untyped).returns(T.untyped) }
       def format_prop(prop, value)
-        if HTML.boolean_attribute?(prop) || value in TrueClass | FalseClass
-          value = prop.to_s
-        end
+        value = prop.to_s if value == true
 
         prop = :value if prop == :initial_value
 
