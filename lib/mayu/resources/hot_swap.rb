@@ -14,27 +14,29 @@ module Mayu
       end
       def self.start(registry, &block)
         FileWatcher.watch(registry.root, ["app"]) do |event|
-          Console
-            .logger
-            .measure(self, "\e[33mSwapping code\e[0m") do
-              visited = T::Set[String].new
+          Console.logger.info(self, "\e[33mSwapping code\e[0m")
+          start_at = Time.now.to_f
 
-              event.modified.each do |path|
-                registry.reload_resource(path, visited:)
-              end
+          visited = T::Set[String].new
 
-              event.added.each do |path|
-                registry.reload_resource(
-                  path,
-                  visited:,
-                  add: path.start_with?("/app/pages/")
-                )
-              end
+          event.modified.each do |path|
+            registry.reload_resource(path, visited:)
+          end
 
-              event.removed.each do |path|
-                registry.unload_resource(path, visited:)
-              end
-            end
+          event.added.each do |path|
+            registry.reload_resource(
+              path,
+              visited:,
+              add: path.start_with?("/app/pages/")
+            )
+          end
+
+          event.removed.each { |path| registry.unload_resource(path, visited:) }
+
+          Console.logger.info(
+            self,
+            format("\e[33mSwapped code in %.3fs\e[0m", Time.now.to_f - start_at)
+          )
 
           yield
         end
