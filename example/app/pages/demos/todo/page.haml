@@ -5,13 +5,11 @@
   Input = import("/app/components/Form/Input")
   Button = import("/app/components/Form/Button")
 
-  def self.get_initial_state(**)
-    {
-      items: [],
-      fieldset_key: "fieldset-0",
-      items_key: "items-0",
-    }
-  end
+  def self.get_initial_state(**) = {
+    items: [],
+    fieldset_key: "fieldset-0",
+    items_key: "items-0",
+  }
 
   def handle_add(e)
     e => { target: { formData: { item: text } } }

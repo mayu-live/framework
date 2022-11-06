@@ -3,9 +3,9 @@
   Details = import("/app/components/Layout/Details")
   YouTubeVideo = import("/app/components/UI/YouTubeVideo")
 
-  def self.get_initial_state(**props)
-    { user: nil }
-  end
+  def self.get_initial_state(**props) = {
+    user: nil
+  }
 
   def handle_submit(e)
     e => { target: { formData: { email:, password: } } }

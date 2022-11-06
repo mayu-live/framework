@@ -7,12 +7,10 @@
 
   ITEMS = %w[ dream friendly chief potato irritate creature pastoral selective lyrical fire seal righteous ]
 
-  def self.get_initial_state(**)
-    {
-      left: ITEMS.size.times.to_a,
-      right: [],
-    }
-  end
+  def self.get_initial_state(**) = {
+    left: ITEMS.size.times.to_a,
+    right: [],
+  }
 
   def get_selected(form_data, prefix)
     form_data

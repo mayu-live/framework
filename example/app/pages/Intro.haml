@@ -1,9 +1,10 @@
 :ruby
   MaxWidth = import("/app/components/Layout/MaxWidth")
 
-  def self.get_initial_state(**props)
-    { angle: 328, word: nil }
-  end
+  def self.get_initial_state(**props) = {
+    angle: 328,
+    word: nil
+  }
 
   WORDS = %w[Mayu is a live-streaming server-side rendering web framework written in Ruby]
 

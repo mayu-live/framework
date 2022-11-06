@@ -1,14 +1,12 @@
 :ruby
   Pagination = import("./Pagination")
 
-  def self.get_initial_state(**props)
-    {
-      result: nil,
-      error: nil,
-      page: props.dig(:query, :page).to_i,
-      per_page: props.dig(:per_page).to_i.nonzero? || 20,
-    }
-  end
+  def self.get_initial_state(**props) = {
+    result: nil,
+    error: nil,
+    page: props.dig(:query, :page).to_i,
+    per_page: props.dig(:per_page).to_i.nonzero? || 20,
+  }
 
   def mount
     sleep 1

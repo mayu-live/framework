@@ -4,7 +4,9 @@
 %article
   %Markdown
     :plain
-      # Whitespace
+      # Syntax guide
+
+      ## Whitespace
 
       Here comes the biggest difference between Mayu Haml and regular Haml.
       Whitespace is significant in HTML in some cases, and it's very important
@@ -37,7 +39,7 @@
       %p
         Read more on
         %a(href="https://github.com/mayu-live/framework")< GitHub
-        \.
+        \\.
       ```
 
       Notice the `<` after the link.
@@ -47,3 +49,53 @@
 
       - `<` adds a space before an element.
       - `>` adds a space after an element.
+
+      ## Pattern matching
+
+      You can use pattern matching in a lot of places.
+
+      ```haml
+      :ruby
+        def self.get_initial_state(initial_count: 0, **) = {
+          count: initial_count
+        }
+        def handle_click(event) =
+          case event
+          in { target: { name: "increment" } }
+            update { |state| { count: state[:count] + 1 } }
+          in { target: { name: "decrement" } }
+            update { |state| { count: state[:count] - 1 } }
+          end
+      - state => count:
+      %div
+        %output= count
+        %button(onclick=handle_click name="increment")
+        %button(onclick=handle_click name="decrement")
+      ```
+
+      ## Early returns
+
+      The following snippet will show a button, and
+      once it has been clicked, the component will
+      instead show a paragraph.
+
+      ```haml
+      :ruby
+        def self.get_initial_state(**) = {
+          clicked: false
+        }
+        def handle_click(event)
+          update(clicked: true)
+        end
+      - return if state[:clicked]
+        %p You clicked the button.
+      %button(onclick=handle_click) Click me
+      ```
+
+      You can also use `return unless`.
+
+      ```haml
+      - return unless props[:data]
+        %p Loading…
+      %pre= props[:data]
+      ```

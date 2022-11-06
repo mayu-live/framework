@@ -6,13 +6,11 @@
 
   MAX_GRID_SIZE = 10
 
-  def self.get_initial_state(initial_grid_size: 5, **)
-    {
-      x: nil,
-      y: nil,
-      grid_size: initial_grid_size,
-    }
-  end
+  def self.get_initial_state(initial_grid_size: 5, **) = {
+    x: nil,
+    y: nil,
+    grid_size: initial_grid_size,
+  }
 
   def handle_activate(_, x, y)
     update do |state|

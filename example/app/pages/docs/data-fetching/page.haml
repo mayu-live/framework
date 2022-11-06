@@ -10,12 +10,10 @@
 
       ```haml
       :ruby
-        def self.get_initial_state(**)
-          {
-            result: nil,
-            error: nil,
-          }
-        end
+        def self.get_initial_state(**) = {
+          result: nil,
+          error: nil,
+        }
         def mount
           sleep 1
           res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{props[:id]}")

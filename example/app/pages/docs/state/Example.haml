@@ -1,7 +1,7 @@
 :ruby
-  def self.get_initial_state(initial_count: 0, **props)
-    { count: initial_count }
-  end
+  def self.get_initial_state(initial_count: 0, **) = {
+    count: initial_count
+  }
   def handle_reset(_event)
     update(count: 0)
   end

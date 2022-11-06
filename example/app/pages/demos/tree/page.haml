@@ -4,11 +4,9 @@
   Entry = import("./Entry")
   FileContents = import("./FileContents")
 
-  def self.get_initial_state(**props)
-    {
-      selected_path: nil
-    }
-  end
+  def self.get_initial_state(**props) = {
+    selected_path: nil
+  }
 
 :css
   .browser {

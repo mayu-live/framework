@@ -10,11 +10,10 @@ graph LR
     ROUTE____app__pages__docs__state__page.haml["/docs/state"]
     ROUTE____app__pages__docs__components__page.haml["/docs/components"]
     ROUTE____app__pages__docs__getting-started__page.haml["/docs/getting-started"]
-    ROUTE____app__pages__docs__whitespace__page.haml["/docs/whitespace"]
     ROUTE____app__pages__docs__deployment__page.haml["/docs/deployment"]
     ROUTE____app__pages__docs__routing__page.haml["/docs/routing"]
+    ROUTE____app__pages__docs__syntax__page.haml["/docs/syntax"]
     ROUTE____app__pages__docs__lifecycle-methods__page.haml["/docs/lifecycle-methods"]
-    ROUTE____app__pages__docs__early-returns__page.haml["/docs/early-returns"]
     ROUTE____app__pages__docs__stylesheets__page.haml["/docs/stylesheets"]
     ROUTE____app__pages__docs__page.haml["/docs"]
     ROUTE____app__pages__demos__svg__page.haml["/demos/svg"]
@@ -39,11 +38,10 @@ graph LR
   ROUTE____app__pages__docs__state__page.haml-->__app__pages__docs__state__page.haml
   ROUTE____app__pages__docs__components__page.haml-->__app__pages__docs__components__page.haml
   ROUTE____app__pages__docs__getting-started__page.haml-->__app__pages__docs__getting-started__page.haml
-  ROUTE____app__pages__docs__whitespace__page.haml-->__app__pages__docs__whitespace__page.haml
   ROUTE____app__pages__docs__deployment__page.haml-->__app__pages__docs__deployment__page.haml
   ROUTE____app__pages__docs__routing__page.haml-->__app__pages__docs__routing__page.haml
+  ROUTE____app__pages__docs__syntax__page.haml-->__app__pages__docs__syntax__page.haml
   ROUTE____app__pages__docs__lifecycle-methods__page.haml-->__app__pages__docs__lifecycle-methods__page.haml
-  ROUTE____app__pages__docs__early-returns__page.haml-->__app__pages__docs__early-returns__page.haml
   ROUTE____app__pages__docs__stylesheets__page.haml-->__app__pages__docs__stylesheets__page.haml
   ROUTE____app__pages__docs__page.haml-->__app__pages__docs__page.haml
   ROUTE____app__pages__demos__svg__page.haml-->__app__pages__demos__svg__page.haml
@@ -152,10 +150,6 @@ graph LR
             __app__pages__docs__getting-started__page.css["fab:fa-css3 page.css&nbsp;"]
             __app__pages__docs__getting-started__page.haml["page.haml"]
           end
-          subgraph PATH__app__pages__docs__whitespace["/app/pages/docs/whitespace"]
-            __app__pages__docs__whitespace__page.css["fab:fa-css3 page.css&nbsp;"]
-            __app__pages__docs__whitespace__page.haml["page.haml"]
-          end
           subgraph PATH__app__pages__docs__deployment["/app/pages/docs/deployment"]
             __app__pages__docs__deployment__page.css["fab:fa-css3 page.css&nbsp;"]
             __app__pages__docs__deployment__page.haml["page.haml"]
@@ -164,13 +158,13 @@ graph LR
             __app__pages__docs__routing__page.css["fab:fa-css3 page.css&nbsp;"]
             __app__pages__docs__routing__page.haml["page.haml"]
           end
+          subgraph PATH__app__pages__docs__syntax["/app/pages/docs/syntax"]
+            __app__pages__docs__syntax__page.css["fab:fa-css3 page.css&nbsp;"]
+            __app__pages__docs__syntax__page.haml["page.haml"]
+          end
           subgraph PATH__app__pages__docs__lifecycle-methods["/app/pages/docs/lifecycle-methods"]
             __app__pages__docs__lifecycle-methods__page.css["fab:fa-css3 page.css&nbsp;"]
             __app__pages__docs__lifecycle-methods__page.haml["page.haml"]
-          end
-          subgraph PATH__app__pages__docs__early-returns["/app/pages/docs/early-returns"]
-            __app__pages__docs__early-returns__page.css["fab:fa-css3 page.css&nbsp;"]
-            __app__pages__docs__early-returns__page.haml["page.haml"]
           end
           subgraph PATH__app__pages__docs__stylesheets["/app/pages/docs/stylesheets"]
             __app__pages__docs__stylesheets__page.css["fab:fa-css3 page.css&nbsp;"]
@@ -311,6 +305,7 @@ graph LR
   __app__pages__docs__Details.haml-->__app__pages__docs__Details.css
   __app__pages__docs__layout.haml-->__app__components__Layout__FullWidthPageWithMenu.haml
   __app__pages__docs__layout.haml-->__app__components__Layout__Heading.haml
+  __app__pages__docs__layout.haml-->__app__components__Layout__Card.haml
   __app__pages__docs__layout.haml-->__app__components__Layout__Menu.haml
   __app__pages__docs__layout.haml-->__app__components__Layout__MenuItem.haml
   __app__pages__docs__layout.haml-->__app__pages__docs__Details.haml
@@ -347,17 +342,15 @@ graph LR
   __app__pages__docs__components__page.haml-->__app__pages__docs__components__page.css
   __app__pages__docs__getting-started__page.haml-->__app__pages__docs__Markdown.haml
   __app__pages__docs__getting-started__page.haml-->__app__pages__docs__getting-started__page.css
-  __app__pages__docs__whitespace__page.haml-->__app__components__Layout__Highlight.haml
-  __app__pages__docs__whitespace__page.haml-->__app__pages__docs__Markdown.haml
-  __app__pages__docs__whitespace__page.haml-->__app__pages__docs__whitespace__page.css
   __app__pages__docs__deployment__page.haml-->__app__components__Layout__Heading.haml
   __app__pages__docs__deployment__page.haml-->__app__pages__docs__deployment__page.css
   __app__pages__docs__routing__page.haml-->__app__pages__docs__Markdown.haml
   __app__pages__docs__routing__page.haml-->__app__pages__docs__routing__page.css
+  __app__pages__docs__syntax__page.haml-->__app__components__Layout__Highlight.haml
+  __app__pages__docs__syntax__page.haml-->__app__pages__docs__Markdown.haml
+  __app__pages__docs__syntax__page.haml-->__app__pages__docs__syntax__page.css
   __app__pages__docs__lifecycle-methods__page.haml-->__app__pages__docs__Markdown.haml
   __app__pages__docs__lifecycle-methods__page.haml-->__app__pages__docs__lifecycle-methods__page.css
-  __app__pages__docs__early-returns__page.haml-->__app__pages__docs__Markdown.haml
-  __app__pages__docs__early-returns__page.haml-->__app__pages__docs__early-returns__page.css
   __app__pages__docs__stylesheets__page.haml-->__app__pages__docs__Markdown.haml
   __app__pages__docs__stylesheets__page.haml-->__app__pages__docs__stylesheets__page.css
   __app__pages__docs__404.haml-->__app__components__Layout__Heading.haml
@@ -480,6 +473,7 @@ graph LR
   class __app__components__Layout__MenuItem.css CSS
   class __app__pages__docs__Details.css NonExistant
   class __app__pages__docs__Details.css CSS
+  class __app__pages__docs__layout.css NonExistant
   class __app__pages__docs__layout.css CSS
   class __app__components__Markdown.css NonExistant
   class __app__components__Markdown.css CSS
@@ -507,15 +501,13 @@ graph LR
   class __app__pages__docs__components__page.css CSS
   class __app__pages__docs__getting-started__page.css NonExistant
   class __app__pages__docs__getting-started__page.css CSS
-  class __app__pages__docs__whitespace__page.css NonExistant
-  class __app__pages__docs__whitespace__page.css CSS
   class __app__pages__docs__deployment__page.css CSS
   class __app__pages__docs__routing__page.css NonExistant
   class __app__pages__docs__routing__page.css CSS
+  class __app__pages__docs__syntax__page.css NonExistant
+  class __app__pages__docs__syntax__page.css CSS
   class __app__pages__docs__lifecycle-methods__page.css NonExistant
   class __app__pages__docs__lifecycle-methods__page.css CSS
-  class __app__pages__docs__early-returns__page.css NonExistant
-  class __app__pages__docs__early-returns__page.css CSS
   class __app__pages__docs__stylesheets__page.css NonExistant
   class __app__pages__docs__stylesheets__page.css CSS
   class __app__pages__docs__404.css NonExistant

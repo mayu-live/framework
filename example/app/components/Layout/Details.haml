@@ -13,12 +13,10 @@
 
   Card = import("/app/components/Layout/Card")
 
-  def self.get_initial_state(initial_open: false, lazy: false, **)
-    {
-      open: initial_open,
-      loaded: initial_open || !lazy
-    }
-  end
+  def self.get_initial_state(initial_open: false, lazy: false, **) = {
+    open: initial_open,
+    loaded: initial_open || !lazy
+  }
 
   def handle_toggle(e)
     if e in { target: { open: true } }

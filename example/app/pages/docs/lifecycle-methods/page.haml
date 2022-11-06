@@ -9,9 +9,9 @@
 
       ```haml
       :ruby
-        def self.get_initial_state(**)
-          { count: 0 }
-        end
+        def self.get_initial_state(**) = {
+          count: 0
+        }
         def mount
           loop do
             sleep 1

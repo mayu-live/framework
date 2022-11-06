@@ -1,10 +1,8 @@
 :ruby
-  def self.get_initial_state(props)
-    {
-      result: nil,
-      error: nil,
-    }
-  end
+  def self.get_initial_state(props) = {
+    result: nil,
+    error: nil,
+  }
 
   def mount
     id = props.dig(:params, :id).to_i

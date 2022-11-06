@@ -1,9 +1,9 @@
 :ruby
   Card = import("/app/components/Layout/Card")
 
-  def self.get_initial_state(initial_value: 0, **)
-    { count: initial_value }
-  end
+  def self.get_initial_state(initial_value: 0, **) = {
+    count: initial_value
+  }
 
   def handle_decrement(event)
     update do |state|

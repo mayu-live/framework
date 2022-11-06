@@ -1,7 +1,7 @@
 :ruby
-  def self.get_initial_state(initial_open: false, **)
-    { open: initial_open }
-  end
+  def self.get_initial_state(initial_open: false, **) = {
+    open: initial_open
+  }
 
   def handle_toggle(_)
     update do |state|

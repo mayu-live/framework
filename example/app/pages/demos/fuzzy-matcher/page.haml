@@ -40,12 +40,10 @@
     Zither
   ])
 
-  def self.get_initial_state(**)
-    {
-      value: "",
-      suggestions: []
-    }
-  end
+  def self.get_initial_state(**) = {
+    value: "",
+    suggestions: []
+  }
 
   def handle_change(e)
     e => { target: { value: } }
