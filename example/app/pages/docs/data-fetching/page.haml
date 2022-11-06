@@ -1,32 +1,36 @@
 :ruby
+  Details = import("/app/components/Layout/Details")
+  Highlight = import("/app/components/Layout/Highlight")
   Markdown = import("../Markdown")
+  Pokemon = import("./Pokemon")
+:css
+  .grid { display: grid; }
+  .scroll {
+    overflow: auto;
+    max-height: 30em;
+  }
 %article
   %Markdown
     :plain
       # Data fetching
 
-      This has nothing to do with Haml but I suppose this document will turn into
-      some proper documentation at some point, so I'm writing it here...
+      This example shows how data can be fetched with
+      loading state and error handling.
+
+  %Highlight(language="haml")
+    = File.read("app/pages/docs/data-fetching/Pokemon.haml")
+
+  %Markdown
+    :plain
+      This component can be used like this:
 
       ```haml
       :ruby
-        def self.get_initial_state(**) = {
-          result: nil,
-          error: nil,
-        }
-        def mount
-          sleep 1
-          res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{props[:id]}")
-          result = res.json(symbolize_names: true)
-          update(result:)
-        rescue => e
-          update(error: e.message)
-        end
-      :ruby
-        state => { error:, result: }
-      - return if error
-        %p.error= error
-      - return unless result
-        %p Loading...
-      %p= result[:name]
+        Pokemon = import("./Pokemon")
+      %Pokemon(id=123)
       ```
+
+  %Details(lazy summary="Demo")
+    .grid
+      .scroll
+        %Pokemon(id=123)
