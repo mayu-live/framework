@@ -13,60 +13,65 @@ module Mayu
       def call(argv)
         require "fileutils"
 
-        Console
-          .logger
-          .measure("Building") do
-            Async do
-              metrics = AppMetrics.setup(Prometheus::Client.registry)
-              environment = Environment.new(configuration, metrics)
-              environment.init_js
-              resources = environment.resources
+        Async do
+          started_at = Time.now.to_f
 
-              components = []
+          metrics = AppMetrics.setup(Prometheus::Client.registry)
+          environment = Environment.new(configuration, metrics)
+          environment.init_js
+          resources = environment.resources
 
-              components.push(File.join("/app", "root"))
+          components = []
 
-              environment.routes.each do |route|
-                route.layouts.each do |layout|
-                  components.push(File.join("/app", "pages", layout))
-                end
+          components.push(File.join("/app", "root"))
 
-                components.push(File.join("/app", "pages", route.template))
-              end
-
-              components.each do |component|
-                resources.load_resource(component).type.component
-              end
-
-              File.write("app-graph.md", <<~EOF)
-                ```mermaid
-                #{resources.dependency_graph.to_mermaid_source.chomp}
-                ```
-              EOF
-
-              puts "\e[34m#{resources.mermaid_url}\e[0m"
-
-              assets_dir = environment.path(:assets)
-              FileUtils.mkdir_p(assets_dir)
-              files_to_remove = Dir.glob(File.join(assets_dir, "*"))
-
-              unless files_to_remove.empty?
-                puts "\e[33mRemoving #{files_to_remove.size} files from #{assets_dir}\e[0m"
-                FileUtils.rm(files_to_remove)
-              end
-
-              puts "\e[33mGenerate assets\e[0m"
-              resources.generate_assets(
-                assets_dir,
-                concurrency: 8,
-                forever: false
-              )
-
-              filename = configuration.paths.bundle_filename
-              puts "\e[33mWrite #{filename}\e[0m"
-              File.write(filename, resources.dump)
+          environment.routes.each do |route|
+            route.layouts.each do |layout|
+              components.push(File.join("/app", "pages", layout))
             end
+
+            components.push(File.join("/app", "pages", route.template))
           end
+
+          components.each do |component|
+            resources.load_resource(component).type.component
+          end
+
+          File.write("app-graph.md", <<~EOF)
+            ```mermaid
+            #{resources.dependency_graph.to_mermaid_source.chomp}
+            ```
+          EOF
+
+          puts "\e[34m#{resources.mermaid_url}\e[0m"
+
+          assets_dir = environment.path(:assets)
+          FileUtils.mkdir_p(assets_dir)
+          files_to_remove = Dir.glob(File.join(assets_dir, "*"))
+
+          unless files_to_remove.empty?
+            puts "\e[33mRemoving #{files_to_remove.size} files from #{assets_dir}\e[0m"
+            FileUtils.rm(files_to_remove)
+          end
+
+          puts "\e[33mGenerate assets\e[0m"
+          resources.generate_assets(
+            assets_dir,
+            concurrency: 8,
+            forever: false
+          ).wait
+
+          filename = configuration.paths.bundle_filename
+          puts "\e[33mWrite #{filename}\e[0m"
+          File.write(filename, resources.dump)
+
+          build_time = Time.now.to_f - started_at
+
+          sleep 0.1 # Wait a little bit for stdout to clear
+
+          puts
+          puts format("\e[36mBuilt app in %.2fs\e[0m", build_time)
+        end
       end
     end
   end
