@@ -47,4 +47,4 @@
     %ul.list
       %Entry(initial_open root=root){path: "app"}
     .right
-      %FileContents(root=root){path: props.dig(:query, :file)}
+      %FileContents(root=root){path: props.dig(:request, :query, :file)}

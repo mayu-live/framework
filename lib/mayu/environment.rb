@@ -110,15 +110,16 @@ module Mayu
       params = route_match.params
 
       # Load the page component.
-      path = File.join("/", "app", "pages", route_match.template)
-      resources.load_resource(
-        File.join("/", "app", "pages", route_match.template)
-      ).type => Resources::Types::Component => mod_type
+      component_path = File.join("/", "app", "pages", route_match.template)
+      resources.load_resource(component_path).type =>
+        Resources::Types::Component => mod_type
 
       page_component = mod_type.component
 
       resources.load_resource(File.join("/", "app", "root")).type =>
         Resources::Types::Component => root
+
+      request_info = { path:, params:, query: }.freeze
 
       # Apply the layouts.
       # NOTE: Pages should probably be their own
@@ -126,14 +127,14 @@ module Mayu
       route_match
         .layouts
         .reverse
-        .reduce(VDOM.h(page_component, path:, params:, query:)) do |app, layout|
+        .reduce(VDOM.h(page_component, request: request_info)) do |app, layout|
           Console.logger.info(self, "Applying layout #{layout.inspect}")
 
           resources.load_resource(
             File.join("/", "app", "pages", layout)
           ).type => Resources::Types::Component => layout
 
-          VDOM.h(layout.component, app, path:, params:, query:)
+          VDOM.h(layout.component, app, request: request_info)
         end
         .then { VDOM.h(root.component, _1) }
     end

@@ -7,7 +7,7 @@
   Details = import("./Details")
 
   def did_update(prev_props, prev_state)
-    unless prev_props[:path] == props[:path]
+    unless prev_props.dig(:request, :path) == props.dig(:request, :path)
       helpers.scroll_into_view("#page")
     end
   end

@@ -4,7 +4,7 @@
   def self.get_initial_state(**props) = {
     result: nil,
     error: nil,
-    page: props.dig(:query, :page).to_i,
+    page: props.dig(:request, :query, :page).to_i,
     per_page: props.dig(:per_page).to_i.nonzero? || 20,
   }
 
@@ -49,7 +49,7 @@
 
   per_page = state[:per_page]
   total_pages = (results.length / per_page).floor
-  page = props.dig(:query, :page).to_i.clamp(1, total_pages.succ)
+  page = props.dig(:request, :query, :page).to_i.clamp(1, total_pages.succ)
   results_on_this_page = results.slice(page.pred * per_page, per_page) || []
 
 %article

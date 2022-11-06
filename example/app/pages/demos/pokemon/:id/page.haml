@@ -5,7 +5,7 @@
   }
 
   def mount
-    id = props.dig(:params, :id).to_i
+    props => { request: { params: { id: Integer => id } } }
     res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{id}/")
     result = res.json(symbolize_names: true)
     update(result:)
