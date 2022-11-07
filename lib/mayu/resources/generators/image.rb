@@ -3,6 +3,7 @@
 
 require "image_size"
 require "base64"
+require "shellwords"
 require_relative "base"
 
 module Mayu
@@ -25,6 +26,11 @@ module Mayu
         sig { override.params(target_path: String).void }
         def process(target_path)
           return if File.exist?(target_path)
+
+          Console.logger.info(
+            self,
+            "Generating #{target_path} from #{@source_path}"
+          )
 
           case @version.format
           when :webp
@@ -56,16 +62,20 @@ module Mayu
         end
         def convert_webp(source_path:, quality:, width:, target_path:)
           system(
-            "cwebp",
-            "-q",
-            "#{quality}",
-            "-resize",
-            "#{width}",
-            "0",
-            source_path,
-            "-o",
-            target_path
-          )
+            Shellwords.shelljoin(
+              [
+                "cwebp",
+                "-q",
+                "#{quality}",
+                "-resize",
+                "#{width}",
+                "0",
+                source_path,
+                "-o",
+                target_path
+              ]
+            ) + " 2> /dev/null"
+          ) or raise "Could not generate #{target_path} from #{source_path}"
         end
 
         sig do
@@ -78,13 +88,17 @@ module Mayu
         end
         def convert_generic(source_path:, quality:, width:, target_path:)
           system(
-            "convert",
-            source_path,
-            "-adaptive-resize",
-            "#{width}",
-            "-strip",
-            target_path
-          )
+            Shellwords.shelljoin(
+              [
+                "convert",
+                source_path,
+                "-adaptive-resize",
+                "#{width}",
+                "-strip",
+                target_path
+              ]
+            ) + " 2> /dev/null"
+          ) or raise "Could not generate #{target_path} from #{source_path}"
         end
       end
     end
