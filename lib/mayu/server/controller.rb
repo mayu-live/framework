@@ -99,7 +99,7 @@ module Mayu
             if @config.server.generate_assets
               environment.resources.generate_assets(
                 environment.path(:assets),
-                concurrency: 8,
+                concurrency: `nproc`.to_i.nonzero? || 8,
                 forever: true
               )
             end

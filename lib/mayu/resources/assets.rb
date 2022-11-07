@@ -38,7 +38,7 @@ module Mayu
       end
       def run(
         asset_dir,
-        concurrency: 4,
+        concurrency:,
         forever: false,
         task: Async::Task.current
       )
