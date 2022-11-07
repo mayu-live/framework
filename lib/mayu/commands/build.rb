@@ -43,7 +43,7 @@ module Mayu
             ```
           EOF
 
-          puts "\e[34m#{resources.mermaid_url}\e[0m"
+          mermaid_url = resources.mermaid_url
 
           assets_dir = environment.path(:assets)
           FileUtils.mkdir_p(assets_dir)
@@ -54,7 +54,8 @@ module Mayu
             FileUtils.rm(files_to_remove)
           end
 
-          puts "\e[33mGenerate assets\e[0m"
+          puts "\e[35mGenerating assets\e[0m"
+
           resources.generate_assets(
             assets_dir,
             concurrency: 8,
@@ -62,15 +63,18 @@ module Mayu
           ).wait
 
           filename = configuration.paths.bundle_filename
-          puts "\e[33mWrite #{filename}\e[0m"
+          puts "\e[35mWriting \e[1m#{filename}\e[0m"
           File.write(filename, resources.dump)
 
-          build_time = Time.now.to_f - started_at
-
-          sleep 0.1 # Wait a little bit for stdout to clear
+          puts
+          puts format(
+                 "\e[36mBuilt app in \e[1m%.2f seconds\e[0m",
+                 Time.now.to_f - started_at
+               )
 
           puts
-          puts format("\e[36mBuilt app in %.2fs\e[0m", build_time)
+          puts "View the app graph:"
+          puts "\e[34;4m#{resources.mermaid_url}\e[0m"
         end
       end
     end
