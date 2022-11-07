@@ -28,7 +28,10 @@ module Mayu
         @root = T.let(File.expand_path(root), String)
         @dependency_graph = T.let(DependencyGraph.new, DependencyGraph)
         @resolver =
-          T.let(Resolver::FS.new(@root, extensions: EXTENSIONS), Resolver::Base)
+          T.let(
+            Resolver::Filesystem.new(@root, extensions: EXTENSIONS),
+            Resolver::Base
+          )
         @assets = T.let(Assets.new, T.nilable(Assets))
       end
 
