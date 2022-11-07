@@ -1,5 +1,36 @@
 :ruby
   Markdown = import("./Markdown")
+
+  FLY_REGIONS = {
+    "ams" => "Amsterdam, Netherlands",
+    "cdg" => "Paris, France",
+    "den" => "Denver, Colorado (US)",
+    "dfw" => "Dallas, Texas (US)",
+    "ewr" => "Secaucus, NJ (US)",
+    "fra" => "Frankfurt, Germany",
+    "gru" => "São Paulo",
+    "hkg" => "Hong Kong, Hong Kong",
+    "iad" => "Ashburn, Virginia (US)",
+    "jnb" => "Johannesburg, South Africa",
+    "lax" => "Los Angeles, California (US)",
+    "lhr" => "London, United Kingdom",
+    "maa" => "Chennai (Madras), India",
+    "mad" => "Madrid, Spain",
+    "mia" => "Miami, Florida (US)",
+    "nrt" => "Tokyo, Japan",
+    "ord" => "Chicago, Illinois (US)",
+    "scl" => "Santiago, Chile",
+    "sea" => "Seattle, Washington (US)",
+    "sin" => "Singapore",
+    "sjc" => "Sunnyvale, California (US)",
+    "syd" => "Sydney, Australia",
+    "yul" => "Montreal, Canada",
+    "yyz" => "Toronto, Canada",
+  }
+
+  # https://fly.io/docs/reference/runtime-environment/#fly_region
+  CURRENT_REGION = FLY_REGIONS.fetch(ENV["FLY_REGION"]) { _1 || "N/A" }
+
 %article
   %Markdown
     :plain
@@ -17,13 +48,26 @@
 
       Mayu is a live streaming server side component-based VirtualDOM rendering framework written in Ruby.
 
-      Everything runs on the server, except for a
-      [tiny JavaScript runtime](https://github.com/mayu-live/framework/tree/main/lib/mayu/client)
-      that handles the connection and updates the DOM.
-
       Mayu has a server side [Virtual DOM](https://en.wikipedia.org/wiki/Virtual_DOM).
-      Virtual DOMs are usually made to be run in browsers, while Mayu runs on
-      a server and streams DOM-patches to the browser.
+      Virtual DOMs are usually made for browsers, while Mayu runs everything on
+      server and streams DOM-patches to the browser runtime.
 
-      By running application logic on the server, you don't need an API
-      for your frontend app to communicate with your backend.
+      The browser runtime is pretty small and split into modules so that the
+      most important parts are loaded first, and the less important parts are
+      loaded asynchronously.
+
+      By running the application on a server,
+      you eliminate the need for an API for your frontend application.
+      You can communicate to your database or other services directly
+      from within your callback handlers.
+
+      By deploying the application on a server near your users,
+      latency should be low enough for interactive elements to appear
+      like they update instantly.
+      [MDN: How long is too long?](https://developer.mozilla.org/en-US/docs/Web/Performance/How_long_is_too_long#responsiveness_goal)
+
+  %p
+    The current instance is deployed to
+    %a(href="https://fly.io/docs/reference/regions/#fly-io-regions" target="_blank")<
+      = CURRENT_REGION
+    \.
