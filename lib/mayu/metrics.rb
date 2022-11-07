@@ -53,7 +53,10 @@ module Mayu
       collector = Metrics::Collector::Server.new(collector_endpoint)
       collector.start
 
-      container.spawn(name: "Metrics collector/exporter") do |instance|
+      container.spawn(
+        name: "Metrics collector/exporter",
+        restart: true
+      ) do |instance|
         Async do
           internal_store = {}
 
