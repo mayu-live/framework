@@ -100,8 +100,12 @@ module Mayu
       State::Store.new(initial_state, reducers:)
     end
 
-    sig { params(request_path: String).returns(VDOM::Descriptor) }
-    def load_root(request_path)
+    sig do
+      params(request_path: String, headers: T::Hash[String, String]).returns(
+        VDOM::Descriptor
+      )
+    end
+    def load_root(request_path, headers: {})
       path, search = request_path.split("?", 2)
       # We should match the route earlier, so that we don't have to get this
       # far in case it doesn't match...
@@ -119,7 +123,7 @@ module Mayu
       resources.load_resource(File.join("/", "app", "root")).type =>
         Resources::Types::Component => root
 
-      request_info = { path:, params:, query: }.freeze
+      request_info = { path:, params:, query:, headers: }.freeze
 
       # Apply the layouts.
       # NOTE: Pages should probably be their own

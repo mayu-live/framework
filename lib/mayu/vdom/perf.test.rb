@@ -96,7 +96,7 @@ class PerfTest < Minitest::Test
     environment = Mayu::Environment.new(config, $metrics)
 
     environment.instance_eval do
-      def load_root(path)
+      def load_root(path, headers: {})
         Mayu::VDOM::Descriptor.new(:div)
       end
       def match_route(path)

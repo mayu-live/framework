@@ -24,7 +24,7 @@ module Mayu
 
           environment.instance_eval <<~RUBY
             # sig {params(path: String).returns(Mayu::VDOM::Descriptor)}
-            def load_root(path)
+            def load_root(path, headers: {})
               Mayu::VDOM::Descriptor.new(:div)
             end
 

@@ -282,7 +282,12 @@ module Mayu
       end
       def handle_session_init(request)
         Console.logger.info(self) { "Init session: #{request.path}" }
-        session = Session.new(environment: @environment, path: request.path)
+        session =
+          Session.new(
+            environment: @environment,
+            path: request.path,
+            headers: request.headers.to_h.freeze
+          )
         body = Async::HTTP::Body::Writable.new
 
         headers = {
