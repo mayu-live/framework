@@ -1,0 +1,148 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Fieldset = import("/app/components/Form/Fieldset")
+  Input = import("/app/components/Form/Input")
+  Button = import("/app/components/Form/Button")
+
+  MAX_SIZE = 20
+
+  def self.get_initial_state(initial_size: MAX_SIZE, **) = {
+    size: initial_size,
+    grid: Array.new(initial_size * initial_size, false),
+    running: false,
+  }
+
+  def mount
+    loop do
+      if state[:running]
+        handle_step
+        sleep 0.25
+      else
+        sleep 0.5
+      end
+    end
+  end
+
+  def handle_reset(event)
+    update do |state|
+      size = state[:size]
+      { grid: Array.new(size * size, false) }
+    end
+  end
+
+  def handle_randomize(event)
+    update do |state|
+      size = state[:size]
+      { grid: Array.new(size * size) { rand(2).zero? } }
+    end
+  end
+
+  def handle_toggle(event)
+    event => { target: { value: } }
+    index = value.to_i
+
+    update do |state|
+      grid = state[:grid].dup
+      grid[index] = !grid[index]
+      { grid: }
+    end
+  end
+
+  def handle_change_size(e)
+    e => { target: { value: } }
+    update_size(value.to_i)
+  end
+
+  def handle_step(*)
+    update do |state|
+      { grid: step_grid(state[:grid], state[:size]) }
+    end
+  end
+
+  def handle_toggle_running(e)
+    update do |state|
+      { running: !state[:running] }
+    end
+  end
+
+  private
+
+  def step_grid(grid, size)
+    grid.map.with_index do |alive, i|
+      y, x = i.divmod(size)
+      neighbor_count = count_neighbors(grid, size, x, y)
+
+      if alive
+        neighbor_count == 2 || neighbor_count == 3
+      else
+        neighbor_count == 3
+      end
+    end
+  end
+
+  def count_neighbors(grid, size, x, y)
+    count = 0
+
+    -1.upto(1) do |yoff|
+      -1.upto(1) do |xoff|
+        next if yoff.zero? && xoff.zero?
+        count += 1 if get_value(grid, size, x + xoff, y + yoff)
+      end
+    end
+
+    count
+  end
+
+  def get_value(grid, size, x, y)
+    grid[get_index(size, x, y)]
+  end
+
+  def get_index(size, x, y)
+    (y % size) * size + x % size
+  end
+
+:css
+  .grid {
+    user-select: none;
+    display: grid;
+    margin: 1em;
+    gap: 1px;
+    background: #000;
+    grid-template-columns: repeat(var(--grid-size), minmax(0, 1fr));
+    grid-auto-flow: row;
+    border: 1px solid #000;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 1em;
+  }
+
+  .cell {
+    border: 0;
+    aspect-ratio: 1;
+  }
+
+  .cell { background: #fff; }
+  .cell:hover { background: #f0f0f0; }
+  .alive { background: #333; }
+  .alive:hover { background: #666; }
+
+:ruby
+  state => size:, running:
+
+%article
+  %Heading(level=2) game of life
+
+  %Fieldset
+    %legend Controls
+    .buttons
+      %Button(onclick=handle_reset) Reset
+      %Button(onclick=handle_randomize) Randomize
+      %Button(onclick=handle_step disabled=running) Step
+      %Button(onclick=handle_toggle_running)
+        = running ? "Stop" : "Start"
+
+  .grid{style: { "--grid-size": size.to_s }}
+    = state[:grid].map.with_index do |alive, value|
+      %button.cell(onclick=handle_toggle){value:, class: { alive: }}
