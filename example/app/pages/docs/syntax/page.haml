@@ -52,7 +52,17 @@
 
       ## Pattern matching
 
-      You can use pattern matching in a lot of places.
+      You can use pattern matching in a lot of places, and it's encouraged,
+      because it verifies that structures are have the expected format.
+      If patterns don't match, you get `NoMatchingPatternError`,
+      so you will know exactly why something went wrong.
+
+      Here are some useful links:
+
+      * [Ruby 3.1 Pattern matching RDoc](https://docs.ruby-lang.org/en/3.1/syntax/pattern_matching_rdoc.html)
+      * [Ruby 3.1 - Pattern Matching](https://leejarvis.me/posts/2022/ruby-3-pattern-matching)
+      * [Second look at pattern matching in Ruby](https://womanonrails.com/ruby-pattern-matching-second-look)
+      * [An Introduction to Pattern Matching in Ruby](https://blog.appsignal.com/2021/07/28/introduction-to-pattern-matching-in-ruby.html)
 
       ```haml
       :ruby
