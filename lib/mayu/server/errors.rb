@@ -23,6 +23,8 @@ module Mayu
       end
       class ServerIsShuttingDown < ServerError
       end
+      class InvalidSecFetchHeader < ServerError
+      end
 
       sig do
         type_parameters(:R)
@@ -109,6 +111,13 @@ module Mayu
           405,
           { "content-type": "text/plain" },
           ["method not allowed"]
+        ]
+      rescue InvalidSecFetchHeader => e
+        Console.logger.error(self, e)
+        Protocol::HTTP::Response[
+          415,
+          { "content-type": "text/plain" },
+          [e.message]
         ]
       rescue => e
         Console.logger.error(self, e)

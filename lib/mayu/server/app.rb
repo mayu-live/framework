@@ -282,6 +282,25 @@ module Mayu
       end
       def handle_session_init(request)
         Console.logger.info(self) { "Init session: #{request.path}" }
+
+        validate_header!(
+          request.headers,
+          "sec-fetch-mode",
+          "navigate"
+        ) do |value|
+          raise Errors::InvalidSecFetchHeader,
+                "Expected sec-fetch-mode to equal navigate but got #{value.inspect}"
+        end
+
+        validate_header!(
+          request.headers,
+          "sec-fetch-dest",
+          "document"
+        ) do |value|
+          raise Errors::InvalidSecFetchHeader,
+                "Expected sec-fetch-dest to equal document but got #{value.inspect}"
+        end
+
         session =
           Session.new(
             environment: @environment,
@@ -380,6 +399,20 @@ module Mayu
       end
 
       private
+
+      sig do
+        params(
+          headers: Protocol::HTTP::Headers,
+          name: String,
+          expected_value: String,
+          block: T.proc.params(arg0: String).void
+        ).void
+      end
+      def validate_header!(headers, name, expected_value, &block)
+        if actual_value = headers[name]
+          yield actual_value.to_s unless actual_value.to_s == expected_value
+        end
+      end
 
       sig { params(session_id: String, body: String).returns(Session) }
       def load_session(session_id, body)
