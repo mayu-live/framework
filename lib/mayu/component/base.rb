@@ -143,7 +143,7 @@ module Mayu
       sig do
         params(
           state: T.nilable(State),
-          blk: T.nilable(T.proc.params(arg0: State).returns(State))
+          blk: T.nilable(Wrapper::UpdateProc)
         ).void
       end
       def update(state = nil, &blk)

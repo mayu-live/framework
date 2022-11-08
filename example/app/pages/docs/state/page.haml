@@ -3,6 +3,7 @@
   Card = import("/app/components/Layout/Card")
   Markdown = import("../Markdown")
   Example = import("./Example")
+  Highlight = import("/app/components/Layout/Highlight")
 
 :css
   .card {
@@ -20,31 +21,45 @@
       read state with `state`,
       and update state with `update`,
 
-      ```haml
-      :ruby
-        def self.get_initial_state(initial_count: 0, **props) = {
-          count: initial_count
-        }
-        def handle_reset(_event)
-          update(count: 0)
-        end
-        def handle_increment(_event)
-          update do |state|
-            { count: state[:count] + 1 }
-          end
-        end
-        def handle_decrement(_event)
-          update do |state|
-            { count: state[:count] - 1 }
-          end
-        end
-      %div
-        %p Count: #{state[:count]}
-        %button(onclick=handle_increment) Increment
-        %button(onclick=handle_decrement) Decrement
-        %button(onclick=handle_reset) Reset
-      ```
+  %Highlight(language="haml")
+    = File.read("app/pages/docs/state/Example.haml")
 
-      This will result in the following component:
+  %p This will result in the following component:
+
   %Card.card
     %Example
+
+  %Markdown
+    :plain
+      # Different ways to update
+
+      If you don't need to read state when updating, you can do this:
+
+      ```ruby
+      update(count: 0)
+      ```
+
+      If you need to read state, you can get the entire state object:
+
+      ```ruby
+      update do |state|
+        { count: state[:count] + 1 }
+      end
+      ```
+
+      Or you could extract just the keys you are interested in:
+
+      ```ruby
+      update do |count:|
+        { count: count + 1 }
+      end
+      ```
+
+      You can also use default values:
+
+      ```ruby
+      update do |count: 0|
+        { count: count + 1 }
+      end
+      ```
+

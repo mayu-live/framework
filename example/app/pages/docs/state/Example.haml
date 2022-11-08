@@ -6,7 +6,7 @@
     update(count: 0)
   end
   def handle_increment(_event)
-    update do |state|
+    update do |count:|
       { count: state[:count] + 1 }
     end
   end

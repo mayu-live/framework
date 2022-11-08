@@ -8,10 +8,31 @@ module Mayu
     class Wrapper
       extend T::Sig
 
+      UpdateProc =
+        T.type_alias do
+          T.any(
+            T.proc.params(arg0: State).returns(State),
+            T.proc.params(kwargs: T.untyped).returns(State)
+          )
+        end
+
+      sig { returns(String) }
+      def vnode_id = @vnode.id
+
       sig { returns(Props) }
       attr_accessor :props
       sig { returns(State) }
       attr_accessor :state
+      sig { returns(State) }
+      attr_reader :next_state
+
+      sig { returns(Helpers) }
+      attr_reader :helpers
+
+      sig { returns(T::Boolean) }
+      def dirty? = @dirty
+      sig { returns(TrueClass) }
+      def dirty! = @dirty = true
 
       sig do
         params(vnode: VDOM::VNode, klass: T.class_of(Base), props: Props).void
@@ -38,38 +59,6 @@ module Mayu
           @instance.class.send(:__resource)
         end
       end
-
-      sig { returns(T.untyped) }
-      def marshal_dump
-        [
-          VDOM::Marshalling.dump_props(@props),
-          VDOM::Marshalling.dump_state(@state)
-        ]
-      end
-
-      sig { params(a: T.untyped).void }
-      def marshal_load(a)
-        @props, @state = a
-        @next_state = @state.clone
-        @dirty = true
-        @barrier = Async::Barrier.new
-      end
-
-      sig { returns(Helpers) }
-      attr_reader :helpers
-      sig { returns(State) }
-      attr_reader :state
-      sig { returns(State) }
-      attr_reader :next_state
-      sig { returns(Props) }
-      attr_reader :props
-      sig { returns(String) }
-      def vnode_id = @vnode.id
-
-      sig { returns(T::Boolean) }
-      def dirty? = @dirty
-      sig { returns(TrueClass) }
-      def dirty! = @dirty = true
 
       sig { void }
       def mount
@@ -108,19 +97,50 @@ module Mayu
       end
 
       sig do
-        params(
-          new_state: T.nilable(State),
-          blk: T.nilable(T.proc.params(arg0: State).returns(State))
-        ).void
+        params(new_state: T.nilable(State), block: T.nilable(UpdateProc)).void
       end
-      def update(new_state = nil, &blk)
-        new_state = blk.call(state) if blk
-
+      def update(new_state = nil, &block)
         if new_state
           @next_state = @next_state.merge(new_state)
-
           enqueue_update!
         end
+
+        return unless block
+
+        if block.parameters in [[:opt, var]]
+          Console.logger.warn(self, <<~EOF) unless var == :state
+            update do |#{var}|
+            # Are you sure you didn't misspell `#{var}`?
+            # Usually it should be called `state`.
+            end
+            EOF
+
+          update(block.call(@state))
+        else
+          if block.parameters.all? { _1 in [:key | :keyreq, key] }
+            keys = block.parameters.map(&:last)
+            sliced_state = T.unsafe(@state).slice(*keys)
+            update(block.call(**sliced_state))
+          else
+            raise ArgumentError, "All arguments to #update are not keys."
+          end
+        end
+      end
+
+      sig { returns(T.untyped) }
+      def marshal_dump
+        [
+          VDOM::Marshalling.dump_props(@props),
+          VDOM::Marshalling.dump_state(@state)
+        ]
+      end
+
+      sig { params(a: T.untyped).void }
+      def marshal_load(a)
+        @props, @state = a
+        @next_state = @state.clone
+        @dirty = true
+        @barrier = Async::Barrier.new
       end
 
       private
