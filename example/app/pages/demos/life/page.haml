@@ -102,25 +102,29 @@
   end
 
 :css
-  .grid {
-    user-select: none;
-    display: grid;
-    margin: 1em;
-    gap: 1px;
-    background: #000;
-    grid-template-columns: repeat(var(--grid-size), minmax(0, 1fr));
-    grid-auto-flow: row;
-    border: 1px solid #000;
-  }
-
   .buttons {
     display: flex;
     gap: 1em;
   }
 
+  .grid {
+    user-select: none;
+    display: grid;
+    margin: 1em;
+    background: #000;
+    grid-template-columns: repeat(var(--grid-size), minmax(0, 1fr));
+    grid-auto-flow: row;
+    border: 1px solid #000;
+    border-left: none;
+    border-top: none;
+  }
+
   .cell {
     border: 0;
     aspect-ratio: 1;
+    border: 1px solid #000;
+    border-bottom: none;
+    border-right: none;
   }
 
   .cell { background: #fff; }
@@ -145,4 +149,4 @@
 
   .grid{style: { "--grid-size": size.to_s }}
     = state[:grid].map.with_index do |alive, value|
-      %button.cell(onclick=handle_toggle){value:, class: { alive: }}
+      %button.cell(onclick=handle_toggle){key: value, value:, class: { alive: }}
