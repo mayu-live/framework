@@ -5,10 +5,16 @@
     :plain
       # Callbacks
 
-      The first `:ruby`-filter block will be evaluted
-      in class scope of the component.
+      The first `:ruby`-filter block will be evaluted in
+      the class scope of the component, which inherits
+      [`Mayu::Component::Base`](https://github.com/mayu-live/framework/blob/main/lib/mayu/component/base.rb).
 
-      This is where you would set up state, lifecycle methods and callback handlers.
+      This is where you:
+
+      * Import components or other resources
+      * Define the initial state
+      * Define lifecycle methods
+      * Define callback handlers
 
       Attributes starting with `on` will automatically be bound to handlers.
 
