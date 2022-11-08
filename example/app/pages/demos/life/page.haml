@@ -23,6 +23,12 @@
     end
   end
 
+  def handle_mouseenter(event)
+    if event in { buttons: 1 }
+      handle_toggle(event)
+    end
+  end
+
   def handle_reset(event)
     update do |state|
       size = state[:size]
@@ -149,4 +155,8 @@
 
   .grid{style: { "--grid-size": size.to_s }}
     = state[:grid].map.with_index do |alive, value|
-      %button.cell(onclick=handle_toggle){key: value, value:, class: { alive: }}
+      %button.cell(onmousedown=handle_toggle onmouseenter=handle_mouseenter){
+        key: value,
+        value:,
+        class: { alive: }
+      }

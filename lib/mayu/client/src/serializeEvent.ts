@@ -69,8 +69,14 @@ function serializeEvent(e: Event) {
     payload.target = serializeElement(e.target);
   }
 
-  if (e instanceof SubmitEvent && e.submitter instanceof HTMLElement) {
-    payload.submitter = serializeElement(e.submitter);
+  if (e instanceof MouseEvent) {
+    payload.buttons = e.buttons;
+  }
+
+  if (e instanceof SubmitEvent) {
+    if (e.submitter instanceof HTMLElement) {
+      payload.submitter = serializeElement(e.submitter);
+    }
   }
 
   return payload;
