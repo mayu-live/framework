@@ -99,7 +99,7 @@ module Mayu
             if @config.server.generate_assets
               environment.resources.generate_assets(
                 environment.path(:assets),
-                concurrency: `nproc`.to_i.nonzero? || 8,
+                concurrency: Async::Container.processor_count,
                 forever: true
               )
             end

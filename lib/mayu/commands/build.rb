@@ -58,7 +58,7 @@ module Mayu
 
           resources.generate_assets(
             assets_dir,
-            concurrency: `nproc`.to_i.nonzero? || 8,
+            concurrency: Async::Container.processor_count,
             forever: false
           ).wait
 
