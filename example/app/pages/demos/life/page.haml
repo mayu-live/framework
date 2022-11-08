@@ -3,6 +3,7 @@
   Fieldset = import("/app/components/Form/Fieldset")
   Input = import("/app/components/Form/Input")
   Button = import("/app/components/Form/Button")
+  GameGrid = import("./GameGrid")
 
   MAX_SIZE = 20
 
@@ -30,15 +31,13 @@
   end
 
   def handle_reset(event)
-    update do |state|
-      size = state[:size]
+    update do |size:|
       { grid: Array.new(size * size, false) }
     end
   end
 
   def handle_randomize(event)
-    update do |state|
-      size = state[:size]
+    update do |size:|
       { grid: Array.new(size * size) { rand(2).zero? } }
     end
   end
@@ -60,14 +59,14 @@
   end
 
   def handle_step(*)
-    update do |state|
-      { grid: step_grid(state[:grid], state[:size]) }
+    update do |grid:, size:|
+      { grid: step_grid(grid, size) }
     end
   end
 
   def handle_toggle_running(e)
-    update do |state|
-      { running: !state[:running] }
+    update do |running:|
+      { running: !running }
     end
   end
 
@@ -139,7 +138,7 @@
   .alive:hover { background: #666; }
 
 :ruby
-  state => size:, running:
+  state => grid:, size:, running:
 
 %article
   %Heading(level=2) game of life
@@ -152,11 +151,4 @@
       %Button(onclick=handle_step disabled=running) Step
       %Button(onclick=handle_toggle_running)
         = running ? "Stop" : "Start"
-
-  .grid{style: { "--grid-size": size.to_s }}
-    = state[:grid].map.with_index do |alive, value|
-      %button.cell(onmousedown=handle_toggle onmouseenter=handle_mouseenter){
-        key: value,
-        value:,
-        class: { alive: }
-      }
+  %GameGrid(grid=grid size=size)
