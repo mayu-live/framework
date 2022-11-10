@@ -12,6 +12,11 @@ module Mayu
       @refs = T.let(Hash.new { |h, k| h[k] = 0 }, T::Hash[Elem, Integer])
     end
 
+    sig { params(key: Elem).returns(Integer) }
+    def count(key)
+      @refs.fetch(key, 0)
+    end
+
     sig { returns(T::Array[Elem]) }
     def keys
       @refs.sort_by { _2 }.map(&:first)

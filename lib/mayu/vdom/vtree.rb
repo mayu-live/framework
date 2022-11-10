@@ -172,6 +172,7 @@ module Mayu
         @session = T.let(session, Session)
 
         @handlers = T.let({}, T::Hash[String, Component::HandlerRef])
+        @handler_counts = T.let(RefCounter.new, RefCounter[String])
 
         @update_queue = T.let(Async::Queue.new, Async::Queue)
 
@@ -191,6 +192,7 @@ module Mayu
       def marshal_load(a)
         @root, @id_generator, @sent_stylesheets = a
         @handlers = {}
+        @handler_counts = RefCounter.new
         @update_queue = Async::Queue.new
         @update_semaphore = Async::Semaphore.new
         @asset_refs = RefCounter.new
@@ -640,12 +642,17 @@ module Mayu
         old_props
           .values_at(*T.unsafe(removed_handlers))
           .select { _1.is_a?(Component::HandlerRef) }
-          .each { |handler| @handlers.delete(handler.id) }
+          .each { |handler| @handler_counts.release(handler.id) }
 
         new_props
           .values_at(*T.unsafe(new_handlers))
           .select { _1.is_a?(Component::HandlerRef) }
-          .each { |handler| @handlers[handler.id] = handler }
+          .each do |handler|
+            @handlers[handler.id] = handler
+            @handler_counts.acquire!(handler.id)
+          end
+
+        @handlers.delete_if { |id, handler| @handler_counts.count(id).zero? }
       end
 
       sig do
