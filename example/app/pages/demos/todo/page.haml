@@ -1,158 +1,291 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
-  Highlight = import("/app/components/Layout/Highlight")
-  Fieldset = import("/app/components/Form/Fieldset")
-  Input = import("/app/components/Form/Input")
-  Button = import("/app/components/Form/Button")
+  Card = import("/app/components/Layout/Card")
+  Link = import("/app/components/UI/Link")
 
   def self.get_initial_state(**) = {
     items: [],
-    fieldset_key: "fieldset-0",
-    items_key: "items-0",
+    editing: nil,
+    filter: "all",
+    form_key: "form-0",
   }
 
-  def handle_add(e)
-    e => { target: { formData: { item: text } } }
+  def handle_submit(e)
+    e => { target: { formData: { new_todo: String => description } } }
 
-    return if text.empty?
-
-    item = {
-      id: Nanoid.generate(),
-      completed: false,
-      text:,
-    }
-
-    update do |state|
+    update do |items:, form_key:|
       {
-        items: [item, *state[:items]],
-        fieldset_key: state[:fieldset_key].succ,
+        items: [
+          { id: Nanoid.generate(), description: },
+          *items,
+        ],
+        form_key: form_key.succ,
       }
     end
   end
 
-  def handle_move_up(e)
-    e => { target: { value: id } }
-
-    update do |state|
-      items = state[:items].dup
-      index = items.find_index { _1[:id] == id }
-
-      if index > 0
-        { items: items.insert(index - 1, items.delete_at(index)).compact }
-      end
-    end
+  def handle_set_filter(e)
+    e => { target: { name: } }
+    update(filter: name)
   end
 
-  def handle_move_down(e)
-    e => { target: { value: id } }
-
-    update do |state|
-      items = state[:items].dup
-      index = items.find_index { _1[:id] == id }
-
-      if index <= items.length.pred
-        { items: items.insert(index + 1, items.delete_at(index)).compact }
-      end
-    end
+  def handle_dblclick(e)
+    e => { currentTarget: { id: } }
+    update(editing: id)
   end
 
-  def handle_complete(e)
-    e => { target: { value: id, checked: } }
+  def handle_update(e)
+    e => { currentTarget: { id:, formData: { description: } } }
 
-    update do |state|
+    update do |items:|
       {
-        items: state[:items].map do |item|
+        editing: nil,
+        items: items.map { |item|
           if item[:id] == id
-            { **item, completed: checked }
+            { **item, description:}
           else
             item
           end
+        }
+      }
+    end
+  end
+
+  def handle_check(e)
+    e => { currentTarget: { name: id, checked: completed } }
+
+    update do |items:|
+      {
+        editing: nil,
+        items: items.map { |item|
+          if item[:id] == id
+            { **item, completed: }
+          else
+            item
+          end
+        }
+      }
+    end
+  end
+
+  def handle_delete(e)
+    e => { currentTarget: { name: id } }
+
+    update do |items:|
+      { items: items.reject { |item| item[:id] == id } }
+    end
+  end
+
+  def handle_toggle_all(e)
+    e => { target: { checked: completed } }
+
+    update do |items:|
+      {
+        items: items.map do |item|
+          { **item, completed: }
         end
       }
     end
   end
 
   def handle_clear_completed(e)
-    update do |state|
+    update do |items:|
       {
-        items: state[:items].reject { _1[:completed] },
-        items_key: state[:items_key].succ
+        items: items.reject { _1[:completed] }
       }
     end
   end
+
+  private
+
+  def get_filtered_items(filter = state[:filter])
+    case filter
+    in "all"
+      state[:items]
+    in "active"
+      state[:items].select { !_1[:completed] }
+    in "completed"
+      state[:items].select { _1[:completed] }
+    end
+  end
+
+  def pluralize(count, singular, plural)
+    format(
+      "%d %s",
+      count,
+      if count == 1
+        singular
+      else
+        plural
+      end
+    )
+  end
 :css
-  .todo-app {
+  .header {
+    border-bottom: 1px solid #0003;
+    padding: .5em;
   }
 
-  .items {
-    list-style-type: none;
-    display: flex;
-    flex-direction: column;
-    margin: 1em;
+  .title {
+    font-size: 1.5em;
+    font-weight: 100;
+    margin: 0;
+  }
+
+  .footer {
+    padding: .5em;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+  }
+
+  .list {
     padding: 0;
-    gap: 1em;
+    margin: 0;
   }
 
   .item {
-    display: grid;
-    gap: 1em;
-    grid-template-columns: 2em auto min-content;
+    padding: .5em;
     margin: 0;
-    padding: 0;
+    display: block;
+    background: linear-gradient(0turn, #0001 0%, #0000 100%);
+    border-bottom: 1px solid #0003;
   }
 
-  .item-text {
+  .delete-button {
+    opacity: 0;
+    border: 0;
+    background: transparent;
+    aspect-ratio: 1;
+    display: block;
+    transition: opacity 100ms;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .delete-button::after {
+    content: "×";
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(2.0);
+  }
+
+  .item:hover .delete-button {
+    opacity: 1;
+  }
+
+  .row {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: .5em;
+  }
+
+  .edit {
+    padding-left: 2em;
+  }
+
+  .description {
+    margin: 0;
+    flex: 1;
+  }
+
+  .checkbox {
+    width: 2em;
+    aspect-ratio: 1;
   }
 
   .completed {
     text-decoration: line-through;
-    color: var(--red);
+    opacity: .5;
   }
 
-  .move-buttons {
+  .input {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .filter {
     display: flex;
     gap: .5em;
   }
 
-  .move-button {
-    display: block;
-    width: 2em;
-    aspect-ratio: 1;
-    font-size: 1em;
+  .footer-button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    transition: opacity 100ms;
   }
 
-:ruby
-  state => items:
-  completed_items = items.select { _1[:completed] }
+  .footer-button[aria-current="true"] {
+    font-weight: bold;
+  }
 
-%article.todo-app
-  %Heading(level=2) Todo app
+  .footer-button:hover {
+    text-decoration: underline;
+  }
 
-  %form(onsubmit=handle_add)
-    %Fieldset{key: state[:fieldset_key]}
-      %legend Add new item
-      %Input(label="Item" type="text" name="item" required)
-      %Button(type="submit") Add item
+  .footer-button:active {
+    opacity: .5;
+  }
 
-  %ul.items{key: state[:items_key]}
-    = items.map.with_index do |item, i|
-      - item => id:, text:, completed:
-      %li.item(key=id)
-        %input(type="checkbox" onchange=handle_complete checked=completed value=id)
-        %h3.item-text{class: { completed: }}= text
+  .filter-button {
+    composes: footer-button;
+  }
 
-        .move-buttons
-          %Button.move-button(onclick=handle_move_up value=id title="Move up"){
-            disabled: i.zero?
-          } ▲
-          %Button.move-button(onclick=handle_move_down value=id title="Move down"){
-            disabled: i == items.length.pred
-          } ▼
+  .clear-button {
+    composes: footer-button;
+    color: var(--red);
+  }
 
-  %Button(onclick=handle_clear_completed){
-    disabled: completed_items.empty?
-  } Clear completed
+  .clear-completed {
+    text-align: right;
+  }
 
-  %Heading(level=3) State
+%Card
+  .header
+    %h1.title Todo App
+    %p
+      This is an implementation of the classic
+      %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
+      \.
 
-  %Highlight(language="json")= JSON.pretty_generate(state)
+    %form.row(onsubmit=handle_submit){key: state[:form_key]}
+      %input.checkbox(type="checkbox" onchange=handle_toggle_all)
+      %input.input(autofocus name="new_todo" placeholder="What needs to be done?" value="")
+  .main
+    %ul.list
+      = get_filtered_items.map do |item|
+        %li.item{key: item[:id]}
+          = if state[:editing] == item[:id]
+            %form.row.edit(onsubmit=handle_update){id: item[:id]}
+              %input.input(type="text" name="description" autofocus onfocus="event.target.select()" onblur="event.target.closest('form').requestSubmit()"){
+                initial_value: item[:description]
+              }
+          = if state[:editing] != item[:id]
+            .row
+              %input.checkbox(type="checkbox" onchange=handle_check){
+                name: item[:id],
+                checked: item[:completed],
+              }
+              %p.description(ondblclick=handle_dblclick){
+                id: item[:id],
+                class: { completed: item[:completed] },
+              }= item[:description]
+              %button.delete-button(onclick=handle_delete){name: item[:id]}
+  .footer
+    .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
+    .filter
+      = %w[all active completed].map do |name|
+        %button.filter-button(onclick=handle_set_filter name=name title="Show #{name} items"){
+          aria: { current: (state[:filter] == name).to_s }
+        }= name.capitalize
+    .clear-completed
+      - completed = get_filtered_items("completed")
+      = if completed.length.nonzero?
+        %button.clear-button(onclick=handle_clear_completed) Clear completed
