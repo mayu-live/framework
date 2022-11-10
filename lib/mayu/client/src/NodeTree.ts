@@ -69,6 +69,19 @@ function replaceScriptNodes(parent: Node, node: Node) {
   }
 }
 
+function handleAutofocus(node: Node) {
+  if (node instanceof HTMLInputElement) {
+    if (node.autofocus) {
+      node.focus();
+      return;
+    }
+  }
+
+  for (const child of node.childNodes) {
+    handleAutofocus(child);
+  }
+}
+
 class NodeTree {
   #cache = new Map<number, CacheEntry>();
 
@@ -175,7 +188,10 @@ class NodeTree {
     if (node instanceof HTMLInputElement) {
       if (name === "value") {
         node.value = value;
-        return;
+      }
+
+      if (name === "checked") {
+        node.checked = true;
       }
     }
 
@@ -190,6 +206,17 @@ class NodeTree {
 
   removeAttribute(id: number, name: string) {
     const node = this.#getEntry(id).node as Element;
+
+    if (node instanceof HTMLInputElement) {
+      if (name === "value") {
+        node.value = "";
+      }
+
+      if (name === "checked") {
+        node.checked = false;
+      }
+    }
+
     node.removeAttribute(name);
   }
 
@@ -225,6 +252,10 @@ class NodeTree {
       if (entry) {
         (entry.node as HTMLElement).outerHTML = (node as HTMLElement).outerHTML;
       }
+
+      requestIdleCallback(() => {
+        handleAutofocus(insertedNode);
+      });
 
       requestIdleCallback(() => {
         replaceScriptNodes(parentEntry.node, insertedNode);
