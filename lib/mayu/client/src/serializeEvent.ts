@@ -1,6 +1,7 @@
 function serializeElement(obj: any) {
   if (obj instanceof HTMLFormElement) {
     const formData = Object.fromEntries(new FormData(obj).entries());
+
     return {
       tagName: obj.tagName,
       id: obj.id,
@@ -64,6 +65,10 @@ function serializeEvent(e: Event) {
   const payload: Record<string, any> = {};
 
   payload.type = e.constructor.name;
+
+  if (e.currentTarget) {
+    payload.currentTarget = serializeElement(e.currentTarget);
+  }
 
   if (e.target) {
     payload.target = serializeElement(e.target);
