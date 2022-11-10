@@ -1,6 +1,6 @@
 :css
   .button {
-    background: var(--accent-color);
+    background-color: var(--button-color, var(--accent-color));
     border: 0;
     border-radius: 2px;
     padding: 0.5em 1em;
@@ -24,10 +24,10 @@
   }
 
   .button:disabled {
-    background: #ccc;
+    background-color: #ccc;
     color: #666;
     cursor: not-allowed;
   }
 
-%button.button{**props}
+%button.button{style: { __button_color: props.fetch(:color, "var(--accent-color)")  }, **props.except(:color)}
   %slot

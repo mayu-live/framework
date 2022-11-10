@@ -141,7 +141,7 @@
   state => grid:, size:, running:
 
 %article
-  %Heading(level=2) game of life
+  %Heading(level=2) Game of life
 
   %Fieldset
     %legend Controls
@@ -149,6 +149,7 @@
       %Button(onclick=handle_reset) Reset
       %Button(onclick=handle_randomize) Randomize
       %Button(onclick=handle_step disabled=running) Step
-      %Button(onclick=handle_toggle_running)
-        = running ? "Stop" : "Start"
-  %GameGrid(grid=grid size=size)
+      %Button(onclick=handle_toggle_running){
+        color: running ? "var(--red)" : "var(--green)"
+      }= running ? "Stop" : "Start"
+  %GameGrid(grid=grid size=size onmousedown=handle_toggle onmouseenter=handle_mouseenter)
