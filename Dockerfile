@@ -100,6 +100,7 @@ RUN bin/mayu build
 
 FROM base
 
+COPY fly /fly
 COPY --from=build-app /app /app
 
 ENV PORT 3000

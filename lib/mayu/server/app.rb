@@ -152,6 +152,8 @@ module Mayu
               File.join(@environment.root, "app", "favicon.png")
             )
           ]
+        in ["__mayu", "status"]
+          Protocol::HTTP::Response[200, {}, "ok"]
         in ["__mayu", "runtime", *path]
           accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
 
