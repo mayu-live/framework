@@ -17,6 +17,8 @@ module Mayu
       end
       class InvalidMethod < ServerError
       end
+      class UnauthorizedSessionCookie < ServerError
+      end
       class SessionAlreadyResumed < ServerError
       end
       class SessionNotFound < ServerError
@@ -27,101 +29,81 @@ module Mayu
       end
 
       sig do
-        type_parameters(:R)
-          .params(block: T.proc.returns(T.type_parameter(:R)))
-          .returns(T.type_parameter(:R))
+        params(block: T.proc.returns(Protocol::HTTP::Response)).returns(
+          Protocol::HTTP::Response
+        )
       end
       def self.handle_exceptions(&block)
+        respond_to_exceptions { log_exceptions { yield } }
+      end
+
+      sig do
+        params(block: T.proc.returns(Protocol::HTTP::Response)).returns(
+          Protocol::HTTP::Response
+        )
+      end
+      def self.log_exceptions(&block)
+        yield
+      rescue => e
+        Console.logger.error(self, "#{e.class.name}: #{e.message}")
+        raise
+      end
+
+      sig do
+        params(block: T.proc.returns(Protocol::HTTP::Response)).returns(
+          Protocol::HTTP::Response
+        )
+      end
+      def self.respond_to_exceptions(&block)
         yield
       rescue Errno::ENOENT => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          404,
-          { "content-type": "text/plain" },
-          ["file not found"]
-        ]
+        text_response(404, "file not found")
       rescue FileNotFound => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          404,
-          { "content-type": "text/plain" },
-          [e.message.to_s]
-        ]
+        text_response(404, e.message.to_s)
       rescue CookieNotSet => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          403,
-          { "content-type": "text/plain" },
-          ["missing session cookie"]
-        ]
+        text_response(403, "session cookie not set")
       rescue SessionNotFound => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          404,
-          { "content-type": "text/plain" },
-          ["session not found"]
-        ]
+        text_response(404, "session not found")
       rescue Mayu::MessageCipher::DecryptError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          403,
-          { "content-type": "text/plain" },
-          ["decrypt error"]
-        ]
+        text_response(403, "decrypt error")
       rescue Mayu::MessageCipher::ExpiredError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          403,
-          { "content-type": "text/plain" },
-          ["session expired"]
-        ]
+        text_response(403, "session expired")
       rescue InvalidToken => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          403,
-          { "content-type": "text/plain" },
-          ["invalid token"]
-        ]
+        text_response(403, "invalid token")
       rescue SessionAlreadyResumed => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          409,
-          { "content-type": "text/plain" },
-          ["already resumed"]
-        ]
+        text_response(409, "already resumed")
       rescue Session::AlreadyRunningError => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          409,
-          { "content-type": "text/plain" },
-          ["already running"]
-        ]
-
-        # https://fly.io/docs/reference/fly-replay/#fly-replay
+        text_response(409, "already running")
       rescue ServerIsShuttingDown => e
-        Console.logger.error(self, "#{e.class.name}: #{e.message}")
-        Protocol::HTTP::Response[
-          503,
-          { "fly-replay": "elsewhere=true" },
-          ["Server is shutting down"]
-        ]
-      rescue InvalidMethod => e
-        Console.logger.error(self, e)
-        Protocol::HTTP::Response[
+        # https://fly.io/docs/reference/fly-replay/#fly-replay
+        text_response(
           405,
-          { "content-type": "text/plain" },
-          ["method not allowed"]
-        ]
+          "invalid method",
+          { "fly-replay" => "elsewhere=true" }
+        )
+      rescue InvalidMethod => e
+        text_response(405, "invalid method")
+      rescue UnauthorizedSessionCookie => e
+        text_response(403, "session cookie is invalid")
       rescue InvalidSecFetchHeader => e
-        Console.logger.error(self, e)
+        text_response(415, e.message)
+      rescue StandardError
+        text_response(500, "error")
+      end
+
+      sig do
+        params(
+          code: Integer,
+          text: String,
+          headers: T::Hash[String, String]
+        ).returns(Protocol::HTTP::Response)
+      end
+      def self.text_response(code, text, headers = {})
         Protocol::HTTP::Response[
-          415,
-          { "content-type": "text/plain" },
-          [e.message]
+          code,
+          { "content-type" => "text/plain", **headers },
+          [text]
         ]
-      rescue => e
-        Console.logger.error(self, e)
-        Protocol::HTTP::Response[500, {}, "error"]
       end
     end
   end

@@ -104,11 +104,13 @@ module Mayu
       end
       def get_session(id, request, resume: false)
         session = load_session(id, resume ? request.read.to_s : "")
+        cookie_value = get_token_cookie_value(request)
 
-        if session.authorized?(get_token_cookie(request))
+        if session.authorized?(cookie_value)
           session
         else
-          raise Errors::InvalidToken
+          raise Errors::UnauthorizedSessionCookie,
+                "session with id #{id} had wrong value #{cookie_value.inspect}"
         end
       end
 
@@ -250,7 +252,7 @@ module Mayu
           # )
           headers = {
             "content-type": "application/json",
-            "set-cookie": token_cookie(session)
+            "set-cookie": set_token_cookie_value(session)
           }
           session.log.push(
             :pong,
@@ -270,7 +272,7 @@ module Mayu
             callback_id,
             JSON.parse(request.read, symbolize_names: true)
           )
-          headers = { "set-cookie": token_cookie(session) }
+          headers = { "set-cookie": set_token_cookie_value(session) }
           Protocol::HTTP::Response[200, headers, ["ok"]]
         end
       end
@@ -331,7 +333,7 @@ module Mayu
           *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
         ].join(", ")
 
-        headers["set-cookie"] = token_cookie(session)
+        headers["set-cookie"] = set_token_cookie_value(session)
 
         @sessions.store(session.id, session)
 
@@ -462,19 +464,18 @@ module Mayu
       end
 
       sig { params(request: Protocol::HTTP::Request).returns(String) }
-      def get_token_cookie(request)
-        CGI::Cookie
-          .parse(request.headers["cookie"].to_s)
-          .fetch("mayu-token") do
-            raise Errors::CookieNotSet, "Cookie #{_1} is not set"
+      def get_token_cookie_value(request)
+        Array(request.headers["cookie"]).each do |str|
+          if match = str.match(/^mayu-token=(\w+)/)
+            return match[1].to_s.tap { Session.validate_token!(_1) }
           end
-          .first
-          .to_s
-          .tap { Session.validate_token!(_1) }
+        end
+
+        raise Errors::CookieNotSet
       end
 
       sig { params(session: Session, ttl_seconds: Integer).returns(String) }
-      def token_cookie(session, ttl_seconds: 60)
+      def set_token_cookie_value(session, ttl_seconds: 60)
         expires = Time.now.utc + ttl_seconds
 
         [
