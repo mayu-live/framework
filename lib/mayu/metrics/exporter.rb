@@ -29,7 +29,6 @@ module Mayu
               )
             end
 
-            Console.logger.info(self, "#{request.method} #{request.path}")
             body = Prometheus::Client::Formats::Text.marshal(registry)
 
             Protocol::HTTP::Response[
