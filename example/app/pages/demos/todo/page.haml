@@ -119,10 +119,26 @@
       end
     )
   end
+
+  def toggle_checkbox_state
+    completed_count = state[:items].count { _1[:completed] }
+    remaining_count = state[:items].count { !_1[:completed] }
+
+    if completed_count == 0
+      { checked: false, indeterminate: false }
+    else
+      if remaining_count == 0
+        { checked: true, indeterminate: false }
+      else
+        { checked: false, indeterminate: true }
+      end
+    end
+  end
+
 :css
   .header {
     border-bottom: 1px solid #0003;
-    padding: .5em;
+    padding: 1em;
   }
 
   .title {
@@ -132,7 +148,7 @@
   }
 
   .footer {
-    padding: .5em;
+    padding: 1em;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
@@ -144,7 +160,7 @@
   }
 
   .item {
-    padding: .5em;
+    padding: 1em;
     margin: 0;
     display: block;
     background: linear-gradient(0turn, #0001 0%, #0000 100%);
@@ -171,7 +187,8 @@
     transform: translate(-50%, -50%) scale(2.0);
   }
 
-  .item:hover .delete-button {
+  .item:hover .delete-button,
+  .item:focus-within .delete-button {
     opacity: 1;
   }
 
@@ -256,18 +273,18 @@
       \.
 
     %form.row(onsubmit=handle_submit){key: state[:form_key]}
-      %input.checkbox(type="checkbox" onchange=handle_toggle_all)
-      %input.input(autofocus name="new_todo" placeholder="What needs to be done?" value="")
+      %input.checkbox(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
+      %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
   .main
     %ul.list
       = get_filtered_items.map do |item|
         %li.item{key: item[:id]}
           = if state[:editing] == item[:id]
             %form.row.edit(onsubmit=handle_update){id: item[:id]}
-              %input.input(type="text" name="description" autofocus onfocus="event.target.select()" onblur="event.target.closest('form').requestSubmit()"){
+              %input.input(type="text" name="description" autofocus onfocus="event.target.select()" onblur="event.target.closest('form').requestSubmit()" required){
                 initial_value: item[:description]
               }
-          = if state[:editing] != item[:id]
+          = unless state[:editing] == item[:id]
             .row
               %input.checkbox(type="checkbox" onchange=handle_check){
                 name: item[:id],

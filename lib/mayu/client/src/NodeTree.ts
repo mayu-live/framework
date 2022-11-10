@@ -193,6 +193,11 @@ class NodeTree {
       if (name === "checked") {
         node.checked = true;
       }
+
+      if (name === "indeterminate") {
+        node.indeterminate = true;
+        return;
+      }
     }
 
     if (name === "initial_value") {
@@ -214,6 +219,11 @@ class NodeTree {
 
       if (name === "checked") {
         node.checked = false;
+      }
+
+      if (name === "indeterminate") {
+        node.indeterminate = false;
+        return;
       }
     }
 
