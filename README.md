@@ -23,6 +23,12 @@ Some parts are quite messy and some files are very long.
 This is fine. I like to paint with a broad brush until
 things are put in place and things feel right.
 
+A starter kit is available at
+[github.com/mayu-live/starter](https://github.com/mayu-live/starter)!
+If you have all dependencies installed, you will be able to deploy
+an app to [Fly.io](https://fly.io/) within a few minutes without
+having to configure anything!
+
 ### Core features:
 
 - 100% Ruby
