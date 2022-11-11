@@ -107,8 +107,8 @@ module Mayu
               @vtree.render(descriptor, ctx:)
             in [:navigate, path]
               yield [:navigate, path]
-            in [:scroll_into_view, id]
-              yield [:scroll_into_view, id]
+            in [:action, payload]
+              yield [:action, payload]
             in [:exception, error]
               yield [:exception, error]
             in [:pong, timestamp]
@@ -274,9 +274,9 @@ module Mayu
         @update_queue.enqueue([:navigate, path])
       end
 
-      sig { params(selector: String).void }
-      def scroll_into_view(selector)
-        @update_queue.enqueue([:scroll_into_view, selector])
+      sig { params(type: Symbol, payload: T.untyped).void }
+      def action(type, payload)
+        @update_queue.enqueue([:action, { type:, payload: }])
       end
 
       sig do

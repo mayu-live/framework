@@ -188,20 +188,8 @@ async function main(url: string) {
           // progressBar.setAttribute("progress", "100");
         }
         break;
-      case "session.scroll_into_view":
-        const elem = document.querySelector(payload);
-        if (elem) {
-          elem.scrollIntoView({
-            block: "start",
-            inline: "nearest",
-            behavior: "smooth",
-          });
-        } else {
-          console.error(
-            "Could not find element to scrollIntoView, selector:",
-            payload
-          );
-        }
+      case "session.action":
+        handleAction(payload.type, payload.payload);
         break;
       case "session.keep_alive":
         break;
@@ -225,6 +213,41 @@ async function main(url: string) {
       default:
         logger.warn("Unhandled event:", event, payload);
         break;
+    }
+  }
+
+  function handleAction(type: string, payload: any) {
+    switch (type) {
+      case "scroll_into_view": {
+        scrollIntoView(payload.selector, payload.options || {});
+        break;
+      }
+      case "alert": {
+        alert(payload);
+        break;
+      }
+      default: {
+        logger.error("Unhandled action:", type, payload);
+        break;
+      }
+    }
+  }
+
+  function scrollIntoView(selector: string, options: Record<string, string>) {
+    const elem = document.querySelector(selector);
+
+    if (elem) {
+      elem.scrollIntoView({
+        block: "start",
+        inline: "nearest",
+        behavior: "smooth",
+        ...options,
+      });
+    } else {
+      console.error(
+        "Could not find element to scrollIntoView, selector:",
+        selector
+      );
     }
   }
 }

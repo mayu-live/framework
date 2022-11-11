@@ -135,9 +135,9 @@ module Mayu
         @vtree.navigate(path)
       end
 
-      sig { params(selector: String).void }
-      def scroll_into_view(selector)
-        @vtree.scroll_into_view(selector)
+      sig { params(type: Symbol, payload: T.untyped).void }
+      def action(type, payload)
+        @vtree.action(type, payload)
       end
 
       sig { void }
