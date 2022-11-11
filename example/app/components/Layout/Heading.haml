@@ -4,7 +4,7 @@
 :ruby
   level = props[:level].to_i.clamp(1, 6)
   tag = :"h#{level}"
-  classname = styles[tag, styles[:class]]
+  classname = styles[:h, tag, styles[:class]]
 
   Mayu::VDOM::h(
     tag,
