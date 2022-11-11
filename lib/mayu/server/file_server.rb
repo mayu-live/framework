@@ -12,11 +12,21 @@ module Mayu
         const :size, Integer
       end
 
-      CACHE_MAX_AGE = T.let(60 * 60 * 24 * 7, Integer)
-
       # TODO: Make configurable. A higher value means less
       # filsystem IO, but obviously consumes more memory.
       DEFAULT_MEMORY_CACHE_MAX_SIZE = T.let(1024, Integer)
+
+      CACHE_MAX_AGE = T.let(60 * 60 * 24 * 7, Integer)
+
+      CACHE_CONTROL =
+        T.let(
+          {
+            "cache-control" => "public, max-age=#{CACHE_MAX_AGE}, immutable"
+          }.freeze,
+          T::Hash[String, String]
+        )
+      BROTLI_CONTENT_ENCODING =
+        T.let({ "content-encoding" => "br" }.freeze, T::Hash[String, String])
 
       extend T::Sig
 
@@ -52,9 +62,8 @@ module Mayu
         end
 
         headers = {
-          "cache-control" => "public, max-age=#{CACHE_MAX_AGE}, immutable",
-          "content-type" => found_file.content_type,
-          "content-length" => found_file.size
+          **CACHE_CONTROL,
+          "content-type" => add_charset(found_file.content_type)
         }
 
         if accept_encodings.include?("br")
@@ -62,11 +71,7 @@ module Mayu
             return(
               Protocol::HTTP::Response[
                 200,
-                {
-                  **headers,
-                  "content-encoding" => "br",
-                  "content-length" => brotlied.size
-                },
+                { **headers, **BROTLI_CONTENT_ENCODING },
                 read_file(brotlied)
               ]
             )
@@ -113,6 +118,22 @@ module Mayu
       sig { params(filename: String).returns(String) }
       def get_absolute_path(filename)
         File.join(@root_dir, File.expand_path(filename, "/"))
+      end
+
+      sig { params(content_type: String).returns(String) }
+      def add_charset(content_type)
+        if add_charset?(content_type)
+          "#{content_type}; charset=utf-8"
+        else
+          content_type
+        end
+      end
+
+      sig { params(content_type: String).returns(T::Boolean) }
+      def add_charset?(content_type)
+        content_type in
+          "application/javascript" | "application/json" | "image/svg+xml" |
+            "text/css" | "text/html"
       end
     end
   end
