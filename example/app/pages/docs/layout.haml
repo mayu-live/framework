@@ -5,11 +5,46 @@
   Menu = import("/app/components/Layout/Menu")
   MenuItem = import("/app/components/Layout/MenuItem")
   Details = import("./Details")
+  Breadcrumbs = import("/app/components/UI/Breadcrumbs")
+
+  LINKS = {
+    "/docs" => "Documentation",
+    "/docs/getting-started" => "Getting started",
+    "/docs/components" => "Components",
+    "/docs/reusing-components" => "Reusing components",
+    "/docs/stylesheets" => "Stylesheets",
+    "/docs/callbacks" => "Callbacks",
+    "/docs/lifecycle-methods" => "Lifecycle methods",
+    "/docs/state" => "State",
+    "/docs/routing" => "Routing",
+    "/docs/data-fetching" => "Data fetching",
+    "/docs/images" => "Images",
+    "/docs/syntax" => "Syntax guide",
+    "/docs/deployment" => "Deployment",
+    "/docs/faq" => "Frequently asked questions",
+  }
 
   def did_update(prev_props, prev_state)
     unless prev_props.dig(:request, :path) == props.dig(:request, :path)
       helpers.scroll_into_view("#page")
     end
+  end
+
+  private
+
+  def breadcrumb_links
+    props => { request: { path: } }
+
+    splat = split_path(path)
+
+    LINKS.select {
+      s = split_path(_1)
+      s == splat.slice(0, s.length)
+    }
+  end
+
+  def split_path(path)
+    path.split("/").reject(&:empty?)
   end
 
 :css
@@ -38,6 +73,8 @@
         %span.icon> ⚠️
         %span This page is under construction!
     %slot
+
+  %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)
 
   %div(slot="menu")
     %Details(open summary="Intro")
