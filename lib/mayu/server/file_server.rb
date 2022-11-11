@@ -73,6 +73,7 @@ module Mayu
           end
         end
 
+        contents = read_file(found_file)
         Protocol::HTTP::Response[200, headers, read_file(found_file)]
       end
 
@@ -94,7 +95,7 @@ module Mayu
 
       sig do
         params(found_file: FoundFile).returns(
-          T.any(String, Protocol::HTTP::Body::File)
+          T.any([String], Protocol::HTTP::Body::File)
         )
       end
       def read_file(found_file)
@@ -102,9 +103,11 @@ module Mayu
           return Protocol::HTTP::Body::File.open(found_file.absolute_path)
         end
 
-        @memory_cache[found_file.absolute_path] ||= begin
-          File.read(found_file.absolute_path)
-        end
+        [
+          @memory_cache[found_file.absolute_path] ||= begin
+            File.read(found_file.absolute_path)
+          end
+        ]
       end
 
       sig { params(filename: String).returns(String) }
