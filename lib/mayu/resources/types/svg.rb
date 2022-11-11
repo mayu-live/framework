@@ -27,7 +27,7 @@ module Mayu
           @resource = resource
 
           original = resource.read(encoding: "utf-8")
-          optimized = SvgOptimizer.optimize(original)
+          optimized = SvgOptimizer.optimize(original, SVG_OPTIMIZER_PLUGINS)
 
           content_hash =
             Base64.urlsafe_encode64(Digest::SHA256.digest(optimized))
