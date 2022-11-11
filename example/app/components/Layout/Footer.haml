@@ -1,5 +1,34 @@
 :ruby
   MaxWidth = import("/app/components/Layout/MaxWidth")
+  Badge = import("./Badge")
+
+  BADGES = [
+    {
+      href: "https://github.com/mayu-live/framework/search?l=Ruby&type=code",
+      alt: "top language",
+      src: "https://img.shields.io/github/languages/top/mayu-live/framework",
+    }, {
+      href: "https://github.com/mayu-live/framework/actions/workflows/ruby.yml",
+      alt: "Ruby build status",
+      src: "https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby"
+    }, {
+      href: "https://github.com/mayu-live/framework/actions/workflows/node.js.yml",
+      alt: "JavaScript build status",
+      src: "https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript",
+    }, {
+      href: "https://github.com/mayu-live/framework/blob/main/COPYING",
+      alt: "License: AGPL-3.0",
+      src: "https://img.shields.io/github/license/mayu-live/framework",
+    }, {
+      href: "https://status.mayu.live/",
+      alt: "uptime status",
+      src: "https://img.shields.io/badge/uptime-up-green",
+    }, {
+      href: "https://github.com/mayu-live/framework/stargazers",
+      alt: "GitHub Stars",
+      src: "https://img.shields.io/github/stars/mayu-live/framework?style=social",
+    }
+  ]
 
 :css
   .footer {
@@ -32,41 +61,18 @@
     gap: 0.5em;
   }
 
+  .links {
+    display: inline-flex;
+  }
+
 %footer.footer{class: props[:class]}
   %MaxWidth.inner
     %p
       - year = [2022, Time.now.year].uniq.join("—")
       Copyright © #{year}
-      %a.link(href="https://github.com/mayu-live")<
+      %a.link(href="https://github.com/mayu-live" target="_blank")<
         github.com/mayu-live
 
     %p.badges
-      %a{href: "https://github.com/mayu-live/framework/search?l=Ruby&type=code"}
-        %img{
-          alt: "top language",
-          loading: "lazy",
-          src: "https://img.shields.io/github/languages/top/mayu-live/framework"
-        }
-      %a{href: "https://github.com/mayu-live/framework/actions/workflows/ruby.yml"}
-        %img{
-          alt: "Ruby build status",
-          loading: "lazy",
-          src: "https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby"
-        }
-      %a{href: "https://github.com/mayu-live/framework/actions/workflows/node.js.yml"}
-        %img{
-          alt: "JavaScript build status",
-          loading: "lazy",
-          src: "https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript"
-        }
-      %a{href: "https://github.com/mayu-live/framework/blob/main/COPYING"}
-        %img{
-          alt: "License: AGPL-3.0",
-          loading: "lazy",
-          src: "https://img.shields.io/github/license/mayu-live/framework"
-        }
-      %a{href: "https://github.com/mayu-live/framework/stargazers"}
-        %img{
-          alt: "GitHub Stars",
-          src: "https://img.shields.io/github/stars/mayu-live/framework?style=social"
-        }
+      = BADGES.map do |badge|
+        %Badge{key: badge[:src], **badge}
