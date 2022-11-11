@@ -1,4 +1,5 @@
 :ruby
+  MaxWidth = import("/app/components/Layout/MaxWidth")
   Link = import("./Link")
   Separator = import("./Separator")
 
@@ -13,26 +14,30 @@
   end
 
 :css
+  .nav {
+    background: #67667a;
+  }
+
   .list {
     list-style-type: none;
-    margin: 0;
-    padding: 1em 2em;
     display: flex;
     gap: .5em;
-    background: #67667a;
     align-items: center;
     font-weight: 300;
+    margin: 0;
+    padding: 1em 0;
   }
 
   .li {
     margin: 0;
     padding: 0;
   }
-%nav{ aria: { label: "Breadcrumbs" } }
-  %ol.list
-    = add_separators(props[:links]).map.with_index do |elem, i|
-      %li.li(key=i)
-        = if elem == :sep
-          %Separator
-        = unless elem == :sep
-          %Link{**elem}
+%nav.nav{ aria: { label: "Breadcrumbs" } }
+  %MaxWidth
+    %ol.list
+      = add_separators(props[:links]).map.with_index do |elem, i|
+        %li.li(key=i)
+          = if elem == :sep
+            %Separator
+          = unless elem == :sep
+            %Link{**elem}
