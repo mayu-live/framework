@@ -19,13 +19,14 @@
           *items,
         ],
         form_key: form_key.succ,
+        editing: nil,
       }
     end
   end
 
   def handle_set_filter(e)
     e => { target: { name: } }
-    update(filter: name)
+    update(filter: name, editing: nil)
   end
 
   def handle_dblclick(e)
@@ -71,7 +72,10 @@
     e => { currentTarget: { name: id } }
 
     update do |items:|
-      { items: items.reject { |item| item[:id] == id } }
+      {
+        editing: nil,
+        items: items.reject { |item| item[:id] == id }
+      }
     end
   end
 
@@ -80,6 +84,7 @@
 
     update do |items:|
       {
+        editing: nil,
         items: items.map do |item|
           { **item, completed: }
         end
@@ -90,6 +95,7 @@
   def handle_clear_completed(e)
     update do |items:|
       {
+        editing: nil,
         items: items.reject { _1[:completed] }
       }
     end
@@ -149,6 +155,12 @@
 
   .footer {
     padding: 1em;
+    background: #fefefe;
+    box-shadow: inset 0 0 15px -10px #000;
+  }
+
+  .footer-grid {
+    font-size: .8em;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
@@ -173,7 +185,7 @@
     background: transparent;
     aspect-ratio: 1;
     display: block;
-    transition: opacity 100ms;
+    transition: opacity 200ms;
     cursor: pointer;
     position: relative;
   }
@@ -200,7 +212,12 @@
     gap: .5em;
   }
 
+  .form {
+    composes: row;
+  }
+
   .edit {
+    composes: row;
     padding-left: 2em;
   }
 
@@ -214,6 +231,10 @@
     aspect-ratio: 1;
   }
 
+  .toggle-all {
+    composes: checkbox;
+  }
+
   .completed {
     text-decoration: line-through;
     opacity: .5;
@@ -221,13 +242,13 @@
 
   .input {
     display: block;
-    width: 100%;
-    height: 100%;
+    flex: 1;
   }
 
   .filter {
     display: flex;
     gap: .5em;
+    justify-content: space-around;
   }
 
   .footer-button {
@@ -236,7 +257,9 @@
     padding: 0;
     margin: 0;
     cursor: pointer;
-    transition: opacity 100ms;
+    transition: opacity 200ms;
+    border-radius: 3px;
+    padding: 0.25em 1em;
   }
 
   .footer-button[aria-current="true"] {
@@ -271,17 +294,16 @@
       This is an implementation of the classic
       %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
       \.
-
-    %form.row(onsubmit=handle_submit){key: state[:form_key]}
-      %input.checkbox(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
+    %form.form(onsubmit=handle_submit){key: state[:form_key]}
+      %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
       %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
   .main
     %ul.list
       = get_filtered_items.map do |item|
         %li.item{key: item[:id]}
           = if state[:editing] == item[:id]
-            %form.row.edit(onsubmit=handle_update){id: item[:id]}
-              %input.input(type="text" name="description" autofocus onfocus="event.target.select()" onblur="event.target.closest('form').requestSubmit()" required){
+            %form.edit(onsubmit=handle_update){id: item[:id]}
+              %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
                 initial_value: item[:description]
               }
           = unless state[:editing] == item[:id]
@@ -296,13 +318,14 @@
               }= item[:description]
               %button.delete-button(onclick=handle_delete){name: item[:id]}
   .footer
-    .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
-    .filter
-      = %w[all active completed].map do |name|
-        %button.filter-button(onclick=handle_set_filter name=name title="Show #{name} items"){
-          aria: { current: (state[:filter] == name).to_s }
-        }= name.capitalize
-    .clear-completed
-      - completed = get_filtered_items("completed")
-      = if completed.length.nonzero?
-        %button.clear-button(onclick=handle_clear_completed) Clear completed
+    .footer-grid
+      .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
+      .filter
+        = %w[all active completed].map do |name|
+          %button.filter-button(onclick=handle_set_filter name=name title="Show #{name} items"){
+            aria: { current: (state[:filter] == name).to_s }
+          }= name.capitalize
+      .clear-completed
+        - completed = get_filtered_items("completed")
+        = if completed.length.nonzero?
+          %button.clear-button(onclick=handle_clear_completed) Clear completed
