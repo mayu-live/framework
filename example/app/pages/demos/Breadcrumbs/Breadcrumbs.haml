@@ -1,0 +1,38 @@
+:ruby
+  Link = import("./Link")
+  Separator = import("./Separator")
+
+  def add_separators(items)
+    items.map.with_index do |(path, text), index|
+      if index.zero?
+        { path:, text: }
+      else
+        [:sep, { path:, text: }]
+      end
+    end.flatten
+  end
+
+:css
+  .list {
+    list-style-type: none;
+    margin: 0;
+    padding: 1em 2em;
+    display: flex;
+    gap: .5em;
+    background: #67667a;
+    align-items: center;
+    font-weight: 300;
+  }
+
+  .li {
+    margin: 0;
+    padding: 0;
+  }
+%nav{ aria: { label: "Breadcrumbs" } }
+  %ol.list
+    = add_separators(props[:links]).map.with_index do |elem, i|
+      %li.li(key=i)
+        = if elem == :sep
+          %Separator
+        = unless elem == :sep
+          %Link{**elem}

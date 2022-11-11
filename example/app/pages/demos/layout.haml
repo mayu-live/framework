@@ -2,6 +2,35 @@
   PageLayout = import("/app/components/Layout/FullWidthPageWithMenu")
   Menu = import("/app/components/Layout/Menu")
   MenuItem = import("/app/components/Layout/MenuItem")
+  Breadcrumbs = import("./Breadcrumbs")
+
+  LINKS = {
+    "/demos" => "Demos",
+    "/demos/pokemon" => "Pokémon",
+    "/demos/tree" => "App tree",
+    "/demos/form" => "Form elements",
+    "/demos/images" => "Images",
+    "/demos/svg" => "SVGs",
+    "/demos/fuzzy-matcher" => "Fuzzy matcher",
+    "/demos/todo" => "Todo app",
+    "/demos/exceptions" => "Exceptions",
+    "/demos/life" => "Game of life",
+  }
+
+  def breadcrumb_links
+    props => { request: { path: } }
+
+    splat = split_path(path)
+
+    LINKS.select {
+      s = split_path(_1)
+      s == splat.slice(0, s.length)
+    }
+  end
+
+  def split_path(path)
+    path.split("/").reject(&:empty?)
+  end
 
 :css
   .nav {
@@ -11,15 +40,9 @@
 %PageLayout
   %slot
 
-  %nav.nav(slot="menu")
+  %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)
+
+  .nav(slot="menu")
     %Menu
-      %MenuItem(href="/demos") Index
-      %MenuItem(href="/demos/pokemon") Pokémon
-      %MenuItem(href="/demos/tree") App tree
-      %MenuItem(href="/demos/form") Form elements
-      %MenuItem(href="/demos/images") Images
-      %MenuItem(href="/demos/svg") SVGs
-      %MenuItem(href="/demos/fuzzy-matcher") Fuzzy matcher
-      %MenuItem(href="/demos/todo") Todo app
-      %MenuItem(href="/demos/exceptions") Exceptions
-      %MenuItem(href="/demos/life") Game of life
+      = LINKS.map do |path, text|
+        %MenuItem(key=path href=path)= text

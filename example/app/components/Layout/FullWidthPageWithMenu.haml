@@ -26,6 +26,7 @@
     .layout {
       display: grid;
       grid-template-columns: min-content auto;
+      grid-template-rows: min-content auto;
     }
 
     .scroll {
@@ -42,7 +43,19 @@
       height: 100%;
     }
   }
+
+  .breadcrumbs {
+    grid-column: 1 / span 2;
+  }
+
+  .breadcrumbs:empty {
+    display: none;
+  }
+
 .layout
+  .breadcrumbs
+    %slot(name="breadcrumbs")
+
   %nav.menu
     .scroll
       %slot(name="menu")
