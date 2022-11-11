@@ -4,6 +4,7 @@ import h from "./h";
 import type MayuPingElement from "./custom-elements/mayu-ping";
 import type MayuLogElement from "./custom-elements/mayu-log";
 import type MayuExceptionElement from "./custom-elements/mayu-exception";
+import type MayuAlertElement from "./custom-elements/mayu-alert";
 
 import serializeEvent from "./serializeEvent";
 
@@ -47,6 +48,13 @@ async function showException({
   ]);
 
   document.body.appendChild(el);
+}
+
+async function showAlert(message: string) {
+  await import("./custom-elements/mayu-alert");
+  const elem = document.createElement("mayu-alert") as MayuAlertElement;
+  elem.setAttribute("message", message);
+  document.body.appendChild(elem);
 }
 
 class MayuGlobal {
@@ -223,7 +231,7 @@ async function main(url: string) {
         break;
       }
       case "alert": {
-        alert(payload);
+        showAlert(payload);
         break;
       }
       default: {
