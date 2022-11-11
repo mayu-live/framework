@@ -2,6 +2,7 @@ PATH
   remote: ..
   specs:
     mayu-live (0.0.0)
+      accept_language (~> 2.0.3)
       async (~> 2.0.3)
       async-container (~> 0.16.12)
       async-http (~> 0.59.1)
@@ -32,6 +33,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
+    accept_language (2.0.3)
     async (2.0.3)
       console (~> 1.10)
       io-event (~> 1.0.0)

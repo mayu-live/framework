@@ -1,10 +1,27 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
+  T = translations("sv-SE", "en-US")
 
-  def t
-    "TODO: Implement me"
+  def self.get_initial_state(**) = {
+    lang: "en-US"
+  }
+
+  def t(*path)
+    T.fetch(lang).dig(*path) || "Translation not found"
   end
 
-%article
-  %Heading(level=2)= t(:title)
-  %slot
+  def handle_set_lang(e)
+    e => { target: { value: lang } }
+    update(lang:)
+  end
+
+  def lang = state[:lang]
+
+%article(lang=lang)
+  %Heading(level=1)= t(:title)
+
+  %p= t(:body)
+
+  %div
+    = T.keys.map do |value|
+      %button(onclick=handle_set_lang value=value)= value

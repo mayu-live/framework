@@ -36,6 +36,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "accept_language", "~> 2.0.3"
   spec.add_dependency "async", "~> 2.0.3"
   spec.add_dependency "async-container", "~> 0.16.12"
   spec.add_dependency "async-http", "~> 0.59.1"

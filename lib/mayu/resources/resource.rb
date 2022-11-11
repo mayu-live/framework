@@ -95,6 +95,9 @@ module Mayu
       end
 
       sig { returns(String) }
+      def basename_without_extension = File.basename(@path, ".*")
+
+      sig { returns(String) }
       def app_root = @registry.root
 
       sig { returns(String) }
