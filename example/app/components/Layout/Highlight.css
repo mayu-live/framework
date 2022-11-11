@@ -7,6 +7,9 @@
 .highlight {
   padding: 0;
   margin: 1em;
+  display: block;
+  font-family: monospace;
+  white-space: pre;
 }
 .highlight,
 .highlight .w {
