@@ -152,6 +152,8 @@ module Mayu
 
           patches = [*stylesheet_patch(stylesheets), *ctx.patches]
           yield [:patch, patches] unless patches.empty?
+
+          @vtree.cleanup_unused_handlers!
         end
       end
 
@@ -303,6 +305,16 @@ module Mayu
           vnode = init_vnode(ctx, descriptor, lifecycles:)
           ctx.insert(vnode)
           return vnode
+        end
+      end
+
+      sig { void }
+      def cleanup_unused_handlers!
+        @handlers.delete_if do |id, handler|
+          if @handler_counts.count(id).zero?
+            Console.logger.warn(self, "Removing handler #{id}")
+            true
+          end
         end
       end
 
@@ -651,8 +663,6 @@ module Mayu
             @handlers[handler.id] = handler
             @handler_counts.acquire!(handler.id)
           end
-
-        @handlers.delete_if { |id, handler| @handler_counts.count(id).zero? }
       end
 
       sig do
