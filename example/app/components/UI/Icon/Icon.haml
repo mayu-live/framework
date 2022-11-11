@@ -1,0 +1,22 @@
+:ruby
+  ICONS = {
+    new_link: svg("./up-right-from-square-solid.svg")
+  }
+
+:css
+  .icon {
+    display: inline-block;
+    width: 1em;
+    aspect-ratio: 1;
+    background: var(--icon-color, #fff);
+    -webkit-mask-image: var(--icon);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-image: var(--icon);
+    mask-repeat: no-repeat;
+    mask-size: contain;
+  }
+%i.icon{
+  style: { __icon: "url(#{ICONS[props[:icon].to_sym]})" },
+  class: props[:class],
+}

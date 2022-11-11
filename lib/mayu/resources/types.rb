@@ -6,6 +6,7 @@ require_relative "types/component"
 require_relative "types/image"
 require_relative "types/stylesheet"
 require_relative "types/javascript"
+require_relative "types/svg"
 
 module Mayu
   module Resources
@@ -25,6 +26,8 @@ module Mayu
           return Stylesheet
         when /\.(png|jpe?g|gif|webp)$\z/
           return Image
+        when /\.svg\z/
+          return SVG
         end
 
         raise "No type for #{path}"

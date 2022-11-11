@@ -1,5 +1,7 @@
 :ruby
   MaxWidth = import("/app/components/Layout/MaxWidth")
+  Icon = import("/app/components/UI/Icon")
+
 %header{class: props[:class]}
   %MaxWidth.inner
     %a.titleLink(href="/" title="Start page")
@@ -15,3 +17,4 @@
         %li
           %a.navLink(href="https://github.com/mayu-live/framework" target="_blank")
             GitHub
+            %Icon.icon(icon="new_link")

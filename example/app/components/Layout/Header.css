@@ -68,6 +68,12 @@
 
 .navLink {
   composes: link;
-  display: block;
+  display: flex;
+  align-items: center;
   white-space: nowrap;
+}
+
+.icon {
+  margin-left: 0.5em;
+  --icon-color: var(--yellow);
 }

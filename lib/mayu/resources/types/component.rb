@@ -30,6 +30,12 @@ module Mayu
                 __resource.import(path) => Image => impl
                 impl
               end
+
+              sig { params(path: String).returns(SVG) }
+              def self.svg(path)
+                __resource.import(path) => SVG => impl
+                impl
+              end
             end
           end
         end
