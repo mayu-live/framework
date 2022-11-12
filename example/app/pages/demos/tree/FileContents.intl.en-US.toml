@@ -1,0 +1,4 @@
+please_choose_a_file = "Please choose a file."
+invalid_path = "%<path>s is not valid."
+not_a_file = "%<path>s is not a file."
+unallowed_extension = "%<path>s is not a %<extensions>s-file."

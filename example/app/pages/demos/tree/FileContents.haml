@@ -1,6 +1,8 @@
 :ruby
   Highlight = import("/app/components/Layout/Highlight")
 
+  translations("en-US", "sv-SE")
+
   ALLOWED_EXTENSIONS = %w[.rb .css .haml]
 
 :css
@@ -26,22 +28,22 @@
 - props => { root:, path: }
 
 - return unless path
-  %p Please choose a file
+  %p= t(:please_choose_a_file)
 
 - path = File.expand_path(path, "/")
 
 - return unless path.start_with?("/app/")
-  %p #{path} is not valid
+  %p= t(:invalid_path, path:)
 
 - absolute_path = File.join(root, path)
 - basename = File.basename(path)
 
 - return unless File.file?(absolute_path)
-  %p #{basename} is not a file
+  %p= t(:path_is_not_a_file, path:)
 
 - extname = File.extname(basename)
 - return unless ALLOWED_EXTENSIONS.include?(extname)
-  %p #{path} is not a #{ALLOWED_EXTENSIONS.join("/")}-file
+  %p= t(:unallowed_extension, path:, extensions: ALLOWED_EXTENSIONS.join("/"))
 
 :ruby
   source = File.read(absolute_path)

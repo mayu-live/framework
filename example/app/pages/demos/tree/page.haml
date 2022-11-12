@@ -1,6 +1,8 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
 
+  translations("en-US", "sv-SE")
+
   Entry = import("./Entry")
   FileContents = import("./FileContents")
 
@@ -40,7 +42,7 @@
   %Heading(level=2) App tree
 
   %p
-    This page shows the file structure of the example app.
+    = t(:description)
     %a(href="https://github.com/mayu-live/framework/tree/main/example/app")<
 
   .browser
