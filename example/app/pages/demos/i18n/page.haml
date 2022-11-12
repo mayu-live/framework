@@ -2,26 +2,19 @@
   Heading = import("/app/components/Layout/Heading")
   T = translations("sv-SE", "en-US")
 
-  def self.get_initial_state(**) = {
-    lang: "en-US"
-  }
-
-  def t(*path)
-    T.fetch(lang).dig(*path) || "Translation not found"
+  def lang
+    helpers.get_accepted_language(T.keys)
   end
 
-  def handle_set_lang(e)
-    e => { target: { value: lang } }
-    update(lang:)
+  def t(*path, **replacements)
+    value = T.fetch(lang) { raise "No translations!" }.dig(*path)
+    return "Missing translation for #{lang} at #{path.join(".")}!" unless value
+    p(lang:, value:, replacements:)
+    format(value, replacements)
   end
-
-  def lang = state[:lang]
 
 %article(lang=lang)
   %Heading(level=1)= t(:title)
 
   %p= t(:body)
-
-  %div
-    = T.keys.map do |value|
-      %button(onclick=handle_set_lang value=value)= value
+  %p= t(:current_language, lang:)

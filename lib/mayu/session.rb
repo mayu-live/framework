@@ -2,6 +2,7 @@
 
 require "time"
 require "nanoid"
+require "accept_language"
 require_relative "environment"
 require_relative "vdom/vtree"
 require_relative "vdom/marshalling"
@@ -136,6 +137,13 @@ module Mayu
       @app = T.let(environment.load_root(path, headers:), VDOM::Descriptor)
       @last_ping_at = T.let(Time.now.to_f, Float)
       @barrier = T.let(Async::Barrier.new, Async::Barrier)
+      @accept_language = T.let(nil, T.nilable(AcceptLanguage::Parser))
+    end
+
+    sig { returns(AcceptLanguage::Parser) }
+    def accept_language
+      @accept_language ||=
+        AcceptLanguage.parse(@headers["accept-language"].to_s)
     end
 
     sig { void }

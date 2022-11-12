@@ -2,3 +2,4 @@ title = "Internationalisering"
 body = """
 hej världen
 """
+current_language = "Nuvarande språk: %<lang>s"

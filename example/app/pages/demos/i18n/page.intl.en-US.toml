@@ -2,3 +2,4 @@ title = "Internationalization"
 body = """
 hello world
 """
+current_language = "Current language: %<lang>s"

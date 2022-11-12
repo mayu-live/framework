@@ -140,6 +140,11 @@ module Mayu
         @vtree.action(type, payload)
       end
 
+      sig { params(languages: T::Array[String]).returns(T.nilable(String)) }
+      def get_accepted_language(languages)
+        @vtree.get_accepted_language(languages)
+      end
+
       sig { void }
       def enqueue_update!
         @vtree.enqueue_update!(self)

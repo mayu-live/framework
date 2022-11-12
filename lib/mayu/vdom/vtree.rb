@@ -185,6 +185,11 @@ module Mayu
         @asset_refs = T.let(RefCounter.new, RefCounter[String])
       end
 
+      sig { params(languages: T::Array[String]).returns(T.nilable(String)) }
+      def get_accepted_language(languages)
+        T.unsafe(@session.accept_language).match(*languages)
+      end
+
       sig { returns(T::Array[T.untyped]) }
       def marshal_dump
         [@root, @id_generator, @sent_stylesheets]
