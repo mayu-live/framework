@@ -37,18 +37,19 @@ module Mayu
                 impl
               end
 
-              sig do
-                params(locales: String).returns(
-                  T::Hash[String, T::Hash[Symbol, T.untyped]]
-                )
-              end
+              sig { params(locales: String).void }
               def self.translations(*locales)
-                locales.each_with_object({}) do |locale, hash|
-                  __resource.import(
-                    "./#{__resource.basename_without_extension}.intl.#{locale}.toml"
-                  ) => Translations => impl
-                  hash[locale] = impl.to_h
-                end
+                const_set(
+                  :LoadedTranslations,
+                  locales
+                    .each_with_object({}) do |locale, hash|
+                      __resource.import(
+                        "./#{__resource.basename_without_extension}.intl.#{locale}.toml"
+                      ) => Translations => impl
+                      hash[locale] = impl.to_h.freeze
+                    end
+                    .freeze
+                )
               end
             end
           end

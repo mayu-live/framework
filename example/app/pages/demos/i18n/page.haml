@@ -1,16 +1,7 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
-  T = translations("sv-SE", "en-US")
 
-  def lang
-    helpers.get_accepted_language(T.keys)
-  end
-
-  def t(*path, **replacements)
-    value = T.fetch(lang) { raise "No translations!" }.dig(*path)
-    return "Missing translation for #{lang} at #{path.join(".")}!" unless value
-    format(value, replacements)
-  end
+  translations("sv-SE", "en-US")
 
   def handle_set_language(e)
     e => { target: { value: } }
@@ -23,5 +14,5 @@
   %p= t(:body)
   %p= t(:current_language, lang:)
   %div
-    = T.keys.map do |language|
+    = self.class.loaded_translations.keys.map do |language|
       %button(onclick=handle_set_language value=language)= language
