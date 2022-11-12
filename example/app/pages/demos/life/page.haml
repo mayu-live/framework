@@ -143,10 +143,7 @@
   .button {
     display: flex;
     align-items: center;
-  }
-
-  .icon {
-    margin-right: .5em;
+    gap: .5em;
   }
 
 :ruby
@@ -159,20 +156,20 @@
     %legend= t(:controls)
     .buttons
       %Button.button(onclick=handle_reset)
-        %Icon.icon(name="refresh")
+        %Icon(name="arrows-rotate")
         = t(:reset)
       %Button.button(onclick=handle_randomize)
-        %Icon.icon(name="dice")
+        %Icon(name="dice")
         = t(:randomize)
       %Button.button(onclick=handle_step disabled=running)
-        %Icon.icon(name="forward_step")
+        %Icon(name="forward-step")
         = t(:step)
       = if running
         %Button.button(onclick=handle_toggle_running color="var(--red)")
-          %Icon.icon(name="pause")
+          %Icon(name="pause")
           = t(:stop)
       = unless running
         %Button.button(onclick=handle_toggle_running color="var(--green)")
-          %Icon.icon(name="play")
+          %Icon(name="play")
           = t(:start)
   %GameGrid(grid=grid size=size onmousedown=handle_toggle onmouseenter=handle_mouseenter)
