@@ -29,5 +29,9 @@
     cursor: not-allowed;
   }
 
-%button.button{style: { __button_color: props.fetch(:color, "var(--accent-color)")  }, **props.except(:color)}
+%button.button{
+  class: props[:class],
+  style: { __button_color: props.fetch(:color, "var(--accent-color)")  },
+  **props.except(:color)
+}
   %slot

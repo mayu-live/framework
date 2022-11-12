@@ -1,8 +1,11 @@
 :ruby
+  translations("en-US", "sv-SE")
+
   Heading = import("/app/components/Layout/Heading")
   Fieldset = import("/app/components/Form/Fieldset")
   Input = import("/app/components/Form/Input")
   Button = import("/app/components/Form/Button")
+  Icon = import("/app/components/UI/Icon")
   GameGrid = import("./GameGrid")
 
   MAX_SIZE = 20
@@ -137,19 +140,39 @@
   .alive { background: #333; }
   .alive:hover { background: #666; }
 
+  .button {
+    display: flex;
+    align-items: center;
+  }
+
+  .icon {
+    margin-right: .5em;
+  }
+
 :ruby
   state => grid:, size:, running:
 
-%article
-  %Heading(level=2) Game of life
+%article(lang=lang)
+  %Heading(level=2)= t(:title)
 
   %Fieldset
-    %legend Controls
+    %legend= t(:controls)
     .buttons
-      %Button(onclick=handle_reset) Reset
-      %Button(onclick=handle_randomize) Randomize
-      %Button(onclick=handle_step disabled=running) Step
-      %Button(onclick=handle_toggle_running){
-        color: running ? "var(--red)" : "var(--green)"
-      }= running ? "Stop" : "Start"
+      %Button.button(onclick=handle_reset)
+        %Icon.icon(name="refresh")
+        = t(:reset)
+      %Button.button(onclick=handle_randomize)
+        %Icon.icon(name="dice")
+        = t(:randomize)
+      %Button.button(onclick=handle_step disabled=running)
+        %Icon.icon(name="forward_step")
+        = t(:step)
+      = if running
+        %Button.button(onclick=handle_toggle_running color="var(--red)")
+          %Icon.icon(name="pause")
+          = t(:stop)
+      = unless running
+        %Button.button(onclick=handle_toggle_running color="var(--green)")
+          %Icon.icon(name="play")
+          = t(:start)
   %GameGrid(grid=grid size=size onmousedown=handle_toggle onmouseenter=handle_mouseenter)

@@ -1,0 +1,7 @@
+title = "Livets spel"
+controls = "Kontroller"
+randomize = "Slumpa"
+reset = "Återställ"
+start = "Starta"
+step = "Stega"
+stop = "Stanna"

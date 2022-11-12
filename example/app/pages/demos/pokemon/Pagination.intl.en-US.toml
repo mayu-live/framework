@@ -1,0 +1,4 @@
+legend = "Page %<page>d of %<total_pages>d, showing %<per_page>d per page"
+previous_page = "Previous page"
+next_page = "Next page"
+per_page_label = "Per page:"

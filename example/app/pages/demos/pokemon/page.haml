@@ -1,6 +1,8 @@
 :ruby
   Pagination = import("./Pagination")
 
+  translations("en-US", "sv-SE")
+
   def self.get_initial_state(**props) = {
     result: nil,
     error: nil,
@@ -37,11 +39,11 @@
   state => result:, error:
 
 - return if error
-  %p Error: #{error}
+  %p= t(:error, error:)
 
 - return unless result
   %p
-    Loading Pokémon from
+    = t(:loading_pokemon_from)
     %a(href="https://pokeapi.co/")< PokéAPI
 
 :ruby

@@ -2,6 +2,8 @@
   Fieldset = import("/app/components/Form/Fieldset")
   Button = import("/app/components/Form/Button")
 
+  translations("en-US", "sv-SE")
+
   def pagination_window(current_page:, total_pages:, window_size: 5)
     half_window_size = (window_size - 1) / 2
     first = current_page - half_window_size.ceil
@@ -34,14 +36,14 @@
       window_size: props[:window_size] || 5,
     )
 
-%Fieldset
+%Fieldset(lang=lang)
   %legend
-    Page #{page} of #{total_pages.succ}, showing #{per_page} per page
+    = t(:legend, page:, total_pages: total_pages.succ, per_page:)
 
   .wrap
     %nav.buttons(aria-label="pagination")
       %a.button(href=prev_page_link rel="prev")
-        Previous page
+        = t(:previous_page)
 
       %ul.pages
         = pages.map do |num|
@@ -52,10 +54,10 @@
             }= num
 
       %a.button(href=next_page_link rel="prev")
-        Next page
+        = t(:next_page)
 
     .perPage
-      Per page:
+      = t(:per_page_label)
       %select(value=per_page){on_change: props[:on_change_per_page]}<
         = [20, 40, 80].map do |num|
           %option(key=num value=num)= num

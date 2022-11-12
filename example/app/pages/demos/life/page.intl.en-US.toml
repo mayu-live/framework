@@ -1,0 +1,7 @@
+title = "Game of life"
+controls = "Controls"
+randomize = "Randomize"
+reset = "Reset"
+start = "Start"
+step = "Step"
+stop = "Stop"

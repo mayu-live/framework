@@ -65,7 +65,7 @@ module Mayu
           raise "There are no translations!"
       end
 
-      sig { params(path: Symbol, replacements: String).returns(String) }
+      sig { params(path: Symbol, replacements: T.untyped).returns(String) }
       def t(*path, **replacements)
         value =
           self
