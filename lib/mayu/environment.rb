@@ -101,11 +101,13 @@ module Mayu
     end
 
     sig do
-      params(request_path: String, headers: T::Hash[String, String]).returns(
-        VDOM::Descriptor
-      )
+      params(
+        request_path: String,
+        accept_language: AcceptLanguage::Parser,
+        headers: T::Hash[String, String]
+      ).returns(VDOM::Descriptor)
     end
-    def load_root(request_path, headers: {})
+    def load_root(request_path, accept_language:, headers: {})
       path, search = request_path.split("?", 2)
       # We should match the route earlier, so that we don't have to get this
       # far in case it doesn't match...
@@ -123,7 +125,13 @@ module Mayu
       resources.load_resource(File.join("/", "app", "root")).type =>
         Resources::Types::Component => root
 
-      request_info = { path:, params:, query:, headers: }.freeze
+      request_info = {
+        path:,
+        params:,
+        query:,
+        headers:,
+        accept_language:
+      }.freeze
 
       # Apply the layouts.
       # NOTE: Pages should probably be their own

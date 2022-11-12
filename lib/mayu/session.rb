@@ -139,10 +139,16 @@ module Mayu
       store: nil
     )
       @environment = environment
+
       @id = T.let(Nanoid.generate, String)
       @token = T.let(self.class.generate_token, String)
+
       @path = path
       @headers = headers
+
+      @prefer_language = prefer_language
+      @accept_language = T.let(nil, T.nilable(AcceptLanguage::Parser))
+
       @vtree = T.let(vtree || VDOM::VTree.new(session: self), VDOM::VTree)
       @log = T.let(EventStream::Log.new, EventStream::Log)
       @store =
@@ -150,11 +156,14 @@ module Mayu
           store || environment.create_store(initial_state: {}),
           State::Store
         )
-      @app = T.let(environment.load_root(path, headers:), VDOM::Descriptor)
+
+      @app =
+        T.let(
+          environment.load_root(path, headers:, accept_language:),
+          VDOM::Descriptor
+        )
       @last_ping_at = T.let(Time.now.to_f, Float)
       @barrier = T.let(Async::Barrier.new, Async::Barrier)
-      @prefer_language = prefer_language
-      @accept_language = T.let(nil, T.nilable(AcceptLanguage::Parser))
     end
 
     sig { returns(AcceptLanguage::Parser) }
@@ -280,7 +289,7 @@ module Mayu
       @last_ping_at = Time.now.to_f
       @vtree = VDOM::Marshalling.restore(dumped_vtree, session: self)
       @store = @environment.create_store(initial_state: Marshal.restore(state))
-      @app = @environment.load_root(@path, headers:)
+      @app = @environment.load_root(@path, headers:, accept_language:)
       @barrier = Async::Barrier.new
       @log = EventStream::Log.new
     end
@@ -312,14 +321,14 @@ module Mayu
 
     sig { void }
     def rerender
-      @app = @environment.load_root(path, headers:)
+      @app = @environment.load_root(path, headers:, accept_language:)
       @vtree.replace_root(@app)
     end
 
     sig { params(path: String).void }
     def navigate(path)
       Console.logger.info(self, "navigate: #{path.inspect}")
-      @app = @environment.load_root(path, headers:)
+      @app = @environment.load_root(path, headers:, accept_language:)
       @path = path
       @vtree.replace_root(@app)
     end
@@ -370,6 +379,7 @@ module Mayu
               yield [:action, payload]
             in [:set_prefer_language, language]
               self.prefer_language = language
+              rerender
               yield [:set_prefer_language, language]
             in [:update_finished, *]
               # noop
