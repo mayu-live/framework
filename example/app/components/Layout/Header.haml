@@ -1,20 +1,22 @@
 :ruby
+  translations("sv-SE", "en-US")
+
   MaxWidth = import("/app/components/Layout/MaxWidth")
   Icon = import("/app/components/UI/Icon")
 
-%header{class: props[:class]}
+%header(lang=lang){class: props[:class]}
   %MaxWidth.inner
-    %a.titleLink(href="/" title="Start page")
+    %a.titleLink(href="/"){title: t(:startpage)}
       Mayu Live
     %nav.nav
       %menu.menu
         %li
           %a.navLink(href="/demos")
-            Demos
+            = t(:demos)
         %li
           %a.navLink(href="/docs")
-            Docs
+            = t(:docs)
         %li
           %a.navLink(href="https://github.com/mayu-live/framework" target="_blank")
             GitHub
-            %Icon.icon(name="up-right-from-square")
+            %Icon.icon(icon="up-right-from-square")

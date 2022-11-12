@@ -61,8 +61,7 @@ module Mayu
 
       sig { returns(String) }
       def lang
-        helpers.get_accepted_language(self.class.loaded_translations.keys) or
-          raise "There are no translations!"
+        props[:lang] or raise "There are no translations!"
       end
 
       sig { params(path: Symbol, replacements: T.untyped).returns(String) }
@@ -74,9 +73,7 @@ module Mayu
             .fetch(lang) { return "No translations" }
             .dig(*path)
 
-        unless value
-          return "Missing translation for #{lang} at #{path.join(".")}!"
-        end
+        return "Missing translation for #{path.join(".")}!" unless value
         format(value, replacements)
       end
 

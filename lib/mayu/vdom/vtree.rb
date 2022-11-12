@@ -350,7 +350,8 @@ module Mayu
           if component.should_update?(descriptor.props, component.next_state)
             vnode.descriptor = descriptor
             prev_props, prev_state = component.props, component.state
-            component.props = descriptor.props
+            lang = get_accepted_language(component.available_languages)
+            component.props = { **descriptor.props, lang: }
             component.state = component.next_state.clone
             descriptors =
               add_comments_between_texts(

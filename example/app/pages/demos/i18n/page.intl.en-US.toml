@@ -3,3 +3,6 @@ body = """
 hello world
 """
 current_language = "Current language: %<lang>s"
+change_language = "Change language"
+lang.sv-SE = "Swedish"
+lang.en-US = "English"

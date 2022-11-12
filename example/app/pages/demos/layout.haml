@@ -47,6 +47,6 @@
   %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)
 
   .nav(slot="menu")
-    %Menu(lang=lang)
+    %Menu(htmllang=lang)
       = LINKS.map do |path, label|
         %MenuItem(key=path href=path)= t(label)

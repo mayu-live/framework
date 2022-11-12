@@ -29,7 +29,7 @@
   .button:hover {
     text-decoration: underline;
   }
-%section.languages
+%section.languages(lang=lang)
   %h3.title= t(:title)
   %button.button(onclick=handle_set_language value="sv-SE" lang="sv-SE") Svenska
   %button.button(onclick=handle_set_language value="en-US" lang="en-US") English (US)

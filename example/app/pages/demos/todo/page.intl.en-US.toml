@@ -2,8 +2,8 @@ what_needs_to_be_done = "What needs to be done?"
 clear_completed = "Clear completed"
 
 [item]
-  one = "%<count>d item"
-  many = "%<count>d items"
+  one = "%<count>d item left"
+  many = "%<count>d items left"
 
 [filter]
   all = "All"

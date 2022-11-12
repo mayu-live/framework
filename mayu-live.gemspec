@@ -63,4 +63,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "syntax_tree-xml", '~> 0.1.0'
   spec.add_dependency "terminal-table", "~> 3.0.1"
   spec.add_dependency "toml-rb", "~> 2.2.0"
+  spec.add_dependency "twitter_cldr", "~> 6.11.4"
 end

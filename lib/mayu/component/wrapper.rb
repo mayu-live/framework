@@ -53,6 +53,11 @@ module Mayu
         @instance.class.assets
       end
 
+      sig { returns(T::Array[String]) }
+      def available_languages
+        @instance.class.loaded_translations.keys
+      end
+
       sig { returns(T.nilable(Resources::Resource)) }
       def resource
         if @instance.class.respond_to?(:__resource)
