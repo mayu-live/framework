@@ -16,6 +16,9 @@ module Mayu
       PING_INTERVAL = 2 # seconds
       NANOID_RE = /[\w-]{21}/
 
+      PREFER_LANGUAGE_COOKIE = "mayu-prefer-language"
+      TOKEN_COOKIE = "mayu-token"
+
       MIME_TYPES =
         T.let(
           {
@@ -256,6 +259,7 @@ module Mayu
             "content-type": "application/json",
             "set-cookie": set_token_cookie_value(session)
           }
+
           session.log.push(
             :pong,
             pong: ping,
@@ -270,11 +274,23 @@ module Mayu
           session.handle_callback("navigate", { path: })
           Protocol::HTTP::Response[200, headers, ["ok"]]
         in ["callback", String => callback_id]
+          prefer_language = session.prefer_language
+
           session.handle_callback(
             callback_id,
             JSON.parse(request.read, symbolize_names: true)
           )
-          headers = { "set-cookie": set_token_cookie_value(session) }
+
+          headers = Protocol::HTTP::Headers.new
+
+          unless session.prefer_language == prefer_language
+            headers.add(
+              "set-cookie",
+              set_prefer_language_cookie_value(session.prefer_language.to_s)
+            )
+          end
+
+          headers.add("set-cookie", set_token_cookie_value(session))
           Protocol::HTTP::Response[200, headers, ["ok"]]
         end
       end
@@ -305,11 +321,14 @@ module Mayu
                 "Expected sec-fetch-dest to equal document but got #{value.inspect}"
         end
 
+        cookies = get_cookies(request)
+
         session =
           Session.new(
             environment: @environment,
             path: request.path,
-            headers: request.headers.to_h.freeze
+            headers: request.headers.to_h.freeze,
+            prefer_language: cookies[PREFER_LANGUAGE_COOKIE]
           )
         body = Async::HTTP::Body::Writable.new
 
@@ -465,25 +484,45 @@ module Mayu
         stream.close
       end
 
+      sig do
+        params(request: Protocol::HTTP::Request).returns(
+          T::Hash[String, String]
+        )
+      end
+      def get_cookies(request)
+        Array(request.headers["cookie"]).each_with_object({}) do |str, obj|
+          key, value = str.split("=", 2)
+          obj[key] = value
+        end
+      end
+
+      sig { params(language: String).returns(String) }
+      def set_prefer_language_cookie_value(language)
+        return "#{PREFER_LANGUAGE_COOKIE}=; max-age=0" if language.empty?
+
+        [
+          "#{PREFER_LANGUAGE_COOKIE}=#{language}",
+          "expires=",
+          "path=/",
+          "secure",
+          "SameSite=Strict"
+        ].join("; ")
+      end
+
       sig { params(request: Protocol::HTTP::Request).returns(String) }
       def get_token_cookie_value(request)
-        Array(request.headers["cookie"]).each do |str|
-          if match = str.match(/^mayu-token=(\w+)/)
-            return match[1].to_s.tap { Session.validate_token!(_1) }
-          end
-        end
-
-        raise Errors::CookieNotSet
+        get_cookies(request)
+          .fetch(TOKEN_COOKIE) { raise Errors::CookieNotSet }
+          .to_s
+          .tap { Session.validate_token!(_1) }
       end
 
       sig { params(session: Session, ttl_seconds: Integer).returns(String) }
       def set_token_cookie_value(session, ttl_seconds: 60)
-        expires = Time.now.utc + ttl_seconds
-
         [
-          "mayu-token=#{session.token}",
+          "#{TOKEN_COOKIE}=#{session.token}",
           "path=/__mayu/session/#{session.id}/",
-          "expires=#{expires.httpdate}",
+          "max-age=#{ttl_seconds}",
           "secure",
           "HttpOnly",
           "SameSite=Strict"

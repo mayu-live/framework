@@ -145,6 +145,11 @@ module Mayu
         @vtree.get_accepted_language(languages)
       end
 
+      sig { params(language: String).void }
+      def set_prefer_language(language)
+        @vtree.set_prefer_language(language)
+      end
+
       sig { void }
       def enqueue_update!
         @vtree.enqueue_update!(self)

@@ -93,6 +93,8 @@ module Mayu
     attr_reader :token
     sig { returns(String) }
     attr_reader :path
+    sig { returns(T.nilable(String)) }
+    attr_reader :prefer_language
     sig { returns(T::Hash[String, String]) }
     attr_reader :headers
     sig { returns(Environment) }
@@ -101,6 +103,12 @@ module Mayu
     attr_reader :last_ping_at
     sig { returns(EventStream::Log) }
     attr_reader :log
+
+    sig { params(language: String).returns(String) }
+    def prefer_language=(language)
+      @accept_language = nil
+      @prefer_language = language
+    end
 
     sig { params(timeout_seconds: T.any(Float, Integer)).returns(T::Boolean) }
     def expired?(timeout_seconds = 30)
@@ -117,11 +125,19 @@ module Mayu
         environment: Environment,
         path: String,
         headers: T::Hash[String, String],
+        prefer_language: T.nilable(String),
         vtree: T.nilable(VDOM::VTree),
         store: T.nilable(State::Store)
       ).void
     end
-    def initialize(environment:, path:, headers: {}, vtree: nil, store: nil)
+    def initialize(
+      environment:,
+      path:,
+      headers: {},
+      prefer_language: nil,
+      vtree: nil,
+      store: nil
+    )
       @environment = environment
       @id = T.let(Nanoid.generate, String)
       @token = T.let(self.class.generate_token, String)
@@ -137,13 +153,26 @@ module Mayu
       @app = T.let(environment.load_root(path, headers:), VDOM::Descriptor)
       @last_ping_at = T.let(Time.now.to_f, Float)
       @barrier = T.let(Async::Barrier.new, Async::Barrier)
+      @prefer_language = prefer_language
       @accept_language = T.let(nil, T.nilable(AcceptLanguage::Parser))
     end
 
     sig { returns(AcceptLanguage::Parser) }
     def accept_language
       @accept_language ||=
-        AcceptLanguage.parse(@headers["accept-language"].to_s)
+        begin
+          accept_language =
+            AcceptLanguage.parse(@headers["accept-language"].to_s)
+
+          if @prefer_language
+            accept_language.instance_variable_get(:@languages_range).store(
+              @prefer_language,
+              BigDecimal(2)
+            )
+          end
+
+          accept_language
+        end
     end
 
     sig { void }
@@ -239,6 +268,7 @@ module Mayu
         @token,
         @path,
         @headers,
+        @prefer_language,
         VDOM::Marshalling.dump(@vtree),
         Marshal.dump(@store.state)
       ]
@@ -246,7 +276,7 @@ module Mayu
 
     sig { params(a: T::Array[T.untyped]).void }
     def marshal_load(a)
-      @id, @token, @path, @headers, dumped_vtree, state = a
+      @id, @token, @path, @headers, @prefer_language, dumped_vtree, state = a
       @last_ping_at = Time.now.to_f
       @vtree = VDOM::Marshalling.restore(dumped_vtree, session: self)
       @store = @environment.create_store(initial_state: Marshal.restore(state))
@@ -338,6 +368,9 @@ module Mayu
               yield [:navigate, path: href.force_encoding("utf-8")]
             in [:action, payload]
               yield [:action, payload]
+            in [:set_prefer_language, language]
+              self.prefer_language = language
+              yield [:set_prefer_language, language]
             in [:update_finished, *]
               # noop
             else

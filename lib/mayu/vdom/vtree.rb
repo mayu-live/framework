@@ -111,6 +111,8 @@ module Mayu
               yield [:action, payload]
             in [:exception, error]
               yield [:exception, error]
+            in [:set_prefer_language, language]
+              yield [:set_prefer_language, language]
             in [:pong, timestamp]
               yield [:pong, timestamp]
             in VNode => vnode
@@ -188,6 +190,12 @@ module Mayu
       sig { params(languages: T::Array[String]).returns(T.nilable(String)) }
       def get_accepted_language(languages)
         T.unsafe(@session.accept_language).match(*languages)
+      end
+
+      sig { params(language: String).void }
+      def set_prefer_language(language)
+        @session.prefer_language = language
+        @update_queue.enqueue([:set_prefer_language, language])
       end
 
       sig { returns(T::Array[T.untyped]) }

@@ -208,6 +208,9 @@ async function main(url: string) {
       case "session.exception":
         showException(payload);
         break;
+      case "session.set_prefer_language":
+        logger.info("Changed preferred language:", payload);
+        break;
       case "ping":
         const values = Object.values(payload.values) as number[];
         const mean = values.reduce((a, b) => a + b, 0.0) / values.length;
