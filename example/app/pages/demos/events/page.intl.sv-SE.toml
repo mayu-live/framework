@@ -1,0 +1,7 @@
+title = "Händelser"
+description = "Denna sida innehåller experiment med events."
+alert = "Alert"
+message = """
+Hej världen!
+Räknare: %<count>d
+"""
