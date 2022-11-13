@@ -1,14 +1,21 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
+  Card = import("/app/components/Layout/Card")
 
-  Entry = import("./Entry")
   FileContents = import("./FileContents")
+  Directory = import("./Directory")
 
   def self.get_initial_state(**props) = {
     selected_path: nil
   }
 
 :css
+  article {
+  }
+
+  header {
+  }
+
   .browser {
     display: grid;
     gap: 1em;
@@ -16,17 +23,19 @@
     align-items: start;
   }
 
-  .list {
+  .tree {
     padding: 1em;
     margin: 0;
     background: var(--yellow-bright);
     border: 1px solid var(--yellow);
     border-radius: 2px;
     list-style-type: none;
+    font-size: .9em;
+    user-select: none;
+    overflow: auto;
   }
 
   .right {
-    overflow: hidden;
   }
 
   @media (min-width: 768px) {
@@ -38,14 +47,16 @@
 - root = File.expand_path(".")
 
 %article
-  %Heading(level=2) App tree
+  %header
+    %Heading(level=2) App tree
 
-  %p
-    This page shows the file structure of the example app.
-    %a(href="https://github.com/mayu-live/framework/tree/main/example/app")<
+    %p
+      This page shows the file structure of the example app.
+      %a(href="https://github.com/mayu-live/framework/tree/main/example/app")<
 
   .browser
-    %ul.list
-      %Entry(initial_open root=root){path: "app"}
+    %Card
+      .tree
+        %Directory(initial_open root=root){path: "app"}
     .right
       %FileContents(root=root){path: props.dig(:request, :query, :file)}

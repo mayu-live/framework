@@ -1,9 +1,10 @@
 :ruby
   Icon = import("/app/components/UI/Icon")
+  Name = import("./Name")
 
   def icon
     case File.extname(props[:path])
-    in ".css" | ".rb"
+    in ".haml" | ".css" | ".rb"
       "file-code"
     in ".md"
       "file-lines"
@@ -15,14 +16,7 @@
   end
 
 :css
-  li {
-    margin: 0;
-    padding: 0;
-    padding-left: 0.5em;
-    margin-left: 1em;
-  }
-
-  .name {
+  h4 {
     display: inline-flex;
     align-items: center;
     gap: .5em;
@@ -32,7 +26,5 @@
   props => path:
   href = "?file=#{path}"
 
-%li
-  %span.name
-    %Icon(name=icon color="var(--blue)")
-    %a{href:}= File.basename(path)
+%Name(icon=icon)
+  %a(href=href)= File.basename(path)

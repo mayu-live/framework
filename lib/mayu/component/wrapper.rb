@@ -115,11 +115,11 @@ module Mayu
             end
             EOF
 
-          update(block.call(@state))
+          update(block.call(@next_state))
         else
           if block.parameters.all? { _1 in [:key | :keyreq, key] }
             keys = block.parameters.map(&:last)
-            sliced_state = T.unsafe(@state).slice(*keys)
+            sliced_state = T.unsafe(@next_state).slice(*keys)
             update(block.call(**sliced_state))
           else
             raise ArgumentError, "All arguments to #update are not keys."

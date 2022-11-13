@@ -1,66 +1,82 @@
 :ruby
   Icon = import("/app/components/UI/Icon")
+  Name = import("./Name")
+  FileEntry = import("./FileEntry")
 
   def self.get_initial_state(initial_open: false, **) = {
-    open: initial_open
+    open: initial_open,
+    entries: nil,
   }
 
-  def handle_toggle(_)
-    update do |state|
-      { open: !state[:open] }
+  def mount
+    if state[:open]
+      update(entries: load_entries)
     end
   end
 
-:css
-  li {
-    margin: 0;
-    padding: 0;
-    padding-left: 0.5em;
-    margin-left: 1em;
-  }
+  def handle_toggle(_)
+    update do |state|
+      open = !state[:open]
+      entries = state[:entries] || open && load_entries
+      p(open:, entries:)
 
-  .name {
-    font-weight: bold;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: .5em;
-  }
+      { open:, entries: }
+    end
+  end
 
-  .name:hover {
-    text-decoration: underline;
-  }
+  private
 
-  .entries {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-  }
+  def load_entries
+    props => { root:, path: }
 
-:ruby
-  props => { root:, path:, entry: }
-
-  entries =
-    if state[:open]
+    entries =
       Dir
         .entries(File.join(root, path))
         .difference(%w[. ..])
         .sort
-        .map do
-          Mayu::VDOM.h(entry,
-          root:,
-          path: File.join(path, _1)
-        )
-        end.compact
-      else
-        []
-      end
+        .map { File.join(path, _1) }
+        .group_by { File.directory?(File.join(root, _1)) }
 
+    {
+      directories: entries[true] || [],
+      files: entries[false] || [],
+    }
+  end
+:css
+  li {
+    margin: 0;
+    padding: 0;
+  }
+
+  ul {
+    list-style-type: none;
+    margin: 0;
+    margin-left: 1em;
+    padding: 0;
+  }
+
+  button {
+    all: unset;
+  }
+
+  button:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
+:ruby
   icon = state[:open] ? "folder-open" : "folder"
 
-%li{class: { nonempty: entries.any? }}
-  %span.name(onclick=handle_toggle)
-    %Icon(name=icon color="var(--dark)")
-    #{File.basename(path)}/
-  = unless entries.empty?
-    %ul.entries= entries
+%div
+  %Name(icon=icon color="var(--blue)")
+    %button(type="button" onclick=handle_toggle)
+      #{File.basename(props[:path])}/
+
+  = if state[:open]
+    = if entries = state[:entries]
+      %ul
+        = entries[:directories]&.map do |path|
+          %li
+            = Mayu::VDOM.h(self.class, root: props[:root], path:)
+        = entries[:files]&.map do |path|
+          %li
+            %FileEntry{path:}
