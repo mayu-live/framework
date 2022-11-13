@@ -171,13 +171,15 @@ module Mayu
       @accept_language ||=
         begin
           accept_language =
-            AcceptLanguage.parse(@headers["accept-language"].to_s)
+            AcceptLanguage.parse(Array(@headers["accept-language"]).join(","))
 
           if @prefer_language
-            accept_language.instance_variable_get(:@languages_range).store(
-              @prefer_language,
-              BigDecimal(2)
-            )
+            accept_language
+              .instance_variable_get(:@languages_range)
+              .tap do |languages_range|
+                languages_range.store(@prefer_language, BigDecimal(2))
+                languages_range["en-US"] ||= BigDecimal("0.01")
+              end
           end
 
           accept_language

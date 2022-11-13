@@ -187,9 +187,13 @@ module Mayu
         @asset_refs = T.let(RefCounter.new, RefCounter[String])
       end
 
+      DEFAULT_ACCEPT_LANGUAGE =
+        T.let(AcceptLanguage.parse("en, *;q=0.5"), AcceptLanguage::Parser)
+
       sig { params(languages: T::Array[String]).returns(T.nilable(String)) }
       def get_accepted_language(languages)
-        T.unsafe(@session.accept_language).match(*languages)
+        T.unsafe(@session.accept_language).match(*languages) ||
+          T.unsafe(DEFAULT_ACCEPT_LANGUAGE).match(*languages) || languages.first
       end
 
       sig { params(language: String).void }
