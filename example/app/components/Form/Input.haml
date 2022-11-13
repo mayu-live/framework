@@ -4,7 +4,7 @@
     margin: 1em 0;
   }
 
-  .input {
+  input {
     font-size: inherit;
     padding: 0.5em;
 
@@ -13,25 +13,25 @@
     border-radius: 2px;
   }
 
-  .input:hover {
+  input:hover {
     border-color: var(--dark);
   }
 
-  .input:focus {
+  input:focus {
     border: 1px solid var(--blue);
     outline: 1px solid var(--blue);
   }
 
-  .input:active {
+  input:active {
     border: 1px solid var(--blue);
     outline: 1px solid var(--blue);
   }
 
-  .input::placeholder {
+  input::placeholder {
     color: transparent;
   }
 
-  .label {
+  label {
     position: absolute;
     top: 50%;
     left: 0.5em;
@@ -42,38 +42,38 @@
     padding: 0 0.2em;
   }
 
-  .input:focus + .label,
-  .input:not(:placeholder-shown) + .label {
+  input:focus + label,
+  input:not(:placeholder-shown) + label {
     top: 0;
     background: #fff;
     font-size: 0.9em;
     opacity: 1;
   }
 
-  .input:invalid {
+  input:invalid {
     border-color: var(--red);
     outline-color: var(--red);
   }
 
-  .input:required + .label::after {
+  input:required + label::after {
     content: " *";
     color: var(--red);
     font-weight: bold;
   }
 
-  .input:invalid:required {
+  input:invalid:required {
     background: var(--red-bright);
   }
 
-  .input:not(:placeholder-shown):valid {
+  input:not(:placeholder-shown):valid {
     border-color: var(--green);
     outline-color: var(--green);
   }
 
 .group
-  %input.input(type="text"){
+  %input(type="text"){
     class: props[:class],
     placeholder: props[:label],
     **props
   }
-  %label.label= props[:label]
+  %label= props[:label]

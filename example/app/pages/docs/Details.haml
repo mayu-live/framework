@@ -1,9 +1,9 @@
 :css
-  .details {
+  details {
     margin: 1em;
   }
 
-  .summary {
+  summary {
     user-select: none;
     cursor: pointer;
     font-weight: bold;
@@ -12,15 +12,15 @@
     padding: .25em 0;
   }
 
-  .summary:hover {
+  summary:hover {
     text-decoration: underline;
   }
 
-  .summary::marker {
+  summary::marker {
     display: none;
   }
 
-  .details > .summary::after {
+  details > summary::after {
     display: inline-block;
     content: "▲";
     transition: transform 250ms;
@@ -28,10 +28,10 @@
     scale: 1.0;
   }
 
-  .details[open] > .summary::after {
+  details[open] > summary::after {
     transform: translateX(.5em) rotateZ(.5turn);
   }
 
-%details.details{open: props[:open]}
-  %summary.summary= props[:summary]
+%details{open: props[:open]}
+  %summary= props[:summary]
   %slot

@@ -1,0 +1,28 @@
+:css
+  ul {
+    list-style-type: none;
+    background: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-items: flex-start;
+    flex-wrap: wrap;
+    gap: .5em;
+    font-size: .8em;
+  }
+
+  ul:empty {
+    display: none;
+  }
+
+  li {
+    display: inline-block;
+    margin: 0;
+    padding: .25em;
+    background: var(--green-bright);
+    border: 1px solid var(--green);
+    border-radius: 3px;
+  }
+%ul
+  = props[:suggestions].map do |suggestion|
+    %li= suggestion

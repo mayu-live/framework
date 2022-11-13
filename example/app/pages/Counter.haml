@@ -20,26 +20,26 @@
   end
 
 :css
-  .card {
+  Card {
     margin: 4em auto;
     max-width: 10em;
   }
 
-  .counter {
+  article {
     display: flex;
     padding: 1em;
     align-items: center;
     user-select: none;
   }
 
-  .count {
+  output {
     flex-basis: 3em;
     text-align: center;
     font-size: 1.2em;
     text-align: center;
   }
 
-  .button {
+  button {
     flex: 1;
     border-radius: 100%;
     border: 0;
@@ -58,26 +58,26 @@
     transform: scale(1);
   }
 
-  .button:hover {
+  button:hover {
     filter: brightness(110%);
     transform: scale(1.2);
   }
 
-  .button:active {
+  button:active {
     filter: brightness(80%);
     box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
   }
 
-  .button:disabled {
+  button:disabled {
     filter: grayscale(100%);
     box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
   }
 
 %Card.card
-  .counter
+  %article
     - decrement_disabled = state[:count].zero?
-    %button.button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
+    %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
       －
-    %span.count= state[:count]
-    %button.button(title="Increment" onclick=handle_increment)
+    %output= state[:count]
+    %button(title="Increment" onclick=handle_increment)
       ＋

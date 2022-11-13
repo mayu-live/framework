@@ -1,24 +1,24 @@
 :css
-  .li {
+  li {
     display: block;
   }
 
-  .a {
+  a {
     padding: .25em 0;
     display: block;
   }
 
-  .a:link,
-  .a:visited {
+  a:link,
+  a:visited {
     color: var(--blue);
     text-decoration: none;
   }
 
-  .a:active,
-  .a:hover {
+  a:active,
+  a:hover {
     text-decoration: underline;
   }
 
-%li.li
-  %a.a{href: props[:href]}
+%li
+  %a{href: props[:href]}
     %slot

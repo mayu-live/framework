@@ -14,11 +14,11 @@
   end
 
 :css
-  .nav {
+  nav {
     background: #67667a;
   }
 
-  .list {
+  ol {
     list-style-type: none;
     display: flex;
     gap: .5em;
@@ -28,15 +28,15 @@
     padding: 1em 0;
   }
 
-  .li {
+  li {
     margin: 0;
     padding: 0;
   }
-%nav.nav{ aria: { label: "Breadcrumbs" } }
+%nav{ aria: { label: "Breadcrumbs" } }
   %MaxWidth
-    %ol.list
+    %ol
       = add_separators(props[:links]).map.with_index do |elem, i|
-        %li.li(key=i)
+        %li(key=i)
           = if elem == :sep
             %Separator
           = unless elem == :sep

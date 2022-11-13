@@ -7,7 +7,7 @@
     position: relative;
   }
 
-  .menu {
+  nav {
     background: var(--blue-bright);
     color: var(--dark);
     --menu-direction: row;
@@ -17,7 +17,7 @@
     padding: 1em;
   }
 
-  .page {
+  MaxWidth {
     padding: 1em 0;
   }
 
@@ -36,7 +36,7 @@
       overflow-y: auto;
     }
 
-    .menu {
+    nav {
       --menu-direction: column;
       width: var(--menu-width);
       position: relative;
@@ -56,8 +56,8 @@
   .breadcrumbs
     %slot(name="breadcrumbs")
 
-  %nav.menu
+  %nav
     .scroll
       %slot(name="menu")
-  %MaxWidth#page.page
+  %MaxWidth#page
     %slot

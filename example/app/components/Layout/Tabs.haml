@@ -35,14 +35,14 @@
     border: 1px solid #0006;
   }
 
-  .buttons {
+  .tablist {
     display: flex;
     border-bottom: 1px solid #0006;
     background: #0001;
     user-select: none;
   }
 
-  .button {
+  button {
     border: none;
     padding: .5em 1em;
     background: transparent;
@@ -54,19 +54,19 @@
     transition: color 100ms, background 100ms;
   }
 
-  .button:hover {
+  button:hover {
     font-weight: bold;
   }
 
-  .button:active {
+  button:active {
     background: var(--blue-bright);
   }
 
-  .button:focus {
+  button:focus {
     z-index: 1;
   }
 
-  .button[aria-selected="true"] {
+  button[aria-selected="true"] {
     background: var(--accent-color);
     font-weight: bold;
     color: #fff;
@@ -82,10 +82,10 @@
   names = Mayu::VDOM.slots(children).keys
 
 .tabs
-  .buttons(role="tablist")
+  .tablist(role="tablist")
     = names.map.with_index do |name, i|
       - handle_enable = enabled.include?(name) ? nil : handler(:handle_enable)
-      %button.button(key=name value=name onclick=handle_change role="tab" tabindex="0"){
+      %button(key=name value=name onclick=handle_change role="tab" tabindex="0"){
         id: id(:tab, i),
         onmouseenter: handle_enable,
         ontouchstart: handle_enable,

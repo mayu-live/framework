@@ -31,27 +31,13 @@
   ]
 
 :css
-  .footer {
+  footer {
     min-height: 5em;
   }
 
   .inner {
     margin-top: 2em;
     margin-bottom: 2em;
-  }
-
-  .link:link,
-  .link:visited {
-    color: #fff;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-  }
-
-  .link:active,
-  .link:hover {
-    text-decoration: underline;
-    color: #fff;
-    opacity: 1;
   }
 
   .badges {
@@ -61,16 +47,26 @@
     gap: 0.5em;
   }
 
-  .links {
-    display: inline-flex;
+  a:link,
+  a:visited {
+    color: #fff;
+    opacity: 0.8;
+    transition: opacity 0.2s;
   }
 
-%footer.footer{class: props[:class]}
+  a:active,
+  a:hover {
+    text-decoration: underline;
+    color: #fff;
+    opacity: 1;
+  }
+
+%footer{**props}
   %MaxWidth.inner
     %p
       - year = [2022, Time.now.year].uniq.join("—")
       Copyright © #{year}
-      %a.link(href="https://github.com/mayu-live" target="_blank")<
+      %a(href="https://github.com/mayu-live" target="_blank")<
         github.com/mayu-live
 
     %p.badges

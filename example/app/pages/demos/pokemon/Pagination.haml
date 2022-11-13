@@ -54,7 +54,7 @@
       %a.button(href=next_page_link rel="prev")
         Next page
 
-    .perPage
+    .per-page
       Per page:
       %select(value=per_page){on_change: props[:on_change_per_page]}<
         = [20, 40, 80].map do |num|

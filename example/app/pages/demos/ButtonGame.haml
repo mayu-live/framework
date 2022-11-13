@@ -19,11 +19,7 @@
   end
 
 :css
-  .relative {
-    position: relative;
-  }
-
-  .button {
+  button {
     transition: transform 0.2s;
   }
 
@@ -32,6 +28,5 @@
   transform = "translate(#{x}px, #{y}px)"
   style = { transform: }
 
-.relative
-  %button.button(style=style onclick=handle_click)
-    = MESSAGES[state[:count] % MESSAGES.size]
+%button(style=style onclick=handle_click)
+  = MESSAGES[state[:count] % MESSAGES.size]

@@ -24,14 +24,14 @@
   end
 
 :css
-  .featureList {}
-  .feature {}
+  ul {}
+  li {}
   .active {
     color: var(--red);
     font-weight: bold;
     font-style: italic;
   }
 
-%ul.featureList
+%ul
   = ITEMS.map.with_index do |item, index|
-    %li.feature{class: { active: index == state[:index] }}= item
+    %li{class: { active: index == state[:index] }}= item

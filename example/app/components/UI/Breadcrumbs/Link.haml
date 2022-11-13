@@ -1,13 +1,13 @@
 :css
-  .a:link, .a:visited {
+  a:link, a:visited {
     color: #fff;
     text-decoration: none;
     opacity: .8;
     transition: opacity 100ms;
   }
 
-  .a:active, .a:hover {
+  a:active, a:hover {
     text-decoration: underline;
     opacity: 1;
   }
-%a.a{href: props[:path]}= props[:text]
+%a{href: props[:path]}= props[:text]

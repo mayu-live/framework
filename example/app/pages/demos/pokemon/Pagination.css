@@ -28,7 +28,7 @@
   text-decoration: underline;
 }
 
-.perPage {
+.per-page {
   flex: 0;
   white-space: nowrap;
 }

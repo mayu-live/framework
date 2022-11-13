@@ -1,5 +1,5 @@
 :css
-  .file {
+  li {
     padding-left: 0.5em;
     margin-left: 1em;
     list-style-type: "📄";
@@ -23,5 +23,5 @@
   basename = File.basename(path)
   classname = File.extname(path).delete_prefix(".").to_sym
 
-%li.file(class=classname)
+%li(class=classname)
   %a{href:}= basename

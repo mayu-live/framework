@@ -5,7 +5,7 @@
   ColombiaMap = image("./colombia-map-flag.png")
 
 :css
-  .figure {
+  figure {
     margin: 0;
   }
 
@@ -17,13 +17,13 @@
   %Heading(level=2) Images
   %p
     This demo shows some images.
-  %figure.figure
+  %figure
     %Image(image=Comuna13 alt="Comuna 13, Medellín, Colombia")
     %figcaption
       Comuna 13, Medellín, Colombia.
       %a(href="https://www.google.com/maps?q=loc:6.2487861,-75.62455" target="_blank")<
         Google Maps
-  %figure.figure
+  %figure
     %Image.green-bg(false image=ColombiaMap alt="Colombia Flag Map from openclipart.org" blur=false)
     %figcaption
       Colombia Flag Map, found on

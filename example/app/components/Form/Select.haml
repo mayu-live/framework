@@ -1,10 +1,10 @@
 :css
-  .group {
+  div {
     position: relative;
     margin: 1em 0;
   }
 
-  .select {
+  select {
     font-size: inherit;
     padding: 0.5em;
     background: var(--white);
@@ -14,25 +14,25 @@
     border-radius: 2px;
   }
 
-  .select:hover {
+  select:hover {
     border-color: var(--dark);
   }
 
-  .select:focus {
+  select:focus {
     border: 1px solid var(--blue);
     outline: 1px solid var(--blue);
   }
 
-  .select:active {
+  select:active {
     border: 1px solid var(--blue);
     outline: 1px solid var(--blue);
   }
 
-  .select::placeholder {
+  select::placeholder {
     color: transparent;
   }
 
-  .label {
+  label {
     position: absolute;
     top: 50%;
     left: 0.5em;
@@ -47,12 +47,11 @@
     opacity: 1;
   }
 
-.group
-  %select.select(type="text"){
+%div
+  %select(type="text"){
     class: props[:class],
     placeholder: props[:label],
     **props
   }
     %slot
-
-  %label.label= props[:label]
+  %label= props[:label]

@@ -4,17 +4,18 @@
 
 %header{class: props[:class]}
   %MaxWidth.inner
-    %a.titleLink(href="/" title="Start page")
-      Mayu Live
-    %nav.nav
-      %menu.menu
+    %h1
+      %a.title(href="/" title="Start page")
+        Mayu Live
+    %nav
+      %menu
         %li
-          %a.navLink(href="/demos")
+          %a(href="/demos")
             Demos
         %li
-          %a.navLink(href="/docs")
+          %a(href="/docs")
             Docs
         %li
-          %a.navLink(href="https://github.com/mayu-live/framework" target="_blank")
+          %a(href="https://github.com/mayu-live/framework" target="_blank")
             GitHub
-            %Icon.icon(name="up-right-from-square")
+            %Icon(name="up-right-from-square")

@@ -4,7 +4,7 @@
     aspect-ratio: 1.7777777;
   }
 
-  .iframe {
+  iframe {
     position: absolute;
     top: 0;
     left: 0;
@@ -14,7 +14,7 @@
 :ruby
   props => video_id:
 .wrapper
-  %iframe.iframe(allowfullscreen){
+  %iframe(allowfullscreen){
     allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
     frameborder: 0,
     loading: "lazy",

@@ -25,11 +25,11 @@
   end
 
 :css
-  .details {
+  details {
     padding: 0.5em 0.5em 0;
   }
 
-  .summary {
+  summary {
     font-weight: bold;
     margin: -0.5em -0.5em 0;
     padding: 0.5em;
@@ -37,16 +37,16 @@
     user-select: none;
   }
 
-  .details[open] {
+  details[open] {
     padding: 0.5em;
   }
 
-  .details[open] .summary {
+  details[open] .summary {
     border-bottom: 1px solid #0003;
     margin-bottom: 0.5em;
   }
 
-  .loading {
+  p {
     margin: 0;
     padding: 0;
   }
@@ -54,10 +54,10 @@
 - state => open:
 
 %Card{class: props[:class]}
-  %details.details(ontoggle=handle_toggle open=open)
-    %summary.summary= props[:summary]
-    %div.content
+  %details(ontoggle=handle_toggle open=open)
+    %summary= props[:summary]
+    .content
       = if state[:loaded]
         %slot
       = unless state[:loaded]
-        %p.loading Loading…
+        %p Loading…

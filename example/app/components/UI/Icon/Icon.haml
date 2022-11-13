@@ -30,9 +30,8 @@
     "wand-magic-sparkles" => svg("wand-magic-sparkles-solid.svg"),
     "xmark" => svg("xmark-solid.svg"),
   }.freeze
-
 :css
-  .icon {
+  i {
     display: inline-block;
     width: 1em;
     aspect-ratio: 1;
@@ -59,7 +58,7 @@
     __icon_color: props[:color]
   }.reject { _2.nil? }
 
-%i.icon{
+%i{
   class: props[:class],
   title: props[:title],
   style:,

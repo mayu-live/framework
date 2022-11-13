@@ -10,7 +10,7 @@
   end
 
 :css
-  .dir {
+  li {
     padding-left: 0.5em;
     margin-left: 1em;
     list-style-type: "📁";
@@ -29,7 +29,7 @@
     text-decoration: underline;
   }
 
-  .list {
+  .entries {
     margin: 0;
     padding: 0;
   }
@@ -53,8 +53,8 @@
         []
       end
 
-%li.dir{class: { nonempty: entries.any?, open: state[:open] }}
-  %span{class: styles[:name], on_click: handler(:handle_toggle)}
+%li{class: { nonempty: entries.any?, open: state[:open] }}
+  %span.name(onclick=handle_toggle)
     #{File.basename(path)}/
   = unless entries.empty?
-    %ul.list= entries
+    %ul.entries= entries

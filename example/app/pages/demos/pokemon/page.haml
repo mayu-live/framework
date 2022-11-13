@@ -24,11 +24,11 @@
   end
 
 :css
-  .list {
+  ul {
     list-style-type: none;
   }
 
-  .item {
+  li {
     list-style-type: none;
     margin: 0.5em 0;
   }
@@ -62,11 +62,11 @@
     on_change_per_page: handler(:handle_set_per_page),
   }
 
-  %ul.list
+  %ul
     = results_on_this_page.map do |result|
       - id = result[:url][/\/(\d+)\/$/, 1].to_i
 
-      %li{key: result[:url], class: styles.item}
+      %li{key: result[:url]}
         = "#{id}. "
         %a(href="/demos/pokemon/#{id}")
           = result[:name].capitalize

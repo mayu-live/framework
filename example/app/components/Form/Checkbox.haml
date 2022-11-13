@@ -8,7 +8,7 @@
     gap: 1em;
   }
 
-  .checkbox {
+  input {
     margin: 0;
 
     font: inherit;
@@ -24,7 +24,7 @@
     position: relative;
   }
 
-  .label {
+  label {
   }
 
 :ruby
@@ -40,12 +40,12 @@
 
   id = "checkbox-#{vnode_id}"
 
-%div(class=group_classname foo="hoppsan")
+%div(class=group_classname)
   %input(id=id){
     class: classname,
     type: "checkbox",
     placeholder: props[:label],
     **props.except(:label),
   }
-  %label.label(for=id)
+  %label(for=id)
     = props[:label]
