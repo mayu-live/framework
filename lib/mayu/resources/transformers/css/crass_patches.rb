@@ -24,7 +24,6 @@ module Crass
             case rule[:name]
             in "media" | "layer"
               rule[:block] = consume_list_of_declarations(input)
-              puts JSON.pretty_generate(rule[:block])
             else
               # Note: The spec says the block should _be_ the consumed simple
               # block, but Simon Sapin's CSS parsing tests and tinycss2 expect
