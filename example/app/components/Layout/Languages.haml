@@ -1,6 +1,8 @@
 :ruby
   translations("en-US", "sv-SE")
 
+  Icon = import("/app/components/UI/Icon")
+
   def handle_set_language(e)
     e => { target: { value: } }
     helpers.set_prefer_language(value)
@@ -30,6 +32,6 @@
     text-decoration: underline;
   }
 %section.languages(lang=lang)
-  %h3.title= t(:title)
+  %Icon(name="language"){title: t(:title), style: { aspect_ratio: "1.25", width: "2em" }}
   %button.button(onclick=handle_set_language value="sv-SE" lang="sv-SE") Svenska
   %button.button(onclick=handle_set_language value="en-US" lang="en-US") English (US)
