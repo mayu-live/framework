@@ -164,8 +164,8 @@ module Mayu
       sig { returns(T.nilable(VNode)) }
       attr_reader :root
 
-      sig { returns(T::Array[String]) }
-      def assets = @asset_refs.keys
+      sig { returns(T::Set[String]) }
+      attr_reader :assets
 
       sig { params(session: Session, task: Async::Task).void }
       def initialize(session:, task: Async::Task.current)
@@ -181,23 +181,22 @@ module Mayu
         @update_semaphore =
           T.let(Async::Semaphore.new(parent: task), Async::Semaphore)
 
-        @sent_stylesheets = T.let(Set.new, T::Set[String])
-        @asset_refs = T.let(RefCounter.new, RefCounter[String])
+        @assets = T.let(Set.new, T::Set[String])
       end
 
       sig { returns(T::Array[T.untyped]) }
       def marshal_dump
-        [@root, @id_generator, @sent_stylesheets]
+        [@root, @id_generator, @assets]
       end
 
       sig { params(a: T::Array[T.untyped]).void }
       def marshal_load(a)
-        @root, @id_generator, @sent_stylesheets = a
+        @root, @id_generator, @assets = a
         @handlers = {}
         @handler_counts = RefCounter.new
         @update_queue = Async::Queue.new
         @update_semaphore = Async::Semaphore.new
-        @asset_refs = RefCounter.new
+        @assets = Set.new
         @root.instance_variable_set(:@vtree, self)
       end
 
@@ -462,7 +461,7 @@ module Mayu
         # This only works with CSS right now.
         # Images could also be preloaded.
         # https://web.dev/preload-responsive-images/
-        component.assets.each { |asset| @asset_refs.acquire!(asset) }
+        component.assets.each { |asset| @assets.add(asset) }
       end
 
       sig do
