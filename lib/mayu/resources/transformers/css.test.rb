@@ -22,6 +22,32 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
     CSS
   end
 
+  def test_media_queries
+    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
+      @media (min-width: 8em) and (max-width: 32em) {
+      .foo { color: fuchsia; }
+      }
+      .bar { color: blue; }
+    CSS
+      @layer app\\/components\\/MyComponent\\?abc123 {
+      @media (min-width: 8em) and (max-width: 32em) {
+      .app\\/components\\/MyComponent\\.foo\\?abc123 { color: fuchsia; }
+      }
+      .app\\/components\\/MyComponent\\.bar\\?abc123 { color: blue; }
+      }
+    CSS
+  end
+
+  def test_element_selectors
+    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
+      p { color: fuchsia; }
+    CSS
+      @layer app\\/components\\/MyComponent\\?abc123 {
+      .app\\/components\\/MyComponent_p\\?abc123 { color: fuchsia; }
+      }
+    CSS
+  end
+
   def test_composes
     assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
       .foo {
@@ -80,10 +106,10 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
 
   def test_adjacent_selectors
     assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
-      .a + .b { color: #fff; }
+      a + .b { color: #fff; }
     CSS
       @layer app\\/components\\/MyComponent\\?abc123 {
-      .app\\/components\\/MyComponent\\.a\\?abc123 + .app\\/components\\/MyComponent\\.b\\?abc123 { color: #fff; }
+      .app\\/components\\/MyComponent_a\\?abc123 + .app\\/components\\/MyComponent\\.b\\?abc123 { color: #fff; }
       }
     CSS
   end

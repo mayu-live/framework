@@ -27,14 +27,16 @@ module Mayu
             source: String,
             source_path: String,
             source_line: Integer,
-            content_hash: T.nilable(String)
+            content_hash: T.nilable(String),
+            elements_to_classes: T::Boolean
           ).returns(TransformResult)
         end
         def self.transform(
           source:,
           source_path:,
           source_line: 1,
-          content_hash: nil
+          content_hash: nil,
+          elements_to_classes: true
         )
           source_path_without_extension =
             File.join(
@@ -44,7 +46,12 @@ module Mayu
 
           ast = SyntaxTree::Haml.parse(source)
           out = StringIO.new
-          transformer = Transformer.new(out, source_path_without_extension)
+          transformer =
+            Transformer.new(
+              out,
+              source_path_without_extension,
+              elements_to_classes:
+            )
           transformer.visit(ast)
           output = out.tap(&:rewind).read.to_s
 
@@ -235,10 +242,17 @@ module Mayu
           sig { returns(T.nilable(CSS::TransformResult)) }
           attr_reader :css
 
-          sig { params(out: StringIO, path: String).void }
-          def initialize(out, path)
+          sig do
+            params(
+              out: StringIO,
+              path: String,
+              elements_to_classes: T::Boolean
+            ).void
+          end
+          def initialize(out, path, elements_to_classes: true)
             @out = out
             @path = path
+            @elements_to_classes = elements_to_classes
             @level = T.let(0, Integer)
             @css = T.let(nil, T.nilable(CSS::TransformResult))
           end
@@ -403,6 +417,8 @@ module Mayu
           def visit_node_attributes(node)
             classes =
               T.let([], T::Array[T.any(String, Symbol, SyntaxTree::Node)])
+
+            classes.push(:"__#{node.value[:name]}") if @elements_to_classes
 
             node.value[:attributes].each do |attr, value|
               if attr == "class"

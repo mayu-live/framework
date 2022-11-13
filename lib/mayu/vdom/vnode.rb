@@ -231,6 +231,7 @@ module Mayu
           next unless value
           next if prop == :children
           next if prop == :slot
+          next if value == ""
 
           if value.is_a?(Hash)
             if prop == :style

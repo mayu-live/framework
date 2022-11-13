@@ -5,6 +5,7 @@ require "crass"
 require "base64"
 require "digest/sha2"
 require "set"
+require_relative "crass_patches"
 
 module Mayu
   module Resources
@@ -14,14 +15,16 @@ module Mayu
           class ClassMap
             extend T::Sig
 
-            sig { params(path: String, content_hash: String).void }
-            def initialize(path:, content_hash:)
+            sig do
+              params(path: String, content_hash: String, separator: String).void
+            end
+            def initialize(path:, content_hash:, separator: ".")
               @layer_name = T.let("#{path}?#{content_hash}", String)
 
               @names =
                 T.let(
                   Hash.new do |hash, key|
-                    hash[key] = "#{path}.#{key}?#{content_hash}"
+                    hash[key] = "#{path}#{separator}#{key}?#{content_hash}"
                   end,
                   T::Hash[String, String]
                 )
@@ -68,14 +71,24 @@ module Mayu
 
           sig { params(path: String, content_hash: String).void }
           def initialize(path:, content_hash:)
-            @classes = T.let(ClassMap.new(path:, content_hash:), ClassMap)
+            @classes =
+              T.let(
+                ClassMap.new(path:, content_hash:, separator: "."),
+                ClassMap
+              )
+            @elements =
+              T.let(
+                ClassMap.new(path:, content_hash:, separator: "_"),
+                ClassMap
+              )
           end
 
           sig { returns(String) }
           def layer_name = @classes.layer_name
 
           sig { returns(T::Hash[String, String]) }
-          def classes = @classes.to_h
+          def classes =
+            @classes.to_h.merge(@elements.to_h.transform_keys { "__#{_1}" })
 
           sig do
             params(
@@ -113,12 +126,12 @@ module Mayu
               else
                 token
               end
-            in { node: :selector, tokens: }
+            in { node: :selector, tokens:, **rest }
               { **token, tokens: transform_selector_tokens(tokens) }
             in { node: :simple_block, value: }
               { **token, value: transform(value) }
             in { node: :at_rule, name: "media", block: }
-              { **token, block: transform_selector_tokens(block) }
+              { **token, block: transform(block) }
             else
               token
             end
@@ -130,10 +143,19 @@ module Mayu
           def transform_selector_tokens(tokens)
             [nil, *tokens].each_cons(2)
               .map do |prev, curr|
-                if prev in { node: :delim, value: "." }
-                  if curr in { node: :ident, value: }
+                if curr in { node: :ident, value: }
+                  case prev
+                  in { node: :delim, value: "." }
                     raw = @classes[value]
                     next { **curr, raw:, value: @classes.escape_string(raw) }
+                  in node: :colon
+                    # noop
+                  else
+                    raw = @elements[value]
+                    next [
+                      { node: :delim, value: ".", raw: "." },
+                      { **curr, raw:, value: @elements.escape_string(raw) }
+                    ]
                   end
                 end
 

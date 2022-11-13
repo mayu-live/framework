@@ -1,15 +1,15 @@
 :css
-  .link:link,
-  .link:visited {
+  a:link,
+  a:visited {
     color: var(--link-color);
     text-decoration: none;
   }
 
-  .link:active,
-  .link:hover {
+  a:active,
+  a:hover {
     text-decoration: underline;
   }
 :ruby
   style = props[:color] && { __link_color: props[:color] }
-%a.link(style=style){**props.except(:color)}
+%a(style=style){**props.except(:color)}
   %slot

@@ -67,10 +67,12 @@ module Mayu
               @out << raw
             in { node: :hash, raw: }
               @out << raw
+            in { node: :error, value: }
+              # TODO: Investigate why we get errors on valid code
             in { node: :at_rule, name:, prelude:, block: }
               @out << "@#{name}"
               format(prelude)
-              @out << "{"
+              @out << "{\n"
               format(block)
               @out << "}"
             end

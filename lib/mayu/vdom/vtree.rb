@@ -685,6 +685,7 @@ module Mayu
           next if value == old_props[attr]
 
           removed.push(attr) and next unless value
+          removed.push(attr) and next if value == ""
 
           if attr == :style && old_value.is_a?(Hash) && value.is_a?(Hash)
             CSSAttributes.new(**old_value).patch(

@@ -31,12 +31,13 @@ class TestHaml < Minitest::Test
     transform_and_format(File.read(File.join(root, path)))
   end
 
-  def transform_and_format(haml)
+  def transform_and_format(haml, elements_to_classes: false)
     transformed =
       Mayu::Resources::Transformers::Haml.transform(
         source: haml,
         source_path: "app/components/MyComponent.haml",
-        content_hash: "abc123"
+        content_hash: "abc123",
+        elements_to_classes:
       ).output
 
     puts "\e[1mInput:\e[0m"
