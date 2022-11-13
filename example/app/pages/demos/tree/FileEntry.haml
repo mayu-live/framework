@@ -1,27 +1,38 @@
+:ruby
+  Icon = import("/app/components/UI/Icon")
+
+  def icon
+    case File.extname(props[:path])
+    in ".css" | ".rb"
+      "file-code"
+    in ".md"
+      "file-lines"
+    in ".png" | ".jpg" | ".jpeg" | ".svg"
+      "file-image"
+    else
+      "file"
+    end
+  end
+
 :css
   li {
+    margin: 0;
+    padding: 0;
     padding-left: 0.5em;
     margin-left: 1em;
-    list-style-type: "📄";
   }
 
-  .rb, .haml {
-    list-style-type: "📝";
-  }
-
-  .css {
-    list-style-type: "🖨️";
-  }
-
-  .png, .jpg, .jpeg {
-    list-style-type: "🖼️";
+  .name {
+    display: inline-flex;
+    align-items: center;
+    gap: .5em;
   }
 
 :ruby
   props => path:
   href = "?file=#{path}"
-  basename = File.basename(path)
-  classname = File.extname(path).delete_prefix(".").to_sym
 
-%li(class=classname)
-  %a{href:}= basename
+%li
+  %span.name
+    %Icon(name=icon color="var(--blue)")
+    %a{href:}= File.basename(path)
