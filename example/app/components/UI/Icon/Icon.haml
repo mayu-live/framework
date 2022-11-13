@@ -1,7 +1,35 @@
 :ruby
   ICONS = {
-    new_link: svg("./up-right-from-square-solid.svg")
-  }
+    "arrows-rotate" => svg("arrows-rotate-solid.svg"),
+    "bars" => svg("bars-solid.svg"),
+    "code" => svg("code-solid.svg"),
+    "dice" => svg("dice-solid.svg"),
+    "file-code" => svg("file-code-solid.svg"),
+    "file-image" => svg("file-image-solid.svg"),
+    "file-lines" => svg("file-lines-solid.svg"),
+    "file" => svg("file-solid.svg"),
+    "filter" => svg("filter-solid.svg"),
+    "fire" => svg("fire-solid.svg"),
+    "flask" => svg("flask-solid.svg"),
+    "folder-open" => svg("folder-open-solid.svg"),
+    "folder" => svg("folder-solid.svg"),
+    "forward-step" => svg("forward-step-solid.svg"),
+    "heart" => svg("heart-solid.svg"),
+    "keyboard" => svg("keyboard-solid.svg"),
+    "language" => svg("language-solid.svg"),
+    "laptop-code" => svg("laptop-code-solid.svg"),
+    "link" => svg("link-solid.svg"),
+    "minus" => svg("minus-solid.svg"),
+    "pause" => svg("pause-solid.svg"),
+    "play" => svg("play-solid.svg"),
+    "plus" => svg("plus-solid.svg"),
+    "question" => svg("question-solid.svg"),
+    "rocket" => svg("rocket-solid.svg"),
+    "seedling" => svg("seedling-solid.svg"),
+    "up-right-from-square" => svg("up-right-from-square-solid.svg"),
+    "wand-magic-sparkles" => svg("wand-magic-sparkles-solid.svg"),
+    "xmark" => svg("xmark-solid.svg"),
+  }.freeze
 
 :css
   .icon {
@@ -12,11 +40,28 @@
     -webkit-mask-image: var(--icon);
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: contain;
+    -webkit-mask-position: 50% 50%;
     mask-image: var(--icon);
     mask-repeat: no-repeat;
     mask-size: contain;
+    mask-position: 50% 50%;
   }
+:ruby
+  props => name:
+
+  url = ICONS[name] or return
+
+  aria = props[:title] ? {} : { hidden: "true" }
+
+  style = {
+    **(props[:style] || {}),
+    __icon: "url(#{url})",
+    __icon_color: props[:color]
+  }.reject { _2.nil? }
+
 %i.icon{
-  style: { __icon: "url(#{ICONS[props[:icon].to_sym]})" },
   class: props[:class],
+  title: props[:title],
+  style:,
+  aria:,
 }
