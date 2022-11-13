@@ -1,0 +1,37 @@
+:ruby
+  translations("en-US", "sv-SE")
+
+  Icon = import("/app/components/UI/Icon")
+
+  def handle_set_language(e)
+    e => { target: { value: } }
+    helpers.set_prefer_language(value)
+  end
+:css
+  .languages {
+    display: flex;
+    gap: .5em;
+  }
+
+  .title {
+    font-size: inherit;
+    margin: 0;
+  }
+
+  .button {
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+  }
+
+  .button:hover {
+    text-decoration: underline;
+  }
+%section.languages(lang=lang)
+  %Icon(name="language"){title: t(:title), style: { aspect_ratio: "1.25", width: "2em" }}
+  %button.button(onclick=handle_set_language value="sv-SE" lang="sv-SE") Svenska
+  %button.button(onclick=handle_set_language value="en-US" lang="en-US") English (US)

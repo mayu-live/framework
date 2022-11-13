@@ -17,7 +17,6 @@ module Mayu
 
       sig { returns(Id) }
       attr_reader :id
-
       sig { returns(Id) }
       attr_accessor :dom_parent_id
 
@@ -28,17 +27,25 @@ module Mayu
 
       sig { returns(Descriptor) }
       attr_accessor :descriptor
+
       sig { returns(Descriptor::ElementType) }
       def type = descriptor.type
+
       sig { returns(Component::Props) }
       def props = descriptor.props
+
       sig { returns(T.untyped) }
       def key = descriptor.key
+
       sig { returns(Children) }
       attr_accessor :children
 
       sig { returns(T.nilable(Component::Wrapper)) }
       attr_reader :component
+
+      sig { returns(T.nilable(String)) }
+      def lang
+      end
 
       sig { returns(T::Boolean) }
       def dom? = type.is_a?(Symbol)
@@ -127,7 +134,15 @@ module Mayu
 
       sig { returns(T.nilable(Component::Wrapper)) }
       def init_component
-        @component ||= Component.wrap(self, type, props)
+        type = self.type
+        return unless Component.component_class?(type)
+        type = T.cast(type, T.class_of(Component::Base))
+
+        @component ||=
+          begin
+            lang = @vtree.get_accepted_language(type.loaded_translations.keys)
+            Component.wrap(self, type, { **props, lang: })
+          end
       end
 
       sig { params(path: String).void }
@@ -138,6 +153,16 @@ module Mayu
       sig { params(type: Symbol, payload: T.untyped).void }
       def action(type, payload)
         @vtree.action(type, payload)
+      end
+
+      sig { params(languages: T::Array[String]).returns(T.nilable(String)) }
+      def get_accepted_language(languages)
+        @vtree.get_accepted_language(languages)
+      end
+
+      sig { params(language: String).void }
+      def set_prefer_language(language)
+        @vtree.set_prefer_language(language)
       end
 
       sig { void }

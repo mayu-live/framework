@@ -1,0 +1,4 @@
+legend = "Sida %<page>d av %<total_pages>d, visar %<per_page>d per sida"
+previous_page = "Föregående sida"
+next_page = "Nästa sida"
+per_page_label = "Antal per sida:"

@@ -43,6 +43,13 @@ module Mayu
         end
       end
 
+      LoadedTranslations = T.let({}.freeze, T::Hash[String, T.untyped])
+
+      sig { returns(T::Hash[String, T.untyped]) }
+      def self.loaded_translations
+        const_get(:LoadedTranslations)
+      end
+
       sig do
         overridable
           .params(props: Component::Props, state: Component::State)
@@ -50,6 +57,24 @@ module Mayu
       end
       def self.get_derived_state_from_props(props, state)
         {}
+      end
+
+      sig { returns(String) }
+      def lang
+        props[:lang] or raise "There are no translations!"
+      end
+
+      sig { params(path: Symbol, replacements: T.untyped).returns(String) }
+      def t(*path, **replacements)
+        value =
+          self
+            .class
+            .loaded_translations
+            .fetch(lang) { return "No translations" }
+            .dig(*path)
+
+        return "Missing translation for #{path.join(".")}!" unless value
+        format(value, replacements)
       end
 
       sig { params(wrapper: Wrapper).void }

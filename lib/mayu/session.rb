@@ -2,6 +2,7 @@
 
 require "time"
 require "nanoid"
+require "accept_language"
 require_relative "environment"
 require_relative "vdom/vtree"
 require_relative "vdom/marshalling"
@@ -92,6 +93,8 @@ module Mayu
     attr_reader :token
     sig { returns(String) }
     attr_reader :path
+    sig { returns(T.nilable(String)) }
+    attr_reader :prefer_language
     sig { returns(T::Hash[String, String]) }
     attr_reader :headers
     sig { returns(Environment) }
@@ -100,6 +103,12 @@ module Mayu
     attr_reader :last_ping_at
     sig { returns(EventStream::Log) }
     attr_reader :log
+
+    sig { params(language: String).returns(String) }
+    def prefer_language=(language)
+      @accept_language = nil
+      @prefer_language = language
+    end
 
     sig { params(timeout_seconds: T.any(Float, Integer)).returns(T::Boolean) }
     def expired?(timeout_seconds = 30)
@@ -116,16 +125,30 @@ module Mayu
         environment: Environment,
         path: String,
         headers: T::Hash[String, String],
+        prefer_language: T.nilable(String),
         vtree: T.nilable(VDOM::VTree),
         store: T.nilable(State::Store)
       ).void
     end
-    def initialize(environment:, path:, headers: {}, vtree: nil, store: nil)
+    def initialize(
+      environment:,
+      path:,
+      headers: {},
+      prefer_language: nil,
+      vtree: nil,
+      store: nil
+    )
       @environment = environment
+
       @id = T.let(Nanoid.generate, String)
       @token = T.let(self.class.generate_token, String)
+
       @path = path
       @headers = headers
+
+      @prefer_language = prefer_language
+      @accept_language = T.let(nil, T.nilable(AcceptLanguage::Parser))
+
       @vtree = T.let(vtree || VDOM::VTree.new(session: self), VDOM::VTree)
       @log = T.let(EventStream::Log.new, EventStream::Log)
       @store =
@@ -133,9 +156,34 @@ module Mayu
           store || environment.create_store(initial_state: {}),
           State::Store
         )
-      @app = T.let(environment.load_root(path, headers:), VDOM::Descriptor)
+
+      @app =
+        T.let(
+          environment.load_root(path, headers:, accept_language:),
+          VDOM::Descriptor
+        )
       @last_ping_at = T.let(Time.now.to_f, Float)
       @barrier = T.let(Async::Barrier.new, Async::Barrier)
+    end
+
+    sig { returns(AcceptLanguage::Parser) }
+    def accept_language
+      @accept_language ||=
+        begin
+          accept_language =
+            AcceptLanguage.parse(Array(@headers["accept-language"]).join(","))
+
+          if @prefer_language
+            accept_language
+              .instance_variable_get(:@languages_range)
+              .tap do |languages_range|
+                languages_range.store(@prefer_language, BigDecimal(2))
+                languages_range["en-US"] ||= BigDecimal("0.01")
+              end
+          end
+
+          accept_language
+        end
     end
 
     sig { void }
@@ -231,6 +279,7 @@ module Mayu
         @token,
         @path,
         @headers,
+        @prefer_language,
         VDOM::Marshalling.dump(@vtree),
         Marshal.dump(@store.state)
       ]
@@ -238,11 +287,11 @@ module Mayu
 
     sig { params(a: T::Array[T.untyped]).void }
     def marshal_load(a)
-      @id, @token, @path, @headers, dumped_vtree, state = a
+      @id, @token, @path, @headers, @prefer_language, dumped_vtree, state = a
       @last_ping_at = Time.now.to_f
       @vtree = VDOM::Marshalling.restore(dumped_vtree, session: self)
       @store = @environment.create_store(initial_state: Marshal.restore(state))
-      @app = @environment.load_root(@path, headers:)
+      @app = @environment.load_root(@path, headers:, accept_language:)
       @barrier = Async::Barrier.new
       @log = EventStream::Log.new
     end
@@ -274,14 +323,14 @@ module Mayu
 
     sig { void }
     def rerender
-      @app = @environment.load_root(path, headers:)
+      @app = @environment.load_root(path, headers:, accept_language:)
       @vtree.replace_root(@app)
     end
 
     sig { params(path: String).void }
     def navigate(path)
       Console.logger.info(self, "navigate: #{path.inspect}")
-      @app = @environment.load_root(path, headers:)
+      @app = @environment.load_root(path, headers:, accept_language:)
       @path = path
       @vtree.replace_root(@app)
     end
@@ -330,6 +379,10 @@ module Mayu
               yield [:navigate, path: href.force_encoding("utf-8")]
             in [:action, payload]
               yield [:action, payload]
+            in [:set_prefer_language, language]
+              self.prefer_language = language
+              rerender
+              yield [:set_prefer_language, language]
             in [:update_finished, *]
               # noop
             else

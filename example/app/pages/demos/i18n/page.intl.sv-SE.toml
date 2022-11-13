@@ -2,3 +2,7 @@ title = "Internationalisering"
 body = """
 hej världen
 """
+current_language = "Nuvarande språk: %<lang>s"
+change_language = "Byt språk"
+lang.sv-SE = "Svenska"
+lang.en-US = "Engelska"

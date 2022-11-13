@@ -1,8 +1,12 @@
 :ruby
+  def self.get_initial_state(**)
+    time = Time.now.utc + 0.5
+    { hour: time.hour, min: time.min, sec: time.sec }
+  end
+
   def mount
     loop do
-      time = Time.now.utc
-      update(hour: time.hour, min: time.min, sec: time.sec)
+      update(self.class.get_initial_state)
       sleep 0.5
     end
   end
@@ -21,6 +25,10 @@
     height: auto;
   }
 
+  .hand {
+    transition: transform 250ms ease-in-out;
+  }
+
 :ruby
   stroke = props[:stroke] || "#000"
   fill = props[:fill] || "transparent"
@@ -30,13 +38,16 @@
   %svg.svg(width="100" height="100" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg")
     %circle(cx=0 cy=0 r=99 fill=fill stroke=stroke stroke-width="2")
     %g
-      - x1, y1 = [0, 0]
-      - x2, y2 = calculate_pos(state[:hour].to_f * 5, 50.0)
-      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="6")
-      - x2, y2 = calculate_pos(state[:min].to_f, 60.0)
-      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="3")
-      - x2, y2 = calculate_pos(state[:sec].to_f, 80.0)
-      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="1")
+      - x1, y1, x2 = [0, 0, 0]
+      - y2 = -50
+      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] / 12.0) }
+      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="6"){style:}
+      - y2 = -60
+      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] + state[:min] / 60.0) }
+      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="3"){style:}
+      - y2 = -80
+      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] * 60.0 + state[:min] + state[:sec] / 60.0) }
+      %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="1"){style:}
     %circle(cx=0 cy=0 r=3 fill=stroke)
     %g
       = 12.times.map do |i|

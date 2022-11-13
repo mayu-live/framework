@@ -1,0 +1,11 @@
+what_needs_to_be_done = "Vad behöver göras?"
+clear_completed = "Rensa färdiga"
+
+[item]
+  one = "%<count>d återstår"
+  many = "%<count>d återstår"
+
+[filter]
+  all = "Alla"
+  active = "Aktiva"
+  completed = "Färdiga"

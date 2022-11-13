@@ -37,6 +37,16 @@ module Mayu
         @vnode.action(:alert, message)
       end
 
+      sig { params(languages: T::Array[String]).returns(T.nilable(String)) }
+      def get_accepted_language(languages)
+        @vnode.get_accepted_language(languages) || languages.first
+      end
+
+      sig { params(language: String).void }
+      def set_prefer_language(language)
+        @vnode.set_prefer_language(language)
+      end
+
       # sig { returns(Mayu::State::Store) }
       # def store
       #   @vnode.store

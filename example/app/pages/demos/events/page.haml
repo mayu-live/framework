@@ -1,4 +1,6 @@
 :ruby
+  translations("sv-SE", "en-US")
+
   Heading = import("/app/components/Layout/Heading")
   Highlight = import("/app/components/Layout/Highlight")
   Card = import("/app/components/Layout/Card")
@@ -9,17 +11,14 @@
   }
 
   def handle_alert(e)
-    helpers.alert("Hello world\nCount: #{state[:count]}")
+    helpers.alert(t(:message, count: state[:count]))
 
     update do |state|
       { count: state[:count] + 1 }
     end
   end
 
-%article
-  %Heading(level=2) Events
-  %p This page contains some experiments with events
-
-  %button(onclick=handle_alert) Alert
-
-
+%article(lang=lang)
+  %Heading(level=2)= t(:title)
+  %p= t(:description)
+  %button(onclick=handle_alert)= t(:alert)

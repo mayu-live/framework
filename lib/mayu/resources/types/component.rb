@@ -36,6 +36,21 @@ module Mayu
                 __resource.import(path) => SVG => impl
                 impl
               end
+
+              sig { params(locales: String).void }
+              def self.translations(*locales)
+                const_set(
+                  :LoadedTranslations,
+                  locales
+                    .each_with_object({}) do |locale, hash|
+                      __resource.import(
+                        "./#{__resource.basename_without_extension}.intl.#{locale}.toml"
+                      ) => Translations => impl
+                      hash[locale] = impl.to_h.freeze
+                    end
+                    .freeze
+                )
+              end
             end
           end
         end

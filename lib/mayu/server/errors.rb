@@ -45,6 +45,7 @@ module Mayu
       def self.log_exceptions(&block)
         yield
       rescue => e
+        Console.logger.error(self, e)
         Console.logger.error(self, "#{e.class.name}: #{e.message}")
         raise
       end

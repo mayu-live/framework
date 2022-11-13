@@ -2,6 +2,8 @@
   Heading = import("/app/components/Layout/Heading")
   Clock = import("/app/components/Clock")
 
+  translations("sv-SE", "en-US")
+
   PATHS = [
     "M 10 10 C 20 20, 40 20, 50 10",
     "M 70 10 C 70 20, 110 20, 110 10",
@@ -35,10 +37,8 @@
   }
 
 %article
-  %Heading(level=2) SVG demo
-  %p
-    This example shows some SVGs.
-    The time is updated on the server.
+  %Heading(level=2)= t(:title)
+  %p= t(:description)
   .flex
     .col
       %Clock

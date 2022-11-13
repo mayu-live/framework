@@ -36,6 +36,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "accept_language", "~> 2.0.3"
   spec.add_dependency "async", "~> 2.0.3"
   spec.add_dependency "async-container", "~> 0.16.12"
   spec.add_dependency "async-http", "~> 0.59.1"
@@ -62,4 +63,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "syntax_tree-xml", '~> 0.1.0'
   spec.add_dependency "terminal-table", "~> 3.0.1"
   spec.add_dependency "toml-rb", "~> 2.2.0"
+  spec.add_dependency "twitter_cldr", "~> 6.11.4"
 end

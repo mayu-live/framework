@@ -25,7 +25,7 @@
 
   classname = props[:class]
 
-%img.img(style=inline_style loading=loading alt=alt class=classname){
+%img.img(style=inline_style loading=loading decoding="async" alt=alt class=classname){
   src: image.src,
   sizes: image.sizes,
   srcset: image.srcset,

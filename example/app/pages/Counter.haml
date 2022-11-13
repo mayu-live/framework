@@ -1,5 +1,6 @@
 :ruby
   Card = import("/app/components/Layout/Card")
+  Icon = import("/app/components/UI/Icon")
 
   def self.get_initial_state(initial_value: 0, **) = {
     count: initial_value
@@ -40,6 +41,9 @@
   }
 
   .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex: 1;
     border-radius: 100%;
     border: 0;
@@ -53,14 +57,11 @@
     --transition-length: 100ms;
     transition:
       filter var(--transition-length),
-      box-shadow var(--transition-length),
-      transform var(--transition-length);
-    transform: scale(1);
+      box-shadow var(--transition-length);
   }
 
   .button:hover {
     filter: brightness(110%);
-    transform: scale(1.2);
   }
 
   .button:active {
@@ -77,7 +78,7 @@
   .counter
     - decrement_disabled = state[:count].zero?
     %button.button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
-      －
+      %Icon(name="minus" color="var(--bright)")
     %span.count= state[:count]
     %button.button(title="Increment" onclick=handle_increment)
-      ＋
+      %Icon(name="plus" color="var(--bright)")

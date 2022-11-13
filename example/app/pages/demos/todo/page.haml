@@ -1,4 +1,6 @@
 :ruby
+  translations("en-US", "sv-SE")
+
   Card = import("/app/components/Layout/Card")
   Link = import("/app/components/UI/Link")
 
@@ -115,15 +117,11 @@
   end
 
   def pluralize(count, singular, plural)
-    format(
-      "%d %s",
-      count,
-      if count == 1
-        singular
-      else
-        plural
-      end
-    )
+    if count == 1
+      singular
+    else
+      plural
+    end
   end
 
   def toggle_checkbox_state
@@ -297,7 +295,9 @@
       \.
     %form.form(onsubmit=handle_submit){key: state[:form_key]}
       %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
-      %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
+      %input.input(required autofocus name="new_todo" value=""){
+        placeholder: t(:what_needs_to_be_done)
+      }
   .main
     %ul.list
       = get_filtered_items.map do |item|
@@ -320,13 +320,15 @@
               %button.delete-button(onclick=handle_delete){name: item[:id]}
   .footer
     .footer-grid
-      .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
+      .items-left
+        - count = get_filtered_items("active").size
+        = t(:item, pluralize(count, :one, :many), count:)
       .filter
         = %w[all active completed].map do |name|
           %button.filter-button(onclick=handle_set_filter name=name title="Show #{name} items"){
             aria: { current: (state[:filter] == name).to_s }
-          }= name.capitalize
+          }= t(:filter, name.to_sym)
       .clear-completed
         - completed = get_filtered_items("completed")
         = if completed.length.nonzero?
-          %button.clear-button(onclick=handle_clear_completed) Clear completed
+          %button.clear-button(onclick=handle_clear_completed)= t(:clear_completed)

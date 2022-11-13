@@ -1,0 +1,7 @@
+title = "Events"
+description = "This page contains some experiments with events."
+alert = "Alert"
+message = """
+Hello world!
+Counter: %<count>d
+"""

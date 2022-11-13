@@ -1,10 +1,53 @@
 :ruby
+  require "twitter_cldr"
+
   Heading = import("/app/components/Layout/Heading")
+  Fieldset = import("/app/components/Form/Fieldset")
 
-  def t
-    "TODO: Implement me"
+  translations("sv-SE", "en-US")
+
+  def handle_set_language(e)
+    e => { target: { value: } }
+    helpers.set_prefer_language(value)
   end
+:css
+  .buttons {
+    display: flex;
+    gap: .5em;
+  }
 
-%article
-  %Heading(level=2)= t(:title)
-  %slot
+  .button[aria-current="true"] {
+    font-weight: bold;
+  }
+%article(lang=lang)
+  %Heading(level=1)= t(:title)
+
+  %p= t(:body)
+  %p= t(:current_language, lang:)
+
+  %ul
+    %dt Number
+    %dd= TwitterCldr::Localized::LocalizedNumber.new(1337, lang).to_s
+    %dt Currency
+    %dd= TwitterCldr::Localized::LocalizedNumber.new(1337, lang).to_currency.to_s(currency: "EUR")
+    %dt Currency
+    %dd= TwitterCldr::Localized::LocalizedNumber.new(12341337, lang).to_currency.to_s(currency: "COP")
+    %dt Short format
+    %dd= TwitterCldr::Localized::LocalizedNumber.new(2337, lang).to_decimal.to_s(format: :short)
+    %dt Long format
+    %dd= TwitterCldr::Localized::LocalizedNumber.new(2337, lang).to_decimal.to_s(format: :long)
+    %dt Short time
+    %dd= TwitterCldr::Localized::LocalizedDateTime.new(DateTime.now, lang).to_short_s
+    %dt Formatted time
+    %dd= TwitterCldr::Localized::LocalizedDateTime.new(DateTime.now, lang).to_additional_s("EBhms")
+    %dt List
+    %dd= TwitterCldr::Formatters::ListFormatter.new(lang).format(["Larry", "Curly", "Moe"])
+    %dt Plural rules
+    %dd= TwitterCldr::Formatters::Plurals::Rules.all_for(lang).inspect
+  %Fieldset
+    %legend= t(:change_language)
+    %div.buttons
+      = [*self.class.loaded_translations.keys, "sv", "en"].map do |language|
+        %button.button(onclick=handle_set_language value=language title=language){
+          aria: { current: (props[:lang] == language).to_s },
+        }= TwitterCldr::Shared::Languages.from_code_for_locale(language.to_sym, lang).capitalize

@@ -1,0 +1,5 @@
+title = "SVG demo"
+description = """
+This example shows some SVGs.
+The clock is updated on the server.
+"""

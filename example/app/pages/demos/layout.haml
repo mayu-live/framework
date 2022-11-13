@@ -4,18 +4,21 @@
   MenuItem = import("/app/components/Layout/MenuItem")
   Breadcrumbs = import("/app/components/UI/Breadcrumbs")
 
+  translations("sv-SE", "en-US")
+
   LINKS = {
-    "/demos" => "Demos",
-    "/demos/pokemon" => "Pokémon",
-    "/demos/tree" => "App tree",
-    "/demos/form" => "Form elements",
-    "/demos/images" => "Images",
-    "/demos/svg" => "SVGs",
-    "/demos/fuzzy-matcher" => "Fuzzy matcher",
-    "/demos/todo" => "Todo app",
-    "/demos/exceptions" => "Exceptions",
-    "/demos/life" => "Game of life",
-    "/demos/events" => "Events",
+    "/demos" => :demos,
+    "/demos/i18n" => :i18n,
+    "/demos/pokemon" => :pokemon,
+    "/demos/tree" => :tree,
+    "/demos/form" => :form,
+    "/demos/images" => :images,
+    "/demos/svg" => :svg,
+    "/demos/fuzzy-matcher" => :fuzzymatch,
+    "/demos/todo" => :todo,
+    "/demos/exceptions" => :exceptions,
+    "/demos/life" => :life,
+    "/demos/events" => :events,
   }
 
   def breadcrumb_links
@@ -26,7 +29,7 @@
     LINKS.select {
       s = split_path(_1)
       s == splat.slice(0, s.length)
-    }
+    }.transform_values { t(_1) }
   end
 
   def split_path(path)
@@ -44,6 +47,6 @@
   %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)
 
   .nav(slot="menu")
-    %Menu
-      = LINKS.map do |path, text|
-        %MenuItem(key=path href=path)= text
+    %Menu(htmllang=lang)
+      = LINKS.map do |path, label|
+        %MenuItem(key=path href=path)= t(label)

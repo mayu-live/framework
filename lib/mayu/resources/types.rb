@@ -6,6 +6,7 @@ require_relative "types/component"
 require_relative "types/image"
 require_relative "types/stylesheet"
 require_relative "types/javascript"
+require_relative "types/translations"
 require_relative "types/svg"
 
 module Mayu
@@ -22,6 +23,8 @@ module Mayu
           return Component
         when /\.js\z/
           return JavaScript
+        when Translations::FILENAME_RE
+          return Translations
         when /\.css\z/
           return Stylesheet
         when /\.(png|jpe?g|gif|webp)$\z/

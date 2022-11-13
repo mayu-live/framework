@@ -1,0 +1,4 @@
+please_choose_a_file = "Vänligen välj en fil."
+invalid_path = "%<path>s är inte tillåten."
+path_is_not_a_file = "%<path>s är inte en fil."
+unallowed_extension = "%<path>s är inte en %<extensions>s-fil."
