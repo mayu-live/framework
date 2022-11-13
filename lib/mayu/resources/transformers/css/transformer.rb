@@ -5,6 +5,7 @@ require "crass"
 require "base64"
 require "digest/sha2"
 require "set"
+require_relative "crass_patches"
 
 module Mayu
   module Resources
