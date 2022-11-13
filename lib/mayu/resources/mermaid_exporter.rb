@@ -63,6 +63,7 @@ module Mayu
         entries.each do |entry|
           @graph
             .direct_dependencies_of(entry)
+            .filter { @graph.get_resource(_1)&.exists? }
             .each { |dep| out.puts "  #{encode(entry)}-->#{encode(dep)}" }
         rescue StandardError
           next
