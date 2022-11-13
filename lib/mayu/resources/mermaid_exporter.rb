@@ -44,7 +44,11 @@ module Mayu
 
       sig { params(out: StringIO).returns(StringIO) }
       def write_source(out)
-        entries = @graph.overall_order(only_leaves: false)
+        entries =
+          @graph
+            .overall_order(only_leaves: false)
+            .filter { @graph.get_resource(_1)&.exists? }
+
         tree = make_tree(entries.map { _1.split("/") })
         out.puts "graph #{GRAPH_DIRECTION}"
 
