@@ -5,7 +5,6 @@
 }
 
 .intro {
-  filter: drop-shadow(0 0 15px rgb(0 0 0 / 50%));
   --angle: 328deg;
   transition: --angle 3s ease-in-out;
   background: linear-gradient(
@@ -25,7 +24,7 @@
   justify-content: center;
   color: var(--bright);
   gap: 2em;
-  padding: 2em 0;
+  padding: 4em 0;
 }
 
 h1 {

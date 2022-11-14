@@ -3,15 +3,16 @@
 :css
   article {
     display: flex;
-    align-items: center;
-    flex-direction: column;
-    gap: 1em;
-    padding: 2em;
+    align-items: flex-start;
+    gap: 2em;
+    padding: 0em;
     max-width: 30em;
     margin: 0 auto;
   }
 
   h3 {
+    font-size: 1.2em;
+    margin: 0;
   }
 
   Icon {
@@ -21,8 +22,8 @@
   }
 
   .content {
+    text-align: left;
     font-size: .9em;
-    text-align: center;
   }
 :ruby
   props => icon:, title:

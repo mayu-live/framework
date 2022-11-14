@@ -1,14 +1,9 @@
 :ruby
-  Intro = import("./Intro")
   Header = import('../components/Layout/Header')
   Footer = import('../components/Layout/Footer')
 
 .layout
   %Header.header{max_width: styles.maxWidth}
-
   %main.main
-    = if props in { request: { path: "/" } }
-      %Intro
     %slot
-
   %Footer.footer{max_width: styles.maxWidth}
