@@ -1,0 +1,34 @@
+:ruby
+  Clock = import("/app/components/Clock")
+  Link = import("/app/components/UI/Link")
+  Section = import("./Section")
+:css
+  Section {
+    background-color: var(--pink);
+  }
+  figure {
+    display: grid;
+    align-items: center;
+    gap: 4em;
+    grid-template-columns: 1fr;
+  }
+  figcaption {
+    font-size: center;
+  }
+  Clock {
+    font-size: 0;
+  }
+  @media (min-width: 42em) {
+    figure {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+%Section
+  %figure
+    %Clock(stroke="var(--dark)" fill="var(--yellow-bright)")
+    %figcaption.clock-figcaption
+      %p This clock is being rendered on the server.
+      %p It shows the current UTC-time.
+      %p
+        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml")<
+          Show source

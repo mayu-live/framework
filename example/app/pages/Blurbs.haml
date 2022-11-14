@@ -1,0 +1,119 @@
+:ruby
+  Icon = import("/app/components/UI/Icon")
+  Section = import("./Section")
+  Blurb = import("./Blurb")
+
+:css
+  @keyframes wand-color {
+    0% { --wand-color: #16213e; }
+    25% { --wand-color: #0f3460; }
+    50% { --wand-color: #533483; }
+    75% { --wand-color: #E94560; }
+    100% { --wand-color: #16213e; }
+  }
+
+  Section {
+    animation-duration: 20s;
+    animation-name: wand-color;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+
+    padding: 4em 0;
+  }
+
+  .blurbs {
+    list-style-type: none;
+    margin: 0;
+    border: 0;
+    padding: 0em;
+    display: grid;
+  }
+
+  @media (min-width: 768px) {
+    .blurbs {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+  }
+
+  li {
+    margin: .5em 0;
+    padding: 0;
+  }
+
+  a:link, a:visited {
+    color: var(--blue);
+  }
+
+  a:active, a:hover {
+    filter: brightness(120%);
+  }
+
+%Section
+  .blurbs
+    %Blurb(icon="fire" title="Interactive web apps without JavaScript")
+      %ul
+        %li
+          You write all code in Ruby.
+          %Icon(name="gem" color="#c00")<
+        %li
+          All code runs on the server.
+        %li
+          All HTML is rendered on the server.
+          %Icon(name="html5" color="var(--dark)")<
+        %li
+          DOM-patches are streamed to the browser.
+          %Icon(name="cloud-arrow-down" color="var(--dark)")<
+    %Blurb(icon="wand-magic-sparkles" title="How does it work?" color="var(--wand-color)")
+      %ul.blurb-list
+        %li
+          Mayu implements a
+          %a(href="https://en.wikipedia.org/wiki/Virtual_DOM" target="_blank")<>
+            Virtual DOM
+          in Ruby.
+          %Icon(name="code-compare" color="var(--dark)")<
+        %li
+          All DOM updates are streamed to the a small browser runtime
+          that takes care of updating the DOM.
+          %Icon(name="code-pull-request" color="var(--dark)")<
+        %li
+          Callback handlers run on the server.
+    %Blurb(icon="rocket" title="Efficient")
+      %ul.blurb-list
+        %li
+          HTTP/2 Streams with
+          %a(href="https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API" target="_blank")<>
+            compression
+          and
+          %a(href="https://msgpack.org/index.html" target="_blank")<>
+            MessagePack
+        %li
+          Designed to be deployed on the edge.
+          %Icon(name="globe" color="var(--dark)")<
+        %li
+          Pages are interactive immediately when loaded.
+          %Icon(name="arrows-rotate" color="var(--dark)")<
+        %li
+          Prometheus endpoint for real-time metrics.
+          %Icon(name="gauge" color="var(--dark)")<
+    %Blurb(icon="code" title="Developer friendly")
+      %ul.blurb-list
+        %li
+          Hot reloading updates the page as soon as you save.
+          %Icon(name="fire" color="#f90")<
+          %Icon(name="arrows-rotate" color="#09c")<
+        %li
+          Asynchronous code without async/await or promises.
+          %Icon(name="rocket" color="var(--dark)")<
+        %li
+          %a(href="https://ruby-lang.org/")> Ruby
+          is pretty comfortable to work with.
+          %Icon(name="gem" color="#c00")<
+        %li
+          %a(href="https://github.com/mayu-live/framework/blob/main/lib/mayu/vdom.test.rb" target="_blank")<
+            Integration test example

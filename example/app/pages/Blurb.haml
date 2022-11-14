@@ -1,0 +1,33 @@
+:ruby
+  Icon = import("/app/components/UI/Icon")
+:css
+  article {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 1em;
+    padding: 2em;
+    max-width: 30em;
+    margin: 0 auto;
+  }
+
+  h3 {
+  }
+
+  Icon {
+    font-size: 4em;
+    flex-shrink: 0;
+    transition: background 5s;
+  }
+
+  .content {
+    font-size: .9em;
+    text-align: center;
+  }
+:ruby
+  props => icon:, title:
+%article
+  %Icon(name=icon){color: props[:color] || "var(--dark)"}
+  .content
+    %h3= title
+    %slot

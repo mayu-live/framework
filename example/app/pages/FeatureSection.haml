@@ -1,0 +1,23 @@
+:ruby
+  Icon = import("/app/components/UI/Icon")
+  Link = import("/app/components/UI/Link")
+  Heading = import("/app/components/Layout/Heading")
+  Section = import("./Section")
+  FeatureThing = import("./FeatureThing")
+:css
+  Section {
+    background: var(--yellow);
+  }
+%Section
+  %article
+    %Heading#features(level=1)
+      Features
+    %p Here's a list of core features:
+
+    %FeatureThing
+
+    %p
+      Read more on
+      %Link(href="https://github.com/mayu-live/framework#readme")<
+        GitHub
+      %Icon(name="github" color="var(--dark)")<

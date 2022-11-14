@@ -1,0 +1,27 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Link = import("/app/components/UI/Link")
+  Details = import("/app/components/Layout/Details")
+  Highlight = import("/app/components/Layout/Highlight")
+  Counter = import("./Counter")
+  Section = import("./Section")
+:css
+  Section {
+    background: var(--green-bright);
+  }
+
+%Section
+  .article.example
+    %Heading.example-heading#example(level=1)
+    %p This text was rendered on the server at #{Time.now.utc.to_s}.
+    %p
+      The counter below was also rendered on the server.
+      The only JavaScript required to make it interactive is a small
+      runtime that makes a connection to the server and updates
+      the DOM whenever the state changes on the server.
+      %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml" target="_blank" color="var(--green-dark)")<
+        Show source on GitHub
+    %Counter(initial_value=7)
+
+    %Details(summary="Show source" lazy)
+      %Highlight(language="haml")= File.read('app/pages/Counter.haml')
