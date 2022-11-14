@@ -75,8 +75,8 @@
     = if entries = state[:entries]
       %ul
         = entries[:directories]&.map do |path|
-          %li
+          %li(key=path)
             = Mayu::VDOM.h(self.class, root: props[:root], path:)
         = entries[:files]&.map do |path|
-          %li
+          %li(key=path)
             %FileEntry{path:}
