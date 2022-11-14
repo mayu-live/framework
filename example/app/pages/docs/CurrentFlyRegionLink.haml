@@ -1,0 +1,34 @@
+:ruby
+  Link = import("/app/components/UI/Link")
+
+  FLY_REGIONS = {
+    "ams" => "Amsterdam, Netherlands",
+    "cdg" => "Paris, France",
+    "den" => "Denver, Colorado (US)",
+    "dfw" => "Dallas, Texas (US)",
+    "ewr" => "Secaucus, NJ (US)",
+    "fra" => "Frankfurt, Germany",
+    "gru" => "São Paulo",
+    "hkg" => "Hong Kong, Hong Kong",
+    "iad" => "Ashburn, Virginia (US)",
+    "jnb" => "Johannesburg, South Africa",
+    "lax" => "Los Angeles, California (US)",
+    "lhr" => "London, United Kingdom",
+    "maa" => "Chennai (Madras), India",
+    "mad" => "Madrid, Spain",
+    "mia" => "Miami, Florida (US)",
+    "nrt" => "Tokyo, Japan",
+    "ord" => "Chicago, Illinois (US)",
+    "scl" => "Santiago, Chile",
+    "sea" => "Seattle, Washington (US)",
+    "sin" => "Singapore",
+    "sjc" => "Sunnyvale, California (US)",
+    "syd" => "Sydney, Australia",
+    "yul" => "Montreal, Canada",
+    "yyz" => "Toronto, Canada",
+  }
+
+  # https://fly.io/docs/reference/runtime-environment/#fly_region
+  CURRENT_REGION = FLY_REGIONS.fetch(ENV["FLY_REGION"]) { _1 || "N/A" }
+%Link(href="https://fly.io/docs/reference/regions/#fly-io-regions" target="_blank")
+  = CURRENT_REGION

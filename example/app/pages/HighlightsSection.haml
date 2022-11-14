@@ -1,25 +1,10 @@
 :ruby
   Link = import("/app/components/UI/Link")
   Section = import("./Section")
-  Blurb = import("./Blurb")
+  Highlight = import("./Highlight")
 
 :css
-  @keyframes wand-color {
-    0% { --wand-color: #16213e; }
-    25% { --wand-color: #0f3460; }
-    50% { --wand-color: #533483; }
-    75% { --wand-color: #E94560; }
-    100% { --wand-color: #16213e; }
-  }
-
-  Section {
-    animation-duration: 20s;
-    animation-name: wand-color;
-    animation-iteration-count: infinite;
-    animation-timing-function: ease-in-out;
-  }
-
-  .blurbs {
+  .highlights {
     list-style-type: none;
     margin: 0;
     border: 0;
@@ -29,7 +14,7 @@
   }
 
   @media (min-width: 768px) {
-    .blurbs {
+    .highlights {
       grid-template-columns: 1fr 1fr;
     }
   }
@@ -54,8 +39,8 @@
   }
 
 %Section
-  .blurbs
-    %Blurb(icon="fire" title="Interactive web apps without JavaScript")
+  .highlights
+    %Highlight(icon="fire" title="Interactive web apps without JavaScript")
       %ul
         %li
           You write all code in Ruby.
@@ -65,8 +50,8 @@
           All HTML is rendered on the server.
         %li
           DOM-patches are streamed to the browser.
-    %Blurb(icon="wand-magic-sparkles" title="How does it work?" color="var(--wand-color)")
-      %ul.blurb-list
+    %Highlight(icon="wand-magic-sparkles" title="How does it work?")
+      %ul.highlight-list
         %li
           Mayu implements a
           %Link(href="https://en.wikipedia.org/wiki/Virtual_DOM" target="_blank")<>
@@ -77,8 +62,8 @@
           that takes care of patching the DOM.
         %li
           Event handlers run on the server.
-    %Blurb(icon="rocket" title="Efficient")
-      %ul.blurb-list
+    %Highlight(icon="rocket" title="Efficient")
+      %ul.highlight-list
         %li
           HTTP/2 Streams with
           %Link(href="https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API" target="_blank")<>
@@ -94,15 +79,17 @@
         %li
           %Link(href="https://prometheus.io/" target="_blank") Prometheus
           \-endpoint for real-time metrics.
-    %Blurb(icon="code" title="Developer friendly")
-      %ul.blurb-list
+    %Highlight(icon="code" title="Developer friendly")
+      %ul.highlight-list
         %li
           Hot reloading updates the page as soon as you save.
         %li
           Asynchronous code without async/await or promises.
         %li
           %Link(href="https://ruby-lang.org/" target="_blank")> Ruby
-          is pretty comfortable to work with.
+          and
+          %Link(href="https://haml.info/" target="_blank")<> Haml
+          are really nice languages to work with.
         %li
           %Link(href="https://github.com/mayu-live/framework/blob/main/lib/mayu/vdom.test.rb" target="_blank")<
             Integration test example

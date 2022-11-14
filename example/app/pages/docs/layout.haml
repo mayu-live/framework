@@ -6,10 +6,12 @@
   MenuItem = import("/app/components/Layout/MenuItem")
   Details = import("./Details")
   Breadcrumbs = import("/app/components/UI/Breadcrumbs")
+  Icon = import("/app/components/UI/Icon")
 
   LINKS = {
     "/docs" => "Documentation",
     "/docs/getting-started" => "Getting started",
+    "/docs/why-mayu" => "Why Mayu?",
     "/docs/components" => "Components",
     "/docs/reusing-components" => "Reusing components",
     "/docs/stylesheets" => "Stylesheets",
@@ -56,21 +58,22 @@
   }
 
   .under-construction {
-    margin: 1em;
     font-size: .8em;
+    display: inline-flex;
+    align-items: center;
+    gap: 1em;
+    margin: 1em;
   }
 
-  .icon {
-    display: inline-block;
-    scale: 2;
-    margin: 0 1em 0 .5em;
+  Icon {
+    font-size: 2em;
   }
 
 %PageLayout
   #page
     %Card(slot="after_heading" border="var(--yellow)" background="var(--yellow-bright)")
       %p.under-construction
-        %span.icon> ⚠️
+        %Icon(name="person-digging" color="var(--dark)")
         %span This page is under construction!
     %slot
 
@@ -81,6 +84,7 @@
       %Menu
         %MenuItem(href="/docs") Introduction
         %MenuItem(href="/docs/getting-started") Getting started
+        %MenuItem(href="/docs/why-mayu") Why Mayu?
     %Details(open summary="Components")
       %Menu
         %MenuItem(href="/docs/components") Components

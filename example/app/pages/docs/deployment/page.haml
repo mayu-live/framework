@@ -1,29 +1,51 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
-
+  Markdown = import("../Markdown")
+  CurrentFlyRegionLink = import("../CurrentFlyRegionLink")
 %article
-  %Heading(level=2) Deployment
+  %Markdown
+    :plain
+      # Deployment
 
+      This page is deployed to [Fly.io](https://fly.io/) using their
+      [hobby plan](https://fly.io/docs/about/pricing/#virtual-machines").
+
+      They make it easy to deploy apps to different regions so that
+      your app runs close to your users, which makes latency really low.
+      If your users get 50ms, that's perfect, but less than 100ms is
+      acceptable most of the time. It depends on what type of app it is.
+
+      This is mostly important for interactive pages.
+      Please play around with the [demos](/demos) on this site and you'll
+      get a feel for it.
   %p
-    This page is deployed to
-    %a(href="https://fly.io/")<> Fly.io
-    using their
-    %a(href="https://fly.io/docs/about/pricing/#virtual-machines")<> free plan
-    = ". "
-    They make it easy to deploy apps to different regions so that your app runs close
-    to your users, which makes latency really low.
-    -#
-    -# <p>
-    -#   Let's say an instance that costs USD$1.94/month can handle 30 sessions.{' '}
-    -#   Then that would be something like{' '}
-    -#   USD$<data class={styles.data} value={"%.64f" % (1.94/30/30/24/60)}>1.94/30/30/24/60</data>{' '}
-    -#   for each minute a visitor is on the page.{' '}
-    -#   That's pretty cheap...{' '}
-    -#   Or did I get something wrong?
-    -# </p>
-    -#
-    -# <p>
-    -#   Fly.io has an auto-scaling feature that can scale an application
-    -#   automatically depending on the traffic.{' '}
-    -#   I haven't tried this yet, but it would be interesting to see how it works.
-    -# </p>
+    Please note that the current instance is located in
+    %CurrentFlyRegionLink<
+    , so if you're in another part of the world you will have
+    much higher latency than you would have had if the website
+    was deployed to a region closer to you.
+  %Markdown
+    :plain
+      If you need lower latency, you could run Mayu on a Raspberry PI
+      in an office. This could be useful for dashboards, point-of-sale
+      systems or internal admin UIs.
+
+      ## State transfer
+
+      When new instances are started and their health checks pass,
+      old instances will receive `SIGINT` and shut down gracefully by:
+
+      * Pause each session
+      * Serialize, sign and encrypt each session
+      * Send this blob to the browser and close the connection
+
+      The browser runtime will then reconnect and send the encrypted
+      blob to another server which will decrypt, verify, deserialize
+      and resume the session.
+
+      Components will be reinitialized with their previous state.
+
+      This works really well most of the time, and the transfer
+      is barely noticable for the user, at least on this website,
+      but it definitely needs a lot more work to become more robust.
+
+      This is addressed in [Issue #20](https://github.com/mayu-live/framework/issues/20 "Implement a server side DOM to make more efficient updates")

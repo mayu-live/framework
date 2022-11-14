@@ -35,6 +35,8 @@
       end
     in type: :codeblock, value:
       Mayu::VDOM.h(:code, value)
+    in type: :br
+      Mayu::VDOM.h(:br)
     in type: :codespan, value:, options: { codespan_delimiter: "```" }
       header, code = value.sub(/\A`+/, '').split(/\s/, 2).map(&:strip)
       Mayu::VDOM.h(Highlight, code, language: header)

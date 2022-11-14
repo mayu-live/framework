@@ -19,7 +19,12 @@
       ```haml
       :ruby
         Image = image("./río_amazonas.jpeg")
-      %img.img{
+      :css
+        img {
+          width: 100%;
+          height: auto;
+        }
+      %img{
         src: Image.src,
         sizes: Image.sizes,
         srcset: Image.srcset,
@@ -27,3 +32,17 @@
         height: Image.original.height,
       }(alt="Amazon river")
       ```
+
+      Images also come with a `blur` attribute which contains a small
+      base64-encoded PNG that you can blur for fancy loading effects.
+
+      [Source code for the Image component on this site](https://github.com/mayu-live/framework/blob/main/example/app/components/UI/Image.haml)
+
+      ## SVGs
+
+      Scalable Vector Graphics are fantastic,
+      and they are really easy to use.
+
+      You can load them using `svg()`.
+
+      [Source code for the Icon component on this site](https://github.com/mayu-live/framework/blob/main/example/app/components/UI/Icon/Icon.haml)

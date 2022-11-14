@@ -11,7 +11,6 @@
     "/demos/form" => "Form elements",
     "/demos/images" => "Images",
     "/demos/svg" => "SVGs",
-    "/demos/fuzzy-matcher" => "Fuzzy matcher",
     "/demos/todo" => "Todo app",
     "/demos/exceptions" => "Exceptions",
     "/demos/life" => "Game of life",
@@ -34,7 +33,7 @@
   end
 
 :css
-  .nav {
+  nav {
     margin: 1em;
   }
 
@@ -43,7 +42,7 @@
 
   %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)
 
-  .nav(slot="menu")
+  %nav(slot="menu")
     %Menu
       = LINKS.map do |path, text|
         %MenuItem(key=path href=path)= text

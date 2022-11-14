@@ -5,25 +5,92 @@
     :plain
       # Stylesheets
 
-      You can write CSS directly inside components, like this:
+      You can write CSS directly inside components.
+      Class and tag-selectors are scoped to components,
+      so you don't have to worry about naming.
+
+      The stylesheet for each component will become a separate file,
+      and the filename will be based on the content hash.
+
+      This means that stylesheets can be cached in the browser
+      very easily, so that thay only will be downloaded when
+      the stylesheet has updated.
+
+      ## Examples
+
+      The following example shows how tag-selectors get their class names.
 
       ```haml
       :css
-        .button { color: #f0f; }
-      %button.button Click me
+        button { color: #f0f; }
+      %button Click me
       ```
 
       This will be transformed into the following Ruby code:
 
       ```ruby
       public def render
-        Mayu::VDOM.h(:button, "Click me", class: styles[:button])
+        Mayu::VDOM.h(:button, "Click me", class: styles[:__button])
       end
       ```
 
-      The `styles`-object implments `#[]` which works kinda like the
-      [classnames](https://www.npmjs.com/package/classnames) library
-      for JS. You can use it like this:
+      You can also use class names:
+
+      ```haml
+      :css
+        .text { color: #f0f; }
+      %p.text Hello world
+      ```
+
+      But usually you don't have to bother with class names.
+      If you keep your components small you can more easily
+      target elements by their names.
+
+
+      ```haml
+      :ruby
+        Button = import("/app/components/Button")
+      :css
+        article {
+          border: 1px solid #f0f;
+        }
+        Button {
+          background: #0f0;
+        }
+      %article
+        %Button Click me
+      ```
+
+      This also works with components, as long as they pass
+      the `class`-prop to to any of their elements.
+      The following component would, used in the previous example,
+      get the generated class name for `Button`.
+
+      ```haml
+      %button{class: props[:class]}
+        %slot
+      ```
+
+      ## Conditional styles
+
+      You can pass symbols, strings, arrays and hashes in the `class`-prop.
+      This works similarly to the [classnames](https://www.npmjs.com/package/classnames)
+      library for JS.
+
+      Here is an example of a `<li>`-tag that applies the `.active`-class
+      if the `active`-prop is truthy.
+
+      ```haml
+      :css
+        li { opacity: .5; }
+        .active { opacity: 1; }
+      %li{class: { active: props[:active] }}
+        %slot
+      ```
+
+      Behind the scenes, this uses the `styles`-object.
+      You probably don't have to use it often,
+      but it can be really useful sometimes.
 
       ```ruby
       styles[:button]
@@ -36,38 +103,9 @@
       #=> "/app/components/MyComponent.button foobar"
       ```
 
-      Note that you can only use class names.
-
       ## Root stylesheet
 
       You can write styles for the root document in ´app/root.css´.
       This is a good place to set up CSS variables and global overrides
       for your document.
       [Example](https://github.com/mayu-live/framework/blob/main/example/app/root.css)
-
-      ## Future ideas
-
-      This doesn't work yet, but there is
-      [an issue](https://github.com/mayu-live/framework/issues/25)
-      for implementing something like this:
-
-      ```haml
-      :css
-        article {
-          border: 1px solid #f0f;
-        }
-        button {
-          background: #0f0;
-        }
-      %article
-        %button click me
-      ```
-
-      Matching by tag-names isn't allowed in Mayu because it wants to avoid surprises
-      that sometimes happen when things are matched unexpectedly.
-      In this example, it would be possible to generate a class name
-      for the button-tag, and then for each button element that matches in the same
-      component, it will just pull that class name from the component stylesheet.
-
-      This means that tag name-selectors would be scoped to the current component,
-      and it looks kinda ridiculous to do: `%button.button` vs just `%button`...
