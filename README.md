@@ -76,27 +76,38 @@ having to configure anything!
 
 ## Install dependencies
 
-Install Ruby dependencies
+Make sure that you have installed [Ruby](https://www.ruby-lang.org/en/downloads/)
+and [NodeJS](https://nodejs.org/en/download/).
+The required versions are specified in the file `.tool-versions`
+in the project root.
+
+[ImageMagick](https://github.com/ImageMagick/ImageMagick) and
+[libwebp](https://chromium.googlesource.com/webm/libwebp) are
+also required for resizing images.
+
+Install Ruby dependencies:
 
     bundle install
 
-Install node dependencies
+Install node dependencies:
 
     npm install
 
-Build browser runtime
+Build browser runtime:
 
     npm run build
 
-## Start the example app
+Start the example app
 
     cd example
     bundle install
     bin/mayu dev
 
-Then open https://localhost:9292/ in your browser.
+Now, open https://localhost:9292/ in your browser.
 
-Mayu generates a self-signed certificate for localhost in development mode.
+HTTP/2 requires HTTPS to work, therefore in development mode,
+Mayu will use the [localhost](https://github.com/socketry/localhost) gem
+to generate a self-signed certificate for localhost.
 
 Depending on your system/browser you might need to do one of the following:
 

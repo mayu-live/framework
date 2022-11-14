@@ -1,0 +1,115 @@
+:ruby
+  Markdown = import("../Markdown")
+%article
+  %Markdown
+    :plain
+      # Concepts
+
+      Here are some ideas explained.
+
+      ## Server-side Virtual DOM
+
+      By running the application on the server, you have complete
+      control over the environment in which it runs.
+
+      You can communicate with your database directly from your
+      app without having to implement an API inbetween.
+
+      The only state that gets exposed to clients
+      is the data you include in the DOM.
+
+      Callbacks are regular POST-request with an identifier
+      that maps to a component and a callback name.
+
+      ## Deploy globally
+
+      You can deploy Mayu to data centers around the world within
+      minutes with very little configuration.
+
+      Let's say you're making an app for finding lunch restaurants
+      around the world. You would have traffic 24/7, but you would
+      have more users in regions closer to lunch time.
+
+      With Mayu, you would just increase the number of instances
+      in those regions. New instances start within seconds.
+
+      ## Resumability
+
+      Before a server shuts down, it serializes the state and sends
+      it to the browser, so that it can send it to another server
+      and resume the state.
+
+      Mayu restores the state of components automatically.
+      Users shouldn't notice anything most of the time.
+
+      However, if the user loses their connection for too long,
+      the session will expire on the server, and they will have
+      to start a new session.
+
+      If you're making an app for users on shaky internet connections,
+      then Mayu is probably not the right tool.
+
+      ## Efficiency
+
+      The browser runtime loads the chunk that makes the connection
+      to the server first, and then loads remaining chunks asynchronously.
+      This way, the browser can many times connect to the even stream
+      before the page has even rendered.
+
+      Mayu only updates the parts that have changed on a site.
+      When you navigate to a different page, only the difference
+      between the current page and the new page will be rendered
+      and sent to the browser.
+
+      Asset filenames are based on their content hash
+      so that they can be cached very easily, and browsers
+      will only have to download stylesheets and images etc
+      that have changed since their last visit.
+
+      Asset files are usually small and compressed when possible.
+      Everything loads in parallel over HTTP/2 so bundling CSS-files
+      together would actually only make things worse.
+
+      ## Metrics
+
+      Mayu exposes a [Prometheus](https://prometheus.io/) endpoint with
+      metrics that you can use to visualize how your app is performing.
+
+      [Fly.io](https://fly.io/) has a [managed Grafana](https://fly.io/docs/reference/metrics/#managed-grafana-preview)
+      instance (early preview release when this was written),
+      which makes this really easy.
+
+      ## Easy to use
+
+      Mayu is written in Ruby which is famous for being user friendly
+      and has been used on the web for a very long time.
+
+      Mayu uses [Haml](https://haml.info/about.html) in a similar way that
+      [React uses JSX](https://reactjs.org/docs/introducing-jsx.html),
+      which results in clean and simple markup in your components.
+
+      Mayu was designed with hot reloading in mind from the start.
+      This is a popular feature in many JavaScript build tools like
+      [Webpack](https://webpack.js.org/) and [Vite](https://vitejs.dev/),
+      and it makes web development really fun because of the fast
+      feedback loop.
+
+      ## Built for the future
+
+      Mayu is using some new browser features and is not designed to
+      work with current browsers, but for the browsers of next year.
+
+      [DecompressionStream](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream)
+      is used to compress the event stream. Not supported everywhere,
+      although [polyfilled](https://github.com/mayu-live/framework/blob/main/lib/mayu/client/src/DecompressionStreamPolyfill.ts)
+      using the very small [fflate](https://github.com/101arrowz/fflate) library.
+
+      This website uses the [`has()`](https://developer.mozilla.org/en-US/docs/Web/CSS/:has)-selector,
+      which can be used to do things you would normally have to use JavaScript for.
+      [Check out this YouTube video](https://www.youtube.com/watch?v=OGJvhpoE8b4 "I never thought this would be possible with CSS"]
+      where [Kevin Powell](https://www.youtube.com/kepowob) shows how to make
+      some really cool validations with only HTML and CSS.
+
+      The [Navigation API](https://developer.chrome.com/docs/web-platform/navigation-api/)
+      will be very useful once supported everywhere.
+      [There is an issue on GitHub](https://github.com/mayu-live/framework/issues/12).
