@@ -185,6 +185,13 @@ class NodeTree {
 
     // logger.log("Trying to set attribute", name, value);
 
+    if (name === "open") {
+      if (node instanceof HTMLDialogElement) {
+        node.showModal();
+        return;
+      }
+    }
+
     if (node instanceof HTMLInputElement) {
       if (name === "value") {
         node.value = value;
@@ -211,6 +218,13 @@ class NodeTree {
 
   removeAttribute(id: number, name: string) {
     const node = this.#getEntry(id).node as Element;
+
+    if (name === "open") {
+      if (node instanceof HTMLDialogElement) {
+        node.open = false;
+        node.close();
+      }
+    }
 
     if (node instanceof HTMLInputElement) {
       if (name === "value") {

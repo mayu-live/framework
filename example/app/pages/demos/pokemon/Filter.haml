@@ -1,0 +1,90 @@
+:ruby
+  require "fuzzy_match"
+
+  Fieldset = import("/app/components/Form/Fieldset")
+  Input = import("/app/components/Form/Input")
+  Button = import("/app/components/Form/Button")
+  Icon = import("/app/components/UI/Icon")
+
+  def self.get_initial_state(**) = {
+    open: false,
+    value: "",
+    suggestions: [],
+  }
+
+  def handle_open(e)
+    update(open: true)
+  end
+
+  def handle_close(e)
+    update(open: false)
+  end
+
+  def mount
+    @fuzzymatch = FuzzyMatch.new(props[:results], read: :name)
+  end
+
+  def handle_change(e)
+    e => { target: { value: } }
+
+    update(
+      value:,
+      suggestions: @fuzzymatch.find_all(value).first(10)
+    )
+  end
+:css
+  .results {
+    position: relative;
+  }
+
+  ul {
+    background: var(--green-bright);
+    border: 1px solid var(--green);
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    min-width: 20em;
+  }
+
+  ul:empty { display: none; }
+
+  li {
+    margin: 0;
+    padding: 0;
+  }
+
+  a:link, a:visited {
+    display: block;
+    text-decoration: none;
+    padding: .5em 1em;
+  }
+
+  a:active, a:hover {
+    background: var(--blue-bright);
+  }
+
+  dialog {
+    border: 1px solid #f0f;
+  }
+
+  dialog::backdrop {
+    backdrop-filter: brightness(50%) blur(5px);
+  }
+
+%div
+  %Button(onclick=handle_open)
+    %Icon(name="filter")>
+    Filter
+  %dialog(onclose=handle_close){open: state[:open]}
+    %form(method="dialog")
+      %Fieldset
+        %legend Filter
+        %Input(label="Name" oninput=handle_change onchange=handle_change autocomplete="off")
+        %Button Close
+        .results
+          %ul
+            = state[:suggestions].map do |result|
+              - id = result[:url].split("/").last.to_i
+              %li
+                %a(href="/demos/pokemon/#{id}")
+                  = result[:name]
