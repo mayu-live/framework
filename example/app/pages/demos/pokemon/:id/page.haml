@@ -5,7 +5,7 @@
   }
 
   def mount
-    props => { request: { params: { id: Integer => id } } }
+    props => { request: { params: { id: /\A\d+\z/ => id } } }
     res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{id}/")
     result = res.json(symbolize_names: true)
     update(result:)
@@ -17,7 +17,7 @@
   pokemon = state[:result]
 
 - return unless pokemon
-  %p Loading pokémon #{props.inspect}
+  %p Loading pokémon
 
 %article
   %h1= pokemon[:name]
