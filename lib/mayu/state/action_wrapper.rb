@@ -18,7 +18,7 @@ module Mayu
 
       sig { params(key: T.untyped).returns(T.untyped) }
       def [](key) = @payload[key]
-      sig { params(key: T.untyped).returns(T.untyped) }
+      sig { params(key: T.untyped, block: T.untyped).returns(T.untyped) }
       def fetch(key, &block) = @payload.fetch(key, &block)
 
       sig { returns(String) }
