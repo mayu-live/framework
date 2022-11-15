@@ -2,23 +2,28 @@
   def self.get_initial_state(initial_count: 0, **) = {
     count: initial_count
   }
+
   def handle_reset(_event)
     update(count: 0)
   end
+
   def handle_increment(_event)
     update do |count:|
-      { count: state[:count] + 1 }
+      { count: count + 1 }
     end
   end
+
   def handle_decrement(_event)
-    update do |state|
-      { count: state[:count] - 1 }
+    update do |count:|
+      { count: count - 1 }
     end
   end
+
 :css
-  .p { margin-top: 0; }
+  p { margin-top: 0; }
+
 %div
-  %p.p Count: #{state[:count]}
+  %p Count: #{state[:count]}
   %button(onclick=handle_decrement) Decrement
   %button(onclick=handle_reset) Reset
   %button(onclick=handle_increment) Increment

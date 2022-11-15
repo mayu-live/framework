@@ -1,5 +1,31 @@
 :ruby
+  Card = import("/app/components/Layout/Card")
+  Image = import("/app/components/UI/Image")
+  Link = import("/app/components/UI/Link")
   Markdown = import("../Markdown")
+  NoCache = image("./no-cache-fs8.png")
+  DiskCache = image("./disk-cache-fs8.png")
+  MemoryCache = image("./memory-cache-fs8.png")
+  Metrics = image("./metrics-fs8.png")
+  HotReload = image("./hot-reload-fs8.png")
+  GlobalScale = image("./global-scale-fs8.png")
+  Haml = image("./haml-fs8.png")
+:css
+  Card {
+    margin: 2em;
+  }
+
+  figure {
+    margin: 0;
+  }
+
+  figcaption {
+    margin: .5em;
+  }
+
+  Image {
+    display: block;
+  }
 %article
   %Markdown
     :plain
@@ -33,6 +59,10 @@
       With Mayu, you would just increase the number of instances
       in those regions. New instances start within seconds.
 
+  %Image(lazy image=GlobalScale)
+
+  %Markdown
+    :plain
       ## Resumability
 
       Before a server shuts down, it serializes the state and sends
@@ -70,15 +100,38 @@
       Everything loads in parallel over HTTP/2 so bundling CSS-files
       together would actually only make things worse.
 
+      Here are some screenshots showing how assets are loaded in Chrome.
+
+  %Card
+    %figure
+      %Image(lazy image=NoCache)
+      %figcaption First full page load, no cache.
+  %Card
+    %figure
+      %Image(lazy image=DiskCache)
+      %figcaption Second full page load, disk cache.
+  %Card
+    %figure
+      %Image(lazy image=MemoryCache)
+      %figcaption Third full page load, utilizing memory cache.
+
+  %Markdown
+    :plain
       ## Metrics
 
       Mayu exposes a [Prometheus](https://prometheus.io/) endpoint with
       metrics that you can use to visualize how your app is performing.
 
-      [Fly.io](https://fly.io/) has a [managed Grafana](https://fly.io/docs/reference/metrics/#managed-grafana-preview)
-      instance (early preview release when this was written),
-      which makes this really easy.
+  %Card
+    %figure
+      %Image(lazy image=Metrics)
+      %figcaption
+        Screenshot from
+        %Link(href="https://grafana.com/" target="_blanImagek")<> Grafana
+        showing some built-in metrics.
 
+  %Markdown
+    :plain
       ## Easy to use
 
       Mayu is written in Ruby which is famous for being user friendly
@@ -88,12 +141,27 @@
       [React uses JSX](https://reactjs.org/docs/introducing-jsx.html),
       which results in clean and simple markup in your components.
 
+  %Card
+    %figure
+      %Image(lazy image=Haml)
+      %figcaption Haml is the markup language that powers Mayu.
+
+  %Markdown
+    :plain
+
       Mayu was designed with hot reloading in mind from the start.
       This is a popular feature in many JavaScript build tools like
       [Webpack](https://webpack.js.org/) and [Vite](https://vitejs.dev/),
       and it makes web development really fun because of the fast
       feedback loop.
 
+  %Card
+    %figure
+      %Image(lazy image=HotReload)
+      %figcaption Hot reloading makes development super fast.
+
+  %Markdown
+    :plain
       ## Built for the future
 
       Mayu is using some new browser features and is not designed to
@@ -106,10 +174,14 @@
 
       This website uses the [`has()`](https://developer.mozilla.org/en-US/docs/Web/CSS/:has)-selector,
       which can be used to do things you would normally have to use JavaScript for.
-      [Check out this YouTube video](https://www.youtube.com/watch?v=OGJvhpoE8b4 "I never thought this would be possible with CSS"]
+      [Check out this YouTube video](https://www.youtube.com/watch?v=OGJvhpoE8b4 "I never thought this would be possible with CSS")
       where [Kevin Powell](https://www.youtube.com/kepowob) shows how to make
       some really cool validations with only HTML and CSS.
 
       The [Navigation API](https://developer.chrome.com/docs/web-platform/navigation-api/)
       will be very useful once supported everywhere.
       [There is an issue on GitHub](https://github.com/mayu-live/framework/issues/12).
+
+      [CSS Module Scripts](https://web.dev/css-module-scripts/)
+      should probably be used for loading CSS as soon as
+      [Firefox ships support for Import Assertions](https://bugzilla.mozilla.org/show_bug.cgi?id=1777526)
