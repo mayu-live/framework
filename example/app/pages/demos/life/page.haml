@@ -6,33 +6,39 @@
   Link = import("/app/components/UI/Link")
   GameGrid = import("./GameGrid")
 
+  MIN_SIZE = 5
   MAX_SIZE = 20
+  DEFAULT_SIZE = MAX_SIZE
 
-  def self.get_initial_state(initial_size: MAX_SIZE, **) = {
+  MIN_FPS = 1
+  MAX_FPS = 10
+  DEFAULT_FPS = 4
+
+  def self.get_initial_state(initial_size: DEFAULT_SIZE, **) = {
     size: initial_size,
     grid: Array.new(initial_size * initial_size, false),
     running: false,
+    fps: DEFAULT_FPS,
   }
 
   def mount
     loop do
       if state[:running]
         handle_step
-        sleep 0.25
+        sleep 1.0 / state[:fps]
       else
         sleep 0.5
       end
     end
   end
 
-  def handle_mouseenter(event)
+  def handle_draw(event)
     event => { target: { value: } }
     index = value.to_i
 
     case event
     in { buttons: 0 }
-      # noop. would be nice if these were never
-      # sent from the client..
+      # noop. It would be nice if these events were filtered in the client.
     in { buttons: 1 }
       set_cell_value(index, true)
     in { buttons: 2 }
@@ -52,17 +58,6 @@
     end
   end
 
-  def handle_toggle(event)
-    event => { target: { value: } }
-    index = value.to_i
-
-    update do |state|
-      grid = state[:grid].dup
-      grid[index] = !grid[index]
-      { grid: }
-    end
-  end
-
   def set_cell_value(index, value)
     update do |state|
       grid = state[:grid].dup
@@ -71,18 +66,28 @@
     end
   end
 
-  def handle_change_size(e)
+  def handle_change_fps(e)
     e => { target: { value: } }
-    update_size(value.to_i)
+    update(fps: value.to_i.clamp(MIN_FPS, MAX_FPS))
   end
 
-  def handle_step(*)
+  def handle_change_size(e)
+    e => { target: { value: } }
+    size = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
+
+    update(
+      size:,
+      grid: Array.new(size * size, false)
+    )
+  end
+
+  def handle_step
     update do |grid:, size:|
       { grid: step_grid(grid, size) }
     end
   end
 
-  def handle_toggle_running(e)
+  def handle_toggle_running
     update do |running:|
       { running: !running }
     end
@@ -151,4 +156,15 @@
       %Button(onclick=handle_toggle_running){
         color: running ? "var(--red)" : "var(--green)"
       }= running ? "Stop" : "Start"
-  %GameGrid(grid=grid size=size onmousedown=handle_toggle onmouseenter=handle_mouseenter)
+    -#
+      %div
+        %label(for="grid-size") Grid size
+        %br
+        %input(id="grid-size" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_size){value: state[:size]}
+        %output= state[:size]
+      %div
+        %label(for="game-fps") Frames per second
+        %br
+        %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: state[:fps]}
+        %output= state[:fps]
+  %GameGrid(grid=grid size=size ondraw=handle_draw)

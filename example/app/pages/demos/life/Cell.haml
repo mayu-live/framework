@@ -26,5 +26,7 @@
 %button{
   **props.except(:alive),
   class: { alive: props[:alive] },
-  oncontextmenu: "event.preventDefault()"
+  oncontextmenu: "event.preventDefault()",
+  onmousedown: props[:ondraw],
+  onmouseenter: props[:ondraw],
 }
