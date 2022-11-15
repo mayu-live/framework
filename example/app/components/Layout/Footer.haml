@@ -71,4 +71,4 @@
 
     %p.badges
       = BADGES.map do |badge|
-        %Badge{key: badge[:src], **badge}
+        %Badge{**badge}[badge[:src]]

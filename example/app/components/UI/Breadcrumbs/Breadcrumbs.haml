@@ -36,7 +36,7 @@
   %MaxWidth
     %ol
       = add_separators(props[:links]).map.with_index do |elem, i|
-        %li(key=i)
+        %li[i]
           = if elem == :sep
             %Separator
           = unless elem == :sep

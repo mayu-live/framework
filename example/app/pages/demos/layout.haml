@@ -45,4 +45,4 @@
   %nav(slot="menu")
     %Menu
       = LINKS.map do |path, text|
-        %MenuItem(key=path href=path)= text
+        %MenuItem[path](href=path)= text

@@ -85,7 +85,7 @@
   .tablist(role="tablist")
     = names.map.with_index do |name, i|
       - handle_enable = enabled.include?(name) ? nil : handler(:handle_enable)
-      %button(key=name value=name onclick=handle_change role="tab" tabindex="0"){
+      %button[name](value=name onclick=handle_change role="tab" tabindex="0"){
         id: id(:tab, i),
         onmouseenter: handle_enable,
         ontouchstart: handle_enable,

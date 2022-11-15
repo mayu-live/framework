@@ -457,6 +457,14 @@ module Mayu
               end
               @out << "]"
             end
+
+            if object_ref = node.value[:object_ref]
+              if object_ref != :nil
+                @out << ",\n"
+                @out << indentation
+                @out << "key: #{object_ref}.inspect"
+              end
+            end
           end
 
           sig do

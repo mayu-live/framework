@@ -14,7 +14,7 @@
   }
 .grid{style: { "--grid-size": props[:size].to_s }}
   = props[:grid].map.with_index do |alive, value|
-    %Cell(key=value){
+    %Cell[value]{
       ondraw: props[:ondraw],
       value:,
       alive:,

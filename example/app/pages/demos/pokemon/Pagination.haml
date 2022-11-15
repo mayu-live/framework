@@ -45,7 +45,7 @@
 
       %ul.pages
         = pages.map do |num|
-          %li(key=num)
+          %li[num]
             %a.page{
               href: "?page=#{num}",
               aria: { current: page == num && "page" }
@@ -58,4 +58,4 @@
       Per page:
       %select(value=per_page){on_change: props[:on_change_per_page]}<
         = [20, 40, 80].map do |num|
-          %option(key=num value=num)= num
+          %option[num](value=num)= num

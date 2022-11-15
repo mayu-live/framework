@@ -49,9 +49,9 @@
 %Fieldset
   %legend Transfer list
   %form.container{on_submit: handler(:handle_submit)}
-    %ul.list
+    %ul
       = state[:left].map do |item|
-        %li.item(key=item)
+        %li[item]
           %Checkbox{
             label: ITEMS[item],
             name: "left-#{item}",
@@ -59,14 +59,14 @@
           }
 
     .buttons
-      %button.button(type="submit" name="action" value="move_all_left" title="Move all left") ⟪
-      %button.button(type="submit" name="action" value="move_selected_left" title="Move selected left") ⟨
-      %button.button(type="submit" name="action" value="move_all_right" title="Move all right") ⟫
-      %button.button(type="submit" name="action" value="move_selected_right" title="Move selected right") ⟩
+      %button(type="submit" name="action" value="move_all_left" title="Move all left") ⟪
+      %button(type="submit" name="action" value="move_selected_left" title="Move selected left") ⟨
+      %button(type="submit" name="action" value="move_all_right" title="Move all right") ⟫
+      %button(type="submit" name="action" value="move_selected_right" title="Move selected right") ⟩
 
-    %ul.list
+    %ul
       = state[:right].map do |item|
-        %li.item(key=item)
+        %li[item]
           %Checkbox{
             label: ITEMS[item],
             name: "right-#{item}",

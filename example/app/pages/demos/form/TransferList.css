@@ -4,7 +4,7 @@
   max-height: 20em;
 }
 
-.list {
+li {
   border: 1px solid var(--blue);
   border-radius: 2px;
   flex: 1;
@@ -15,16 +15,16 @@
   user-select: none;
 }
 
-.list .group {
+li .group {
   margin: 0;
 }
 
-.item {
+li {
   padding: 0.5em;
   margin: 0;
 }
 
-.item:has(:checked) {
+li:has(:checked) {
   background: var(--accent-color);
   color: #fff;
   font-weight: bold;
@@ -38,7 +38,7 @@
   gap: 1em;
 }
 
-.button {
+button {
   border: 1px solid var(--blue);
   border-radius: 2px;
   font: inherit;

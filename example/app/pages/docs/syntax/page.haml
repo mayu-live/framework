@@ -50,6 +50,20 @@
       - `<` adds a space before an element.
       - `>` adds a space after an element.
 
+      ## Lists and keys
+
+      Mayu uses keys to identify which items have been added, changed or
+      removed from lists, [just like React does](https://reactjs.org/docs/lists-and-keys.html#keys).
+
+      You can use the [Object Reference](https://haml.info/docs/yardoc/file.REFERENCE.html#object-reference-)
+      syntax in Haml to specify keys. Example:
+
+      ```haml
+      %ul
+         = todos.map do |todo|
+           %li[todo.id]= todo.text
+      ```
+
       ## Pattern matching
 
       You can use pattern matching in a lot of places, and it's encouraged,

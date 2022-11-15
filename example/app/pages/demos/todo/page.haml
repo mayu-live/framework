@@ -295,13 +295,13 @@
       This is an implementation of the classic
       %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
       \.
-    %form.form(onsubmit=handle_submit){key: state[:form_key]}
+    %form.form(onsubmit=handle_submit)[state[:form_key]]
       %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
       %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
   %main
     %ul
       = get_filtered_items.map do |item|
-        %li{key: item[:id]}
+        %li[item[:id]]
           = if state[:editing] == item[:id]
             %form.edit(onsubmit=handle_update){id: item[:id]}
               %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
