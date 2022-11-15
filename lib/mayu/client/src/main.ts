@@ -135,9 +135,15 @@ function getSessionIdFromUrl(url: string) {
   return url.slice(index + 1);
 }
 
-async function main(url: string) {
-  import("./custom-elements");
+function loadCustomElements() {
+  import("./custom-elements/mayu-ping");
+  import("./custom-elements/mayu-disconnected");
+  import("./custom-elements/mayu-progress-bar");
+  import("./custom-elements/mayu-exception");
+  import("./custom-elements/mayu-alert");
+}
 
+async function main(url: string) {
   const sessionId = getSessionIdFromUrl(url);
   const mayu = new MayuGlobal(sessionId);
   window.Mayu = mayu;
@@ -154,6 +160,8 @@ async function main(url: string) {
   for await (const [event, payload] of sessionStream(sessionId)) {
     switch (event) {
       case "system.connected":
+        loadCustomElements();
+
         pingElement.setAttribute("region", "Connected!");
         pingElement.setAttribute("status", "connected");
         logger.success("Connected!");
