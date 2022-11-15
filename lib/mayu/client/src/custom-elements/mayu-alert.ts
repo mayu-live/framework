@@ -24,12 +24,16 @@ class MayuAlert extends HTMLElement {
     this.#dialog = this.shadowRoot!.querySelector(
       "dialog"
     ) as HTMLDialogElement;
+
     this.#button = this.shadowRoot!.querySelector(
       "button"
     ) as HTMLButtonElement;
+
     this.#message = this.shadowRoot!.getElementById(
       "message"
     ) as HTMLParagraphElement;
+
+    this.#dialog.addEventListener("close", () => this.remove());
   }
 
   connectedCallback() {
