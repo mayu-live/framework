@@ -56,11 +56,10 @@
 %article
   %Filter{results:}
 
-  %Pagination{
+  %Pagination(on-change-per-page=handle_set_per_page){
     page:,
     per_page:,
     total_pages:,
-    on_change_per_page: handler(:handle_set_per_page),
   }
 
   %ul
@@ -72,9 +71,8 @@
         %a(href="/demos/pokemon/#{id}")
           = result[:name].capitalize
 
-  %Pagination{
+  %Pagination(on-change-per-page=handle_set_per_page){
     page:,
     per_page:,
     total_pages:,
-    on_change_per_page: handler(:handle_set_per_page),
   }
