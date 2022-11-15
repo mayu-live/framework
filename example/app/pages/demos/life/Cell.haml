@@ -1,0 +1,30 @@
+:ruby
+  def should_update?(next_props, _next_state)
+    case
+    when props[:alive] != next_props[:alive]
+      true
+    when props[:value] != next_props[:value]
+      true
+    else
+      false
+    end
+  end
+:css
+  button {
+    border: 0;
+    aspect-ratio: 1;
+    border: 1px solid #000;
+    border-bottom: none;
+    border-right: none;
+  }
+
+  button { background: #fff; }
+  button:hover { background: #f0f0f0; }
+
+  .alive { background: #333; }
+  .alive:hover { background: #666; }
+%button{
+  **props.except(:alive),
+  class: { alive: props[:alive] },
+  oncontextmenu: "event.preventDefault()"
+}

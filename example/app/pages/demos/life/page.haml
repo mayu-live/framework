@@ -3,6 +3,7 @@
   Fieldset = import("/app/components/Form/Fieldset")
   Input = import("/app/components/Form/Input")
   Button = import("/app/components/Form/Button")
+  Link = import("/app/components/UI/Link")
   GameGrid = import("./GameGrid")
 
   MAX_SIZE = 20
@@ -25,8 +26,17 @@
   end
 
   def handle_mouseenter(event)
-    if event in { buttons: 1 }
-      handle_toggle(event)
+    event => { target: { value: } }
+    index = value.to_i
+
+    case event
+    in { buttons: 0 }
+      # noop. would be nice if these were never
+      # sent from the client..
+    in { buttons: 1 }
+      set_cell_value(index, true)
+    in { buttons: 2 }
+      set_cell_value(index, false)
     end
   end
 
@@ -49,6 +59,14 @@
     update do |state|
       grid = state[:grid].dup
       grid[index] = !grid[index]
+      { grid: }
+    end
+  end
+
+  def set_cell_value(index, value)
+    update do |state|
+      grid = state[:grid].dup
+      grid[index] = value
       { grid: }
     end
   end
@@ -117,6 +135,12 @@
 
 %article
   %Heading(level=2) Game of life
+
+  %p
+    This is an implementation of
+    %Link(href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life" target="_blank")< Conway's Game of Life
+    \.
+  %p Use the primary mouse button to draw and the secondary mouse button to erase.
 
   %Fieldset
     %legend Controls

@@ -1,3 +1,5 @@
+:ruby
+  Cell = import("./Cell")
 :css
   .grid {
     user-select: none;
@@ -10,26 +12,11 @@
     border-left: none;
     border-top: none;
   }
-
-  .cell {
-    border: 0;
-    aspect-ratio: 1;
-    border: 1px solid #000;
-    border-bottom: none;
-    border-right: none;
-  }
-
-  .cell { background: #fff; }
-  .cell:hover { background: #f0f0f0; }
-  .alive { background: #333; }
-  .alive:hover { background: #666; }
-
 .grid{style: { "--grid-size": props[:size].to_s }}
   = props[:grid].map.with_index do |alive, value|
-    %button.cell{
+    %Cell(key=value){
+      value:,
+      alive:,
       onmousedown: props[:onmousedown],
       onmouseenter: props[:onmouseenter],
-      key: value,
-      value:,
-      class: { alive: }
     }
