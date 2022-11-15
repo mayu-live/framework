@@ -12,7 +12,7 @@
     border-left: none;
     border-top: none;
   }
-.grid{style: { "--grid-size": props[:size].to_s }}
+.grid{style: { __grid_size: props[:size] }}
   = props[:grid].map.with_index do |alive, value|
     %Cell[value]{
       ondraw: props[:ondraw],

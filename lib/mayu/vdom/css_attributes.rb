@@ -115,11 +115,16 @@ module Mayu
 
       sig { params(property: Symbol, value: T.untyped).returns(String) }
       def transform_value(property, value)
-        if value.is_a?(Numeric) && !UNITLESS_PROPERTIES.include?(property)
-          "#{value}px"
-        else
-          value.to_s
-        end
+        should_apply_px?(property, value) ? "#{value}px" : value.to_s
+      end
+
+      sig { params(property: Symbol, value: T.untyped).returns(T::Boolean) }
+      def should_apply_px?(property, value)
+        return false unless Integer === value
+        return false if UNITLESS_PROPERTIES.include?(property)
+        return false if property.start_with?("__")
+        return false if property.start_with?("--")
+        true
       end
     end
   end
