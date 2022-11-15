@@ -122,11 +122,23 @@ module Mayu
           begin
             # $stderr.puts "\e[33m#{@source}\e[0m"
             impl.class_eval(@source, @resource.path, 1)
+          rescue SyntaxTree::Parser::ParseError => e
+            $stderr.puts "\e[31mError parsing #{@resource.path}: #{e.message}\e[0m"
+
+            @source
+              .each_line
+              .with_index(1) do |line, lineno|
+                if lineno == e.lineno
+                  puts "\e[31m#{line.chomp}\e[0m"
+                else
+                  puts "\e[33m#{line.chomp}\e[0m"
+                end
+              end
           rescue => e
             backtrace =
               [*e.backtrace].reject { _1.include?("/gems/sorbet-runtime-") }
                 .join("\n")
-            $stderr.puts "\e[31mError loading #{@resource.path}: #{e.message}\n\e[33m#{backtrace}\e[0m"
+            $stderr.puts "\e[31mError loading #{@resource.path}: #{e.class.name}: #{e.message}\n\e[33m#{backtrace}\e[0m"
             $stderr.puts "\e[33m#{@source}\e[0m"
             raise "Error parsing #{@resource.absolute_path}"
           end
