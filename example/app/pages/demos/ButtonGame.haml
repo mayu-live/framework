@@ -10,7 +10,7 @@
   def self.get_initial_state(**) =
     { x: 0, y: 0, count: 0 }
 
-  def handle_click(_)
+  def handle_click
     update(
       count: state[:count].succ,
       x: (rand * 2 - 1) * 200,

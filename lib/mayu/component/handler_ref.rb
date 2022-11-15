@@ -24,10 +24,11 @@ module Mayu
       def initialize(component, name, args = [], kwargs = {})
         @component = component
         @name = name
-        # TODO: Validate args
-        # method = T.let(component.method(name), T.untyped)
         @args = args
         @kwargs = kwargs
+        # TODO: Validate that args and kwargs match the method signature.
+        method = T.let(component.public_method(name), Method)
+        @arity = T.let(method.arity, Integer)
         @id =
           T.let(
             [component.vnode_id, name, @args, @kwargs].inspect
@@ -70,7 +71,11 @@ module Mayu
 
       sig { params(payload: T.untyped).void }
       def call(payload)
-        T.unsafe(@component).send(@name, payload, *@args, **@kwargs)
+        if @arity.zero?
+          T.unsafe(@component).public_send(@name)
+        else
+          T.unsafe(@component).public_send(@name, payload, *@args, **@kwargs)
+        end
       end
 
       sig { returns(String) }
@@ -80,7 +85,7 @@ module Mayu
 
       sig { params(other: T.untyped).returns(T::Boolean) }
       def ==(other)
-        other.is_a?(self.class) ? @id == other.id : false
+        self.class === other && @id == other.id
       end
     end
   end

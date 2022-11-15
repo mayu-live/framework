@@ -8,7 +8,7 @@
     count: 0
   }
 
-  def handle_alert(e)
+  def handle_alert
     helpers.alert("Hello world\nCount: #{state[:count]}")
 
     update do |state|

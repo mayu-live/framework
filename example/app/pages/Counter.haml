@@ -5,14 +5,14 @@
     count: initial_value
   }
 
-  def handle_decrement(event)
+  def handle_decrement
     update do |state|
       count = [0, state[:count] - 1].max
       { count: }
     end
   end
 
-  def handle_increment(event)
+  def handle_increment
     update do |state|
       count = state[:count] + 1
       { count: }
