@@ -14,12 +14,14 @@
     end
   end
 
+  def should_update?(next_props, next_state)
+    state[:open] != next_state[:open]
+  end
+
   def handle_toggle(_)
     update do |state|
       open = !state[:open]
-      entries = state[:entries] || open && load_entries
-      p(open:, entries:)
-
+      entries = state[:entries] || (open && load_entries)
       { open:, entries: }
     end
   end
