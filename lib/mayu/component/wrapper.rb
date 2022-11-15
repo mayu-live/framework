@@ -79,6 +79,11 @@ module Mayu
 
       sig { returns(ChildType) }
       def render
+        if derived_state =
+             @instance.class.get_derived_state_from_props(props, state)
+          @state = @state.merge(derived_state)
+        end
+
         @instance.render
       rescue NotImplementedError => e
         raise NotImplementedError, "#{@instance} should implement #render"

@@ -46,10 +46,10 @@ module Mayu
       sig do
         overridable
           .params(props: Component::Props, state: Component::State)
-          .returns(Component::State)
+          .returns(T.nilable(Component::State))
       end
       def self.get_derived_state_from_props(props, state)
-        {}
+        nil
       end
 
       sig { params(wrapper: Wrapper).void }
