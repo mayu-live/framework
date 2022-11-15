@@ -52,11 +52,48 @@ module Mayu
         )
       end
       def self.clean_children(children, parent_type: nil)
-        Array(children)
+        cleaned = Array(children).flatten.select(&:itself) # Remove anything falsy
+
+        if parent_type == :title
+          # <title> can only have text children
+          cleaned.map { text(_1) }
+        else
+          cleaned.map { or_text(_1) }
+        end
+      end
+
+      sig do
+        params(descriptors: T::Array[Descriptor], parent_type: T.untyped).void
+      end
+      def self.check_duplicate_keys(descriptors, parent_type: "??unknown??")
+        keys = descriptors.map(&:key).compact
+        duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }.uniq
+        duplicates.each do |key|
+          Console.logger.warn(
+            self,
+            "Duplicate keys detected: #{key.inspect}",
+            "This may cause an update error!",
+            "Parent type: #{parent_type.inspect}"
+          )
+        end
+      end
+
+      sig do
+        params(descriptors: T::Array[Descriptor]).returns(T::Array[Descriptor])
+      end
+      def self.add_comments_between_texts(descriptors)
+        comment = Descriptor.comment
+        prev = T.let(nil, T.nilable(Descriptor))
+
+        descriptors
+          .map
+          .with_index do |curr, i|
+            prev2 = prev
+            prev = curr if curr
+
+            prev2&.text? && curr.text? ? [comment, curr] : [curr]
+          end
           .flatten
-          .select(&:itself) # Remove anything falsy
-          .map { |child| parent_type == :title ? text(child) : or_text(child) }
-          .compact
       end
 
       sig do
@@ -98,7 +135,7 @@ module Mayu
       sig { returns(T::Array[Descriptor]) }
       def children = props[:children]
       sig { returns(T::Boolean) }
-      def children? = children.any?
+      def has_children? = children.any?
 
       sig { returns(T.class_of(Component::Base)) }
       def component_class

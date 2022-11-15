@@ -338,10 +338,8 @@ module Mayu
             prev_props, prev_state = component.props, component.state
             component.props = descriptor.props
             component.state = component.next_state.clone
-            descriptors =
-              add_comments_between_texts(
-                Descriptor.clean_children(component.render)
-              )
+
+            descriptors = clean_children(component.render, parent: descriptor)
 
             ctx.enter(vnode) do
               vnode.children =
@@ -393,7 +391,7 @@ module Mayu
             return vnode
           end
         else
-          if vnode.descriptor.children? && descriptor.children?
+          if vnode.descriptor.has_children? && descriptor.has_children?
             if vnode.descriptor.children != descriptor.children
               ctx.enter(vnode) do
                 vnode.children =
@@ -405,13 +403,10 @@ module Mayu
                   )
               end
             end
-          elsif descriptor.children?
-            check_duplicate_keys(descriptor.children)
-            puts "adding new children"
-
+          elsif descriptor.has_children?
             ctx.enter(vnode) do
               vnode.children =
-                add_comments_between_texts(descriptor.children).map do
+                clean_children(descriptor.children, parent: descriptor).map do
                   init_vnode(ctx, _1, lifecycles:).tap do |child|
                     ctx.insert(child)
                   end
@@ -487,11 +482,13 @@ module Mayu
         update_stylesheet(ctx, component) if component
         # puts "\e[32mInitializing vnode #{vnode.id} #{vnode.descriptor.type} with #{children.length} children\e[0m"
 
-        ctx.enter(vnode) do
-          vnode.children =
-            add_comments_between_texts(children).map do
-              init_vnode(ctx, _1, lifecycles:, nested: true)
-            end
+        unless children.empty?
+          ctx.enter(vnode) do
+            vnode.children =
+              clean_children(children, parent: descriptor).map do
+                init_vnode(ctx, _1, lifecycles:, nested: true)
+              end
+          end
         end
 
         vnode.component&.mount if lifecycles
@@ -520,15 +517,6 @@ module Mayu
         nil
       end
 
-      sig { params(descriptors: T::Array[Descriptor]).void }
-      def check_duplicate_keys(descriptors)
-        keys = descriptors.map(&:key).compact
-        duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }.uniq
-        duplicates.each do |key|
-          puts "\e[31mDuplicate keys detected: '#{key}'. This may cause an update error.\e[0m"
-        end
-      end
-
       sig { params(vnode: VNode, descriptor: Descriptor).returns(T::Boolean) }
       def same?(vnode, descriptor)
         vnode.descriptor.same?(descriptor)
@@ -543,8 +531,7 @@ module Mayu
         ).returns(T::Array[VNode])
       end
       def update_children(ctx, vnodes, descriptors, lifecycles:)
-        check_duplicate_keys(descriptors)
-
+        Descriptor.check_duplicate_keys(descriptors)
         new_children = T.let([], T::Array[VNode])
 
         vnodes = vnodes.compact
@@ -622,24 +609,6 @@ module Mayu
       end
 
       sig do
-        params(descriptors: T::Array[Descriptor]).returns(T::Array[Descriptor])
-      end
-      def add_comments_between_texts(descriptors)
-        comment = Descriptor.comment
-        prev = T.let(nil, T.nilable(Descriptor))
-
-        descriptors
-          .map
-          .with_index do |curr, i|
-            prev2 = prev
-            prev = curr if curr
-
-            prev2&.text? && curr.text? ? [comment, curr] : [curr]
-          end
-          .flatten
-      end
-
-      sig do
         params(old_props: Component::Props, new_props: Component::Props).void
       end
       def update_handlers(old_props, new_props)
@@ -710,6 +679,19 @@ module Mayu
         return nil if str1.strip.empty? || str1.length >= str2.length
         return nil unless str2.slice(0...str1.length) == str1
         str2.slice(str1.length..-1)
+      end
+
+      sig do
+        params(children: Component::Children, parent: Descriptor).returns(
+          T::Array[Descriptor]
+        )
+      end
+      def clean_children(children, parent:)
+        children
+          .then { Descriptor.clean_children(_1, parent_type: parent) }
+          # TODO: Make it possible to disable the following check in production:
+          .tap { Descriptor.check_duplicate_keys(_1, parent_type: parent) }
+          .then { Descriptor.add_comments_between_texts(_1) }
       end
     end
   end
