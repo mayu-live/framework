@@ -1,12 +1,11 @@
 :ruby
   PageLayout = import("/app/components/Layout/FullWidthPageWithMenu")
   Heading = import("/app/components/Layout/Heading")
-  Card = import("/app/components/Layout/Card")
   Menu = import("/app/components/Layout/Menu")
   MenuItem = import("/app/components/Layout/MenuItem")
   Details = import("./Details")
   Breadcrumbs = import("/app/components/UI/Breadcrumbs")
-  Icon = import("/app/components/UI/Icon")
+  UnderConstruction = import("/app/components/UnderConstruction")
 
   LINKS = {
     "/docs" => "Documentation",
@@ -70,12 +69,11 @@
     font-size: 2em;
   }
 
+:ruby
+  props => request: { path: }
 %PageLayout
   #page
-    %Card(slot="after_heading" border="var(--yellow)" background="var(--yellow-bright)")
-      %p.under-construction
-        %Icon(name="person-digging" color="var(--dark)")
-        %span This page is under construction!
+    %UnderConstruction(slot="after_heading" path=path)
     %slot
 
   %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)

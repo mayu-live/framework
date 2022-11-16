@@ -1,4 +1,5 @@
 :ruby
+  Heading = import("/app/components/Layout/Heading")
   Card = import("/app/components/Layout/Card")
   Link = import("/app/components/UI/Link")
 
@@ -142,7 +143,7 @@
   end
 
 :css
-  header {
+  .header {
     border-bottom: 1px solid #0003;
     padding: 1em;
   }
@@ -153,7 +154,7 @@
     margin: 0;
   }
 
-  footer {
+  .footer {
     padding: 1em;
     background: #fefefe;
     box-shadow: inset 0 0 15px -10px #000;
@@ -288,45 +289,46 @@
     text-align: right;
   }
 
-%Card
-  %header
-    %h1 Todo App
-    %p
-      This is an implementation of the classic
-      %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
-      \.
-    %form.form(onsubmit=handle_submit)[state[:form_key]]
-      %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
-      %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
-  %main
-    %ul
-      = get_filtered_items.map do |item|
-        %li[item[:id]]
-          = if state[:editing] == item[:id]
-            %form.edit(onsubmit=handle_update){id: item[:id]}
-              %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
-                initial_value: item[:description]
-              }
-          = unless state[:editing] == item[:id]
-            .row
-              %input.checkbox(type="checkbox" onchange=handle_check){
-                name: item[:id],
-                checked: item[:completed],
-              }
-              %p.description(ondblclick=handle_dblclick){
-                id: item[:id],
-                class: { completed: item[:completed] },
-              }= item[:description]
-              %button.delete-button(onclick=handle_delete){name: item[:id]}
-  %footer
-    .footer-grid
-      .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
-      .filter
-        = %w[all active completed].map do |name|
-          %button.filter-button(onclick=handle_set_filter name=name title="Show #{name} items"){
-            aria: { current: (state[:filter] == name).to_s }
-          }= name.capitalize
-      .clear-completed
-        - completed = get_filtered_items("completed")
-        = if completed.length.nonzero?
-          %button.clear-button(onclick=handle_clear_completed) Clear completed
+%article
+  %Heading(level=2) Todo App
+  %p
+    This is an implementation of the classic
+    %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
+    \.
+  %Card
+    .header
+      %form.form(onsubmit=handle_submit)[state[:form_key]]
+        %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
+        %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
+    .main
+      %ul
+        = get_filtered_items.map do |item|
+          %li[item[:id]]
+            = if state[:editing] == item[:id]
+              %form.edit(onsubmit=handle_update){id: item[:id]}
+                %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
+                  initial_value: item[:description]
+                }
+            = unless state[:editing] == item[:id]
+              .row
+                %input.checkbox(type="checkbox" onchange=handle_check){
+                  name: item[:id],
+                  checked: item[:completed],
+                }
+                %p.description(ondblclick=handle_dblclick){
+                  id: item[:id],
+                  class: { completed: item[:completed] },
+                }= item[:description]
+                %button.delete-button(onclick=handle_delete){name: item[:id]}
+    .footer
+      .footer-grid
+        .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
+        .filter
+          = %w[all active completed].map do |name|
+            %button.filter-button(onclick=handle_set_filter name=name title="Show #{name} items"){
+              aria: { current: (state[:filter] == name).to_s }
+            }= name.capitalize
+        .clear-completed
+          - completed = get_filtered_items("completed")
+          = if completed.length.nonzero?
+            %button.clear-button(onclick=handle_clear_completed) Clear completed

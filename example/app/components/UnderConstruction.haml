@@ -1,0 +1,37 @@
+:ruby
+  Icon = import("/app/components/UI/Icon")
+  Link = import("/app/components/UI/Link")
+  Card = import("/app/components/Layout/Card")
+
+:css
+  Card {
+    margin: 1.5em 0;
+  }
+
+  .flex {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  p {
+    display: inline-flex;
+    gap: 1em;
+    margin: 1em;
+    align-items: center;
+    font-size: .8em;
+  }
+
+  Icon {
+    font-size: 2em;
+  }
+
+%Card(border="var(--yellow)" background="var(--yellow-bright)")
+  .flex
+    %p
+      %Icon(name="person-digging" color="var(--dark)")
+      %span This page is under construction!
+    = if props in path:
+      %p
+        %Icon(name="github" color="var(--dark)")
+        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/pages#{path}/page.haml" target="_blank")
+          Edit on GitHub

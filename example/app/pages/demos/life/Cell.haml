@@ -3,19 +3,20 @@
     case
     when props[:alive] != next_props[:alive]
       true
-    when props[:value] != next_props[:value]
+    when props[:x] != next_props[:x]
+      true
+    when props[:y] != next_props[:y]
       true
     else
       false
     end
   end
+
 :css
   button {
     border: 0;
     aspect-ratio: 1;
-    border: 1px solid #000;
-    border-bottom: none;
-    border-right: none;
+    flex: 1;
   }
 
   button { background: #fff; }
@@ -23,10 +24,18 @@
 
   .alive { background: #333; }
   .alive:hover { background: #666; }
+
+  button:active:hover { background: #000; }
+
+:ruby
+  props => x:, y:, alive:, ondraw:, **rest
+  value = "#{x} #{y}"
+
 %button{
-  **props.except(:alive),
-  class: { alive: props[:alive] },
+  **rest,
+  value:,
+  class: { alive: },
   oncontextmenu: "event.preventDefault()",
-  onmousedown: props[:ondraw],
-  onmouseenter: props[:ondraw],
+  onmousedown: ondraw,
+  onmouseenter: ondraw,
 }

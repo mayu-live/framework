@@ -2,6 +2,7 @@
   Card = import("/app/components/Layout/Card")
   Image = import("/app/components/UI/Image")
   Link = import("/app/components/UI/Link")
+  YouTubeVideo = import("/app/components/UI/YouTubeVideo")
   Markdown = import("../Markdown")
   NoCache = image("./no-cache-fs8.png")
   DiskCache = image("./disk-cache-fs8.png")
@@ -159,6 +160,11 @@
     %figure
       %Image(lazy image=HotReload)
       %figcaption Hot reloading makes development super fast.
+
+  %Card
+    %figure
+      %YouTubeVideo(video-id="GdwDXqr6wFk")
+      %figcaption Hot reloading in action.
 
   %Markdown
     :plain

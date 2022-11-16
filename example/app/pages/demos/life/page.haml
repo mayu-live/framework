@@ -21,9 +21,22 @@
   MAX_FPS = 10
   DEFAULT_FPS = 4
 
+  def self.init_grid(width, height, &block)
+    Array.new(height) do |y|
+      Array.new(width) do |x|
+        if block_given?
+          yield x, y
+        else
+          false
+        end
+      end
+    end
+  end
+
   def self.get_initial_state(initial_size: DEFAULT_SIZE, **) = {
-    size: initial_size,
-    grid: Array.new(initial_size * initial_size, false),
+    width: initial_size,
+    height: initial_size,
+    grid: init_grid(initial_size, initial_size),
     running: false,
     fps: DEFAULT_FPS,
   }
@@ -39,37 +52,44 @@
     end
   end
 
-  def handle_draw(event)
+  def get_position(event)
     event => { target: { value: } }
-    index = value.to_i
+    value.split.map(&:to_i) => [x, y]
+    [x, y]
+  end
+
+  def handle_draw(event)
+    x, y = get_position(event)
 
     case event
     in { buttons: 0 }
       # noop. It would be nice if these events were filtered in the client.
     in { buttons: 1 }
-      set_cell_value(index, true)
+      set_cell_value(x, y, true)
     in { buttons: 2 }
-      set_cell_value(index, false)
+      set_cell_value(x, y, false)
     end
   end
 
-  def handle_reset(event)
-    update do |size:|
-      { grid: Array.new(size * size, false) }
+  def handle_reset
+    update do |width:, height:|
+      { grid: self.class.init_grid(width, height) }
     end
   end
 
   def handle_randomize(event)
-    update do |size:|
-      { grid: Array.new(size * size) { rand(2).zero? } }
+    update do |width:, height:|
+      { grid: self.class.init_grid(width, height) { rand(2).zero? } }
     end
   end
 
-  def set_cell_value(index, value)
+  def set_cell_value(x, y, value)
     update do |state|
-      grid = state[:grid].dup
-      grid[index] = value
-      { grid: }
+      {
+        grid: state[:grid].dup.tap do |grid|
+          grid[y] = grid[y].dup.tap { |row| row[x] = value }
+        end
+      }
     end
   end
 
@@ -78,19 +98,42 @@
     update(fps: value.to_i.clamp(MIN_FPS, MAX_FPS))
   end
 
+  def handle_change_width(e)
+    e => { target: { value: } }
+    width = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
+    update do |grid:|
+      { grid:
+        grid.map { |row| row.slice(0...width).fill(false, (row.size)...width) }
+      }
+    end
+    handle_reset
+  end
+
+  def handle_change_height(e)
+    e => { target: { value: } }
+    height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
+    update do |grid:, width:|
+      { grid:
+        if grid.size > height
+          grid.slice(0..height)
+        else
+          grid + this.class.init_grid(width, height - grid.size)
+        end
+      }
+    end
+    handle_reset
+  end
+
   def handle_change_size(e)
     e => { target: { value: } }
     size = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-
-    update(
-      size:,
-      grid: Array.new(size * size, false)
-    )
+    update(width: size, height: size)
+    handle_reset
   end
 
   def handle_step
-    update do |grid:, size:|
-      { grid: step_grid(grid, size) }
+    update do |grid:|
+      { grid: step_grid(grid) }
     end
   end
 
@@ -102,32 +145,30 @@
 
   private
 
-  def step_grid(grid, size)
-    grid.map.with_index do |alive, i|
-      y, x = i.divmod(size)
-      neighbor_count = each_neighbor(grid, size, x, y).count { _1[:value] }
-      RULES[alive ? :s : :b].include?(neighbor_count)
-    end
-  end
-
-  def each_neighbor(grid, size, x, y)
-    Enumerator.new do |enum|
-      -1.upto(1) do |yoff|
-        -1.upto(1) do |xoff|
-          next if yoff.zero? && xoff.zero?
-          value = get_value(grid, size, x + xoff, y + yoff)
-          enum.yield(x:, y:, value:)
-        end
+  def step_grid(grid)
+    grid.map.with_index do |row, y|
+      row.map.with_index do |alive, x|
+        RULES[alive ? :s : :b].include?(count_neighbors(grid, x, y))
       end
     end
   end
 
-  def get_value(grid, size, x, y)
-    grid[get_index(size, x, y)]
+  def count_neighbors(grid, x, y)
+    each_neighbor(grid, x, y).count { _1[:value] }
   end
 
-  def get_index(size, x, y)
-    (y % size) * size + x % size
+  def each_neighbor(grid, x, y)
+    Enumerator.new do |enum|
+      -1.upto(1) do |yoff|
+        row = grid[(y + yoff) % grid.size]
+
+        -1.upto(1) do |xoff|
+          next if yoff.zero? && xoff.zero?
+          value = row[(x + xoff) % row.size]
+          enum.yield(x:, y:, value:)
+        end
+      end
+    end
   end
 
 :css
@@ -137,7 +178,7 @@
   }
 
 :ruby
-  state => grid:, size:, running:
+  state => grid:, running:
 
 %article
   %Heading(level=2) Game of life
@@ -159,13 +200,18 @@
       }= running ? "Stop" : "Start"
     -#
       %div
-        %label(for="grid-size") Grid size
+        %label(for="grid-width") Grid width
         %br
-        %input(id="grid-size" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_size){value: state[:size]}
-        %output= state[:size]
+        %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: state[:width]}
+        %output= state[:width]
+      %div
+        %label(for="grid-height") Grid height
+        %br
+        %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: state[:height]}
+        %output= state[:height]
       %div
         %label(for="game-fps") Frames per second
         %br
         %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: state[:fps]}
         %output= state[:fps]
-  %GameGrid(grid=grid size=size ondraw=handle_draw)
+  %GameGrid(grid=grid ondraw=handle_draw)
