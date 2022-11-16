@@ -5,6 +5,8 @@
     height: 100%;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
   nav {
@@ -18,11 +20,13 @@
   }
 
   MaxWidth {
-    padding: 1em 0;
+    display: grid;
+    margin-bottom: 2em;
+    flex: 1;
   }
 
-  /* 46em + 14em + 4em = 64em */
-  @media (min-width: 64em) {
+  /* 60rem + 14rem + 4rem = 78rem */
+  @media (min-width: 78rem) {
     .layout {
       display: grid;
       grid-template-columns: min-content auto;

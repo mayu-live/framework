@@ -15,8 +15,8 @@
   --pink-bright: #f9e5ef;
   --accent-color: var(--blue);
   accent-color: var(--accent-color);
-  --page-max-width: 46em;
-  --menu-width: 14em;
+  --page-max-width: 60rem;
+  --menu-width: 14rem;
   --link-color: var(--accent-color);
 }
 
