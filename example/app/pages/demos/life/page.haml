@@ -6,6 +6,13 @@
   Link = import("/app/components/UI/Link")
   GameGrid = import("./GameGrid")
 
+  # b = born
+  # s = survive
+  RULES = { b: 3..3, s: 2..3 }
+  # RULES = { b: 2..2, s: -1..-1 }
+  # RULES = { b: 3..3, s: 2..5 }
+  # RULES = { b: 3..4, s: 3..5 }
+
   MIN_SIZE = 5
   MAX_SIZE = 20
   DEFAULT_SIZE = MAX_SIZE
@@ -98,14 +105,8 @@
   def step_grid(grid, size)
     grid.map.with_index do |alive, i|
       y, x = i.divmod(size)
-
       neighbor_count = each_neighbor(grid, size, x, y).count { _1[:value] }
-
-      if alive
-        neighbor_count == 2 || neighbor_count == 3
-      else
-        neighbor_count == 3
-      end
+      RULES[alive ? :s : :b].include?(neighbor_count)
     end
   end
 
