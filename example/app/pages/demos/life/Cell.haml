@@ -13,19 +13,32 @@
   end
 
 :css
+  @keyframes alive {
+    0% { background-color: hsl(0deg 50% 50%); }
+    33% { background-color: hsl(120deg 50% 50%); }
+    66% { background-color: hsl(240deg 50% 60%); }
+    100% { background-color: hsl(360deg 50% 50%); }
+  }
+
   button {
     border: 0;
     aspect-ratio: 1;
     flex: 1;
   }
 
-  button { background: #fff; }
-  button:hover { background: #f0f0f0; }
+  button { background-color: #fff; }
+  button:hover { background-color: #f0f0f0; }
 
-  .alive { background: #333; }
-  .alive:hover { background: #666; }
+  .alive {
+    background-color: #000;
+    animation-duration: 2s;
+    animation-name: alive;
+    animation-iteration-count: infinite;
+  }
 
-  button:active:hover { background: #000; }
+  .alive:hover { filter: brightness(120%); }
+
+  button:active:hover { background-color: #000; }
 
 :ruby
   props => x:, y:, alive:, ondraw:, **rest
