@@ -48,7 +48,7 @@
 
 %Fieldset
   %legend Transfer list
-  %form.container{on_submit: handler(:handle_submit)}
+  %form{on_submit: handler(:handle_submit)}
     %ul
       = state[:left].map do |item|
         %li[item]

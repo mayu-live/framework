@@ -1,10 +1,10 @@
-.container {
+form {
   display: flex;
   gap: 1em;
   max-height: 20em;
 }
 
-li {
+ul {
   border: 1px solid var(--blue);
   border-radius: 2px;
   flex: 1;
