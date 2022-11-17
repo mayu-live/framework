@@ -1,4 +1,5 @@
 :ruby
+  Spinner = import("/app/components/UI/Spinner")
   Filter = import("./Filter")
   Pagination = import("./Pagination")
 
@@ -41,10 +42,12 @@
   %p Error: #{error}
 
 - return unless result
-  %p
-    Loading Pokémon from
-    %a(href="https://pokeapi.co/")< PokéAPI
-
+  %div
+    %p
+      Loading Pokémon from
+      %a(href="https://pokeapi.co/")< PokéAPI
+      \.
+    %Spinner
 :ruby
   result => results:
 
