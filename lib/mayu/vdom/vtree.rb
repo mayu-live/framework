@@ -12,8 +12,8 @@ require_relative "update_context"
 require_relative "id_generator"
 require_relative "../session"
 require_relative "../ref_counter"
-require_relative "indexes"
 require_relative "../utils"
+require_relative "./reconciliation"
 
 module Mayu
   module VDOM
@@ -531,81 +531,23 @@ module Mayu
         ).returns(T::Array[VNode])
       end
       def update_children(ctx, vnodes, descriptors, lifecycles:)
-        Descriptor.check_duplicate_keys(descriptors)
-        new_children = T.let([], T::Array[VNode])
-
-        vnodes = vnodes.compact
-        descriptors = descriptors.compact
-        old_ids = vnodes.map(&:id)
-
-        indexes = Indexes.new(vnodes.map(&:id))
-
-        new_children =
-          descriptors.map.with_index do |descriptor, i|
-            vnode = vnodes.find { _1.same?(descriptor) }
-
-            if vnode
-              vnodes.delete(vnode)
-              patch_vnode(ctx, vnode, descriptor, lifecycles:)
-            else
-              init_vnode(ctx, descriptor, lifecycles:)
-            end
-          end
-
-        # This is very inefficient.
-        # I tried to get the algorithm from snabbdom/vue to work,
-        # but it's not very easy to get right.
-        # I always got some weird ordering issues and it's tricky to debug.
-        # Fun stuff for later though.
-
-        start_at = Time.now
-        all_vnodes = vnodes + new_children
-
-        new_children.each_with_index do |vnode, expected_index|
-          new_indexes = Indexes.new(indexes.to_a - vnodes.map(&:id))
-          current_index = indexes.index(vnode.id)
-
-          before_id = indexes[expected_index]
-          before = before_id && all_vnodes.find { _1.id == before_id } || nil
-
-          if old_ids.include?(vnode.id)
-            unless current_index == expected_index
-              ctx.move(vnode, before:)
-              indexes.insert_before(vnode.id, before_id)
-            end
-          else
+        Reconciliation.reconcile(vnodes, descriptors) do |event|
+          case event
+          in [Reconciliation::Events::Patch, { vnode:, descriptor: }]
+            patch_vnode(ctx, vnode, descriptor, lifecycles:)
+          in [Reconciliation::Events::Init, { descriptor: }]
+            init_vnode(ctx, descriptor, lifecycles:)
+          in [Reconciliation::Events::Move, { vnode:, before: }]
+            ctx.move(vnode, before:)
+            nil
+          in [Reconciliation::Events::Insert, { vnode:, before: }]
             ctx.insert(vnode, before:)
-            indexes.insert_before(vnode.id, before_id)
+            nil
+          in [Reconciliation::Events::Remove, { vnode: }]
+            remove_vnode(ctx, vnode, lifecycles:)
+            nil
           end
         end
-
-        vnodes.each { |vnode| remove_vnode(ctx, vnode, lifecycles:) }
-        delta_time_ms = (Time.now - start_at) * 1000
-
-        if delta_time_ms > 10
-          Console.logger.warn(self, "Updating took %.3fms" % delta_time_ms)
-        end
-
-        new_children
-      end
-
-      sig do
-        params(
-          children: T::Array[VNode],
-          start_index: Integer,
-          end_index: Integer
-        ).returns(T::Hash[Integer, T.untyped])
-      end
-      def build_key_index_map(children, start_index, end_index)
-        keymap = {}
-
-        start_index.upto(end_index) do |i|
-          if key = children[i]&.descriptor&.key
-            keymap[key] = i
-          end
-        end
-
-        keymap
       end
 
       sig do
