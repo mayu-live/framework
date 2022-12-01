@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-ARG RUBY_VERSION=3.1.2
+ARG RUBY_VERSION=3.1.3
 ARG VARIANT=jemalloc-slim
 FROM quay.io/evl.ms/fullstaq-ruby:${RUBY_VERSION}-${VARIANT} as base
 
@@ -20,7 +20,7 @@ RUN mkdir -p tmp/pids
 ## build js runtime ##
 ######################
 
-FROM node:19.0.0-alpine3.15 as build-js
+FROM node:19.2.0-alpine3.15 as build-js
 
 COPY lib/mayu/client /build
 
