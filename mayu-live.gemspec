@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.homepage = "https://github.com/mayu-live/framework"
 
   spec.license = "AGPL-3.0"
-  spec.required_ruby_version = ">= 3.1.2"
+  spec.required_ruby_version = ">= 3.2.0"
 
   # spec.metadata["allowed_push_host"] = "TODO: Set to your gem server 'https://example.com'"
 
@@ -36,9 +36,9 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "async", "~> 2.0.3"
+  spec.add_dependency "async", "~> 2.3.0"
   spec.add_dependency "async-container", "~> 0.16.12"
-  spec.add_dependency "async-http", "~> 0.59.3"
+  spec.add_dependency "async-http", "~> 0.59.4"
   spec.add_dependency "brotli", "~> 0.4.0"
   spec.add_dependency "crass", "~> 1.0.6"
   spec.add_dependency "image_size", "~> 3.1.0"
