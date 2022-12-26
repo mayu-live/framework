@@ -190,7 +190,7 @@ end
 # source://async-http//lib/async/http/body/writable.rb#33
 class Async::HTTP::Body::Writable::Closed < ::StandardError; end
 
-# source://async-http//lib/async/http/client.rb#49
+# source://async-http//lib/async/http/client.rb#40
 class Async::HTTP::Client < ::Protocol::HTTP::Methods
   # Provides a robust interface to a server.
   # * If there are no connections, it will create one.
@@ -264,6 +264,9 @@ class Async::HTTP::Client < ::Protocol::HTTP::Methods
     def open(*arguments, **options, &block); end
   end
 end
+
+# source://async-http//lib/async/http/client.rb#38
+Async::HTTP::DEFAULT_CONNECTION_LIMIT = T.let(T.unsafe(nil), T.untyped)
 
 # source://async-http//lib/async/http/client.rb#37
 Async::HTTP::DEFAULT_RETRIES = T.let(T.unsafe(nil), Integer)
@@ -551,7 +554,7 @@ end
 # source://async-http//lib/async/http/protocol/http11.rb#29
 Async::HTTP::Protocol::HTTP11::VERSION = T.let(T.unsafe(nil), String)
 
-# source://async-http//lib/async/http/protocol/http1/client.rb#30
+# source://async-http//lib/async/http/protocol/http1/client.rb#29
 class Async::HTTP::Protocol::HTTP1::Client < ::Async::HTTP::Protocol::HTTP1::Connection
   # Used by the client to send requests to the remote server.
   #
@@ -1258,5 +1261,5 @@ class Async::HTTP::Statistics
   end
 end
 
-# source://async/2.0.3/lib/async/version.rb#24
+# source://async/2.3.0/lib/async/version.rb#7
 Async::VERSION = T.let(T.unsafe(nil), String)

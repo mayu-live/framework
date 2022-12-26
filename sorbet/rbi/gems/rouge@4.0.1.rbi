@@ -168,15 +168,15 @@ module Rouge::Formatters; end
 #
 # source://rouge//lib/rouge/formatters/html.rb#7
 class Rouge::Formatters::HTML < ::Rouge::Formatter
-  # source://rouge//lib/rouge/formatters/html.rb#21
+  # source://rouge//lib/rouge/formatters/html.rb#29
   def safe_span(tok, safe_val); end
 
-  # source://rouge//lib/rouge/formatters/html.rb#15
+  # source://rouge//lib/rouge/formatters/html.rb#23
   def span(tok, val); end
 
   # @yield the html output.
   #
-  # source://rouge//lib/rouge/formatters/html.rb#11
+  # source://rouge//lib/rouge/formatters/html.rb#19
   def stream(tokens, &b); end
 
   private
@@ -191,11 +191,14 @@ class Rouge::Formatters::HTML < ::Rouge::Formatter
   # Returns either the given `value` argument string as is or a new string with the
   # special characters replaced with their escaped counterparts.
   #
-  # source://rouge//lib/rouge/formatters/html.rb#48
+  # source://rouge//lib/rouge/formatters/html.rb#50
   def escape_special_html_chars(value); end
 end
 
-# source://rouge//lib/rouge/formatters/html.rb#32
+# source://rouge//lib/rouge/formatters/html.rb#14
+Rouge::Formatters::HTML::ESCAPE_REGEX = T.let(T.unsafe(nil), Regexp)
+
+# source://rouge//lib/rouge/formatters/html.rb#8
 Rouge::Formatters::HTML::TABLE_FOR_ESCAPE_HTML = T.let(T.unsafe(nil), Hash)
 
 # source://rouge//lib/rouge/formatters/html_inline.rb#6
@@ -1726,20 +1729,14 @@ end
 # source://rouge//lib/rouge/lexers/coq.rb#6
 class Rouge::Lexers::Coq < ::Rouge::RegexLexer
   class << self
-    # source://rouge//lib/rouge/lexers/coq.rb#69
+    # source://rouge//lib/rouge/lexers/coq.rb#59
     def classify(x); end
 
     # source://rouge//lib/rouge/lexers/coq.rb#19
     def coq; end
 
-    # source://rouge//lib/rouge/lexers/coq.rb#65
-    def end_sentence; end
-
     # source://rouge//lib/rouge/lexers/coq.rb#12
     def gallina; end
-
-    # source://rouge//lib/rouge/lexers/coq.rb#59
-    def keyopts; end
 
     # source://rouge//lib/rouge/lexers/coq.rb#32
     def ltac; end
@@ -2822,7 +2819,7 @@ Rouge::Lexers::Julia::PUNCTUATION = T.let(T.unsafe(nil), Regexp)
 # source://rouge//lib/rouge/lexers/julia.rb#65
 Rouge::Lexers::Julia::TYPES = T.let(T.unsafe(nil), Regexp)
 
-# source://rouge//lib/rouge/lexers/kotlin.rb#7
+# source://rouge//lib/rouge/lexers/kotlin.rb#6
 class Rouge::Lexers::Kotlin < ::Rouge::RegexLexer; end
 
 # source://rouge//lib/rouge/lexers/llvm.rb#6
@@ -3237,7 +3234,7 @@ class Rouge::Lexers::Nial < ::Rouge::RegexLexer
   end
 end
 
-# source://rouge//lib/rouge/lexers/nim.rb#7
+# source://rouge//lib/rouge/lexers/nim.rb#6
 class Rouge::Lexers::Nim < ::Rouge::RegexLexer
   class << self
     # source://rouge//lib/rouge/lexers/nim.rb#40
@@ -3480,6 +3477,39 @@ class Rouge::Lexers::Praat < ::Rouge::RegexLexer
     #
     # source://rouge//lib/rouge/lexers/praat.rb#14
     def detect?(text); end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#63
+    def functions_array; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#83
+    def functions_builtin; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#69
+    def functions_matrix; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#35
+    def functions_numeric; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#26
+    def functions_string; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#77
+    def functions_string_vector; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#18
+    def keywords; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#136
+    def object_attributes; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#92
+    def objects; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#121
+    def variables_numeric; end
+
+    # source://rouge//lib/rouge/lexers/praat.rb#128
+    def variables_string; end
   end
 end
 
@@ -4818,7 +4848,7 @@ end
 #
 # @abstract
 #
-# source://rouge//lib/rouge/template_lexer.rb#11
+# source://rouge//lib/rouge/template_lexer.rb#10
 class Rouge::TemplateLexer < ::Rouge::RegexLexer
   # the parent lexer - the one being templated.
   #
@@ -4895,7 +4925,7 @@ class Rouge::TexThemeRenderer
   def token_name(tok); end
 end
 
-# source://rouge//lib/rouge/text_analyzer.rb#6
+# source://rouge//lib/rouge/text_analyzer.rb#5
 class Rouge::TextAnalyzer < ::String
   # Return the contents of the doctype tag if present, nil otherwise.
   #

@@ -50,82 +50,85 @@ class ImageSize
   # source://image_size//lib/image_size.rb#76
   def detect_format(ir); end
 
-  # source://image_size//lib/image_size.rb#123
+  # source://image_size//lib/image_size.rb#124
   def detect_jpeg2000_type(ir); end
 
-  # source://image_size//lib/image_size.rb#101
+  # source://image_size//lib/image_size.rb#102
   def detect_png_type(ir); end
 
-  # source://image_size//lib/image_size.rb#114
+  # source://image_size//lib/image_size.rb#115
   def detect_pnm_type(ir); end
 
-  # source://image_size//lib/image_size.rb#146
+  # source://image_size//lib/image_size.rb#147
   def size_of_apng(ir); end
 
-  # source://image_size//lib/image_size.rb#180
+  # source://image_size//lib/image_size.rb#181
   def size_of_bmp(ir); end
 
-  # source://image_size//lib/image_size.rb#320
+  # source://image_size//lib/image_size.rb#321
   def size_of_cur(ir); end
 
-  # source://image_size//lib/image_size.rb#134
+  # source://image_size//lib/image_size.rb#382
+  def size_of_emf(ir); end
+
+  # source://image_size//lib/image_size.rb#135
   def size_of_gif(ir); end
 
-  # source://image_size//lib/image_size.rb#320
+  # source://image_size//lib/image_size.rb#321
   def size_of_ico(ir); end
 
-  # source://image_size//lib/image_size.rb#374
+  # source://image_size//lib/image_size.rb#375
   def size_of_j2c(ir); end
 
-  # source://image_size//lib/image_size.rb#338
+  # source://image_size//lib/image_size.rb#339
   def size_of_jp2(ir); end
 
-  # source://image_size//lib/image_size.rb#161
+  # source://image_size//lib/image_size.rb#162
   def size_of_jpeg(ir); end
 
-  # source://image_size//lib/image_size.rb#338
+  # source://image_size//lib/image_size.rb#339
   def size_of_jpx(ir); end
 
-  # source://image_size//lib/image_size.rb#138
+  # source://image_size//lib/image_size.rb#139
   def size_of_mng(ir); end
 
-  # source://image_size//lib/image_size.rb#204
+  # source://image_size//lib/image_size.rb#205
   def size_of_pam(ir); end
 
-  # source://image_size//lib/image_size.rb#195
+  # source://image_size//lib/image_size.rb#196
   def size_of_pbm(ir); end
 
-  # source://image_size//lib/image_size.rb#283
+  # source://image_size//lib/image_size.rb#284
   def size_of_pcx(ir); end
 
-  # source://image_size//lib/image_size.rb#195
+  # source://image_size//lib/image_size.rb#196
   def size_of_pgm(ir); end
 
-  # source://image_size//lib/image_size.rb#146
+  # source://image_size//lib/image_size.rb#147
   def size_of_png(ir); end
 
-  # source://image_size//lib/image_size.rb#195
+  # source://image_size//lib/image_size.rb#196
   def size_of_ppm(ir); end
 
-  # source://image_size//lib/image_size.rb#248
+  # source://image_size//lib/image_size.rb#249
   def size_of_psd(ir); end
 
-  # source://image_size//lib/image_size.rb#297
+  # source://image_size//lib/image_size.rb#298
   def size_of_svg(ir); end
 
-  # source://image_size//lib/image_size.rb#288
+  # source://image_size//lib/image_size.rb#289
   def size_of_swf(ir); end
 
-  # source://image_size//lib/image_size.rb#252
+  # source://image_size//lib/image_size.rb#253
   def size_of_tiff(ir); end
 
-  # source://image_size//lib/image_size.rb#325
+  # source://image_size//lib/image_size.rb#326
   def size_of_webp(ir); end
 
-  # source://image_size//lib/image_size.rb#231
+  # source://image_size//lib/image_size.rb#232
   def size_of_xbm(ir); end
 
-  # source://image_size//lib/image_size.rb#236
+  # source://image_size//lib/image_size.rb#237
   def size_of_xpm(ir); end
 
   class << self
@@ -168,10 +171,16 @@ module ImageSize::ChunkyReader
   def chunk_size; end
 end
 
+# source://image_size//lib/image_size.rb#380
+ImageSize::EMF_SMAX = T.let(T.unsafe(nil), Integer)
+
+# source://image_size//lib/image_size.rb#379
+ImageSize::EMF_UMAX = T.let(T.unsafe(nil), Integer)
+
 # source://image_size//lib/image_size.rb#11
 class ImageSize::FormatError < ::StandardError; end
 
-# source://image_size//lib/image_size.rb#155
+# source://image_size//lib/image_size.rb#156
 ImageSize::JPEG_CODE_CHECK = T.let(T.unsafe(nil), Array)
 
 # source://image_size//lib/image_size/reader.rb#7
@@ -217,7 +226,7 @@ end
 
 # Array joining with 'x'
 #
-# source://image_size//lib/image_size.rb#15
+# source://image_size//lib/image_size.rb#14
 class ImageSize::Size < ::Array
   # get second element
   #

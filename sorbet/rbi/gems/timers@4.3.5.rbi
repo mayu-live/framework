@@ -122,10 +122,10 @@ class Timers::Group
   # source://timers//lib/timers/group.rb#117
   def delay(seconds); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def each(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def empty?(*args, **_arg1, &block); end
 
   # Scheduled events:
@@ -260,6 +260,7 @@ class Timers::PriorityHeap
   # source://timers//lib/timers/priority_heap.rb#26
   def size; end
 
+  # Validate the heap invariant. Every element except the root must not be smaller than
   # its parent element. Note that it MAY be equal.
   #
   # @return [Boolean]
