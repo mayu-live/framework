@@ -1,3 +1,6 @@
+# ruby-prof doesn't load currently and I don't know why.
+__END__
+
 # typed: true
 require_relative "../disable_sorbet"
 # Mayu::DisableSorbet.disable_sorbet!
