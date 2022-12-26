@@ -9,7 +9,6 @@
     count = 1
     hot_swap = true
 
-    event_source_retry_ms = 1000
     render_exceptions = true
     self_signed_cert = true
 
@@ -29,7 +28,6 @@
     render_exceptions = true
     self_signed_cert = true
 
-    event_source_retry_ms = 1000
     hot_swap = false
 
     count = 4
@@ -48,7 +46,6 @@
     host = "0.0.0.0"
     port = 3000
 
-    event_source_retry_ms = 1000
     hot_swap = false
 
     count = 4

@@ -17,7 +17,6 @@ module Mayu
       const :host, String, default: "127.0.0.1"
       const :port, Integer, default: 9292
 
-      const :event_source_retry_ms, Integer, default: 1000
       const :hot_swap, T::Boolean, default: false
       const :self_signed_cert, T::Boolean, default: false
 
@@ -37,9 +36,7 @@ module Mayu
 
     class Instance < T::Struct
       const :app_name, String, default: ENV.fetch("FLY_APP_NAME", "mayu-live")
-
       const :region, String, default: ENV.fetch("FLY_REGION", "dev")
-
       const :alloc_id,
             String,
             default:
