@@ -13,7 +13,10 @@ module Mayu
           ).returns(Async::HTTP::Server)
         end
         def self.setup(endpoint:, registry:)
-          Console.logger.info(self, "Starting on #{endpoint.to_url}")
+          Console.logger.info(
+            self,
+            "Starting metrics exporter on #{endpoint.to_url}"
+          )
 
           Async::HTTP::Server.for(
             endpoint,

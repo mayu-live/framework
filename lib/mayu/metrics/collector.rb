@@ -133,7 +133,7 @@ module Mayu
 
           Console.logger.info(
             self,
-            "Starting: #{File.expand_path(@endpoint.path)}"
+            "Starting metrics collection on #{File.expand_path(@endpoint.path)}"
           )
 
           @endpoint.accept do |peer|

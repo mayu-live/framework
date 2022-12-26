@@ -35,7 +35,11 @@ module Mayu
           ).void
         end
         def self.connect(collector_endpoint, &block)
-          Console.logger.info(self, "Connecting to #{collector_endpoint.to_s}")
+          Console.logger.info(
+            self,
+            "Connecting to #{File.expand_path(collector_endpoint.path)}"
+          )
+
           collector_endpoint.connect { |peer| yield new(peer) }
         end
 
