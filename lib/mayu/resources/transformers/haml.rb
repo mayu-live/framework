@@ -145,8 +145,10 @@ module Mayu
                       )
                       child.instance_variable_set(
                         :@value,
-                        SyntaxTree::FCall.new(
-                          value:
+                        SyntaxTree::CallNode.new(
+                          receiver: nil,
+                          operator: nil,
+                          message:
                             SyntaxTree::Ident.new(
                               value: "handler",
                               location: child.value.location
@@ -154,22 +156,18 @@ module Mayu
                           arguments:
                             SyntaxTree::ArgParen.new(
                               location: child.value.location,
-                              comments: [],
                               arguments:
                                 SyntaxTree::Args.new(
                                   location: child.value.location,
-                                  comments: [],
                                   parts: [
                                     SyntaxTree::SymbolLiteral.new(
                                       value: child.value,
-                                      location: child.value.location,
-                                      comments: []
+                                      location: child.value.location
                                     )
                                   ]
                                 )
                             ),
-                          location: child.value.location,
-                          comments: []
+                          location: child.value.location
                         )
                       )
                       false

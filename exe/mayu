@@ -13,8 +13,10 @@ else
   puts "\e[2mDisable sorbet with --disable-sorbet\e[0m"
 end
 
-if RubyVM::YJIT.enabled?
-  puts "\e[1mYJIT is enabled!\e[0m"
+if RubyVM.const_defined?(:YJIT)
+  if RubyVM::YJIT.enabled?
+    puts "\e[1mYJIT is enabled!\e[0m"
+  end
 end
 
 if RubyVM::MJIT.enabled?

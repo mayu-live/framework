@@ -36,3 +36,8 @@ module Kernel
   class NoMatchingPatternError < StandardError
   end
 end
+
+module URI
+  class WS < Generic
+  end
+end

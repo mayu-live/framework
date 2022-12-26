@@ -23,11 +23,7 @@ module Mayu
               source_line: line
             )
 
-          impl =
-            T.cast(
-              Class.new(Mayu::Component::Base),
-              T.class_of(Mayu::Component::Base)
-            )
+          impl = Class.new(Mayu::Component::Base)
           impl.class_eval(result.output, file, line)
 
           if css = result.css
