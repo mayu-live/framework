@@ -20,7 +20,7 @@ PATH
       rack (~> 3.0.0)
       rake (~> 13.0.6)
       rouge (~> 4.0.0)
-      sorbet-runtime (~> 0.5.10554)
+      sorbet-runtime (~> 0.5.10598)
       source_map (~> 3.0.1)
       svg_optimizer (~> 0.2.6)
       syntax_tree (~> 3.6.3)

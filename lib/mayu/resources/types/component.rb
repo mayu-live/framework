@@ -107,11 +107,7 @@ module Mayu
 
         sig { returns(T.class_of(Mayu::Component::Base)) }
         def setup_component
-          impl =
-            T.cast(
-              Class.new(Mayu::Component::Base),
-              T.class_of(Mayu::Component::Base)
-            )
+          impl = Class.new(Mayu::Component::Base)
 
           LoaderUtils.define_import(impl, @resource)
 
@@ -165,9 +161,9 @@ module Mayu
           classes.merge!(@inline_css.classes) if @inline_css
 
           unless classes.empty?
-            classname_proxy =
+            impl.instance_exec(
               Resources::Types::Stylesheet::ClassnameProxy.new(classes)
-            impl.instance_exec(classname_proxy) do |classname_proxy|
+            ) do |classname_proxy|
               define_singleton_method(:styles) { classname_proxy }
               define_method(:styles) { classname_proxy }
             end
