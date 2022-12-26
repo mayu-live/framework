@@ -48,7 +48,7 @@
 
     hot_swap = false
 
-    count = 4
+    count = 2
     forks = 1
 
   [prod.metrics]

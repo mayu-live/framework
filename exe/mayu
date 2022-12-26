@@ -16,7 +16,11 @@ end
 if RubyVM.const_defined?(:YJIT)
   if RubyVM::YJIT.enabled?
     puts "\e[1mYJIT is enabled!\e[0m"
+  else
+    puts "\e[2mYJIT is disabled!\e[0m"
   end
+else
+  puts "\e[2mYJIT is not supported!\e[0m"
 end
 
 if RubyVM::MJIT.enabled?
