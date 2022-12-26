@@ -32,12 +32,13 @@
     event_source_retry_ms = 1000
     hot_swap = false
 
-    count = 1
-    forks = 1
-    threads = 2
+    count = 4
+    forks = 2
 
   [devbundle.metrics]
     enabled = true
+    port = 9091
+    host = "0.0.0.0"
 
 [prod]
   use_bundle = true
@@ -50,9 +51,8 @@
     event_source_retry_ms = 1000
     hot_swap = false
 
-    count = 1
+    count = 4
     forks = 1
-    threads = 2
 
   [prod.metrics]
     enabled = true

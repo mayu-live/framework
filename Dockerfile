@@ -1,41 +1,37 @@
 # syntax = docker/dockerfile:experimental
-ARG RUBY_VERSION=3.1.3
-ARG VARIANT=jemalloc-slim
-FROM quay.io/evl.ms/fullstaq-ruby:${RUBY_VERSION}-${VARIANT} as base
 
-ARG BUNDLER_VERSION=2.3.11
+######################
+## build js runtime ##
+######################
 
+FROM node:19.3.0-alpine3.17 as build-js
+
+WORKDIR /build
+
+COPY package.json package-lock.json /build
+COPY lib/mayu/client/package.json /build/lib/mayu/client/
+
+RUN npm install
+
+COPY lib/mayu/client /build/lib/mayu/client
+
+RUN \
+    npm run build:production -w lib/mayu/client && \
+    rm -r node_modules
+
+################
+## build-base ##
+################
+
+FROM registry.fly.io/mayu-ruby:3.2-slim-bullseye as build-base
+
+ARG BUNDLER_VERSION=2.4.1
 ARG BUNDLE_WITHOUT=development:test
 ARG BUNDLE_PATH=vendor/bundle
 ENV BUNDLE_PATH ${BUNDLE_PATH}
 ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
 
 SHELL ["/bin/bash", "-c"]
-
-RUN mkdir /app
-WORKDIR /app
-RUN mkdir -p tmp/pids
-
-######################
-## build js runtime ##
-######################
-
-FROM node:19.2.0-alpine3.15 as build-js
-
-COPY lib/mayu/client /build
-
-WORKDIR /build
-
-RUN \
-    npm install && \
-    npm run build:production && \
-    rm -r node_modules
-
-################
-## build base ##
-################
-
-FROM base as build-base
 
 WORKDIR /build
 
@@ -50,9 +46,9 @@ RUN \
 
 RUN gem install -N bundler -v ${BUNDLER_VERSION}
 
-####################
-## build mayu gem ##
-####################
+###############
+## build-gem ##
+###############
 
 FROM build-base as build-gem
 
@@ -65,7 +61,7 @@ COPY exe ./exe
 COPY sorbet ./sorbet
 COPY lib ./lib
 
-COPY --from=build-js /build/dist lib/mayu/client/dist
+COPY --from=build-js /build/lib/mayu/client/dist lib/mayu/client/dist
 RUN brotli lib/mayu/client/dist/*.{js,map}
 
 RUN gem build
@@ -98,13 +94,41 @@ RUN bin/mayu build
 ## build final image ##
 #######################
 
-FROM base
+# FROM registry.fly.io/mayu-ruby:3.2-alpine3.17
+FROM registry.fly.io/mayu-ruby:3.2-slim-bullseye
+
+
+ARG BUNDLER_VERSION=2.4.1
+ARG BUNDLE_WITHOUT=development:test
+ARG BUNDLE_PATH=vendor/bundle
+ENV BUNDLE_PATH ${BUNDLE_PATH}
+ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
+
+SHELL ["/bin/bash", "-c"]
+
+RUN mkdir /app
+WORKDIR /app
+RUN mkdir -p tmp/pids
+
+ENV PROD_PACKAGES curl
+
+RUN \
+    --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
+    --mount=type=cache,id=dev-apt-lib,sharing=locked,target=/var/lib/apt \
+    apt-get update -qq && \
+    apt-get install --no-install-recommends -y ${PROD_PACKAGES} && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+RUN gem install -N bundler -v ${BUNDLER_VERSION}
+# COPY --from=build-app /app/Gemfile /app/Gemfile.lock /app/
+# COPY --from=build-app /app/vendor /app/vendor
+# RUN bundle install && \
+#     rm -rf vendor/bundle/ruby/*/cache && \
+#     rm -rf vendor/cache
 
 COPY fly /fly
 COPY --from=build-app /app /app
 
 ENV PORT 3000
-
-WORKDIR /app
 
 CMD ["bin/mayu", "serve", "--disable-sorbet"]
