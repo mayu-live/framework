@@ -2,8 +2,10 @@
 Self = setup_component(assets: [], styles: {})
 public def render
   Mayu::VDOM.h(
-    :body,
-    Mayu::VDOM.h(:main, mayu.slot),
-    Mayu::VDOM.h(:footer, mayu.slot("footer"))
+    :div,
+    Mayu::VDOM.h(
+      :svg,
+      Mayu::VDOM.h(:line, **mayu.merge_props({ stroke_width: 2 }))
+    )
   )
 end

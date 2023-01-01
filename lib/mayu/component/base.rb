@@ -5,9 +5,48 @@ require_relative "handler_ref"
 module Mayu
   module Component
     class Base
+      class SelfWrapper
+        extend T::Sig
+
+        sig { params(klass: T.class_of(Base)).void }
+        def initialize(klass)
+          @klass = klass
+        end
+
+        sig do
+          params(
+            method: Symbol,
+            args: T.untyped,
+            block: T.nilable(T.proc.void)
+          ).returns(T.untyped)
+        end
+        def method_missing(method, *args, &block)
+          T.unsafe(@klass).send(method, *args, &block)
+        end
+      end
+
       extend T::Sig
       extend T::Helpers
       abstract!
+
+      sig do
+        params(
+          styles: T::Hash[Symbol, String],
+          assets: T::Array[String]
+        ).returns(SelfWrapper)
+      end
+      def self.setup_component(styles:, assets:)
+        # T.unsafe(
+        #   class << self; self ; end,
+        # ).undef_method(T.must(__method__))
+
+        const_set(
+          :MAYU,
+          { styles: styles.freeze, assets: assets.freeze }.freeze
+        )
+
+        SelfWrapper.new(self)
+      end
 
       sig { overridable.params(props: T.untyped).returns(Component::State) }
       def self.get_initial_state(**props)
@@ -58,9 +97,9 @@ module Mayu
       end
 
       sig { returns(State) }
-      def state = @__wrapper.state
+      def state = mayu.state
       sig { returns(Props) }
-      def props = @__wrapper.props
+      def props = mayu.props
       sig { returns(String) }
       def vnode_id = @__wrapper.vnode_id
 
@@ -136,9 +175,8 @@ module Mayu
       end
 
       sig { returns(Helpers) }
-      def helpers
-        @__wrapper.helpers
-      end
+      def mayu = @__wrapper.helpers
+      alias helpers mayu
 
       sig do
         params(

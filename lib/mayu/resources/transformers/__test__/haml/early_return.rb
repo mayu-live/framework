@@ -1,16 +1,9 @@
+# frozen_string_literal: true
+Self = setup_component(assets: [], styles: {})
 public def render
   begin
-    if true
-      begin
-        return(
-          begin
-            Mayu::VDOM.h(:div, class: styles[:foo])
-          end
-        )
-        nil
-      end
-    end
+    return Mayu::VDOM.h(:div, **mayu.merge_props({ class: :foo })) if true
     nil
   end
-  Mayu::VDOM.h(:div, class: styles[:bar])
+  Mayu::VDOM.h(:div, **mayu.merge_props({ class: :bar }))
 end

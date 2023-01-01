@@ -23,7 +23,7 @@ module Mayu
 
       sig { returns(Id) }
       def dom_id
-        component ? children.first&.dom_id || "root" : id
+        wrapper ? children.first&.dom_id || "root" : id
       end
 
       sig { returns(Descriptor) }
@@ -38,7 +38,8 @@ module Mayu
       attr_accessor :children
 
       sig { returns(T.nilable(Component::Wrapper)) }
-      attr_reader :component
+      attr_reader :wrapper
+      alias component wrapper
 
       sig { returns(T::Boolean) }
       def dom? = type.is_a?(Symbol)
@@ -62,7 +63,7 @@ module Mayu
         @vtree = vtree
         @descriptor = descriptor
         @children = T.let([], Children)
-        @component = T.let(nil, T.nilable(Component::Wrapper))
+        @wrapper = T.let(nil, T.nilable(Component::Wrapper))
         @removed = T.let(false, T::Boolean)
         # TODO:
         # VNodes should keep track of the associated stylesheet and whenever
@@ -83,22 +84,22 @@ module Mayu
       sig { returns(T.untyped) }
       def marshal_dump
         assert_not_removed!
-        [@id, @dom_parent_id, @component, @children, @descriptor]
+        [@id, @dom_parent_id, @wrapper, @children, @descriptor]
       end
 
       sig { params(a: T.untyped).void }
       def marshal_load(a)
-        @id, @dom_parent_id, @component, @children, @descriptor = a
+        @id, @dom_parent_id, @wrapper, @children, @descriptor = a
         @removed = false
 
-        if @component
-          @component.instance_variable_set(:@vnode, self)
-          instance = descriptor.component_class.new(@component)
-          @component.instance_variable_set(:@instance, instance)
-          instance.instance_variable_set(:@wrapper, @component)
-          @component.instance_variable_set(
+        if @wrapper
+          @wrapper.instance_variable_set(:@vnode, self)
+          instance = descriptor.component_class.new(@wrapper)
+          @wrapper.instance_variable_set(:@instance, instance)
+          instance.instance_variable_set(:@wrapper, @wrapper)
+          @wrapper.instance_variable_set(
             :@helpers,
-            Component::Helpers.new(self)
+            Component::Helpers.new(@wrapper)
           )
         end
       end
@@ -127,7 +128,7 @@ module Mayu
 
       sig { returns(T.nilable(Component::Wrapper)) }
       def init_component
-        @component ||= Component.wrap(self, type, props)
+        @wrapper ||= Component.wrap(self, type, props)
       end
 
       sig { params(path: String).void }

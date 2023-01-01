@@ -12,26 +12,32 @@ class TestHaml < Minitest::Test
   Dir[File.join(EXAMPLES_ROOT, "*.haml")].each do |input_path|
     basename = File.basename(input_path, ".*")
 
+    if ENV["MATCH"] in String => match
+      next unless basename.include?(match)
+    end
+
     skip_path = File.join(EXAMPLES_ROOT, "#{basename}.skip")
     output_path = File.join(EXAMPLES_ROOT, "#{basename}.rb")
 
     input = File.read(input_path)
-    output = File.read(output_path)
+    expected = File.read(output_path)
 
     define_method(:"test_#{basename}") do
       T.bind(self, TestHaml)
       skip File.read(skip_path) if File.exist?(skip_path)
-      assert_equal(transform_and_format(input), output)
+      actual = transform_and_format(input, path: input_path)
+      # File.write(output_path, actual)
+      assert_equal(expected, actual)
     end
   end
 
   private
 
   def transform_and_format_file(root:, path:)
-    transform_and_format(File.read(File.join(root, path)))
+    transform_and_format(File.read(File.join(root, path)), path:)
   end
 
-  def transform_and_format(haml, elements_to_classes: false)
+  def transform_and_format(haml, elements_to_classes: false, path: nil)
     transformed =
       Mayu::Resources::Transformers::Haml.transform(
         source: haml,
@@ -40,7 +46,7 @@ class TestHaml < Minitest::Test
         elements_to_classes:
       ).output
 
-    puts "\e[1mInput:\e[0m"
+    puts "\e[1mInput:\e[0;2m #{path}\e[0m"
     puts prepend_line_numbers(
            colorize_source(haml, Rouge::Lexers::Haml.new).each_line
          )
