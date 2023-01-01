@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "sorbet-runtime"
+
+require_relative "../lib/mayu/resources/transformers/haml"
+
+puts Mayu::Resources::Transformers::Haml.transform(
+  source: ARGF.read,
+  source_path: ARGF.path,
+).output

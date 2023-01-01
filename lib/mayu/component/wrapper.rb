@@ -28,11 +28,16 @@ module Mayu
 
       sig { returns(Helpers) }
       attr_reader :helpers
+      sig { returns(Component::Base) }
+      attr_reader :instance
 
       sig { returns(T::Boolean) }
       def dirty? = @dirty
       sig { returns(TrueClass) }
       def dirty! = @dirty = true
+
+      sig { returns(VDOM::VNode) }
+      attr_reader :vnode
 
       sig do
         params(vnode: VDOM::VNode, klass: T.class_of(Base), props: Props).void
@@ -45,7 +50,7 @@ module Mayu
         @dirty = T.let(true, T::Boolean)
         @instance = T.let(klass.new(self), Base)
         @barrier = T.let(Async::Barrier.new, Async::Barrier)
-        @helpers = T.let(Helpers.new(vnode), Helpers)
+        @helpers = T.let(Helpers.new(self), Helpers)
       end
 
       sig { returns(T::Array[String]) }

@@ -48,5 +48,7 @@
   .card
     %code.highlight
       = tokens.map do |token, str|
-        - classname = token.shortname.to_sym
-        %span(class=classname)= str
+        = if str == " " && !token.shortname
+          &nbsp;
+        = else
+          %span{class: token.shortname.to_sym}= str

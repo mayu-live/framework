@@ -119,8 +119,9 @@ module Mayu
             # $stderr.puts "\e[33m#{@source}\e[0m"
             impl.class_eval(@source, @resource.path, 1)
           rescue SyntaxTree::Parser::ParseError => e
-            $stderr.puts "\e[31mError parsing #{@resource.path}: #{e.message}\e[0m"
+            $stderr.puts "\e[31mError parsing #{@resource.path}:#{e.lineno} #{e.message}\e[0m"
 
+            puts "Error on line #{e.lineno}"
             @source
               .each_line
               .with_index(1) do |line, lineno|

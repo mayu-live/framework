@@ -23,6 +23,23 @@ module Mayu
         extend T::Sig
 
         sig do
+          params(transform_results: T::Array[TransformResult]).returns(
+            T::Hash[String, String]
+          )
+        end
+        def self.merge_classnames(transform_results)
+          classnames = Hash.new { |h, k| h[k] = Set.new }
+
+          transform_results.each do |transform_result|
+            transform_result.classes.each do |source, target|
+              classnames[source].add(target)
+            end
+          end
+
+          classnames.transform_values { _1.join(" ") }
+        end
+
+        sig do
           params(
             source: String,
             source_path: String,

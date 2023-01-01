@@ -60,7 +60,7 @@
       :ruby
         text = "hello world"
       %div
-        %p Contents of text: #{text.inspect}
+        %p Contents of text: \#{text.inspect}
         %button(title=text) Button with a title
-        %button{title: "text: #{text}"} Button with a title
+        %button{title: "text: \#{text}"} Button with a title
       ```
