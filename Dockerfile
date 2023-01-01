@@ -35,7 +35,7 @@ SHELL ["/bin/bash", "-c"]
 
 WORKDIR /build
 
-ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils npm webp imagemagick brotli
+ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils webp imagemagick brotli
 
 RUN \
     --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
@@ -90,9 +90,9 @@ COPY example/app ./app
 ENV MAYU_SECRET_KEY "nothing secret here, we just need to set something"
 RUN bin/mayu build && rm -rf vendor
 
-#######################
-## build final image ##
-#######################
+##############
+## app-base ##
+##############
 
 FROM registry.fly.io/mayu-ruby:3.2-alpine3.17 as app-base
 
@@ -105,6 +105,12 @@ RUN gem install -N bundler -v ${BUNDLER_VERSION}
 
 RUN apk update && apk add --no-cache curl bash
 
+SHELL ["/bin/bash", "-c"]
+
+##############
+## pack-app ##
+##############
+
 FROM app-base as pack-app
 
 WORKDIR /app
@@ -113,9 +119,11 @@ COPY --from=build-app /app /app
 COPY --from=build-gem /build/mayu-live-*.gem vendor/cache/
 RUN bundle install && rm -rf vendor/cache
 
-FROM app-base
+#######################
+## build final image ##
+#######################
 
-SHELL ["/bin/bash", "-c"]
+FROM app-base
 
 RUN mkdir /app
 WORKDIR /app
