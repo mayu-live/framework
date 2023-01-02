@@ -1,4 +1,6 @@
 :ruby
+  YEAR = [2022, Time.now.year].uniq.join("–")
+
   MaxWidth = import("./MaxWidth")
   Badge = import("./Footer/Badge")
 
@@ -10,11 +12,11 @@
     }, {
       href: "https://github.com/mayu-live/framework/actions/workflows/ruby.yml",
       alt: "Ruby build status",
-      src: "https://img.shields.io/github/workflow/status/mayu-live/framework/Ruby/main?label=ruby"
+      src: "https://img.shields.io/github/actions/workflow/status/mayu-live/framework/.github/workflows/ruby.yml?branch=main&label=Ruby",
     }, {
       href: "https://github.com/mayu-live/framework/actions/workflows/node.js.yml",
       alt: "JavaScript build status",
-      src: "https://img.shields.io/github/workflow/status/mayu-live/framework/Node.js%20CI/main?label=JavaScript",
+      src: "https://img.shields.io/github/actions/workflow/status/mayu-live/framework/.github/workflows/node.js.yml?branch=main&label=JavaScript",
     }, {
       href: "https://github.com/mayu-live/framework/blob/main/COPYING",
       alt: "License: AGPL-3.0",
@@ -64,8 +66,8 @@
 %footer{**props}
   %MaxWidth.inner
     %p
-      - year = [2022, Time.now.year].uniq.join("—")
-      Copyright © #{year}
+      Copyright © #{YEAR}
+      #{" "}
       %a(href="https://github.com/mayu-live" target="_blank")<
         github.com/mayu-live
 
