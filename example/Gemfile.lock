@@ -32,7 +32,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    async (2.3.0)
+    async (2.3.1)
       console (~> 1.10)
       io-event (~> 1.1)
       timers (~> 4.1)
@@ -47,7 +47,7 @@ GEM
       protocol-http1 (~> 0.14.0)
       protocol-http2 (~> 0.14.0)
       traces (>= 0.8.0)
-    async-io (1.34.0)
+    async-io (1.34.1)
       async
     async-pool (0.3.12)
       async (>= 1.25)
@@ -96,14 +96,14 @@ GEM
       coderay (~> 1.1)
       method_source (~> 1.0)
     racc (1.6.2)
-    rack (3.0.2)
+    rack (3.0.3)
     rake (13.0.6)
     rb-fsevent (0.11.2)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
     rexml (3.2.5)
     rouge (4.0.1)
-    sorbet-runtime (0.5.10598)
+    sorbet-runtime (0.5.10599)
     source_map (3.0.1)
       json
     svg_optimizer (0.2.6)

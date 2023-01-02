@@ -235,42 +235,42 @@ class Async::List
 
   # A callback that is invoked when an item is added to the list.
   #
-  # source://async//lib/async/list.rb#32
+  # source://async//lib/async/list.rb#48
   def added(node); end
 
   # Append a node to the end of the list.
   #
-  # source://async//lib/async/list.rb#38
+  # source://async//lib/async/list.rb#54
   def append(node); end
 
   # Iterate over each node in the linked list. It is generally safe to remove the current node, any previous node or any future node during iteration.
   #
-  # source://async//lib/async/list.rb#128
-  def each; end
+  # source://async//lib/async/list.rb#173
+  def each(&block); end
 
   # @return [Boolean]
   #
-  # source://async//lib/async/list.rb#120
+  # source://async//lib/async/list.rb#136
   def empty?; end
 
-  # source://async//lib/async/list.rb#162
+  # source://async//lib/async/list.rb#194
   def first; end
 
   # Points at the end of the list.
   #
-  # source://async//lib/async/list.rb#24
+  # source://async//lib/async/list.rb#40
   def head; end
 
   # Points at the end of the list.
   #
-  # source://async//lib/async/list.rb#24
+  # source://async//lib/async/list.rb#40
   def head=(_arg0); end
 
   # Determine whether the given node is included in the list.
   #
   # @return [Boolean]
   #
-  # source://async//lib/async/list.rb#153
+  # source://async//lib/async/list.rb#185
   def include?(needle); end
 
   # Print a short summary of the list.
@@ -278,17 +278,17 @@ class Async::List
   # source://async//lib/async/list.rb#17
   def inspect; end
 
-  # source://async//lib/async/list.rb#169
+  # source://async//lib/async/list.rb#211
   def last; end
 
-  # source://async//lib/async/list.rb#51
+  # source://async//lib/async/list.rb#67
   def prepend(node); end
 
   # Remove the node. If it was already removed, this will raise an error.
   #
   # You should be careful to only remove nodes that are part of this list.
   #
-  # source://async//lib/async/list.rb#99
+  # source://async//lib/async/list.rb#115
   def remove(node); end
 
   # Remove the node if it is in a list.
@@ -297,33 +297,41 @@ class Async::List
   #
   # @return [Boolean]
   #
-  # source://async//lib/async/list.rb#85
+  # source://async//lib/async/list.rb#101
   def remove?(node); end
 
   # A callback that is invoked when an item is removed from the list.
   #
-  # source://async//lib/async/list.rb#75
+  # source://async//lib/async/list.rb#91
   def removed(node); end
+
+  # source://async//lib/async/list.rb#227
+  def shift; end
 
   # Returns the value of attribute size.
   #
-  # source://async//lib/async/list.rb#29
+  # source://async//lib/async/list.rb#45
   def size; end
 
   # Add the node, yield, and the remove the node.
   #
-  # source://async//lib/async/list.rb#67
+  # source://async//lib/async/list.rb#83
   def stack(node, &block); end
 
   # Points at the start of the list.
   #
-  # source://async//lib/async/list.rb#27
+  # source://async//lib/async/list.rb#43
   def tail; end
 
   # Points at the start of the list.
   #
-  # source://async//lib/async/list.rb#27
+  # source://async//lib/async/list.rb#43
   def tail=(_arg0); end
+
+  # Fast, safe, unbounded accumulation of children.
+  #
+  # source://async//lib/async/list.rb#24
+  def to_a; end
 
   # Print a short summary of the list.
   #
@@ -332,36 +340,63 @@ class Async::List
 
   private
 
-  # source://async//lib/async/list.rb#108
+  # source://async//lib/async/list.rb#124
   def remove!(node); end
+end
+
+# source://async//lib/async/list.rb#241
+class Async::List::Iterator < ::Async::List::Node
+  # @return [Iterator] a new instance of Iterator
+  #
+  # source://async//lib/async/list.rb#242
+  def initialize(list); end
+
+  # source://async//lib/async/list.rb#285
+  def each; end
+
+  # source://async//lib/async/list.rb#270
+  def move_current; end
+
+  # source://async//lib/async/list.rb#260
+  def move_next; end
+
+  # source://async//lib/async/list.rb#252
+  def remove!; end
+
+  class << self
+    # source://async//lib/async/list.rb#295
+    def each(list, &block); end
+  end
 end
 
 # A linked list Node.
 #
-# source://async//lib/async/list.rb#177
+# source://async//lib/async/list.rb#234
 class Async::List::Node
   # Returns the value of attribute head.
   #
-  # source://async//lib/async/list.rb#178
+  # source://async//lib/async/list.rb#235
   def head; end
 
   # Sets the attribute head
   #
   # @param value the value to set the attribute head to.
   #
-  # source://async//lib/async/list.rb#178
+  # source://async//lib/async/list.rb#235
   def head=(_arg0); end
+
+  def inspect; end
 
   # Returns the value of attribute tail.
   #
-  # source://async//lib/async/list.rb#179
+  # source://async//lib/async/list.rb#236
   def tail; end
 
   # Sets the attribute tail
   #
   # @param value the value to set the attribute tail to.
   #
-  # source://async//lib/async/list.rb#179
+  # source://async//lib/async/list.rb#236
   def tail=(_arg0); end
 end
 
@@ -438,7 +473,7 @@ class Async::Node
   # source://async//lib/async/node.rb#147
   def parent=(parent); end
 
-  # source://async//lib/async/node.rb#256
+  # source://async//lib/async/node.rb#255
   def print_hierarchy(out = T.unsafe(nil), backtrace: T.unsafe(nil)); end
 
   # source://async//lib/async/node.rb#75
@@ -446,12 +481,12 @@ class Async::Node
 
   # Attempt to stop the current node immediately, including all non-transient children. Invokes {#stop_children} to stop all children.
   #
-  # source://async//lib/async/node.rb#240
+  # source://async//lib/async/node.rb#239
   def stop(later = T.unsafe(nil)); end
 
   # @return [Boolean]
   #
-  # source://async//lib/async/node.rb#252
+  # source://async//lib/async/node.rb#251
   def stopped?; end
 
   # @private
@@ -466,7 +501,7 @@ class Async::Node
 
   # Immediately terminate all children tasks, including transient tasks. Internally invokes `stop(false)` on all children. This should be considered a last ditch effort and is used when closing the scheduler.
   #
-  # source://async//lib/async/node.rb#227
+  # source://async//lib/async/node.rb#226
   def terminate; end
 
   # source://async//lib/async/node.rb#137
@@ -486,7 +521,7 @@ class Async::Node
 
   # Traverse the task tree.
   #
-  # source://async//lib/async/node.rb#212
+  # source://async//lib/async/node.rb#211
   def traverse(&block); end
 
   protected
@@ -503,17 +538,17 @@ class Async::Node
   # @yield [_self, level]
   # @yieldparam _self [Async::Node] the object that the method was called on
   #
-  # source://async//lib/async/node.rb#218
+  # source://async//lib/async/node.rb#217
   def traverse_recurse(level = T.unsafe(nil), &block); end
 
   private
 
-  # source://async//lib/async/node.rb#268
+  # source://async//lib/async/node.rb#267
   def print_backtrace(out, indent, node); end
 
   # Attempt to stop all non-transient children.
   #
-  # source://async//lib/async/node.rb#246
+  # source://async//lib/async/node.rb#245
   def stop_children(later = T.unsafe(nil)); end
 end
 
@@ -959,7 +994,7 @@ class Async::Task < ::Async::Node
   # source://async//lib/async/task.rb#220
   def fail!(exception = T.unsafe(nil), propagate = T.unsafe(nil)); end
 
-  # Finish the current task, and all bound bound IO objects.
+  # Finish the current task, moving any children to the parent.
   #
   # source://async//lib/async/task.rb#267
   def finish!; end

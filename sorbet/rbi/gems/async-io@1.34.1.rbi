@@ -74,34 +74,34 @@ class Async::IO::BasicSocket < ::Async::IO::Generic
   include ::Socket::Constants
   include ::Async::IO::Peer
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def close_read(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def close_write(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def connect_address(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def do_not_reverse_lookup(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def do_not_reverse_lookup=(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def getpeereid(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def getpeername(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def getsockname(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def getsockopt(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def local_address(*args, **_arg1, &block); end
 
   # Invokes `recv_nonblock` on the underlying {io}. If the operation would block, the current task is paused until the operation can succeed, at which point it's resumed and the operation is completed.
@@ -120,7 +120,7 @@ class Async::IO::BasicSocket < ::Async::IO::Generic
   # source://async-io//lib/async/io/generic.rb#68
   def recvmsg_nonblock(*args, exception: T.unsafe(nil)); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def remote_address(*args, **_arg1, &block); end
 
   # Invokes `sendmsg_nonblock` on the underlying {io}. If the operation would block, the current task is paused until the operation can succeed, at which point it's resumed and the operation is completed.
@@ -136,10 +136,10 @@ class Async::IO::BasicSocket < ::Async::IO::Generic
   # source://async-io//lib/async/io/generic.rb#68
   def sendmsg_nonblock(*args, exception: T.unsafe(nil)); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def setsockopt(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def shutdown(*args, **_arg1, &block); end
 end
 
@@ -327,34 +327,34 @@ class Async::IO::Generic < ::Async::Wrapper
   # source://async-io//lib/async/io/generic.rb#170
   def <<(buffer); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def advise(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def autoclose=(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def autoclose?(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def binmode(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def binmode?(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def close_on_exec=(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def close_on_exec?(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def close_read(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def close_write(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def closed?(*args, **_arg1, &block); end
 
   # @return [Boolean]
@@ -365,37 +365,37 @@ class Async::IO::Generic < ::Async::Wrapper
   # source://async-io//lib/async/io/generic.rb#175
   def dup; end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def eof(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def eof?(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def external_encoding(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def fcntl(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def fdatasync(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def fileno(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def flush(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def fsync(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def internal_encoding(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def ioctl(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def isatty(*args, **_arg1, &block); end
 
   # source://async-io//lib/async/io/generic.rb#194
@@ -409,25 +409,28 @@ class Async::IO::Generic < ::Async::Wrapper
   # source://async-io//lib/async/io/generic.rb#202
   def nonblock?; end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def nread(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
+  def path(*args, **_arg1, &block); end
+
+  # source://forwardable/1.3.3/forwardable.rb#231
   def pathconf(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def pid(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def pos(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def pos=(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def pread(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def pwrite(*args, **_arg1, &block); end
 
   # Read `length` bytes of data from the underlying I/O. If length is unspecified, read everything.
@@ -441,31 +444,31 @@ class Async::IO::Generic < ::Async::Wrapper
   # source://async-io//lib/async/io/generic.rb#68
   def readpartial(*args, exception: T.unsafe(nil)); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def ready?(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def reopen(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def rewind(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def seek(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def set_encoding(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def set_encoding_by_bom(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def stat(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def sync(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def sync=(*args, **_arg1, &block); end
 
   # Read the specified number of bytes from the input stream. This is fast path.
@@ -477,7 +480,7 @@ class Async::IO::Generic < ::Async::Wrapper
   # source://async-io//lib/async/io/generic.rb#61
   def sysread(*args); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def sysseek(*args, **_arg1, &block); end
 
   # Write entire buffer to output stream. This is fast path.
@@ -489,7 +492,7 @@ class Async::IO::Generic < ::Async::Wrapper
   # source://async-io//lib/async/io/generic.rb#61
   def syswrite(*args); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def tell(*args, **_arg1, &block); end
 
   # Returns the value of attribute timeout.
@@ -504,13 +507,16 @@ class Async::IO::Generic < ::Async::Wrapper
   # source://async-io//lib/async/io/generic.rb#210
   def timeout=(_arg0); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def to_i(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def to_io(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
+  def to_path(*args, **_arg1, &block); end
+
+  # source://forwardable/1.3.3/forwardable.rb#231
   def tty?(*args, **_arg1, &block); end
 
   # source://async-io//lib/async/io/generic.rb#181
@@ -590,10 +596,10 @@ end
 
 # source://async-io//lib/async/io/socket.rb#192
 class Async::IO::IPSocket < ::Async::IO::BasicSocket
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def addr(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def peeraddr(*args, **_arg1, &block); end
 
   # Invokes `recvfrom_nonblock` on the underlying {io}. If the operation would block, the current task is paused until the operation can succeed, at which point it's resumed and the operation is completed.
@@ -745,10 +751,10 @@ class Async::IO::SSLServer
   # source://async-io//lib/async/io/ssl_socket.rb#131
   def accept(task: T.unsafe(nil), **options); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def close(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def close_on_exec=(*args, **_arg1, &block); end
 
   # Returns the value of attribute context.
@@ -762,16 +768,16 @@ class Async::IO::SSLServer
   # source://async-io//lib/async/io/ssl_socket.rb#114
   def fileno; end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def getsockopt(*args, **_arg1, &block); end
 
   # source://async-io//lib/async/io/ssl_socket.rb#127
   def listen(*args); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def local_address(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def reactor=(*args, **_arg1, &block); end
 
   # Returns the value of attribute server.
@@ -779,13 +785,13 @@ class Async::IO::SSLServer
   # source://async-io//lib/async/io/ssl_socket.rb#124
   def server; end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def setsockopt(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def timeout(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def timeout=(*args, **_arg1, &block); end
 end
 
@@ -809,16 +815,16 @@ class Async::IO::SSLSocket < ::Async::IO::Generic
   # source://async-io//lib/async/io/generic.rb#68
   def accept_nonblock(*args, exception: T.unsafe(nil)); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def alpn_protocol(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def cert(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def cipher(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def client_ca(*args, **_arg1, &block); end
 
   # source://async-io//lib/async/io/ssl_socket.rb#95
@@ -835,79 +841,82 @@ class Async::IO::SSLSocket < ::Async::IO::Generic
   # source://async-io//lib/async/io/generic.rb#68
   def connect_nonblock(*args, exception: T.unsafe(nil)); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def context(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
+  def export_keying_material(*args, **_arg1, &block); end
+
+  # source://forwardable/1.3.3/forwardable.rb#231
   def finished_message(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def getsockopt(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def hostname(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def hostname=(*args, **_arg1, &block); end
 
   # source://async-io//lib/async/io/ssl_socket.rb#83
   def local_address; end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def npn_protocol(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def peer_cert(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def peer_cert_chain(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def peer_finished_message(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def pending(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def post_connection_check(*args, **_arg1, &block); end
 
   # source://async-io//lib/async/io/ssl_socket.rb#87
   def remote_address; end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def session(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def session=(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def session_reused?(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def setsockopt(*args, **_arg1, &block); end
 
   # source://async-io//lib/async/io/ssl_socket.rb#99
   def shutdown(how); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def ssl_version(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def state(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def sync_close(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def sync_close=(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def sysclose(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def tmp_key(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def verify_result(*args, **_arg1, &block); end
 
   class << self
@@ -929,7 +938,7 @@ end
 
 # Pre-connect and pre-bind sockets so that it can be used between processes.
 #
-# source://async-io//lib/async/io/shared_endpoint.rb#30
+# source://async-io//lib/async/io/shared_endpoint.rb#29
 class Async::IO::SharedEndpoint < ::Async::IO::Endpoint
   # @return [SharedEndpoint] a new instance of SharedEndpoint
   #
@@ -986,17 +995,17 @@ end
 class Async::IO::Socket < ::Async::IO::BasicSocket
   include ::Async::IO::Server
 
-  # @param duration [Numeric] the maximum time to wait for accepting a connection, if specified.
+  # @param timeout [Numeric] the maximum time to wait for accepting a connection, if specified.
   #
   # source://async-io//lib/async/io/socket.rb#61
   def accept(timeout: T.unsafe(nil), task: T.unsafe(nil)); end
 
-  # @param duration [Numeric] the maximum time to wait for accepting a connection, if specified.
+  # @param timeout [Numeric] the maximum time to wait for accepting a connection, if specified.
   #
   # source://async-io//lib/async/io/socket.rb#61
   def accept_nonblock(timeout: T.unsafe(nil), task: T.unsafe(nil)); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def bind(*args, **_arg1, &block); end
 
   # @raise Errno::EAGAIN the connection failed due to the remote end being overloaded.
@@ -1009,10 +1018,10 @@ class Async::IO::Socket < ::Async::IO::BasicSocket
   # source://async-io//lib/async/io/socket.rb#50
   def connect_nonblock(*args); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def ipv6only!(*args, **_arg1, &block); end
 
-  # source://forwardable/1.3.2/forwardable.rb#229
+  # source://forwardable/1.3.3/forwardable.rb#231
   def listen(*args, **_arg1, &block); end
 
   # Invokes `recvfrom_nonblock` on the underlying {io}. If the operation would block, the current task is paused until the operation can succeed, at which point it's resumed and the operation is completed.
@@ -1023,7 +1032,7 @@ class Async::IO::Socket < ::Async::IO::BasicSocket
   # source://async-io//lib/async/io/generic.rb#68
   def recvfrom_nonblock(*args, exception: T.unsafe(nil)); end
 
-  # @param duration [Numeric] the maximum time to wait for accepting a connection, if specified.
+  # @param timeout [Numeric] the maximum time to wait for accepting a connection, if specified.
   #
   # source://async-io//lib/async/io/socket.rb#61
   def sysaccept(timeout: T.unsafe(nil), task: T.unsafe(nil)); end
@@ -1315,5 +1324,5 @@ end
 # source://async-io//lib/async/io/version.rb#25
 Async::IO::VERSION = T.let(T.unsafe(nil), String)
 
-# source://async/2.0.3/lib/async/version.rb#24
+# source://async/2.3.1/lib/async/version.rb#7
 Async::VERSION = T.let(T.unsafe(nil), String)
