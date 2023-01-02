@@ -398,7 +398,7 @@ module Mayu
                   update_children(
                     ctx,
                     vnode.children,
-                    descriptor.children,
+                    descriptor.children.to_a,
                     lifecycles:
                   )
               end
@@ -406,7 +406,10 @@ module Mayu
           elsif descriptor.has_children?
             ctx.enter(vnode) do
               vnode.children =
-                clean_children(descriptor.children, parent: descriptor).map do
+                clean_children(
+                  descriptor.children.to_a,
+                  parent: descriptor
+                ).map do
                   init_vnode(ctx, _1, lifecycles:).tap do |child|
                     ctx.insert(child)
                   end
@@ -476,7 +479,7 @@ module Mayu
           if component
             Array(component.render).compact
           else
-            descriptor.props[:children]
+            descriptor.props[:children].to_a
           end
 
         update_stylesheet(ctx, component) if component

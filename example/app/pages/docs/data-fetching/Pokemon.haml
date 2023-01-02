@@ -15,12 +15,11 @@
     update(error: e.message)
   end
 
-- state => error:, result:
-
-- return if error
-  %p.error= error
-
-- return unless result
-  %p Loading Pokémon with id #{props[:id]}…
-
-%pre= JSON.pretty_generate(result)
+%div
+  = case state
+  = in { error: String }
+    %p.error= error
+  = in { result: Hash }
+    %pre= JSON.pretty_generate(result)
+  = else
+    %p Loading Pokémon with id #{props[:id]}…

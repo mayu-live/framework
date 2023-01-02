@@ -37,18 +37,16 @@
     overflow-y: auto;
   }
 
-:ruby
-  tokens = get_tokens
-
-- return unless tokens
+= if tokens = get_tokens
+  .container
+    .card
+      %code.highlight
+        = tokens.map do |token, str|
+          = if str == " " && !token.shortname
+            &nbsp;
+          = else
+            %span{class: token.shortname.to_sym}= str
+= else
   .container
     .card
       %code.highlight= children.join
-.container
-  .card
-    %code.highlight
-      = tokens.map do |token, str|
-        = if str == " " && !token.shortname
-          &nbsp;
-        = else
-          %span{class: token.shortname.to_sym}= str

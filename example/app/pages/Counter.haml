@@ -5,6 +5,8 @@
     count: initial_value
   }
 
+  def decrement_disabled = state[:count].zero?
+
   def handle_decrement
     update do |state|
       count = [0, state[:count] - 1].max
@@ -18,6 +20,12 @@
       { count: }
     end
   end
+
+%Card.card
+  %article
+    %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled) －
+    %output= state[:count]
+    %button(title="Increment" onclick=handle_increment) ＋
 
 :css
   Card {
@@ -73,11 +81,3 @@
     box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
   }
 
-%Card.card
-  %article
-    - decrement_disabled = state[:count].zero?
-    %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled)
-      －
-    %output= state[:count]
-    %button(title="Increment" onclick=handle_increment)
-      ＋

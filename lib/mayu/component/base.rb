@@ -5,26 +5,6 @@ require_relative "handler_ref"
 module Mayu
   module Component
     class Base
-      class SelfWrapper
-        extend T::Sig
-
-        sig { params(klass: T.class_of(Base)).void }
-        def initialize(klass)
-          @klass = klass
-        end
-
-        sig do
-          params(
-            method: Symbol,
-            args: T.untyped,
-            block: T.nilable(T.proc.void)
-          ).returns(T.untyped)
-        end
-        def method_missing(method, *args, &block)
-          T.unsafe(@klass).send(method, *args, &block)
-        end
-      end
-
       extend T::Sig
       extend T::Helpers
       abstract!
@@ -33,19 +13,21 @@ module Mayu
         params(
           styles: T::Hash[Symbol, String],
           assets: T::Array[String]
-        ).returns(SelfWrapper)
+        ).returns(T.class_of(Base))
       end
       def self.setup_component(styles:, assets:)
-        # T.unsafe(
-        #   class << self; self ; end,
-        # ).undef_method(T.must(__method__))
+        T.unsafe(
+          class << self
+            self
+          end
+        ).undef_method(T.must(__method__))
 
         const_set(
           :MAYU,
           { styles: styles.freeze, assets: assets.freeze }.freeze
         )
 
-        SelfWrapper.new(self)
+        self
       end
 
       sig { overridable.params(props: T.untyped).returns(Component::State) }
@@ -188,9 +170,7 @@ module Mayu
         @__wrapper.update(state, &blk)
       end
 
-      sig { returns(VDOM::Descriptor::Children) }
-      def children = props[:children].compact
-      sig { returns(VDOM::Descriptor::Children) }
+      sig { returns(VDOM::Children) }
       def children = props[:children]
     end
   end

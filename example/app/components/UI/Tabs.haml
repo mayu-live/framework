@@ -1,6 +1,6 @@
 :ruby
   def self.get_initial_state(children:, **)
-    active = Mayu::VDOM.slots(children).keys.first
+    active = children.slots.keys.first
     { active:, enabled: [active] }
   end
 
@@ -79,7 +79,7 @@
 
 :ruby
   state => active:, enabled:
-  names = Mayu::VDOM.slots(children).keys
+  names = children.slots.keys
 
 .tabs
   .tablist(role="tablist")

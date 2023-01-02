@@ -3,6 +3,7 @@
 
 require_relative "../component"
 require_relative "component_marshaler"
+require_relative "children"
 
 module Mayu
   module VDOM
@@ -18,9 +19,6 @@ module Mayu
         T.type_alias { T.any(T.class_of(Component::Base), LambdaComponent) }
 
       ElementType = T.type_alias { T.any(Symbol, ComponentType) }
-
-      Children = T.type_alias { T.any(ChildType, T::Array[ChildType]) }
-      ChildType = T.type_alias { T.nilable(Descriptor) }
 
       TEXT = :TEXT
       COMMENT = :COMMENT
@@ -83,17 +81,16 @@ module Mayu
       end
       def self.add_comments_between_texts(descriptors)
         comment = Descriptor.comment
-        prev = T.let(nil, T.nilable(Descriptor))
 
-        descriptors
-          .map
-          .with_index do |curr, i|
-            prev2 = prev
-            prev = curr if curr
-
-            prev2&.text? && curr.text? ? [comment, curr] : [curr]
+        [*descriptors, nil].each_cons(2)
+          .flat_map do |curr, succ|
+            if curr&.text? && succ&.text?
+              [curr, comment]
+            else
+              curr
+            end
           end
-          .flatten
+          .compact
       end
 
       sig do
@@ -106,7 +103,8 @@ module Mayu
       def initialize(type, props = {}, children = [])
         @type = T.let(convert_special_type(type), ElementType)
 
-        children = self.class.clean_children(children, parent_type: type)
+        children =
+          Children.new(self.class.clean_children(children, parent_type: type))
         @props = T.let(props.merge(children:), Component::Props)
         @key = T.let(@props.delete(:key), T.untyped)
         @slot = T.let(@props.delete(:slot)&.to_s, T.nilable(String))
@@ -132,7 +130,7 @@ module Mayu
       def element? = @type.is_a?(Symbol)
       sig { returns(T::Boolean) }
       def component? = Component.component_class?(@type)
-      sig { returns(T::Array[Descriptor]) }
+      sig { returns(Children) }
       def children = props[:children]
       sig { returns(T::Boolean) }
       def has_children? = children.any?
@@ -161,7 +159,7 @@ module Mayu
       sig { params(other: Descriptor).returns(T::Boolean) }
       def same?(other)
         if key == other.key && type == other.type
-          type == :input ? props[:type] == props[:type] : true
+          type == :input ? props[:type] == other.props[:type] : true
         else
           false
         end

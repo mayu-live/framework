@@ -519,6 +519,8 @@ module Mayu
               .compact
           end
 
+          IN_RE = /\A\s*in\s+/
+
           def group_control_statements(children)
             children
               .chunk_while do |a, b|
@@ -534,8 +536,14 @@ module Mayu
                    ]
                   true
                 in [
-                     { type: :script, value: { keyword: "case" | "in" } },
-                     { type: :script, value: { keyword: "in" } }
+                     {
+                       type: :script,
+                       value: { keyword: "case" } | { text: IN_RE }
+                     },
+                     {
+                       type: :script,
+                       value: { keyword: "else" } | { text: IN_RE }
+                     }
                    ]
                   true
                 in [

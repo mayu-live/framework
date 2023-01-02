@@ -78,7 +78,7 @@
       %ul
         = entries[:directories]&.map do |path|
           %li[path]
-            = Mayu::VDOM.h(self.class, root: props[:root], path:)
+            %Self{root: props[:root], path:}
         = entries[:files]&.map do |path|
           %li[path]
             %FileEntry{path:}

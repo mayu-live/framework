@@ -42,7 +42,7 @@ module Mayu
       sig { returns(Props) }
       def props = @wrapper.props
 
-      sig { returns(VDOM::Descriptor::Children) }
+      sig { returns(VDOM::Children) }
       def children = props[:children]
 
       sig { params(sources: Props).returns(Props) }
@@ -58,12 +58,17 @@ module Mayu
       end
 
       sig do
-        params(name: T.nilable(String)).returns(T::Array[VDOM::Descriptor])
+        params(
+          name: T.nilable(String),
+          fallback: T.nilable(T.proc.returns(VDOM::Descriptor))
+        ).returns(
+          T.nilable(T.any(VDOM::Descriptor, T::Array[VDOM::Descriptor]))
+        )
       end
-      def slot(name = nil) = VDOM.slot(Array(children).compact, name)
+      def slot(name = nil, &fallback) = children.slot(name, &fallback)
 
-      sig { returns(T::Hash[T.nilable(String), VDOM::Descriptor]) }
-      def slots = VDOM.slots(Array(children).compact)
+      sig { returns(T::Array[T.nilable(String)]) }
+      def slot_names = children.slots.keys
 
       sig do
         params(name: Symbol, args: T.untyped, kwargs: T.untyped).returns(

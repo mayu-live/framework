@@ -9,7 +9,7 @@ module Mayu
           VDOM::Descriptor.new(
             :__mayu_head,
             props,
-            [children, VDOM.h(:__mayu_links)].flatten.compact
+            [*children, VDOM.h(:__mayu_links)].flatten.compact
           )
         end
       end
@@ -20,7 +20,7 @@ module Mayu
           VDOM::Descriptor.new(
             :__mayu_body,
             props,
-            [children, VDOM.h(:__mayu_scripts, [], {})].flatten.compact
+            [*children, VDOM.h(:__mayu_scripts, [], {})].flatten.compact
           )
         end
       end
@@ -42,7 +42,7 @@ module Mayu
           VDOM::Descriptor.new(
             :__mayu_a,
             overridden_props,
-            [children].flatten.compact
+            [*children].flatten.compact
           )
         end
       end
@@ -69,7 +69,7 @@ module Mayu
                   key: descriptor.key,
                   selected: !value.nil? && value == descriptor.props[:value]
                 },
-                descriptor.props[:children]
+                descriptor.props[:children].to_a
               )
             end
 
