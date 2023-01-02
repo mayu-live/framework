@@ -620,6 +620,8 @@ module Mayu
                    }
                   if curr in { type: :plain, value: { text: } }
                     curr.value = { text: " #{text}" }
+                  else
+                    next make_space(curr), curr
                   end
                 end
 
@@ -629,17 +631,29 @@ module Mayu
 
           def append_whitespace(children)
             [*children, nil].each_cons(2)
-              .map do |curr, succ|
+              .flat_map do |curr, succ|
                 if succ in {
                      type: :tag, value: { nuke_inner_whitespace: true }
                    }
                   if curr in { type: :plain, value: { text: } }
                     curr.value = { text: "#{text} " }
+                  else
+                    next curr, make_space(curr)
                   end
                 end
 
                 curr
               end
+          end
+
+          def make_space(ref_node)
+            ::Haml::Parser::ParseNode.new(
+              :plain,
+              ref_node.line,
+              { text: " " },
+              ref_node.parent,
+              []
+            )
           end
 
           def visit_filter(node)
