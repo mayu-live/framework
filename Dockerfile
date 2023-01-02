@@ -134,5 +134,5 @@ COPY --from=pack-app /app /app
 
 ENV PORT 3000
 
-# ENTRYPOINT ["ruby", "--yjit"]
+ENTRYPOINT ["/fly/entrypoint.sh"]
 CMD ["bin/mayu", "serve", "--disable-sorbet"]
