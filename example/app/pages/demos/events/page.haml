@@ -9,11 +9,8 @@
   }
 
   def handle_alert
-    helpers.alert("Hello world\nCount: #{state[:count]}")
-
-    update do |state|
-      { count: state[:count] + 1 }
-    end
+    helpers.alert("Hello world\nCount: #{@count}")
+    @count += 1
   end
 
 %article

@@ -10,6 +10,6 @@
     text-decoration: underline;
   }
 :ruby
-  style = props[:color] && { __link_color: props[:color] }
+  style = $color && { __link_color: $color }
 %a(style=style){**props.except(:color)}
   %slot

@@ -7,10 +7,10 @@
     display: grid;
   }
 .card{
-  class: props[:class],
+  class: $class,
   style: {
-    :"--card-background" => props[:background] || "var(--bright)",
-    :"--card-border" => props[:border] || "#0002",
+    :"--card-background" => $background || "var(--bright)",
+    :"--card-border" => $border || "#0002",
   }
 }
   %slot

@@ -3,7 +3,7 @@
   Name = import("./Name")
 
   def icon
-    case File.extname(props[:path])
+    case File.extname($path)
     in ".haml" | ".css" | ".rb"
       "file-code"
     in ".md"
@@ -25,8 +25,7 @@
   }
 
 :ruby
-  props => path:
-  href = "?file=#{path}"
+  href = "?file=#{$path}"
 
 %Name(icon=icon)
-  %a(href=href)= File.basename(path)
+  %a(href=href)= File.basename($path)

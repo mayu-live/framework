@@ -4,8 +4,8 @@
 
 %MaxWidth(grid)
   .page
-    = if props[:title]
-      %Heading(level=1)= props[:title]
+    = if $title
+      %Heading(level=1)= $title
 
     %slot(name="after_heading")
     .wrap

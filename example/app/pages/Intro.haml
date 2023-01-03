@@ -11,22 +11,22 @@
   def mount
     loop do
       sleep 15
-      update(angle: rand)
+      @angle = rand
 
       WORDS.length.times do |i|
-        update(word: i)
+        @word = i
         sleep 0.5
       end
 
-      update(word: nil)
+      @word = nil
     end
   end
 
-.intro{style: { "--angle": "#{state[:angle] * 2}turn" }}
+.intro{style: { "--angle": "#{@angle * 2}turn" }}
   %MaxWidth
     .inner
       %h1
         Reactive Server-Side component-based VirtualDOM framework for Ruby
       %h2
         = WORDS.map.with_index do |word, i|
-          %span{class: { active: i == state[:word] }}= word
+          %span{class: { active: i == @word }}= word

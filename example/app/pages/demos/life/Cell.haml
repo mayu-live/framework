@@ -1,11 +1,11 @@
 :ruby
   def should_update?(next_props, _next_state)
     case
-    when props[:alive] != next_props[:alive]
+    when $alive != next_props[:alive]
       true
-    when props[:x] != next_props[:x]
+    when $x != next_props[:x]
       true
-    when props[:y] != next_props[:y]
+    when $y != next_props[:y]
       true
     else
       false

@@ -36,15 +36,19 @@
       If you don't need to read state when updating, you can do this:
 
       ```ruby
-      update(count: 0)
+      update(count: 0) # old syntax
+      @count = 0 # new syntax
       ```
 
       If you need to read state, you can get the entire state object:
 
       ```ruby
+      # old syntax
       update do |state|
         { count: state[:count] + 1 }
       end
+      # new syntax
+      @count += 1
       ```
 
       Or you could extract just the keys you are interested in:
@@ -58,8 +62,10 @@
       You can also use default values:
 
       ```ruby
+      # old syntax
       update do |count: 0|
         { count: count + 1 }
       end
+      # new syntax
+      @count = (@count || 0) + 1
       ```
-

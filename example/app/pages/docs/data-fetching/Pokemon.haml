@@ -8,11 +8,10 @@
 
   def mount
     sleep 1
-    res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{props[:id]}")
-    result = res.json(symbolize_names: true)
-    update(result:)
+    res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{$id}")
+    @result = res.json(symbolize_names: true)
   rescue => e
-    update(error: e.message)
+    @error = e.message
   end
 
 %div
@@ -22,4 +21,4 @@
   = in { result: Hash }
     %pre= JSON.pretty_generate(result)
   = else
-    %p Loading Pokémon with id #{props[:id]}…
+    %p Loading Pokémon with id #{$id}…

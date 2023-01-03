@@ -32,6 +32,6 @@
     transform: translateX(.5em) rotateZ(.5turn);
   }
 
-%details{open: props[:open]}
-  %summary= props[:summary]
+%details{open: $open}
+  %summary= $summary
   %slot

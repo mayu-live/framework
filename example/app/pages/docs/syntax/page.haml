@@ -86,9 +86,9 @@
         def handle_click(event) =
           case event
           in { target: { name: "increment" } }
-            update { |state| { count: state[:count] + 1 } }
+            @state += 1
           in { target: { name: "decrement" } }
-            update { |state| { count: state[:count] - 1 } }
+            @state -= 1
           end
       - state => count:
       %div
@@ -109,9 +109,9 @@
           clicked: false
         }
         def handle_click(event)
-          update(clicked: true)
+          @clicked = true
         end
-      = return if state[:clicked]
+      = return if @clicked
         %p You clicked the button.
       %button(onclick=handle_click) Click me
       ```
@@ -119,7 +119,7 @@
       You can also use `return unless`.
 
       ```haml
-      = return unless props[:data]
+      = return unless $data
         %p Loading…
-      %pre= props[:data]
+      %pre= $data
       ```

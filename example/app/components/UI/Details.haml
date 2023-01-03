@@ -20,9 +20,18 @@
 
   def handle_toggle(e)
     if e in { target: { open: true } }
-      update(loaded: true)
+      @loaded = true
     end
   end
+
+%Card{class: $class}
+  %details(ontoggle=handle_toggle open=open)
+    %summary= $summary
+    .content
+      = if @loaded
+        %slot
+      = else
+        %p Loading…
 
 :css
   details {
@@ -50,14 +59,3 @@
     margin: 0;
     padding: 0;
   }
-
-- state => open:
-
-%Card{class: props[:class]}
-  %details(ontoggle=handle_toggle open=open)
-    %summary= props[:summary]
-    .content
-      = if state[:loaded]
-        %slot
-      = unless state[:loaded]
-        %p Loading…

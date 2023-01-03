@@ -5,21 +5,9 @@
     count: initial_value
   }
 
+  def handle_increment = @count += 1
+  def handle_decrement = @count -= 1
   def decrement_disabled = @count.zero?
-
-  def handle_decrement
-    update do |state|
-      count = [0, state[:count] - 1].max
-      { count: }
-    end
-  end
-
-  def handle_increment
-    update do |state|
-      count = state[:count] + 1
-      { count: }
-    end
-  end
 
 %Card.card
   %article
@@ -80,4 +68,3 @@
     filter: grayscale(100%);
     box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
   }
-
