@@ -5,7 +5,7 @@
     count: initial_value
   }
 
-  def decrement_disabled = state[:count].zero?
+  def decrement_disabled = @count.zero?
 
   def handle_decrement
     update do |state|

@@ -83,7 +83,7 @@ module Mayu
                   create_render(render)
                 ]
               )
-            )
+            ).accept(StateAndPropsTransformer.new.visitor)
           end
 
           def const_path(*names)
@@ -817,6 +817,70 @@ module Mayu
             end
 
             visitor
+          end
+        end
+
+        class StateAndPropsTransformer
+          include SyntaxTree::DSL
+
+          COLLECTIONS = {
+            SyntaxTree::IVar => "state",
+            SyntaxTree::GVar => "props"
+          }
+
+          def visitor
+            SyntaxTree.mutation do |visitor|
+              visitor.mutate("VarRef[value: IVar | GVar]") do |var_ref|
+                aref(var_ref.value)
+              end
+
+              visitor.mutate(
+                "Assign[target: VarField[value: GVar]]"
+              ) do |assign|
+                loc = assign.target.location
+                raise "Can not write to props on line #{loc.start_line} col #{loc.start_column}"
+              end
+
+              visitor.mutate(
+                "OpAssign[target: VarField[value: IVar]]"
+              ) do |assign|
+                assign.copy(target: aref_field(assign.target.value))
+              end
+
+              visitor.mutate(
+                "Assign[target: VarField[value: IVar]]"
+              ) do |assign|
+                assign.copy(target: aref_field(assign.target.value))
+              end
+            end
+          end
+
+          private
+
+          def aref(node)
+            ARef(
+              call_self(COLLECTIONS.fetch(node.class)),
+              Args([var_to_symbol(node)])
+            )
+          end
+
+          def aref_field(node)
+            ARefField(
+              call_self(COLLECTIONS.fetch(node.class)),
+              Args([var_to_symbol(node)])
+            )
+          end
+
+          def call_self(method)
+            CallNode(VarRef(Kw("self")), Period("."), Ident(method), nil)
+          end
+
+          def var_to_symbol(node)
+            SymbolLiteral(Ident(strip_var_prefix(node.value)))
+          end
+
+          def strip_var_prefix(str)
+            str[/\A[@$]?(.*)/, 1]
           end
         end
 
