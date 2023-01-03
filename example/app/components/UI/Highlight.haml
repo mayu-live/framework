@@ -6,8 +6,8 @@
   end
 
   def lexer
-    return unless props[:language]
-    case props[:language].to_sym
+    return unless $language
+    case $language.to_sym
     when :haml
       Rouge::Lexers::Haml.new
     when :shell

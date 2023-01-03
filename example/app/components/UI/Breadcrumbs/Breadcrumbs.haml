@@ -35,7 +35,7 @@
 %nav{ aria: { label: "Breadcrumbs" } }
   %MaxWidth
     %ol
-      = add_separators(props[:links]).map.with_index do |elem, i|
+      = add_separators($links).map.with_index do |elem, i|
         %li[i]
           = if elem == :sep
             %Separator

@@ -2,7 +2,7 @@
   # class scope
 
 :ruby
-  level = props[:level].to_i.clamp(1, 6)
+  level = $level.to_i.clamp(1, 6)
   tag = :"h#{level}"
   classname = styles[:h, tag, styles[:class]]
 

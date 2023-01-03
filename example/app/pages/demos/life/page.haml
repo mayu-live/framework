@@ -43,9 +43,9 @@
 
   def mount
     loop do
-      if state[:running]
+      if @running
         handle_step
-        sleep 1.0 / state[:fps]
+        sleep 1.0 / @fps
       else
         sleep 0.5
       end
@@ -86,7 +86,7 @@
   def set_cell_value(x, y, value)
     update do |state|
       {
-        grid: state[:grid].dup.tap do |grid|
+        grid: @grid.dup.tap do |grid|
           grid[y] = grid[y].dup.tap { |row| row[x] = value }
         end
       }
@@ -177,9 +177,6 @@
     gap: 1em;
   }
 
-:ruby
-  state => grid:, running:
-
 %article
   %Heading(level=2) Game of life
 
@@ -196,22 +193,22 @@
       %Button(onclick=handle_randomize) Randomize
       %Button(onclick=handle_step disabled=running) Step
       %Button(onclick=handle_toggle_running){
-        color: running ? "var(--red)" : "var(--green)"
-      }= running ? "Stop" : "Start"
+        color: @running ? "var(--red)" : "var(--green)"
+      }= @running ? "Stop" : "Start"
     -#
       %div
         %label(for="grid-width") Grid width
         %br
-        %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: state[:width]}
-        %output= state[:width]
+        %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: @width}
+        %output= @width
       %div
         %label(for="grid-height") Grid height
         %br
-        %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: state[:height]}
-        %output= state[:height]
+        %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: @height}
+        %output= @height
       %div
         %label(for="game-fps") Frames per second
         %br
-        %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: state[:fps]}
-        %output= state[:fps]
-  %GameGrid(grid=grid ondraw=handle_draw)
+        %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
+        %output= @fps
+  %GameGrid(grid=@grid ondraw=handle_draw)

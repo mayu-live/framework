@@ -72,8 +72,8 @@
 
 .group
   %input(type="text"){
-    class: props[:class],
-    placeholder: props[:label],
+    class: $class,
+    placeholder: $label,
     **props
   }
-  %label= props[:label]
+  %label= $label

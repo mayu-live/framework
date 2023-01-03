@@ -61,21 +61,17 @@
     mask-position: 50% 50%;
   }
 :ruby
-  props => name:
-
-  url = ICONS[name] or return
-
-  aria = props[:title] ? {} : { hidden: "true" }
-
+  url = ICONS[$name] or return
+  aria = $title ? {} : { hidden: "true" }
   style = {
-    **(props[:style] || {}),
+    **($style || {}),
     __icon: "url(#{url})",
-    __icon_color: props[:color]
+    __icon_color: $color
   }.reject { _2.nil? }
 
 %i{
-  class: props[:class],
-  title: props[:title],
+  class: $class,
+  title: $title,
   style:,
   aria:,
 }

@@ -1,9 +1,9 @@
 :ruby
   def inline_style
-    return {} if props[:blur] == false
+    return {} if $blur == false
 
     {
-      background_image: "url('#{props[:image].blur}')",
+      background_image: "url('#{$image.blur}')",
       background_size: "cover",
     }
   end
@@ -15,18 +15,13 @@
   }
 
 :ruby
-  image = props.fetch(:image)
+  image = $image or return
 
-  loading = props[:lazy] && "lazy"
-  decoding = props.fetch(:decoding, "async")
+  loading = $lazy && "lazy"
+  decoding = $decoding || "async"
+  alt = $alt or Console.logger.warn(self, "Missing alt-attribute!")
 
-  alt = props.fetch(:alt) do
-    Console.logger.warn(self, "Missing alt-attribute!")
-  end
-
-  classname = props[:class]
-
-%img(style=inline_style loading=loading decoding=decoding alt=alt class=classname){
+%img(style=inline_style loading=loading decoding=decoding alt=alt class=$class){
   src: image.src,
   sizes: image.sizes,
   srcset: image.srcset,

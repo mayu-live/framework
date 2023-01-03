@@ -12,26 +12,41 @@
     suggestions: [],
   }
 
-  def handle_open
-    update(open: true)
-  end
-
-  def handle_close
-    update(open: false)
-  end
+  def handle_open = @open = true
+  def handle_close = @open = false
 
   def mount
-    @fuzzymatch = FuzzyMatch.new(props[:results], read: :name)
+    instance_variable_set(:@fuzzymatch, FuzzyMatch.new($results, read: :name))
   end
 
   def handle_change(e)
     e => { target: { value: } }
 
-    update(
-      value:,
-      suggestions: @fuzzymatch.find_all(value).first(10)
-    )
+    @value = value
+    @suggestions =
+      instance_variable_get(:@fuzzymatch)
+      .find_all(value)
+      .first(10)
   end
+
+%div
+  %Button(onclick=handle_open)
+    %Icon(name="filter")>
+    Filter
+  %dialog(onclose=handle_close){open: @open}
+    %form(method="dialog")
+      %Fieldset
+        %legend Filter
+        %Input(label="Name" oninput=handle_change onchange=handle_change autocomplete="off")
+        %Button Close
+        .results
+          %ul
+            = @suggestions.map do |result|
+              - id = result[:url].split("/").last.to_i
+              %li
+                %a(href="/demos/pokemon/#{id}")
+                  = result[:name]
+
 :css
   .results {
     position: relative;
@@ -70,21 +85,3 @@
   dialog::backdrop {
     backdrop-filter: brightness(50%) blur(5px);
   }
-
-%div
-  %Button(onclick=handle_open)
-    %Icon(name="filter")>
-    Filter
-  %dialog(onclose=handle_close){open: state[:open]}
-    %form(method="dialog")
-      %Fieldset
-        %legend Filter
-        %Input(label="Name" oninput=handle_change onchange=handle_change autocomplete="off")
-        %Button Close
-        .results
-          %ul
-            = state[:suggestions].map do |result|
-              - id = result[:url].split("/").last.to_i
-              %li
-                %a(href="/demos/pokemon/#{id}")
-                  = result[:name]

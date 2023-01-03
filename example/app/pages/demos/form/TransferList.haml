@@ -20,29 +20,21 @@
   end
 
   def handle_submit(e)
-    update do |state|
-      case e
-      in { submitter: { name: "action", value: "move_all_left" } }
-        { left: state[:left] + state[:right], right: [] }
-      in { submitter: { name: "action", value: "move_all_right" } }
-        { left: [], right: state[:right] + state[:left] }
-      in { submitter: { name: "action", value: "move_selected_left" }, target: { formData: } }
-        selected = get_selected(formData, "right-")
-
-        {
-          left: state[:left].union(selected),
-          right: state[:right].difference(selected),
-        }
-      in { submitter: { name: "action", value: "move_selected_right" }, target: { formData: } }
-        selected = get_selected(formData, "left-")
-
-        {
-          left: state[:left].difference(selected),
-          right: state[:right].union(selected),
-        }
-      else
-        {}
-      end
+    case e
+    in { submitter: { name: "action", value: "move_all_left" } }
+      @left += @right
+      @right = []
+    in { submitter: { name: "action", value: "move_all_right" } }
+      @right += @left
+      @left = []
+    in { submitter: { name: "action", value: "move_selected_left" }, target: { formData: } }
+      selected = get_selected(formData, "right-")
+      @left = @left.union(selected)
+      @right = @right.difference(selected)
+    in { submitter: { name: "action", value: "move_selected_right" }, target: { formData: } }
+      selected = get_selected(formData, "left-")
+      @left = @left.difference(selected)
+      @right = @right.difference(selected)
     end
   end
 
@@ -50,7 +42,7 @@
   %legend Transfer list
   %form{on_submit: handler(:handle_submit)}
     %ul
-      = state[:left].map do |item|
+      = @left.map do |item|
         %li[item]
           %Checkbox{
             label: ITEMS[item],
@@ -65,7 +57,7 @@
       %button(type="submit" name="action" value="move_selected_right" title="Move selected right") ⟩
 
     %ul
-      = state[:right].map do |item|
+      = @right.map do |item|
         %li[item]
           %Checkbox{
             label: ITEMS[item],

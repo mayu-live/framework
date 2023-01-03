@@ -11,11 +11,9 @@
     { x: 0, y: 0, count: 0 }
 
   def handle_click
-    update(
-      count: state[:count].succ,
-      x: (rand * 2 - 1) * 200,
-      y: (rand * 2 - 1) * 200,
-    )
+    @count += 1
+    @x = (rand * 2 - 1) * 200
+    @y = (rand * 2 - 1) * 200
   end
 
 :css
@@ -29,4 +27,4 @@
   style = { transform: }
 
 %button(style=style onclick=handle_click)
-  = MESSAGES[state[:count] % MESSAGES.size]
+  = MESSAGES[@count % MESSAGES.size]

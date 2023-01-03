@@ -30,9 +30,9 @@
   }
 
 :ruby
-  stroke = props[:stroke] || "#000"
-  fill = props[:fill] || "transparent"
-  classname = props[:class]
+  stroke = $stroke || "#000"
+  fill = $fill || "transparent"
+  classname = $class
 
 %div(class=classname)
   %svg.svg(width="100" height="100" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg")
@@ -40,13 +40,13 @@
     %g
       - x1, y1, x2 = [0, 0, 0]
       - y2 = -50
-      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] / 12.0) }
+      - style = { transform: format("rotateZ(%.5fturn)", @hour / 12.0) }
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="6"){style:}
       - y2 = -60
-      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] + state[:min] / 60.0) }
+      - style = { transform: format("rotateZ(%.5fturn)", @hour + @min / 60.0) }
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="3"){style:}
       - y2 = -80
-      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] * 60.0 + state[:min] + state[:sec] / 60.0) }
+      - style = { transform: format("rotateZ(%.5fturn)", @hour * 60.0 + @min + @sec / 60.0) }
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="1"){style:}
     %circle(cx=0 cy=0 r=3 fill=stroke)
     %g

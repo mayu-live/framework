@@ -1,5 +1,7 @@
 :ruby
   Icon = import("/app/components/UI/Icon")
+
+  def color = $color || "var(--dark)"
 :css
   label {
     display: inline-flex;
@@ -8,9 +10,6 @@
     padding: 0;
     gap: .5em;
   }
-:ruby
-  props => { icon: }
-  color = props[:color] || "var(--dark)"
-%label{**props}
-  %Icon(name=icon color=color)
+%label{**props.except(:color, :icon)}
+  %Icon(name=$icon color=color)
   %slot

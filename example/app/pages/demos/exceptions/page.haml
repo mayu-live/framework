@@ -11,9 +11,7 @@
   def handle_click(e) =
     case e
     in { target: { name: "increment" } }
-      update do |state|
-        { count: state[:count] + 1 }
-      end
+      @count += 1
     end
 
 %article
@@ -24,7 +22,7 @@
       Issue for implementing error boundaries
   %p
     Count:
-    %output<= state[:count]
+    %output<= @count
   %p
     %button(onclick=handle_click name="increment") Increment
     %button(onclick=handle_click name="error") Error

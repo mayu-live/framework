@@ -9,22 +9,22 @@
   }
 
   def mount
-    if state[:open]
+    if @open
       update(entries: load_entries)
     end
   end
 
   def should_update?(next_props, next_state)
-    state[:open] != next_state[:open]
+    @open != next_state[:open]
   end
 
   def handle_toggle
-    update do |state|
-      open = !state[:open]
-      entries = state[:entries] || (open && load_entries)
-      { open:, entries: }
-    end
+    open = !@open
+    entries = @entries || (open && load_entries)
+    { open:, entries: }
   end
+
+  def icon = @open ? "folder-open" : "folder"
 
   private
 
@@ -65,20 +65,17 @@
     text-decoration: underline;
     cursor: pointer;
   }
-:ruby
-  icon = state[:open] ? "folder-open" : "folder"
-
 %div
   %Name(icon=icon color="var(--blue)")
     %button(type="button" onclick=handle_toggle)
-      #{File.basename(props[:path])}/
+      #{File.basename($path)}/
 
-  = if state[:open]
-    = if entries = state[:entries]
+  = if @open
+    = if entries = @entries
       %ul
         = entries[:directories]&.map do |path|
           %li[path]
-            %Self{root: props[:root], path:}
+            %Self{root: $root, path:}
         = entries[:files]&.map do |path|
           %li[path]
             %FileEntry{path:}
