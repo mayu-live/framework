@@ -55,15 +55,18 @@ module Mayu
             when ".haml"
               transform_result =
                 Transformers::Haml.transform(
-                  source: original_source,
-                  source_path: resource.path,
+                  Transformers::Haml::TransformOptions.new(
+                    source: original_source,
+                    source_path: resource.path,
+                    source_line: 1
+                  )
                 )
               source = transform_result.output
 
               @inline_css =
                 T.let(
                   transform_result.css,
-                  T.nilable(Transformers::CSS::TransformResult),
+                  T.nilable(Transformers::CSS::TransformResult)
                 )
 
               source
@@ -87,16 +90,16 @@ module Mayu
               @inline_css.filename,
               Generators::WriteFile.new(
                 contents: @inline_css.output + source_map_link,
-                compress: true,
-              ),
+                compress: true
+              )
             ),
             Asset.new(
               @inline_css.filename + ".map",
               Generators::WriteFile.new(
                 contents: JSON.generate(@inline_css.source_map),
-                compress: true,
-              ),
-            ),
+                compress: true
+              )
+            )
           ]
         end
 
@@ -143,12 +146,12 @@ module Mayu
 
           styles =
             @resource.registry.add_resource(
-              @resource.path.sub(/\.\w+\z/, ".css"),
+              @resource.path.sub(/\.\w+\z/, ".css")
             )
 
           @resource.registry.dependency_graph.add_dependency(
             @resource.path,
-            styles.path,
+            styles.path
           )
 
           classes = T.let(Hash.new, T::Hash[String, String])
@@ -164,7 +167,7 @@ module Mayu
 
           unless classes.empty?
             impl.instance_exec(
-              Resources::Types::Stylesheet::ClassnameProxy.new(classes),
+              Resources::Types::Stylesheet::ClassnameProxy.new(classes)
             ) do |classname_proxy|
               define_singleton_method(:styles) { classname_proxy }
               define_method(:styles) { classname_proxy }

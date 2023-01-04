@@ -17,10 +17,12 @@ module Mayu
         def haml_to_component(source, file:, line:)
           result =
             Mayu::Resources::Transformers::Haml.transform(
-              content_hash: "test123",
-              source: source,
-              source_path: get_path_relative_to_root(file),
-              source_line: line
+              Mayu::Resources::Transformers::Haml::TransformOptions.new(
+                content_hash: "test123",
+                source: source,
+                source_path: get_path_relative_to_root(file),
+                source_line: line
+              )
             )
 
           impl = Class.new(Mayu::Component::Base)

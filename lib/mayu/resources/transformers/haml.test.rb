@@ -37,13 +37,20 @@ class TestHaml < Minitest::Test
     transform_and_format(File.read(File.join(root, path)), path:)
   end
 
-  def transform_and_format(haml, elements_to_classes: false, path: nil)
+  def transform_and_format(
+    haml,
+    transform_elements_to_classes: false,
+    path: nil
+  )
     transformed =
       Mayu::Resources::Transformers::Haml.transform(
-        source: haml,
-        source_path: "app/components/MyComponent.haml",
-        content_hash: "abc123",
-        elements_to_classes:
+        Mayu::Resources::Transformers::Haml::TransformOptions.new(
+          source: haml,
+          source_path: "app/components/MyComponent.haml",
+          source_line: 1,
+          content_hash: "abc123",
+          transform_elements_to_classes:
+        )
       ).output
 
     puts "\e[1mInput:\e[0;2m #{path}\e[0m"

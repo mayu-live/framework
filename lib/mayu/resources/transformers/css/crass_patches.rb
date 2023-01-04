@@ -54,10 +54,7 @@ module Crass
       rules = []
 
       while token = input.consume
-        if token[:node] == :"}"
-          puts "BREAKING"
-          break
-        end
+        break if token[:node] == :"}"
 
         if token[:node] == :whitespace
           rules << token unless rules.empty?

@@ -15,6 +15,51 @@ module Mayu
   module Resources
     module Transformers
       module Haml
+        class MutationVisitor < SyntaxTree::Visitor::MutationVisitor
+          # This class visits more nodes than the parent class.
+          # This should probably be fixed in the syntax_tree gem,
+          # but I don't know what other nodes need to be fixed.
+
+          def self.build(&block)
+            new.tap { yield _1 }
+          end
+
+          def visit_assign(node)
+            node.copy(target: visit(node.target), value: visit(node.value))
+          end
+
+          def visit_assoc_splat(node)
+            node.copy(value: visit(node.value))
+          end
+
+          def visit_assoc(node)
+            node.copy(key: visit(node.key), value: visit(node.value))
+          end
+
+          def visit_aref(node)
+            node.copy(
+              collection: visit(node.collection),
+              index: visit(node.index)
+            )
+          end
+
+          def visit_opassign(node)
+            node.copy(target: visit(node.target), value: visit(node.value))
+          end
+
+          def visit_binary(node)
+            node.copy(left: visit(node.left), right: visit(node.right))
+          end
+
+          def visit_if_op(node)
+            node.copy(
+              predicate: visit(node.predicate),
+              truthy: visit(node.truthy),
+              falsy: visit(node.falsy)
+            )
+          end
+        end
+
         class TransformResult < T::Struct
           const :filename, String
           const :output, String
@@ -23,45 +68,39 @@ module Mayu
           const :source_map, T::Hash[String, T.untyped]
         end
 
-        extend T::Sig
+        class TransformOptions < T::Struct
+          const :source, String
+          const :source_path, String
+          const :source_line, Integer
 
-        sig do
-          params(
-            source: String,
-            source_path: String,
-            source_line: Integer,
-            content_hash: T.nilable(String),
-            elements_to_classes: T::Boolean
-          ).returns(TransformResult)
-        end
-        def self.transform(
-          source:,
-          source_path:,
-          source_line: 1,
-          content_hash: nil,
-          elements_to_classes: true
-        )
-          source_path_without_extension =
+          # TODO: Remove content_hash, it does not seem to be used?
+          const :content_hash, T.nilable(String)
+
+          const :transform_elements_to_classes, T::Boolean, default: true
+          const :enable_new_helper_ident, T::Boolean, default: false
+
+          def source_path_without_extension
             File.join(
               File.dirname(source_path),
               File.basename(source_path, ".*")
             ).delete_prefix("./")
+          end
+        end
 
+        extend T::Sig
+
+        sig { params(options: TransformOptions).returns(TransformResult) }
+        def self.transform(options)
           result =
-            SyntaxTree::Haml.parse(source).accept(
-              Transformer.new(
-                source_path_without_extension,
-                elements_to_classes:
-              )
+            SyntaxTree::Haml.parse(options.source).accept(
+              Transformer.new(options)
             )
 
-          output = result.source
-
           TransformResult.new(
-            output:,
-            filename: source_path,
+            filename: options.source_path,
+            output: result.source,
+            content_hash: Digest::SHA256.digest(result.source),
             css: result.styles.first,
-            content_hash: Digest::SHA256.digest(output),
             source_map: {
             }
           )
@@ -69,6 +108,10 @@ module Mayu
 
         class RubyBuilder
           include SyntaxTree::DSL
+
+          def initialize(options)
+            @options = options
+          end
 
           def assign_const(name, value) = Assign(VarField(Const(name)), value)
           def self_var_ref = VarRef(Kw("self"))
@@ -83,7 +126,7 @@ module Mayu
                   create_render(render)
                 ]
               )
-            )
+            ).accept(StateAndPropsTransformer.new.visitor)
           end
 
           def const_path(*names)
@@ -346,6 +389,14 @@ module Mayu
             )
           end
 
+          def helper_ident
+            if @options.enable_new_helper_ident
+              CallNode(VarRef(Kw("self")), Period("."), Ident("Mayu"), nil)
+            else
+              Ident("mayu")
+            end
+          end
+
           def wrap_args(args)
             args.empty? ? nil : ArgParen(Args(args))
           end
@@ -369,10 +420,9 @@ module Mayu
             end
           end
 
-          def initialize(path, elements_to_classes: true)
-            @path = path
-            @builder = RubyBuilder.new
-            @elements_to_classes = elements_to_classes
+          def initialize(options)
+            @options = options
+            @builder = RubyBuilder.new(options)
             @state = {}
           end
 
@@ -446,7 +496,7 @@ module Mayu
 
             attrs = []
 
-            if @elements_to_classes
+            if @options.transform_elements_to_classes
               attrs.push(@builder.props_hash(class: :"__#{name}"))
             end
 
@@ -663,7 +713,8 @@ module Mayu
             in { name: "css", text: }
               CSS.transform(
                 source: text,
-                source_path: @path + ".haml (inline css)",
+                source_path:
+                  @options.source_path_without_extension + ".haml (inline css)",
                 source_line: node.line,
                 content_hash: Digest::SHA256.hexdigest(text)[0..7].to_s
               )
@@ -820,6 +871,74 @@ module Mayu
           end
         end
 
+        class StateAndPropsTransformer
+          include SyntaxTree::DSL
+
+          COLLECTIONS = {
+            SyntaxTree::IVar => "state",
+            SyntaxTree::GVar => "props"
+          }
+
+          def visitor
+            MutationVisitor.build do |visitor|
+              visitor.mutate(
+                "VarRef[value: GVar[value: /\\A\\$\\w+/]]"
+              ) { |var_ref| aref(var_ref.value) }
+
+              visitor.mutate(
+                "Assign[target: VarField[value: GVar]]"
+              ) do |assign|
+                assign => { target: { target: { value: var_name } } }
+                loc = assign.target.location
+                raise "Can not write to prop #{var_name} on line #{loc.start_line} col #{loc.start_column}"
+              end
+
+              visitor.mutate("VarRef[value: IVar]") do |var_ref|
+                aref(var_ref.value)
+              end
+
+              # visitor.mutate(
+              #   "OpAssign[target: VarField[value: IVar]]"
+              # ) do |assign|
+              #   assign.copy(target: aref_field(assign.target.value))
+              # end
+              #
+              # visitor.mutate(
+              #   "Assign[target: VarField[value: IVar]]"
+              # ) do |assign|
+              #   assign.copy(target: aref_field(assign.target.value))
+              # end
+            end
+          end
+
+          private
+
+          def aref(node)
+            ARef(
+              call_self(COLLECTIONS.fetch(node.class)),
+              Args([var_to_symbol(node)])
+            )
+          end
+
+          def aref_field(node)
+            ARefField(
+              call_self(COLLECTIONS.fetch(node.class)),
+              Args([var_to_symbol(node)])
+            )
+          end
+
+          def call_self(method)
+            CallNode(VarRef(Kw("self")), Period("."), Ident(method), nil)
+          end
+
+          def var_to_symbol(node)
+            SymbolLiteral(Ident(strip_var_prefix(node.value)))
+          end
+
+          def strip_var_prefix(str)
+            str[/\A[@$]?(.*)/, 1]
+          end
+        end
         class HashKeyExtractorVisitor
           extend T::Sig
 
