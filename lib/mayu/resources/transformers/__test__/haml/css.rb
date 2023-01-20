@@ -7,5 +7,5 @@ Self =
     }
   )
 public def render
-  Mayu::VDOM.h(:button, "Click me", **mayu.merge_props({ class: :button }))
+  Mayu::VDOM::H[:button, "Click me", **mayu.merge_props({ class: :button })]
 end

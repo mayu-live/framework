@@ -4,121 +4,59 @@
 require_relative "../component"
 require_relative "component_marshaler"
 require_relative "children"
+require_relative "./special_elements"
 
 module Mayu
   module VDOM
-    class Descriptor
+    class Descriptor < T::Struct
       extend T::Sig
+      include Component::IDescriptor
 
-      LambdaComponent =
-        T.type_alias do
-          T.proc.params(kwargs: Component::Props).returns(T.nilable(Descriptor))
-        end
-
-      ComponentType =
-        T.type_alias { T.any(T.class_of(Component::Base), LambdaComponent) }
-
-      ElementType = T.type_alias { T.any(Symbol, ComponentType) }
+      const :type, Component::ElementType
+      const :props, Component::Props
+      const :key, T.untyped
+      const :slot, T.nilable(String)
 
       TEXT = :TEXT
       COMMENT = :COMMENT
 
       sig { returns(Descriptor) }
-      def self.comment = new(:COMMENT)
+      def self.comment = self[COMMENT]
 
       sig { params(text_content: T.untyped).returns(Descriptor) }
-      def self.text(text_content) =
-        new(TEXT, { text_content: text_content.to_s })
+      def self.text(text_content) = self[TEXT, text_content: text_content.to_s]
 
       sig { params(descriptor: T.untyped).returns(Descriptor) }
       def self.or_text(descriptor)
         descriptor.is_a?(self) ? descriptor : text(descriptor)
       end
 
-      sig { returns(ElementType) }
-      attr_reader :type
-      sig { returns(Component::Props) }
-      attr_reader :props
-      sig { returns(T.untyped) }
-      attr_reader :key
-      sig { returns(T.nilable(String)) }
-      attr_reader :slot
-
-      sig do
-        params(children: Component::Children, parent_type: T.untyped).returns(
-          T::Array[Descriptor]
-        )
-      end
-      def self.clean_children(children, parent_type: nil)
-        cleaned = Array(children).flatten.select(&:itself) # Remove anything falsy
-
-        if parent_type == :title
-          # <title> can only have text children
-          cleaned.map { text(_1) }
-        else
-          cleaned.map { or_text(_1) }
-        end
-      end
-
-      sig do
-        params(descriptors: T::Array[Descriptor], parent_type: T.untyped).void
-      end
-      def self.check_duplicate_keys(descriptors, parent_type: "??unknown??")
-        keys = descriptors.map(&:key).compact
-        duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }.uniq
-        duplicates.each do |key|
-          Console.logger.warn(
-            self,
-            "Duplicate keys detected: #{key.inspect}",
-            "This may cause an update error!",
-            "Parent type: #{parent_type.inspect}"
-          )
-        end
-      end
-
-      sig do
-        params(descriptors: T::Array[Descriptor]).returns(T::Array[Descriptor])
-      end
-      def self.add_comments_between_texts(descriptors)
-        comment = Descriptor.comment
-
-        [*descriptors, nil].each_cons(2)
-          .flat_map do |curr, succ|
-            if curr&.text? && succ&.text?
-              [curr, comment]
-            else
-              curr
-            end
-          end
-          .compact
-      end
-
       sig do
         params(
-          type: ElementType,
-          props: Component::Props,
-          children: T.untyped
-        ).void
+          type: Component::ElementType,
+          children: T.untyped,
+          props: T.untyped
+        ).returns(Descriptor)
       end
-      def initialize(type, props = {}, children = [])
-        @type = T.let(convert_special_type(type), ElementType)
+      def self.[](type, *children, **props)
+        type = T.let(SpecialElements.for_type(type), Component::ElementType)
 
-        children =
-          Children.new(self.class.clean_children(children, parent_type: type))
-        @props = T.let(props.merge(children:), Component::Props)
-        @key = T.let(@props.delete(:key), T.untyped)
-        @slot = T.let(@props.delete(:slot)&.to_s, T.nilable(String))
-        freeze
+        children = Children.new(children, parent_type: type)
+        props = props.merge(children:)
+        key = props.delete(:key)
+        slot = props.delete(:slot)&.to_s
+
+        new(type:, key:, slot:, props:)
       end
 
       sig { returns(T::Array[T.untyped]) }
       def marshal_dump
-        [ComponentMarshaler.new(type), Marshalling.dump_props(props), key]
+        [ComponentMarshaler.new(type), Marshalling.dump_props(props), key, slot]
       end
 
       sig { params(a: T::Array[T.untyped]).void }
       def marshal_load(a)
-        @type, @props, @key = a
+        @type, @props, @key, @slot = a
         freeze
       end
 
@@ -152,43 +90,20 @@ module Mayu
       end
 
       sig { returns(String) }
-      def text
-        @props[:text_content].to_s
-      end
+      def text = @props[:text_content].to_s
 
-      sig { params(other: Descriptor).returns(T::Boolean) }
+      sig { override.params(other: Component::IDescriptor).returns(T::Boolean) }
       def same?(other)
         if key == other.key && type == other.type
-          type == :input ? props[:type] == other.props[:type] : true
+          if type == :input
+            # Inputs are considered to be different if their type changes.
+            # Is this a good behavior? I think maybe it comes from from Preact.
+            props[:type] == other.props[:type]
+          else
+            true
+          end
         else
           false
-        end
-      end
-
-      private
-
-      sig { params(type: ElementType).returns(ElementType) }
-      def convert_special_type(type)
-        # This allows us to inject some special markup
-        case type
-        when :head
-          Component::SpecialComponents::Head
-        when :__mayu_head
-          :head
-        when :body
-          Component::SpecialComponents::Body
-        when :__mayu_body
-          :body
-        when :a
-          Component::SpecialComponents::A
-        when :__mayu_a
-          :a
-        when :select
-          Component::SpecialComponents::Select
-        when :__mayu_select
-          :select
-        else
-          type
         end
       end
     end

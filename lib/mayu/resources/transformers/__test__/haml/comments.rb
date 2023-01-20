@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 Self = setup_component(assets: [], styles: {})
 public def render
-  Mayu::VDOM.h(:div, Mayu::VDOM.h(:foo), Mayu::VDOM.h(:bar))
+  Mayu::VDOM::H[:div, Mayu::VDOM::H[:foo], Mayu::VDOM::H[:bar]]
 end

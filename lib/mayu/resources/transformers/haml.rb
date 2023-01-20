@@ -185,9 +185,18 @@ module Mayu
           end
 
           def tag(name, children, attrs_to_merge)
-            call_mayu(
-              :h,
-              [tag_name_or_class(name), *children, merge_props(attrs_to_merge)]
+            ARef(
+              ConstPathRef(
+                ConstPathRef(VarRef(Const("Mayu")), Const("VDOM")),
+                Const("H")
+              ),
+              Args(
+                [
+                  tag_name_or_class(name),
+                  *children,
+                  merge_props(attrs_to_merge)
+                ].flatten.compact
+              )
             )
           end
 
@@ -326,15 +335,6 @@ module Mayu
           def mayu_const_path
             ConstPathRef(VarRef(Const("Mayu")), Const("VDOM"))
             # Const("Mayu")
-          end
-
-          def call_mayu(method, *args)
-            CallNode(
-              mayu_const_path,
-              Period("."),
-              Ident(method.to_s),
-              wrap_args(args.flatten.compact)
-            )
           end
 
           def call_helpers(method, *args)

@@ -1,10 +1,10 @@
 # typed: strict
 
+require_relative "./descriptor"
 require_relative "../component"
-require_relative "../vdom/descriptor"
 
 module Mayu
-  module Component
+  module VDOM
     module SpecialElements
       extend T::Sig
 
@@ -94,10 +94,12 @@ module Mayu
             select: Select,
             __mayu_select: :select
           }.freeze,
-          T::Hash[Symbol, ElementType]
+          T::Hash[Symbol, Component::ElementType]
         )
 
-      sig { params(type: ElementType).returns(ElementType) }
+      sig do
+        params(type: Component::ElementType).returns(Component::ElementType)
+      end
       def self.for_type(type)
         MAPPINGS.fetch(T.unsafe(type), type)
       end

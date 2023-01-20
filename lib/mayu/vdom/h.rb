@@ -5,21 +5,22 @@ require "sorbet-runtime"
 module Mayu
   module VDOM
     module H
-      extend T::Sig
-      extend self
+      class << self
+        extend T::Sig
 
-      sig do
-        params(
-          type: Descriptor::ElementType,
-          children: T.any(Component::Children, Component::ChildType),
-          props: T.untyped
-        ).returns(Descriptor)
-      end
-      def h(type, *children, **props)
-        Descriptor.new(type, props, children)
-      end
+        sig do
+          params(
+            type: Component::ElementType,
+            children: T.any(Component::Children, Component::ChildType),
+            props: T.untyped
+          ).returns(Descriptor)
+        end
+        def [](type, *children, **props)
+          T.unsafe(Descriptor)[type, *children, **props]
+        end
 
-      alias h2 h
+        alias h []
+      end
     end
   end
 end

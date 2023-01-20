@@ -6,10 +6,10 @@ begin
   props = { label: "label", asd: "asd" }
 end
 public def render
-  Mayu::VDOM.h(
+  Mayu::VDOM::H[
     :div,
     "hello",
-    Mayu::VDOM.h(
+    Mayu::VDOM::H[
       :input,
       **mayu.merge_props(
         {
@@ -20,7 +20,7 @@ public def render
         },
         { id: id }
       )
-    ),
+    ],
     **mayu.merge_props({ class: %i[foo bar] }, { class: "baz" }, { asdd: lol })
-  )
+  ]
 end

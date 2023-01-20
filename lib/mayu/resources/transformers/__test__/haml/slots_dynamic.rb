@@ -5,5 +5,5 @@ public def render
     name = "foo"
     nil
   end
-  mayu.slot(name) { Mayu::VDOM.h(:p, "Fallback content") }
+  mayu.slot(name) { Mayu::VDOM::H[:p, "Fallback content"] }
 end

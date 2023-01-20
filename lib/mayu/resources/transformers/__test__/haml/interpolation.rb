@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 Self = setup_component(assets: [], styles: {})
 public def render
-  Mayu::VDOM.h(
+  Mayu::VDOM::H[
     :div,
-    Mayu::VDOM.h(:div, "foo #{bar} baz"),
-    Mayu::VDOM.h(:div, "foo #{bar} baz"),
-    Mayu::VDOM.h(:div, "foo #{bar} baz"),
-    Mayu::VDOM.h(:div, ("lol #{boll} polle" if bar))
-  )
+    Mayu::VDOM::H[:div, "foo #{bar} baz"],
+    Mayu::VDOM::H[:div, "foo #{bar} baz"],
+    Mayu::VDOM::H[:div, "foo #{bar} baz"],
+    Mayu::VDOM::H[:div, ("lol #{boll} polle" if bar)]
+  ]
 end

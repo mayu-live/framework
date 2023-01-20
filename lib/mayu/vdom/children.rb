@@ -13,11 +13,66 @@ module Mayu
       extend T::Generic
       include Enumerable
 
+      sig do
+        params(children: Component::Children, parent_type: T.untyped).returns(
+          T::Array[Descriptor]
+        )
+      end
+      def self.clean(children, parent_type: nil)
+        cleaned = Array(children).flatten.select(&:itself) # Remove anything falsy
+
+        if parent_type == :title
+          # <title> can only have text children
+          cleaned.map { Descriptor.text(_1) }
+        else
+          cleaned.map { Descriptor.or_text(_1) }
+        end
+      end
+
+      sig do
+        params(descriptors: T::Array[Descriptor], parent_type: T.untyped).void
+      end
+      def self.check_duplicate_keys(descriptors, parent_type: "??unknown??")
+        keys = descriptors.map(&:key).compact
+        duplicates = keys.reject { keys.rindex(_1) == keys.index(_1) }.uniq
+        duplicates.each do |key|
+          Console.logger.warn(
+            self,
+            "Duplicate keys detected: #{key.inspect}",
+            "This may cause an update error!",
+            "Parent type: #{parent_type.inspect}"
+          )
+        end
+      end
+
+      sig do
+        params(descriptors: T::Array[Descriptor]).returns(T::Array[Descriptor])
+      end
+      def self.add_comments_between_texts(descriptors)
+        comment = Descriptor.comment
+
+        [*descriptors, nil].each_cons(2)
+          .flat_map do |curr, succ|
+            if curr&.text? && succ&.text?
+              [curr, comment]
+            else
+              curr
+            end
+          end
+          .compact
+      end
+
       Elem = type_member { { fixed: Descriptor } }
 
-      sig { params(descriptors: T::Array[Descriptor]).void }
-      def initialize(descriptors)
-        @descriptors = descriptors
+      sig do
+        params(descriptors: T::Array[Descriptor], parent_type: T.untyped).void
+      end
+      def initialize(descriptors, parent_type: nil)
+        @descriptors =
+          T.let(
+            self.class.clean(descriptors, parent_type:),
+            T::Array[Descriptor]
+          )
         @slots = T.let(nil, T.nilable(Slots))
       end
 
