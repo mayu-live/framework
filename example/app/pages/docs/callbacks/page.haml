@@ -34,8 +34,12 @@
       def handle_click(e)
         Console.logger.info(self, e)
       end
-      def render
-        Mayu::VDOM.h(:button, "Click me", **{ onclick: handler(:handle_click) })
+      public def render
+        Mayu::VDOM::H[
+          :button,
+          "Click me",
+          **mayu.merge_props({ onclick: mayu.handler(:handle_click) })
+        ]
       end
       ```
 
