@@ -370,7 +370,7 @@ module Mayu
               update_children(
                 ctx,
                 vnode.children.compact,
-                descriptors,
+                T.cast(descriptors, T::Array[Descriptor]),
                 lifecycles:
               )
           end
@@ -633,10 +633,8 @@ module Mayu
       end
       def clean_children(children, parent:)
         children
-          .then { Descriptor.clean_children(_1, parent_type: parent) }
-          # TODO: Make it possible to disable the following check in production:
-          .tap { Descriptor.check_duplicate_keys(_1, parent_type: parent) }
-          .then { Descriptor.add_comments_between_texts(_1) }
+          .then { Children.clean(_1, parent_type: parent) }
+          .then { Children.add_comments_between_texts(_1) }
       end
     end
   end

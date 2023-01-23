@@ -28,7 +28,7 @@ module Mayu
 
       sig { returns(Descriptor) }
       attr_accessor :descriptor
-      sig { returns(Descriptor::ElementType) }
+      sig { returns(Component::ElementType) }
       def type = descriptor.type
       sig { returns(Component::Props) }
       def props = descriptor.props

@@ -6,12 +6,11 @@ require "async"
 require "rexml/document"
 require "stringio"
 require_relative "vtree"
-require_relative "h"
 require_relative "../session"
 require_relative "../app_metrics"
 
 class TestVTree < Minitest::Test
-  include Mayu::VDOM::H
+  H = Mayu::VDOM::Descriptor
 
   MyComponent = Mayu::TestHelper.haml_to_component(__FILE__, __LINE__, <<~HAML)
     %div
@@ -24,12 +23,12 @@ class TestVTree < Minitest::Test
       # page.debug!
       original_text = page.find_by_css("h1")&.inner_text
 
-      page.render(Mayu::VDOM.h(MyComponent, count: 1))
+      page.render(H[MyComponent, count: 1])
       page.wait_for_update
       # page.debug!
       assert_equal(page.find_by_css("h1")&.inner_text, original_text)
 
-      page.render(Mayu::VDOM.h(MyComponent, count: 2))
+      page.render(H[MyComponent, count: 2])
       page.wait_for_update
 
       # page.debug!
@@ -54,7 +53,7 @@ class TestVTree < Minitest::Test
 
     Mayu::TestHelper.test_component(component, numbers: []) do |page|
       number_lists.each do |numbers|
-        page.render(Mayu::VDOM.h(component, numbers:))
+        page.render(H[component, numbers:])
         assert_equal(numbers, extract_numbers(page.to_html))
         # page.debug!
       end

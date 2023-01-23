@@ -37,7 +37,9 @@ module Mayu
         ).returns(T::Array[VNode])
       end
       def self.reconcile(vnodes, descriptors, &block)
-        Descriptor.check_duplicate_keys(descriptors)
+        # TODO: Make it possible to disable the following check in production:
+        Children.check_duplicate_keys(descriptors)
+
         new_children = T.let([], T::Array[VNode])
 
         vnodes = vnodes.compact

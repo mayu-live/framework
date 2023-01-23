@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 Self = setup_component(assets: [], styles: {})
 public def render
-  Mayu::VDOM.h(
+  Mayu::VDOM::H[
     :div,
     case props[:value]
     when "foo"
-      Mayu::VDOM.h(:p, "Foo")
+      Mayu::VDOM::H[:p, "Foo"]
     when "bar"
-      Mayu::VDOM.h(:p, "Bar")
+      Mayu::VDOM::H[:p, "Bar"]
     else
-      Mayu::VDOM.h(:p, "Other")
+      Mayu::VDOM::H[:p, "Other"]
     end
-  )
+  ]
 end

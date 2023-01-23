@@ -5,8 +5,8 @@ begin
 end
 public def render
   if true
-    Mayu::VDOM.h(:div, **mayu.merge_props({ class: :foo }))
+    Mayu::VDOM::H[:div, **mayu.merge_props({ class: :foo })]
   else
-    Mayu::VDOM.h(:div, **mayu.merge_props({ class: :bar }))
+    Mayu::VDOM::H[:div, **mayu.merge_props({ class: :bar })]
   end
 end

@@ -447,40 +447,69 @@ Look at this example:
 That above code will be transformed into something like this:
 
 ```ruby
-def self.get_initial_state(initial_value: 0, **)
-  { count: initial_value }
-end
-
-def handle_decrement(_)
-  update { |state| { count: [0, state[:count].pred].max } }
-end
-
-def handle_increment(_)
-  update { |state| { count: state[:count].succ } }
-end
-
-def render
-  Mayu::VDOM.h(
-    :div,
-    Mayu::VDOM.h(
-      :button,
-      ("-"),
-      **{
-        title: "Decrement",
-        on_click: handler(:handle_decrement),
-        disabled: state[:count].zero?
-      },
-      class: styles[:button]
-    ),
-    Mayu::VDOM.h(:span, (state[:count]), class: styles[:count]),
-    Mayu::VDOM.h(
-      :button,
-      ("+"),
-      **{ title: "Increment", on_click: handler(:handle_increment) },
-      class: styles[:button]
-    ),
-    class: styles[:counter]
+# frozen_string_literal: true
+Self =
+  setup_component(
+    assets: ["0tyaKLqdvUGGcwZkdPOdMiMoMZoO74sMmtyRTuksjaQ=.css"],
+    styles: {
+      __Card: "example/app/pages/Counter_Card?7d89edff",
+      __article: "example/app/pages/Counter_article?7d89edff",
+      __output: "example/app/pages/Counter_output?7d89edff",
+      __button: "example/app/pages/Counter_button?7d89edff",
+    },
   )
+begin
+  Card = import("/app/components/UI/Card")
+  def self.get_initial_state(initial_value: 0, **) = { count: initial_value }
+  def decrement_disabled = state[:count].zero?
+  def handle_decrement
+    update do |state|
+      count = [0, state[:count] - 1].max
+      { count: }
+    end
+  end
+  def handle_increment
+    update do |state|
+      count = state[:count] + 1
+      { count: }
+    end
+  end
+end
+public def render
+  Mayu::VDOM::H[
+    Card,
+    Mayu::VDOM::H[
+      :article,
+      Mayu::VDOM::H[
+        :button,
+        "－",
+        **mayu.merge_props(
+          { class: :__button },
+          { title: "Decrement" },
+          {
+            onclick: mayu.handler(:handle_decrement),
+            disabled: decrement_disabled,
+          },
+        )
+      ],
+      Mayu::VDOM::H[
+        :output,
+        state[:count],
+        **mayu.merge_props({ class: :__output })
+      ],
+      Mayu::VDOM::H[
+        :button,
+        "＋",
+        **mayu.merge_props(
+          { class: :__button },
+          { title: "Increment" },
+          { onclick: mayu.handler(:handle_increment) },
+        )
+      ],
+      **mayu.merge_props({ class: :__article })
+    ],
+    **mayu.merge_props({ class: :__Card }, { class: :card })
+  ]
 end
 ```
 

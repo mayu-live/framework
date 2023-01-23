@@ -6,8 +6,8 @@
   tag = :"h#{level}"
   classname = styles[:h, tag, styles[:class]]
 
-  Mayu::VDOM::h(
+  Mayu::VDOM::H[
     tag,
     *children,
     **props.except(:level).merge(class: classname),
-  )
+  ]

@@ -16,7 +16,7 @@
     # print "\e[0m" if node.has_key?(:children)
     case node
     in type: :root, children:
-      Mayu::VDOM.h(:div, *visit_nodes(children))
+      Mayu::VDOM::H[:div, *visit_nodes(children)]
     in type: :header, children:, options: { level: }
       build(:header, :"h#{level}", *visit_nodes(children), level:)
     in type: :text | :blank, value:
@@ -31,22 +31,22 @@
       end
 
       build(:a, :a, *visit_nodes(children), **attrs) do
-        Mayu::VDOM.h(:a, *visit_nodes(children), **attrs)
+        Mayu::VDOM::H[:a, *visit_nodes(children), **attrs]
       end
     in type: :codeblock, value:
-      Mayu::VDOM.h(:code, value)
+      Mayu::VDOM::H[:code, value]
     in type: :br
-      Mayu::VDOM.h(:br)
+      Mayu::VDOM::H[:br]
     in type: :codespan, value:, options: { codespan_delimiter: "```" }
       header, code = value.sub(/\A`+/, '').split(/\s/, 2).map(&:strip)
-      Mayu::VDOM.h(Highlight, code, language: header)
+      Mayu::VDOM::H[Highlight, code, language: header]
     in type: :codespan, value:, options: { codespan_delimiter: "`" }
       build(:code, :code, value.strip)
     in type:, children:, **rest
       build(type, type, *visit_nodes(children))
     in type:
       Console.logger.error(self, "Unsupported node", JSON.pretty_generate(node))
-      Mayu::VDOM.h(:pre, "Unsupported node:\n\n#{JSON.pretty_generate(node)}")
+      Mayu::VDOM::H[:pre, "Unsupported node:\n\n#{JSON.pretty_generate(node)}"]
     end
   end
 
@@ -57,12 +57,12 @@
   def build(type, default, *children, **props, &block)
     if elems = self.props[:elems]
       if elem = elems[type]
-        return Mayu::VDOM.h(elem, *children, **props)
+        return Mayu::VDOM::H[elem, *children, **props]
       end
     end
 
     return yield if block_given?
-    Mayu::VDOM.h(default, *children, class: styles[default])
+    Mayu::VDOM::H[default, *children, class: styles[default]]
   end
 
 :css

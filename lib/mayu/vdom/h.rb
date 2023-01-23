@@ -6,20 +6,17 @@ module Mayu
   module VDOM
     module H
       extend T::Sig
-      extend self
 
       sig do
         params(
-          type: Descriptor::ElementType,
+          type: Component::ElementType,
           children: T.any(Component::Children, Component::ChildType),
           props: T.untyped
         ).returns(Descriptor)
       end
-      def h(type, *children, **props)
-        Descriptor.new(type, props, children)
+      def self.[](type, *children, **props)
+        T.unsafe(Descriptor)[type, *children, **props]
       end
-
-      alias h2 h
     end
   end
 end

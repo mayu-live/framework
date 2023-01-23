@@ -35,7 +35,7 @@ module Mayu
     def self.test_component(component, **props, &block)
       Async do
         Page.run do |page|
-          page.render(Mayu::VDOM.h(component, **props))
+          page.render(Mayu::VDOM::Descriptor[component, **props])
           yield page
         end
       end

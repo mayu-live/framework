@@ -5,9 +5,9 @@
   }
 
 :ruby
-  Mayu::VDOM.h(
+  Mayu::VDOM::H[
     (props[:as] || props[:tag] || :div).to_sym,
     *children,
     **props,
     class: styles[:maxWidth, props[:class]]
-  )
+  ]
