@@ -1,6 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
+require_relative "interfaces"
 require_relative "../component"
 require_relative "component_marshaler"
 require_relative "children"
@@ -10,7 +11,7 @@ module Mayu
   module VDOM
     class Descriptor < T::Struct
       extend T::Sig
-      include Component::IDescriptor
+      include Interfaces::Descriptor
 
       const :type, Component::ElementType
       const :props, Component::Props
@@ -92,7 +93,7 @@ module Mayu
       sig { returns(String) }
       def text = @props[:text_content].to_s
 
-      sig { override.params(other: Component::IDescriptor).returns(T::Boolean) }
+      sig { override.params(other: Interfaces::Descriptor).returns(T::Boolean) }
       def same?(other)
         if key == other.key && type == other.type
           if type == :input

@@ -4,45 +4,17 @@
 require_relative "../component"
 require_relative "descriptor"
 require_relative "dom"
+require_relative "interfaces"
 require_relative "id_generator"
 require_relative "../html"
 
 module Mayu
   module VDOM
-    class VNode
+    class VNode < T::Struct
       extend T::Sig
 
       Children = T.type_alias { T::Array[VNode] }
       Id = T.type_alias { IdGenerator::Type }
-
-      sig { returns(Id) }
-      attr_reader :id
-
-      sig { returns(Id) }
-      attr_accessor :dom_parent_id
-
-      sig { returns(Id) }
-      def dom_id
-        wrapper ? children.first&.dom_id || "root" : id
-      end
-
-      sig { returns(Descriptor) }
-      attr_accessor :descriptor
-      sig { returns(Component::ElementType) }
-      def type = descriptor.type
-      sig { returns(Component::Props) }
-      def props = descriptor.props
-      sig { returns(T.untyped) }
-      def key = descriptor.key
-      sig { returns(Children) }
-      attr_accessor :children
-
-      sig { returns(T.nilable(Component::Wrapper)) }
-      attr_reader :wrapper
-      alias component wrapper
-
-      sig { returns(T::Boolean) }
-      def dom? = type.is_a?(Symbol)
 
       sig do
         params(
@@ -50,32 +22,45 @@ module Mayu
           dom_parent_id: Id,
           descriptor: Descriptor,
           task: Async::Task
-        ).void
+        ).returns(VNode)
       end
-      def initialize(
+      def self.build(
         vtree,
         dom_parent_id,
         descriptor,
         task: Async::Task.current
       )
-        @id = T.let(vtree.next_id!, Id)
-        @dom_parent_id = dom_parent_id
-        @vtree = vtree
-        @descriptor = descriptor
-        @children = T.let([], Children)
-        @wrapper = T.let(nil, T.nilable(Component::Wrapper))
-        @removed = T.let(false, T::Boolean)
-        # TODO:
-        # VNodes should keep track of the associated stylesheet and whenever
-        # the styhesheets differ, they should unload the old one and load the new...
-        # @stylesheet = T.let(nil, T.nilable(Module::CSSModule::Base))
+        new(id: vtree.next_id!, vtree:, dom_parent_id:, descriptor:, task:)
       end
+
+      const :id, Id
+      const :vtree, Interfaces::VTree
+      const :dom_parent_id, Id
+      prop :descriptor, Descriptor
+      const :task, Async::Task, factory: -> { Async::Task.current }
+      prop :children, Children, default: []
+      prop :removed, T::Boolean, default: false
+      prop :wrapper, T.nilable(Component::Wrapper)
+      alias component wrapper
+
+      sig { returns(Component::ElementType) }
+      def type = descriptor.type
+      sig { returns(Component::Props) }
+      def props = descriptor.props
+      sig { returns(T.untyped) }
+      def key = descriptor.key
+
+      sig { returns(Id) }
+      def dom_id = (wrapper ? children.first&.dom_id || "root" : id)
+      sig { returns(T::Boolean) }
+      def dom? = type.is_a?(Symbol)
 
       sig { returns(T::Boolean) }
       def removed? = @removed
       sig { void }
       def remove! = @removed = true
       sig { returns(T::Boolean) }
+
       def assert_not_removed!
         return true unless removed?
         raise "VNode is marked as removed and should not be used!"

@@ -4,6 +4,7 @@ require "async/queue"
 require "nanoid"
 require "benchmark"
 require_relative "../component"
+require_relative "interfaces"
 require_relative "descriptor"
 require_relative "dom"
 require_relative "vnode"
@@ -19,6 +20,8 @@ module Mayu
   module VDOM
     class VTree
       extend T::Sig
+
+      include Interfaces::VTree
 
       class Updater
         extend T::Sig
@@ -157,8 +160,9 @@ module Mayu
         end
       end
 
-      sig { returns(Session) }
+      sig { override.returns(Session) }
       attr_reader :session
+
       sig { returns(Async::Queue) }
       attr_reader :update_queue
       sig { returns(T.nilable(VNode)) }
@@ -265,15 +269,15 @@ module Mayu
         @update_queue.enqueue(vnode)
       end
 
-      sig { returns(IdGenerator::Type) }
+      sig { override.returns(IdGenerator::Type) }
       def next_id! = @id_generator.next!
 
-      sig { params(path: String).void }
+      sig { override.params(path: String).void }
       def navigate(path)
         @update_queue.enqueue([:navigate, path])
       end
 
-      sig { params(type: Symbol, payload: T.untyped).void }
+      sig { override.params(type: Symbol, payload: T.untyped).void }
       def action(type, payload)
         @update_queue.enqueue([:action, { type:, payload: }])
       end
@@ -471,7 +475,7 @@ module Mayu
         ).returns(VNode)
       end
       def init_vnode(ctx, descriptor, lifecycles:, nested: false)
-        vnode = VNode.new(self, ctx.dom_parent_id, descriptor)
+        vnode = VNode.build(self, ctx.dom_parent_id, descriptor)
 
         component = vnode.init_component
 
