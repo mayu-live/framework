@@ -1,6 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
+require_relative "interfaces"
 require_relative "indexes"
 
 module Mayu
@@ -21,8 +22,8 @@ module Mayu
       Event =
         T.type_alias do
           T.any(
-            [Events::Patch, vnode: VNode, descriptor: Descriptor],
-            [Events::Init, descriptor: Descriptor],
+            [Events::Patch, vnode: VNode, descriptor: Interfaces::Descriptor],
+            [Events::Init, descriptor: Interfaces::Descriptor],
             [Events::Move, vnode: VNode, before: T.nilable(VNode)],
             [Events::Insert, vnode: VNode, before: T.nilable(VNode)],
             [Events::Remove, vnode: VNode]
@@ -32,7 +33,7 @@ module Mayu
       sig do
         params(
           vnodes: T::Array[VNode],
-          descriptors: T::Array[Descriptor],
+          descriptors: T::Array[Interfaces::Descriptor],
           block: T.proc.params(arg0: Event).returns(T.nilable(VNode))
         ).returns(T::Array[VNode])
       end

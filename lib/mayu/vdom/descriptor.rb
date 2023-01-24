@@ -10,6 +10,66 @@ require_relative "./special_elements"
 module Mayu
   module VDOM
     class Descriptor < T::Struct
+      class FactoryImpl
+        extend T::Sig
+        include Interfaces::Descriptor::Factory
+
+        sig { override.returns(Descriptor) }
+        def comment
+          Descriptor[Interfaces::Descriptor::COMMENT]
+        end
+
+        sig { override.params(text_content: T.untyped).returns(Descriptor) }
+        def text(text_content)
+          Descriptor[
+            Interfaces::Descriptor::TEXT,
+            text_content: text_content.to_s
+          ]
+        end
+
+        sig { override.params(obj: T.untyped).returns(Descriptor) }
+        def or_text(obj)
+          Descriptor === obj ? obj : text(obj.to_s)
+        end
+
+        sig do
+          override
+            .params(children: Component::Children, parent_type: T.untyped)
+            .returns(T::Array[Descriptor])
+        end
+        def clean(children, parent_type: nil)
+          cleaned = Array(children).flatten.select(&:itself) # Remove anything falsy
+
+          if parent_type == :title
+            # <title> can only have text children
+            cleaned.map { text(_1) }
+          else
+            cleaned.map { or_text(_1) }
+          end
+        end
+
+        sig do
+          override
+            .params(descriptors: T::Array[Interfaces::Descriptor])
+            .returns(T::Array[Interfaces::Descriptor])
+        end
+        def add_comments_between_texts(descriptors)
+          comment = self.comment
+
+          [*descriptors, nil].each_cons(2)
+            .flat_map do |curr, succ|
+              if curr&.text? && succ&.text?
+                [curr, comment]
+              else
+                curr
+              end
+            end
+            .compact
+        end
+      end
+
+      Factory = T.let(FactoryImpl.new, FactoryImpl)
+
       extend T::Sig
       include Interfaces::Descriptor
 
@@ -17,20 +77,6 @@ module Mayu
       const :props, Component::Props
       const :key, T.untyped
       const :slot, T.nilable(String)
-
-      TEXT = :TEXT
-      COMMENT = :COMMENT
-
-      sig { returns(Descriptor) }
-      def self.comment = self[COMMENT]
-
-      sig { params(text_content: T.untyped).returns(Descriptor) }
-      def self.text(text_content) = self[TEXT, text_content: text_content.to_s]
-
-      sig { params(descriptor: T.untyped).returns(Descriptor) }
-      def self.or_text(descriptor)
-        descriptor.is_a?(self) ? descriptor : text(descriptor)
-      end
 
       sig do
         params(
@@ -61,20 +107,16 @@ module Mayu
         freeze
       end
 
-      sig { returns(T::Boolean) }
-      def text? = @type == TEXT
-      sig { returns(T::Boolean) }
-      def comment? = @type == COMMENT
-      sig { returns(T::Boolean) }
-      def element? = @type.is_a?(Symbol)
-      sig { returns(T::Boolean) }
-      def component? = Component.component_class?(@type)
-      sig { returns(Children) }
-      def children = props[:children]
-      sig { returns(T::Boolean) }
-      def has_children? = children.any?
+      ##
+      # This is used for hash comparisons,
+      # https://ruby-doc.org/3.2.0/Hash.html#class-Hash-label-User-Defined+Hash+Keys
+      sig { override.params(other: T.untyped).returns(T::Boolean) }
+      def eql?(other) = self.class === other && same?(other)
 
-      sig { returns(T.class_of(Component::Base)) }
+      sig { override.returns(T::Boolean) }
+      def component? = Component.component_class?(@type)
+
+      sig { override.returns(T.class_of(Component::Base)) }
       def component_class
         if Component.component_class?(@type)
           T.cast(@type, T.class_of(Component::Base))
@@ -89,9 +131,6 @@ module Mayu
         return "" if comment?
         "#<Descriptor type=#{type.inspect}>"
       end
-
-      sig { returns(String) }
-      def text = @props[:text_content].to_s
 
       sig { override.params(other: Interfaces::Descriptor).returns(T::Boolean) }
       def same?(other)

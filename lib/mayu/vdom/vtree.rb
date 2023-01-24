@@ -206,7 +206,7 @@ module Mayu
 
       sig do
         params(
-          descriptor: Descriptor,
+          descriptor: Interfaces::Descriptor,
           ctx: UpdateContext,
           lifecycles: T::Boolean
         ).returns(UpdateContext)
@@ -217,7 +217,7 @@ module Mayu
         ctx
       end
 
-      sig { params(descriptor: Descriptor).void }
+      sig { params(descriptor: Interfaces::Descriptor).void }
       def replace_root(descriptor)
         @update_queue.enqueue([:replace_root, descriptor])
       end
@@ -286,7 +286,7 @@ module Mayu
         params(
           ctx: UpdateContext,
           vnode: T.nilable(VNode),
-          descriptor: T.nilable(Descriptor),
+          descriptor: T.nilable(Interfaces::Descriptor),
           lifecycles: T::Boolean
         ).returns(T.nilable(VNode))
       end
@@ -327,7 +327,7 @@ module Mayu
         params(
           ctx: UpdateContext,
           vnode: VNode,
-          descriptor: Descriptor,
+          descriptor: Interfaces::Descriptor,
           lifecycles: T::Boolean
         ).returns(VNode)
       end
@@ -374,7 +374,7 @@ module Mayu
               update_children(
                 ctx,
                 vnode.children.compact,
-                T.cast(descriptors, T::Array[Descriptor]),
+                descriptors,
                 lifecycles:
               )
           end
@@ -469,7 +469,7 @@ module Mayu
       sig do
         params(
           ctx: UpdateContext,
-          descriptor: Descriptor,
+          descriptor: Interfaces::Descriptor,
           lifecycles: T::Boolean,
           nested: T::Boolean
         ).returns(VNode)
@@ -524,7 +524,11 @@ module Mayu
         nil
       end
 
-      sig { params(vnode: VNode, descriptor: Descriptor).returns(T::Boolean) }
+      sig do
+        params(vnode: VNode, descriptor: Interfaces::Descriptor).returns(
+          T::Boolean
+        )
+      end
       def same?(vnode, descriptor)
         vnode.descriptor.same?(descriptor)
       end
@@ -533,7 +537,7 @@ module Mayu
         params(
           ctx: UpdateContext,
           vnodes: T::Array[VNode],
-          descriptors: T::Array[Descriptor],
+          descriptors: T::Array[Interfaces::Descriptor],
           lifecycles: T::Boolean
         ).returns(T::Array[VNode])
       end
@@ -631,14 +635,15 @@ module Mayu
       end
 
       sig do
-        params(children: Component::Children, parent: Descriptor).returns(
-          T::Array[Descriptor]
-        )
+        params(
+          children: Component::Children,
+          parent: Interfaces::Descriptor
+        ).returns(T::Array[Interfaces::Descriptor])
       end
       def clean_children(children, parent:)
         children
-          .then { Children.clean(_1, parent_type: parent) }
-          .then { Children.add_comments_between_texts(_1) }
+          .then { Descriptor::Factory.clean(_1, parent_type: parent) }
+          .then { Descriptor::Factory.add_comments_between_texts(_1) }
       end
     end
   end

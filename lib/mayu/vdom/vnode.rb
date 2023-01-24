@@ -20,7 +20,7 @@ module Mayu
         params(
           vtree: VTree,
           dom_parent_id: Id,
-          descriptor: Descriptor,
+          descriptor: Interfaces::Descriptor,
           task: Async::Task
         ).returns(VNode)
       end
@@ -36,7 +36,7 @@ module Mayu
       const :id, Id
       const :vtree, Interfaces::VTree
       const :dom_parent_id, Id
-      prop :descriptor, Descriptor
+      prop :descriptor, Interfaces::Descriptor
       const :task, Async::Task, factory: -> { Async::Task.current }
       prop :children, Children, default: []
       prop :removed, T::Boolean, default: false
@@ -131,9 +131,9 @@ module Mayu
         @vtree.enqueue_update!(self)
       end
 
-      sig { params(descriptor: Descriptor).returns(T::Boolean) }
+      sig { params(descriptor: Interfaces::Descriptor).returns(T::Boolean) }
       def same?(descriptor)
-        descriptor.type == type && descriptor.key == key
+        self.descriptor.eql?(descriptor)
       end
 
       sig { returns(T.untyped) }
@@ -169,7 +169,7 @@ module Mayu
         type = descriptor.type
 
         case type
-        when Descriptor::TEXT
+        when Mayu::VDOM::Interfaces::Descriptor::TEXT
           text = descriptor.text
           if text.empty?
             # A zero-width-space will generate a text node in the DOM.
@@ -178,7 +178,7 @@ module Mayu
             io.write(CGI.escape_html(descriptor.text))
           end
           return
-        when Descriptor::COMMENT
+        when Mayu::VDOM::Interfaces::Descriptor::COMMENT
           io.write("<!--mayu-id=#{@id}-->")
           return
         when :__mayu_links

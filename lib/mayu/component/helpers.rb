@@ -60,9 +60,14 @@ module Mayu
       sig do
         params(
           name: T.nilable(String),
-          fallback: T.nilable(T.proc.returns(VDOM::Descriptor))
+          fallback: T.nilable(T.proc.returns(VDOM::Interfaces::Descriptor))
         ).returns(
-          T.nilable(T.any(VDOM::Descriptor, T::Array[VDOM::Descriptor]))
+          T.nilable(
+            T.any(
+              VDOM::Interfaces::Descriptor,
+              T::Array[VDOM::Interfaces::Descriptor]
+            )
+          )
         )
       end
       def slot(name = nil, &fallback) = children.slot(name, &fallback)
