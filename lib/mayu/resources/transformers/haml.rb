@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 require "ripper"
-require "nokogiri"
 require "syntax_suggest"
 require "syntax_suggest/code_line"
 require "syntax_suggest/explain_syntax"
@@ -681,7 +680,7 @@ module Mayu
 
           def visit_plain(node)
             node.value => { text: }
-            @builder.string_literal(Nokogiri::HTML5.fragment(text).inner_text)
+            @builder.string_literal(CGI.escape_html(text))
           end
 
           def visit_script(node)
