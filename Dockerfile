@@ -23,7 +23,7 @@ RUN \
 ## build-base ##
 ################
 
-FROM registry.fly.io/mayu-ruby:3.2-slim-bullseye as build-base
+FROM ruby:3.2.0-slim-bullseye as build-base
 
 ARG BUNDLER_VERSION=2.4.1
 ARG BUNDLE_WITHOUT=development:test
@@ -94,7 +94,7 @@ RUN bin/mayu build && rm -rf vendor
 ## app-base ##
 ##############
 
-FROM registry.fly.io/mayu-ruby:3.2-alpine3.17 as app-base
+FROM ruby:3.2.0-alpine3.17 as app-base
 
 ARG BUNDLER_VERSION=2.4.1
 ARG BUNDLE_WITHOUT=development:test
