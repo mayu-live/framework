@@ -51,7 +51,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "prometheus-client", "~> 4.0.0"
   spec.add_dependency "protocol-http", "~> 0.23.12"
   spec.add_dependency "pry", "~> 0.14.1"
-  spec.add_dependency "rack", "~> 3.0.0"
+  spec.add_dependency "rack", "~> 3.0.4.1"
   spec.add_dependency "rake", "~> 13.0.6"
   spec.add_dependency "rouge", "~> 4.0.0"
   spec.add_dependency "sorbet-runtime", "~> 0.5.10598"
