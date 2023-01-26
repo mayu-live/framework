@@ -54,7 +54,7 @@ module Mayu
           result[:class] = T.unsafe(@wrapper.instance).styles[*classes]
         end
 
-        result
+        result.transform_keys { _1.to_s.tr("-", "_").to_sym }
       end
 
       sig do
