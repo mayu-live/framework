@@ -1,8 +1,8 @@
 :ruby
   Card = import("/app/components/UI/Card")
 
-  def self.get_initial_state(initial_value: 0, **) = {
-    count: initial_value
+  def self.get_initial_state(initial_count: 0, **) = {
+    count: initial_count
   }
 
   def decrement_disabled = state[:count].zero?
