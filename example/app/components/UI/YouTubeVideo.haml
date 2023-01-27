@@ -18,6 +18,6 @@
     allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
     frameborder: 0,
     loading: "lazy",
-    title: props[:title] || "YouTube video player",
+    title: $title || "YouTube video player",
     src: "https://www.youtube.com/embed/#{video_id}",
   }

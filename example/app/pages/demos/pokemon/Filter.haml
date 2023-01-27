@@ -21,7 +21,7 @@
   end
 
   def mount
-    @fuzzymatch = FuzzyMatch.new(props[:results], read: :name)
+    @fuzzymatch = FuzzyMatch.new($results, read: :name)
   end
 
   def handle_change(e)

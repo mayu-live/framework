@@ -2,7 +2,7 @@
   MaxWidth = import("/app/components/Layout/MaxWidth")
   Icon = import("/app/components/UI/Icon")
 
-%header{class: props[:class]}
+%header(class=$class)
   %MaxWidth.inner
     %h1
       %a.title(href="/" title="Start page")

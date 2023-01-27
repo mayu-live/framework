@@ -25,13 +25,13 @@
   }
 
   prev_page_link = page > 1 && "?page=#{page.pred}"
-  next_page_link = page <= props[:total_pages] && "?page=#{page.succ}"
+  next_page_link = page <= $total_pages && "?page=#{page.succ}"
 
   pages =
     pagination_window(
       current_page: page,
-      total_pages: props[:total_pages].succ,
-      window_size: props[:window_size] || 5,
+      total_pages: $total_pages.succ,
+      window_size: $window_size || 5,
     )
 
 %Fieldset
@@ -56,6 +56,6 @@
 
     .per-page
       Per page:
-      %select(value=per_page){on_change: props[:on_change_per_page]}<
+      %select(value=per_page on_change=$on_change_per_page)<
         = [20, 40, 80].map do |num|
           %option[num](value=num)= num

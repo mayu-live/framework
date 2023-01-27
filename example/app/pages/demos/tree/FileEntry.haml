@@ -3,7 +3,7 @@
   Name = import("./Name")
 
   def icon
-    case File.extname(props[:path])
+    case File.extname($path)
     in ".haml" | ".css" | ".rb"
       "file-code"
     in ".md"

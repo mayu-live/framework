@@ -28,7 +28,7 @@
 :ruby
   props => icon:, title:
 %article
-  %Icon(name=icon){color: props[:color] || "var(--dark)"}
+  %Icon(name=icon){color: $color || "var(--dark)"}
   .content
     %h3= title
     %slot

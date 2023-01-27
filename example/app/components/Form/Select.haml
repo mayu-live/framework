@@ -48,10 +48,6 @@
   }
 
 %div
-  %select(type="text"){
-    class: props[:class],
-    placeholder: props[:label],
-    **props
-  }
+  %select(type="text" class=$class placeholder=$label){**props}
     %slot
-  %label= props[:label]
+  %label= $label

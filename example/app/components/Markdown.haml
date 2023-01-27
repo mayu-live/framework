@@ -55,7 +55,7 @@
   end
 
   def build(type, default, *children, **props, &block)
-    if elems = self.props[:elems]
+    if elems = $elems
       if elem = elems[type]
         return Mayu::VDOM::H[elem, *children, **props]
       end

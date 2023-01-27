@@ -67,7 +67,7 @@
       get the generated class name for `Button`.
 
       ```haml
-      %button{class: props[:class]}
+      %button(class=$class)
         %slot
       ```
 
@@ -84,7 +84,7 @@
       :css
         li { opacity: .5; }
         .active { opacity: 1; }
-      %li{class: { active: props[:active] }}
+      %li{class: { active: $active }}
         %slot
       ```
 

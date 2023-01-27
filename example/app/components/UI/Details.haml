@@ -53,11 +53,11 @@
 
 - state => open:
 
-%Card{class: props[:class]}
+%Card(class=$class)
   %details(ontoggle=handle_toggle open=open)
-    %summary= props[:summary]
+    %summary= $summary
     .content
       = if state[:loaded]
         %slot
-      = unless state[:loaded]
+      = else
         %p Loading…

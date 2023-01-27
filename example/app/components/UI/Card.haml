@@ -1,3 +1,8 @@
+:ruby
+  def style = {
+    :"--card-background" => $background || "var(--bright)",
+    :"--card-border" => $border || "#0002",
+  }
 :css
   .card {
     background: var(--card-background, var(--bright));
@@ -6,11 +11,5 @@
     border-radius: 2px;
     display: grid;
   }
-.card{
-  class: props[:class],
-  style: {
-    :"--card-background" => props[:background] || "var(--bright)",
-    :"--card-border" => props[:border] || "#0002",
-  }
-}
+.card(class=$class style=style)
   %slot

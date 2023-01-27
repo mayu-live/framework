@@ -30,12 +30,12 @@
 :ruby
   classname = [
     styles[:checkbox],
-    props[:class],
+    $class,
   ].compact.join(" ")
 
   group_classname = [
     styles.group,
-    props[:group_class],
+    $group_class,
   ].compact.join(" ")
 
   id = "checkbox-#{vnode_id}"
@@ -44,8 +44,8 @@
   %input(id=id){
     class: classname,
     type: "checkbox",
-    placeholder: props[:label],
+    placeholder: $label,
     **props.except(:label),
   }
   %label(for=id)
-    = props[:label]
+    = $label

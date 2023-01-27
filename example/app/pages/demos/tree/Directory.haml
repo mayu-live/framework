@@ -71,14 +71,14 @@
 %div
   %Name(icon=icon color="var(--blue)")
     %button(type="button" onclick=handle_toggle)
-      #{File.basename(props[:path])}/
+      #{File.basename($path)}/
 
   = if state[:open]
     = if entries = state[:entries]
       %ul
         = entries[:directories]&.map do |path|
           %li[path]
-            %Self{root: props[:root], path:}
+            %Self(root=$root path=path)
         = entries[:files]&.map do |path|
           %li[path]
-            %FileEntry{path:}
+            %FileEntry(root=$root path=path)

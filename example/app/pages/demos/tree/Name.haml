@@ -10,7 +10,7 @@
   }
 :ruby
   props => { icon: }
-  color = props[:color] || "var(--dark)"
+  color = $color || "var(--dark)"
 %label{**props}
   %Icon(name=icon color=color)
   %slot

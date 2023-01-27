@@ -23,7 +23,7 @@
   props => grid:, ondraw:
 
 .grid
-  = props[:grid].map.with_index do |row, y|
+  = $grid.map.with_index do |row, y|
     .row[y]
       = row.map.with_index do |alive, x|
         %Cell["#{x}.#{y}"]{ondraw:, alive:, x:, y:}
