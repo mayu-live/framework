@@ -7,6 +7,7 @@ require "syntax_suggest/code_line"
 require "syntax_suggest/explain_syntax"
 require "syntax_suggest/lex_all"
 require "syntax_suggest/ripper_errors"
+require "syntax_tree"
 require "syntax_tree/haml"
 require_relative "css"
 
