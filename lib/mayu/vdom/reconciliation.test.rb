@@ -39,8 +39,8 @@ class Mayu::VDOM::Reconciliation::Test < Minitest::Test
   end
 
   def update(vnodes, descriptors)
-    Mayu::VDOM::Reconciliation
-      .reconcile(vnodes, descriptors) do
+    result =
+      Mayu::VDOM::Reconciliation.reconcile(vnodes, descriptors) do
         case _1
         in Mayu::VDOM::Reconciliation::Patches::Init => init
           VNode.new(descriptor: init.descriptor)
@@ -50,7 +50,7 @@ class Mayu::VDOM::Reconciliation::Test < Minitest::Test
           vnode
         end
       end
-      .vnodes
-      .then { T.cast(_1, T::Array[VNode]) }
+    p(count: result.patches.length)
+    result.vnodes.then { T.cast(_1, T::Array[VNode]) }
   end
 end
