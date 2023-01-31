@@ -63,7 +63,7 @@
     %pre= state[:items].join("\n")
     %ul
       = state[:items].map do |item|
-        %li{style: { __color: color(item) }}
+        %li[item]{style: { __color: color(item) }}
           = item
 :css
   .flex {
