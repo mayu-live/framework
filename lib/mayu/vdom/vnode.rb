@@ -12,6 +12,7 @@ module Mayu
   module VDOM
     class VNode < T::Struct
       extend T::Sig
+      include Interfaces::VNode
 
       Children = T.type_alias { T::Array[VNode] }
       Id = T.type_alias { IdGenerator::Type }
@@ -134,6 +135,11 @@ module Mayu
       sig { params(descriptor: Interfaces::Descriptor).returns(T::Boolean) }
       def same?(descriptor)
         self.descriptor.eql?(descriptor)
+      end
+
+      sig { params(other: T.untyped).returns(T::Boolean) }
+      def eql?(other)
+        self.class === other && other.id == id
       end
 
       sig { returns(T.untyped) }

@@ -1,102 +1,204 @@
-# typed: strict
+# typed: true
 # frozen_string_literal: true
 
 require_relative "interfaces"
-require_relative "indexes"
 
 module Mayu
   module VDOM
     module Reconciliation
-      extend T::Sig
+      class RangeIterator
+        def initialize(elements)
+          @head = 0
+          @tail = elements.length.pred
+          @elements = elements
+        end
 
-      class Events < T::Enum
-        enums do
-          Patch = new
-          Init = new
-          Move = new
-          Insert = new
-          Remove = new
+        def done? = @head > @tail
+
+        def head = @elements[@head]
+        def tail = @elements[@tail]
+
+        def tail_idx = @tail
+
+        def next_head! = @head += 1
+        def next_tail! = @tail -= 1
+
+        def to_a = @elements[to_range] || []
+        def to_range = @head..@tail
+
+        def [](idx)
+          @elements[idx]
+        end
+
+        def []=(idx, value)
+          @elements[idx] = value
         end
       end
 
-      Event =
-        T.type_alias do
-          T.any(
-            [Events::Patch, vnode: VNode, descriptor: Interfaces::Descriptor],
-            [Events::Init, descriptor: Interfaces::Descriptor],
-            [Events::Move, vnode: VNode, before: T.nilable(VNode)],
-            [Events::Insert, vnode: VNode, before: T.nilable(VNode)],
-            [Events::Remove, vnode: VNode]
-          )
+      module Patches
+        extend T::Sig
+
+        class Init < T::Struct
+          const :descriptor, Interfaces::Descriptor
+          def inspect = "#{self.class.name}(#{descriptor.type.to_s})"
         end
+
+        class InsertBefore < T::Struct
+          const :vnode, Interfaces::VNode
+          const :ref, T.nilable(Interfaces::VNode)
+
+          def inspect =
+            "#{self.class.name}(#{vnode.id.inspect}, #{ref&.id.inspect})"
+        end
+
+        class InsertAfter < T::Struct
+          const :vnode, Interfaces::VNode
+          const :ref, T.nilable(Interfaces::VNode)
+
+          def inspect =
+            "#{self.class.name}(#{vnode.id.inspect}, #{ref&.id.inspect})"
+        end
+
+        class Patch < T::Struct
+          const :vnode, Interfaces::VNode
+          const :descriptor, Interfaces::Descriptor
+          def inspect =
+            "#{self.class.name}(#{vnode.id.inspect}, #{descriptor.type.to_s})"
+        end
+
+        class Remove < T::Struct
+          const :vnode, Interfaces::VNode
+          def inspect = "#{self.class.name}(#{vnode.id.inspect})"
+        end
+
+        Any =
+          T.type_alias { T.any(Init, InsertBefore, InsertAfter, Patch, Remove) }
+      end
+
+      class Result < T::Struct
+        const :vnodes, T::Array[Interfaces::VNode]
+        const :patches, T::Array[Patches::Any]
+      end
+
+      extend T::Sig
 
       sig do
         params(
-          vnodes: T::Array[VNode],
+          old_children: T::Array[Interfaces::VNode],
           descriptors: T::Array[Interfaces::Descriptor],
-          block: T.proc.params(arg0: Event).returns(T.nilable(VNode))
-        ).returns(T::Array[VNode])
+          block:
+            T
+              .proc
+              .params(arg0: Patches::Any)
+              .returns(T.nilable(Interfaces::VNode))
+        ).returns(Result)
       end
-      def self.reconcile(vnodes, descriptors, &block)
+      def self.reconcile(old_children, descriptors, &block)
         # TODO: Make it possible to disable the following check in production:
         Children.check_duplicate_keys(descriptors)
 
-        new_children = T.let([], T::Array[VNode])
-
-        vnodes = vnodes.compact
-        descriptors = descriptors.compact
-        old_ids = vnodes.map(&:id)
-
-        indexes = Indexes.new(vnodes.map(&:id))
+        grouped = old_children.group_by { _1.descriptor }
 
         new_children =
-          descriptors.map.with_index do |descriptor, i|
-            vnode = vnodes.find { _1.same?(descriptor) }
+          descriptors
+            .map do |descriptor|
+              if vnode = grouped[descriptor]&.shift
+                yield Patches::Patch.new(vnode:, descriptor:)
+              else
+                yield Patches::Init.new(descriptor:)
+              end
+            end
+            .compact
 
-            if vnode
-              vnodes.delete(vnode)
-              yield [Events::Patch, vnode:, descriptor:]
-            else
-              yield [Events::Init, descriptor:]
+        patches = T.let([], T::Array[Patches::Any])
+
+        delta_time_ms =
+          Mayu::Utils.measure_time do
+            patches.concat(diff(old_children, new_children))
+
+            grouped.values.flatten.each do |removed|
+              patches << Patches::Remove.new(vnode: removed)
             end
           end
-
-        # This is very inefficient.
-        # I tried to get the algorithm from snabbdom/vue to work,
-        # but it's not very easy to get right.
-        # I always got some weird ordering issues and it's tricky to debug.
-        # Fun stuff for later though.
-
-        start_at = Time.now
-        all_vnodes = vnodes + new_children
-
-        new_children.each_with_index do |vnode, expected_index|
-          new_indexes = Indexes.new(indexes.to_a - vnodes.map(&:id))
-          current_index = indexes.index(vnode.id)
-
-          before_id = indexes[expected_index]
-          before = before_id && all_vnodes.find { _1.id == before_id } || nil
-
-          if old_ids.include?(vnode.id)
-            unless current_index == expected_index
-              yield [Events::Move, vnode:, before:]
-              indexes.insert_before(vnode.id, before_id)
-            end
-          else
-            yield [Events::Insert, vnode:, before:]
-            indexes.insert_before(vnode.id, before_id)
-          end
-        end
-
-        vnodes.each { |vnode| yield [Events::Remove, vnode:] }
-
-        delta_time_ms = (Time.now - start_at) * 1000
 
         if delta_time_ms > 10
-          Console.logger.warn(self, "Updating took %.3fms" % delta_time_ms)
+          Console.logger.warn(self, "Diffing took %.3fms" % delta_time_ms)
         end
 
-        new_children
+        Result.new(vnodes: new_children, patches:)
+      end
+
+      def self.diff(old, new)
+        old = old.dup
+        new = new.dup
+
+        old_ids = old.map(&:id).sort
+
+        iold = RangeIterator.new(old)
+        inew = RangeIterator.new(new)
+
+        ops = []
+
+        until iold.done? || inew.done?
+          iold.next_head! and next unless iold.head
+          iold.next_tail! and next unless iold.tail
+          inew.next_head! and next unless inew.head
+          inew.next_tail! and next unless inew.tail
+
+          if iold.tail.eql?(inew.tail)
+            iold.next_tail!
+            inew.next_tail!
+            next
+          end
+
+          if iold.head.eql?(inew.head)
+            iold.next_head!
+            inew.next_head!
+            next
+          end
+
+          if iold.head.eql?(inew.tail)
+            # Right move
+            ops << Patches::InsertAfter.new(vnode: iold.head, ref: iold.tail)
+            iold.next_head!
+            inew.next_tail!
+            next
+          end
+
+          if iold.tail.eql?(inew.head)
+            # Left move
+            ops << Patches::InsertBefore.new(vnode: iold.tail, ref: iold.head)
+            inew.next_head!
+            iold.next_tail!
+            next
+          end
+
+          if old_index = old.find_index { _1.eql?(inew.head) }
+            old[old_index] = nil
+            ops << Patches::InsertBefore.new(vnode: inew.head, ref: iold.head)
+            inew.next_head!
+            next
+          end
+
+          ops << Patches::InsertBefore.new(vnode: inew.head, ref: iold.head)
+
+          inew.next_head!
+        end
+
+        if iold.done?
+          before = new[inew.tail_idx.succ]
+
+          until inew.done?
+            ops << Patches::InsertBefore.new(vnode: inew.head, ref: before)
+            inew.next_head!
+          end
+        elsif inew.done?
+          iold.to_a.compact.each do |vnode|
+            # ops << Patches::Remove.new(vnode:)
+          end
+        end
+
+        ops
       end
     end
   end

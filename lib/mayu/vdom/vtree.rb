@@ -20,7 +20,6 @@ module Mayu
   module VDOM
     class VTree
       extend T::Sig
-
       include Interfaces::VTree
 
       class Updater
@@ -259,7 +258,7 @@ module Mayu
         @root&.id_tree
       end
 
-      sig { params(vnode: VNode).void }
+      sig { override.params(vnode: VNode).void }
       def enqueue_update!(vnode)
         component = vnode.component
         return unless component
@@ -542,23 +541,43 @@ module Mayu
         ).returns(T::Array[VNode])
       end
       def update_children(ctx, vnodes, descriptors, lifecycles:)
-        Reconciliation.reconcile(vnodes, descriptors) do |event|
-          case event
-          in [Reconciliation::Events::Patch, { vnode:, descriptor: }]
-            patch_vnode(ctx, vnode, descriptor, lifecycles:)
-          in [Reconciliation::Events::Init, { descriptor: }]
-            init_vnode(ctx, descriptor, lifecycles:)
-          in [Reconciliation::Events::Move, { vnode:, before: }]
-            ctx.move(vnode, before:)
+        initialized = T.let([], T::Array[VNode::Id])
+
+        result =
+          Reconciliation.reconcile(vnodes, descriptors) do
+            case _1
+            in Reconciliation::Patches::Init => init
+              vnode = init_vnode(ctx, init.descriptor, lifecycles:)
+              initialized.push(vnode.id)
+              vnode
+            in Reconciliation::Patches::Patch => patch
+              patch_vnode(ctx, patch.vnode, patch.descriptor, lifecycles:)
+            end
+          end
+
+        result.patches.each do |patch|
+          case patch
+          in Reconciliation::Patches::InsertBefore => insert
+            if initialized.delete(insert.vnode.id)
+              ctx.insert(insert.vnode, before: insert.ref)
+            else
+              ctx.move(insert.vnode, before: insert.ref)
+            end
             nil
-          in [Reconciliation::Events::Insert, { vnode:, before: }]
-            ctx.insert(vnode, before:)
+          in Reconciliation::Patches::InsertAfter => insert
+            if initialized.delete(insert.vnode.id)
+              ctx.insert(insert.vnode, after: insert.ref)
+            else
+              ctx.move(insert.vnode, after: insert.ref)
+            end
             nil
-          in [Reconciliation::Events::Remove, { vnode: }]
-            remove_vnode(ctx, vnode, lifecycles:)
+          in Reconciliation::Patches::Remove => remove
+            remove_vnode(ctx, remove.vnode, lifecycles:)
             nil
           end
         end
+
+        T.cast(result.vnodes, T::Array[VNode])
       end
 
       sig do
