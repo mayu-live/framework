@@ -1,0 +1,94 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Highlight = import("/app/components/UI/Highlight")
+  Card = import("/app/components/UI/Card")
+  Details = import("/app/components/UI/Details")
+
+  def self.get_initial_state(**) = {
+    items: []
+  }
+
+  def handle_add
+    update do |state|
+      { items: [*state[:items], *Array.new(5) { SecureRandom.alphanumeric(5) }] }
+    end
+  end
+
+  def handle_remove
+    update do |state|
+      { items: state[:items].reject { rand(3).zero? } }
+    end
+  end
+
+  def handle_shuffle
+    update do |state|
+      { items: state[:items].shuffle }
+    end
+  end
+
+  def handle_shuffle_slices
+    update do |state|
+      { items: state[:items].each_slice(5).to_a.shuffle.flatten }
+    end
+  end
+
+  def handle_sort
+    update do |state|
+      { items: state[:items].sort }
+    end
+  end
+
+  def handle_sort_by_color
+    update do |state|
+      { items: state[:items].sort_by { color(_1) } }
+    end
+  end
+
+  def color(str)
+    Digest::SHA256.digest(str).unpack("I").first % 360
+  end
+
+%article
+  %Heading(level=2)
+    Sorting
+    %span< (#{state[:items].size} items)
+  %div
+    %button(onclick=handle_add) Add items
+    %button(onclick=handle_remove) Remove items
+    %button(onclick=handle_shuffle) Shuffle items
+    %button(onclick=handle_shuffle_slices) Shuffle slices
+    %button(onclick=handle_sort) Sort
+    %button(onclick=handle_sort_by_color) Sort by color
+  .flex
+    %pre= state[:items].join("\n")
+    %ul
+      = state[:items].map do |item|
+        %li{style: { __color: color(item) }}
+          = item
+:css
+  .flex {
+    display: flex;
+    gap: 1em;
+  }
+
+  pre {
+    line-height: 2em;
+  }
+
+  ul {
+    display: grid;
+    list-style-type: none;
+    padding: 0;
+    flex: 1 1 5em;
+    gap: 1px;
+  }
+
+  li {
+    border: 1px solid #0003;
+    border-radius: 3px;
+    margin: 0;
+    padding: 0 .5em;
+    background: hsl(var(--color), 50%, 70%);
+    color: #000;
+    line-height: 2em;
+  }
