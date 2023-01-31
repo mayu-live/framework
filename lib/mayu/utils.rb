@@ -4,6 +4,18 @@ module Mayu
   module Utils
     extend T::Sig
 
+    sig { params(unit: Symbol).returns(Float) }
+    def self.monotonic_now(unit = :float_millisecond)
+      Process.clock_gettime(Process::CLOCK_MONOTONIC).to_f
+    end
+
+    sig { params(unit: Symbol, block: T.proc.void).returns(Float) }
+    def self.measure_time(unit = :float_millisecond, &block)
+      start = monotonic_now
+      yield
+      monotonic_now - start
+    end
+
     sig do
       params(
         hash: T::Hash[T.untyped, T.untyped],

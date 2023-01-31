@@ -136,6 +136,11 @@ module Mayu
         self.descriptor.eql?(descriptor)
       end
 
+      sig { params(other: T.untyped).returns(T::Boolean) }
+      def eql?(other)
+        self.class === other && other.id == id
+      end
+
       sig { returns(T.untyped) }
       def id_tree
         children = Array(self.children).flatten.compact

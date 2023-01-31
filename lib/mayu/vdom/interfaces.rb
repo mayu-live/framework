@@ -131,7 +131,7 @@ module Mayu
         # https://ruby-doc.org/3.2.0/Hash.html#class-Hash-label-User-Defined+Hash+Keys
         sig { overridable.returns(Integer) }
         def hash
-          [type, props, key, type == :input && props[:type]].hash
+          [type, slot, key, type == :input && props[:type]].hash
         end
 
         ##

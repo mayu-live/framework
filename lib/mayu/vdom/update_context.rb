@@ -56,14 +56,6 @@ module Mayu
         ).void
       end
       def insert(vnode, before: nil, after: nil)
-        # if before
-        #   puts "\e[32minsert\e[0m #{vnode.dom_id} before #{before.dom_id}"
-        # elsif after
-        #   puts "\e[32minsert\e[0m #{vnode.dom_id} after #{after.dom_id}"
-        # else
-        #   puts "\e[32minsert\e[0m #{vnode.dom_id} last"
-        # end
-        # p caller.grep(/markup/).first(5)
         html = vnode.to_html
         ids = vnode.id_tree
 
@@ -96,13 +88,6 @@ module Mayu
         end
       end
 
-      # sig {params(args: T.untyped).void}
-      # def puts(*args)
-      #   if @parents.last&.descriptor&.type == :ul
-      #     T.unsafe(Kernel)::puts(*args)
-      #   end
-      # end
-
       sig do
         params(
           vnode: VNode,
@@ -111,17 +96,6 @@ module Mayu
         ).void
       end
       def move(vnode, before: nil, after: nil)
-        #   if before
-        # #    raise if vnode.key == 3 && before.key == 7
-        #     puts "\e[33mmove:\e[0m #{vnode.dom_id} before #{before.key}"
-        #   elsif after
-        #     puts "\e[33mmove:\e[0m #{vnode.dom_id} after #{after.key}"
-        #   else
-        #     puts "\e[33mmove:\e[0m #{vnode.dom_id} last"
-        #   end
-
-        #  p dom_parent_id: vnode.dom_parent_id, vnode_id: vnode.id, vnode_dom_id: vnode.dom_id, type: vnode.descriptor.type.to_s
-
         if before
           add_patch(
             :move,
