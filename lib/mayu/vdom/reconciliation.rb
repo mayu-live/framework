@@ -44,30 +44,30 @@ module Mayu
         end
 
         class InsertBefore < T::Struct
-          const :vnode, VNode
-          const :ref, T.nilable(VNode)
+          const :vnode, Interfaces::VNode
+          const :ref, T.nilable(Interfaces::VNode)
 
           def inspect =
             "#{self.class.name}(#{vnode.id.inspect}, #{ref&.id.inspect})"
         end
 
         class InsertAfter < T::Struct
-          const :vnode, VNode
-          const :ref, T.nilable(VNode)
+          const :vnode, Interfaces::VNode
+          const :ref, T.nilable(Interfaces::VNode)
 
           def inspect =
             "#{self.class.name}(#{vnode.id.inspect}, #{ref&.id.inspect})"
         end
 
         class Patch < T::Struct
-          const :vnode, VNode
+          const :vnode, Interfaces::VNode
           const :descriptor, Interfaces::Descriptor
           def inspect =
             "#{self.class.name}(#{vnode.id.inspect}, #{descriptor.type.to_s})"
         end
 
         class Remove < T::Struct
-          const :vnode, VNode
+          const :vnode, Interfaces::VNode
           def inspect = "#{self.class.name}(#{vnode.id.inspect})"
         end
 
@@ -75,14 +75,23 @@ module Mayu
           T.type_alias { T.any(Init, InsertBefore, InsertAfter, Patch, Remove) }
       end
 
+      class Result < T::Struct
+        const :vnodes, T::Array[Interfaces::VNode]
+        const :patches, T::Array[Patches::Any]
+      end
+
       extend T::Sig
 
       sig do
         params(
-          old_children: T::Array[VNode],
+          old_children: T::Array[Interfaces::VNode],
           descriptors: T::Array[Interfaces::Descriptor],
-          block: T.proc.params(arg0: Patches::Any).returns(T.nilable(VNode))
-        ).returns(T::Array[VNode])
+          block:
+            T
+              .proc
+              .params(arg0: Patches::Any)
+              .returns(T.nilable(Interfaces::VNode))
+        ).returns(Result)
       end
       def self.reconcile(old_children, descriptors, &block)
         # TODO: Make it possible to disable the following check in production:
@@ -101,20 +110,22 @@ module Mayu
             end
             .compact
 
+        patches = T.let([], T::Array[Patches::Any])
+
         delta_time_ms =
           Mayu::Utils.measure_time do
-            diff(old_children, new_children).each { |patch| yield patch }
+            patches.concat(diff(old_children, new_children))
 
             grouped.values.flatten.each do |removed|
-              yield Patches::Remove.new(vnode: removed)
+              patches << Patches::Remove.new(vnode: removed)
             end
           end
 
         if delta_time_ms > 10
-          Console.logger.warn(self, "Updating took %.3fms" % delta_time_ms)
+          Console.logger.warn(self, "Diffing took %.3fms" % delta_time_ms)
         end
 
-        new_children
+        Result.new(vnodes: new_children, patches:)
       end
 
       def self.diff(old, new)

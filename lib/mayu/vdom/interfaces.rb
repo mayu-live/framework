@@ -24,8 +24,22 @@ module Mayu
         def action(type, payload)
         end
 
-        sig { params(vnode: VNode).void }
+        sig { overridable.params(vnode: T.untyped).void }
         def enqueue_update!(vnode)
+        end
+      end
+
+      module VNode
+        extend T::Sig
+        extend T::Helpers
+        abstract!
+
+        sig { abstract.returns(String) }
+        def id
+        end
+
+        sig { abstract.returns(Descriptor) }
+        def descriptor
         end
       end
 

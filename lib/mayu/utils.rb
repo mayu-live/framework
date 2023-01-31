@@ -6,7 +6,7 @@ module Mayu
 
     sig { params(unit: Symbol).returns(Float) }
     def self.monotonic_now(unit = :float_millisecond)
-      Process.clock_gettime(Process::CLOCK_MONOTONIC).to_f
+      Process.clock_gettime(Process::CLOCK_MONOTONIC, unit).to_f
     end
 
     sig { params(unit: Symbol, block: T.proc.void).returns(Float) }

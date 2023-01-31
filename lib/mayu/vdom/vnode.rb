@@ -12,6 +12,7 @@ module Mayu
   module VDOM
     class VNode < T::Struct
       extend T::Sig
+      include Interfaces::VNode
 
       Children = T.type_alias { T::Array[VNode] }
       Id = T.type_alias { IdGenerator::Type }
