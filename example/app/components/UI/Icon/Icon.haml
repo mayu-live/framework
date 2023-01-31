@@ -61,9 +61,7 @@
     mask-position: 50% 50%;
   }
 :ruby
-  props => name:
-
-  url = ICONS[name] or return
+  url = ICONS[$name] or return
 
   aria = $title ? {} : { hidden: "true" }
 
