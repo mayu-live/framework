@@ -154,10 +154,11 @@ module Mayu
             styles.path
           )
 
-          classes = T.let(Hash.new, T::Hash[String, String])
+          classes = T.let(Hash.new, T::Hash[Symbol, String])
 
           if styles.type.is_a?(Types::Stylesheet)
             classes.merge!(styles.type.classes)
+
             impl.instance_exec(styles) do |styles|
               define_singleton_method(:stylesheet) { styles.type }
             end
@@ -167,10 +168,10 @@ module Mayu
 
           unless classes.empty?
             impl.instance_exec(
-              Resources::Types::Stylesheet::ClassnameProxy.new(classes)
-            ) do |classname_proxy|
-              define_singleton_method(:styles) { classname_proxy }
-              define_method(:styles) { classname_proxy }
+              Resources::Types::Stylesheet::ClassNames.new(classes)
+            ) do |classnames|
+              define_singleton_method(:styles) { classnames }
+              define_method(:styles) { classnames }
             end
           end
 

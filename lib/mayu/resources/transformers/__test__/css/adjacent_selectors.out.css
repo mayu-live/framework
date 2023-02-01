@@ -1,0 +1,6 @@
+@layer app\\/components\\/MyComponent\\?abc123 {
+  .app\\/components\\/MyComponent_a\\?abc123
+    + .app\\/components\\/MyComponent\\.b\\?abc123 {
+    color: #fff;
+  }
+}

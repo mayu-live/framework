@@ -133,11 +133,11 @@ module Mayu
       def self.stylesheet! =
         stylesheet ||
           raise(RuntimeError, "There is no stylesheet for this component!")
-      sig { returns(Resources::Types::Stylesheet::ClassnameProxy) }
+      sig { returns(Resources::Types::Stylesheet::ClassNames) }
       def self.styles
-        Resources::Types::Stylesheet::ClassnameProxy.new({})
+        Resources::Types::Stylesheet::ClassNames.new({})
       end
-      sig { returns(Resources::Types::Stylesheet::ClassnameProxy) }
+      sig { returns(Resources::Types::Stylesheet::ClassNames) }
       def styles = self.class.styles
 
       sig { params(blk: T.proc.bind(T.self_type).void).void }

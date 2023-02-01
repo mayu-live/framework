@@ -104,24 +104,13 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
     CSS
   end
 
-  def test_adjacent_selectors
-    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
-      a + .b { color: #fff; }
-    CSS
-      @layer app\\/components\\/MyComponent\\?abc123 {
-      .app\\/components\\/MyComponent_a\\?abc123 + .app\\/components\\/MyComponent\\.b\\?abc123 { color: #fff; }
-      }
-    CSS
-  end
-
   private
 
   def transform(source)
     source_path = "app/components/MyComponent"
-    content_hash = "abc123"
 
     Mayu::Resources::Transformers::CSS
-      .transform(source:, source_path:, content_hash:)
+      .transform(source:, source_path:)
       .output
       .each_line
       .map(&:rstrip)
