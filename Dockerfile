@@ -103,7 +103,11 @@ ENV BUNDLE_PATH ${BUNDLE_PATH}
 ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
 RUN gem install -N bundler -v ${BUNDLER_VERSION}
 
-RUN apk update && apk add --no-cache curl bash
+RUN apk update && apk add --no-cache curl bash jemalloc
+ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
+
+RUN MALLOC_CONF=stats_print:true ruby -e "exit"
+ENV MALLOC_CONF=narenas:2
 
 SHELL ["/bin/bash", "-c"]
 
