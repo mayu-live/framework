@@ -20,3 +20,4 @@ group :development do
 end
 
 gem "fuzzy_match"
+gem "mayucss", git: "git@github.com:mayu-live/css.git"

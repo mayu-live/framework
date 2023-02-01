@@ -1,3 +1,9 @@
+GIT
+  remote: git@github.com:mayu-live/css.git
+  revision: 07b1490057f5ed3f1f5968f56408c8842a7a3753
+  specs:
+    mayucss (0.0.1)
+
 PATH
   remote: .
   specs:
@@ -211,6 +217,7 @@ DEPENDENCIES
   guard
   localhost
   mayu-live!
+  mayucss!
   minitest
   minitest-reporters
   nokogiri

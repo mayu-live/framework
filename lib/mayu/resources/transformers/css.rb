@@ -3,9 +3,7 @@
 
 require "base64"
 require "digest/sha2"
-require "crass"
-require_relative "css/transformer"
-require_relative "css/formatter"
+require "mayucss"
 
 module Mayu
   module Resources
@@ -17,6 +15,7 @@ module Mayu
           const :content_hash, String
           const :layer_name, String
           const :classes, T::Hash[String, String]
+          const :elements, T::Hash[Symbol, String]
           const :source_map, T::Hash[String, T.untyped]
         end
 
@@ -66,17 +65,9 @@ module Mayu
               0..7
             ]
 
-          transformer =
-            CSS::Transformer.new(
-              path: source_path_without_extension,
-              content_hash: content_hash
-            )
+          result = MayuCSS.transform(source_path_without_extension, source)
 
-          output =
-            source
-              .then { Crass.parse(_1) }
-              .then { transformer.transform(_1) }
-              .then { Formatter.format_ast(_1) }
+          output = result.code.encode("utf-8")
 
           header = "/* #{source_path} */\n"
 
@@ -84,14 +75,20 @@ module Mayu
           urlsafe_hash = Base64.urlsafe_encode64(content_hash)
           filename = "#{urlsafe_hash}.css"
 
-          output =
-            "@layer #{escape_string(transformer.layer_name)} {\n#{output}\n}"
+          layer_name = "#{source_path_without_extension}?#{urlsafe_hash}"
+
+          output = "@layer #{escape_string(layer_name)} {\n#{output}\n}"
+          p output
 
           TransformResult.new(
             filename:,
             output:,
-            layer_name: transformer.layer_name,
-            classes: transformer.classes,
+            layer_name: layer_name,
+            classes: {
+              **result.classes.transform_keys(&:to_s),
+              **result.elements.transform_keys { "__#{_1}" }
+            },
+            elements: result.elements.transform_keys(&:to_sym),
             content_hash:,
             source_map: {
               "version" => 3,
