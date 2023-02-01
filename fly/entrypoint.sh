@@ -2,7 +2,7 @@
 
 flags=""
 
-if [[ "$ENABLE_YJIT" == "true" ]]; then
+if [[ "$ENABLE_YJIT" == t* ]]; then
   echo "Enabling YJIT"
   flags+=" --yjit"
 else
