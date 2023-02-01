@@ -588,7 +588,8 @@ module Mayu
         new_handlers = new_props.keys.select { _1.start_with?("on") }
 
         # FIXME: If the same handler id is used somewhere else,
-        # it will be cleared too. Use RefCounter
+        # it will be cleared too. The id needs to include the attribute
+        # to be unique. Then we can also remove @handler_counts.
         removed_handlers = old_handlers - new_handlers
 
         old_props

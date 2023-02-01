@@ -39,6 +39,13 @@ module Mayu
           )
       end
 
+      sig { returns(Integer) }
+      def hash = [self.class, @id].hash
+      sig { params(other: T.untyped).returns(T::Boolean) }
+      def eql?(other) = self.class === other && other.id == id
+      sig { params(other: T.untyped).returns(T::Boolean) }
+      def ==(other) = self.class === other && other.id == id
+
       sig { returns(String) }
       def inspect
         "#<HandlerRef vnode_id=%d %s(%s)" %
