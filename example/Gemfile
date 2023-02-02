@@ -5,4 +5,7 @@ source "https://rubygems.org"
 gem "mayu-live", path: ".."
 
 gem "fuzzy_match"
-gem "mayucss", git: "git@github.com:mayu-live/css.git"
+
+group :development do
+  gem "mayucss", "~> 0.0.3"
+end

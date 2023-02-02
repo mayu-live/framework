@@ -26,16 +26,20 @@ RUN \
 FROM ruby:3.2.0-slim-bullseye as build-base
 
 ARG BUNDLER_VERSION=2.4.1
-ARG BUNDLE_WITHOUT=development:test
+ARG BUNDLE_WITHOUT=
 ARG BUNDLE_PATH=vendor/bundle
 ENV BUNDLE_PATH ${BUNDLE_PATH}
 ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
+
+ENV RUSTUP_HOME=/rust
+ENV CARGO_HOME=/cargo
+ENV PATH=/cargo/bin:/rust/bin:$PATH
 
 SHELL ["/bin/bash", "-c"]
 
 WORKDIR /build
 
-ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils webp imagemagick brotli
+ENV DEV_PACKAGES git build-essential wget vim curl gzip xz-utils webp imagemagick brotli libclang-dev
 
 RUN \
     --mount=type=cache,id=dev-apt-cache,sharing=locked,target=/var/cache/apt \
@@ -43,6 +47,8 @@ RUN \
     apt-get update -qq && \
     apt-get install --no-install-recommends -y ${DEV_PACKAGES} && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly --no-modify-path && rustup default nightly
 
 RUN gem install -N bundler -v ${BUNDLER_VERSION}
 
@@ -121,6 +127,10 @@ WORKDIR /app
 RUN apk add --no-cache --virtual run-dependencies build-base git
 COPY --from=build-app /app /app
 COPY --from=build-gem /build/mayu-live-*.gem vendor/cache/
+
+ARG BUNDLE_WITHOUT=development:test
+ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
+
 RUN bundle install && rm -rf vendor/cache
 
 #######################

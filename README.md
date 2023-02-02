@@ -76,6 +76,10 @@ having to configure anything!
 
 ## Install dependencies
 
+Mayu uses [Lightning CSS](https://lightningcss.dev/),
+which is a state-of-the-art CSS parser written in Rust.
+Therefore, Mayu needs Rust and Cargo to build the extension.
+
 Make sure that you have installed [Ruby](https://www.ruby-lang.org/en/downloads/)
 and [NodeJS](https://nodejs.org/en/download/).
 The required versions are specified in the file `.tool-versions`

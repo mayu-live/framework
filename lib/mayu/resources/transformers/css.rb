@@ -3,7 +3,6 @@
 
 require "base64"
 require "digest/sha2"
-require "mayucss"
 
 module Mayu
   module Resources
@@ -46,6 +45,10 @@ module Mayu
           ).returns(TransformResult)
         end
         def self.transform(source:, source_path:, source_line: 1)
+          # Required here because it's not necessary in production..
+          # kinda messy. need to rewrite the entire "resources" thing...
+          require "mayucss"
+
           source_path_without_extension =
             File.join(
               File.dirname(source_path),
