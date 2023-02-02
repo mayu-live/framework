@@ -1,0 +1,55 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Button = import("/app/components/Form/Button")
+
+  def self.get_initial_state(**) = {
+    stat: GC.stat
+  }
+
+  def handle_refresh =
+    update(stat: GC.stat)
+
+  # def mount =
+  #   loop do
+  #     sleep 1
+  #     update(stat: GC.stat)
+  #   end
+
+%article
+  %Heading(level=2)
+    GC Stats
+  %p
+    %Button(onclick=handle_refresh)
+      Refresh
+    %a(href="https://docs.ruby-lang.org/en/master/GC.html#method-c-stat" target="_blank")
+      Documentation for these values
+  .flex
+    - stat = state[:stat]
+    = stat.each_slice((stat.size / 2.0).ceil).map do |slice|
+      %table
+        %tbody
+          = slice.map do |key, value|
+            %tr[key]
+              %th= key.to_s
+              %td= value.to_s
+:css
+  .flex {
+    display: flex;
+    gap: 1em;
+  }
+
+  table {
+    font-size: .8em;
+  }
+  th { text-align: left; }
+  td { text-align: right; }
+  th, td {
+    border: 1px solid #0003;
+    padding: .5em;
+  }
+
+  p {
+    gap: 1em;
+    display: flex;
+    align-items: center;
+  }
