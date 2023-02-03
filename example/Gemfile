@@ -5,7 +5,3 @@ source "https://rubygems.org"
 gem "mayu-live", path: ".."
 
 gem "fuzzy_match"
-
-group :development do
-  gem "mayucss", "~> 0.0.3"
-end
