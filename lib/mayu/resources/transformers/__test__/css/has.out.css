@@ -1,11 +1,10 @@
-@layer app\\/components\\/MyComponent\\?abc123 {
-  .app\\/components\\/MyComponent\\.formGroup\\?abc123:has(:invalid) {
-    --color: var(--invalid);
-  }
+@layer app\/components\/MyComponent\?tjLaPD8V {
+.app\/components\/MyComponent\.formGroup\?vNHgJWqX:has(:invalid) {
+  --color: var(--invalid);
+}
 
-  .app\\/components\\/MyComponent\\.formGroup\\?abc123:has(
-      :invalid:not(:focus)
-    ) {
-    animation: shake 0.25s;
-  }
+.app\/components\/MyComponent\.formGroup\?vNHgJWqX:has(:invalid:not(:focus)) {
+  animation: .25s shake;
+}
+
 }

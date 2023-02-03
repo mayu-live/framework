@@ -1,7 +1,10 @@
-@layer app\\/components\\/MyComponent\\?abc123 {
-  .app\\/components\\/MyComponent\\.foo\\?abc123 {
-    color: #f0f;
-  }
-  .app\\/components\\/MyComponent\\.bar\\?abc123 {
-  }
+@layer app\/components\/MyComponent\?ugAGryRB {
+.app\/components\/MyComponent\.foo\?aiQioe1q {
+  color: #f0f;
+}
+
+.app\/components\/MyComponent\.bar\?aiQioe1q {
+  composes: foo;
+}
+
 }

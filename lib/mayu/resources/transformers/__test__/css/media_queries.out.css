@@ -1,10 +1,12 @@
-@layer app\\/components\\/MyComponent\\?abc123 {
-  @media (min-width: 8em) and (max-width: 32em) {
-    .app\\/components\\/MyComponent\\.foo\\?abc123 {
-      color: fuchsia;
-    }
+@layer app\/components\/MyComponent\?zQoPHO29 {
+@media (min-width: 8em) and (max-width: 32em) {
+  .app\/components\/MyComponent\.foo\?Ef7fDeuq {
+    color: #f0f;
   }
-  .app\\/components\\/MyComponent\\.bar\\?abc123 {
-    color: blue;
-  }
+}
+
+.app\/components\/MyComponent\.bar\?Ef7fDeuq {
+  color: #00f;
+}
+
 }
