@@ -8,100 +8,29 @@ require_relative "css/rouge_lexer"
 require "rouge"
 
 class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
-  def test_pseudo_classes
-    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
-      *,
-      *::before,
-      *::after { box-sizing: border-box; }
-    CSS
-      @layer app\\/components\\/MyComponent\\?abc123 {
-      *,
-      *::before,
-      *::after { box-sizing: border-box; }
-      }
-    CSS
-  end
+  EXAMPLES_ROOT = File.join(__dir__, "__test__", "css")
 
-  def test_media_queries
-    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
-      @media (min-width: 8em) and (max-width: 32em) {
-      .foo { color: fuchsia; }
-      }
-      .bar { color: blue; }
-    CSS
-      @layer app\\/components\\/MyComponent\\?abc123 {
-      @media (min-width: 8em) and (max-width: 32em) {
-      .app\\/components\\/MyComponent\\.foo\\?abc123 { color: fuchsia; }
-      }
-      .app\\/components\\/MyComponent\\.bar\\?abc123 { color: blue; }
-      }
-    CSS
-  end
+  Dir[File.join(EXAMPLES_ROOT, "*.in.css")].each do |input_path|
+    basename = File.basename(input_path, ".in.css")
 
-  def test_element_selectors
-    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
-      p { color: fuchsia; }
-    CSS
-      @layer app\\/components\\/MyComponent\\?abc123 {
-      .app\\/components\\/MyComponent_p\\?abc123 { color: fuchsia; }
-      }
-    CSS
-  end
+    if ENV["MATCH"] in String => match
+      next unless basename.include?(match)
+    end
 
-  def test_composes
-    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
-      .foo {
-        color: #f0f;
-      }
-      .bar {
-        composes: foo;
-      }
-    CSS
-      @layer app\\/components\\/MyComponent\\?abc123 {
-      .app\\/components\\/MyComponent\\.foo\\?abc123 {
-        color: #f0f;
-      }
-      .app\\/components\\/MyComponent\\.bar\\?abc123 {
+    skip_path = File.join(EXAMPLES_ROOT, "#{basename}.skip")
+    output_path = File.join(EXAMPLES_ROOT, "#{basename}.out.css")
 
-      }
-      }
-    CSS
-  end
+    input = File.read(input_path)
+    expected = File.read(output_path)
 
-  def test_has
-    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
-      .formGroup:has(:invalid) {
-        --color: var(--invalid);
-      }
+    define_method(:"test_#{basename}") do
+      T.bind(self, Mayu::Resources::Transformers::CSS::Test)
 
-      .formGroup:has(:invalid:not(:focus)) {
-        animation: shake 0.25s;
-      }
-    CSS
-      @layer app\\/components\\/MyComponent\\?abc123 {
-      .app\\/components\\/MyComponent\\.formGroup\\?abc123:has(:invalid) {
-        --color: var(--invalid);
-      }
-
-      .app\\/components\\/MyComponent\\.formGroup\\?abc123:has(:invalid:not(:focus)) {
-        animation: shake 0.25s;
-      }
-      }
-    CSS
-  end
-
-  def test_attributes
-    assert_equal(transform(<<~CSS.strip), <<~CSS.strip)
-      .page[aria-current="page"] {
-        background: var(--blue);
-      }
-    CSS
-      @layer app\\/components\\/MyComponent\\?abc123 {
-      .app\\/components\\/MyComponent\\.page\\?abc123[aria-current=\"page\"] {
-        background: var(--blue);
-      }
-      }
-    CSS
+      skip File.read(skip_path) if File.exist?(skip_path)
+      actual = transform(input)
+      # File.write(output_path, actual)
+      assert_equal(expected, actual)
+    end
   end
 
   private
