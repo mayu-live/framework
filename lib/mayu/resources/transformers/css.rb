@@ -47,7 +47,7 @@ module Mayu
         def self.transform(source:, source_path:, source_line: 1)
           # Required here because it's not necessary in production..
           # kinda messy. need to rewrite the entire "resources" thing...
-          require "mayucss"
+          require "mayu/css"
 
           source_path_without_extension =
             File.join(
@@ -55,7 +55,7 @@ module Mayu
               File.basename(source_path, ".*")
             ).delete_prefix("./")
 
-          result = MayuCSS.transform(source_path_without_extension, source)
+          result = Mayu::CSS.transform(source_path_without_extension, source)
 
           output = result.code.encode("utf-8")
 
