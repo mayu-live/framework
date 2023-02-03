@@ -7,17 +7,19 @@ module Mayu
   module Resources
     module Types
       class Stylesheet < Base
-        class ClassnameProxy
+        Classes = T.type_alias { T::Hash[Symbol, String] }
+
+        class ClassNames
           extend T::Sig
 
-          sig { params(classes: T::Hash[String, String]).void }
+          sig { params(classes: Classes).void }
           def initialize(classes)
             @classes = classes
           end
 
           sig { params(ident: Symbol).returns(String) }
           def method_missing(ident)
-            @classes[ident.to_s].to_s
+            @classes[ident].to_s
           end
 
           sig { params(args: T.untyped).returns(String) }
@@ -33,7 +35,7 @@ module Mayu
           def add_to_result(result, arg)
             case arg
             when Symbol
-              if klass = @classes[arg.to_s]
+              if klass = @classes[arg]
                 result.add(klass)
               end
             when String
@@ -48,7 +50,7 @@ module Mayu
 
         extend T::Sig
 
-        sig { returns(T::Hash[String, String]) }
+        sig { returns(Classes) }
         attr_reader :classes
 
         sig { params(resource: Resource).void }
@@ -66,15 +68,16 @@ module Mayu
 
           @source = T.let(transform_result.output, String)
           @content_hash = T.let(transform_result.content_hash, String)
-          @classes = T.let(transform_result.classes, T::Hash[String, String])
+          @classes = T.let(transform_result.classes, Classes)
           @filename = T.let(transform_result.filename, String)
           @source_map =
             T.let(transform_result.source_map, T::Hash[String, T.untyped])
+          @classnames = T.let(nil, T.nilable(ClassNames))
         end
 
-        sig { returns(ClassnameProxy) }
-        def classname_proxy
-          ClassnameProxy.new(self.classes)
+        sig { returns(ClassNames) }
+        def classnames
+          @classnames ||= ClassNames.new(self.classes)
         end
 
         sig { returns(T::Array[Asset]) }
@@ -99,8 +102,7 @@ module Mayu
           ]
         end
 
-        MarshalFormat =
-          T.type_alias { [T::Hash[String, String], String, String, String] }
+        MarshalFormat = T.type_alias { [Classes, String, String, String] }
 
         sig { returns(MarshalFormat) }
         def marshal_dump

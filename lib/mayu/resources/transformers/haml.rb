@@ -715,8 +715,7 @@ module Mayu
                 source: text,
                 source_path:
                   @options.source_path_without_extension + ".haml (inline css)",
-                source_line: node.line,
-                content_hash: Digest::SHA256.hexdigest(text)[0..7].to_s
+                source_line: node.line
               )
             in { name: "plain", text: }
               case text.inspect.each_line.to_a

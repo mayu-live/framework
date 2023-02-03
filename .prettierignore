@@ -1,2 +1,3 @@
 /sorbet
 /vendor/bundle
+/lib/mayu/resources/transformers/__test__/css

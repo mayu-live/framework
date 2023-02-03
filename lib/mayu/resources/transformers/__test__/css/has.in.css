@@ -1,0 +1,7 @@
+.formGroup:has(:invalid) {
+  --color: var(--invalid);
+}
+
+.formGroup:has(:invalid:not(:focus)) {
+  animation: shake 0.25s;
+}

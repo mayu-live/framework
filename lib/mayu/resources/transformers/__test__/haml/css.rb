@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 Self =
   setup_component(
-    assets: ["MhX21ANfU9yaX-4TrDS09Q78ezWwvMXHPC5iPRFjtwQ=.css"],
+    assets: ["rKxGn-R511h2m1nlvs18PwsPwrzW-iGCNVojf-x0LRg=.css"],
     styles: {
-      button: "app/components/MyComponent.button?761847c0"
+      button: "app/components/MyComponent.button?dhhHwAZl"
     }
   )
 public def render

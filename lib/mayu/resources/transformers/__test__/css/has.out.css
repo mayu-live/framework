@@ -1,0 +1,10 @@
+@layer app\/components\/MyComponent\?tjLaPD8V {
+.app\/components\/MyComponent\.formGroup\?vNHgJWqX:has(:invalid) {
+  --color: var(--invalid);
+}
+
+.app\/components\/MyComponent\.formGroup\?vNHgJWqX:has(:invalid:not(:focus)) {
+  animation: .25s shake;
+}
+
+}

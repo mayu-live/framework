@@ -107,7 +107,7 @@ RUN apk update && apk add --no-cache curl bash jemalloc
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
 
 RUN MALLOC_CONF=stats_print:true ruby -e "exit"
-ENV MALLOC_CONF=narenas:2
+# ENV MALLOC_CONF=narenas:2
 
 SHELL ["/bin/bash", "-c"]
 

@@ -48,12 +48,12 @@ class Mayu::VDOM::Test < Minitest::Test
       # page.debug!
 
       assert_equal(page.to_html, <<~HTML)
-        <div class="lib/mayu/vdom.test.foo">
+        <div class="lib/mayu/vdom.foo">
           <button
             name="increment"
             value="1"
             onclick="Mayu.handle(event,'LckOTvJsohBty1Pm')"
-            class="lib/mayu/vdom.test.increment"
+            class="lib/mayu/vdom.increment"
           >
             Decrement
           </button>
@@ -61,7 +61,7 @@ class Mayu::VDOM::Test < Minitest::Test
             name="decrement"
             value="-1"
             onclick="Mayu.handle(event,'LckOTvJsohBty1Pm')"
-            class="lib/mayu/vdom.test.decrement"
+            class="lib/mayu/vdom.decrement"
           >
             Increment
           </button>

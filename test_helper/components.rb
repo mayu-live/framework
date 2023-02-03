@@ -29,11 +29,11 @@ module Mayu
           impl.class_eval(result.output, file, line)
 
           if css = result.css
-            classname_proxy =
-              Resources::Types::Stylesheet::ClassnameProxy.new(css.classes)
-            impl.instance_exec(classname_proxy) do |classname_proxy|
-              define_singleton_method(:styles) { classname_proxy }
-              define_method(:styles) { classname_proxy }
+            classnames =
+              Resources::Types::Stylesheet::ClassNames.new(css.classes)
+            impl.instance_exec(classnames) do |classnames|
+              define_singleton_method(:styles) { classnames }
+              define_method(:styles) { classnames }
             end
           end
 

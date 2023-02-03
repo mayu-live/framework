@@ -212,10 +212,10 @@ They contain logic and return other components or HTML elements.
 You might be familiar with ReactJS and other component based
 rendering libraries. This is the same thing, but in Ruby.
 
-## CSS modules
+## Scoped CSS
 
-[CSS Modules](https://github.com/css-modules/css-modules) makes sure
-that all CSS class names are scoped locally.
+All class names and element names are given an unique name,
+inspired by [CSS Modules](https://github.com/css-modules/css-modules).
 
 Class names are applied automatically by Haml.
 
@@ -232,13 +232,13 @@ Class names are applied automatically by Haml.
     font-weight: bold;
   }
 
-  .button {
+  button {
     background: #0f0;
     color: #fff;
   }
 .box
   %p.hello Hello world
-  %button.button Click me!
+  %button Click me!
 ```
 
 This would generate the following HTML:
@@ -246,7 +246,7 @@ This would generate the following HTML:
 ```html
 <div class="/app/components/Example.box?MjQSEK">
   <p class="/app/components/Example.hello?MjQSEK">Hello world</p>
-  <button class="/app/components/Example.button?MjQSEK">Click me!</button>
+  <button class="/app/components/Example_button?MjQSEK">Click me!</button>
 </div>
 ```
 

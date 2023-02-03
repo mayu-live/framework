@@ -1,0 +1,8 @@
+@media (min-width: 8em) and (max-width: 32em) {
+  .foo {
+    color: fuchsia;
+  }
+}
+.bar {
+  color: blue;
+}
