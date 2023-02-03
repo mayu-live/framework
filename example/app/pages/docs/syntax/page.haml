@@ -12,6 +12,18 @@
       as well as `$foobar`. The latter will transform into the former,
       for convenience.
 
+      ## Self / recursion
+
+      The constant `Self` is defined to point at the current class,
+      which is useful if you want to make a tree.
+
+      ```haml
+      %ul
+        = Dir.entries($path).map do |path|
+          %li[path]
+            %Self(path=path)
+      ```
+
       ## Whitespace
 
       Here comes the biggest difference between Mayu Haml and regular Haml.
