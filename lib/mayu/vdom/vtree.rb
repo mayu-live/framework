@@ -504,6 +504,8 @@ module Mayu
         vnode
       end
 
+      EMPTY_HASH = T.let({}.freeze, T::Hash[T.untyped, T.untyped])
+
       sig do
         params(
           ctx: UpdateContext,
@@ -519,7 +521,7 @@ module Mayu
         vnode.remove!
         ctx.remove(vnode) if patch
         vnode.children.map { remove_vnode(ctx, _1, lifecycles:, patch: false) }
-        update_handlers(vnode.props, {})
+        update_handlers(vnode.props, EMPTY_HASH)
         nil
       end
 

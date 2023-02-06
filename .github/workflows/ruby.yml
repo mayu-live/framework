@@ -33,4 +33,8 @@ jobs:
       - name: Check types
         run: bundle exec srb tc
       - name: Run tests
-        run: bundle exec rake
+        run: bundle exec rake test
+      - uses: actions/upload-artifact@v3
+        with:
+          name: profile
+          path: profile/

@@ -53,6 +53,7 @@ GEM
       async
     async-pool (0.3.12)
       async (>= 1.25)
+    benchmark (0.2.1)
     brotli (0.4.0)
     builder (3.2.4)
     citrus (3.0.2)
@@ -143,6 +144,7 @@ GEM
     rbs (2.8.4)
     rexml (3.2.5)
     rouge (4.0.1)
+    ruby-prof (1.4.5)
     ruby-progressbar (1.11.0)
     shellany (0.0.1)
     sorbet (0.5.10648)
@@ -208,6 +210,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  benchmark
   fuzzy_match
   guard
   localhost
@@ -217,6 +220,7 @@ DEPENDENCIES
   nokogiri
   prettier
   rexml
+  ruby-prof
   sorbet
   tapioca
 

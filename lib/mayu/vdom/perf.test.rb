@@ -1,10 +1,10 @@
-# ruby-prof doesn't load currently and I don't know why.
-__END__
-
-# typed: true
+# typed: false
+$LOAD_PATH.unshift(File.join(__dir__, "..", "..", ".."))
 require_relative "../disable_sorbet"
-# Mayu::DisableSorbet.disable_sorbet!
+Mayu::DisableSorbet.disable_sorbet!
 
+require "sorbet-runtime"
+require "bundler/setup"
 require "minitest/autorun"
 require "test_helper"
 require "async"
@@ -18,9 +18,15 @@ require_relative "../commands"
 require_relative "../app_metrics"
 
 class PerfTest < Minitest::Test
-  class MyComponent < Mayu::Component::Base
-    include Mayu::VDOM::H
+  H = Mayu::VDOM::H
 
+  class Item < Mayu::Component::Base
+    def render
+      H[:li, H[:a, props[:children].to_a, href: props[:path]]]
+    end
+  end
+
+  class MyComponent < Mayu::Component::Base
     def self.get_initial_state(**props)
       { page: 0 }
     end
@@ -30,30 +36,42 @@ class PerfTest < Minitest::Test
     end
 
     def render
-      per_page = 150
+      per_page = 50
       items = props[:items].slice(state[:page] * per_page, per_page)
 
-      h(
+      H[
         :div,
-        (h(:button, on_click: handler(:handle_next_page)) unless items.empty?),
-        h(:ul, items.map { h(:li, _1, key: _1) })
-      )
+        (H[:button, on_click: handler(:handle_next_page)] unless items.empty?),
+        H[:ul, items.map { H[Item, _1, key: _1, path: "/#{_1}"] }]
+      ]
     end
   end
 
-  include Mayu::VDOM::H
-
   def test_perf
-    items = 500.times.map { SecureRandom.alphanumeric(5 + rand(10)) }
+    items = 2000.times.map { SecureRandom.alphanumeric(5 + rand(10)) }
 
     Async do
       vtree = setup_vtree
-      app = h(MyComponent, items:)
+      app = H[MyComponent, items:]
       vtree.render(app)
       vtree.to_html.tap { |html| print_xml(html) }
 
+      # https://ruby-prof.github.io/#measurements
+      RubyProf.measure_mode = RubyProf::WALL_TIME
+      # RubyProf.measure_mode = RubyProf::PROCESS_TIME
+      # RubyProf.measure_mode = RubyProf::ALLOCATIONS
+      # RubyProf.measure_mode = RubyProf::MEMORY
+
+      profile = RubyProf::Profile.new(track_allocations: true)
+      profile.exclude_methods!(T::Types::Union, :recursively_valid?)
+      profile.exclude_methods!(T::Types::FixedArray, :initialize)
+      profile.exclude_methods!(T::Props::WeakConstructor, :initialize)
+      # profile.exclude_methods!(T::Props::Constructor::DecoratorMethods, :construct_props_without_defaults)
+      profile.exclude_methods!(T::Types::TypedEnumerable, :recursively_valid?)
+      # profile.exclude_methods!(T::Private::Methods::Signature, :initialize)
+
       result =
-        RubyProf.profile do
+        profile.profile do
           while handler_ref =
                   vtree.instance_variable_get(:@handlers).values.first
             handler_ref.call({})
@@ -61,11 +79,10 @@ class PerfTest < Minitest::Test
           end
         end
 
-      printer = RubyProf::GraphHtmlPrinter.new(result)
-
-      File.open(File.join(__dir__, "profile.html"), "w") do |f|
-        printer.print(f, min_percent: 0)
-      end
+      printer = RubyProf::MultiPrinter.new(result)
+      path = File.join(Mayu::TestHelper::ROOT, "profile")
+      FileUtils.mkdir_p(path)
+      printer.print(path:, profile: File.basename(__FILE__, ".*"))
 
       vtree.render(app)
       vtree.to_html.tap { |html| print_xml(html) }
@@ -100,7 +117,7 @@ class PerfTest < Minitest::Test
 
     environment.instance_eval do
       def load_root(path, headers: {})
-        Mayu::VDOM::Descriptor.new(:div)
+        H[:div]
       end
       def match_route(path)
       end

@@ -13,10 +13,11 @@ group :development do
   gem "minitest-reporters", require: false
   gem "prettier", require: false
   gem "rexml", require: false
-  # gem "ruby-prof", require: false
+  gem "ruby-prof", require: false
   gem "sorbet", require: false
   gem "tapioca", require: false
   gem "nokogiri", require: false
+  gem "benchmark", require: false
 end
 
 gem "fuzzy_match"

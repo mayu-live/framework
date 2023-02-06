@@ -10,3 +10,4 @@ lib/mayu/client/dist
 lib/mayu/client/stats.html
 node_modules
 vendor/bundle
+profile

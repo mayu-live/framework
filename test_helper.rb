@@ -25,6 +25,8 @@ module Mayu
     autoload :Page, "test_helper/page"
     autoload :VDOM, "test_helper/vdom"
 
+    ROOT = T.let(__dir__.to_s, String)
+
     sig do
       params(
         component: T.class_of(Mayu::Component::Base),

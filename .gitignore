@@ -2,3 +2,4 @@ vendor/bundle
 node_modules
 *.gem
 lib/mayu/vdom/profile.html
+profile/
