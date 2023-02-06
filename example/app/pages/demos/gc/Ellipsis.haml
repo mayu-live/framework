@@ -1,0 +1,17 @@
+.ellipsis
+  %span
+    %slot
+:css
+  .ellipsis {
+    position: relative;
+  }
+  span {
+    position: absolute;
+    top: 50%;
+    translate: 0 -50%;
+    left: 0;
+    right: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }

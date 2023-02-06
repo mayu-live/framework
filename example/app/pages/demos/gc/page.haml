@@ -1,18 +1,20 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
   Button = import("/app/components/Form/Button")
+  Ellipsis = import("./Ellipsis")
 
   def self.get_initial_state(**) = {
-    stat: GC.stat
+    stats: GC.stat,
+    objcount: ObjectSpace.count_objects,
   }
 
   def handle_refresh =
-    update(stat: GC.stat)
+    update(Self.get_initial_state)
 
   # def mount =
   #   loop do
   #     sleep 1
-  #     update(stat: GC.stat)
+  #     update(Self.get_initial_state)
   #   end
 
 %article
@@ -24,27 +26,53 @@
     %a(href="https://docs.ruby-lang.org/en/master/GC.html#method-c-stat" target="_blank")
       Documentation for these values
   .flex
-    - stat = state[:stat]
-    = stat.each_slice((stat.size / 2.0).ceil).map do |slice|
-      %table
+    - state => { stats:, objcount: }
+    = stats.each_slice(stats.size.succ / 3).with_index.map do |slice, i|
+      %table[slice, i]
         %tbody
           = slice.map do |key, value|
-            %tr[key]
-              %th= key.to_s
+            %tr
+              %th
+                %Ellipsis= key.to_s
               %td= value.to_s
+    %table
+      %tbody
+        = objcount.map do |key, value|
+          %tr[key]
+            %th= key.to_s
+            %td= value.to_s
 :css
   .flex {
     display: flex;
+    flex-wrap: wrap;
+    align-items: start;
     gap: 1em;
   }
 
   table {
+    flex: 1 0 20em;
     font-size: .8em;
+    border: 1px solid #0003;
+    border-radius: 2px;
+    border-spacing: 1px;
   }
-  th { text-align: left; }
-  td { text-align: right; }
+
+  .key {
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+  }
+
+  th {
+    text-align: left;
+    width: 100%;
+  }
+  td {
+    text-align: right;
+  }
   th, td {
     border: 1px solid #0003;
+    border-radius: 2px;
     padding: .5em;
   }
 
