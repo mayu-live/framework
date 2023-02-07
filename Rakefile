@@ -2,7 +2,11 @@
 # typed: ignore
 
 require "bundler/setup"
-require "sorbet-runtime"
+
+if ENV['DISABLE_SORBET']
+  require_relative "lib/mayu/disable_sorbet"
+  Mayu::DisableSorbet.disable_sorbet!
+end
 
 unless ENV['BUNDLE_WITHOUT'].to_s.split(":").include?("test")
   require "minitest/test_task"

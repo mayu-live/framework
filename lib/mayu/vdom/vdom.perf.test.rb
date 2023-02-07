@@ -1,10 +1,5 @@
 # typed: false
-$LOAD_PATH.unshift(File.join(__dir__, "..", "..", ".."))
-require_relative "../disable_sorbet"
-Mayu::DisableSorbet.disable_sorbet!
 
-require "sorbet-runtime"
-require "bundler/setup"
 require "minitest/autorun"
 require "test_helper"
 require "async"
@@ -17,7 +12,7 @@ require_relative "../session"
 require_relative "../commands"
 require_relative "../app_metrics"
 
-class PerfTest < Minitest::Test
+class Mayu::VDOM::PerformanceTest < Minitest::Test
   H = Mayu::VDOM::H
 
   class Item < Mayu::Component::Base
