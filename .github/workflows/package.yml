@@ -1,16 +1,44 @@
+name: Release
+
 on:
   workflow_dispatch:
+  push:
+    tags: ["v*"]
 
 jobs:
+  run-tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Ensure version matches the tag
+        run: |
+          GEM_VERSION=$(grep VERSION lib/mayu/version.rb | head -n 1 | cut -d'"' -f2)
+          if [ "v$GEM_VERSION" != "${{ github.ref_name }}" ]; then
+            echo "Gem version does not match tag"
+            echo "  v$GEM_VERSION != ${{ github.ref_name }}"
+            exit 1
+          fi
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2.0"
+          bundler-cache: true
+      - name: Check types
+        run: bundle exec srb tc
+      - name: Run tests
+        run: bundle exec rake test
+
   build-js:
     name: Build client JS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: node/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           cache: npm
           node-version: '19.3.0'
+      - run: npm ci
       - name: Build
         run: |
           npm run build:production -w lib/mayu/client
@@ -19,31 +47,48 @@ jobs:
         with:
           name: client-dist
           path: lib/mayu/client/dist/
-  build-gem:
-    needs: build-js
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        ruby-version: ["3.2.0"]
 
+  build-gem:
+    needs:
+      - run-tests
+      - build-js
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          ruby-version: "3.2.0"
+          bundler-cache: true
       - uses: actions/download-artifact@v3
+        name: "Download client JS"
         with:
           name: client-dist
           path: lib/mayu/client/dist/
-      - name: Check types
-        run: bundle exec srb tc
-      - name: Run tests
-        run: bundle exec rake test
       - name: Build gem
-        run: gem build
-      - uses: actions/upload-artifact@v3
+        run: bundle exec rake build
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
         with:
-          name: Upload gem
-          path: mayu-live-*.gem
+          artifacts: "pkg/*.gem"
+      - name: Push Gem
+        working-directory: pkg/
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_KEY }}
+        run: |
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
+          ls -l
+          for i in *.gem; do
+            if [ -f "$i" ]; then
+              if ! gem push "$i" >push.out; then
+                gemerr=$?
+                sed 's/^/::error:: /' push.out
+                if ! grep -q "Repushing of gem" push.out; then
+                  exit $gemerr
+                fi
+              fi
+            fi
+          done

@@ -2,6 +2,7 @@
 # typed: ignore
 
 require "bundler/setup"
+require "bundler/gem_tasks"
 
 if ENV['DISABLE_SORBET']
   require_relative "lib/mayu/disable_sorbet"
