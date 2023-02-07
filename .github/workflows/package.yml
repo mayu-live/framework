@@ -1,0 +1,49 @@
+on:
+  workflow_dispatch:
+
+jobs:
+  build-js:
+    name: Build client JS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: node/setup-node@v1
+        with:
+          cache: npm
+          node-version: '19.3.0'
+      - name: Build
+        run: |
+          npm run build:production -w lib/mayu/client
+          brotli lib/mayu/client/dist/*.{js,map}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: client-dist
+          path: lib/mayu/client/dist/
+  build-gem:
+    needs: build-js
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby-version: ["3.2.0"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+      - uses: actions/download-artifact@v3
+        with:
+          name: client-dist
+          path: lib/mayu/client/dist/
+      - name: Check types
+        run: bundle exec srb tc
+      - name: Run tests
+        run: bundle exec rake test
+      - name: Build gem
+        run: gem build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Upload gem
+          path: mayu-live-*.gem
