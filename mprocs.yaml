@@ -1,5 +1,0 @@
-procs:
-  example:
-    shell: "cd example && bin/mayu dev"
-  client:
-    shell: "cd lib/mayu/client && npm run watch"

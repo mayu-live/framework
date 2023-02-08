@@ -27,7 +27,6 @@
     "happy-dom": "^8.1.1",
     "husky": "^8.0.2",
     "lint-staged": "^13.1.0",
-    "mprocs": "^0.6.4",
     "prettier": "^2.8.1"
   },
   "lint-staged": {
