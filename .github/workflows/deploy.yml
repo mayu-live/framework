@@ -1,4 +1,4 @@
-name: Deploy mayu.live
+name: Deploy to https://mayu.live/
 
 on:
   workflow_dispatch:
@@ -7,6 +7,7 @@ jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
+    environment: fly.io
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
