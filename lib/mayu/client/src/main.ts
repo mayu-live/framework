@@ -114,17 +114,31 @@ function mayuCallback(sessionId: string, handlerId: string, payload: any) {
     method: "POST",
     headers: {
       "content-type": "application/json",
+      "x-request-time": performance.now(),
     },
     body: JSON.stringify(payload),
-  });
+  }).then(logRequestTime);
 }
 
 async function navigateTo(sessionId: string, url: string) {
   return fetch(`/__mayu/session/${sessionId}/navigate`, {
     method: "POST",
-    headers: { "content-type": "text/plain; charset=utf-8" },
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "x-request-time": performance.now(),
+    },
     body: url,
-  });
+  }).then(logRequestTime);
+}
+
+function logRequestTime(res) {
+  const requestTime = res.headers.get("x-request-time");
+
+  if (requestTime) {
+    console.log("Pong:", performance.now() - Number(requestTime), "ms");
+  }
+
+  return res;
 }
 
 function getSessionIdFromUrl(url: string) {

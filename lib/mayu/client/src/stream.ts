@@ -117,7 +117,7 @@ export async function* sessionStream(
                   "ping",
                   {
                     values: {
-                      client: new Date().getTime() - Number(payload.pong),
+                      client: performance.now() - Number(payload.pong),
                       server: payload.server,
                     },
                     region: payload.region,
@@ -128,7 +128,7 @@ export async function* sessionStream(
               case "ping":
                 postCallback(sessionId, "ping", {
                   pong: payload,
-                  ping: new Date().getTime(),
+                  ping: performance.now(),
                 });
                 break;
               default:

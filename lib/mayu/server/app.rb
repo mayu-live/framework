@@ -248,10 +248,6 @@ module Mayu
           ping = body["ping"]
           time = time_ping_value
           server_pong = time_ping_value - body["pong"].to_f
-          # Console.logger.info(
-          #   self,
-          #   format("Session #{session.id} ping: %.2f ms", server_pong)
-          # )
           headers = {
             "content-type": "application/json",
             "set-cookie": set_token_cookie_value(session)
@@ -268,13 +264,22 @@ module Mayu
           @environment.metrics.session_navigate_count.increment()
           path = request.read.force_encoding("utf-8")
           session.handle_callback("navigate", { path: })
+          headers = {
+            "content-type": "text/plain",
+            "set-cookie": set_token_cookie_value(session),
+            "x-request-time": request.headers["x-request-time"]
+          }
           Protocol::HTTP::Response[200, headers, ["ok"]]
         in ["callback", String => callback_id]
           session.handle_callback(
             callback_id,
             JSON.parse(request.read, symbolize_names: true)
           )
-          headers = { "set-cookie": set_token_cookie_value(session) }
+          headers = {
+            "content-type": "text/plain",
+            "set-cookie": set_token_cookie_value(session),
+            "x-request-time": request.headers["x-request-time"]
+          }
           Protocol::HTTP::Response[200, headers, ["ok"]]
         end
       end
