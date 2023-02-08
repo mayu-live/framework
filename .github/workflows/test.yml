@@ -1,0 +1,42 @@
+name: Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  javascript:
+    # This job only builds the JS,
+    # there are no tests yet.
+    name: Test JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          cache: npm
+          node-version: '19.3.0'
+      - run: npm ci
+      - name: Build
+        run: |
+          npm run build:production -w lib/mayu/client
+  ruby:
+    name: Test Ruby
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2.0"
+          bundler-cache: true
+      - name: Check types
+        run: bundle exec srb tc
+      - name: Run tests
+        run: bundle exec rake test
+      - uses: actions/upload-artifact@v3
+        with:
+          name: profile
+          path: profile/
