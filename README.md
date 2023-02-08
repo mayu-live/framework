@@ -56,7 +56,7 @@ having to configure anything!
   - [100% server side](#100-server-side)
   - [100% async](#100-async)
   - [Components](#components)
-  - [CSS modules](#css-modules)
+  - [Scoped CSS](#scoped-css)
   - [State management](#state-management)
   - [Path based routing](#path-based-routing)
   - [Hot reloading](#hot-reloading)
@@ -217,7 +217,7 @@ rendering libraries. This is the same thing, but in Ruby.
 All class names and element names are given an unique name,
 inspired by [CSS Modules](https://github.com/css-modules/css-modules).
 
-Class names are applied automatically by Haml.
+Class names are applied automatically.
 
 ### `app/components/Example.haml`
 
