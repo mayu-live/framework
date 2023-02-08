@@ -1,0 +1,5 @@
+.assets
+vendor
+*.ipc
+tmp
+dist
