@@ -7,41 +7,14 @@
       # Getting started
 
       Here are some instructions to get started.
-      Note that no package has been released yet,
-      and that there are bugs. Do not use in production.
 
       Easiest way would probably be to use the
       [starter kit](https://github.com/mayu-live/starter#readme)
       which may or may not work. Use at your own risk.
 
-      Make sure you have the latest stable versions of
-      [Ruby](https://www.ruby-lang.org/en/downloads/)
-      and
-      [NodeJS](https://nodejs.org/en/).
-
-      NodeJS is only used to build the browser runtime and will be packaged into the gem.
-      Mayu does not depend on Node during runtime.
-
       ```shell
-      # Clone repository
-      git clone https://github.com/mayu-live/framework.git mayu-live
-      cd mayu-live
-      ```
-
-      ```shell
-      # Install dependencies
-      bundle install
-      npm install
-      ```
-
-      ```shell
-      # Build browser runtime
-      npm run build
-      ```
-
-      ```shell
-      # Setup the example app
-      cd example/
+      git clone https://github.com/mayu-live/starter.git mayu-hello
+      cd mayu-hello
       bundle install
       ```
 
@@ -57,3 +30,18 @@
       If you have any issues, feel free to open an
       [issue on GitHub](https://github.com/mayu-live/framework/issues),
       or submit a Pull Request if you fix or improve something.
+
+      ## Deployment
+
+      If you want to deploy the starter app to [fly.io](https://fly.io/),
+      there is a Rake task that will configure the app for you.
+
+      ```shell
+      rake launch_on_fly
+      ```
+
+      Then, whenever you want to deploy, you just have to type:
+
+      ```shell
+      fly deploy
+      ```
