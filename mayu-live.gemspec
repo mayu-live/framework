@@ -9,19 +9,20 @@ Gem::Specification.new do |spec|
   spec.email = ["andreas.alin@gmail.com"]
 
   spec.summary = "Server side VDOM framework"
-  spec.homepage = "https://github.com/mayu-live/framework"
 
+  spec.description = <<~EOF
+    Mayu Live is a live streaming server side VirtualDOM framework for Ruby,
+    inspired by modern frontend tools that exist in the JavaScript ecosystem.
+  EOF
+
+  spec.homepage = "https://mayu.live/"
   spec.license = "AGPL-3.0"
   spec.required_ruby_version = ">= 3.2.0"
-
-  # spec.metadata["allowed_push_host"] = "TODO: Set to your gem server 'https://example.com'"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/mayu-live/framework"
   # spec.metadata["changelog_uri"] = "TODO: Put your gem's CHANGELOG.md URL here."
 
-  # Specify which files should be added to the gem when it is released.
-  # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
   spec.files =
     Dir.chdir(__dir__) do
       [
@@ -29,7 +30,12 @@ Gem::Specification.new do |spec|
         "COPYING",
         "README.md",
         *Dir.glob("exe/**/*"),
-        *Dir.glob("lib/**/*").grep_v("/node_modules").grep_v("/mayu/client/src")
+        *Dir.glob("lib/**/*")
+          .grep_v("/node_modules")
+          .grep_v("/mayu/client/")
+          .grep_v("/__test__")
+          .grep_v(%r{\.test\.rb\z}),
+        *Dir.glob("lib/mayu/client/dist/**/*"),
       ]
     end
   spec.bindir = "exe"

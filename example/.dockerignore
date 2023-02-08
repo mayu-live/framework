@@ -1,5 +1,7 @@
-.assets
-vendor
 *.ipc
-tmp
+.DS_store
+.assets
+Dockerfile
 dist
+tmp
+vendor
