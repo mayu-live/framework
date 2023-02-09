@@ -731,7 +731,7 @@ module Mayu
 
           def visit_plain(node)
             node.value => { text: }
-            @builder.string_literal(CGI.escape_html(text))
+            @builder.string_literal(text)
           end
 
           def visit_script(node)
