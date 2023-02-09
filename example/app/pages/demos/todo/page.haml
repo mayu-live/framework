@@ -309,7 +309,7 @@
                 %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
                   initial_value: item[:description]
                 }
-            = unless state[:editing] == item[:id]
+            = else
               .row
                 %input.checkbox(type="checkbox" onchange=handle_check){
                   name: item[:id],
