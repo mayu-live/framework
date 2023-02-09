@@ -74,10 +74,12 @@ module Mayu
             filename:,
             output:,
             layer_name: layer_name,
-            classes: {
-              **result.classes.transform_keys(&:to_sym),
-              **result.elements.transform_keys { :"__#{_1}" }
-            }.freeze,
+            classes:
+              join_classes(
+                result.classes,
+                result.elements,
+                result.exports
+              ).freeze,
             elements: result.elements.transform_keys(&:to_sym),
             content_hash:,
             source_map: {
@@ -88,6 +90,48 @@ module Mayu
               "sourcesContent" => [source]
             }
           )
+        end
+
+        sig do
+          params(
+            classes: T::Hash[String, String],
+            elements: T::Hash[String, String],
+            exports: T::Hash[Symbol, T.untyped]
+          ).returns(T::Hash[Symbol, String])
+        end
+        def self.join_classes(classes, elements, exports)
+          {
+            **classes
+              .transform_values { join_class(_1, exports, classes) }
+              .transform_keys(&:to_sym),
+            **elements
+              .transform_values { join_class(_1, exports, classes) }
+              .transform_keys { :"__#{_1}" }
+          }
+        end
+
+        sig do
+          params(
+            klass: String,
+            exports: T::Hash[Symbol, T.untyped],
+            classes: T::Hash[String, String]
+          ).returns(String)
+        end
+        def self.join_class(klass, exports, classes)
+          case exports[klass.to_sym]
+          in composes:
+            [
+              klass,
+              *composes.map do
+                case _1
+                in { type: "local", name: }
+                  classes[name]
+                end
+              end
+            ].join(" ")
+          else
+            klass
+          end
         end
 
         sig { params(str: String).returns(String) }

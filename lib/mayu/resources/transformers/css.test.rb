@@ -10,6 +10,27 @@ require "rouge"
 class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
   EXAMPLES_ROOT = File.join(__dir__, "__test__", "css")
 
+  def test_composes123
+    result =
+      Mayu::Resources::Transformers::CSS.transform(
+        source: <<~CSS,
+          .foo { color: #f0f; }
+          .bar { composes: foo; }
+          baz { composes: bar; }
+        CSS
+        source_path: "path/to/file"
+      )
+
+    assert_equal(
+      {
+        foo: "path/to/file.foo?IbyVK-OP",
+        bar: "path/to/file.bar?IbyVK-OP path/to/file.foo?IbyVK-OP",
+        __baz: "path/to/file_baz?IbyVK-OP path/to/file.bar?IbyVK-OP"
+      },
+      result.classes
+    )
+  end
+
   Dir[File.join(EXAMPLES_ROOT, "*.in.css")].each do |input_path|
     basename = File.basename(input_path, ".in.css")
 
@@ -23,7 +44,7 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
     input = File.read(input_path)
     expected = File.read(output_path)
 
-    define_method(:"test_#{basename}") do
+    define_method(:"test_file_#{basename}") do
       T.bind(self, Mayu::Resources::Transformers::CSS::Test)
 
       skip File.read(skip_path) if File.exist?(skip_path)
