@@ -1,4 +1,5 @@
 :ruby
+  Button = import("/app/components/Form/Button")
   Heading = import("/app/components/Layout/Heading")
   Highlight = import("/app/components/UI/Highlight")
   Card = import("/app/components/UI/Card")
@@ -25,9 +26,15 @@
   %p
     Count:
     %output<= state[:count]
-  %p
-    %button(onclick=handle_click name="increment") Increment
-    %button(onclick=handle_click name="error") Error
-    %Details(summary="Show source")
-      %Highlight(language="haml")
-        = File.read("app/pages/demos/exceptions/page.haml")
+  .buttons
+    %Button(onclick=handle_click name="increment") Increment
+    %Button(onclick=handle_click name="error") Error
+  %Details(summary="Show source")
+    %Highlight(language="haml")
+      = File.read("app/pages/demos/exceptions/page.haml")
+:css
+  .buttons {
+    display: flex;
+    gap: 1em;
+    margin: 1em 0;
+  }

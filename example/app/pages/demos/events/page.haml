@@ -3,6 +3,7 @@
   Highlight = import("/app/components/UI/Highlight")
   Card = import("/app/components/UI/Card")
   Details = import("/app/components/UI/Details")
+  Button = import("/app/components/Form/Button")
 
   def self.get_initial_state(**) = {
     count: 0
@@ -20,4 +21,4 @@
   %Heading(level=2) Events
   %p This page contains some experiments with events
 
-  %button(onclick=handle_alert) Alert
+  %Button(onclick=handle_alert) Alert

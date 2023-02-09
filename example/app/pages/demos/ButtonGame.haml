@@ -1,4 +1,6 @@
 :ruby
+  Button = import("/app/components/Form/Button")
+
   MESSAGES = [
     "Click me!",
     "Click again!!",
@@ -26,7 +28,7 @@
 :ruby
   state => { count:, x:, y: }
   transform = "translate(#{x}px, #{y}px)"
-  style = { transform: }
+  style = { transform:, transition: "all .2s" }
 
-%button(style=style onclick=handle_click)
+%Button(style=style onclick=handle_click)
   = MESSAGES[state[:count] % MESSAGES.size]

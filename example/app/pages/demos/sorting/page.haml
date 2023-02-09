@@ -3,14 +3,25 @@
   Highlight = import("/app/components/UI/Highlight")
   Card = import("/app/components/UI/Card")
   Details = import("/app/components/UI/Details")
+  Button = import("/app/components/Form/Button")
+  Fieldset = import("/app/components/Form/Fieldset")
+
+  Item = Data.define(:id, :color) do
+    def self.create
+      new(
+        id: Nanoid.generate,
+        color: rand * 360
+      )
+    end
+  end
 
   def self.get_initial_state(**) = {
-    items: []
+    items: Array.new(5) { Item.create }
   }
 
   def handle_add
     update do |state|
-      { items: [*state[:items], *Array.new(5) { SecureRandom.alphanumeric(5) }] }
+      { items: [*state[:items], *Array.new(5) { Item.create }] }
     end
   end
 
@@ -34,37 +45,33 @@
 
   def handle_sort
     update do |state|
-      { items: state[:items].sort }
+      { items: state[:items].sort_by(&:id) }
     end
   end
 
   def handle_sort_by_color
     update do |state|
-      { items: state[:items].sort_by { color(_1) } }
+      { items: state[:items].sort_by(&:color) }
     end
-  end
-
-  def color(str)
-    Digest::SHA256.digest(str).unpack("I").first % 360
   end
 
 %article
   %Heading(level=2)
     Sorting
     %span< (#{state[:items].size} items)
-  %div
-    %button(onclick=handle_add) Add items
-    %button(onclick=handle_remove) Remove items
-    %button(onclick=handle_shuffle) Shuffle items
-    %button(onclick=handle_shuffle_slices) Shuffle slices
-    %button(onclick=handle_sort) Sort
-    %button(onclick=handle_sort_by_color) Sort by color
   .flex
-    %pre= state[:items].join("\n")
+    %Button(onclick=handle_add) Add items
+    %Button(onclick=handle_remove) Remove items
+    %Button(onclick=handle_shuffle) Shuffle items
+    %Button(onclick=handle_shuffle_slices) Shuffle slices
+    %Button(onclick=handle_sort) Sort
+    %Button(onclick=handle_sort_by_color) Sort by color
+  .flex
+    %pre= state[:items].map(&:id).join("\n")
     %ul
       = state[:items].map do |item|
-        %li[item]{style: { __color: color(item) }}
-          = item
+        %li[item]{style: { __color: item.color }}
+          = item.id
 :css
   .flex {
     display: flex;
@@ -76,19 +83,23 @@
   }
 
   ul {
-    display: grid;
     list-style-type: none;
     padding: 0;
     flex: 1 1 5em;
     gap: 1px;
+    font-family: monospace;
+    line-height: 2em;
+    outline: 1px solid #000;
+    border-radius: 3px;
+    box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
   }
 
   li {
-    border: 1px solid #0003;
-    border-radius: 3px;
     margin: 0;
     padding: 0 .5em;
     background: hsl(var(--color), 50%, 70%);
+    background-image: linear-gradient(0.5turn, #0006 0%, #0003 25%, #0000 100%);
     color: #000;
+    font-size: 1em;
     line-height: 2em;
   }
