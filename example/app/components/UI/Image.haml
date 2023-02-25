@@ -24,9 +24,7 @@
     Console.logger.warn(self, "Missing alt-attribute!")
   end
 
-  classname = $class
-
-%img(style=inline_style loading=loading decoding=decoding alt=alt class=classname){
+%img(class=$class style=inline_style loading=loading decoding=decoding alt=alt){
   src: image.src,
   sizes: image.sizes,
   srcset: image.srcset,

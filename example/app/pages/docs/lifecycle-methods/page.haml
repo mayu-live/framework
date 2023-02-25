@@ -23,13 +23,13 @@
       %p Count: #{state[:count]}
       ```
 
-      ## `def self.get_initial_state(**props)`
+      ### **`def self.get_initial_state(**props)`**
 
       Called when initializing the component.
 
       It has to return a Hash with the initial state.
 
-      ## `def mount`
+      ### **`def mount`**
 
       Called when the component gets mounted.
 
@@ -49,11 +49,11 @@
 
       This component will update the current time every second.
 
-      ## `def unmount`
+      ### **`def unmount`**
 
       Called after the component has been unmounted.
 
-      ## `def should_update?(next_props, next_state)`
+      ### **`def should_update?(next_props, next_state)`**
 
       By default, components will re-render on every change,
       but in some cases you might want to skip rendering to
@@ -63,12 +63,12 @@
 
       Should return `true` or `false`.
 
-      ## `def did_update(prev_props, prev_state)`
+      ### **`def did_update(prev_props, prev_state)`**
 
       The `did_update` method is called right
       after a component has been updated.
 
-      ## `def self.get_derived_state_from_props(props, state)`
+      ### **`def self.get_derived_state_from_props(props, state)`**
 
       Should return `nil` or new state.
 

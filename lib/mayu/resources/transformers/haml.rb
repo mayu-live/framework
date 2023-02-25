@@ -637,7 +637,7 @@ module Mayu
           def group_condition(type, chunk)
             parse_ruby(join_ruby_script_nodes(chunk), fix: true) => [statement]
 
-            visitor = SyntaxTree::Visitor::MutationVisitor.new
+            visitor = MutationVisitor.new
 
             chunk.shift if type == :case
 
@@ -792,7 +792,7 @@ module Mayu
 
             parse_ruby(source, fix: true) => [statement]
 
-            visitor = SyntaxTree::Visitor::MutationVisitor.new
+            visitor = MutationVisitor.new
 
             visitor.mutate("Statements[body: [VoidStmt]]") do
               @builder.Statements(visit_tag_children(node.children))
@@ -834,7 +834,7 @@ module Mayu
           end
 
           def wrap_handler_mutation_visitor
-            visitor = SyntaxTree::Visitor::MutationVisitor.new
+            visitor = MutationVisitor.new
 
             visitor.mutate(
               "Assoc[key: Label, value: VCall[value: Ident]]"
@@ -855,7 +855,7 @@ module Mayu
           end
 
           def string_keys_to_labels_mutation_visitor
-            visitor = SyntaxTree::Visitor::MutationVisitor.new
+            visitor = MutationVisitor.new
 
             visitor.mutate("Assoc[key: StringLiteral]") do |assoc|
               @builder.Assoc(

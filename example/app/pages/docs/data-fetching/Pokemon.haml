@@ -1,25 +1,22 @@
 :ruby
-  Highlight = import("/app/components/UI/Highlight")
-
   def self.get_initial_state(**) = {
     result: nil,
     error: nil,
   }
 
   def mount
-    sleep 1
-    res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{$id}")
-    result = res.json(symbolize_names: true)
+    result = helpers
+      .fetch("https://pokeapi.co/api/v2/pokemon/#{$id}")
+      .json(symbolize_names: true)
     update(result:)
   rescue => e
     update(error: e.message)
   end
 
 %div
-  = case state
-  = in { error: String }
+  = if error = state[:error]
     %p.error= error
-  = in { result: Hash }
+  = elsif result = state[:result]
     %pre= JSON.pretty_generate(result)
   = else
     %p Loading Pokémon with id #{$id}…

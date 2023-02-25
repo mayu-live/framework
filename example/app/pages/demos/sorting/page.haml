@@ -9,7 +9,7 @@
   Item = Data.define(:id, :color) do
     def self.create
       new(
-        id: Nanoid.generate,
+        id: Nanoid.generate(size: 10),
         color: rand * 360
       )
     end
@@ -70,12 +70,13 @@
     %pre= state[:items].map(&:id).join("\n")
     %ul
       = state[:items].map do |item|
-        %li[item]{style: { __color: item.color }}
-          = item.id
+        %li[item.id]{style: { __color: item.color }}
+          #{item.id} (#{item.color.to_i})
 :css
   .flex {
     display: flex;
-    gap: 1em;
+    gap: .25em;
+    flex-wrap: wrap;
   }
 
   pre {
@@ -89,8 +90,8 @@
     gap: 1px;
     font-family: monospace;
     line-height: 2em;
-    outline: 1px solid #000;
     border-radius: 3px;
+    overflow: hidden;
     box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
   }
 

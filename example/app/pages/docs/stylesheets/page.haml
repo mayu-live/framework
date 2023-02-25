@@ -5,8 +5,10 @@
     :plain
       # Stylesheets
 
-      Mayu uses [Lightning CSS](https://lightningcss.dev/) to
-      parse, transform and minify CSS.
+      Mayu uses [Lightning CSS](https://lightningcss.dev/) to parse,
+      transform and minify CSS. Lightning CSS automatically compiles
+      many modern CSS syntax features to more compatible output.
+      [Read more in their documentation](https://lightningcss.dev/docs.html)
 
       You can write CSS directly inside components.
       Class and tag-selectors are scoped to components,
@@ -35,6 +37,12 @@
       public def render
         Mayu::VDOM::H[:button, "Click me", class: styles[:__button]]
       end
+      ```
+
+      And generate the following output:
+
+      ```html
+      <button class="/app/components/Button_button?abc123">Click me</button>
       ```
 
       You can also use class names:

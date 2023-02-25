@@ -1,4 +1,5 @@
 :ruby
+  require "mayu/version"
   Markdown = import("../Markdown")
 %article
   %Markdown
@@ -26,9 +27,9 @@
 
       Before you use Mayu, consider that:
 
-      * Mayu is made for future browsers.
+      * Mayu is made for future browsers and may not work for everyone.
       * Mayu is not production ready.
-      * It's still on version `0.0.x`.
+      * It's still on version `#{::Mayu::VERSION}`.
       * There are plenty of bugs.
 
       If you still think Mayu is interesting,
