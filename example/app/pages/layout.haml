@@ -2,8 +2,37 @@
   Header = import('../components/Layout/Header')
   Footer = import('../components/Layout/Footer')
 
-.layout
-  %Header.header{max_width: styles.maxWidth}
-  %main.main
+.grid
+  %Header
+  %main
     %slot
-  %Footer.footer{max_width: styles.maxWidth}
+  %Footer
+
+:css
+  .grid {
+    height: 100%;
+    display: grid;
+    min-height: 100vh;
+    grid-template:
+      "header" auto
+      "main" 1fr
+      "footer" auto;
+  }
+
+  Header {
+    grid-area: header;
+    color: var(--yellow);
+    display: flex;
+    padding: 1em 0;
+    overflow: hidden;
+  }
+
+  main {
+    grid-area: main;
+    background: var(--bright);
+    color: var(--dark);
+  }
+
+  Footer {
+    grid-area: footer;
+  }

@@ -1,3 +1,6 @@
+header {
+}
+
 MaxWidth {
   display: flex;
   flex-direction: row;
@@ -5,7 +8,7 @@ MaxWidth {
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
-  margin: 0 2rem;
+  margin: 1rem 2rem;
 }
 
 nav {
@@ -21,18 +24,19 @@ menu {
   padding: 0;
 }
 
-a {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
 h1 {
   font-weight: bold;
   font-family: monospace;
   font-size: 1.4em;
   padding: 0;
   margin: 0;
+}
+
+a {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  gap: 0.5em;
 }
 
 a:link,
@@ -45,9 +49,4 @@ a:active,
 a:hover {
   text-decoration: underline;
   filter: brightness(120%);
-}
-
-Icon {
-  margin-left: 0.5em;
-  --icon-color: var(--yellow);
 }
