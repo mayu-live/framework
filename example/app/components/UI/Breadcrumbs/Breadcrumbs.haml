@@ -1,5 +1,4 @@
 :ruby
-  MaxWidth = import("/app/components/Layout/MaxWidth")
   Link = import("./Link")
   Separator = import("./Separator")
 
@@ -13,9 +12,19 @@
     end.flatten
   end
 
+%nav{ aria: { label: "Breadcrumbs" } }
+  %ol
+    = add_separators($links).map.with_index do |elem, i|
+      %li[i]
+        = if elem == :sep
+          %Separator
+        = else
+          %Link{**elem}
+
 :css
   nav {
-    background: #67667a;
+    background: var(--nav-bg);
+    padding: 0 2em;
   }
 
   ol {
@@ -32,12 +41,3 @@
     margin: 0;
     padding: 0;
   }
-%nav{ aria: { label: "Breadcrumbs" } }
-  %MaxWidth
-    %ol
-      = add_separators($links).map.with_index do |elem, i|
-        %li[i]
-          = if elem == :sep
-            %Separator
-          = unless elem == :sep
-            %Link{**elem}

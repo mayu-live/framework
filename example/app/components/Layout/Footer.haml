@@ -1,7 +1,4 @@
 :ruby
-  YEAR = [2022, Time.now.year].uniq.join("–")
-
-  MaxWidth = import("./MaxWidth")
   Badge = import("./Footer/Badge")
 
   BADGES = [
@@ -32,14 +29,19 @@
     }
   ]
 
+%footer
+  %p
+    Copyright ©
+    %a(href="https://github.com/mayu-live" target="_blank")<
+      github.com/mayu-live
+
+  %p.badges
+    = BADGES.map do |badge|
+      %Badge{**badge}[badge[:src]]
+
 :css
   footer {
-    min-height: 5em;
-  }
-
-  .inner {
-    margin-top: 2em;
-    margin-bottom: 2em;
+    margin: 2em;
   }
 
   .badges {
@@ -62,14 +64,3 @@
     color: #fff;
     opacity: 1;
   }
-
-%footer
-  %MaxWidth.inner
-    %p
-      Copyright © #{YEAR}
-      %a(href="https://github.com/mayu-live" target="_blank")<
-        github.com/mayu-live
-
-    %p.badges
-      = BADGES.map do |badge|
-        %Badge{**badge}[badge[:src]]

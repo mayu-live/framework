@@ -1,21 +1,19 @@
 :ruby
-  MaxWidth = import("/app/components/Layout/MaxWidth")
   Icon = import("/app/components/UI/Icon")
 
 %header
-  %MaxWidth
-    %h1
-      %a.title(href="/" title="Start page")
-        Mayu Live
-    %nav
-      %menu
-        %li
-          %a(href="/demos")
-            Demos
-        %li
-          %a(href="/docs")
-            Docs
-        %li
-          %a(href="https://github.com/mayu-live/framework" target="_blank")
-            GitHub
-            %Icon(name="up-right-from-square")
+  %h1
+    %a.title(href="/" title="Start page")
+      Mayu Live
+  %nav
+    %menu
+      %li
+        %a(href="/demos")
+          Demos
+      %li
+        %a(href="/docs")
+          Docs
+      %li
+        %a(href="https://github.com/mayu-live/framework" target="_blank")
+          GitHub
+          %Icon(name="up-right-from-square")

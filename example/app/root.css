@@ -18,6 +18,8 @@
   --page-max-width: 60rem;
   --menu-width: 14rem;
   --link-color: var(--accent-color);
+  --text-color: var(--dark);
+  --nav-bg: #67667a;
 }
 
 *,

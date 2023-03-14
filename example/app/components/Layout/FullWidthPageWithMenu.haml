@@ -1,5 +1,16 @@
 :ruby
   MaxWidth = import("./MaxWidth")
+
+.layout
+  .breadcrumbs
+    %slot(name="breadcrumbs")
+
+  %nav
+    .scroll
+      %slot(name="menu")
+  %MaxWidth#page
+    %slot
+
 :css
   .layout {
     height: 100%;
@@ -33,13 +44,6 @@
       grid-template-rows: min-content auto;
     }
 
-    .scroll {
-      position: absolute;
-      inset: 0;
-      max-height: 100%;
-      overflow-y: auto;
-    }
-
     nav {
       --menu-direction: column;
       width: var(--menu-width);
@@ -55,13 +59,3 @@
   .breadcrumbs:empty {
     display: none;
   }
-
-.layout
-  .breadcrumbs
-    %slot(name="breadcrumbs")
-
-  %nav
-    .scroll
-      %slot(name="menu")
-  %MaxWidth#page
-    %slot
