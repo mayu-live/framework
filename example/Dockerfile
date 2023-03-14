@@ -1,4 +1,4 @@
-FROM ruby:3.2.0-alpine3.17 as base
+FROM ruby:3.2.1-alpine3.17 as base
 
 ARG BUNDLER_VERSION=2.4.1
 ARG BUNDLE_WITHOUT=development:test
