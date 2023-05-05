@@ -38,7 +38,7 @@ having to configure anything!
 - Hot-reloading in dev
 - Automatic asset handling
 - Built-in metrics
-- File-system routing inspired by [Next.js](https://nextjs.org/docs/routing/introduction)
+- File-system based routing inspired by [Next.js](https://nextjs.org/docs/routing/introduction)
 - Designed for edge deployments
 - Powerful and compact templating using [Haml](https://haml.info/)
 - One component per file
