@@ -1,3 +1,7 @@
+.group
+  %input(type="text" class=$class label=$label){**props}
+  %label= $label
+
 :css
   .group {
     position: relative;
@@ -5,6 +9,7 @@
   }
 
   input {
+    width: 100%;
     font-size: inherit;
     padding: 0.5em;
 
@@ -70,6 +75,3 @@
     outline-color: var(--green);
   }
 
-.group
-  %input(type="text" class=$class label=$label){**props}
-  %label= $label
