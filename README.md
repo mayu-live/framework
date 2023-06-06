@@ -279,7 +279,7 @@ you can create a `.css`-file right next to your component.
 
 This does the same thing as the previous example:
 
-#### `app/components/Example.haml`
+#### `app/components/Example.css`
 
 ```css
 .box {
