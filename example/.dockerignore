@@ -5,3 +5,4 @@ Dockerfile
 dist
 tmp
 vendor
+fly.toml

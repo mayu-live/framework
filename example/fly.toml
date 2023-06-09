@@ -1,6 +1,7 @@
-# fly.toml file generated for mayu on 2022-07-14T10:48:22-05:00
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 
 app = "mayu"
+primary_region = "bog"
 
 kill_signal = "SIGINT"
 kill_timeout = 5
@@ -9,20 +10,19 @@ processes = []
 [env]
   ENABLE_YJIT=false
 
+[deploy]
+  strategy = "rolling"
+
 [metrics]
   port = 9092
   path = "/metrics"
 
-[experimental]
-  allowed_public_ports = []
-  auto_rollback = true
-
 [[services]]
   internal_port = 3000
-  processes = ["app"]
-  protocol = "tcp"
-  tcp_checks = []
-  http_checks = []
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
 
   [services.concurrency]
     hard_limit = 25
@@ -30,17 +30,25 @@ processes = []
     type = "connections"
 
   [[services.ports]]
+    port = 80
     force_https = true
     handlers = ["http"]
-    port = 80
 
   [[services.ports]]
-    handlers = ["tls"]
     port = 443
-    tls_options = { alpn = ["h2"] }
+    handlers = ["tls"]
+    tls_options = { "alpn" = ["h2"] }
 
-  [[services.script_checks]]
-    interval = 10000
-    timeout = 1000
-    command = "/fly/healthcheck.sh"
-    restart_limit = 3
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "15s"
+    restart_limit = 0
+    timeout = "2s"
+
+  # [[services.http_checks]]
+  #   type = "http"
+  #   interval = 10000
+  #   restart_limit = 0
+  #   timeout = 2000
+  #   method = "get"
+  #   path = "/__mayu/status"
