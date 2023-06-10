@@ -234,10 +234,8 @@ async function main(url: string) {
         const values = Object.values(payload.values) as number[];
         const mean = values.reduce((a, b) => a + b, 0.0) / values.length;
         pingElement.setAttribute("ping", `${mean.toFixed(2)} ms`);
-        pingElement.setAttribute(
-          "region",
-          `${payload.instance} @ ${payload.region}`
-        );
+        pingElement.setAttribute("instance", payload.instance);
+        pingElement.setAttribute("region", payload.region);
         pingElement.setAttribute("status", "ping");
         break;
       default:
