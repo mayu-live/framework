@@ -112,10 +112,10 @@ class MayuGlobal {
 function mayuCallback(sessionId: string, handlerId: string, payload: any) {
   return fetch(`/__mayu/session/${sessionId}/callback/${handlerId}`, {
     method: "POST",
-    headers: {
+    headers: new Headers({
       "content-type": "application/json",
-      "x-request-time": performance.now(),
-    },
+      "x-request-time": String(performance.now()),
+    }),
     body: JSON.stringify(payload),
   }).then(logRequestTime);
 }
@@ -123,15 +123,15 @@ function mayuCallback(sessionId: string, handlerId: string, payload: any) {
 async function navigateTo(sessionId: string, url: string) {
   return fetch(`/__mayu/session/${sessionId}/navigate`, {
     method: "POST",
-    headers: {
+    headers: new Headers({
       "content-type": "text/plain; charset=utf-8",
-      "x-request-time": performance.now(),
-    },
+      "x-request-time": String(performance.now()),
+    }),
     body: url,
   }).then(logRequestTime);
 }
 
-function logRequestTime(res) {
+function logRequestTime(res: Response) {
   const requestTime = res.headers.get("x-request-time");
 
   if (requestTime) {
