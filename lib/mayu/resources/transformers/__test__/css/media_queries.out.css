@@ -1,5 +1,5 @@
-@layer app\/components\/MyComponent\?zQoPHO29 {
-@media (min-width: 8em) and (max-width: 32em) {
+@layer app\/components\/MyComponent\?E59aOM9B {
+@media (width >= 8em) and (width <= 32em) {
   .app\/components\/MyComponent\.foo\?Ef7fDeuq {
     color: #f0f;
   }

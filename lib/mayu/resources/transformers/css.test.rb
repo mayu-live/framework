@@ -50,7 +50,7 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
       skip File.read(skip_path) if File.exist?(skip_path)
       actual = transform(input)
       # File.write(output_path, actual)
-      assert_equal(expected, actual)
+      assert_equal(expected.chomp, actual.chomp)
     end
   end
 
