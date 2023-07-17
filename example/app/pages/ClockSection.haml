@@ -1,10 +1,12 @@
 :ruby
   Clock = import("/app/components/Clock")
   Link = import("/app/components/UI/Link")
+  Heading = import("/app/components/Layout/Heading")
   Section = import("./Section")
 :css
   Section {
-    background-color: var(--pink);
+    background-color: var(--material-color-teal-100);
+    color: var(--material-color-teal-900);
   }
   figure {
     display: grid;
@@ -17,6 +19,8 @@
   }
   Clock {
     font-size: 0;
+    --stroke: #000;
+    --fill: var(--material-color-yellow-100);
   }
   @media (min-width: 42em) {
     figure {
@@ -25,8 +29,9 @@
   }
 %Section
   %figure
-    %Clock(stroke="var(--dark)" fill="var(--yellow-bright)")
+    %Clock
     %figcaption
+      %Heading Server time
       %p This clock is being rendered on the server.
       %p It shows the current UTC-time.
       %p

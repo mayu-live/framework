@@ -9,12 +9,12 @@
   transition: --angle 3s ease-in-out;
   background: linear-gradient(
     var(--angle),
-    rgba(249, 220, 92, 1) 7%,
-    rgba(242, 155, 89, 1) 25%,
-    rgba(232, 72, 85, 1) 34%,
-    rgba(49, 133, 252, 1) 80%,
-    rgba(27, 98, 201, 1) 82%,
-    rgba(64, 63, 76, 1) 100%
+    #f9dc5c 0%,
+    #f29b59 20%,
+    #e84855 40%,
+    #3185fc 60%,
+    #1b62c9 80%,
+    #403f4c 100%
   );
 }
 
@@ -23,21 +23,23 @@
   flex-direction: column;
   justify-content: center;
   color: var(--bright);
-  gap: 2em;
-  padding: 4em 0;
+  gap: 4em;
+  padding: 4em 2em;
+  container-type: inline-size;
 }
 
 h1 {
-  font-size: min(5vw, 2em);
+  font-size: max(4cqw, 1.5em);
+  line-height: 1.5em;
   margin: 0;
-  padding: 0;
+  text-wrap: balance;
 }
 
 h2 {
   margin: 0;
-  padding: 0;
   font-weight: 100;
-  font-size: min(3vw, 1.5em);
+  font-size: max(3cqw, 1.2em);
+  line-height: 1.5em;
   display: flex;
   flex-wrap: wrap;
   gap: 0.8ch;

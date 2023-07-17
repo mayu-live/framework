@@ -49,26 +49,6 @@
     path.split("/").reject(&:empty?)
   end
 
-:css
-  .layout {
-    display: grid;
-    height: 100%;
-    grid-template-columns: 15em auto;
-    overflow: hidden;
-  }
-
-  .under-construction {
-    font-size: .8em;
-    display: inline-flex;
-    align-items: center;
-    gap: 1em;
-    margin: 1em;
-  }
-
-  Icon {
-    font-size: 2em;
-  }
-
 :ruby
   props => request: { path: }
 %PageLayout
@@ -101,3 +81,22 @@
       %Menu
         %MenuItem(href="/docs/deployment") Deployment
         %MenuItem(href="/docs/faq") Frequently asked questions
+:css
+  .layout {
+    display: grid;
+    height: 100%;
+    grid-template-columns: 15em auto;
+    overflow: hidden;
+  }
+
+  .under-construction {
+    font-size: .8em;
+    display: inline-flex;
+    align-items: center;
+    gap: 1em;
+    margin: 1em;
+  }
+
+  Icon {
+    font-size: 2em;
+  }

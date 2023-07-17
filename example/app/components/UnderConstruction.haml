@@ -3,9 +3,21 @@
   Link = import("/app/components/UI/Link")
   Card = import("/app/components/UI/Card")
 
+%Card(border="var(--yellow)" background="var(--yellow-bright)")
+  .flex
+    %p
+      %Icon(name="person-digging" color="var(--dark)")
+      %span This page is under construction!
+    = if props in path:
+      %p
+        %Icon(name="github" color="var(--dark)")
+        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/pages#{path}/page.haml" target="_blank")
+          Edit on GitHub
 :css
   Card {
     margin: 1.5em 0;
+    color: var(--dark);
+    --card-background: var(--material-color-amber-100);
   }
 
   .flex {
@@ -24,14 +36,3 @@
   Icon {
     font-size: 2em;
   }
-
-%Card(border="var(--yellow)" background="var(--yellow-bright)")
-  .flex
-    %p
-      %Icon(name="person-digging" color="var(--dark)")
-      %span This page is under construction!
-    = if props in path:
-      %p
-        %Icon(name="github" color="var(--dark)")
-        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/pages#{path}/page.haml" target="_blank")
-          Edit on GitHub

@@ -10,19 +10,21 @@
 
 :css
   article {
+    display: flex;
+    flex-direction: column;
+    container-type: inline-size;
+  }
+
+  .grid {
+    flex: 1;
     display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: min-content auto;
     gap: 1em;
-    align-items: start;
   }
 
   .tree {
-    padding: 1em;
-    box-shadow: inset 1px 1px 3px #0007,
-            inset -1px -1px 3px #fff;
-    border: 1px solid #0003;
-    background: #f0f0f0;
+    padding: 2em;
+    background: var(--material-color-blue-gray-50);
+    box-shadow: 0 0 1em var(--material-color-blue-gray-200);
     border-radius: 2px;
     list-style-type: none;
     font-size: .8em;
@@ -30,41 +32,39 @@
     overflow: auto;
   }
 
-  @media (min-width: 768px) {
-    article {
-      grid-template-columns: 14em auto;
-      grid-template-rows: min-content auto;
-    }
-    header {
-      grid-column: span 2;
+  .column {
+    position: relative;
+  }
+
+  .scroll {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+  }
+
+  @container (width > 50em) {
+    .grid {
+      grid-template-columns: 16em auto;
     }
 
     .column {
-      position: relative;
-      height: 100%;
-      overflow: auto;
       min-height: 10em;
-    }
-
-    .inner {
-      position: absolute;
-      inset: 0;
-      margin: 0;
     }
   }
 
 - root = File.expand_path(".")
 
 %article
-  %header
+  .header
     %Heading(level=2) App tree
 
     %p
       This page shows the file structure of the example app.
       %a(href="https://github.com/mayu-live/framework/tree/main/example/app")<
-  .column
-    .inner.tree
-      %Directory(initial_open root=root){path: "app"}
-  .column
-    .inner
-      %FileContents(root=root){path: props.dig(:request, :query, :file)}
+  .grid
+    .column
+      .scroll.tree
+        %Directory(initial_open root=root){path: "app"}
+    .column
+      .scroll
+        %FileContents(root=root){path: props.dig(:request, :query, :file)}

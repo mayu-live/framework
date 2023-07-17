@@ -1,15 +1,10 @@
-:ruby
-  def style = {
-    :"--card-background" => $background || "var(--bright)",
-    :"--card-border" => $border || "#0002",
-  }
+.card(class=$class)
+  %slot
 :css
   .card {
     background: var(--card-background, var(--bright));
-    border: 1px solid var(--card-border, #0002);
+    border: 1px solid var(--card-border, var(--slightly-darker));
     box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
     border-radius: 2px;
     display: grid;
   }
-.card(class=$class style=style)
-  %slot

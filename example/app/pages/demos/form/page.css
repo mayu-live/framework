@@ -9,15 +9,15 @@ Good channel, check it out if you haven't!
   grid-gap: 1rem;
 
   --orange: #ffb300;
-  --grey: hsl(0 0% 45%);
-  --grey-1: hsl(0 0% 65%);
-  --grey-5: hsl(0 0% 75%);
+  --gray: hsl(0 0% 45%);
+  --gray-1: hsl(0 0% 65%);
+  --gray-5: hsl(0 0% 75%);
   --transition: 0.2s;
   --valid: var(--green);
   --invalid: var(--red);
   --focus: var(--orange);
   --blur: var(--blue);
-  --disabled: var(--grey);
+  --disabled: var(--gray);
 
   max-width: 20em;
 }
@@ -93,7 +93,7 @@ Good channel, check it out if you haven't!
 
 .form:valid [type="submit"] {
   background: var(--valid);
-  color: var(--grey-1);
+  color: var(--gray-1);
 }
 
 @keyframes shake {

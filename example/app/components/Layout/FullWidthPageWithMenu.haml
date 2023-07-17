@@ -4,56 +4,54 @@
 .layout
   .breadcrumbs
     %slot(name="breadcrumbs")
-
   %nav
-    .scroll
-      %slot(name="menu")
+    %slot(name="menu")
   %MaxWidth#page
     %slot
 
 :css
   .layout {
     height: 100%;
-    overflow: hidden;
     position: relative;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template:
+      "breadcrumbs" auto
+      "menu" auto
+      "content" 1fr;
   }
 
   nav {
-    background: var(--blue-bright);
-    color: var(--dark);
-    --menu-direction: row;
-  }
-
-  .scroll {
-    padding: 1em;
+    grid-area: menu;
+    background: var(--menu-background);
+    color: var(--menu-color);
+    border-bottom: var(--thin-border);
   }
 
   MaxWidth {
+    grid-area: content;
     display: grid;
-    margin-bottom: 2em;
-    flex: 1;
+    padding: 1em 0;
   }
 
   /* 60rem + 14rem + 4rem = 78rem */
   @media (min-width: 78rem) {
     .layout {
       display: grid;
-      grid-template-columns: min-content auto;
-      grid-template-rows: min-content auto;
+      grid-template:
+        "breadcrumbs breadcrumbs" auto
+        "menu content" 1fr
+        / 14em 1fr;
     }
 
     nav {
-      --menu-direction: column;
-      width: var(--menu-width);
-      position: relative;
-      height: 100%;
+      border-bottom: 0;
+      border-right: var(--thin-border);
+      container-type: size;
     }
   }
 
   .breadcrumbs {
-    grid-column: 1 / span 2;
+    grid-area: breadcrumbs;
   }
 
   .breadcrumbs:empty {

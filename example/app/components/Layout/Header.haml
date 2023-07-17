@@ -17,3 +17,49 @@
         %a(href="https://github.com/mayu-live/framework" target="_blank")
           GitHub
           %Icon(name="up-right-from-square")
+
+:css
+  header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1em 2em;
+    background: var(--header-background);
+    border-bottom: var(--thin-border);
+  }
+
+  menu {
+    list-style-type: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5em;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1 {
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 1.5em;
+    line-height: 1em;
+    padding: 0;
+    margin: 0;
+  }
+
+  a:any-link {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    gap: 0.5em;
+    text-decoration: none;
+    color: var(--header-link-color);
+    transition: filter 100ms;
+  }
+
+  a:is(:active, :hover) {
+    text-decoration: underline;
+    filter: brightness(140%);
+  }

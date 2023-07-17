@@ -6,16 +6,16 @@
     word: nil
   }
 
-  WORDS = %w[Mayu is a live-streaming server-side rendering web framework written in Ruby]
+  WORDS = %w[Mayu is a live updating server-side rendering web framework written in Ruby]
 
   def mount
     loop do
-      sleep 15
+      sleep 1
       update(angle: rand)
 
       WORDS.length.times do |i|
         update(word: i)
-        sleep 0.5
+        sleep 0.25
       end
 
       update(word: nil)
@@ -26,7 +26,7 @@
   %MaxWidth
     .inner
       %h1
-        Reactive Server-Side component-based VirtualDOM framework for Ruby
+        Reactive web pages in Ruby
       %h2
         = WORDS.map.with_index do |word, i|
           %span{class: { active: i == state[:word] }}= word

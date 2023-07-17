@@ -5,14 +5,11 @@
   Highlight = import("/app/components/UI/Highlight")
   Counter = import("./Counter")
   Section = import("./Section")
-:css
-  Section {
-    background: var(--green-bright);
-  }
 
 %Section
   .article.example
-    %Heading.example-heading#example(level=1)
+    %Heading#example(level=1)
+      Interactivity
     %p This text was rendered on the server at #{Time.now.utc.to_s}.
     %p
       The counter below was also rendered on the server.
@@ -24,3 +21,8 @@
 
     %Details(summary="Show source" lazy)
       %Highlight(language="haml")= File.read('app/pages/Counter.haml')
+
+:css
+  Section {
+    background: var(--green-bright);
+  }

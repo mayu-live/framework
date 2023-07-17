@@ -4,16 +4,20 @@
   Highlight = import("./Highlight")
 
 :css
+  Section {
+    background: var(--material-color-gray-50);
+  }
+
   .highlights {
     list-style-type: none;
-    margin: 0;
+    margin: 2em 0;
     border: 0;
     padding: 0em;
     display: grid;
     gap: 2em;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 50em) {
     .highlights {
       grid-template-columns: 1fr 1fr;
     }
@@ -30,27 +34,23 @@
     padding: 0;
   }
 
-  a:link, a:visited {
-    color: var(--blue);
-  }
-
-  a:active, a:hover {
-    filter: brightness(120%);
-  }
-
 %Section
   .highlights
-    %Highlight(icon="fire" title="Interactive web apps without JavaScript")
+    %Highlight(icon="fire" icon-color="linear-gradient(var(--material-color-yellow-600),var(--material-color-red-900))" title="Interactive web apps without JavaScript")
       %ul
         %li
-          You write all code in Ruby.
+          Use
+          %Link(href="https://haml.info/" target="_blank")<> Haml
+          for markup,
+          %Link(href="https://ruby-lang.org/" target="_blank")<> Ruby
+          for logic.
         %li
-          All code runs on a server.
+          All code runs on the server.
         %li
-          All HTML is rendered on a server.
+          All HTML is rendered on the server.
         %li
           DOM-patches are streamed to the browser.
-    %Highlight(icon="wand-magic-sparkles" title="How does it work?")
+    %Highlight(icon="wand-magic-sparkles" icon-color="linear-gradient(var(--material-color-purple-300),var(--material-color-purple-900))" title="How does it work?")
       %ul.highlight-list
         %li
           Mayu implements a
@@ -62,7 +62,7 @@
           that takes care of patching the DOM.
         %li
           Event handlers run on the server.
-    %Highlight(icon="rocket" title="Efficient")
+    %Highlight(icon="rocket" icon-color="linear-gradient(var(--material-color-blue-gray-200),var(--material-color-blue-gray-900))" title="Efficient")
       %ul.highlight-list
         %li
           HTTP/2 Streams with
@@ -81,7 +81,7 @@
         %li
           %Link(href="https://prometheus.io/" target="_blank") Prometheus
           \-endpoint for real-time metrics.
-    %Highlight(icon="code" title="Developer friendly")
+    %Highlight(icon="code" icon-color="linear-gradient(var(--material-color-teal-200),var(--material-color-green-700))" title="Developer friendly")
       %ul.highlight-list
         %li
           Hot reloading updates the page as soon as you save.

@@ -45,21 +45,6 @@
     "xmark" => svg("./xmark-solid.svg"),
   }.freeze
 
-:css
-  i {
-    display: inline-block;
-    width: 1em;
-    aspect-ratio: 1;
-    background: var(--icon-color, currentcolor);
-    -webkit-mask-image: var(--icon);
-    -webkit-mask-repeat: no-repeat;
-    -webkit-mask-size: contain;
-    -webkit-mask-position: 50% 50%;
-    mask-image: var(--icon);
-    mask-repeat: no-repeat;
-    mask-size: contain;
-    mask-position: 50% 50%;
-  }
 :ruby
   url = ICONS[$name] or return
 
@@ -77,3 +62,19 @@
   style:,
   aria:,
 }
+
+:css
+  i {
+    display: inline-block;
+    width: 1em;
+    aspect-ratio: 1;
+    background: var(--icon-color, currentcolor);
+    -webkit-mask-image: var(--icon);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    -webkit-mask-position: 50% 50%;
+    mask-image: var(--icon);
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    mask-position: 50% 50%;
+  }

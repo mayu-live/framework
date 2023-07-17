@@ -8,14 +8,14 @@ Good channel, check it out if you haven't!
   display: grid;
   grid-gap: 1rem;
 
-  --grey: #666;
-  --grey-1: #999;
+  --gray: #666;
+  --gray-1: #999;
   --transition: 0.2s;
   --valid: var(--green);
   --invalid: var(--red);
   --focus: var(--orange);
   --blur: var(--blue);
-  --disabled: var(--grey);
+  --disabled: var(--gray);
 
   max-width: 20em;
 }

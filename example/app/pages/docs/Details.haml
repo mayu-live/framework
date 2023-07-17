@@ -1,6 +1,6 @@
 :css
   details {
-    margin: 1em;
+    margin: 1em 2em;
   }
 
   summary {
@@ -32,6 +32,11 @@
     transform: translateX(.5em) rotateZ(.5turn);
   }
 
+  .content {
+    margin: .5em 0;
+  }
+
 %details(open=$open)
   %summary= $summary
-  %slot
+  .content
+    %slot

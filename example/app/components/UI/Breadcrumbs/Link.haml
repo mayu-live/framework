@@ -1,13 +1,11 @@
 :css
-  a:link, a:visited {
-    color: #fff;
+  a:any-link {
     text-decoration: none;
-    opacity: .8;
-    transition: opacity 100ms;
+    transition: color 100ms;
+    color: var(--link-color);
   }
 
-  a:active, a:hover {
+  a:is(:active, :hover) {
     text-decoration: underline;
-    opacity: 1;
   }
 %a{href: $path}= $text

@@ -2,8 +2,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  margin: 1em;
   gap: 1em;
+  padding: 1em;
+  margin: 1em;
+  background: #fff;
+  border: var(--thin-border);
+  border-radius: 2px;
+  background: var(--material-color-light-blue-50);
 }
 
 .buttons {
@@ -11,14 +16,12 @@
   flex-direction: row;
   gap: 0.5em;
   align-items: center;
-  background: var(--blue-bright);
-  padding: 1em;
+  align-content: space-between;
   flex: 1;
   border-radius: 2px;
 }
 
-.button[href]:link,
-.button[href]:visited {
+.button[href]:any-link {
   text-decoration: none;
   color: var(--blue);
 }

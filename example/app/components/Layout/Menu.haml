@@ -1,12 +1,18 @@
+%menu
+  %slot
+
 :css
   menu {
     list-style-type: none;
     padding: 0;
-    margin: 0;
+    margin: 0 1em;
     display: flex;
     flex-wrap: wrap;
-    flex-direction: var(--menu-direction, column);
-    gap: 0 1em;
+    gap: .5em 2em;
   }
-%menu
-  %slot
+
+  @container (max-width: 20em) {
+    menu {
+      flex-direction: column;
+    }
+  }
