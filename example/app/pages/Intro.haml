@@ -10,23 +10,26 @@
 
   def mount
     loop do
-      sleep 1
-      update(angle: rand)
+      sleep 15
+
+      update do |state|
+        { angle: state[:angle] + (rand - 0.5) / 2.0 }
+      end
 
       WORDS.length.times do |i|
         update(word: i)
-        sleep 0.25
+        sleep 0.1
       end
 
       update(word: nil)
     end
   end
 
-.intro{style: { "--angle": "#{state[:angle] * 2}turn" }}
+.intro{style: { "--angle": "#{state[:angle]}turn" }}
   %MaxWidth
     .inner
       %h1
         Reactive web pages in Ruby
       %h2
         = WORDS.map.with_index do |word, i|
-          %span{class: { active: i == state[:word] }}= word
+          %span.word[i]{class: { active: i == state[:word] }}= word

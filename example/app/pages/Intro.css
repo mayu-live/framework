@@ -42,16 +42,20 @@ h2 {
   line-height: 1.5em;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8ch;
+  gap: 1ch;
 }
 
 .word {
   display: inline-block;
-  transition: text-shadow 0.5s, transform 0.5s;
+  --transition-length: 1000ms;
+  transition: scale var(--transition-length),
+    text-shadow var(--transition-length), translate var(--transition-length);
   text-shadow: 0 0 0 #fff;
+  scale: 1;
 }
 
 .active {
+  --transition-length: 100ms;
   text-shadow: 0 0 10px #fff;
-  transform: scale(1.1);
+  translate: 0 -0.2em;
 }
