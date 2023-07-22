@@ -9,7 +9,11 @@
   Mayu::VDOM::H[
     tag,
     *children,
-    **props.except(:level).merge(class: classname),
+    **mayu.merge_props(
+      props.except(:level),
+      { class: $class },
+      { class: classname },
+    )
   ]
 :css
   .h {

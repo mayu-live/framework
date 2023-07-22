@@ -1,6 +1,7 @@
 :ruby
   Heading = import("/app/components/Layout/Heading")
   Details = import("/app/components/UI/Details")
+  Link = import("/app/components/UI/Link")
 
 :css
   Details {
@@ -21,7 +22,7 @@
       Many modern websites today require a connection to work at all.
       Mayu is designed to be deployed on servers near your users,
       that could be on
-      %a(href="https://fly.io/")< Fly.io
+      %Link(href="https://fly.io/")< Fly.io
       or an on-premise Raspberry PI.
     %p
       If the ping time is around 50-60ms, latency is barely noticable.
@@ -29,11 +30,11 @@
     %p
       There are a few ways to make things seem faster, by preloading stuff
       while hiding them (such as the
-      %a(href="/demos/form")< form example
+      %Link(href="/demos/form")< form example
       ), and using other HTML/CSS-tricks.
     %p
       In the future, it would be nice to have support for
-      %a(href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements")< Custom elements
+      %Link(href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements")< Custom elements
       , but no work has been done on this yet.
 
   %Details.details(summary="What happens to sessions during deploy?")
@@ -56,7 +57,7 @@
       so if the session can't be found, the user will get an error
       dialog and the only option is to reload the page.
     %p
-      %a(href="https://github.com/mayu-live/framework/issues/20")> Issue #20
+      %Link(href="https://github.com/mayu-live/framework/issues/20")> Issue #20
       could remove the need to reload the page by serializing the current
       browser DOM and deserializing it on the server and then use that as
       a reference for patching.

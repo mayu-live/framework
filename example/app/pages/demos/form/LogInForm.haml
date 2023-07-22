@@ -2,6 +2,7 @@
   Fieldset = import("/app/components/Form/Fieldset")
   Details = import("/app/components/UI/Details")
   YouTubeVideo = import("/app/components/UI/YouTubeVideo")
+  Link = import("/app/components/UI/Link")
 
   def self.get_initial_state(**props) = {
     user: nil
@@ -35,7 +36,7 @@
     web pages can be faster, use less resources and be more accessible.
   %p
     It should work in browsers that
-    %a(href="https://caniuse.com/css-has")<
+    %Link(href="https://caniuse.com/css-has")<
       support the
       %code< :has()
       —pseudo-class
@@ -63,7 +64,7 @@
 
   %p
     This is based on the following YouTube video by
-    %a(href="https://www.youtube.com/kepowob" target="_blank")< Kevin Powell
+    %Link(href="https://www.youtube.com/kepowob" target="_blank")< Kevin Powell
     , who has a great channel about HTML and CSS. Check it out!
   %Details(summary="Video: How is this possible with CSS only?!")
     %YouTubeVideo(video_id="g-Y31Iswr2M")

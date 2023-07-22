@@ -12,6 +12,18 @@
     end
   end
 
+- props => x:, y:, alive:, ondraw:, **rest
+- value = "#{x} #{y}"
+
+%button{
+  **rest,
+  value:,
+  class: { alive: },
+  oncontextmenu: "event.preventDefault()",
+  onmousedown: ondraw,
+  onmouseenter: ondraw,
+}
+
 :css
   @keyframes alive {
     0% { background-color: hsl(0deg 50% 50%); }
@@ -27,28 +39,18 @@
   }
 
   button { background-color: #fff; }
-  button:hover { background-color: #f0f0f0; }
+  button:hover { background-color: var(--material-color-gray-500); }
 
   .alive {
     background-color: #000;
     animation-duration: 2s;
     animation-name: alive;
     animation-iteration-count: infinite;
+    animation-timing-function: linear;
   }
 
-  .alive:hover { filter: brightness(120%); }
+  .alive:hover {
+    filter: brightness(150%);
+  }
 
   button:active:hover { background-color: #000; }
-
-:ruby
-  props => x:, y:, alive:, ondraw:, **rest
-  value = "#{x} #{y}"
-
-%button{
-  **rest,
-  value:,
-  class: { alive: },
-  oncontextmenu: "event.preventDefault()",
-  onmousedown: ondraw,
-  onmouseenter: ondraw,
-}

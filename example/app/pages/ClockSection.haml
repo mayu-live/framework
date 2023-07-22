@@ -3,6 +3,16 @@
   Link = import("/app/components/UI/Link")
   Heading = import("/app/components/Layout/Heading")
   Section = import("./Section")
+%Section
+  %figure
+    %Clock
+    %figcaption
+      %Heading(level=2) Server time
+      %p This clock is being rendered on the server.
+      %p It shows the current UTC-time.
+      %p
+        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml")<
+          Show source
 :css
   Section {
     background-color: var(--material-color-teal-100);
@@ -11,11 +21,14 @@
   figure {
     display: grid;
     align-items: center;
-    gap: 4em;
+    gap: 2em 4em;
     grid-template-columns: 1fr;
   }
   figcaption {
     text-align: center;
+  }
+  Heading {
+    margin-top: 0;
   }
   Clock {
     font-size: 0;
@@ -27,13 +40,3 @@
       grid-template-columns: 1fr 1fr;
     }
   }
-%Section
-  %figure
-    %Clock
-    %figcaption
-      %Heading Server time
-      %p This clock is being rendered on the server.
-      %p It shows the current UTC-time.
-      %p
-        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml")<
-          Show source

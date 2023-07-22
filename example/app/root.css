@@ -300,7 +300,7 @@
 
   --main-background: #fff;
   --main-color: var(--material-color-blue-gray-800);
-  --main-link-color: var(--accent-color);
+  --main-link-color: var(--material-color-blue-600);
 
   --breadcrumbs-background: var(--material-color-blue-gray-800);
   --breadcrumbs-color: var(--material-color-blue-gray-50);

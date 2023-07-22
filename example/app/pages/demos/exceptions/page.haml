@@ -4,6 +4,7 @@
   Highlight = import("/app/components/UI/Highlight")
   Card = import("/app/components/UI/Card")
   Details = import("/app/components/UI/Details")
+  Link = import("/app/components/UI/Link")
 
   def self.get_initial_state(**) = {
     count: 0
@@ -21,7 +22,7 @@
   %Heading(level=2) Exceptions
   %p This demo shows how exceptions are handled.
   %p
-    %a(href="https://github.com/mayu-live/framework/issues/6")
+    %Link(href="https://github.com/mayu-live/framework/issues/6")
       Issue for implementing error boundaries
   %p
     Count:

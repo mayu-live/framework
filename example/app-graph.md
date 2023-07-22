@@ -27,6 +27,8 @@ graph LR
     ROUTE____app__pages__demos__life__page.haml["/demos/life"]
     ROUTE____app__pages__demos__exceptions__page.haml["/demos/exceptions"]
     ROUTE____app__pages__demos__todo__page.haml["/demos/todo"]
+    ROUTE____app__pages__demos__sorting__page.haml["/demos/sorting"]
+    ROUTE____app__pages__demos__gc__page.haml["/demos/gc"]
     ROUTE____app__pages__demos__events__page.haml["/demos/events"]
     ROUTE____app__pages__demos__i18n__page.haml["/demos/i18n"]
     ROUTE____app__pages__demos__page.haml["/demos"]
@@ -58,6 +60,8 @@ graph LR
   ROUTE____app__pages__demos__life__page.haml-->__app__pages__demos__life__page.haml
   ROUTE____app__pages__demos__exceptions__page.haml-->__app__pages__demos__exceptions__page.haml
   ROUTE____app__pages__demos__todo__page.haml-->__app__pages__demos__todo__page.haml
+  ROUTE____app__pages__demos__sorting__page.haml-->__app__pages__demos__sorting__page.haml
+  ROUTE____app__pages__demos__gc__page.haml-->__app__pages__demos__gc__page.haml
   ROUTE____app__pages__demos__events__page.haml-->__app__pages__demos__events__page.haml
   ROUTE____app__pages__demos__i18n__page.haml-->__app__pages__demos__i18n__page.haml
   ROUTE____app__pages__demos__page.haml-->__app__pages__demos__page.haml
@@ -65,20 +69,6 @@ graph LR
   subgraph PATH__["/"]
     subgraph PATH__app["/app"]
       subgraph PATH__app__components["/app/components"]
-        subgraph PATH__app__components__Layout["/app/components/Layout"]
-          subgraph PATH__app__components__Layout__Footer["/app/components/Layout/Footer"]
-            __app__components__Layout__Footer__Badge.haml["Badge.haml"]
-          end
-          __app__components__Layout__MaxWidth.haml["MaxWidth.haml"]
-          __app__components__Layout__Header.css["fab:fa-css3 Header.css&nbsp;"]
-          __app__components__Layout__Header.haml["Header.haml"]
-          __app__components__Layout__Footer.haml["Footer.haml"]
-          __app__components__Layout__Heading.css["fab:fa-css3 Heading.css&nbsp;"]
-          __app__components__Layout__Heading.haml["Heading.haml"]
-          __app__components__Layout__FullWidthPageWithMenu.haml["FullWidthPageWithMenu.haml"]
-          __app__components__Layout__Menu.haml["Menu.haml"]
-          __app__components__Layout__MenuItem.haml["MenuItem.haml"]
-        end
         subgraph PATH__app__components__UI["/app/components/UI"]
           subgraph PATH__app__components__UI__Icon["/app/components/UI/Icon"]
             __app__components__UI__Icon__arrows-rotate-solid.svg["arrows-rotate-solid.svg"]
@@ -145,9 +135,21 @@ graph LR
           __app__components__UI__Hr.haml["Hr.haml"]
           __app__components__UI__Tabs.haml["Tabs.haml"]
         end
+        subgraph PATH__app__components__Layout["/app/components/Layout"]
+          subgraph PATH__app__components__Layout__Footer["/app/components/Layout/Footer"]
+            __app__components__Layout__Footer__Badge.haml["Badge.haml"]
+          end
+          __app__components__Layout__Header.haml["Header.haml"]
+          __app__components__Layout__Footer.haml["Footer.haml"]
+          __app__components__Layout__MaxWidth.haml["MaxWidth.haml"]
+          __app__components__Layout__Heading.haml["Heading.haml"]
+          __app__components__Layout__FullWidthPageWithMenu.haml["FullWidthPageWithMenu.haml"]
+          __app__components__Layout__Menu.haml["Menu.haml"]
+          __app__components__Layout__MenuItem.haml["MenuItem.haml"]
+        end
         subgraph PATH__app__components__Form["/app/components/Form"]
-          __app__components__Form__Fieldset.haml["Fieldset.haml"]
           __app__components__Form__Button.haml["Button.haml"]
+          __app__components__Form__Fieldset.haml["Fieldset.haml"]
           __app__components__Form__Input.haml["Input.haml"]
           __app__components__Form__Select.haml["Select.haml"]
           __app__components__Form__Checkbox.haml["Checkbox.haml"]
@@ -269,6 +271,13 @@ graph LR
           subgraph PATH__app__pages__demos__todo["/app/pages/demos/todo"]
             __app__pages__demos__todo__page.haml["page.haml"]
           end
+          subgraph PATH__app__pages__demos__sorting["/app/pages/demos/sorting"]
+            __app__pages__demos__sorting__page.haml["page.haml"]
+          end
+          subgraph PATH__app__pages__demos__gc["/app/pages/demos/gc"]
+            __app__pages__demos__gc__Ellipsis.haml["Ellipsis.haml"]
+            __app__pages__demos__gc__page.haml["page.haml"]
+          end
           subgraph PATH__app__pages__demos__events["/app/pages/demos/events"]
             __app__pages__demos__events__page.haml["page.haml"]
           end
@@ -279,7 +288,6 @@ graph LR
           __app__pages__demos__ButtonGame.haml["ButtonGame.haml"]
           __app__pages__demos__page.haml["page.haml"]
         end
-        __app__pages__layout.css["fab:fa-css3 layout.css&nbsp;"]
         __app__pages__layout.haml["layout.haml"]
         __app__pages__Intro.css["fab:fa-css3 Intro.css&nbsp;"]
         __app__pages__Intro.haml["Intro.haml"]
@@ -291,7 +299,6 @@ graph LR
         __app__pages__FeatureThing.haml["FeatureThing.haml"]
         __app__pages__FeatureSection.haml["FeatureSection.haml"]
         __app__pages__ClockSection.haml["ClockSection.haml"]
-        __app__pages__page.css["fab:fa-css3 page.css&nbsp;"]
         __app__pages__page.haml["page.haml"]
         __app__pages__404.haml["404.haml"]
       end
@@ -343,14 +350,10 @@ graph LR
   __app__components__UI__Icon__Icon.haml-->__app__components__UI__Icon__up-right-from-square-solid.svg
   __app__components__UI__Icon__Icon.haml-->__app__components__UI__Icon__wand-magic-sparkles-solid.svg
   __app__components__UI__Icon__Icon.haml-->__app__components__UI__Icon__xmark-solid.svg
-  __app__components__Layout__Header.haml-->__app__components__Layout__MaxWidth.haml
   __app__components__Layout__Header.haml-->__app__components__UI__Icon__Icon.haml
-  __app__components__Layout__Header.haml-->__app__components__Layout__Header.css
-  __app__components__Layout__Footer.haml-->__app__components__Layout__MaxWidth.haml
   __app__components__Layout__Footer.haml-->__app__components__Layout__Footer__Badge.haml
   __app__pages__layout.haml-->__app__components__Layout__Header.haml
   __app__pages__layout.haml-->__app__components__Layout__Footer.haml
-  __app__pages__layout.haml-->__app__pages__layout.css
   __app__pages__Intro.haml-->__app__components__Layout__MaxWidth.haml
   __app__pages__Intro.haml-->__app__pages__Intro.css
   __app__pages__Section.haml-->__app__components__Layout__MaxWidth.haml
@@ -358,7 +361,6 @@ graph LR
   __app__pages__HighlightsSection.haml-->__app__components__UI__Link.haml
   __app__pages__HighlightsSection.haml-->__app__pages__Section.haml
   __app__pages__HighlightsSection.haml-->__app__pages__Highlight.haml
-  __app__components__Layout__Heading.haml-->__app__components__Layout__Heading.css
   __app__components__UI__Details.haml-->__app__components__UI__Card.haml
   __app__components__UI__Highlight.haml-->__app__components__UI__Highlight.css
   __app__pages__Counter.haml-->__app__components__UI__Card.haml
@@ -375,15 +377,14 @@ graph LR
   __app__pages__FeatureSection.haml-->__app__pages__FeatureThing.haml
   __app__pages__ClockSection.haml-->__app__components__Clock.haml
   __app__pages__ClockSection.haml-->__app__components__UI__Link.haml
+  __app__pages__ClockSection.haml-->__app__components__Layout__Heading.haml
   __app__pages__ClockSection.haml-->__app__pages__Section.haml
   __app__pages__page.haml-->__app__pages__Intro.haml
   __app__pages__page.haml-->__app__pages__HighlightsSection.haml
   __app__pages__page.haml-->__app__pages__CounterSection.haml
   __app__pages__page.haml-->__app__pages__FeatureSection.haml
   __app__pages__page.haml-->__app__pages__ClockSection.haml
-  __app__pages__page.haml-->__app__pages__page.css
   __app__components__Layout__FullWidthPageWithMenu.haml-->__app__components__Layout__MaxWidth.haml
-  __app__components__UI__Breadcrumbs__Breadcrumbs.haml-->__app__components__Layout__MaxWidth.haml
   __app__components__UI__Breadcrumbs__Breadcrumbs.haml-->__app__components__UI__Breadcrumbs__Link.haml
   __app__components__UI__Breadcrumbs__Breadcrumbs.haml-->__app__components__UI__Breadcrumbs__Separator.haml
   __app__components__UnderConstruction.haml-->__app__components__UI__Icon__Icon.haml
@@ -409,8 +410,8 @@ graph LR
   __app__pages__docs__images__page.haml-->__app__pages__docs__Markdown.haml
   __app__pages__docs__faq__page.haml-->__app__components__Layout__Heading.haml
   __app__pages__docs__faq__page.haml-->__app__components__UI__Details.haml
+  __app__pages__docs__faq__page.haml-->__app__components__UI__Link.haml
   __app__pages__docs__reusing-components__page.haml-->__app__pages__docs__Markdown.haml
-  __app__pages__docs__data-fetching__Pokemon.haml-->__app__components__UI__Highlight.haml
   __app__pages__docs__data-fetching__page.haml-->__app__components__UI__Details.haml
   __app__pages__docs__data-fetching__page.haml-->__app__components__UI__Highlight.haml
   __app__pages__docs__data-fetching__page.haml-->__app__pages__docs__Markdown.haml
@@ -449,6 +450,7 @@ graph LR
   __app__pages__demos__layout.haml-->__app__components__Layout__Menu.haml
   __app__pages__demos__layout.haml-->__app__components__Layout__MenuItem.haml
   __app__pages__demos__layout.haml-->__app__components__UI__Breadcrumbs__Breadcrumbs.haml
+  __app__pages__demos__ButtonGame.haml-->__app__components__Form__Button.haml
   __app__pages__demos__page.haml-->__app__components__Layout__Heading.haml
   __app__pages__demos__page.haml-->__app__pages__demos__ButtonGame.haml
   __app__pages__demos__svg__page.haml-->__app__components__Layout__Heading.haml
@@ -456,6 +458,7 @@ graph LR
   __app__pages__demos__tree__FileContents.haml-->__app__components__UI__Highlight.haml
   __app__pages__demos__tree__Name.haml-->__app__components__UI__Icon__Icon.haml
   __app__pages__demos__tree__FileEntry.haml-->__app__components__UI__Icon__Icon.haml
+  __app__pages__demos__tree__FileEntry.haml-->__app__components__UI__Link.haml
   __app__pages__demos__tree__FileEntry.haml-->__app__pages__demos__tree__Name.haml
   __app__pages__demos__tree__Directory.haml-->__app__components__UI__Icon__Icon.haml
   __app__pages__demos__tree__Directory.haml-->__app__pages__demos__tree__Name.haml
@@ -467,6 +470,7 @@ graph LR
   __app__pages__demos__form__LogInForm.haml-->__app__components__Form__Fieldset.haml
   __app__pages__demos__form__LogInForm.haml-->__app__components__UI__Details.haml
   __app__pages__demos__form__LogInForm.haml-->__app__components__UI__YouTubeVideo.haml
+  __app__pages__demos__form__LogInForm.haml-->__app__components__UI__Link.haml
   __app__pages__demos__form__LogInForm.haml-->__app__pages__demos__form__LogInForm.css
   __app__pages__demos__form__Elements.haml-->__app__components__Form__Fieldset.haml
   __app__pages__demos__form__Elements.haml-->__app__components__Form__Button.haml
@@ -488,6 +492,7 @@ graph LR
   __app__pages__demos__form__page.haml-->__app__pages__demos__form__page.css
   __app__pages__demos__images__page.haml-->__app__components__Layout__Heading.haml
   __app__pages__demos__images__page.haml-->__app__components__UI__Image.haml
+  __app__pages__demos__images__page.haml-->__app__components__UI__Link.haml
   __app__pages__demos__images__page.haml-->__app__pages__demos__images__comuna-13.jpeg
   __app__pages__demos__images__page.haml-->__app__pages__demos__images__colombia-map-flag.png
   __app__pages__demos__pokemon__layout.haml-->__app__components__Layout__Heading.haml
@@ -500,6 +505,7 @@ graph LR
   __app__pages__demos__pokemon__Pagination.haml-->__app__components__Form__Button.haml
   __app__pages__demos__pokemon__Pagination.haml-->__app__pages__demos__pokemon__Pagination.css
   __app__pages__demos__pokemon__page.haml-->__app__components__UI__Spinner__Spinner.haml
+  __app__pages__demos__pokemon__page.haml-->__app__components__UI__Link.haml
   __app__pages__demos__pokemon__page.haml-->__app__pages__demos__pokemon__Filter.haml
   __app__pages__demos__pokemon__page.haml-->__app__pages__demos__pokemon__Pagination.haml
   __app__pages__demos__life__GameGrid.haml-->__app__pages__demos__life__Cell.haml
@@ -509,27 +515,37 @@ graph LR
   __app__pages__demos__life__page.haml-->__app__components__Form__Button.haml
   __app__pages__demos__life__page.haml-->__app__components__UI__Link.haml
   __app__pages__demos__life__page.haml-->__app__pages__demos__life__GameGrid.haml
+  __app__pages__demos__exceptions__page.haml-->__app__components__Form__Button.haml
   __app__pages__demos__exceptions__page.haml-->__app__components__Layout__Heading.haml
   __app__pages__demos__exceptions__page.haml-->__app__components__UI__Highlight.haml
   __app__pages__demos__exceptions__page.haml-->__app__components__UI__Card.haml
   __app__pages__demos__exceptions__page.haml-->__app__components__UI__Details.haml
+  __app__pages__demos__exceptions__page.haml-->__app__components__UI__Link.haml
   __app__pages__demos__todo__page.haml-->__app__components__Layout__Heading.haml
   __app__pages__demos__todo__page.haml-->__app__components__UI__Card.haml
   __app__pages__demos__todo__page.haml-->__app__components__UI__Link.haml
+  __app__pages__demos__sorting__page.haml-->__app__components__Layout__Heading.haml
+  __app__pages__demos__sorting__page.haml-->__app__components__UI__Highlight.haml
+  __app__pages__demos__sorting__page.haml-->__app__components__UI__Card.haml
+  __app__pages__demos__sorting__page.haml-->__app__components__UI__Details.haml
+  __app__pages__demos__sorting__page.haml-->__app__components__Form__Button.haml
+  __app__pages__demos__sorting__page.haml-->__app__components__Form__Fieldset.haml
+  __app__pages__demos__gc__page.haml-->__app__components__Layout__Heading.haml
+  __app__pages__demos__gc__page.haml-->__app__components__Form__Button.haml
+  __app__pages__demos__gc__page.haml-->__app__pages__demos__gc__Ellipsis.haml
+  __app__pages__demos__gc__page.haml-->__app__components__UI__Link.haml
   __app__pages__demos__events__page.haml-->__app__components__Layout__Heading.haml
   __app__pages__demos__events__page.haml-->__app__components__UI__Highlight.haml
   __app__pages__demos__events__page.haml-->__app__components__UI__Card.haml
   __app__pages__demos__events__page.haml-->__app__components__UI__Details.haml
+  __app__pages__demos__events__page.haml-->__app__components__Form__Button.haml
   __app__pages__demos__i18n__page.haml-->__app__components__Layout__Heading.haml
   __app__pages__404.haml-->__app__components__Layout__MaxWidth.haml
   __app__pages__404.haml-->__app__components__Layout__Heading.haml
+  __app__pages__404.haml-->__app__components__UI__Link.haml
   class __app__root.css CSS
-  class __app__components__Layout__Header.css CSS
-  class __app__pages__layout.css CSS
   class __app__pages__Intro.css CSS
-  class __app__components__Layout__Heading.css CSS
   class __app__components__UI__Highlight.css CSS
-  class __app__pages__page.css CSS
   class __app__pages__docs__deployment__page.css CSS
   class __app__pages__docs__concepts__no-cache-fs8.png Image
   class __app__pages__docs__concepts__disk-cache-fs8.png Image

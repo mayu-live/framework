@@ -1,5 +1,6 @@
 :ruby
   Spinner = import("/app/components/UI/Spinner")
+  Link = import("/app/components/UI/Link")
   Filter = import("./Filter")
   Pagination = import("./Pagination")
 
@@ -45,7 +46,7 @@
   %div
     %p
       Loading Pokémon from
-      %a(href="https://pokeapi.co/")< PokéAPI
+      %Link(href="https://pokeapi.co/")< PokéAPI
       \.
     %Spinner
 
@@ -72,7 +73,7 @@
 
       %li[result[:url]]
         = "#{id}. "
-        %a(href="/demos/pokemon/#{id}")
+        %Link(href="/demos/pokemon/#{id}")
           = result[:name].capitalize
 
   %Pagination(on-change-per-page=handle_set_per_page){

@@ -3,37 +3,6 @@
   Section = import("./Section")
   Highlight = import("./Highlight")
 
-:css
-  Section {
-    background: var(--material-color-gray-50);
-  }
-
-  .highlights {
-    list-style-type: none;
-    margin: 2em 0;
-    border: 0;
-    padding: 0em;
-    display: grid;
-    gap: 2em;
-  }
-
-  @media (min-width: 50em) {
-    .highlights {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-  }
-
-  li {
-    margin: 1em 0;
-    padding: 0;
-  }
-
 %Section
   .highlights
     %Highlight(icon="fire" icon-color="linear-gradient(var(--material-color-yellow-600),var(--material-color-red-900))" title="Interactive web apps without JavaScript")
@@ -95,3 +64,33 @@
         %li
           %Link(href="https://github.com/mayu-live/framework/blob/main/lib/mayu/vdom.test.rb" target="_blank")<
             Integration test example
+:css
+  Section {
+    background: var(--material-color-gray-50);
+  }
+
+  .highlights {
+    list-style-type: none;
+    margin: 2em 0;
+    border: 0;
+    padding: 0em;
+    display: grid;
+    gap: 2em;
+  }
+
+  @media (min-width: 50em) {
+    .highlights {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+  }
+
+  li {
+    margin: 1em 0;
+    padding: 0;
+  }

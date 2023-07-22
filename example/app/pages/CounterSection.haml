@@ -8,7 +8,7 @@
 
 %Section
   .article.example
-    %Heading#example(level=1)
+    %Heading#interactivity(level=2)
       Interactivity
     %p This text was rendered on the server at #{Time.now.utc.to_s}.
     %p
@@ -25,4 +25,7 @@
 :css
   Section {
     background: var(--green-bright);
+  }
+  Heading {
+    margin-top: 0;
   }

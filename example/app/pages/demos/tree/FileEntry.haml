@@ -1,5 +1,6 @@
 :ruby
   Icon = import("/app/components/UI/Icon")
+  Link = import("/app/components/UI/Link")
   Name = import("./Name")
 
   def icon
@@ -29,4 +30,4 @@
   href = "?file=#{path}"
 
 %Name(icon=icon)
-  %a(href=href)= File.basename(path)
+  %Link(href=href)= File.basename(path)

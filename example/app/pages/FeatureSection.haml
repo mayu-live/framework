@@ -4,14 +4,9 @@
   Heading = import("/app/components/Layout/Heading")
   Section = import("./Section")
   FeatureThing = import("./FeatureThing")
-:css
-  Section {
-    background: var(--material-color-cyan-50);
-    color: var(--material-color-cyan-900);
-  }
 %Section
   %article
-    %Heading#features(level=1)
+    %Heading#features(level=2)
       Features
     %p Here's a list of core features:
 
@@ -22,3 +17,11 @@
       %Link(href="https://github.com/mayu-live/framework#readme")<
         GitHub
       %Icon(name="github" color="var(--dark)")<
+:css
+  Section {
+    background: var(--material-color-cyan-50);
+    color: var(--material-color-cyan-900);
+  }
+  Heading {
+    margin-top: 0;
+  }

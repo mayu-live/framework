@@ -1,6 +1,6 @@
 :ruby
   def self.get_initial_state(**)
-    time = Time.now.utc + 0.5
+    time = Time.now.utc.round + 0.5
     { hour: time.hour, min: time.min, sec: time.sec }
   end
 
@@ -19,20 +19,8 @@
     ].map { _1 * length }.map { _1.round(5) }
   end
 
-:css
-  .svg {
-    width: 100%;
-    height: auto;
-  }
-
-  .hand {
-    transition: transform 250ms ease-in-out;
-  }
-
-:ruby
-  stroke = $stroke || "var(--stroke, #000)"
-  fill = $fill || "var(--fill, transparent)"
-
+- stroke = $stroke || "var(--stroke, #000)"
+- fill = $fill || "var(--fill, transparent)"
 %div(class=$class)
   %svg.svg(width="100" height="100" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg")
     %circle(cx=0 cy=0 r=99 fill=fill stroke=stroke stroke-width="2")
@@ -53,3 +41,13 @@
         - x1, y1 = calculate_pos(i * 5, 60.0)
         - x2, y2 = calculate_pos(i * 5, 80.0)
         %line(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width=2)
+
+:css
+  .svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .hand {
+    transition: transform 250ms ease-in-out;
+  }

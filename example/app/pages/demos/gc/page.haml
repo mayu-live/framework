@@ -2,6 +2,7 @@
   Heading = import("/app/components/Layout/Heading")
   Button = import("/app/components/Form/Button")
   Ellipsis = import("./Ellipsis")
+  Link = import("/app/components/UI/Link")
 
   def self.get_initial_state(**) = {
     stats: GC.stat,
@@ -23,7 +24,7 @@
   %p
     %Button(onclick=handle_refresh)
       Refresh
-    %a(href="https://docs.ruby-lang.org/en/master/GC.html#method-c-stat" target="_blank")
+    %Link(href="https://docs.ruby-lang.org/en/master/GC.html#method-c-stat" target="_blank")
       Documentation for these values
   .flex
     - state => { stats:, objcount: }
@@ -52,7 +53,7 @@
   table {
     flex: 1 0 20em;
     font-size: .8em;
-    border: 1px solid #0003;
+    border: var(--thin-border)
     border-radius: 2px;
     border-spacing: 1px;
   }
@@ -73,7 +74,7 @@
   th, td {
     border: 1px solid #0003;
     border-radius: 2px;
-    padding: .5em;
+    padding: 0 .5em;
   }
 
   p {

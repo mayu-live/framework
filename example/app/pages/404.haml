@@ -1,10 +1,17 @@
 :ruby
   MaxWidth = import("/app/components/Layout/MaxWidth")
   Heading = import("/app/components/Layout/Heading")
+  Link = import("/app/components/UI/Link")
 
-%MaxWidth
+.center
   %Heading(level=2)
     Page not found!
   %p
-    %a(href="/")
+    %Link(href="/")
       Go to the start page
+
+:css
+  .center {
+    margin-inline: auto;
+    text-align: center;
+  }
