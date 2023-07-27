@@ -1,5 +1,8 @@
 :ruby
+  Card = import("/app/components/UI/Card")
+  Highlight = import("/app/components/UI/Highlight")
   Markdown = import("../Markdown")
+  Example = import("./Example")
 %article
   %Markdown
     :plain
@@ -7,22 +10,12 @@
 
       There are a few lifecycle methods that can be useful.
 
-      ```haml
-      :ruby
-        def self.get_initial_state(**) = {
-          count: 0
-        }
-        def mount
-          loop do
-            sleep 1
-            update do |state|
-              { count: state[:count] + 1 }
-            end
-          end
-        end
-      %p Count: #{state[:count]}
-      ```
-
+  %Highlight(language="haml")
+    = File.read("app/pages/docs/lifecycle-methods/Example.haml")
+  %Card
+    %Example
+  %Markdown
+    :plain
       ### **`def self.get_initial_state(**props)`**
 
       Called when initializing the component.
@@ -73,3 +66,10 @@
       Should return `nil` or new state.
 
       [React documentation: getDerivedStateFromProps](https://reactjs.org/docs/react-component.html#static-getderivedstatefromprops)
+
+:css
+  Card {
+    margin: 1em;
+    margin-top: 2em;
+    padding: 1em;
+  }

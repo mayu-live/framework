@@ -1,0 +1,16 @@
+:ruby
+  def self.get_initial_state(**) = {
+    count: 0
+  }
+
+  def mount
+    loop do
+      sleep 1
+
+      update do |state|
+        { count: state[:count] + 1 }
+      end
+    end
+  end
+
+%span Count: #{state[:count]}
