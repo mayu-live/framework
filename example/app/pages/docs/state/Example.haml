@@ -19,11 +19,12 @@
     end
   end
 
-:css
-  p { margin-top: 0; }
-
 %div
   %p Count: #{state[:count]}
   %button(onclick=handle_decrement) Decrement
   %button(onclick=handle_reset) Reset
   %button(onclick=handle_increment) Increment
+
+:css
+  p { margin-top: 0; }
+  button { margin-right: .5em; }

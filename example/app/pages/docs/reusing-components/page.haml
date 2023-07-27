@@ -18,14 +18,14 @@
       **`app/components/Button.haml`**
 
       ```haml
+      %button{**props}
+        %slot
       :css
-        .button {
+        button {
           border: none;
           background: var(--blue);
           color: var(--white);
         }
-      %button.button{**props}
-        %slot
       ```
 
       **`app/pages/my-page/page.haml`**

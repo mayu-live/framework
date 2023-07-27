@@ -26,9 +26,9 @@
       The following example shows how tag-selectors get their class names.
 
       ```haml
+      %button Click me
       :css
         button { color: #f0f; }
-      %button Click me
       ```
 
       This will be transformed into the following Ruby code:
@@ -48,9 +48,9 @@
       You can also use class names:
 
       ```haml
+      %p.text Hello world
       :css
         .text { color: #f0f; }
-      %p.text Hello world
       ```
 
       But usually you don't have to bother with class names.
@@ -61,6 +61,8 @@
       ```haml
       :ruby
         Button = import("/app/components/Button")
+      %article
+        %Button Click me
       :css
         article {
           border: 1px solid #f0f;
@@ -68,8 +70,6 @@
         Button {
           background: #0f0;
         }
-      %article
-        %Button Click me
       ```
 
       This also works with components, as long as they pass
@@ -92,11 +92,11 @@
       if the `active`-prop is truthy.
 
       ```haml
+      %li{class: { active: $active }}
+        %slot
       :css
         li { opacity: .5; }
         .active { opacity: 1; }
-      %li{class: { active: $active }}
-        %slot
       ```
 
       Behind the scenes, this uses the `styles`-object.

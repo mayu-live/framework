@@ -19,11 +19,6 @@
       ```haml
       :ruby
         Image = image("./río_amazonas.jpeg")
-      :css
-        img {
-          width: 100%;
-          height: auto;
-        }
       %img{
         src: Image.src,
         sizes: Image.sizes,
@@ -31,6 +26,11 @@
         width: Image.original.width,
         height: Image.original.height,
       }(alt="Amazon river")
+      :css
+        img {
+          width: 100%;
+          height: auto;
+        }
       ```
 
       Images also come with a `blur` attribute which contains a small
