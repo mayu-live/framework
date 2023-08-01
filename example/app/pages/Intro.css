@@ -4,9 +4,10 @@
   initial-value: 10deg;
 }
 
-.intro {
+section {
   --angle: 328deg;
   transition: --angle 3s ease-in-out;
+  background-size: contain;
   background: linear-gradient(
     var(--angle),
     var(--material-color-amber-300) 0%,
@@ -19,29 +20,36 @@
   );
 }
 
-.inner {
+MaxWidth {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  color: var(--bright);
-  gap: 4cqw;
+  gap: 8cqw;
   padding: 10cqw 0;
-  container-type: inline-size;
+  color: #fff;
+
+  /*
+  background: #fff;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  mix-blend-mode: exclusion;
+  */
 }
 
 h1 {
-  font-size: max(4cqw, 1.5em);
-  line-height: 1.5em;
+  font-size: 7cqw;
+  line-height: 1em;
   margin: 0;
-  text-wrap: balance;
   font-weight: 800;
 }
 
 h2 {
   margin: 0;
   font-weight: 400;
-  font-size: max(3cqw, 1.2em);
-  line-height: 1.5em;
+  font-size: 3.5cqw;
+  line-height: 1em;
   display: flex;
   flex-wrap: wrap;
   gap: 1ch;
@@ -50,14 +58,13 @@ h2 {
 .word {
   display: inline-block;
   --transition-length: 1000ms;
-  transition: scale var(--transition-length),
-    text-shadow var(--transition-length), transform var(--transition-length);
-  text-shadow: 0 0 0 #fff;
-  scale: 1;
+  transition: text-shadow var(--transition-length),
+    transform var(--transition-length);
+  text-shadow: 0 0 0 #fff0;
 }
 
 .active {
   --transition-length: 100ms;
-  text-shadow: 0 0 10px #fff;
+  text-shadow: 0 0 10px #ffff;
   transform: translateY(-0.2em) scale(110%);
 }
