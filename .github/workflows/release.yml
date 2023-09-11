@@ -10,7 +10,7 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Ensure version matches the tag
         run: |
           GEM_VERSION=$(grep VERSION lib/mayu/version.rb | head -n 1 | cut -d'"' -f2)
@@ -33,7 +33,7 @@ jobs:
     name: Build client JS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           cache: npm
@@ -54,7 +54,7 @@ jobs:
       - build-js
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
