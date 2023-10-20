@@ -22,7 +22,7 @@ PATH
       rouge (~> 4.0.0)
       sorbet-runtime (~> 0.5.10634)
       source_map (~> 3.0.1)
-      svg_optimizer (~> 0.2.6)
+      svg_optimizer (>= 0.2.6, < 0.4.0)
       syntax_tree (~> 5.3.0)
       syntax_tree-haml (~> 3.0.0)
       syntax_tree-xml (~> 0.1.0)
@@ -164,7 +164,7 @@ GEM
       sorbet (>= 0.5.10187)
       sorbet-runtime (>= 0.5.9204)
       thor (>= 0.19.2)
-    svg_optimizer (0.2.6)
+    svg_optimizer (0.3.0)
       nokogiri
     syntax_tree (5.3.0)
       prettier_print (>= 1.2.0)
