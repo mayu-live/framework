@@ -9,7 +9,7 @@
 
 # Description
 
-Mayu is a live streaming server side component-based
+Mayu is a live updating server side component-based
 VirtualDOM rendering framework written in Ruby.
 
 Everything runs on the server, except for a tiny little runtime that
