@@ -1,4 +1,4 @@
-# <img alt="Mayu Live" width="337" src="https://user-images.githubusercontent.com/41148/192179194-f44aed92-74a3-4b59-a25e-bf2a8d313796.png">
+# ![Mayu Live](https://raw.githubusercontent.com/mayu-live/framework/main/example/app/mayu-logo.svg)
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/mayu-live/framework/.github/workflows/test.yml?branch=main&label=Tests&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/test.yml)
 [![Release](https://img.shields.io/github/v/release/mayu-live/framework?sort=semver&style=flat-square)](https://github.com/mayu-live/framework/releases)
