@@ -45,7 +45,7 @@ module Mayu
       @app_root = T.let(File.join(config.root, "app"), String)
       @config = config
       @message_cipher =
-        T.let(MessageCipher.new(key: config.secret_key, ttl: 30), MessageCipher)
+        T.let(MessageCipher.new(config.secret_key, ttl: 30), MessageCipher)
       # TODO: Reload routes when things change in /pages...
       # Should probably make routes into a resource type.
       @routes =

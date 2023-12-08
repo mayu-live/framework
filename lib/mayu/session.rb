@@ -2,6 +2,7 @@
 
 require "time"
 require "nanoid"
+require "rbnacl"
 require_relative "environment"
 require_relative "vdom/vtree"
 require_relative "vdom/marshalling"
@@ -77,11 +78,7 @@ module Mayu
 
     sig { params(token: String).returns(T::Boolean) }
     def authorized?(token)
-      if self.token.length == token.length
-        OpenSSL.fixed_length_secure_compare(self.token, token)
-      else
-        false
-      end
+      RbNaCl::Util.verify64(self.token, token)
     end
 
     Marshaled = T.type_alias { [String, String, String, String, String] }
