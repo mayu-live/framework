@@ -1,4 +1,4 @@
-# ![Mayu Live](https://raw.githubusercontent.com/mayu-live/framework/main/example/app/mayu-logo.svg)
+# ![Mayu Live](https://raw.githubusercontent.com/mayu-live/logo/main/logo-with-text.svg)
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/mayu-live/framework/.github/workflows/test.yml?branch=main&label=Tests&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/test.yml)
 [![Release](https://img.shields.io/github/v/release/mayu-live/framework?sort=semver&style=flat-square)](https://github.com/mayu-live/framework/releases)
