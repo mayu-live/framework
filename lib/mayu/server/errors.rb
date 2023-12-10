@@ -64,9 +64,9 @@ module Mayu
         text_response(403, "session cookie not set")
       rescue SessionNotFound => e
         text_response(404, "session not found")
-      rescue Mayu::MessageCipher::DecryptError => e
+      rescue Mayu::EncryptedMarshal::DecryptError => e
         text_response(403, "decrypt error")
-      rescue Mayu::MessageCipher::ExpiredError => e
+      rescue Mayu::EncryptedMarshal::ExpiredError => e
         text_response(403, "session expired")
       rescue InvalidToken => e
         text_response(403, "invalid token")
