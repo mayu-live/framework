@@ -1,10 +1,13 @@
 :ruby
   Icon = import("/app/components/UI/Icon")
+  Logo = svg("./logo.svg")
+  Title = svg("./title.svg")
 
 %header
   %h1
     %a.title(href="/" title="Start page")
-      Mayu Live
+      %img.logo(src=Logo)
+      %img.title-text(src=Title)
   %nav
     %menu
       %li
@@ -20,12 +23,16 @@
 
 :css
   header {
-    display: flex;
-    flex-direction: row;
+    /*
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    */
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
-    justify-content: space-between;
     gap: 1rem;
-    padding: 1em 2em;
+    padding: .5em 2em;
     background: var(--header-background);
     border-bottom: var(--thin-border);
   }
@@ -42,24 +49,41 @@
 
   h1 {
     font-weight: bold;
-    font-family: monospace;
-    font-size: 1.5em;
-    line-height: 1em;
+    font-size: 1em;
     padding: 0;
     margin: 0;
+    color: #b8346c;
+    display: flex;
+    filter:
+      drop-shadow(0 0 2px #fff)
+      drop-shadow(0 0 1px #fff);
   }
 
-  a:any-link {
+  menu a:any-link {
     display: inline-flex;
     align-items: center;
     white-space: nowrap;
     gap: 0.5em;
     text-decoration: none;
     color: var(--header-link-color);
-    transition: filter 100ms;
   }
 
-  a:is(:active, :hover) {
+  menu a:is(:active, :hover) {
     text-decoration: underline;
-    filter: brightness(140%);
+    color: var(--header-link-hover-color);
+  }
+
+  .title {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: .75em;
+    align-items: end;
+  }
+
+  .logo {
+    max-height: 2.5em;
+  }
+
+  .title-text {
+    max-height: 2em;
   }
