@@ -11,7 +11,7 @@ SHELL ["/bin/bash", "-c"]
 WORKDIR /app
 
 FROM base AS install
-RUN apk update && apk add --no-cache build-base gzip libwebp-tools imagemagick brotli
+RUN apk update && apk add --no-cache build-base gzip libwebp-tools imagemagick brotli libsodium
 COPY Gemfile* .
 RUN bundle install
 COPY . .
