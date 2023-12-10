@@ -433,7 +433,7 @@ module Mayu
           )
         end
 
-        @environment.message_cipher.load(body) => String => dumped
+        @environment.encrypted_marshal.load(body) => String => dumped
         session = Session.restore(environment: @environment, dumped:)
         @sessions.store(session.id, session)
       end
@@ -454,7 +454,7 @@ module Mayu
           EventStream::Message.new(
             :"session.transfer",
             EventStream::Blob.new(
-              @environment.message_cipher.dump(
+              @environment.encrypted_marshal.dump(
                 Session::SerializedSession.dump_session(session)
               )
             )

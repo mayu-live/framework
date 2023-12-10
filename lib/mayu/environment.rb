@@ -10,7 +10,7 @@ require_relative "metrics"
 require_relative "app_metrics"
 require_relative "resources/registry"
 require_relative "fetch"
-require_relative "message_cipher"
+require_relative "encrypted_marshal"
 require_relative "configuration"
 
 module Mayu
@@ -34,8 +34,8 @@ module Mayu
     attr_reader :resources
     sig { returns(Fetch) }
     attr_reader :fetch
-    sig { returns(MessageCipher) }
-    attr_reader :message_cipher
+    sig { returns(EncryptedMarshal) }
+    attr_reader :encrypted_marshal
     sig { returns(AppMetrics) }
     attr_reader :metrics
 
@@ -44,8 +44,11 @@ module Mayu
       @root = T.let(config.root, String)
       @app_root = T.let(File.join(config.root, "app"), String)
       @config = config
-      @message_cipher =
-        T.let(MessageCipher.new(config.secret_key, ttl: 30), MessageCipher)
+      @encrypted_marshal =
+        T.let(
+          EncryptedMarshal.new(config.secret_key, default_ttl: 30),
+          EncryptedMarshal
+        )
       # TODO: Reload routes when things change in /pages...
       # Should probably make routes into a resource type.
       @routes =

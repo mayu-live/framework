@@ -163,7 +163,7 @@ module Mayu
       # freeze
 
       # encrypted_session =
-      #   @environment.message_cipher.dump(SerializedSession.dump_session(self))
+      #   @environment.encrypted_marshal.dump(SerializedSession.dump_session(self))
 
       links = [
         %{<script async type="module" src="/__mayu/runtime/#{environment.init_js}##{id}" crossorigin="same-origin" fetchpriority="high"></script>},
