@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Server side VDOM framework"
 
   spec.description = <<~EOF
-    Mayu Live is a live streaming server side VirtualDOM framework for Ruby,
+    Mayu Live is a live updating server side VirtualDOM framework for Ruby,
     inspired by modern frontend tools that exist in the JavaScript ecosystem.
   EOF
 
