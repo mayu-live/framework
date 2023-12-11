@@ -69,6 +69,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "kramdown", "~> 2.4.0"
   spec.add_dependency "rouge", "~> 4.0.0"
   spec.add_dependency "mayu-css", "~> 0.0.3"
+  spec.add_dependency "rmagick", "~> 5.3.0"
   spec.add_dependency "source_map", "~> 3.0.1"
   spec.add_dependency "syntax_tree", "~> 5.3.0"
   spec.add_dependency "syntax_tree-haml", "~> 3.0.0"

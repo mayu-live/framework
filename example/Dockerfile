@@ -6,12 +6,16 @@ ARG BUNDLE_PATH=vendor/bundle
 ENV BUNDLE_PATH ${BUNDLE_PATH}
 ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
 RUN gem install -N bundler -v ${BUNDLER_VERSION}
-RUN apk update && apk add --no-cache curl bash jemalloc gcompat
+RUN apk update && apk add --no-cache \
+  curl bash jemalloc gcompat libsodium \
+  imagemagick imlib2
 SHELL ["/bin/bash", "-c"]
 WORKDIR /app
 
 FROM base AS install
-RUN apk update && apk add --no-cache build-base gzip libwebp-tools imagemagick brotli libsodium
+RUN apk update && apk add --no-cache \
+  build-base gzip brotli \
+  pkgconfig imagemagick imagemagick-dev imlib2 imlib2-dev
 COPY Gemfile* .
 RUN bundle install
 COPY . .
