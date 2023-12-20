@@ -43,7 +43,7 @@ jobs:
         run: |
           npm run build:production -w lib/mayu/client
           brotli lib/mayu/client/dist/*.{js,map}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: client-dist
           path: lib/mayu/client/dist/
