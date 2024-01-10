@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mayu-live (0.0.5)
+    mayu-live (0.0.6)
       async (~> 2.8.0)
       async-container (~> 0.16.12)
       async-http (~> 0.61.0)
