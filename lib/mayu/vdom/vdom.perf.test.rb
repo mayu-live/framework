@@ -52,12 +52,15 @@ class Mayu::VDOM::PerformanceTest < Minitest::Test
       vtree.to_html.tap { |html| print_xml(html) }
 
       # https://ruby-prof.github.io/#measurements
-      RubyProf.measure_mode = RubyProf::WALL_TIME
-      # RubyProf.measure_mode = RubyProf::PROCESS_TIME
-      # RubyProf.measure_mode = RubyProf::ALLOCATIONS
-      # RubyProf.measure_mode = RubyProf::MEMORY
 
-      profile = RubyProf::Profile.new(track_allocations: true)
+      profile =
+        RubyProf::Profile.new(
+          track_allocations: true,
+          measure_mode: RubyProf::WALL_TIME
+          # measure_mode: RubyProf::PROCESS_TIME,
+          # measure_mode: RubyProf::ALLOCATIONS,
+          # measure_mode: RubyProf::MEMORY,
+        )
       profile.exclude_methods!(T::Types::Union, :recursively_valid?)
       profile.exclude_methods!(T::Types::FixedArray, :initialize)
       profile.exclude_methods!(T::Props::WeakConstructor, :initialize)

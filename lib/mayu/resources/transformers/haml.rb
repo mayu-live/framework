@@ -3,6 +3,7 @@
 
 require "ripper"
 require "syntax_suggest"
+require "syntax_suggest/api"
 require "syntax_suggest/code_line"
 require "syntax_suggest/explain_syntax"
 require "syntax_suggest/lex_all"

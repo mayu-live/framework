@@ -16,6 +16,10 @@ module Mayu
 
       case argv
       in ["dev", *rest]
+        # Initialize RMagick on start to avoid the following error:
+        #   objc[88493]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called.
+        #   We cannot safely call it or ignore it in the fork() child process. Crashing instead.
+        require "rmagick"
         require_relative "server"
         Server.start(load_config(:dev))
       in ["devbundle", *rest]

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 Self =
   setup_component(
-    assets: ["rKxGn-R511h2m1nlvs18PwsPwrzW-iGCNVojf-x0LRg=.css"],
+    assets: ["Cd9Qx4lhkbeZyruovAokW1FL3tHSmMOxOc-2y1h7Zvc=.css"],
     styles: {
       button: "app/components/MyComponent.button?dhhHwAZl"
     }

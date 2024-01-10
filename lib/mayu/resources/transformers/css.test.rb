@@ -60,7 +60,7 @@ class Mayu::Resources::Transformers::CSS::Test < Minitest::Test
     source_path = "app/components/MyComponent"
 
     Mayu::Resources::Transformers::CSS
-      .transform(source:, source_path:)
+      .transform(source:, source_path:, minify: false)
       .output
       .each_line
       .map(&:rstrip)

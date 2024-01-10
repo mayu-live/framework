@@ -23,10 +23,6 @@ else
   puts "\e[2mYJIT is not supported!\e[0m"
 end
 
-if RubyVM::MJIT.enabled?
-  puts "\e[1mMJIT is enabled!\e[0m"
-end
-
 require "mayu/banner"
 require "mayu/commands"
 

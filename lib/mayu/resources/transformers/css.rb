@@ -41,10 +41,11 @@ module Mayu
           params(
             source: String,
             source_path: String,
-            source_line: Integer
+            source_line: Integer,
+            minify: T::Boolean
           ).returns(TransformResult)
         end
-        def self.transform(source:, source_path:, source_line: 1)
+        def self.transform(source:, source_path:, source_line: 1, minify: true)
           # Required here because it's not necessary in production..
           # kinda messy. need to rewrite the entire "resources" thing...
           require "mayu/css"
@@ -55,7 +56,8 @@ module Mayu
               File.basename(source_path, ".*")
             ).delete_prefix("./")
 
-          result = Mayu::CSS.transform(source_path_without_extension, source)
+          result =
+            Mayu::CSS.transform(source_path_without_extension, source, minify:)
 
           output = result.code.encode("utf-8")
 
@@ -113,19 +115,18 @@ module Mayu
         sig do
           params(
             klass: String,
-            exports: T::Hash[Symbol, T.untyped],
+            exports: T::Hash[String, T.untyped],
             classes: T::Hash[String, String]
           ).returns(String)
         end
         def self.join_class(klass, exports, classes)
-          case exports[klass.to_sym]
-          in composes:
+          if composes = exports[klass]&.composes
             [
               klass,
-              *composes.map do
-                case _1
-                in { type: "local", name: }
-                  classes[name]
+              *composes.map do |compose|
+                case compose
+                in Mayu::CSS::ComposeLocal
+                  classes[compose.name.to_sym]
                 end
               end
             ].join(" ")

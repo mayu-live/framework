@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
 
   spec.homepage = "https://mayu.live/"
   spec.license = "AGPL-3.0"
-  spec.required_ruby_version = ">= 3.2.0"
+  spec.required_ruby_version = ">= 3.3.0"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/mayu-live/framework"
@@ -68,10 +68,11 @@ Gem::Specification.new do |spec|
   spec.add_dependency "image_size", "~> 3.2.0"
   spec.add_dependency "kramdown", "~> 2.4.0"
   spec.add_dependency "rouge", "~> 4.0.0"
-  spec.add_dependency "mayu-css", "~> 0.0.3"
+  spec.add_dependency "mayu-css", "~> 0.1.2"
   spec.add_dependency "rmagick", "~> 5.3.0"
   spec.add_dependency "source_map", "~> 3.0.1"
   spec.add_dependency "syntax_tree", "~> 5.3.0"
   spec.add_dependency "syntax_tree-haml", "~> 3.0.0"
   spec.add_dependency "syntax_tree-xml", "~> 0.1.0"
+  spec.add_dependency "base64", "~> 0.2.0"
 end
