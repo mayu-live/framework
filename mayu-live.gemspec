@@ -43,15 +43,15 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Core dependencies
-  spec.add_dependency "async", "~> 2.3.0"
+  spec.add_dependency "async", "~> 2.8.0"
   spec.add_dependency "async-container", "~> 0.16.12"
-  spec.add_dependency "async-http", "~> 0.59.4"
+  spec.add_dependency "async-http", "~> 0.61.0"
   spec.add_dependency "brotli", "~> 0.4.0"
   spec.add_dependency "mime-types", "~> 3.4.1"
   spec.add_dependency "msgpack", "~> 1.6.0"
   spec.add_dependency "nanoid", "~> 2.0.0"
   spec.add_dependency "prometheus-client", "~> 4.0.0"
-  spec.add_dependency "protocol-http", "~> 0.23.12"
+  spec.add_dependency "protocol-http", "~> 0.25.0"
   spec.add_dependency "pry", "~> 0.14.2"
   spec.add_dependency "rack", ">= 3.0.4.1", "< 3.0.9.0"
   spec.add_dependency "rake", "~> 13.0.6"
