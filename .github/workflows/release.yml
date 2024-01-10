@@ -22,7 +22,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.2.0"
+          ruby-version: "3.3.0"
           bundler-cache: true
       - name: Check types
         run: bundle exec srb tc
@@ -58,7 +58,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.2.0"
+          ruby-version: "3.3.0"
           bundler-cache: true
       - uses: actions/download-artifact@v4
         name: "Download client JS"
