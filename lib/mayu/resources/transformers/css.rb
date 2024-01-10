@@ -96,9 +96,9 @@ module Mayu
 
         sig do
           params(
-            classes: T::Hash[String, String],
-            elements: T::Hash[String, String],
-            exports: T::Hash[Symbol, T.untyped]
+            classes: T::Hash[Symbol, String],
+            elements: T::Hash[Symbol, String],
+            exports: T::Hash[String, T.untyped]
           ).returns(T::Hash[Symbol, String])
         end
         def self.join_classes(classes, elements, exports)
@@ -116,7 +116,7 @@ module Mayu
           params(
             klass: String,
             exports: T::Hash[String, T.untyped],
-            classes: T::Hash[String, String]
+            classes: T::Hash[Symbol, String]
           ).returns(String)
         end
         def self.join_class(klass, exports, classes)
