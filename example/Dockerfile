@@ -7,16 +7,14 @@ ENV BUNDLE_PATH ${BUNDLE_PATH}
 ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
 RUN gem install -N bundler -v ${BUNDLER_VERSION}
 RUN apk update && apk add --no-cache \
-  curl bash jemalloc gcompat libsodium \
-  imagemagick imlib2
-# RUN ln -s /usr/lib/libsodium.so.26 /usr/lib/libsodium.so.23
+  curl bash jemalloc gcompat libsodium
 SHELL ["/bin/bash", "-c"]
 WORKDIR /app
 
 FROM base AS install
 RUN apk update && apk add --no-cache \
   build-base gzip brotli \
-  pkgconfig imagemagick imagemagick-dev imlib2 imlib2-dev
+  pkgconfig imagemagick-dev
 COPY Gemfile* .
 RUN bundle install
 COPY . .
@@ -26,6 +24,6 @@ FROM base AS final
 COPY .fly /fly
 COPY --from=install /app /app
 ENV PORT 3000
-# ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
+ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
 ENTRYPOINT ["/fly/entrypoint.sh"]
 CMD ["bin/mayu", "serve", "--disable-sorbet"]
