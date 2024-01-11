@@ -14,7 +14,7 @@ kill_timeout = "5s"
   strategy = "rolling"
 
 [env]
-  ENABLE_YJIT = "false"
+  ENABLE_YJIT = "true"
 
 [[services]]
   protocol = "tcp"
