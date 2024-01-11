@@ -1,4 +1,5 @@
 :ruby
+  require "mayu/version"
   Badge = import("./Footer/Badge")
 
   BADGES = [
@@ -35,6 +36,14 @@
     %a(href="https://github.com/mayu-live" target="_blank")<
       github.com/mayu-live
 
+  %dl.versions
+    %dt Mayu
+    %dd #{::Mayu::VERSION}
+    %dt Ruby
+    %dd #{::RUBY_VERSION}
+    %dt YJIT
+    %dd #{RubyVM::YJIT.enabled? ? "enabled" : "disabled"}
+
   %p.badges
     = BADGES.map do |badge|
       %Badge{**badge}[badge[:src]]
@@ -65,4 +74,21 @@
     text-decoration: underline;
     color: #fff;
     opacity: 1;
+  }
+
+  .versions {
+    & :is(dt, dd) {
+      display: inline-block;
+      margin: 0;
+      padding: 0;
+    }
+
+    & dt {
+      font-weight: bold;
+      margin-right: .5ch;
+    }
+
+    & dd {
+      margin-right: 1em;
+    }
   }
