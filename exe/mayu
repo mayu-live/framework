@@ -23,6 +23,7 @@ else
   puts "\e[2mYJIT is not supported!\e[0m"
 end
 
+require "mayu/version"
 require "mayu/banner"
 require "mayu/commands"
 
