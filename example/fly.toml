@@ -1,54 +1,54 @@
+# fly.toml app configuration file generated for mayu on 2024-01-11T00:11:41-05:00
+#
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "mayu"
 primary_region = "bog"
-
 kill_signal = "SIGINT"
-kill_timeout = 5
-processes = []
+kill_timeout = "5s"
 
-[env]
-  ENABLE_YJIT=false
+[build]
 
 [deploy]
   strategy = "rolling"
 
-[metrics]
-  port = 9092
-  path = "/metrics"
+[env]
+  ENABLE_YJIT = "false"
 
 [[services]]
+  protocol = "tcp"
   internal_port = 3000
-  force_https = true
   auto_stop_machines = true
   auto_start_machines = true
   min_machines_running = 1
 
-  [services.concurrency]
-    hard_limit = 25
-    soft_limit = 20
-    type = "connections"
-
   [[services.ports]]
     port = 80
-    force_https = true
     handlers = ["http"]
+    force_https = true
 
   [[services.ports]]
     port = 443
     handlers = ["tls"]
-    tls_options = { "alpn" = ["h2"] }
+    [services.ports.tls_options]
+      alpn = ["h2"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
 
   [[services.tcp_checks]]
-    grace_period = "1s"
     interval = "15s"
-    restart_limit = 0
     timeout = "2s"
+    grace_period = "1s"
 
-  # [[services.http_checks]]
-  #   type = "http"
-  #   interval = 10000
-  #   restart_limit = 0
-  #   timeout = 2000
-  #   method = "get"
-  #   path = "/__mayu/status"
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[[metrics]]
+  port = 9092
+  path = "/metrics"
