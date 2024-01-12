@@ -3,25 +3,31 @@
   Link = import("/app/components/UI/Link")
   Heading = import("/app/components/Layout/Heading")
   Section = import("./Section")
-  FeatureThing = import("./FeatureThing")
+  Feature = import("./Feature")
 %Section
   %article
     %Heading#features(level=2)
       Features
     %p Here's a list of core features:
 
-    %FeatureThing
+    %Feature
 
     %p
       Read more on
-      %Link(href="https://github.com/mayu-live/framework#readme")<
+      %Link(target="_blank" href="https://github.com/mayu-live/framework#readme")<
         GitHub
-      %Icon(name="github" color="var(--dark)")<
+        %Icon(name="github" color="var(--dark)")<
 :css
   Section {
-    background: var(--material-color-cyan-50);
-    color: var(--material-color-cyan-900);
+    background: #E2D58B;
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
   }
+
   Heading {
     margin-top: 0;
+  }
+
+  article {
   }

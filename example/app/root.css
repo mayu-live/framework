@@ -273,6 +273,10 @@
   --material-color-blue-gray-800: #37474f;
   --material-color-blue-gray-900: #263238;
 
+  --blue-background: #1b2b5f;
+  --pink: #df6492;
+  --deep-purple: #1f254c;
+
   --dark: var(--material-color-blue-gray-900);
   --bright: #fff;
   --red: #e84855;
@@ -289,25 +293,25 @@
   --accent-color: var(--material-color-blue);
   accent-color: var(--accent-color);
 
-  --body-background: var(--material-color-blue-gray-700);
+  --body-background: var(--deep-purple);
   --body-color: var(--material-color-blue-gray-50);
 
-  --header-background: var(--material-color-blue-gray-900);
-  --header-link-color: var(--material-color-yellow-400);
+  --header-background: #1b2b5f99;
+  --header-link-color: var(--pink);
 
   --footer-background: var(--body-background);
   --footer-color: var(--body-color);
 
-  --main-background: #fff;
-  --main-color: var(--material-color-blue-gray-800);
+  --main-background: var(--material-color-gray-50);
+  --main-color: #000a;
   --main-link-color: var(--material-color-blue-600);
 
-  --breadcrumbs-background: var(--material-color-blue-gray-800);
+  --breadcrumbs-background: #2f3779;
   --breadcrumbs-color: var(--material-color-blue-gray-50);
 
-  --menu-background: var(--material-color-blue-50);
+  --menu-background: #ffe3f2;
   --menu-color: #333;
-  --menu-link-color: var(--material-color-blue);
+  --menu-link-color: var(--pink);
 
   --slightly-darker: #0003;
   --slightly-brighter: #fff3;
@@ -319,8 +323,9 @@
   min-height: 100svh;
   --page-max-width: 60rem;
 
-  font-family: Helvetica, sans-serif;
-  line-height: 1.5em;
+  --font-heading: "Roboto Condensed";
+  --font-regular: "Roboto";
+  --font-mono: "Roboto Mono";
 }
 
 /*
@@ -348,7 +353,19 @@ body {
   margin: 0;
   padding: 0;
   overflow-y: scroll;
-  min-height: 100%;
+  min-height: 100dvh;
   background: var(--body-background);
+  background-size: stretch;
+  background-repeat: no-repeat;
   color: var(--body-color);
+  font-family: var(--font-regular), sans-serif;
+  line-height: 1.5em;
+}
+
+:is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading), sans-serif;
+}
+
+:is(pre, code) {
+  font-family: var(--font-mono), monospace;
 }

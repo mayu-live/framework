@@ -1,3 +1,6 @@
+%button{style: { __button_color: props.fetch(:color, "var(--accent-color)")  }, **props.except(:color)}
+  %slot
+
 :css
   button {
     background-color: var(--button-color, var(--accent-color));
@@ -29,5 +32,3 @@
     cursor: not-allowed;
   }
 
-%button{style: { __button_color: props.fetch(:color, "var(--accent-color)")  }, **props.except(:color)}
-  %slot

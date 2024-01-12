@@ -14,9 +14,19 @@
     min-height: 100svh;
     display: grid;
     grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr;
+    z-index: 0;
   }
 
   main {
+    grid-column: 1;
+
+    &:has([data-intro]) {
+      grid-row: 1 / 2;
+    }
+
+    height: 100%;
+    z-index: 0;
     background: var(--main-background);
     color: var(--main-color);
     --link-color: var(--main-link-color);

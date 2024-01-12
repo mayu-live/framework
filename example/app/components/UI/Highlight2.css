@@ -15,16 +15,16 @@
   font-weight: 200;
 }
 .highlight > * {
-  color: rgb(var(--color));
-  text-shadow: 0 0 2px #000, 0 0 0.75em rgb(var(--color) / 50%);
+  color: var(--color);
+  text-shadow: 0 0 2px #000, 0 0 0.5em var(--color);
 }
 .highlight,
 .highlight .w {
-  --color: 98% 95% 78%;
+  --color: #fbf1c7;
 }
 .highlight .err {
-  --color: 98% 29% 20%;
-  background---color: 16% 16% 16%;
+  --color: #fb4934;
+  background---color: #282828;
   font-weight: bold;
 }
 .highlight .c,
@@ -34,33 +34,33 @@
 .highlight .cpf,
 .highlight .c1,
 .highlight .cs {
-  --color: 57% 51% 45%;
+  --color: #928374;
   font-style: italic;
 }
 .highlight .cp {
-  --color: 56% 75% 49%;
+  --color: #8ec07c;
 }
 .highlight .nt {
-  --color: 98% 29% 20%;
+  --color: #fb4934;
 }
 .highlight .o,
 .highlight .ow {
-  --color: 98% 95% 78%;
+  --color: #fbf1c7;
 }
 .highlight .p,
 .highlight .pi {
-  --color: 98% 95% 78%;
+  --color: #fbf1c7;
 }
 .highlight .gi {
-  --color: 72% 73% 15%;
-  background---color: 16% 16% 16%;
+  --color: #b8bb26;
+  background---color: #282828;
 }
 .highlight .gd {
-  --color: 98% 29% 20%;
-  background---color: 16% 16% 16%;
+  --color: #fb4934;
+  background---color: #282828;
 }
 .highlight .gh {
-  --color: 72% 73% 15%;
+  --color: #b8bb26;
   font-weight: bold;
 }
 .highlight .k,
@@ -68,16 +68,16 @@
 .highlight .kp,
 .highlight .kr,
 .highlight .kv {
-  --color: 98% 29% 20%;
+  --color: #fb4934;
 }
 .highlight .kc {
-  --color: 83% 53% 61%;
+  --color: #d3869b;
 }
 .highlight .kt {
-  --color: 98% 74% 18%;
+  --color: #fabd2f;
 }
 .highlight .kd {
-  --color: 100% 50% 10%;
+  --color: #fe8019;
 }
 .highlight .s,
 .highlight .sb,
@@ -88,34 +88,34 @@
 .highlight .sh,
 .highlight .sx,
 .highlight .s1 {
-  --color: 72% 73% 15%;
+  --color: #b8bb26;
   font-style: italic;
 }
 .highlight .si {
-  --color: 72% 73% 15%;
+  --color: #b8bb26;
   font-style: italic;
 }
 .highlight .sr {
-  --color: 72% 73% 15%;
+  --color: #b8bb26;
   font-style: italic;
 }
 .highlight .sa {
-  --color: 98% 29% 20%;
+  --color: #fb4934;
 }
 .highlight .se {
-  --color: 100% 50% 10%;
+  --color: #fe8019;
 }
 .highlight .nn {
-  --color: 56% 75% 49%;
+  --color: #8ec07c;
 }
 .highlight .nc {
-  --color: 56% 75% 49%;
+  --color: #8ec07c;
 }
 .highlight .no {
-  --color: 83% 53% 61%;
+  --color: #d3869b;
 }
 .highlight .na {
-  --color: 72% 73% 15%;
+  --color: #b8bb26;
 }
 .highlight .m,
 .highlight .mb,
@@ -125,8 +125,8 @@
 .highlight .il,
 .highlight .mo,
 .highlight .mx {
-  --color: 83% 53% 61%;
+  --color: #d3869b;
 }
 .highlight .ss {
-  --color: 51% 65% 60%;
+  --color: #83a598;
 }

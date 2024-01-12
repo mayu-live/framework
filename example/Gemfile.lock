@@ -106,7 +106,7 @@ GEM
     rmagick (5.3.0)
       pkg-config (~> 1.4)
     rouge (4.0.1)
-    sorbet-runtime (0.5.11181)
+    sorbet-runtime (0.5.11188)
     source_map (3.0.1)
       json
     syntax_tree (5.3.0)

@@ -21,7 +21,7 @@
     end
   end
 
-%Card.card
+%Card
   %article
     %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled) －
     %output= state[:count]
@@ -31,6 +31,7 @@
   Card {
     margin: 4em auto;
     max-width: 10em;
+    --card-background: #fffc;
   }
 
   article {

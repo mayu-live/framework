@@ -23,11 +23,16 @@
 
 :css
   header {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: start;
+    z-index: 1;
+
     /*
     position: sticky;
     top: 0;
-    z-index: 2;
     */
+
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
@@ -35,9 +40,12 @@
     padding: .5em 2em;
     background: var(--header-background);
     border-bottom: var(--thin-border);
+    backdrop-filter: brightness(50%) blur(.5rem);
+    box-shadow: 0 0 5em #1b2b5f;
   }
 
   menu {
+    font-family: var(--font-heading);
     list-style-type: none;
     display: flex;
     flex-direction: row;

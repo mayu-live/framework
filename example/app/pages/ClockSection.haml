@@ -3,6 +3,7 @@
   Link = import("/app/components/UI/Link")
   Heading = import("/app/components/Layout/Heading")
   Section = import("./Section")
+
 %Section
   %figure
     %Clock
@@ -15,8 +16,10 @@
           Show source
 :css
   Section {
-    background-color: var(--material-color-teal-100);
-    color: var(--material-color-teal-900);
+    background-color: #FAC05E;
+    min-height: 50vh;
+    display: flex;
+    align-items: center;
   }
   figure {
     display: grid;
@@ -33,7 +36,7 @@
   Clock {
     font-size: 0;
     --stroke: #000;
-    --fill: var(--material-color-yellow-100);
+    --fill: #FEDC97;
   }
   @media (min-width: 42em) {
     figure {

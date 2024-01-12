@@ -1,8 +1,19 @@
+:ruby
+  FONTS = [
+    "Roboto Condensed",
+    "Roboto:wght@400;700",
+    "Roboto Mono"
+  ].map do |font|
+    font.tr(" ", "+").prepend("family=")
+  end.join("&")
+
 %html
   %head
     %meta(name="charset" value="utf-8")
-    %meta(name="generator" value="github.com/mayu-live/framework")
+    %meta(name="generator" value="https://github.com/mayu-live/framework/releases/tag/v#{Mayu::VERSION}")
     %meta(name="viewport" content="width=device-width, initial-scale=1")
+    %link(crossorigin=true href="https://fonts.googleapis.com" rel="preconnect")
+    %link(href="https://fonts.googleapis.com/css2?#{FONTS}&display=swap" rel="stylesheet")
     %title
       Mayu Live
   %body

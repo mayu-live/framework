@@ -1,13 +1,18 @@
 :ruby
   Intro = import("./Intro")
   HighlightsSection = import("./HighlightsSection")
-  CounterSection = import("./CounterSection")
+  Interactivity = import("./Interactivity")
   FeatureSection = import("./FeatureSection")
   ClockSection = import("./ClockSection")
 
-%div
+.page
   %Intro
   %HighlightsSection
-  %CounterSection
+  %Interactivity
   %ClockSection
   %FeatureSection
+
+:css
+  .page {
+    display: grid;
+  }

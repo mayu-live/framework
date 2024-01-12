@@ -5,19 +5,30 @@
 }
 
 section {
+  min-height: 100dvh;
   --angle: 328deg;
   transition: --angle 3s ease-in-out;
   background-size: contain;
-  background: linear-gradient(
-    var(--angle),
-    var(--material-color-amber-300) 0%,
-    var(--material-color-orange-400) 10%,
-    var(--material-color-red-400) 20%,
-    var(--material-color-deep-purple-400) 50%,
-    var(--material-color-indigo-400) 60%,
-    var(--material-color-blue-800) 80%,
-    var(--material-color-blue-gray-800) 100%
-  );
+  display: flex;
+  position: relative;
+  contain: content;
+
+  background: radial-gradient(
+      ellipse at bottom,
+      color-mix(in srgb, var(--pink) 50%, var(--blue-background)),
+      transparent
+    ),
+    var(--blue-background);
+}
+
+.background {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at bottom, #0002, transparent);
+  mask-position: 50% 50%;
+  mask-size: 2rem auto;
 }
 
 MaxWidth {
@@ -28,6 +39,9 @@ MaxWidth {
   gap: 8cqw;
   padding: 10cqw 0;
   color: #fff;
+  font-family: "Roboto Condensed", sans-serif;
+
+  filter: drop-shadow(0 0 0.5rem #fff9) drop-shadow(0 0 3rem var(--pink));
 
   /*
   background: #fff;
@@ -38,11 +52,18 @@ MaxWidth {
   */
 }
 
+img {
+  max-width: 20rem;
+  display: block;
+  margin: 0 auto;
+}
+
 h1 {
   font-size: 7cqw;
   line-height: 1em;
   margin: 0;
   font-weight: 800;
+  text-align: center;
 }
 
 h2 {
@@ -53,6 +74,7 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 1ch;
+  justify-content: center;
 }
 
 .word {

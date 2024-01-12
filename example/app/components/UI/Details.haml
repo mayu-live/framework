@@ -24,6 +24,15 @@
     end
   end
 
+%Card(class=$class)
+  %details(ontoggle=handle_toggle){open: state[:open]}
+    %summary= $summary
+    .content
+      = if state[:loaded]
+        %slot
+      = else
+        %p Loading…
+
 :css
   details {
     padding: 0.5em 0.5em 0;
@@ -32,32 +41,39 @@
   summary {
     font-weight: bold;
     margin: -0.5em -0.5em 0;
-    padding: 0.5em;
+    padding: 0.5em 1em;
     cursor: pointer;
     user-select: none;
+
+    details[open] & {
+      border-bottom: 1px solid #0003;
+      margin-bottom: 0.5em;
+
+      &::after {
+        transform: translateX(0.5em) rotateZ(0.25turn);
+      }
+    }
+
+    &::after {
+      display: inline-block;
+      content: "▶";
+      transition: transform 250ms;
+      transform: translateX(0.5em) rotateZ(0turn);
+      scale: 1;
+      margin-right: 1em;
+    }
+  }
+
+  summary::marker {
+    content: "";
+    display: none;
   }
 
   details[open] {
     padding: 0.5em;
   }
 
-  details[open] .summary {
-    border-bottom: 1px solid #0003;
-    margin-bottom: 0.5em;
-  }
-
   p {
     margin: 0;
     padding: 0;
   }
-
-- state => open:
-
-%Card(class=$class)
-  %details(ontoggle=handle_toggle open=open)
-    %summary= $summary
-    .content
-      = if state[:loaded]
-        %slot
-      = else
-        %p Loading…

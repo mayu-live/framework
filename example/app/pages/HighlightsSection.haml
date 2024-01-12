@@ -61,12 +61,16 @@
           and
           %Link(href="https://haml.info/" target="_blank")<> Haml
           are really nice languages to work with.
-        %li
-          %Link(href="https://github.com/mayu-live/framework/blob/main/lib/mayu/vdom.test.rb" target="_blank")<
-            Integration test example
 :css
   Section {
-    background: var(--material-color-gray-50);
+    background: linear-gradient(
+      135deg,
+      var(--deep-purple),
+      color-mix(in srgb, var(--deep-purple) 60%, #000)
+    );
+    color: #fffc;
+    min-height: 100dvh;
+    display: flex;
   }
 
   .highlights {
@@ -76,6 +80,8 @@
     padding: 0em;
     display: grid;
     gap: 2em;
+    height: 100%;
+    align-items: center;
   }
 
   @media (min-width: 50em) {
