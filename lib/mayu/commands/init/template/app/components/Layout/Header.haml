@@ -1,0 +1,21 @@
+:ruby
+  Image = svg('./header.svg')
+
+%header
+  %h1
+    %img(src=Image alt="mayu live")
+
+:css
+  header {
+    margin-inline: auto;
+  }
+
+  h1 {
+    font-size: inherit;
+  }
+
+  img {
+    max-width: 20em;
+    display: block;
+    filter: var(--pink-shadow);
+  }

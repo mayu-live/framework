@@ -84,6 +84,7 @@ GEM
       thor
       tilt
     image_size (3.2.0)
+    io-console (0.7.1)
     io-event (1.4.1)
     json (2.7.1)
     kramdown (2.4.0)
@@ -151,6 +152,8 @@ GEM
       ffi
     rbs (3.4.1)
       abbrev
+    reline (0.4.2)
+      io-console (~> 0.5)
     rexml (3.2.6)
     rmagick (5.3.0)
       pkg-config (~> 1.4)
@@ -225,6 +228,7 @@ DEPENDENCIES
   minitest-reporters
   nokogiri
   prettier
+  reline (~> 0.4.2)
   rexml
   ruby-prof
   sorbet

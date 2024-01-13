@@ -1,0 +1,57 @@
+[dev]
+  secret_key = "dev"
+
+  [dev.server]
+    scheme = "https"
+    host = "localhost"
+    port = 9292
+
+    count = 1
+    hot_swap = true
+
+    render_exceptions = true
+    self_signed_cert = true
+
+    generate_assets = true
+
+  [dev.metrics]
+    enabled = true
+
+[devbundle]
+  secret_key = "dev"
+  use_bundle = true
+
+  [devbundle.server]
+    scheme = "https"
+    host = "localhost"
+    port = 9292
+    render_exceptions = true
+    self_signed_cert = true
+
+    hot_swap = false
+
+    count = 4
+    forks = 2
+
+  [devbundle.metrics]
+    enabled = true
+    port = 9091
+    host = "0.0.0.0"
+
+[prod]
+  use_bundle = true
+
+  [prod.server]
+    scheme = "http"
+    host = "0.0.0.0"
+    port = 3000
+
+    hot_swap = false
+
+    count = 2
+    forks = 1
+
+  [prod.metrics]
+    enabled = true
+    port = 9091
+    host = "0.0.0.0"

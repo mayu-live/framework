@@ -1,0 +1,4 @@
+vendor
+metrics.ipc
+fly.toml
+.assets/*

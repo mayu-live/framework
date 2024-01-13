@@ -21,3 +21,5 @@ group :development do
 end
 
 gem "fuzzy_match"
+
+gem "reline", "~> 0.4.2"

@@ -1,0 +1,11 @@
+:ruby
+  Hexagons = svg('./hexagons.svg')
+%html
+  %head
+    %meta(name="charset" value="utf-8")
+    %meta(name="generator" value="Mayu #{Mayu::VERSION}")
+    %meta(name="viewport" content="width=device-width, initial-scale=1")
+    %title Mayu App
+  %body
+    .background{style: { mask_image: "url(#{Hexagons})" }}
+    %slot

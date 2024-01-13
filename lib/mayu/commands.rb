@@ -39,6 +39,9 @@ module Mayu
       in ["serve", *rest]
         require_relative "server"
         Server.start(load_config(:prod))
+      in ["init", *rest]
+        require_relative "commands/init"
+        Commands::Init.new.call(rest)
       else
         puts "Invalid args: #{argv.inspect}"
         exit 1
