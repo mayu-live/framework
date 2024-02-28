@@ -207,7 +207,7 @@ GEM
       citrus (~> 3.0, > 3.0)
     traces (0.11.1)
     unicode-display_width (2.5.0)
-    yard (0.9.34)
+    yard (0.9.35)
     yard-sorbet (0.8.1)
       sorbet-runtime (>= 0.5)
       yard (>= 0.9)
