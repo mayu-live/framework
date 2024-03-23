@@ -3,7 +3,7 @@ import html from "./mayu-exception.html";
 const template = document.createElement("template");
 template.innerHTML = html;
 
-class MayuException extends HTMLElement {
+export default class MayuException extends HTMLElement {
   dialog?: HTMLDialogElement;
 
   connectedCallback() {
@@ -13,8 +13,9 @@ class MayuException extends HTMLElement {
 
     this.shadowRoot!.appendChild(template.content.cloneNode(true));
 
-    this.dialog = this.shadowRoot!.querySelector("dialog") as HTMLDialogElement;
+    this.dialog = this.shadowRoot!.querySelector<HTMLDialogElement>("dialog")!;
 
+    this.dialog!.addEventListener("close", this.remove);
     this.dialog!.showModal();
   }
 
@@ -24,5 +25,3 @@ class MayuException extends HTMLElement {
 }
 
 window.customElements.define("mayu-exception", MayuException);
-
-export default MayuException;

@@ -1,175 +1,152 @@
-import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
-import { stringifyJSON, retry, FatalError, sleep } from "./utils";
-import { MimeTypes } from "./MimeTypes";
-import logger from "./logger";
-import DecompressionStream from "./DecompressionStream";
+// Copyright Andreas Alin <andreas.alin@gmail.com>
+// License: AGPL-3.0
 
-function createExtensionCodec() {
-  const extensionCodec = new ExtensionCodec();
+import {
+  STREAM_MIME_TYPE,
+  STREAM_CONTENT_ENCODING,
+  SESSION_MIME_TYPE,
+} from "./constants";
 
-  extensionCodec.register({
-    type: 0x01,
-    encode() {
-      throw new Error("Not implemented");
-    },
-    decode(buffer: Uint8Array) {
-      return new Blob([buffer], { type: "application/vnd.mayu.session" });
-    },
-  });
+import supportsRequestStreams from "./supportsRequestStreams";
 
-  return extensionCodec;
+const CALLBACK_STREAM_METHOD = "PATCH";
+
+export async function initInputStream(
+  endpoint: string,
+  state: Blob | null = null,
+): Promise<ReadableStream<any>> {
+  const res = await connect(endpoint, state);
+
+  if (!res.body) throw new Error("No body");
+
+  const contentEncoding = res.headers.get("content-encoding");
+
+  if (!contentEncoding) return res.body;
+
+  return res.body.pipeThrough(new DecompressionStream(contentEncoding as any));
 }
 
-async function startStream(sessionId: string, encryptedState?: Blob) {
-  const res = await resume(sessionId, encryptedState);
+export class StreamError extends Error {}
+
+export async function connect(
+  endpoint: string,
+  state: Blob | null = null,
+): Promise<Response> {
+  console.info("🟡 Connecting to", endpoint);
+
+  let res: Response | null = null;
+
+  try {
+    res = state
+      ? await fetch(endpoint, {
+          method: "POST",
+          credentials: "include",
+          headers: new Headers({
+            accept: STREAM_MIME_TYPE,
+            "accept-encoding": STREAM_CONTENT_ENCODING,
+            "content-type": SESSION_MIME_TYPE,
+          }),
+          body: state,
+        })
+      : await fetch(endpoint, {
+          method: "GET",
+          credentials: "include",
+          headers: new Headers({
+            accept: STREAM_MIME_TYPE,
+            "accept-encoding": STREAM_CONTENT_ENCODING,
+          }),
+        });
+  } catch (e) {
+    throw new StreamError();
+  }
 
   if (!res.ok) {
-    const text = await res.text();
-
-    if (res.status == 503) {
-      // Server is shutting down, so retry..
-      throw new Error(`${res.status}: ${text}`);
-    }
-
-    throw new FatalError(`${res.status}: ${text}`);
+    const message = await res.json();
+    throw new StreamError(message.error);
   }
 
-  if (!res.body) {
-    throw new FatalError("body is null");
+  const contentType = res.headers.get("content-type");
+
+  if (contentType !== STREAM_MIME_TYPE) {
+    // alert(`Unexpected content type: ${contentType}`);
+    // console.error(res);
+    throw new StreamError(`Unexpected content type: ${contentType}`);
   }
 
-  const decompressionStream = new DecompressionStream("deflate-raw");
+  console.info("🟢 Connected to", endpoint);
 
-  return res.body.pipeThrough(decompressionStream);
+  return res;
 }
 
-type ServerMessage = [id: string, event: string, payload: any];
-type SessionStreamMessage = [string, any];
+export class RAFQueue<T> {
+  onFlush: (queue: T[]) => void;
+  queue: T[];
+  raf: number | null;
 
-function resume(sessionId: string, encryptedState?: Blob) {
-  if (!encryptedState) {
-    return retry(() =>
-      fetch(`/__mayu/session/${sessionId}/init`, {
-        method: "POST",
-      })
-    );
+  constructor(onFlush: (queue: T[]) => void) {
+    this.onFlush = onFlush;
+    this.queue = [];
+    this.raf = null;
   }
 
-  return retry(() =>
-    fetch(`/__mayu/session/${sessionId}/resume`, {
-      method: "POST",
-      headers: { "content-type": MimeTypes.MAYU_SESSION },
-      body: encryptedState,
-    })
-  );
-}
-
-function errorMessage(e: any) {
-  if (e instanceof Error) {
-    return e.message;
+  enqueue(messages: T[]) {
+    messages.forEach((msg) => this.queue.push(msg));
+    this.raf ||= requestAnimationFrame(() => this.flush());
   }
 
-  if (typeof e === "string") {
-    return e;
-  }
-
-  return String(e);
-}
-
-export async function* sessionStream(
-  sessionId: string
-): AsyncGenerator<SessionStreamMessage> {
-  let isRunning = true;
-  let encryptedState: Blob | undefined;
-  let isConnected = false;
-  const extensionCodec = createExtensionCodec();
-  let reason: string | undefined;
-
-  while (isRunning) {
-    try {
-      const stream = await retry(() => startStream(sessionId, encryptedState));
-
-      try {
-        for await (const message of decodeMultiStream(stream, {
-          extensionCodec,
-        })) {
-          const [id, event, payload] = message as ServerMessage;
-
-          if (!isConnected) {
-            isConnected = true;
-            yield ["system.connected", {}];
-          }
-
-          if (encryptedState) {
-            logger.info("Clearing encryptedState");
-            encryptedState = undefined;
-          }
-
-          try {
-            switch (event) {
-              case "session.transfer":
-                yield ["session.transfer", {}];
-                encryptedState = payload;
-                logger.info("Setting encryptedState", payload);
-                break;
-              case "pong":
-                yield [
-                  "ping",
-                  {
-                    values: {
-                      client: performance.now() - Number(payload.pong),
-                      server: payload.server,
-                    },
-                    region: payload.region,
-                    instance: payload.instance,
-                  },
-                ];
-                break;
-              case "ping":
-                postCallback(sessionId, "ping", {
-                  pong: payload,
-                  ping: performance.now(),
-                });
-                break;
-              default:
-                yield [event, payload];
-            }
-          } catch (e) {
-            reason = errorMessage(e);
-            logger.error(e);
-          }
-        }
-      } catch (e) {
-        reason = errorMessage(e);
-        logger.error(e);
-      }
-
-      isConnected = false;
-
-      if (isRunning) {
-        reason ||= "Stream ended unexpectedly";
-      }
-
-      yield ["system.disconnected", { transferring: !!encryptedState, reason }];
-    } catch (e) {
-      logger.error(e);
-
-      if (e instanceof FatalError) {
-        isRunning = false;
-        isConnected = false;
-        yield ["system.disconnected", { reason: e.message }];
-        return;
-      }
-
-      await sleep(1000);
-    }
+  flush() {
+    this.raf = null;
+    const queue = this.queue;
+    if (queue.length === 0) return;
+    this.queue = [];
+    this.onFlush(queue);
   }
 }
 
-async function postCallback(sessionId: string, callbackId: string, data: any) {
-  return fetch(`/__mayu/session/${sessionId}/${callbackId}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: stringifyJSON(data),
+export class JSONEncoderStream extends TransformStream {
+  constructor() {
+    super({
+      transform(chunk, controller) {
+        controller.enqueue(JSON.stringify(chunk) + "\n");
+      },
+    });
+  }
+}
+
+export function initCallbackStream(endpoint: string) {
+  if (!supportsRequestStreams) {
+    console.warn("Request streams not supported, using fallback.");
+    return initCallbackStreamFetchFallback(endpoint);
+  }
+
+  const contentEncoding = "identity"; // STREAM_CONTENT_ENCODING;
+  const { readable, writable } = new TransformStream(); // new CompressionStream(contentEncoding);
+
+  fetch(endpoint, {
+    method: CALLBACK_STREAM_METHOD,
+    headers: new Headers({
+      "content-type": STREAM_MIME_TYPE,
+      "content-encoding": contentEncoding,
+    }),
+    duplex: "half",
+    mode: "cors",
+    body: readable,
+  } as any)
+
+  return writable;
+}
+
+function initCallbackStreamFetchFallback(endpoint: string) {
+  return new WritableStream({
+    write(body) {
+      fetch(endpoint, {
+        method: CALLBACK_STREAM_METHOD,
+        headers: new Headers({
+          "content-type": "application/json",
+        }),
+        mode: "cors",
+        body: body,
+      });
+    },
   });
 }

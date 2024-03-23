@@ -1,0 +1,26 @@
+:ruby
+  Button = import "/components/Button"
+
+  def initialize =
+    @count = 0
+
+  def handle_increment =
+    @count += 1
+
+  def handle_decrement =
+    @count -= 1
+
+  def handle_reset =
+    @count = 0
+
+%head
+  %title Events demo
+  %meta(name="description" content="events demo")
+%h2 Events demo
+%p
+  Current count:
+  %output{class: { belowZero: @count < 0 }}<= @count
+.buttons
+  %Button(onclick=handle_increment) Increment
+  %Button(onclick=handle_decrement) Decrement
+  %Button(onclick=handle_reset) Reset

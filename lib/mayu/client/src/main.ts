@@ -1,283 +1,203 @@
-import { sessionStream } from "./stream";
-import NodeTree from "./NodeTree";
-import h from "./h";
-import type MayuPingElement from "./custom-elements/mayu-ping";
-import type MayuLogElement from "./custom-elements/mayu-log";
-import type MayuExceptionElement from "./custom-elements/mayu-exception";
-import type MayuAlertElement from "./custom-elements/mayu-alert";
+import Runtime from "./runtime.js";
 
-import serializeEvent from "./serializeEvent";
+import {
+  initInputStream,
+  initCallbackStream,
+  JSONEncoderStream,
+} from "./stream.js";
 
-import logger from "./logger";
+import serializeEvent from "./serializeEvent.js";
+import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
 
-const onDOMContentLoaded = new Promise<void>((resolve) => {
-  if (document.readyState !== "loading") {
-    return resolve();
+import { SESSION_MIME_TYPE, SESSION_PATH, PING_INTERVAL } from "./constants";
+import { updateConnectionStatus } from "./ping";
+import { getTransferState, setTransferState } from "./transfer";
+import throttle from './throttle'
+
+import "./custom-elements/mayu-exception";
+
+declare global {
+  interface Window {
+    Mayu: Mayu;
   }
 
-  window.addEventListener("DOMContentLoaded", () => resolve());
-});
+  interface Document {
+    startViewTransition?: (callback: () => void) => void
+  }
+}
 
-function shouldPreventDefault(e: Event) {
-  if (typeof TouchEvent !== "undefined") {
-    if (e instanceof TouchEvent) {
-      return false;
+class Mayu {
+  #writer: WritableStreamDefaultWriter<any> | null;
+  #pingTimer: NodeJS.Timeout;
+
+  constructor() {
+    this.#writer = null;
+
+    window.addEventListener("popstate", () => {
+      this.navigate(location.pathname + location.search, false);
+    });
+
+    this.#pingTimer = setTimeout(() => this.ping(), 100);
+  }
+
+  setWriter(writer: WritableStreamDefaultWriter<any>) {
+    this.#writer = writer;
+  }
+
+  async #write(message: any) {
+    try {
+      await this.#writer?.write(message)
+    } catch (e) {
+      console.error("Write error")
     }
   }
-  return true;
-}
 
-async function showException({
-  type,
-  message,
-  backtrace,
-}: {
-  type: string;
-  message: string;
-  backtrace: string[];
-}) {
-  await import("./custom-elements/mayu-exception");
-
-  const cleanedBacktrace = backtrace
-    .filter((line) => !/\/vendor\/bundle\//.test(line))
-    .join("\n");
-
-  const el = h("mayu-exception", [
-    h("span", [`${type}: ${message}`], { slot: "title" }),
-    h("span", [cleanedBacktrace], { slot: "backtrace" }),
-  ]);
-
-  document.body.appendChild(el);
-}
-
-async function showAlert(message: string) {
-  await import("./custom-elements/mayu-alert");
-  const elem = document.createElement("mayu-alert") as MayuAlertElement;
-  elem.setAttribute("message", message);
-  document.body.appendChild(elem);
-}
-
-class MayuGlobal {
-  #sessionId: string;
-
-  constructor(sessionId: string) {
-    this.#sessionId = sessionId;
-
-    onDOMContentLoaded.then(() => {
-      window.addEventListener("popstate", () => {
-        return navigateTo(this.#sessionId, location.pathname);
+  callback(event: Event, id: string) {
+    const serializedEvent = serializeEvent(event)
+    throttle(event.currentTarget!, () => {
+      this.#write({
+        type: "callback",
+        payload: { id, event: serializedEvent },
+        ping: performance.now(),
       });
+    })
+  }
+
+  navigate(href: string, pushState: boolean = true) {
+    console.warn("navigate", href);
+    this.#write({
+      type: "navigate",
+      payload: { href, pushState },
+      ping: performance.now(),
     });
   }
 
-  async handle(e: Event, handlerId: string) {
-    if (shouldPreventDefault(e)) {
-      e.preventDefault();
-    }
+  ping() {
+    clearTimeout(this.#pingTimer);
 
-    const payload = serializeEvent(e);
-    console.log(payload);
-    // progressBar.setAttribute("progress", "0");
+    this.#pingTimer = setTimeout(() => this.ping(), PING_INTERVAL);
 
-    await mayuCallback(this.#sessionId, handlerId, payload);
-
-    let didRun = false;
-    const timeout = setTimeout(() => {
-      // progressBar.setAttribute("progress", "25");
-      didRun = true;
-    }, 1);
-
-    clearTimeout(timeout);
-
-    // progressBar.setAttribute("progress", "100");
-  }
-
-  async navigate(e: MouseEvent) {
-    if (e.metaKey || e.ctrlKey) return;
-
-    e.preventDefault();
-    const anchor = (e.target as HTMLElement).closest("a");
-
-    if (!anchor) {
-      logger.error("Could not find anchor element for", e.target);
-      return;
-    }
-
-    const url = new URL((anchor as HTMLAnchorElement).href);
-    // progressBar.setAttribute("progress", "0");
-    return navigateTo(this.#sessionId, url.pathname + url.search);
+    this.#write({
+      type: "ping",
+      ping: performance.now(),
+    });
   }
 }
 
-function mayuCallback(sessionId: string, handlerId: string, payload: any) {
-  return fetch(`/__mayu/session/${sessionId}/callback/${handlerId}`, {
-    method: "POST",
-    headers: new Headers({
-      "content-type": "application/json",
-      "x-request-time": String(performance.now()),
-    }),
-    body: JSON.stringify(payload),
-  }).then(logRequestTime);
+async function sleep(milliseconds: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
 
-async function navigateTo(sessionId: string, url: string) {
-  return fetch(`/__mayu/session/${sessionId}/navigate`, {
-    method: "POST",
-    headers: new Headers({
-      "content-type": "text/plain; charset=utf-8",
-      "x-request-time": String(performance.now()),
-    }),
-    body: url,
-  }).then(logRequestTime);
-}
+async function resetSessionEntirely() {
+  const [morphdom, res] = await Promise.all([
+    import("morphdom"),
+    fetch(location.pathname + location.search, {
+      method: "GET",
+      credentials: "include",
+      headers: new Headers({
+        accept: "text/html"
+      }),
+    })
+  ])
 
-function logRequestTime(res: Response) {
-  const requestTime = res.headers.get("x-request-time");
+  const html = (await res.text()).replace(/^<!DOCTYPE html>\n/, '')
+  const sessionId = res.headers.get("x-mayu-session-id")
 
-  if (requestTime) {
-    console.log("Pong:", performance.now() - Number(requestTime), "ms");
+  console.warn(`%cmorphing dom`, "font-size: 4em; font-weight: bold; font-family: monospace;")
+
+  if (document.startViewTransition) {
+    document.startViewTransition(async () => {
+      morphdom.default(document.documentElement, html)
+    })
+  } else {
+    morphdom.default(document.documentElement, html)
   }
 
-  return res;
+  setTransferState(null);
+
+  return `${SESSION_PATH}/${sessionId}`;
 }
 
-function getSessionIdFromUrl(url: string) {
-  const index = url.lastIndexOf("#");
-  if (index === -1) {
-    throw new Error(`No # found in script url: ${url}`);
-  }
-  return url.slice(index + 1);
-}
+async function startPatchStream(runtime: Runtime, endpoint: string) {
+  const extensionCodec = createExtensionCodec();
+  let failures = 0;
 
-function loadCustomElements() {
-  import("./custom-elements/mayu-ping");
-  import("./custom-elements/mayu-disconnected");
-  import("./custom-elements/mayu-progress-bar");
-  import("./custom-elements/mayu-exception");
-  import("./custom-elements/mayu-alert");
-}
+  while (true) {
+    try {
+      const state = getTransferState();
 
-async function main(url: string) {
-  const sessionId = getSessionIdFromUrl(url);
-  const mayu = new MayuGlobal(sessionId);
-  window.Mayu = mayu;
+      updateConnectionStatus(state ? "transferring" : "disconnected");
 
-  let nodeTree: NodeTree | undefined;
+      const input = await initInputStream(endpoint, state);
+      setTransferState(null);
 
-  const disconnectedElement = document.createElement("mayu-disconnected");
+      const callbackStream = new TransformStream();
+      window.Mayu.setWriter(callbackStream.writable.getWriter())
+      const output = initCallbackStream(endpoint);
 
-  const pingElement = document.createElement("mayu-ping") as MayuPingElement;
-  pingElement.setAttribute("region", "Connecting...");
-  pingElement.setAttribute("status", "connecting");
-  document.body.appendChild(pingElement);
+      failures = 0;
 
-  for await (const [event, payload] of sessionStream(sessionId)) {
-    switch (event) {
-      case "system.connected":
-        loadCustomElements();
+      callbackStream.readable
+        .pipeThrough(new JSONEncoderStream())
+        .pipeThrough(new TextEncoderStream())
+        .pipeTo(output);
 
-        pingElement.setAttribute("region", "Connected!");
-        pingElement.setAttribute("status", "connected");
-        logger.success("Connected!");
+      updateConnectionStatus("connected");
 
-        document.body
-          .querySelectorAll("mayu-disconnected")
-          .forEach((el) => el.remove());
-        break;
-      case "system.disconnected":
-        if (payload.transferring) {
-          pingElement.setAttribute("region", "Transferring…");
-          pingElement.setAttribute("status", "transferring");
-          break;
-        }
-
-        pingElement.setAttribute("region", "Disconnected");
-        pingElement.setAttribute("status", "disconnected");
-
-        logger.error("Disconnected");
-
-        disconnectedElement.setAttribute("reason", payload.reason);
-
-        if (disconnectedElement.parentElement !== document.body) {
-          document.body.appendChild(disconnectedElement);
-        }
-        break;
-      case "session.init":
-        await onDOMContentLoaded;
-        nodeTree = new NodeTree(payload.ids);
-        break;
-      case "session.patch":
-        nodeTree?.apply(payload);
-        break;
-      case "session.navigate":
-        const path = payload.path;
-
-        if (path !== location.pathname) {
-          logger.info("Navigating to", path);
-          history.pushState({}, "", path);
-          // progressBar.setAttribute("progress", "100");
-        }
-        break;
-      case "session.action":
-        handleAction(payload.type, payload.payload);
-        break;
-      case "session.keep_alive":
-        break;
-      case "session.transfer":
-        pingElement.setAttribute("region", "Transferring");
-        pingElement.setAttribute("status", "transferring");
-        break;
-      case "session.exception":
-        showException(payload);
-        break;
-      case "ping":
-        const values = Object.values(payload.values) as number[];
-        const mean = values.reduce((a, b) => a + b, 0.0) / values.length;
-        pingElement.setAttribute("ping", `${mean.toFixed(2)} ms`);
-        pingElement.setAttribute("instance", payload.instance);
-        pingElement.setAttribute("region", payload.region);
-        pingElement.setAttribute("status", "ping");
-        break;
-      default:
-        logger.warn("Unhandled event:", event, payload);
-        break;
-    }
-  }
-
-  function handleAction(type: string, payload: any) {
-    switch (type) {
-      case "scroll_into_view": {
-        scrollIntoView(payload.selector, payload.options || {});
-        break;
+      for await (const patch of decodeMultiStream(input, { extensionCodec })) {
+        updateConnectionStatus("connected");
+        runtime.apply(patch as any);
       }
-      case "alert": {
-        showAlert(payload);
-        break;
-      }
-      default: {
-        logger.error("Unhandled action:", type, payload);
-        break;
+    } catch (e: any) {
+      failures += 1;
+
+      if (e.message === 'expired' || e.message === "cipher error") {
+        console.warn("Resetting session because of:", e.message)
+        endpoint = await resetSessionEntirely()
+      } else {
+        await sleep(Math.min(10_000, 1000 * failures + 1));
       }
     }
   }
-
-  function scrollIntoView(selector: string, options: Record<string, string>) {
-    const elem = document.querySelector(selector);
-
-    if (elem) {
-      elem.scrollIntoView({
-        block: "start",
-        inline: "nearest",
-        behavior: "smooth",
-        ...options,
-      });
-    } else {
-      console.error(
-        "Could not find element to scrollIntoView, selector:",
-        selector
-      );
-    }
-  }
 }
 
-export default main(import.meta.url);
+function createExtensionCodec() {
+  const extensionCodec = new ExtensionCodec();
+
+  extensionCodec.register({
+    type: 0x01,
+    encode() {
+      throw new Error("Not implemented");
+    },
+    decode(buffer) {
+      return new Blob([buffer], { type: SESSION_MIME_TYPE });
+    },
+  });
+
+  return extensionCodec;
+}
+
+function main() {
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(`
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 1s;
+  }
+  `);
+  document.adoptedStyleSheets.push(sheet)
+
+  const runtime = new Runtime();
+
+  window.Mayu = new Mayu();
+
+  const sessionId = import.meta.url.split("#").at(-1);
+  const endpoint = `${SESSION_PATH}/${sessionId}`;
+  startPatchStream(runtime, endpoint)
+}
+
+if (window.Mayu) {
+  console.error("%cwindow.Mayu is already defined", "font-size: 1.5em; color: #c00;")
+} else {
+  main()
+}

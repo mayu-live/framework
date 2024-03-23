@@ -1,63 +1,80 @@
-# typed: strict
+# frozen_string_literal: true
 
-require "bundler/setup"
-require "sorbet-runtime"
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 require "async"
-require "async/container"
-require "async/http/server"
-require "async/http/endpoint"
-require "protocol/http/body/file"
-require "async/io/host_endpoint"
-require "async/io/shared_endpoint"
-require "async/io/ssl_endpoint"
 require "async/io/trap"
-require "localhost"
-require "mime/types"
-require_relative "environment"
-require_relative "session"
-require_relative "configuration"
-require_relative "colors"
-require_relative "server/controller"
+require "async/barrier"
+require "async/queue"
+require "async/http/endpoint"
+require "async/http/protocol/response"
+require "async/http/server"
+
+require_relative "server/app"
 
 module Mayu
-  module Server
-    extend T::Sig
+  class Server
+    def initialize(config)
+      @uri = URI.parse(config.server.listen)
+      @app = App.new(config)
 
-    sig { params(config: Configuration).void }
-    def self.start_dev(config) = start(config)
+      endpoint = Async::HTTP::Endpoint.new(@uri)
 
-    sig { params(config: Configuration).void }
-    def self.start_prod(config) = start(config)
-
-    sig { params(config: Configuration).void }
-    def self.start(config)
-      uri = config.server.uri
-      ssl_context = setup_self_signed_cert(config)
-      endpoint = Async::HTTP::Endpoint.new(uri, ssl_context:, reuse_port: true)
-
-      Configuration.log_config(config)
-      Process.setproctitle("mayu #{config.mode} file://#{config.root} #{uri}")
-
-      # Metrics.setup(config) if config.metrics.enabled
-
-      Controller.new(config:, endpoint:).run
-    end
-
-    sig do
-      params(config: Configuration).returns(T.nilable(OpenSSL::SSL::SSLContext))
-    end
-    def self.setup_self_signed_cert(config)
-      return unless config.server.self_signed_cert
-
-      authority = Localhost::Authority.fetch(config.server.host)
-
-      authority.server_context.tap do |context|
-        context.alpn_select_cb = lambda { |_| "h2" }
-        lambda { |protocols| protocols.include?("h2") ? "h2" : nil }
-
-        context.alpn_protocols = ["h2"]
-        context.session_id_context = "mayu"
+      if config.server.self_signed_cert?
+        endpoint = apply_local_certificate(endpoint)
       end
+
+      @server =
+        Async::HTTP::Server.new(
+          @app,
+          endpoint,
+          scheme: @uri.scheme,
+          protocol: Async::HTTP::Protocol::HTTP2
+        )
+    end
+
+    def run(task: Async::Task.current)
+      interrupt = Async::IO::Trap.new(:INT)
+
+      task.async do
+        interrupt.install!
+        puts "\e[3m Starting server on #{@uri} \e[0m"
+
+        barrier = Async::Barrier.new
+
+        listeners = @server.run
+
+        interrupt.wait
+        Console.logger.info("Got interrupt")
+
+        @app.stop
+        interrupt.default!
+      rescue Errno::EADDRINUSE => e
+        puts format("\e[3;31m %s \e[0m", e.message)
+        exit 1
+      ensure
+        Console.logger.info("Stopped server")
+      end
+    end
+
+    private
+
+    def apply_local_certificate(endpoint)
+      require "localhost"
+      require "async/io/ssl_endpoint"
+
+      authority = Localhost::Authority.fetch(endpoint.hostname)
+
+      context = authority.server_context
+      context.alpn_select_cb = ->(protocols) do
+        protocols.include?("h2") ? "h2" : nil
+      end
+
+      context.alpn_protocols = ["h2"]
+      context.session_id_context = "mayu"
+
+      Async::IO::SSLEndpoint.new(endpoint, ssl_context: context)
     end
   end
 end
