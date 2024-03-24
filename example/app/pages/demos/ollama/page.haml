@@ -1,0 +1,141 @@
+:ruby
+  Heading = import("/app/components/Layout/Heading")
+  Button = import("/app/components/Form/Button")
+  Message = import("./Message")
+
+  MODEL = "llama2"
+
+  def self.get_initial_state(**) = {
+    key: 0,
+    messages: [],
+    words: [],
+    loading: false,
+    ollama: Ollama.new(model: MODEL, url: ENV["OLLAMA_URL"])
+  }
+
+  def handle_submit(e)
+    return if state[:loading]
+
+    text = e.dig(:currentTarget, :formData, :message)
+
+    update do |state|
+      {
+        **state,
+        key: state[:key].succ,
+        loading: true,
+        messages: [
+          *state[:messages],
+          { id: SecureRandom.alphanumeric, role: "user", text: }
+        ]
+      }
+    end
+
+    chunks = []
+
+    begin
+      state[:ollama].generate(text) do |word|
+        chunks.push(word)
+
+        update do |state|
+          {
+            **state,
+            words: [*state[:words], word]
+          }
+        end
+      end
+    rescue => e
+      pp e
+    end
+
+    update do |state|
+      {
+        **state,
+        words: [],
+        messages: [
+          *state[:messages],
+          {
+            id: SecureRandom.alphanumeric,
+            role: "model",
+            text: chunks.join.strip
+          }
+        ]
+      }
+    end
+  ensure
+    update(loading: false)
+  end
+
+%section
+  %Heading(level=2) Ollama chat
+
+  .scroller
+    = if state[:messages].empty?
+      %p.type-your-message Type a message to chat with #{MODEL}
+    %ul
+      = unless state[:words].empty?
+        %Message.model[:temp]{
+          role: "model",
+          text: state[:words].join.strip
+        }
+      = state[:messages].reverse.map do |message|
+        %Message.model[message[:id]]{
+          role: message[:role],
+          text: message[:text],
+        }
+  %form(onsubmit=handle_submit)
+    %input[state[:key]]{
+      autofocus: true,
+      type: "text",
+      name: "message",
+      autocomplete: "off",
+      placeholder: "Type your message here…"
+    }
+    %Button(type="submit"){disabled: state[:loading]} Send
+
+:css
+  section {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 20em;
+    gap: 1em;
+  }
+
+  Heading {
+    margin-bottom: 0;
+  }
+
+  .scroller {
+    position: relative;
+  }
+
+  ul {
+    position: absolute;
+    inset: 0;
+    overflow-y: scroll;
+    font-family: "Roboto Mono";
+    white-space: pre-wrap;
+    border: 1px solid #0003;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column-reverse;
+    margin: 0;
+    padding: 0;
+  }
+
+  form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1em;
+  }
+
+  input {
+    padding: .5em;
+  }
+
+  .type-your-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+  }

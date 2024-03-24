@@ -1,0 +1,24 @@
+%li{class: $role.to_sym}
+  %strong= $role
+  %span= $text
+
+:css
+  li {
+    display: block;
+    padding: .5em;
+    margin: 0;
+  }
+
+  strong {
+    &::after {
+      content: ": ";
+    }
+  }
+
+  .user {
+    background: #0063;
+  }
+
+  .model {
+    background: #0603;
+  }
