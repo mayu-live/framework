@@ -2,14 +2,15 @@
   .mayu-ping {
     position: fixed;
     bottom: 0;
-    left: 0;
+    right: 0;
     z-index: 10000;
     background: #0003;
+    backdrop-filter: blur(5px);
     border: 0 solid #0003;
-    border-width: 1px 1px 0 0;
-    font-size: 0.9em;
-    padding: 0.2em 0.5em;
-    border-top-right-radius: 3px;
+    border-width: 1px 0 0 1px;
+    font-size: 0.8rem;
+    padding: .5em;
+    border-top-left-radius: 3px;
     text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000,
       0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000,
       0 0 2px #000;
@@ -17,6 +18,8 @@
     font-weight: bold;
     font-family: monospace;
     transition: background 500ms 0s ease-in-out;
+    text-align: center;
+    min-width: 3em;
   }
   .status-disconnected {
     background: #d0060699;
@@ -27,9 +30,39 @@
   .status-transferring {
     background: #0866f799;
   }
+
+  meter {
+    width: 100%;
+    height: 2rem;
+    display: none;
+  }
+
+  meter::-webkit-meter-inner-element {
+    grid-template-rows: 0 [line1] 1fr [line2] 0
+  }
+
+  meter::-webkit-meter-bar {
+    border-radius: 0;
+    border: none;
+  }
+
+  meter::-webkit-meter-optimum-value {
+    background: #0c0;
+  }
+  meter::-webkit-meter-suboptimum-value {
+    background: #fc0;
+  }
+  meter::-webkit-meter-even-less-good-value {
+    background: #c00;
+  }
+
+  meter::-webkit-meter-optimum-value,
+  meter::-webkit-meter-suboptimum-value,
+  meter::-webkit-meter-even-less-good-value {
+    transition: 500ms width, 500ms background-color;
+  }
 </style>
-<div inert class="mayu-ping">
-  Ping:
-  <span class="ping">N/A</span>
-  (<span class="instance">N/A</span> @ <span class="region">N/A</span>)
+<div class="mayu-ping">
+  <span class="ping">N/A</span></meter>
+  <meter min="0" max="200" low="100" high="75" optimum="50" value="0">
 </div>

@@ -42,37 +42,34 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  # Core dependencies
-  spec.add_dependency "async", "~> 2.8.0"
-  spec.add_dependency "async-container", "~> 0.16.12"
-  spec.add_dependency "async-http", "~> 0.61.0"
+  # Core
+  spec.add_dependency "async", "~> 2.8"
+  spec.add_dependency "async-http", "~> 0.62.0"
+  spec.add_dependency "async-io", "~> 1.41"
+  spec.add_dependency "base64", "~> 0.2.0"
+  spec.add_dependency "toml", "~> 0.3.0"
+
+  # Server
   spec.add_dependency "brotli", "~> 0.4.0"
-  spec.add_dependency "mime-types", "~> 3.4.1"
-  spec.add_dependency "msgpack", "~> 1.6.0"
-  spec.add_dependency "nanoid", "~> 2.0.0"
-  spec.add_dependency "prometheus-client", "~> 4.0.0"
-  spec.add_dependency "protocol-http", "~> 0.25.0"
-  spec.add_dependency "pry", "~> 0.14.2"
+  spec.add_dependency "msgpack", "~> 1.7"
   spec.add_dependency "rack", ">= 3.0.4.1", "< 3.0.10.0"
-  spec.add_dependency "rake", "~> 13.0.6"
-  spec.add_dependency "rbnacl", "~> 7.1.1"
-  spec.add_dependency "sorbet-runtime", "~> 0.5.10634"
-  spec.add_dependency "terminal-table", "~> 3.0.2"
-  spec.add_dependency "toml-rb", "~> 2.2.0"
+  spec.add_dependency "rbnacl", "~> 7.1"
 
   # Development
-  spec.add_dependency "listen", "~> 3.7.1"
-  spec.add_dependency "localhost", "~> 1.1.9"
+  spec.add_dependency "filewatcher", "~> 2.1"
+  spec.add_dependency "localhost", "~> 1.1"
+  spec.add_dependency "minitest", "~> 5.21"
+  spec.add_dependency "nokogiri", "~> 1.16"
+  spec.add_dependency "pry", "~> 0.14.2"
+  spec.add_dependency "rouge", "~> 4.2"
 
-  # Build
-  spec.add_dependency "image_size", "~> 3.2.0"
-  spec.add_dependency "kramdown", "~> 2.4.0"
-  spec.add_dependency "rouge", "~> 4.0.0"
+  # Modules
+  spec.add_dependency "image_size", "~> 3.4"
   spec.add_dependency "mayu-css", "~> 0.1.2"
-  spec.add_dependency "rmagick", "~> 5.3.0"
-  spec.add_dependency "source_map", "~> 3.0.1"
-  spec.add_dependency "syntax_tree", "~> 5.3.0"
-  spec.add_dependency "syntax_tree-haml", "~> 3.0.0"
+  spec.add_dependency "mime-types", "~> 3.5"
+  spec.add_dependency "rake", "~> 13.1"
+  spec.add_dependency "syntax_tree", "~> 6.2"
+  spec.add_dependency "syntax_tree-haml", "~> 4.0"
   spec.add_dependency "syntax_tree-xml", "~> 0.1.0"
-  spec.add_dependency "base64", "~> 0.2.0"
+  spec.add_dependency "tsort", "~> 0.2.0"
 end

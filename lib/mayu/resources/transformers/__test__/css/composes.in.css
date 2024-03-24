@@ -1,6 +1,0 @@
-.foo {
-  color: #f0f;
-}
-.bar {
-  composes: foo;
-}

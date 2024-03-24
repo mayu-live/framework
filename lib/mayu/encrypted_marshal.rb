@@ -1,119 +1,95 @@
-# typed: true
 # frozen_string_literal: true
 
-require "sorbet-runtime"
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
+require "time"
 require "rbnacl"
+require "securerandom"
 require "brotli"
 
 module Mayu
   class EncryptedMarshal
+    DEFAULT_TTL_SECONDS = 10
+
+    Message = Data.define(:iss, :exp, :payload)
+
     class Error < StandardError
     end
-
-    class IssuedInTheFutureError < Error
-    end
-
     class ExpiredError < Error
     end
-
+    class IssuedInTheFutureError < Error
+    end
+    class EncryptError < Error
+    end
     class DecryptError < Error
     end
 
-    AdditionalData =
-      Data.define(:issued_at, :ttl) do
-        def self.create(ttl:, now: Time.now) = new(now.to_f, ttl)
-
-        def self.unpack(data)
-          data.unpack("D S") => [issued_at, ttl]
-          new(issued_at, ttl)
-        end
-
-        def pack = [issued_at, ttl].pack("D S")
-        def expired?(now: Time.now) = now > expires_at
-        def expires_at = Time.at(issued_at + ttl)
-      end
-
-    Message =
-      Data.define(:nonce, :ad, :ciphertext) do
-        def self.unpack(data)
-          data.unpack("S a*") => [nonce_length, data]
-          data.unpack("a#{nonce_length} S a*") => [nonce, ad_length, data]
-          data.unpack("a#{ad_length} a*") => [ad, ciphertext]
-          new(nonce, AdditionalData.unpack(ad), ciphertext)
-        end
-
-        def pack
-          packed_ad = ad.pack
-          [
-            nonce.bytesize,
-            nonce,
-            packed_ad.bytesize,
-            packed_ad,
-            ciphertext
-          ].pack("S a* S a* a*")
-        end
-
-        def expired?(now: Time.now) = ad.expired?(now:)
-        def expires_at = ad.expires_at
-
-        def verify_timestamps!(now: Time.now)
-          if ad.expired?(now:)
-            raise ExpiredError, "Message expired at #{ad.expires_at}"
-          end
-
-          if ad.issued_at > now.to_f
-            raise IssuedInTheFutureError,
-                  "Message was issued in the future, #{Time.at(ad.issued_at)}"
-          end
-
-          self
-        end
-      end
-
-    extend T::Sig
-
-    Cipher = RbNaCl::AEAD::ChaCha20Poly1305IETF
-
-    DEFAULT_TTL_SECONDS = 10
-
-    sig { returns(String) }
-    def self.random_key = RbNaCl::Random.random_bytes(Cipher::KEYBYTES)
-
-    sig { params(base_key: String, default_ttl: Integer).void }
-    def initialize(base_key, default_ttl: DEFAULT_TTL_SECONDS)
-      @cipher = Cipher.new(RbNaCl::Hash.sha256(base_key))
-      @default_ttl = default_ttl
+    def initialize(key, ttl: DEFAULT_TTL_SECONDS)
+      validate_ttl!(ttl)
+      @default_ttl_seconds = ttl
+      @box = RbNaCl::SimpleBox.from_secret_key(RbNaCl::Hash.sha256(key))
     end
 
-    sig { params(object: T.untyped, ttl: Integer).returns(String) }
-    def dump(object, ttl: @default_ttl) =
-      object
-        .then { Marshal.dump(_1) }
-        .then { Brotli.deflate(_1) }
-        .then { encrypt(_1, ttl:) }
+    def dump(payload, ttl: @default_ttl_seconds)
+      encode_message(Marshal.dump(payload), ttl: @default_ttl_seconds)
+    end
 
-    sig { params(encrypted: String).returns(T.untyped) }
-    def load(encrypted) =
-      encrypted
-        .then { Message.unpack(_1) }
-        .then { _1.verify_timestamps! }
-        .then { decrypt(_1) }
-        .then { Brotli.inflate(_1) }
-        .then { Marshal.load(_1) }
+    def load(data)
+      Marshal.load(decode_message(data))
+    end
 
     private
 
-    def encrypt(message, ttl:)
-      nonce = RbNaCl::Random.random_bytes(@cipher.nonce_bytes)
-      ad = AdditionalData.create(ttl:)
-      ciphertext = @cipher.encrypt(nonce, message, ad.pack)
-      Message.new(nonce, ad, ciphertext).pack
+    def encode_message(payload, ttl:)
+      build_message(payload, ttl:)
+        .then { Marshal.dump(_1) }
+        .then { Brotli.deflate(_1) }
+        .then { @box.encrypt(_1) }
     end
 
-    def decrypt(message)
-      @cipher.decrypt(message.nonce, message.ciphertext, message.ad.pack)
+    def build_message(payload, ttl:)
+      validate_ttl!(ttl)
+
+      now = Time.now.to_f
+
+      { iss: now, exp: now + ttl, payload: }
+    end
+
+    def decode_message(message)
+      message
+        .then { @box.decrypt(_1) }
+        .then { Brotli.inflate(_1) }
+        .then { Marshal.load(_1) }
+        .then { validate_message(_1) }
     rescue RbNaCl::CryptoError => e
       raise DecryptError, e.message
+    end
+
+    def validate_message(message)
+      message => { iss:, exp:, payload: }
+      now = Time.now.to_f
+      validate_iss!(now, iss)
+      validate_exp!(now, exp)
+      payload
+    end
+
+    def validate_ttl!(ttl)
+      raise ArgumentError, "ttl must be positive" if ttl < 0
+    end
+
+    def validate_iss!(now, iss)
+      if iss > now
+        raise IssuedInTheFutureError,
+              "The message was issued at #{Time.at(iss).iso8601}, which is in the future"
+      end
+    end
+
+    def validate_exp!(now, exp)
+      if exp < now
+        raise ExpiredError,
+              "The message expired at #{Time.at(exp).iso8601}, which is in the past"
+      end
     end
   end
 end

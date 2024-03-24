@@ -1,0 +1,21 @@
+add_asset(
+  Assets::Asset.build(
+    "my__element__gpwgkrgfmfm.js",
+    Base64.decode64(
+      "ZXhwb3J0IGRlZmF1bHQgY2xhc3MgZXh0ZW5kcyBIVE1MRWxlbWVudCB7CiAg
+c3RhdGljIG9ic2VydmVkQXR0cmlidXRlcyA9IFsiY29sb3IiLCAic2l6ZSJd
+OwoKICBjb25zdHJ1Y3RvcigpIHsKICAgIC8vIEFsd2F5cyBjYWxsIHN1cGVy
+IGZpcnN0IGluIGNvbnN0cnVjdG9yCiAgICBzdXBlcigpOwogIH0KCiAgY29u
+bmVjdGVkQ2FsbGJhY2soKSB7CiAgICBjb25zb2xlLmxvZygiQ3VzdG9tIGVs
+ZW1lbnQgYWRkZWQgdG8gcGFnZS4iKTsKICB9CgogIGRpc2Nvbm5lY3RlZENh
+bGxiYWNrKCkgewogICAgY29uc29sZS5sb2coIkN1c3RvbSBlbGVtZW50IHJl
+bW92ZWQgZnJvbSBwYWdlLiIpOwogIH0KCiAgYWRvcHRlZENhbGxiYWNrKCkg
+ewogICAgY29uc29sZS5sb2coIkN1c3RvbSBlbGVtZW50IG1vdmVkIHRvIG5l
+dyBwYWdlLiIpOwogIH0KCiAgYXR0cmlidXRlQ2hhbmdlZENhbGxiYWNrKG5h
+bWUsIG9sZFZhbHVlLCBuZXdWYWx1ZSkgewogICAgY29uc29sZS5sb2coYEF0
+dHJpYnV0ZSAke25hbWV9IGhhcyBjaGFuZ2VkLmApOwogIH0KfQo="
+    )
+  )
+)
+Default =
+  Mayu::CustomElement[:my__element__gpwgkrgfmfm, "my__element__gpwgkrgfmfm.js"]

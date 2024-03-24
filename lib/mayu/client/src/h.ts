@@ -1,7 +1,7 @@
 export default function h(
   type: string,
   children: any[] = [],
-  attrs: Record<string, any> = {}
+  attrs: Record<string, any> = {},
 ) {
   const el = document.createElement(type);
 

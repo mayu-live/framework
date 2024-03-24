@@ -1,169 +1,237 @@
-# typed: strict
+# frozen_string_literal: true
 
-require "terminal-table"
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
+require "rack/utils"
+require "pathname"
 
 module Mayu
   module Routes
-    extend T::Sig
-
-    class NotFoundError < StandardError
-    end
-
-    class Route < T::Struct
-      const :path, String
-      const :regexp, Regexp
-      const :layouts, T::Array[String]
-      const :template, String
-    end
-
-    class RouteMatch < T::Struct
-      const :params, T::Hash[Symbol, String]
-      const :layouts, T::Array[String]
-      const :template, String
-    end
-
-    EXTENSIONS = T.let(%w[.rb .haml].freeze, T::Array[String])
-
-    PAGE_FILENAME = "page"
-    LAYOUT_FILENAME = "layout"
-    NOT_FOUND_FILENAME = "404"
-
-    sig do
-      params(
-        root: String,
-        routes: T::Array[Route],
-        layouts: T::Array[String],
-        path: T::Array[String],
-        level: Integer
-      ).returns(T::Array[Route])
-    end
-    def self.build_routes(root, routes: [], layouts: [], path: [], level: 0)
-      dir = T.unsafe(File).join(root, *path)
-      return routes unless File.directory?(dir)
-
-      entries = Dir.entries(dir) - %w[. ..]
-
-      if layout = find_and_delete(entries, LAYOUT_FILENAME)
-        layouts += [T.unsafe(File).join(*path, layout)]
+    Segment =
+      Data.define(:name, :views, :children) do
+        def regexp = Regexp.escape(name)
+        def pathname(params) = name
       end
 
-      if page = find_and_delete(entries, PAGE_FILENAME)
-        routes.push(
-          Route.new(
-            path: path.join("/"),
-            regexp: path_to_regexp(path.join("/")),
-            layouts:,
-            template: T.unsafe(File).join(*path, page)
-          )
-        )
+    Group =
+      Data.define(:name, :views, :children) do
+        def regexp = nil
+        def pathname(params) = nil
       end
 
-      entries.each do |entry|
-        build_routes(
-          File.join(root),
-          routes:,
-          layouts:,
-          path: path + [entry],
-          level: level.succ
-        )
+    Param =
+      Data.define(:name, :param, :views, :children) do
+        def regexp = "(?<#{Regexp.escape(param)}>[^\/]+)"
+        def pathname(params) = params.fetch(param)
       end
 
-      if not_found = find_and_delete(entries, NOT_FOUND_FILENAME)
-        routes.push(
-          Route.new(
-            path: path.join("/"),
-            regexp: path_to_regexp([*path, "*"].join("/")),
-            layouts:,
-            template: T.unsafe(File).join(*path, not_found)
-          )
-        )
-      else
-        Console.logger.warn(self) { <<~EOF } if level.zero?
-            There is no #{NOT_FOUND_FILENAME} in the app root,
-            you should probably create one.
-            EOF
-      end
+    SplatParam =
+      Data.define(:name, :param, :views) do
+        def self.[](name, param, views, children)
+          raise "Splat param must be last" unless children.empty?
 
-      routes
-    end
-
-    sig { params(routes: T::Array[Route]).void }
-    def self.log_routes(routes)
-      Console
-        .logger
-        .info(self) do
-          Terminal::Table.new do |t|
-            t.headings =
-              %w[Path Template Layouts Regexp].map { "\e[1m#{_1}\e[0m" }
-            t.style = { all_separators: true, border: :unicode }
-
-            routes.each do |route|
-              t.add_row(
-                [
-                  "/#{route.path}",
-                  route.template,
-                  route.layouts.join("\n"),
-                  "/#{route.regexp.to_s}/"
-                ]
-              )
-            end
-          end
+          new(name, param, views)
         end
+        def regexp = "(?<#{Regexp.escape(param)}>.+)"
+        def pathname(params) = Array(params.fetch(param)).join("/")
+        def children = []
+      end
+
+    Root =
+      Data.define(:path, :views, :children) do
+        def regexp = nil
+        def pathname(params) = ""
+      end
+
+    Views = Data.define(:page, :layout, :template, :not_found)
+
+    Match = Data.define(:route, :params, :query)
+
+    module Utils
+      def self.parse_query(query)
+        query
+          .then { Rack::Utils.parse_nested_query(_1) }
+          .then { deep_symbolize_keys(_1) }
+      end
+
+      def self.deep_symbolize_keys(obj)
+        case obj
+        when Hash
+          obj
+            .transform_keys do |key|
+              case key
+              in /\A[[:digit:]+]\z/
+                key.to_i
+              in String
+                key.to_sym
+              else
+                key
+              end
+            end
+            .transform_values do |value|
+              deep_symbolize_keys(value)
+            end
+        else
+          obj
+        end
+      end
     end
 
-    sig do
-      params(routes: T::Array[Route], request_path: String).returns(RouteMatch)
-    end
-    def self.match_route(routes, request_path)
-      routes.each do |route|
-        match = route.regexp.match(request_path)
+    Route =
+      Data.define(:regexp, :segments, :views, :layouts) do
+        def match(request_path)
+          path, query = request_path.split("?", 2)
 
-        next unless match
-
-        return(
-          RouteMatch.new(
-            template: route.template,
-            layouts: route.layouts,
-            params:
+          if match = regexp.match(path)
+            Match[
+              self,
               match
                 .named_captures
                 .transform_keys(&:to_sym)
-                .transform_values(&:to_s)
-          )
-        )
+                .transform_values do
+                  case _1.split("/")
+                  in [one]
+                    one
+                  in many
+                    many
+                  end
+                end,
+              Utils.parse_query(query)
+            ]
+          end
+        end
+
+        def pathname(**params)
+          segments.map { _1.pathname(params) }.compact.join("/")
+        end
       end
 
-      raise NotFoundError,
-            "Page not found, and no 404 page either. You should probably create one."
-    end
+    Router =
+      Data.define(:root_dir, :routes) do
+        def self.build(root_dir)
+          new(root_dir, Builder.build(root_dir))
+        end
 
-    sig do
-      params(path: String, formats: T::Hash[Symbol, Regexp]).returns(Regexp)
-    end
-    def self.path_to_regexp(path, formats: {})
-      parts =
-        path
-          .delete_prefix("/")
-          .split("/")
-          .map do |part|
-            case part
-            when "*"
-              ".+"
-            when /\A:(?<var>\w+)\Z/
-              var = Regexp.escape($~[:var])
-              "(?<#{var}>[^/]+)"
-            else
-              Regexp.escape(part).to_s
+        def match(path)
+          routes.each do |route|
+            if match = route.match(path)
+              return match
             end
           end
 
-      Regexp.new('\A\/' + parts.join('\/') + '\Z')
-    end
+          nil
+        end
 
-    sig { params(a: T::Array[String], name: String).returns(T.nilable(String)) }
-    def self.find_and_delete(a, name)
-      EXTENSIONS.find do |extension|
-        a.delete("#{name}#{extension}")&.tap { return _1 }
+        def all_templates
+          set = Set.new
+
+          routes.each do |route|
+            set.add(route.views.page)
+            route.layouts.each do |layout|
+              set.add(layout)
+            end
+          end
+
+          set
+        end
+      end
+
+    class Builder
+      def self.build(root_dir)
+        new(root_dir).build
+      end
+
+      def initialize(root_dir)
+        @root_dir = root_dir
+      end
+
+      def build
+        root =
+          Root.new(
+            @root_dir,
+            build_page(@root_dir),
+            traverse_children(@root_dir)
+          )
+
+        routes = []
+
+        build_routes(root) { |route| routes << route if route.views.page }
+
+        routes
+      end
+
+      def build_routes(node, parents = [], &block)
+        segments = [*parents, node].compact
+
+        yield(
+          Route[
+            Regexp.compile(
+              '\A/' + segments.map(&:regexp).compact.join('\/') + '\z'
+            ),
+            segments,
+            node.views,
+            segments.map(&:views).map(&:layout).compact
+          ]
+        )
+
+        node.children.each { |child| build_routes(child, segments, &block) }
+      end
+
+      def build_page(dir)
+        views = { page: nil, layout: nil, template: nil, not_found: nil }
+
+        Dir
+          .entries(dir)
+          .map do |entry|
+            path =
+              Pathname
+                .new(File.join(dir, entry))
+                .relative_path_from(@root_dir)
+                .to_s
+
+            case entry
+            in "page.haml"
+              views[:page] = path
+            in "layout.haml"
+              views[:layout] = path
+            in "template.haml"
+              views[:template] = path
+            in "not-found.haml"
+              views[:not_found] = path
+            else
+              nil
+            end
+          end
+
+        Views.new(**views)
+      end
+
+      def traverse_children(dir)
+        Dir
+          .each_child(dir)
+          .map do |entry|
+            path = File.join(dir, entry)
+
+            if File.directory?(path)
+              case entry
+              in /\A\::(.*)\Z/ # [param]
+                SplatParam[
+                  entry,
+                  $~[1],
+                  build_page(path),
+                  traverse_children(path)
+                ]
+              in /\A\:(.*)\Z/ # [param]
+                Param[entry, $~[1], build_page(path), traverse_children(path)]
+              in /\A\((.*)\)\Z/ # (group)
+                Group[entry, build_page(path), traverse_children(path)]
+              else
+                Segment[entry, build_page(path), traverse_children(path)]
+              end
+            end
+          end
+          .compact
       end
     end
   end
