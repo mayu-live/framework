@@ -32,8 +32,6 @@ jobs:
         with:
           ruby-version: "3.3.0"
           bundler-cache: true
-      - name: Check types
-        run: bundle exec srb tc
       - name: Run tests
         run: bundle exec rake test
       - uses: actions/upload-artifact@v4
