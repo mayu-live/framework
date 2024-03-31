@@ -53,7 +53,7 @@ module Mayu
                 source:,
                 source_path: relative_path,
                 source_line: 1,
-                content_hash: "x",
+                content_hash: RbNaCl::Hash.sha256(source),
                 factory:,
                 transform_elements_to_classes: false,
                 enable_new_helper_ident: false
@@ -467,8 +467,7 @@ module Mayu
                 end
               end
 
-              setup =
-              setup.map { _1.accept(self) }
+              setup = setup.map { _1.accept(self) }
               render =
                 render
                   .then { group_control_statements(_1) }
@@ -789,7 +788,12 @@ module Mayu
                 in [line]
                   @builder.string_literal(line)
                 in [*lines]
-                  id = SecureRandom.alphanumeric
+                  id =
+                    RbNaCl::Hash
+                      .sha256(@options.content_hash + text)
+                      .unpack("h*")
+                      .join
+
                   @builder.Heredoc(
                     @builder.HeredocBeg("<<~PLAIN_#{id}"),
                     @builder.HeredocEnd("PLAIN_#{id}"),
@@ -971,7 +975,9 @@ module Mayu
                 SyntaxTree
                   .parse(source)
                   .statements
-                  .accept(StateAndPropsTransformer.new(@provides_context).visitor)
+                  .accept(
+                    StateAndPropsTransformer.new(@provides_context).visitor
+                  )
 
               if mark_sourcemap
                 statements

@@ -10,12 +10,11 @@ class Test < Mayu::Component::Base
     [
       H[
         :pre,
-        <<~PLAIN_WHwlMSypTpPSucBr,
+        <<~PLAIN_0d28776580b49b522a44d225bc27b05f207b810a69b97e9d06bda26431e0c9f3,
 hello
 
 world
-
-PLAIN_WHwlMSypTpPSucBr
+PLAIN_0d28776580b49b522a44d225bc27b05f207b810a69b97e9d06bda26431e0c9f3
         **self.class.merge_props({ class: :__pre })
       ],
       H[:p, "asd", **self.class.merge_props({ class: :__p })]

@@ -95,22 +95,35 @@ module Mayu
 
           include SyntaxTree::DSL
 
-          COLLECTIONS = { SyntaxTree::IVar => "state", SyntaxTree::GVar => "props" }
+          COLLECTIONS = {
+            SyntaxTree::IVar => "state",
+            SyntaxTree::GVar => "props"
+          }
 
           def self.transform(source, path, using: [], component_base_class:)
             transformer = new
             puts "\e[33m#{source}\e[0m"
-            SyntaxTree.parse(component_base_class).statements.body => [component_base_path]
+            SyntaxTree.parse(component_base_class).statements.body => [
+              component_base_path
+            ]
 
-            using = using.map do
-              SyntaxTree.parse(_1).statements.body => [mod]
-              mod
-            end
+            using =
+              using.map do
+                SyntaxTree.parse(_1).statements.body => [mod]
+                mod
+              end
 
             SyntaxTree
               .parse(source)
               .accept(transformer.heredoc_html)
-              .then { transformer.wrap_in_class(_1, path, component_base_path:, using:) }
+              .then do
+                transformer.wrap_in_class(
+                  _1,
+                  path,
+                  component_base_path:,
+                  using:
+                )
+              end
               .accept(transformer.frozen_strings)
               .then { Formatter.format(source, _1) }
           end
@@ -118,7 +131,8 @@ module Mayu
           def frozen_strings = FrozenStringLiteralsVisitor.new
 
           def wrap_in_class(program, path, component_base_path:, using:)
-            class_name = File.basename(path, ".*").sub(/\A[[:lower:]]/) { _1.upcase }
+            class_name =
+              File.basename(path, ".*").sub(/\A[[:lower:]]/) { _1.upcase }
 
             statements =
               Statements(
@@ -134,7 +148,13 @@ module Mayu
                             Period("."),
                             Ident("module_path"),
                             nil,
-                            BodyStmt(Statements([VarRef(Kw("__FILE__"))]), nil, nil, nil, nil)
+                            BodyStmt(
+                              Statements([VarRef(Kw("__FILE__"))]),
+                              nil,
+                              nil,
+                              nil,
+                              nil
+                            )
                           ),
                           using_statements(using),
                           program.statements.body
@@ -147,70 +167,59 @@ module Mayu
                     )
                   ),
                   unless class_name == "Default"
-                    Assign(
-                      VarRef(Const("Default")),
-                      VarRef(Const(class_name))
-                    )
+                    Assign(VarRef(Const("Default")), VarRef(Const(class_name)))
                   end,
                   MethodAddBlock(
                     CallNode(
-                      ConstPathRef(
-                        VarRef(Const("Default")),
-                        Const("Styles")
-                      ),
+                      ConstPathRef(VarRef(Const("Default")), Const("Styles")),
                       Period("."),
                       Ident("each"),
                       nil
                     ),
                     BlockNode(
-                      BlockVar(
-                        Params(
-                          [],
-                          [],
-                          [],
-                          [],
-                          [],
-                          [],
-                          nil
-                        ),
-                        nil
-                      ),
+                      BlockVar(Params([], [], [], [], [], [], nil), nil),
                       nil,
-                      Statements([
-                        CallNode(
-                          nil,
-                          nil,
-                          Ident("add_asset"),
-                          ArgParen(
-                            Args([
-                              CallNode(
-                                ConstPathRef(
-                                  VarRef(Const("Assets")),
-                                  Const("Asset")
-                                ),
-                                Period("."),
-                                Ident("build"),
-                                ArgParen(
-                                  Args([
-                                    CallNode(
-                                      VarRef(Ident("_1")),
-                                      Period("."),
-                                      Ident("filename"),
-                                      nil
+                      Statements(
+                        [
+                          CallNode(
+                            nil,
+                            nil,
+                            Ident("add_asset"),
+                            ArgParen(
+                              Args(
+                                [
+                                  CallNode(
+                                    ConstPathRef(
+                                      VarRef(Const("Assets")),
+                                      Const("Asset")
                                     ),
-                                    CallNode(
-                                      VarRef(Ident("_1")),
-                                      Period("."),
-                                      Ident("content"),
-                                      nil
-                                    ),
-                                  ])
-                                ),
+                                    Period("."),
+                                    Ident("build"),
+                                    ArgParen(
+                                      Args(
+                                        [
+                                          CallNode(
+                                            VarRef(Ident("_1")),
+                                            Period("."),
+                                            Ident("filename"),
+                                            nil
+                                          ),
+                                          CallNode(
+                                            VarRef(Ident("_1")),
+                                            Period("."),
+                                            Ident("content"),
+                                            nil
+                                          )
+                                        ]
+                                      )
+                                    )
+                                  )
+                                ]
                               )
-                            ])
+                            )
                           )
-                        )
-                      ])
+                        ]
+                      )
                     )
                   )
                 ]
@@ -219,13 +228,7 @@ module Mayu
           end
 
           def using_statements(using)
-            using.map do
-              Command(
-                Ident("using"),
-                Args([_1]),
-                nil
-              )
-            end
+            using.map { Command(Ident("using"), Args([_1]), nil) }
           end
 
           def heredoc_html
@@ -247,7 +250,8 @@ module Mayu
                 parser = XMLUtils::Parser.new
                 parser.parse(tokenizer.tokens.dup)
 
-                statements = parser.tokens.map { xml_token_to_ast_node(_1) }.compact
+                statements =
+                  parser.tokens.map { xml_token_to_ast_node(_1) }.compact
 
                 Formatter.format("", Statements(statements))
 
@@ -278,7 +282,10 @@ module Mayu
             in { type: :var_ref, value: /\A@(.*)/ }
               ARef(call_self("state"), Args([SymbolLiteral(Ident($~[1]))]))
             in { type: :var_ref, value: /\A\$(.*)/ }
-              ARef(VarRef(IVar("@__props")), Args([SymbolLiteral(Ident($~[1]))]))
+              ARef(
+                VarRef(IVar("@__props")),
+                Args([SymbolLiteral(Ident($~[1]))])
+              )
             in type: :newline
               nil
             in { type: :string, value: }

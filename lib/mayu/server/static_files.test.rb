@@ -9,33 +9,29 @@ require "minitest/autorun"
 require_relative "static_files"
 
 class Mayu::Server::StaticFiles::Test < Minitest::Test
+  def setup
+    @root = File.join(__dir__, "..", "..", "..", "example", "app")
+    @static_files = Mayu::Server::StaticFiles.new(@root)
+  end
+
   def test_static_files
-    root = File.join(__dir__, "..", "..", "..", "app")
-    static_files = Mayu::Server::StaticFiles.new(root)
-
-    robots = static_files.get("robots.txt")
-
+    robots = @static_files.get("robots.txt")
     assert_equal("text/plain", robots.content_type)
   end
 
   def text_nonexistant
-    root = File.join(__dir__, "..", "..", "..", "app")
-    static_files = Mayu::Server::StaticFiles.new(root)
-
-    assert_nil static_files.get('nonexistant')
+    assert_nil @static_files.get("nonexistant")
   end
 
   def test_getting_out_of_root
-    root = File.join(__dir__, "..", "..", "..", "app")
-    static_files = Mayu::Server::StaticFiles.new(root)
-
-    assert_nil static_files.get('../Gemfile.lock')
+    assert_nil @static_files.get("../Gemfile.lock")
   end
 end
 
 class Mayu::Server::StaticFiles::StaticFile::Test < Minitest::Test
   def test_static_file1
-    asset = Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.txt", "content")
+    asset =
+      Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.txt", "content")
 
     assert_equal("text/plain", asset.content_type)
     assert_equal(:br, asset.encoded_content.encoding)
@@ -44,11 +40,15 @@ class Mayu::Server::StaticFiles::StaticFile::Test < Minitest::Test
       "/path/to/foo.txt?yqy-cFH3rN6EyrcsWbBdog-NE1tHRkLWWO1sdhQVMNk",
       asset.filename
     )
-    assert_equal(Digest::SHA256.digest(Brotli.deflate("content")), asset.content_hash)
+    assert_equal(
+      Digest::SHA256.digest(Brotli.deflate("content")),
+      asset.content_hash
+    )
   end
 
   def test_static_file2
-    asset = Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.png", "content")
+    asset =
+      Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.png", "content")
 
     assert_equal("image/png", asset.content_type)
     assert_nil(asset.encoded_content.encoding)
