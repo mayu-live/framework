@@ -3,11 +3,9 @@
 # frozen_string_literal: true
 
 require "bundler/setup"
-require "sorbet-runtime"
-
-require_relative "../lib/mayu/resources/transformers/haml"
-
 require "rouge"
+
+require_relative "../lib/mayu/modules/loaders"
 
 DEFAULT_LINE_NUMBERS = true
 DEFAULT_COLORS = true
@@ -16,21 +14,26 @@ module Main
   def self.main(source, source_path, line_numbers: DEFAULT_LINE_NUMBERS, colors: DEFAULT_COLORS)
     formatter = CodeFormatter.new(line_numbers:, colors:)
 
-    puts "\e[1mInput:\e[0;2m #{source_path}\e[0m"
-    puts formatter.format(source, Rouge::Lexers::Haml)
+    loading_file = Mayu::Modules::Loaders::LoadingFile.new(
+      root: Dir.pwd,
+      path: ARGF.filename,
+      source: ARGF.read,
+      digest: nil
+    ).load_source
 
-    transformed = Mayu::Resources::Transformers::Haml.transform(
-      Mayu::Resources::Transformers::Haml::TransformOptions.new(
-        source:,
-        source_path:,
-        source_line: 1,
-      )
-    ).output
+    puts "\e[1mInput:\e[0;2m #{source_path}\e[0m"
+    puts formatter.format(loading_file.source.strip, Rouge::Lexers::Haml)
+
+    loading_file = Mayu::Modules::Loaders::Haml[
+      component_base_class: "Mayu::Component::Base",
+      using: ["Mayu::Component::CSSUnits::Refinements"],
+      factory: "H"
+    ].call(loading_file)
 
     puts "\e[1mOutput:\e[0m"
 
-    formatter.handle_parse_error(transformed) do
-      puts formatter.format(transformed, Rouge::Lexers::Ruby)
+    formatter.handle_parse_error(loading_file.source.strip) do
+      puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
     end
   end
 
