@@ -69,7 +69,6 @@ having to configure anything!
   - [Server](#server)
     - [Development server](#development-server)
     - [Production server](#production-server)
-  - [Static typing](#static-typing)
 - [Contributing](#contributing)
 
 # Getting started
@@ -530,8 +529,6 @@ rather than to have a separate tree for tests.
 
 It's also preferred to test things on a higher level, and only write unit
 tests for specific edge cases and trickier situations.
-[Sorbet](https://sorbet.org/) is pretty good at finding errors.
-If the higher level tests pass, then everything works as expected.
 
 The example app could also be considered to be a test.
 It should always work and be updated to use the latest features.
@@ -581,13 +578,6 @@ parses all inputs and generates static files.
 hot_swap = false
 self_signed_cert = false
 ```
-
-## Static typing
-
-Most files are strictly typed with [Sorbet](https://sorbet.org/).
-
-Some aren't strictly typed yet, but the goal is to enable
-strict typechecking everywhere.
 
 # Contributing
 
