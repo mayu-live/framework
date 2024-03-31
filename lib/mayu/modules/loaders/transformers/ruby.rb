@@ -102,7 +102,7 @@ module Mayu
 
           def self.transform(source, path, using: [], component_base_class:)
             transformer = new
-            puts "\e[33m#{source}\e[0m"
+            # puts "\e[33m#{source}\e[0m"
             SyntaxTree.parse(component_base_class).statements.body => [
               component_base_path
             ]
