@@ -27,15 +27,16 @@ module Mayu
       end
     end
 
-  MergedStyleSheet = Data.define(:stylseheets) do
-    def [](*class_names)
-      stylesheets.map { _1[*class_names] }.flatten.compact.uniq
-    end
+  MergedStyleSheet =
+    Data.define(:stylesheets) do
+      def [](*class_names)
+        stylesheets.map { _1[*class_names] }.flatten.compact.uniq
+      end
 
-    def each(&)
-      stylesheets.each(&)
+      def each(&)
+        stylesheets.each(&)
+      end
     end
-  end
 
   StyleSheet =
     Data.define(:source_filename, :content_hash, :classes, :content) do
@@ -44,7 +45,7 @@ module Mayu
       end
 
       def filename
-         source_filename + ".css"
+        source_filename + ".css"
       end
 
       def each(&)
@@ -91,11 +92,7 @@ module Mayu
       end
 
       def merge(other)
-        if other
-          MergedStyleSheet[stylesheets: [self, other]]
-        else
-          self
-        end
+        other ? MergedStyleSheet[stylesheets: [self, other]] : self
       end
     end
 end
