@@ -6,10 +6,13 @@ class Test < Mayu::Component::Base
   Self = self
   FILENAME = __FILE__
   Styles = Mayu::NullStyleSheet[self]
-  # SourceMapMark:2:ZGVmIGluY3JlYXNlX2NvbnRleHRfdmFy
-  def increase_context_var
-    # SourceMapMark:3:QEBjb250ZXh0X3ZhciArPSAx # SourceMapMark:3:QEBjb250ZXh0X3ZhciArPSAx
-    @__context[:context_var] += 1
+  begin
+    # SourceMapMark:2:ZGVmIGluY3JlYXNlX2NvbnRleHRfdmFy
+    def increase_context_var
+      # SourceMapMark:3:QEBjb250ZXh0X3ZhciArPSAx # SourceMapMark:3:QEBjb250ZXh0X3ZhciArPSAx
+      @__context[:context_var] += 1
+    end
+    nil
   end
   public def render
     H[

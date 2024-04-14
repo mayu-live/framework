@@ -126,6 +126,12 @@ module Mayu
               end
               .accept(transformer.frozen_strings)
               .then { Formatter.format(source, _1) }
+          rescue SyntaxTree::Parser::ParseError => e
+            puts "\e[1;31mError parsing: #{path}\e[0m"
+            line = source.lines.to_a[e.lineno.pred].dup
+            line[e.column, 0] = "\e[3m"
+            puts "#{e.lineno}: #{line}\e[0m"
+            raise
           end
 
           def frozen_strings = FrozenStringLiteralsVisitor.new

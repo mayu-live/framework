@@ -1,5 +1,5 @@
 :ruby
-  Button = import("/app/components/Form/Button")
+  Button = import("/components/Form/Button")
 
   MESSAGES = [
     "Click me!",
@@ -9,17 +9,18 @@
     "LOL",
   ]
 
-  def self.get_initial_state(**) =
-    { x: 0, y: 0, count: 0 }
+  def initialize
+    @x = 0
+    @y = 0
+    @count = 0
+  end
 
   def handle_click
     radius = rand * 200
 
-    update(
-      count: state[:count].succ,
-      x: Math.cos(Math::PI * 2 * rand) * radius,
-      y: Math.sin(Math::PI * 2 * rand) * radius,
-    )
+    @count += 1
+    @x = Math.cos(Math::PI * 2 * rand) * radius
+    @y = Math.sin(Math::PI * 2 * rand) * radius
   end
 
 :css
@@ -27,10 +28,8 @@
     transition: transform 0.2s;
   }
 
-:ruby
-  state => { count:, x:, y: }
-  transform = "translate(#{x}px, #{y}px)"
-  style = { transform:, transition: "all .2s" }
-
-%Button(style=style onclick=handle_click)
-  = MESSAGES[state[:count] % MESSAGES.size]
+%Button(onclick=handle_click){
+  transform: "translate(#{@x}px, #{@y}px)",
+  transition: "all 200ms"
+}
+  = MESSAGES[@count % MESSAGES.size]

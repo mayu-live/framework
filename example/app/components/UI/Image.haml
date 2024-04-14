@@ -15,19 +15,17 @@
   }
 
 :ruby
-  image = props.fetch(:image)
-
   loading = $lazy && "lazy"
-  decoding = props.fetch(:decoding, "async")
+  decoding = $decoding || "async"
 
-  alt = props.fetch(:alt) do
+  unless $alt
     Console.logger.warn(self, "Missing alt-attribute!")
   end
 
-%img(class=$class style=inline_style loading=loading decoding=decoding alt=alt){
-  src: image.src,
-  sizes: image.sizes,
-  srcset: image.srcset,
-  width: image.original.width,
-  height: image.original.height,
+%img(class=$class style=inline_style loading=loading decoding=decoding alt=$alt){
+  src: $image.src,
+  sizes: $image.sizes,
+  srcset: $image.srcset,
+  width: $image.width,
+  height: $image.height,
 }

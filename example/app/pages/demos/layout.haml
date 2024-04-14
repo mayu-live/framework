@@ -1,8 +1,8 @@
 :ruby
-  PageLayout = import("/app/components/Layout/FullWidthPageWithMenu")
-  Menu = import("/app/components/Layout/Menu")
-  MenuItem = import("/app/components/Layout/MenuItem")
-  Breadcrumbs = import("/app/components/UI/Breadcrumbs")
+  PageLayout = import("/components/Layout/FullWidthPageWithMenu")
+  Menu = import("/components/Layout/Menu")
+  MenuItem = import("/components/Layout/MenuItem")
+  Breadcrumbs = import("/components/UI/Breadcrumbs")
 
   LINKS = {
     "/demos" => "Demos",
@@ -21,9 +21,7 @@
   }
 
   def breadcrumb_links
-    props => { request: { path: } }
-
-    splat = split_path(path)
+    splat = split_path($path)
 
     LINKS.select {
       s = split_path(_1)

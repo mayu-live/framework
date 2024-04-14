@@ -1,5 +1,5 @@
 :ruby
-  Icon = import("/app/components/UI/Icon")
+  Icon = import("/components/UI/Icon")
 :css
   article {
     display: grid;
@@ -21,10 +21,8 @@
   .content {
     font-size: .9em;
   }
-:ruby
-  props => icon:, title:
 %article
-  %Icon(name=icon color=$icon_color)
+  %Icon(name=$icon color=$icon_color)
   .content
-    %h3= title
+    %h3= $title
     %slot

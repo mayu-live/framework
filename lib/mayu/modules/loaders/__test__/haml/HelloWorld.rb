@@ -31,6 +31,7 @@ CSS
       # SourceMapMark:2:ZGVmIGluaXRpYWxpemU= # SourceMapMark:7:QGNvdW50ICs9IDE=
       update!(@count += 1)
     end
+    nil
   end
   public def render
     Mayu::Descriptors::H[

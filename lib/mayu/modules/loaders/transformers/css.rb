@@ -19,7 +19,9 @@ module Mayu
           def self.transform(source_path, source)
             Mayu::CSS
               .transform(source_path, source)
-              .then { new(source_path, _1).build_inline_ast(assign_default: true) }
+              .then do
+                new(source_path, _1).build_inline_ast(assign_default: true)
+              end
               .then { SyntaxTree::Formatter.format("", _1) }
           end
 
@@ -51,8 +53,14 @@ module Mayu
                   [
                     BareAssocHash(
                       [
-                        Assoc(Label("source_filename:"), StringLiteral([TStringContent(@source_path)], '"')),
-                        Assoc(Label("content_hash:"), build_content_hash_string),
+                        Assoc(
+                          Label("source_filename:"),
+                          StringLiteral([TStringContent(@source_path)], '"')
+                        ),
+                        Assoc(
+                          Label("content_hash:"),
+                          build_content_hash_string
+                        ),
                         Assoc(Label("classes:"), build_classes_hash),
                         Assoc(Label("content:"), build_code_heredoc)
                       ]
@@ -65,10 +73,7 @@ module Mayu
               [
                 *build_imports,
                 if assign_default
-                  Assign(
-                    VarField(Const("Default")),
-                    VarRef(new_style_sheet)
-                  )
+                  Assign(VarField(Const("Default")), VarRef(new_style_sheet))
                 else
                   new_style_sheet
                 end
@@ -123,7 +128,11 @@ module Mayu
               .sort_by(&:first)
               .map do |key, value|
                 Assoc(
-                  Label("#{key}:"),
+                  if key.match(/\A[A-Za-z0-9_]\z/)
+                    Label("#{key}:")
+                  else
+                    DynaSymbol([TStringContent(key)], '"')
+                  end,
                   StringLiteral([TStringContent(value.to_s)], '"')
                 )
               end

@@ -1,11 +1,11 @@
 :ruby
-  PageLayout = import("/app/components/Layout/FullWidthPageWithMenu")
-  Heading = import("/app/components/Layout/Heading")
-  Menu = import("/app/components/Layout/Menu")
-  MenuItem = import("/app/components/Layout/MenuItem")
+  PageLayout = import("/components/Layout/FullWidthPageWithMenu")
+  Heading = import("/components/Layout/Heading")
+  Menu = import("/components/Layout/Menu")
+  MenuItem = import("/components/Layout/MenuItem")
   Details = import("./Details")
-  Breadcrumbs = import("/app/components/UI/Breadcrumbs")
-  UnderConstruction = import("/app/components/UnderConstruction")
+  Breadcrumbs = import("/components/UI/Breadcrumbs")
+  UnderConstruction = import("/components/UnderConstruction")
 
   LINKS = {
     "/docs" => "Documentation",
@@ -35,9 +35,7 @@
   private
 
   def breadcrumb_links
-    props => { request: { path: } }
-
-    splat = split_path(path)
+    splat = split_path($path)
 
     LINKS.select {
       s = split_path(_1)
@@ -49,11 +47,9 @@
     path.split("/").reject(&:empty?)
   end
 
-:ruby
-  props => request: { path: }
 %PageLayout
   #page
-    %UnderConstruction(slot="after_heading" path=path)
+    %UnderConstruction(slot="after_heading" path=$path)
     %slot
 
   %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)

@@ -1,12 +1,11 @@
 :ruby
-  def self.get_initial_state(**)
-    time = Time.now.utc.round + 0.5
-    { hour: time.hour, min: time.min, sec: time.sec }
+  def initialize
+    @time = Time.now.utc.round + 0.5
   end
 
   def mount
     loop do
-      update(self.class.get_initial_state)
+      @time = Time.now.utc.round + 0.5
       sleep 0.5
     end
   end
@@ -27,13 +26,13 @@
     %g
       - x1, y1, x2 = [0, 0, 0]
       - y2 = -50
-      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] / 12.0) }
+      - style = { transform: format("rotateZ(%.5fturn)", @time.hour / 12.0) }
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="6"){style:}
       - y2 = -60
-      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] + state[:min] / 60.0) }
+      - style = { transform: format("rotateZ(%.5fturn)", @time.hour + @time.min / 60.0) }
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="3"){style:}
       - y2 = -80
-      - style = { transform: format("rotateZ(%.5fturn)", state[:hour] * 60.0 + state[:min] + state[:sec] / 60.0) }
+      - style = { transform: format("rotateZ(%.5fturn)", @time.hour * 60.0 + @time.min + @time.sec / 60.0) }
       %line.hand(x1=x1 y1=y1 x2=x2 y2=y2 stroke=stroke stroke-width="1"){style:}
     %circle(cx=0 cy=0 r=3 fill=stroke)
     %g

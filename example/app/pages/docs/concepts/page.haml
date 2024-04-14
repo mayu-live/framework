@@ -1,32 +1,17 @@
 :ruby
-  Card = import("/app/components/UI/Card")
-  Image = import("/app/components/UI/Image")
-  Link = import("/app/components/UI/Link")
-  YouTubeVideo = import("/app/components/UI/YouTubeVideo")
+  Card = import("/components/UI/Card")
+  Image = import("/components/UI/Image")
+  Link = import("/components/UI/Link")
+  YouTubeVideo = import("/components/UI/YouTubeVideo")
   Markdown = import("../Markdown")
-  NoCache = image("./no-cache-fs8.png")
-  DiskCache = image("./disk-cache-fs8.png")
-  MemoryCache = image("./memory-cache-fs8.png")
-  Metrics = image("./metrics-fs8.png")
-  HotReload = image("./hot-reload-fs8.png")
-  GlobalScale = image("./global-scale-fs8.png")
-  Haml = image("./haml-fs8.png")
-:css
-  Card {
-    margin: 2em;
-  }
+  NoCache = import("./no-cache-fs8.png")
+  DiskCache = import("./disk-cache-fs8.png")
+  MemoryCache = import("./memory-cache-fs8.png")
+  Metrics = import("./metrics-fs8.png")
+  HotReload = import("./hot-reload-fs8.png")
+  GlobalScale = import("./global-scale-fs8.png")
+  Haml = import("./haml-fs8.png")
 
-  figure {
-    margin: 0;
-  }
-
-  figcaption {
-    margin: .5em;
-  }
-
-  Image {
-    display: block;
-  }
 %article
   %Markdown
     :plain
@@ -191,3 +176,20 @@
       [CSS Module Scripts](https://web.dev/css-module-scripts/)
       should probably be used for loading CSS as soon as
       [Firefox ships support for Import Assertions](https://bugzilla.mozilla.org/show_bug.cgi?id=1777526)
+
+:css
+  Card {
+    margin: 2em;
+  }
+
+  figure {
+    margin: 0;
+  }
+
+  figcaption {
+    margin: .5em;
+  }
+
+  Image {
+    display: block;
+  }

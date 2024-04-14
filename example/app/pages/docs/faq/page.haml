@@ -1,63 +1,63 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
-  Details = import("/app/components/UI/Details")
-  Link = import("/app/components/UI/Link")
+  Heading = import("/components/Layout/Heading")
+  Details = import("/components/UI/Details")
+  Link = import("/components/UI/Link")
+
+%Heading(level=2) Frequently asked questions
+
+%p Here are some questions people have asked.
+
+%Details.details(summary="Will not latency be a problem?")
+  %p
+    It depends. For a regular web page, users would probably not
+    notice any more latency than with any other framework, but
+    if you have a lot of interactive components, it might be
+    annoying for the user if they are on a stable connection.
+  %p
+    Many modern websites today require a connection to work at all.
+    Mayu is designed to be deployed on servers near your users,
+    that could be on
+    %Link(href="https://fly.io/")< Fly.io
+    or an on-premise Raspberry PI.
+  %p
+    If the ping time is around 50-60ms, latency is barely noticable.
+    100ms is manageable, and if it's higher it can get annoying.
+  %p
+    There are a few ways to make things seem faster, by preloading stuff
+    while hiding them (such as the
+    %Link(href="/demos/form")< form example
+    ), and using other HTML/CSS-tricks.
+  %p
+    In the future, it would be nice to have support for
+    %Link(href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements")< Custom elements
+    , but no work has been done on this yet.
+
+%Details.details(summary="What happens to sessions during deploy?")
+  %p
+    Clients will be transferred automatically to a new server.
+  %p
+    Before a server shuts down, it will pause all sessions,
+    serialize and encrypt them, and send them to each client.
+  %p
+    The client will then send the encrypted session to another
+    server which will decrypt and verify the data before deserializing
+    and resuming the session.
+
+%Details.details(summary="What if the user loses their connection?")
+  %p
+    Usually they will just reconnect and the session will be resumed.
+    I don't know how this works if an app is deployed to different regions.
+  %p
+    Sessions are cleared after a few seconds of disconnectivity,
+    so if the session can't be found, the user will get an error
+    dialog and the only option is to reload the page.
+  %p
+    %Link(href="https://github.com/mayu-live/framework/issues/20")> Issue #20
+    could remove the need to reload the page by serializing the current
+    browser DOM and deserializing it on the server and then use that as
+    a reference for patching.
 
 :css
   Details {
     margin: 2em 1em;
   }
-%article
-  %Heading(level=2) Frequently asked questions
-
-  %p Here are some questions people have asked.
-
-  %Details.details(summary="Will not latency be a problem?")
-    %p
-      It depends. For a regular web page, users would probably not
-      notice any more latency than with any other framework, but
-      if you have a lot of interactive components, it might be
-      annoying for the user if they are on a stable connection.
-    %p
-      Many modern websites today require a connection to work at all.
-      Mayu is designed to be deployed on servers near your users,
-      that could be on
-      %Link(href="https://fly.io/")< Fly.io
-      or an on-premise Raspberry PI.
-    %p
-      If the ping time is around 50-60ms, latency is barely noticable.
-      100ms is manageable, and if it's higher it can get annoying.
-    %p
-      There are a few ways to make things seem faster, by preloading stuff
-      while hiding them (such as the
-      %Link(href="/demos/form")< form example
-      ), and using other HTML/CSS-tricks.
-    %p
-      In the future, it would be nice to have support for
-      %Link(href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements")< Custom elements
-      , but no work has been done on this yet.
-
-  %Details.details(summary="What happens to sessions during deploy?")
-    %p
-      Clients will be transferred automatically to a new server.
-    %p
-      Before a server shuts down, it will pause all sessions,
-      serialize and encrypt them, and send them to each client.
-    %p
-      The client will then send the encrypted session to another
-      server which will decrypt and verify the data before deserializing
-      and resuming the session.
-
-  %Details.details(summary="What if the user loses their connection?")
-    %p
-      Usually they will just reconnect and the session will be resumed.
-      I don't know how this works if an app is deployed to different regions.
-    %p
-      Sessions are cleared after a few seconds of disconnectivity,
-      so if the session can't be found, the user will get an error
-      dialog and the only option is to reload the page.
-    %p
-      %Link(href="https://github.com/mayu-live/framework/issues/20")> Issue #20
-      could remove the need to reload the page by serializing the current
-      browser DOM and deserializing it on the server and then use that as
-      a reference for patching.

@@ -1,4 +1,4 @@
-%button{style: { __button_color: props.fetch(:color, "var(--accent-color)")  }, **props.except(:color)}
+%button{style: { __button_color: $color || "var(--accent-color)"  }, **$*.except(:color)}
   %slot
 
 :css

@@ -1,0 +1,14 @@
+:ruby
+  def initialize
+    @foo = $foo
+  end
+
+:ruby
+  classname = $class || :default
+
+%p(class=classname) hello
+
+:css
+  .default {
+    font-weight: bold;
+  }

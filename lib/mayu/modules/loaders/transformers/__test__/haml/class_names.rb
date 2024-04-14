@@ -13,6 +13,7 @@ class Test < Mayu::Component::Base
     id = "check123"
     # SourceMapMark:4:cHJvcHMgPSB7IGxhYmVsOiAibGFiZWwiLCBhc2Q6ICJhc2QiIH0=
     props = { label: "label", asd: "asd" }
+    nil
   end
   public def render
     H[

@@ -6,10 +6,13 @@ class Test < Mayu::Component::Base
   Self = self
   FILENAME = __FILE__
   Styles = Mayu::NullStyleSheet[self]
-  # SourceMapMark:2:ZGVmIGhhbmRsZV9jbGljayhlKQ==
-  def handle_click(e)
-    # SourceMapMark:3:Q29uc29sZS5sb2dnZXIuaW5mbyhzZWxmLCBlKQ== # SourceMapMark:3:Q29uc29sZS5sb2dnZXIuaW5mbyhzZWxmLCBlKQ==
-    Console.logger.info(self, e)
+  begin
+    # SourceMapMark:2:ZGVmIGhhbmRsZV9jbGljayhlKQ==
+    def handle_click(e)
+      # SourceMapMark:3:Q29uc29sZS5sb2dnZXIuaW5mbyhzZWxmLCBlKQ== # SourceMapMark:3:Q29uc29sZS5sb2dnZXIuaW5mbyhzZWxmLCBlKQ==
+      Console.logger.info(self, e)
+    end
+    nil
   end
   public def render
     H[

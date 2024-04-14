@@ -8,6 +8,7 @@ class Test < Mayu::Component::Base
   Styles = Mayu::NullStyleSheet[self]
   begin
     # setup
+    nil
   end
   public def render
     if true

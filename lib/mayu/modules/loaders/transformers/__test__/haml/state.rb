@@ -39,6 +39,7 @@ class Test < Mayu::Component::Base
         @count = 0
       )
     end
+    nil
   end
   public def render
     [

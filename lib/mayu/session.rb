@@ -3,14 +3,12 @@ require_relative "session/token"
 
 module Mayu
   class Session
-    RequestInfo = Data.define(:path, :headers) do
-      def self.from_request(request)
-        new(
-          path: request.path,
-          headers: request.headers.to_h.freeze,
-        )
+    RequestInfo =
+      Data.define(:path, :headers) do
+        def self.from_request(request)
+          new(path: request.path, headers: request.headers.to_h.freeze)
+        end
       end
-    end
 
     TIMEOUT_SECONDS = 5
 
@@ -52,17 +50,18 @@ module Mayu
     end
 
     def run(&block)
-      @task = Async do |task|
-        task.async do
-          while Modules::System.current.wait_for_reload
-            @engine.update(resolve_route(@request_info.path))
+      @task =
+        Async do |task|
+          task.async do
+            while Modules::System.current.wait_for_reload
+              @engine.update(resolve_route(@request_info.path))
+            end
           end
-        end
 
-        @engine.run(&block)
-      ensure
-        @task = nil
-      end
+          @engine.run(&block)
+        ensure
+          @task = nil
+        end
     end
 
     def wait
@@ -101,6 +100,8 @@ module Mayu
           Mayu::Server::EventStream::Blob[@environment.marshaller.dump(self)]
         ]
       )
+    rescue => e
+      Console.logger.error(self, e)
     end
 
     private
@@ -131,7 +132,8 @@ module Mayu
             layout,
             page,
             params: match.params,
-            query: match.query
+            query: match.query,
+            path:
           ]
         end
     end

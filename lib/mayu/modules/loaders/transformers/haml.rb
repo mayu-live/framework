@@ -173,6 +173,22 @@ module Mayu
               end
             end
 
+            def wrap_in_begin_end(statements)
+              if statements in SyntaxTree::Begin
+                statements = statements.bodystmt.statements
+              end
+
+              Begin(
+                BodyStmt(
+                  Statements([*Array(statements), VarRef(Kw("nil"))]),
+                  nil,
+                  nil,
+                  nil,
+                  nil
+                )
+              )
+            end
+
             # def assocs(**kwargs)
             #   kwargs.map { |key, value| Assoc(Label("#{key}:"), value) }
             # end
@@ -356,9 +372,7 @@ module Mayu
               in [statement]
                 statement
               else
-                Statements(statements).then do
-                  Begin(BodyStmt(_1, nil, nil, nil, nil))
-                end
+                Begin(BodyStmt(Statements(statements), nil, nil, nil, nil))
               end
             end
 
@@ -776,8 +790,10 @@ module Mayu
               case node.value
               in { name: "ruby", text: }
                 if text
-                  @builder.ruby_script(
-                    parse_ruby(text, mark_sourcemap: node.line)
+                  @builder.wrap_in_begin_end(
+                    @builder.ruby_script(
+                      parse_ruby(text, mark_sourcemap: node.line)
+                    )
                   )
                 end
               in { name: "css", text: }
@@ -791,7 +807,7 @@ module Mayu
                 in [*lines]
                   id =
                     RbNaCl::Hash
-                      .sha256(@options.content_hash + text)
+                      .sha256(Base64.encode64(@options.content_hash) + text)
                       .unpack("h*")
                       .join
 

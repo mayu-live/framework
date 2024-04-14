@@ -715,7 +715,10 @@ module Mayu
 
           @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
           @instance.instance_variable_set(:@__context, @context)
-          @instance.instance_variable_set(:@__children, @descriptor.children.freeze)
+          @instance.instance_variable_set(
+            :@__children,
+            @descriptor.children.freeze
+          )
 
           @instance.send(:initialize)
           @children = VChildren.new(render_children, parent: self)
@@ -751,7 +754,10 @@ module Mayu
           old_props = @instance.instance_variable_get(:@__props)
           old_children = @instance.instance_variable_get(:@__children)
 
-          @instance.instance_variable_set(:@__children, @descriptor.children.freeze)
+          @instance.instance_variable_set(
+            :@__children,
+            @descriptor.children.freeze
+          )
           @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
 
           @children.update(render_children)
@@ -860,6 +866,8 @@ module Mayu
                     "meta-property-#{name}"
                   in Descriptors::Element[type: :title]
                     "title"
+                  in Descriptors::Element[type: :link]
+                    "link"
                   else
                     puts "\e[31mUnsupported %head node: #{descriptor.inspect}\e[0m"
                     nil

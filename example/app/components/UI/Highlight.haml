@@ -2,7 +2,7 @@
   ::Kernel.require("rouge")
 
   def get_tokens
-    lexer&.lex(children.join)
+    lexer&.lex(Array(__children).join)
   end
 
   def lexer
@@ -25,6 +25,20 @@
     end
   end
 
+= if tokens = get_tokens
+  .container
+    .card
+      %code.highlight
+        = tokens.map do |token, str|
+          = if str == " " && !token.shortname
+            &nbsp;
+          = else
+            %span{class: token.shortname.to_sym}= str
+= else
+  .container
+    .card
+      %code.highlight= Array(__children).join
+
 :css
   .container {
     display: grid;
@@ -38,17 +52,3 @@
     margin: 1em;
     overflow-y: auto;
   }
-
-= if tokens = get_tokens
-  .container
-    .card
-      %code.highlight
-        = tokens.map do |token, str|
-          = if str == " " && !token.shortname
-            &nbsp;
-          = else
-            %span{class: token.shortname.to_sym}= str
-= else
-  .container
-    .card
-      %code.highlight= children.join

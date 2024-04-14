@@ -8,18 +8,23 @@ class Test < Mayu::Component::Base
   Styles =
     Mayu::StyleSheet[
       source_filename: "/app/components/Test.haml (inline css)",
-      content_hash: "FmoF815t3OvnBIkZL1_W0EjCkEOEvPsG1A3wNosv0Q0",
+      content_hash: "II_m4Tqejb8BcNpaXciICXJBLLft4dvCnYoTLEm_hcc",
       classes: {
-        button: "/app/components/Test.button?dhhHwAZl"
+        button: "/app/components/Test.button?Trf1Txj1",
+        "button-text": "/app/components/Test.button-text?Trf1Txj1"
       },
       content: <<CSS
-.\\/app\\/components\\/Test\\.button\\?dhhHwAZl{color:#f0f}
+.\\/app\\/components\\/Test\\.button\\?Trf1Txj1{color:#f0f}.\\/app\\/components\\/Test\\.button-text\\?Trf1Txj1{font-weight:700}
 CSS
     ].merge(import?("/app/components/Test.css"))
   public def render
     H[
       :button,
-      "Click me",
+      H[
+        :span,
+        "Click me",
+        **self.class.merge_props({ class: :__span }, { class: :"button-text" })
+      ],
       **self.class.merge_props({ class: :__button }, { class: :button })
     ]
   end

@@ -16,7 +16,7 @@
     # print "\e[0m" if node.has_key?(:children)
     case node
     in type: :root, children:
-      Mayu::VDOM::H[:div, *visit_nodes(children)]
+      H[:div, *visit_nodes(children)]
     in type: :header, children:, options: { level: }
       build(:header, :"h#{level}", *visit_nodes(children), level:)
     in type: :text | :blank, value:
@@ -31,22 +31,22 @@
       end
 
       build(:a, :a, *visit_nodes(children), **attrs) do
-        Mayu::VDOM::H[:a, *visit_nodes(children), **attrs]
+        H[:a, *visit_nodes(children), **attrs]
       end
     in type: :codeblock, value:
-      Mayu::VDOM::H[:code, value]
+      H[:code, value]
     in type: :br
-      Mayu::VDOM::H[:br]
+      H[:br]
     in type: :codespan, value:, options: { codespan_delimiter: "```" }
       header, code = value.sub(/\A`+/, '').split(/\s/, 2).map(&:strip)
-      Mayu::VDOM::H[Highlight, code, language: header]
+      H[Highlight, code, language: header]
     in type: :codespan, value:, options: { codespan_delimiter: "`" }
       build(:code, :code, value.strip)
     in type:, children:, **rest
       build(type, type, *visit_nodes(children))
     in type:
       Console.logger.error(self, "Unsupported node", JSON.pretty_generate(node))
-      Mayu::VDOM::H[:pre, "Unsupported node:\n\n#{JSON.pretty_generate(node)}"]
+      H[:pre, "Unsupported node:\n\n#{JSON.pretty_generate(node)}"]
     end
   end
 
@@ -57,12 +57,12 @@
   def build(type, default, *children, **props, &block)
     if elems = $elems
       if elem = elems[type]
-        return Mayu::VDOM::H[elem, *children, **props]
+        return H[elem, *children, **props]
       end
     end
 
     return yield if block_given?
-    Mayu::VDOM::H[default, *children, class: styles[default]]
+    H[default, *children, class: Styles[default]]
   end
 
 :css
@@ -82,4 +82,4 @@
     margin: .25em 0;
   }
 
-= visit_node(Kramdown::Document.new(children.join).to_hash_ast)
+= visit_node(Kramdown::Document.new(Array(__children).join).to_hash_ast)

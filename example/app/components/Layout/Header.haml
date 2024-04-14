@@ -1,13 +1,13 @@
 :ruby
-  Icon = import("/app/components/UI/Icon")
-  Logo = svg("./logo.svg")
-  Title = svg("./title.svg")
+  Icon = import("/components/UI/Icon")
+  Logo = import("./logo.svg")
+  Title = import("./title.svg")
 
 %header
   %h1
     %a.title(href="/" title="Start page")
       %img.logo(src=Logo)
-      %img.title-text(src=Title)
+      %img.titleText(src=Title)
   %nav
     %menu
       %li
@@ -92,6 +92,6 @@
     max-height: 2.5em;
   }
 
-  .title-text {
+  .titleText {
     max-height: 2em;
   }

@@ -8,6 +8,7 @@ require_relative "static_files"
 
 require_relative "../environment"
 require_relative "../session"
+require_relative "../modules/system"
 
 module Mayu
   class Server
@@ -165,10 +166,11 @@ module Mayu
       # Session
 
       def handle_session_start(request)
-        session = Session.new(
-          request_info: Session::RequestInfo.from_request(request),
-          environment: @environment
-        )
+        session =
+          Session.new(
+            request_info: Session::RequestInfo.from_request(request),
+            environment: @environment
+          )
 
         @sessions.store(session)
 

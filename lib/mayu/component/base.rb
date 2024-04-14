@@ -48,15 +48,13 @@ module Mayu
       end
 
       def marshal_dump
-        instance_variables.map do |ivar|
-          [ivar, instance_variable_get(ivar)]
-        end.to_h
+        instance_variables
+          .map { |ivar| [ivar, instance_variable_get(ivar)] }
+          .to_h
       end
 
       def marshal_load(ivars)
-        ivars.each do |ivar, value|
-          instance_variable_set(ivar, value)
-        end
+        ivars.each { |ivar, value| instance_variable_set(ivar, value) }
       end
 
       def mount
@@ -66,6 +64,7 @@ module Mayu
       end
 
       def should_update?(old_props, old_state)
+        true
       end
 
       def render
