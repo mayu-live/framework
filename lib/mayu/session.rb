@@ -120,8 +120,13 @@ module Mayu
 
       match = @environment.router.match(path)
 
-      layouts =
-        match.route.layouts.map { system.import(File.join("/pages", _1)) }
+      layouts = [
+        system.import("root.haml"),
+        *match.route.layouts.map do
+          p _1
+          system.import(File.join("/pages", _1))
+        end
+      ]
 
       page =
         Mayu::Runtime::H[
