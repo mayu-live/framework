@@ -5,7 +5,7 @@ class Interpolation < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self]
+  Styles = Mayu::NullStyleSheet[self].merge(import?("interpolation.css"))
   public def render
     H[
       :div,

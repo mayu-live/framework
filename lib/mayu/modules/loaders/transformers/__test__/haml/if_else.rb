@@ -5,7 +5,7 @@ class If_else < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self]
+  Styles = Mayu::NullStyleSheet[self].merge(import?("if_else.css"))
   begin
     # setup
     nil

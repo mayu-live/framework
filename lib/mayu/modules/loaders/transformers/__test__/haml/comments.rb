@@ -5,7 +5,7 @@ class Comments < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self]
+  Styles = Mayu::NullStyleSheet[self].merge(import?("comments.css"))
   public def render
     H[
       :div,

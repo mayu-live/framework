@@ -5,7 +5,7 @@ class Slots_dynamic < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self]
+  Styles = Mayu::NullStyleSheet[self].merge(import?("slots_dynamic.css"))
   public def render
     [
       begin

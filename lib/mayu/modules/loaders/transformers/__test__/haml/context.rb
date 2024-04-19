@@ -5,7 +5,7 @@ class Context < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self]
+  Styles = Mayu::NullStyleSheet[self].merge(import?("context.css"))
   begin
     # SourceMapMark:2:ZGVmIGluY3JlYXNlX2NvbnRleHRfdmFy
     def increase_context_var

@@ -113,12 +113,42 @@ module Mayu
               assign_const(
                 "Styles",
                 if styles.empty?
-                  ARef(
-                    ConstPathRef(
-                      VarRef(Const("Mayu")),
-                      Const("NullStyleSheet")
+                  CallNode(
+                    ARef(
+                      ConstPathRef(
+                        VarRef(Const("Mayu")),
+                        Const("NullStyleSheet")
+                      ),
+                      Args([VarRef(Kw("self"))])
                     ),
-                    Args([VarRef(Kw("self"))])
+                    Period("."),
+                    Ident("merge"),
+                    ArgParen(
+                      Args(
+                        [
+                          CallNode(
+                            nil,
+                            nil,
+                            Ident("import?"),
+                            ArgParen(
+                              Args(
+                                [
+                                  StringLiteral(
+                                    [
+                                      TStringContent(
+                                        @options.source_path_without_extension +
+                                          ".css"
+                                      )
+                                    ],
+                                    '"'
+                                  )
+                                ]
+                              )
+                            )
+                          )
+                        ]
+                      )
+                    )
                   )
                 else
                   CallNode(

@@ -5,7 +5,7 @@ class Plain < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self]
+  Styles = Mayu::NullStyleSheet[self].merge(import?("plain.css"))
   public def render
     [
       H[

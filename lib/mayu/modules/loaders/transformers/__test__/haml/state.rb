@@ -5,7 +5,7 @@ class State < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self]
+  Styles = Mayu::NullStyleSheet[self].merge(import?("state.css"))
   begin
     # SourceMapMark:2:QnV0dG9uID0gaW1wb3J0ICIvY29tcG9uZW50cy9CdXR0b24i
     Button = import "/components/Button"
