@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 require "minitest/autorun"
 
 require_relative "source_map"
@@ -45,7 +50,7 @@ class Mayu::Modules::SourceMap::Test < Minitest::Test
         /app/components/MyComponent.haml:11:in `render'
         /vendor/mayu/hello.rb:123:in `update'
       BACKTRACE
-        "/app/components/MyComponent.haml",
+        "/app/components/MyComponent.haml"
       )
 
     assert_equal(expected, actual)
@@ -79,11 +84,13 @@ class Mayu::Modules::SourceMap::Test < Minitest::Test
 
     e = StandardError.new("Something went wrong")
 
-    e.set_backtrace([
-      "/app/components/MyComponent.haml:3:in `render'",
-      "/app/components/MyComponent.haml:6:in `render'",
-      "/vendor/mayu/hello.rb:123:in `update'",
-    ])
+    e.set_backtrace(
+      [
+        "/app/components/MyComponent.haml:3:in `render'",
+        "/app/components/MyComponent.haml:6:in `render'",
+        "/vendor/mayu/hello.rb:123:in `update'"
+      ]
+    )
 
     puts source_map.format_exception(e, "/app/components/MyComponent.haml")
   end

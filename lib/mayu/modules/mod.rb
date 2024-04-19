@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 module Mayu
   module Modules
     class Exports < Module
@@ -8,11 +13,9 @@ module Mayu
         module_eval(source, path, 1)
       end
 
-      def import(path) =
-        @mod.import(path)
+      def import(path) = @mod.import(path)
 
-      def add_asset(asset) =
-        @mod.add_asset(asset)
+      def add_asset(asset) = @mod.add_asset(asset)
     end
 
     class Mod < Module
@@ -51,33 +54,50 @@ module Mayu
       end
 
       def marshal_dump
-        [@order, @path, @dependants, @dependencies, @state, @source, @assets, @source_map]
+        [
+          @order,
+          @path,
+          @dependants,
+          @dependencies,
+          @state,
+          @source,
+          @assets,
+          @source_map
+        ]
       end
 
       def marshal_load(a)
-        @order, @path, @dependants, @dependencies, @state, @source, @assets, @source_map = a
+        @order,
+        @path,
+        @dependants,
+        @dependencies,
+        @state,
+        @source,
+        @assets,
+        @source_map =
+          a
         Registry[@path] = self
       end
 
       def reload(reload_source: true)
         if const_defined?(:Exports)
-          puts "Reloading #@path"
+          puts "Reloading #{@path}"
           old_exports = const_get(:Exports)
           remove_const(:Exports)
         else
-          puts "Loading #@path"
+          puts "Loading #{@path}"
         end
 
-        begin
-          reload_source!
-        rescue => e
-          if old_exports
-            const_set(:Exports, old_exports)
+        if reload_source
+          begin
+            reload_source!
+          rescue => e
+            const_set(:Exports, old_exports) if old_exports
+            pp e
+            puts e.backtrace
+            return
           end
-          pp e
-          puts e.backtrace
-          return
-        end if reload_source
+        end
 
         @assets.clear
 

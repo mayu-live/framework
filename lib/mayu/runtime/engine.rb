@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 require "async/queue"
 
 require_relative "vnodes"
@@ -23,9 +28,7 @@ module Mayu
       end
 
       def patch(patches)
-        Array(patches).flatten.each do |patch|
-          @patches.enqueue(patch)
-        end
+        Array(patches).flatten.each { |patch| @patches.enqueue(patch) }
       end
 
       def callback(id, payload)
@@ -35,9 +38,7 @@ module Mayu
       def navigate(path, descriptor, push_state: true)
         update(descriptor)
 
-        if push_state
-          @patches.enqueue(Patches::HistoryPushState[path])
-        end
+        @patches.enqueue(Patches::HistoryPushState[path]) if push_state
       end
 
       def ping(timestamp)

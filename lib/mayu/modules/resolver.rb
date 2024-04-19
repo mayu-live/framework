@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 module Mayu
   module Modules
     class Resolver
@@ -55,10 +60,14 @@ module Mayu
           absolute_path_with_extension = absolute_path + extension
 
           if File.file?(absolute_path_with_extension)
-            $stderr.puts "\e[1mFound #{absolute_path_with_extension}\e[0m" if @verbose
+            if @verbose
+              $stderr.puts "\e[1mFound #{absolute_path_with_extension}\e[0m"
+            end
             yield extension
           else
-            $stderr.puts "\e[2mTried #{absolute_path_with_extension}\e[0m" if @verbose
+            if @verbose
+              $stderr.puts "\e[2mTried #{absolute_path_with_extension}\e[0m"
+            end
           end
         end
       end

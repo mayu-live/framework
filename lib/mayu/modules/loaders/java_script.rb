@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 require_relative "transformers/css"
 
 module Mayu
@@ -12,7 +17,8 @@ module Mayu
 
             loading_file.maybe_load_source.with_digest.transform do
               SyntaxTree::Formatter
-                .format("", build_code(_1)).+("\n")
+                .format("", build_code(_1))
+                .+("\n")
                 .tap { |x| puts "\e[93m#{x}\e[0m" }
             end
           end
@@ -54,13 +60,25 @@ module Mayu
                           ArgParen(
                             Args(
                               [
-                                StringLiteral([TStringContent(custom_element_name + ".js")], '"'),
+                                StringLiteral(
+                                  [TStringContent(custom_element_name + ".js")],
+                                  '"'
+                                ),
                                 CallNode(
                                   VarRef(Const("Base64")),
                                   Period("."),
                                   Ident("decode64"),
                                   ArgParen(
-                                    StringLiteral([TStringContent(Base64.encode64(loading_file.source).strip)], '"')
+                                    StringLiteral(
+                                      [
+                                        TStringContent(
+                                          Base64.encode64(
+                                            loading_file.source
+                                          ).strip
+                                        )
+                                      ],
+                                      '"'
+                                    )
                                   )
                                 )
                               ]
@@ -74,14 +92,16 @@ module Mayu
                 Assign(
                   VarField(Const("Default")),
                   ARef(
-                    ConstPathRef(
-                      VarRef(Const("Mayu")),
-                      Const("CustomElement")
-                    ),
-                    Args([
-                      Args([SymbolLiteral(Ident(custom_element_name))]),
-                      StringLiteral([TStringContent(custom_element_name + ".js")], '"')
-                    ])
+                    ConstPathRef(VarRef(Const("Mayu")), Const("CustomElement")),
+                    Args(
+                      [
+                        Args([SymbolLiteral(Ident(custom_element_name))]),
+                        StringLiteral(
+                          [TStringContent(custom_element_name + ".js")],
+                          '"'
+                        )
+                      ]
+                    )
                   )
                 )
               ]

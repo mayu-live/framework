@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 require_relative "descriptors"
 
 module Mayu
@@ -16,9 +21,7 @@ module Mayu
       end
 
       def self.slot(component, name = nil)
-        component.__children.slots.fetch(name) do
-          yield if block_given?
-        end
+        component.__children.slots.fetch(name) { yield if block_given? }
       end
 
       # H.provide(theme: "dark") do

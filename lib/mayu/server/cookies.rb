@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
 
 module Mayu
   class Server
@@ -16,9 +20,7 @@ module Mayu
       end
 
       def self.set_token_cookie_header(session, ttl_seconds: 60)
-        {
-          "set-cookie": set_token_cookie_value(session, ttl_seconds:)
-        }
+        { "set-cookie": set_token_cookie_value(session, ttl_seconds:) }
       end
 
       def self.set_token_cookie_value(session, ttl_seconds: 60)

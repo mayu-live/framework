@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 module Mayu
   class Server
     class SessionStore
@@ -33,19 +38,20 @@ module Mayu
       end
 
       def start_cleanup_task
-        @cleanup_task ||= Async do
-          loop do
-            sleep 1
+        @cleanup_task ||=
+          Async do
+            loop do
+              sleep 1
 
-            @sessions.delete_if do |session_id, session|
-              if session.timed_out?
-                puts "\e[31mDeleting timed out session #{session_id}\e[0m"
-                session.stop
-                true
+              @sessions.delete_if do |session_id, session|
+                if session.timed_out?
+                  puts "\e[31mDeleting timed out session #{session_id}\e[0m"
+                  session.stop
+                  true
+                end
               end
             end
           end
-        end
       end
     end
   end

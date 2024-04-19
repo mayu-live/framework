@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 #!/usr/bin/env ruby -rbundler/setup
 
 require "minitest/autorun"
@@ -16,7 +21,7 @@ class Mayu::Modules::Loaders::Haml::Test < Minitest::Test
       output =
         Mayu::Modules::Loaders::Haml[
           component_base_class: "Mayu::Component::Base",
-          factory: "Mayu::Descriptors::H",
+          factory: "Mayu::Descriptors::H"
         ].call(
           Mayu::Modules::Loaders::LoadingFile[root, File.basename(haml)]
         ).source

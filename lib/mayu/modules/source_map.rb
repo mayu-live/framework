@@ -1,3 +1,8 @@
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 require "base64"
 
 module Mayu
@@ -10,11 +15,7 @@ module Mayu
           end
 
           def to_comment(location: SyntaxTree::Location.default)
-            SyntaxTree::Comment.new(
-              value: "# #{to_s}",
-              inline: true,
-              location:
-            )
+            SyntaxTree::Comment.new(value: "# #{to_s}", inline: true, location:)
           end
         end
 
@@ -77,15 +78,20 @@ module Mayu
             [
               "\e[1;31;47m ERROR \e[3;31;47m #{e.class.name}: #{e.message} #{reset}",
               "\e[1;34mBacktrace:#{reset}",
-              e.backtrace.map do |trace|
-                if match = trace.match(/\A(.*):(\d+):in `(.*)'\Z/)
-                  "#{reset}\e[2mfrom #{reset}\e[1m%s:%s#{reset}\e[2m:in `#{reset}\e[1m%s#{reset}\e[2m`#{reset}" % match.captures
-                else
-                  "from #{trace}#{reset}"
+              e
+                .backtrace
+                .map do |trace|
+                  if match = trace.match(/\A(.*):(\d+):in `(.*)'\Z/)
+                    "#{reset}\e[2mfrom #{reset}\e[1m%s:%s#{reset}\e[2m:in `#{reset}\e[1m%s#{reset}\e[2m`#{reset}" %
+                      match.captures
+                  else
+                    "from #{trace}#{reset}"
+                  end
                 end
-              end.join("\n"),
+                .join("\n"),
               "\e[1;34mSource:#{reset}",
-              self.input
+              self
+                .input
                 .each_line
                 .map
                 .with_index(1) do |line, i|
@@ -116,10 +122,7 @@ module Mayu
           end
 
           def find_closest_mapping(line_no, mappings)
-            mappings
-              .select { |k, _| k <= line_no }
-              .max_by(&:first)
-              &.last
+            mappings.select { |k, _| k <= line_no }.max_by(&:first)&.last
           end
         end
     end
