@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "samovar"
+
 module Mayu
   module Commands
     class Transform < Samovar::Command
