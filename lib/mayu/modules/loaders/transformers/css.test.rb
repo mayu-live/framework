@@ -16,13 +16,13 @@ class Mayu::Modules::Loaders::Transformers::CSS::Test < Minitest::Test
           .then do
             Mayu::Modules::Loaders::Transformers::CSS.transform_inline(
               "/app/components/Test.css",
-              _1,
+              _1
             )
           end
           .then { SyntaxTree::Formatter.format("", _1) }
 
       if File.exist?(ruby)
-        assert_equal(File.read(ruby), output)
+        assert_equal(File.read(ruby).strip, output.strip)
       else
         puts "\e[33mWriting #{ruby}\e[0m"
         File.write(ruby, output)

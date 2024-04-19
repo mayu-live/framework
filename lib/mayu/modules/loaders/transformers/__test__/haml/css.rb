@@ -7,23 +7,16 @@ class Css < Mayu::Component::Base
   FILENAME = __FILE__
   Styles =
     Mayu::StyleSheet[
-      source_filename:
-        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/css.haml (inline css)",
-      content_hash: "5HZABHNkuR2dxz9RlgC0DfKE8pZseYPLg7US5JUy22s",
+      source_filename: "css.haml (inline css)",
+      content_hash: "QRzl4L9HjW2wS-4CE_xH6vXN4WTNT72NL210gVqRO_c",
       classes: {
-        button:
-          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/css.button?Trf1Txj1",
-        "button-text":
-          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/css.button-text?Trf1Txj1"
+        button: "css.button?Trf1Txj1",
+        "button-text": "css.button-text?Trf1Txj1"
       },
       content: <<CSS
-.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/css\\.button\\?Trf1Txj1{color:#f0f}.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/css\\.button-text\\?Trf1Txj1{font-weight:700}
+.css\\.button\\?Trf1Txj1{color:#f0f}.css\\.button-text\\?Trf1Txj1{font-weight:700}
 CSS
-    ].merge(
-      import?(
-        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/css.css"
-      )
-    )
+    ].merge(import?("css.css"))
   public def render
     H[
       :button,

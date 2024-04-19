@@ -15,13 +15,13 @@ class Mayu::Modules::Loaders::Transformers::Haml::Test < Minitest::Test
           .then do
             Mayu::Modules::Loaders::Transformers::Haml.transform(
               _1,
-              haml
+              basename
             ).output
           end
           .then do
             Mayu::Modules::Loaders::Transformers::Ruby.transform(
               _1,
-              haml,
+              basename,
               component_base_class: "Mayu::Component::Base"
             )
           end

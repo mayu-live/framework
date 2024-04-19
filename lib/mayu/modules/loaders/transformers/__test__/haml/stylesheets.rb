@@ -7,23 +7,16 @@ class Stylesheets < Mayu::Component::Base
   FILENAME = __FILE__
   Styles =
     Mayu::StyleSheet[
-      source_filename:
-        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/stylesheets.haml (inline css)",
-      content_hash: "5o5zqFp_qnESy2JDHouwZVMDiR6WbWehIOmbQ0XCqv0",
+      source_filename: "stylesheets.haml (inline css)",
+      content_hash: "R6kIl4_IwYp2R6BekTTwSY18oRRIDM1BaHtBsFX5Zag",
       classes: {
-        __h1:
-          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/stylesheets_h1?ct99ezRm",
-        world:
-          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/stylesheets.world?ct99ezRm"
+        __h1: "stylesheets_h1?ct99ezRm",
+        world: "stylesheets.world?ct99ezRm"
       },
       content: <<CSS
-.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/stylesheets_h1\\?ct99ezRm{color:#f0f}.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/stylesheets\\.world\\?ct99ezRm{background:#f0f}
+.stylesheets_h1\\?ct99ezRm{color:#f0f}.stylesheets\\.world\\?ct99ezRm{background:#f0f}
 CSS
-    ].merge(
-      import?(
-        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/stylesheets.css"
-      )
-    )
+    ].merge(import?("stylesheets.css"))
   public def render
     H[
       :div,
