@@ -1,24 +1,32 @@
 # frozen_string_literal: true
 
-require "rouge"
-require_relative "../modules/loaders"
-
 module Mayu
   module Commands
-    class Transform
-      DEFAULT_LINE_NUMBERS = true
-      DEFAULT_COLORS = true
-
-      def self.call(filename)
-        transform(File.read(filename), filename)
+    class Transform < Samovar::Command
+      options do
+        option "--no-line-numbers", "Disable line numbers", default: false
+        option "--no-colors", "Disable syntax highlighting", default: false
       end
 
-      def self.transform(
-        source,
-        path,
-        line_numbers: DEFAULT_LINE_NUMBERS,
-        colors: DEFAULT_COLORS
-      )
+      self.description = "Transform haml -> ruby"
+
+      one :path, "Path to file to transform", required: true
+
+      def call
+        require "rouge"
+        require_relative "../modules/loaders"
+
+        transform(
+          File.read(@path),
+          @path,
+          line_numbers: !@options[:no_line_numbers],
+          colors: !@options[:no_colors]
+        )
+      end
+
+      private
+
+      def transform(source, path, line_numbers:, colors:)
         formatter = CodeFormatter.new(line_numbers:, colors:)
 
         loading_file =

@@ -20,6 +20,7 @@ PATH
       rake (~> 13.1)
       rbnacl (~> 7.1)
       rouge (~> 4.2)
+      samovar (~> 2.3)
       syntax_tree (~> 6.2)
       syntax_tree-haml (~> 4.0)
       syntax_tree-xml (~> 0.1.0)
@@ -69,6 +70,7 @@ GEM
     kramdown (2.4.0)
       rexml
     localhost (1.2.0)
+    mapping (1.1.1)
     mayu-css (0.1.2-arm64-darwin)
     mayu-css (0.1.2-x86_64-darwin)
     method_source (1.0.0)
@@ -101,6 +103,9 @@ GEM
       ffi
     rexml (3.2.6)
     rouge (4.2.1)
+    samovar (2.3.0)
+      console (~> 1.0)
+      mapping (~> 1.0)
     syntax_tree (6.2.0)
       prettier_print (>= 1.2.0)
     syntax_tree-haml (4.0.3)
