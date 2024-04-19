@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Object_ref_as_key < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -10,5 +10,5 @@ class Test < Mayu::Component::Base
     H[:div, **self.class.merge_props({ class: :__div }, { key: ["hello"] })]
   end
 end
-Default = Test
+Default = Object_ref_as_key
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }

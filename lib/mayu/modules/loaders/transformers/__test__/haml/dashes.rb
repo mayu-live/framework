@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Dashes < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -25,5 +25,5 @@ class Test < Mayu::Component::Base
     ]
   end
 end
-Default = Test
+Default = Dashes
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }

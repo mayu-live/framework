@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Multiple_ruby_filters < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -7,15 +7,21 @@ class Test < Mayu::Component::Base
   FILENAME = __FILE__
   Styles =
     Mayu::StyleSheet[
-      source_filename: "/app/components/Test.haml (inline css)",
-      content_hash: "bqEaytGziGYN7IPb40YU5_w9vSeOTU-lSPeEZ8-fWPs",
+      source_filename:
+        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/multiple_ruby_filters.haml (inline css)",
+      content_hash: "5IW2fYJ_i7IFwaBZwbtyiU97mQ6eVV4rgxvwx3YmnIk",
       classes: {
-        default: "/app/components/Test.default?zMcJqVrb"
+        default:
+          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/multiple_ruby_filters.default?zMcJqVrb"
       },
       content: <<CSS
-.\\/app\\/components\\/Test\\.default\\?zMcJqVrb{font-weight:700}
+.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/multiple_ruby_filters\\.default\\?zMcJqVrb{font-weight:700}
 CSS
-    ].merge(import?("/app/components/Test.css"))
+    ].merge(
+      import?(
+        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/multiple_ruby_filters.css"
+      )
+    )
   begin
     # SourceMapMark:2:ZGVmIGluaXRpYWxpemU=
     def initialize
@@ -46,5 +52,5 @@ CSS
     ].flatten
   end
 end
-Default = Test
+Default = Multiple_ruby_filters
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }

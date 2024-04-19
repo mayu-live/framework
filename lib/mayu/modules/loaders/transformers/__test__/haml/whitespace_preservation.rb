@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Whitespace_preservation < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -11,5 +11,5 @@ class Test < Mayu::Component::Base
     "Foo\n<pre>Bar\nBaz</pre>"
   end
 end
-Default = Test
+Default = Whitespace_preservation
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }

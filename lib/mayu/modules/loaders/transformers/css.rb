@@ -22,7 +22,7 @@ module Mayu
               .then do
                 new(source_path, _1).build_inline_ast(assign_default: true)
               end
-              .then { SyntaxTree::Formatter.format("", _1) }
+              .then { SyntaxTree::Formatter.format("", _1).rstrip + "\n" }
           end
 
           def self.transform_inline(source_path, source, **options)

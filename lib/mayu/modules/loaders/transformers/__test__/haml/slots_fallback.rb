@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Slots_fallback < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -16,5 +16,5 @@ class Test < Mayu::Component::Base
     ]
   end
 end
-Default = Test
+Default = Slots_fallback
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }

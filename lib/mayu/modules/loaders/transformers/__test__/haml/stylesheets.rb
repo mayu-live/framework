@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Stylesheets < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -7,16 +7,23 @@ class Test < Mayu::Component::Base
   FILENAME = __FILE__
   Styles =
     Mayu::StyleSheet[
-      source_filename: "/app/components/Test.haml (inline css)",
-      content_hash: "F2Z4_LlGkoj31SdZSm7XcwoREsDkQyK8wl9TKOG_8xE",
+      source_filename:
+        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/stylesheets.haml (inline css)",
+      content_hash: "5o5zqFp_qnESy2JDHouwZVMDiR6WbWehIOmbQ0XCqv0",
       classes: {
-        __h1: "/app/components/Test_h1?ct99ezRm",
-        world: "/app/components/Test.world?ct99ezRm"
+        __h1:
+          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/stylesheets_h1?ct99ezRm",
+        world:
+          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/stylesheets.world?ct99ezRm"
       },
       content: <<CSS
-.\\/app\\/components\\/Test_h1\\?ct99ezRm{color:#f0f}.\\/app\\/components\\/Test\\.world\\?ct99ezRm{background:#f0f}
+.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/stylesheets_h1\\?ct99ezRm{color:#f0f}.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/stylesheets\\.world\\?ct99ezRm{background:#f0f}
 CSS
-    ].merge(import?("/app/components/Test.css"))
+    ].merge(
+      import?(
+        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/stylesheets.css"
+      )
+    )
   public def render
     H[
       :div,
@@ -30,5 +37,5 @@ CSS
     ]
   end
 end
-Default = Test
+Default = Stylesheets
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }

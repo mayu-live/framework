@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Plain < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -21,5 +21,5 @@ PLAIN_3a33e85b1163f921b28fe81f304cf142fa2cffbb0a76a9262e2313211716e37f
     ].flatten
   end
 end
-Default = Test
+Default = Plain
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }

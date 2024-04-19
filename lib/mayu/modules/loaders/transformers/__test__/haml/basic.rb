@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Basic < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -10,5 +10,5 @@ class Test < Mayu::Component::Base
     H[:p, "Hello world", **self.class.merge_props({ class: :__p })]
   end
 end
-Default = Test
+Default = Basic
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }

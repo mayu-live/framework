@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-class Test < Mayu::Component::Base
+class Css < Mayu::Component::Base
   def self.module_path
     __FILE__
   end
@@ -7,16 +7,23 @@ class Test < Mayu::Component::Base
   FILENAME = __FILE__
   Styles =
     Mayu::StyleSheet[
-      source_filename: "/app/components/Test.haml (inline css)",
-      content_hash: "II_m4Tqejb8BcNpaXciICXJBLLft4dvCnYoTLEm_hcc",
+      source_filename:
+        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/css.haml (inline css)",
+      content_hash: "5HZABHNkuR2dxz9RlgC0DfKE8pZseYPLg7US5JUy22s",
       classes: {
-        button: "/app/components/Test.button?Trf1Txj1",
-        "button-text": "/app/components/Test.button-text?Trf1Txj1"
+        button:
+          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/css.button?Trf1Txj1",
+        "button-text":
+          "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/css.button-text?Trf1Txj1"
       },
       content: <<CSS
-.\\/app\\/components\\/Test\\.button\\?Trf1Txj1{color:#f0f}.\\/app\\/components\\/Test\\.button-text\\?Trf1Txj1{font-weight:700}
+.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/css\\.button\\?Trf1Txj1{color:#f0f}.\\/Users\\/andreas\\/Projects\\/mayu-live\\/framework\\/lib\\/mayu\\/modules\\/loaders\\/transformers\\/__test__\\/haml\\/css\\.button-text\\?Trf1Txj1{font-weight:700}
 CSS
-    ].merge(import?("/app/components/Test.css"))
+    ].merge(
+      import?(
+        "/Users/andreas/Projects/mayu-live/framework/lib/mayu/modules/loaders/transformers/__test__/haml/css.css"
+      )
+    )
   public def render
     H[
       :button,
@@ -29,5 +36,5 @@ CSS
     ]
   end
 end
-Default = Test
+Default = Css
 Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }
