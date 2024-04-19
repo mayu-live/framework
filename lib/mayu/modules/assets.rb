@@ -32,7 +32,7 @@ module Mayu
               format(
                 "%s.%s",
                 Base64.urlsafe_encode64(content_hash, padding: false),
-                mime_type.preferred_extension,
+                mime_type.preferred_extension
               )
 
             new(content_type:, content_hash:, encoded_content:, filename:)
@@ -65,11 +65,7 @@ module Mayu
           def self.brotli(content) = new(:br, Brotli.deflate(content))
 
           def headers
-            if encoding
-              { "content-encoding": encoding.to_s }
-            else
-              {}
-            end
+            encoding ? { "content-encoding": encoding.to_s } : {}
           end
         end
 
@@ -78,7 +74,10 @@ module Mayu
       end
 
       def get(filename)
-        @assets.fetch(filename)
+        @assets.fetch(filename) do
+          puts "\e[91;1mAsset not found: \e[0;31m#{filename}\e[0m"
+          nil
+        end
       end
 
       def store(asset)
