@@ -3,12 +3,12 @@
 module Mayu
   module Commands
     class Transform < Samovar::Command
+      self.description = "Transform Haml/CSS -> Ruby"
+
       options do
         option "--no-line-numbers", "Disable line numbers", default: false
         option "--no-colors", "Disable syntax highlighting", default: false
       end
-
-      self.description = "Transform haml -> ruby"
 
       one :path, "Path to file to transform", required: true
 
@@ -29,6 +29,17 @@ module Mayu
       def transform(source, path, line_numbers:, colors:)
         formatter = CodeFormatter.new(line_numbers:, colors:)
 
+        case extname = File.extname(path)
+        when ".haml"
+          transform_haml(formatter, source, path)
+        when ".css"
+          transform_css(formatter, source, path)
+        else
+          puts "Can't transform #{extname}-files"
+        end
+      end
+
+      def transform_haml(formatter, source, path)
         loading_file =
           Mayu::Modules::Loaders::LoadingFile.new(
             root: Dir.pwd,
@@ -48,6 +59,27 @@ module Mayu
           ].call(loading_file)
 
         puts "\e[1;3mOutput:\e[0m"
+
+        formatter.handle_parse_error(loading_file.source.strip) do
+          puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
+        end
+      end
+
+      def transform_css(formatter, source, path)
+        loading_file =
+          Mayu::Modules::Loaders::LoadingFile.new(
+            root: Dir.pwd,
+            path:,
+            source:,
+            digest: nil
+          ).load_source
+
+        puts "\e[1mInput:\e[0;2m #{path}\e[0m"
+        puts formatter.format(loading_file.source.strip, Rouge::Lexers::CSS)
+
+        loading_file = Mayu::Modules::Loaders::CSS.new.call(loading_file)
+
+        puts "\e[1mOutput:\e[0m"
 
         formatter.handle_parse_error(loading_file.source.strip) do
           puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
