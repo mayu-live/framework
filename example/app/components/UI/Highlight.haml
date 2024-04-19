@@ -25,6 +25,14 @@
     end
   end
 
+  def token_class_name(token)
+    shortname = token.shortname
+
+    unless shortname.empty?
+      shortname.to_sym
+    end
+  end
+
 = if tokens = get_tokens
   .container
     .card
@@ -33,7 +41,7 @@
           = if str == " " && !token.shortname
             &nbsp;
           = else
-            %span{class: token.shortname.to_sym}= str
+            %span{class: token_class_name(token)}= str
 = else
   .container
     .card
