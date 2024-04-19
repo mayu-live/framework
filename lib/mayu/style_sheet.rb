@@ -10,10 +10,7 @@ module Mayu
         unless class_names.compact.all? {
                  _1.start_with?("__") || String === _1
                }
-          Console.logger.error(
-            source_filename,
-            "\e[31mNo stylesheet defined\e[0m"
-          )
+          puts "\e[1;91mNo stylesheet defined\e[0;31m (#{source_filename})\e[0m"
         end
 
         class_names.filter { String === _1 }
@@ -66,11 +63,7 @@ module Mayu
               classes.fetch(class_name) do
                 unless class_name.start_with?("__")
                   available_class_names =
-                    classes
-                      .keys
-                      .reject { _1.start_with?("__") }
-                      .map { _1.to_s.prepend("  ") }
-                      .join("\n")
+                    classes.keys.reject { _1.start_with?("__") }.join(", ")
 
                   Console.logger.error(
                     source_filename,
