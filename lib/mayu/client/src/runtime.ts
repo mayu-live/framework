@@ -34,7 +34,7 @@ export default class Runtime {
       try {
         patchFn.apply(this.#nodeSet, args as any);
       } catch (e) {
-        console.error(e)
+        console.error(e);
       }
     }
   }
@@ -100,7 +100,7 @@ class NodeSet {
   getElement(id: string) {
     const node = this.getNode(id);
 
-    if (node instanceof HTMLElement) {
+    if (node instanceof Element) {
       return node;
     }
 
@@ -143,9 +143,9 @@ function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
 
   // console.log("Visiting", domNode, domNode.nodeName, idNode.name, JSON.stringify(domNode.textContent));
 
-  if (domNode.nodeName !== idNode.name) {
+  if (domNode.nodeName.toUpperCase() !== idNode.name.toUpperCase()) {
     console.error(
-      `Node ${idNode.id} should be ${idNode.name}, but found ${domNode.nodeName}`,
+      `Node ${idNode.id} should be ${idNode.name}, but found ${domNode.nodeName}`
     );
   }
 
@@ -158,7 +158,7 @@ function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
   if (!idNode.children) return;
 
   const childNodes = Array.from(domNode.childNodes).filter(
-    (child) => child.nodeType !== Node.DOCUMENT_TYPE_NODE,
+    (child) => child.nodeType !== Node.DOCUMENT_TYPE_NODE
   );
 
   nodeInfo.childIds = idNode.children.map((child) => child.id);
@@ -172,14 +172,14 @@ declare global {
   interface ObjectConstructor {
     groupBy<Item, Key extends PropertyKey>(
       items: Iterable<Item>,
-      keySelector: (item: Item, index: number) => Key,
+      keySelector: (item: Item, index: number) => Key
     ): Record<Key, Item[]>;
   }
 
   interface MapConstructor {
     groupBy<Item, Key>(
       items: Iterable<Item>,
-      keySelector: (item: Item, index: number) => Key,
+      keySelector: (item: Item, index: number) => Key
     ): Map<Key, Item[]>;
   }
 }
@@ -188,20 +188,20 @@ function updateHead(
   nodeSet: NodeSet,
   element: Element,
   nodeInfo: NodeInfo,
-  newChildIds: string[],
+  newChildIds: string[]
 ) {
-  console.log("UPDATE HEAD")
+  console.log("UPDATE HEAD");
   const oldChildIds = nodeInfo.childIds;
 
-  const existingNodes = new Map()
+  const existingNodes = new Map();
 
   oldChildIds.forEach((id, i) => {
-    existingNodes.set(id, element.childNodes[i])
-  })
+    existingNodes.set(id, element.childNodes[i]);
+  });
 
   newChildIds.forEach((id) => {
-    existingNodes.set(id, nodeSet.getNode(id))
-  })
+    existingNodes.set(id, nodeSet.getNode(id));
+  });
 
   // Remove nodes that are no longer needed
   oldChildIds.forEach((id) => {
@@ -262,9 +262,8 @@ const Patches = {
   CreateTree(this: NodeSet, html: string, tree: IdNode) {
     const template = document
       .createRange()
-      .createContextualFragment(
-        `<template>${html}</template>`,
-      ).firstElementChild!;
+      .createContextualFragment(`<template>${html}</template>`)
+      .firstElementChild!;
     const content = (template as HTMLTemplateElement).content;
 
     setupTree(this, content.firstChild!, tree);
@@ -315,14 +314,14 @@ const Patches = {
     if (nodeInfo) {
       if (element.nodeName === "HEAD") {
         updateHead(this, element, nodeInfo, childIds);
-        return
+        return;
       }
 
       nodeInfo.childIds.forEach((id) => {
         if (!childIds.includes(id)) {
-          this.deleteNode(id)
+          this.deleteNode(id);
         }
-      })
+      });
     }
 
     element.replaceChildren(...this.getNodes(childIds));
@@ -350,7 +349,7 @@ const Patches = {
     message: string,
     backtrace: string[],
     source: string,
-    treePath: { name: string; path?: string }[],
+    treePath: { name: string; path?: string }[]
   ) {
     renderError(file, type, message, backtrace, source, treePath);
   },
