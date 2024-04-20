@@ -49,6 +49,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "base64", "~> 0.2.0"
   spec.add_dependency "toml", "~> 0.3.0"
   spec.add_dependency "samovar", "~> 2.3"
+  spec.add_dependency "terminal-table", "~> 3.0.1"
 
   # Server
   spec.add_dependency "brotli", "~> 0.4.0"

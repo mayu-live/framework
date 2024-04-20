@@ -6,11 +6,13 @@
 require "samovar"
 require_relative "commands/dev"
 require_relative "commands/transform"
+require_relative "commands/routes"
 
 module Mayu
   module Commands
     class Application < Samovar::Command
-      nested :command, { "dev" => Dev, "transform" => Transform }
+      nested :command,
+             { "dev" => Dev, "transform" => Transform, "routes" => Routes }
 
       def call
         @command.call if @command
