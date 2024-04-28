@@ -5,7 +5,7 @@
   level = $level.to_i.clamp(1, 6)
   tag = :"h#{level}"
 
-  H[
+  return H[
     tag,
     H.slot(self),
     **self.class.merge_props(
