@@ -382,6 +382,10 @@ const Patches = {
     }
 
     element.replaceChildren(...this.getNodes(childIds));
+
+    requestIdleCallback(() => {
+      handleAutofocus(element);
+    });
   },
   Transfer(this: NodeSet, state: Blob) {
     console.log("Transfer", state);
@@ -411,3 +415,16 @@ const Patches = {
     renderError(file, type, message, backtrace, source, treePath);
   },
 } as const;
+
+function handleAutofocus(node: Node) {
+  if (node instanceof HTMLInputElement) {
+    if (node.autofocus) {
+      node.focus();
+      return;
+    }
+  }
+
+  for (const child of node.childNodes) {
+    handleAutofocus(child);
+  }
+}
