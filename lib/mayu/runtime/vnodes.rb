@@ -210,7 +210,7 @@ module Mayu
           if old
             return prop, old if old.callback.same?(new)
 
-            @root.remove_listener(old)
+            closest(VDocument).remove_listener(old)
 
             unless new
               patch(Patches::RemoveAttribute[@parent.id, prop])
