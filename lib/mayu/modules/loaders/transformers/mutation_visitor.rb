@@ -20,6 +20,14 @@ module Mayu
             node.copy(target: visit(node.target), value: visit(node.value))
           end
 
+          def visit_rassign(node)
+            node.copy(
+              operator: visit(node.operator),
+              pattern: visit(node.pattern),
+              value: visit(node.value)
+            )
+          end
+
           def visit_assoc_splat(node)
             node.copy(value: visit(node.value))
           end
@@ -37,7 +45,10 @@ module Mayu
           end
 
           def visit_lambda(node)
-            node.copy(params: visit(node.params), statements: visit(node.statements))
+            node.copy(
+              params: visit(node.params),
+              statements: visit(node.statements)
+            )
           end
 
           def visit_assoc(node)
@@ -45,7 +56,10 @@ module Mayu
           end
 
           def visit_aref(node)
-            node.copy(collection: visit(node.collection), index: visit(node.index))
+            node.copy(
+              collection: visit(node.collection),
+              index: visit(node.index)
+            )
           end
 
           def visit_if_op(node)
