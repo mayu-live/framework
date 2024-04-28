@@ -228,7 +228,7 @@ module Mayu
 
         def update_attribute(prop, old, new)
           unless new
-            patch(Patches::RemoveAttribute[@parent.id, new.to_s])
+            patch(Patches::RemoveAttribute[@parent.id, prop])
             return
           end
 
