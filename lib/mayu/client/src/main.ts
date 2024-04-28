@@ -12,7 +12,7 @@ import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
 import { SESSION_MIME_TYPE, SESSION_PATH, PING_INTERVAL } from "./constants";
 import { updateConnectionStatus } from "./ping";
 import { getTransferState, setTransferState } from "./transfer";
-import throttle from './throttle'
+import throttle from "./throttle";
 
 import "./custom-elements/mayu-exception";
 
@@ -22,7 +22,7 @@ declare global {
   }
 
   interface Document {
-    startViewTransition?: (callback: () => void) => void
+    startViewTransition?: (callback: () => void) => void;
   }
 }
 
@@ -46,21 +46,23 @@ class Mayu {
 
   async #write(message: any) {
     try {
-      await this.#writer?.write(message)
+      await this.#writer?.write(message);
     } catch (e) {
-      console.error("Write error")
+      console.error("Write error");
     }
   }
 
   callback(event: Event, id: string) {
-    const serializedEvent = serializeEvent(event)
+    event.preventDefault();
+
+    const serializedEvent = serializeEvent(event);
     throttle(event.currentTarget!, () => {
       this.#write({
         type: "callback",
         payload: { id, event: serializedEvent },
         ping: performance.now(),
       });
-    })
+    });
   }
 
   navigate(href: string, pushState: boolean = true) {
@@ -95,22 +97,25 @@ async function resetSessionEntirely() {
       method: "GET",
       credentials: "include",
       headers: new Headers({
-        accept: "text/html"
+        accept: "text/html",
       }),
-    })
-  ])
+    }),
+  ]);
 
-  const html = (await res.text()).replace(/^<!DOCTYPE html>\n/, '')
-  const sessionId = res.headers.get("x-mayu-session-id")
+  const html = (await res.text()).replace(/^<!DOCTYPE html>\n/, "");
+  const sessionId = res.headers.get("x-mayu-session-id");
 
-  console.warn(`%cmorphing dom`, "font-size: 4em; font-weight: bold; font-family: monospace;")
+  console.warn(
+    `%cmorphing dom`,
+    "font-size: 4em; font-weight: bold; font-family: monospace;"
+  );
 
   if (document.startViewTransition) {
     document.startViewTransition(async () => {
-      morphdom.default(document.documentElement, html)
-    })
+      morphdom.default(document.documentElement, html);
+    });
   } else {
-    morphdom.default(document.documentElement, html)
+    morphdom.default(document.documentElement, html);
   }
 
   setTransferState(null);
@@ -132,7 +137,7 @@ async function startPatchStream(runtime: Runtime, endpoint: string) {
       setTransferState(null);
 
       const callbackStream = new TransformStream();
-      window.Mayu.setWriter(callbackStream.writable.getWriter())
+      window.Mayu.setWriter(callbackStream.writable.getWriter());
       const output = initCallbackStream(endpoint);
 
       failures = 0;
@@ -151,9 +156,9 @@ async function startPatchStream(runtime: Runtime, endpoint: string) {
     } catch (e: any) {
       failures += 1;
 
-      if (e.message === 'expired' || e.message === "cipher error") {
-        console.warn("Resetting session because of:", e.message)
-        endpoint = await resetSessionEntirely()
+      if (e.message === "expired" || e.message === "cipher error") {
+        console.warn("Resetting session because of:", e.message);
+        endpoint = await resetSessionEntirely();
       } else {
         await sleep(Math.min(10_000, 1000 * failures + 1));
       }
@@ -185,7 +190,7 @@ function main() {
     animation-duration: 1s;
   }
   `);
-  document.adoptedStyleSheets.push(sheet)
+  document.adoptedStyleSheets.push(sheet);
 
   const runtime = new Runtime();
 
@@ -193,11 +198,14 @@ function main() {
 
   const sessionId = import.meta.url.split("#").at(-1);
   const endpoint = `${SESSION_PATH}/${sessionId}`;
-  startPatchStream(runtime, endpoint)
+  startPatchStream(runtime, endpoint);
 }
 
 if (window.Mayu) {
-  console.error("%cwindow.Mayu is already defined", "font-size: 1.5em; color: #c00;")
+  console.error(
+    "%cwindow.Mayu is already defined",
+    "font-size: 1.5em; color: #c00;"
+  );
 } else {
-  main()
+  main();
 }
