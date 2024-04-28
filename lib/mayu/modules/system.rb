@@ -24,18 +24,15 @@ module Mayu
         new(root, **options).use(&)
       end
 
-      def self.current =
-        Fiber[CURRENT_KEY]
+      def self.current = Fiber[CURRENT_KEY]
 
-      def self.import(path, source) =
-        current.import(path, source)
+      def self.import(path, source) = current.import(path, source)
 
-      def self.add_asset(asset, source) =
-        current.add_asset(asset, source)
+      def self.add_asset(asset, source) = current.add_asset(asset, source)
 
       def self.import?(path, source)
         import(path, source)
-      rescue
+      rescue StandardError
         nil
       end
 
@@ -84,26 +81,20 @@ module Mayu
 
         matching_rules = @rules.select { _1.match?(path) }
 
-        if matching_rules.empty?
-          raise "No rules for file: #{path}"
-        end
+        raise "No rules for file: #{path}" if matching_rules.empty?
 
         transformed =
-          matching_rules
-            .reduce(file) do |file, rule|
-              rule.call(file)
-            end
-            .source
-            # .tap do
-            #   puts "\e[3m#{path}\e[0m\e[35m\n#{_1}\e[0m"
-            # end
+          matching_rules.reduce(file) { |file, rule| rule.call(file) }.source
+        # .tap do
+        #   puts "\e[3m#{path}\e[0m\e[35m\n#{_1}\e[0m"
+        # end
 
         source_map = SourceMap::SourceMap.parse(input, transformed)
         [transformed, source_map]
       end
 
       def relative_from_root(path)
-        Pathname.new(path).relative_path_from(@root).to_s.sub(/\A\/*/, "/")
+        Pathname.new(path).relative_path_from(@root).to_s.sub(%r{\A/*}, "/")
       end
 
       def register(path, mod)
@@ -132,13 +123,13 @@ module Mayu
               in Watcher::Events::Updated[path:]
                 if mod = @mods[path]
                   mod.dirty!
-                  # visit_dependencies(mod, &:dirty!)
+                  visit_dependants(mod, &:dirty!)
                 else
                   puts "\e[31mModule not found: #{path}\e[0m"
                 end
               in Watcher::Events::Deleted[path:]
                 if mod = @mods.delete(path)
-                  visit_dependencies(mod, &:dirty?)
+                  visit_dependants(mod, &:dirty?)
                   delete_mod(path)
                 end
               end
@@ -179,9 +170,7 @@ module Mayu
       end
 
       def update_order
-        overall_order.each_with_index do |mod, index|
-          mod.order = index
-        end
+        overall_order.each_with_index { |mod, index| mod.order = index }
       end
 
       def delete_mod(id)
@@ -226,11 +215,11 @@ module Mayu
         end
       end
 
-      def visit_dependencies(mod, &block)
+      def visit_dependants(mod, &block)
         mod.dependants.each do |dependency|
           if mod = @mods[dependency]
             yield mod
-            visit_dependencies(mod, &block)
+            visit_dependants(mod, &block)
           end
         end
       end
