@@ -208,7 +208,11 @@ module Mayu
 
         def update_callback(prop, old, new)
           if old
-            return prop, old if old.callback.same?(new)
+            if old.callback.respond_to?(:same?)
+              return prop, old if old.callback.same?(new)
+            end
+
+            return prop, old if old.callback == new
 
             closest(VDocument).remove_listener(old)
 

@@ -44,9 +44,9 @@
 
   def mount
     loop do
-      if state[:running]
+      if @running
         handle_step
-        sleep 1.0 / state[:fps]
+        sleep 1.0 / @fps
       else
         sleep 0.5
       end
@@ -73,11 +73,11 @@
   end
 
   def handle_reset
-    @grid = self.class.init_grid(width, height)
+    @grid = self.class.init_grid(@width, @height)
   end
 
   def handle_randomize(event)
-    @grid = self.class.init_grid(width, height) { rand(2).zero? }
+    @grid = self.class.init_grid(@width, @height) { rand(2).zero? }
   end
 
   def set_cell_value(x, y, value)
@@ -93,20 +93,20 @@
 
   def handle_change_width(e)
     e => { target: { value: } }
-    width = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
+    @width = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
     @grid = @grid.map do |row|
-        row.slice(0...width).fill(false, (row.size)...width)
+      row.slice(0...@width).fill(false, (row.size)...@width)
     end
     handle_reset
   end
 
   def handle_change_height(e)
     e => { target: { value: } }
-    height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    if @grid.size > height
-      @grid = grid.slice(0..height)
+    @height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
+    if @grid.size > @height
+      @grid = grid.slice(0..@height)
     else
-      @grid = @grid + self.class.init_grid(width, height - @grid.size)
+      @grid = @grid + self.class.init_grid(@width, @height - @grid.size)
     end
     handle_reset
   end
@@ -130,7 +130,7 @@
   private
 
   def step_grid(grid)
-    grid.map.with_index do |row, y|
+    @grid.map.with_index do |row, y|
       row.map.with_index do |alive, x|
         RULES[alive ? :s : :b].include?(count_neighbors(grid, x, y))
       end
@@ -144,7 +144,7 @@
   def each_neighbor(grid, x, y)
     Enumerator.new do |enum|
       -1.upto(1) do |yoff|
-        row = grid[(y + yoff) % grid.size]
+        row = @grid[(y + yoff) % grid.size]
 
         -1.upto(1) do |xoff|
           next if yoff.zero? && xoff.zero?
@@ -190,17 +190,17 @@
       %div
         %label(for="grid-width") Grid width
         %br
-        %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: state[:width]}
-        %output= state[:width]
+        %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: @width}
+        %output= @width
       %div
         %label(for="grid-height") Grid height
         %br
-        %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: state[:height]}
-        %output= state[:height]
+        %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: @height}
+        %output= @height
       %div
         %label(for="game-fps") Frames per second
         %br
-        %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: state[:fps]}
-        %output= state[:fps]
+        %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
+        %output= @fps
 
   %GameGrid(grid=@grid ondraw=handle_draw)
