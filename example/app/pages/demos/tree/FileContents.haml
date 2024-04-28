@@ -22,31 +22,28 @@
     padding: 1em;
   }
 
-:ruby
-- props => { root:, path: }
-
-- return unless path
+- return unless $path
   %p Please choose a file
 
-- path = File.expand_path(path, "/")
+- full_path = File.expand_path($path, "/")
 
-- return unless path.start_with?("/app/")
-  %p #{path} is not valid
+- return unless full_path.start_with?("/app/")
+  %p #{full_path} is not valid
 
-- absolute_path = File.join(root, path)
-- basename = File.basename(path)
+- absolute_path = File.join($root, full_path)
+- basename = File.basename(full_path)
 
 - return unless File.file?(absolute_path)
   %p #{basename} is not a file
 
 - extname = File.extname(basename)
 - return unless ALLOWED_EXTENSIONS.include?(extname)
-  %p #{path} is not a #{ALLOWED_EXTENSIONS.join("/")}-file
+  %p #{full_path} is not a #{ALLOWED_EXTENSIONS.join("/")}-file
 
 :ruby
   source = File.read(absolute_path)
   language = extname.delete_prefix(".").to_sym
 
 %article.article
-  %h3.path= path
+  %h3.path= full_path
   %Highlight(language=language)= source

@@ -4,15 +4,33 @@
   FileContents = import("./FileContents")
   Directory = import("./Directory")
 
-  def self.get_initial_state(**props) = {
-    selected_path: nil
-  }
+  def initialize
+    @selected_path = nil
+  end
+
+- root = File.expand_path(".")
+
+%article
+  .header
+    %Heading(level=2) App tree
+
+    %p
+      This page shows the file structure of the example app.
+      %a(href="https://github.com/mayu-live/framework/tree/main/example/app")<
+  .grid
+    .column
+      .scroll.tree
+        %Directory(initial_open root=root){path: "app"}
+    .column
+      .scroll
+        %FileContents(root=root){path: $query[:file]}
 
 :css
   article {
     display: flex;
     flex-direction: column;
     container-type: inline-size;
+    min-height: 100%;
   }
 
   .grid {
@@ -51,20 +69,3 @@
       min-height: 10em;
     }
   }
-
-- root = File.expand_path(".")
-
-%article
-  .header
-    %Heading(level=2) App tree
-
-    %p
-      This page shows the file structure of the example app.
-      %a(href="https://github.com/mayu-live/framework/tree/main/example/app")<
-  .grid
-    .column
-      .scroll.tree
-        %Directory(initial_open root=root){path: "app"}
-    .column
-      .scroll
-        %FileContents(root=root){path: props.dig(:request, :query, :file)}

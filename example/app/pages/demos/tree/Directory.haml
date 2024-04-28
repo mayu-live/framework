@@ -3,14 +3,14 @@
   Name = import("./Name")
   FileEntry = import("./FileEntry")
 
-  def self.get_initial_state(initial_open: false, **) = {
-    open: initial_open,
-    entries: nil,
-  }
+  def initialize
+    @open = $initial_open || false
+    @entries = @open && load_entries
+  end
 
   def mount
-    if state[:open]
-      update(entries: load_entries)
+    if @open
+      @entries = load_entries
     end
   end
 
@@ -19,31 +19,45 @@
   end
 
   def handle_toggle
-    update do |state|
-      open = !state[:open]
-      entries = state[:entries] || (open && load_entries)
-      { open:, entries: }
-    end
+    @open = !@open
+    @entries ||= @open && load_entries
   end
 
   private
 
   def load_entries
-    props => { root:, path: }
-
     entries =
       Dir
-        .entries(File.join(root, path))
+        .entries(File.join($root, $path))
         .difference(%w[. ..])
         .sort
-        .map { File.join(path, _1) }
-        .group_by { File.directory?(File.join(root, _1)) }
+        .map { File.join($path, _1) }
+        .group_by { File.directory?(File.join($root, _1)) }
 
     {
       directories: entries[true] || [],
       files: entries[false] || [],
     }
   end
+
+:ruby
+  icon = @open ? "folder-open" : "folder"
+
+%div
+  %Name(icon=icon color="var(--blue)")
+    %button(type="button" onclick=handle_toggle)
+      #{File.basename($path)}/
+
+  = if @open
+    = if @entries
+      %ul
+        = @entries[:directories]&.map do |path|
+          %li[path]
+            %Self(root=$root path=path)
+        = @entries[:files]&.map do |path|
+          %li[path]
+            %FileEntry(root=$root path=path)
+
 :css
   li {
     margin: 0;
@@ -65,20 +79,3 @@
     text-decoration: underline;
     cursor: pointer;
   }
-:ruby
-  icon = state[:open] ? "folder-open" : "folder"
-
-%div
-  %Name(icon=icon color="var(--blue)")
-    %button(type="button" onclick=handle_toggle)
-      #{File.basename($path)}/
-
-  = if state[:open]
-    = if entries = state[:entries]
-      %ul
-        = entries[:directories]&.map do |path|
-          %li[path]
-            %Self(root=$root path=path)
-        = entries[:files]&.map do |path|
-          %li[path]
-            %FileEntry(root=$root path=path)

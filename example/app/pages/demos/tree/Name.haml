@@ -9,7 +9,7 @@
     gap: .5em;
   }
 :ruby
-  props => { icon: }
+  $* => { icon:, **props }
   color = $color || "var(--dark)"
 %label{**props}
   %Icon(name=icon color=color)
