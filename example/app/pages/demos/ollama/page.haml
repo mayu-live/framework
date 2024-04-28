@@ -4,100 +4,96 @@
   Message = import("./Message")
 
   MODEL = "llama2"
+  OLLAMA_URL = ENV.fetch("OLLAMA_URL", "http://localhost:11434")
 
-  def self.get_initial_state(**) = {
-    key: 0,
-    messages: [],
-    words: [],
-    loading: false,
-    ollama: Ollama.new(model: MODEL, url: ENV["OLLAMA_URL"])
-  }
+  def initialize
+    @key = 0
+    @messages = []
+    @words = []
+    @loading = false
+    @ollama = Ollama.new(
+      model: MODEL,
+      url: OLLAMA_URL,
+    )
+  end
 
   def handle_submit(e)
-    return if state[:loading]
+    return if @loading
 
     text = e.dig(:currentTarget, :formData, :message)
 
-    update do |state|
-      {
-        **state,
-        key: state[:key].succ,
-        loading: true,
-        messages: [
-          *state[:messages],
-          { id: SecureRandom.alphanumeric, role: "user", text: }
-        ]
-      }
-    end
+    @key += 1
+    @loading = true
+    @messages = [
+      *@messages,
+      { id: SecureRandom.alphanumeric, role: "user", text: }
+    ]
 
     chunks = []
 
     begin
-      state[:ollama].generate(text) do |word|
+      @ollama.generate(text) do |word|
         chunks.push(word)
 
-        update do |state|
-          {
-            **state,
-            words: [*state[:words], word]
-          }
-        end
+        @words = [*@words, word]
       end
     rescue => e
       pp e
     end
 
-    update do |state|
+    @words = []
+    @messages = [
+      *@messages,
       {
-        **state,
-        words: [],
-        messages: [
-          *state[:messages],
-          {
-            id: SecureRandom.alphanumeric,
-            role: "model",
-            text: chunks.join.strip
-          }
-        ]
+        id: SecureRandom.alphanumeric,
+        role: "model",
+        text: chunks.join.strip
       }
-    end
+    ]
   ensure
-    update(loading: false)
+    @loading = false
   end
 
 %section
-  %Heading(level=2) Ollama chat
+  %Heading(level=2)
+    %span Ollama chat
 
   .scroller
-    = if state[:messages].empty?
+    = if @messages.empty?
       %p.type-your-message Type a message to chat with #{MODEL}
     %ul
-      = unless state[:words].empty?
+      = unless @words.empty?
         %Message.model[:temp]{
           role: "model",
-          text: state[:words].join.strip
+          text: @words.join.strip
         }
-      = state[:messages].reverse.map do |message|
+      = @messages.reverse.map do |message|
         %Message.model[message[:id]]{
           role: message[:role],
           text: message[:text],
         }
   %form(onsubmit=handle_submit)
-    %input[state[:key]]{
+    %input[@key]{
       autofocus: true,
       type: "text",
       name: "message",
       autocomplete: "off",
       placeholder: "Type your message here…"
     }
-    %Button(type="submit"){disabled: state[:loading]} Send
+    %Button(type="submit"){disabled: @loading} Send
 
 :css
   section {
     display: grid;
     grid-template-rows: auto 1fr auto;
     min-height: 20em;
+    height: 100%;
+    border: 1px solid #f0f;
     gap: 1em;
+  }
+
+  .scroller {
+  border: 5px solid #0f0;
   }
 
   Heading {
