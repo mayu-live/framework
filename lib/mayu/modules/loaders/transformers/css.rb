@@ -133,9 +133,36 @@ module Mayu
                   else
                     DynaSymbol([TStringContent(key)], '"')
                   end,
-                  StringLiteral([TStringContent(value.to_s)], '"')
+                  StringLiteral(
+                    [
+                      TStringContent(
+                        join_class(
+                          value.to_s,
+                          @parse_result.exports,
+                          @parse_result.classes
+                        )
+                      )
+                    ],
+                    '"'
+                  )
                 )
               end
+          end
+
+          def join_class(klass, exports, classes)
+            if composes = exports[klass]&.composes
+              [
+                klass,
+                *composes.map do |compose|
+                  case compose
+                  in Mayu::CSS::ComposeLocal
+                    classes[compose.name.to_sym]
+                  end
+                end
+              ].join(" ")
+            else
+              klass
+            end
           end
 
           def build_code_heredoc

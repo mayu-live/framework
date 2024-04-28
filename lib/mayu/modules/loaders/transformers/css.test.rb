@@ -1,9 +1,8 @@
+#!/usr/bin/env ruby -rbundler/setup
 # frozen_string_literal: true
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
-
-#!/usr/bin/env ruby -rbundler/setup
 
 require "pry"
 require "minitest/autorun"
