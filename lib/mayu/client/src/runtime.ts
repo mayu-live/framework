@@ -293,10 +293,67 @@ const Patches = {
     this.getElement(id).className = value;
   },
   SetAttribute(this: NodeSet, id: string, name: string, value: string) {
-    this.getElement(id).setAttribute(name, value);
+    const element = this.getElement(id);
+
+    if (name === "open") {
+      if (element instanceof HTMLDialogElement) {
+        element.showModal();
+      }
+    }
+
+    if (element instanceof HTMLInputElement) {
+      switch (name) {
+        case "value": {
+          element.value = value;
+          break;
+        }
+        case "checked": {
+          element.checked = true;
+          break;
+        }
+        case "indeterminate": {
+          element.indeterminate = true;
+          return;
+        }
+      }
+    }
+
+    if (name === "initial_value") {
+      name = "value";
+    } else {
+      name = name.replaceAll(/_/g, "");
+    }
+
+    element.setAttribute(name, value);
   },
   RemoveAttribute(this: NodeSet, id: string, name: string) {
-    this.getElement(id).removeAttribute(name);
+    const element = this.getElement(id);
+
+    if (name === "open") {
+      if (element instanceof HTMLDialogElement) {
+        element.open = false;
+        element.close();
+      }
+    }
+
+    if (element instanceof HTMLInputElement) {
+      switch (name) {
+        case "value": {
+          element.value = "";
+          break;
+        }
+        case "checked": {
+          element.checked = false;
+          break;
+        }
+        case "indeterminate": {
+          element.indeterminate = false;
+          return;
+        }
+      }
+    }
+
+    element.removeAttribute(name);
   },
   SetCSSProperty(this: NodeSet, id: string, name: string, value: string) {
     this.getElement(id).style.setProperty(name, value);
