@@ -3,115 +3,94 @@
   Card = import("/components/UI/Card")
   Link = import("/components/UI/Link")
 
-  def self.get_initial_state(**) = {
-    items: [],
-    editing: nil,
-    filter: "all",
-    form_key: "form-0",
-  }
+  def initialize
+    @items = []
+    @editing = nil
+    @filter = "all"
+    @form_key = "form-0"
+  end
 
   def handle_submit(e)
     e => { target: { formData: { new_todo: String => description } } }
 
-    update do |items:, form_key:|
-      {
-        items: [
-          { id: Nanoid.generate(), description: },
-          *items,
-        ],
-        form_key: form_key.succ,
-        editing: nil,
-      }
-    end
+    @items = [
+      { id: SecureRandom.alphanumeric(10), description: },
+      *@items
+    ]
+
+    @form_key = @form_key.succ
+    @editing = nil
   end
 
   def handle_set_filter(e)
     e => { target: { name: } }
-    update(filter: name, editing: nil)
+    @filter = name
+    @editing = nil
   end
 
   def handle_dblclick(e)
     e => { currentTarget: { id: } }
-    update(editing: id)
+    @editing = id
   end
 
   def handle_update(e)
     e => { currentTarget: { id:, formData: { description: } } }
 
-    update do |items:|
-      {
-        editing: nil,
-        items: items.map { |item|
-          if item[:id] == id
-            { **item, description:}
-          else
-            item
-          end
-        }
-      }
+    @editing = nil
+    @items = @items.map do |item|
+      if item[:id] == id
+        { **item, description: }
+      else
+        item
+      end
     end
   end
 
   def handle_check(e)
     e => { currentTarget: { name: id, checked: completed } }
 
-    update do |items:|
-      {
-        editing: nil,
-        items: items.map { |item|
-          if item[:id] == id
-            { **item, completed: }
-          else
-            item
-          end
-        }
-      }
+    @editing = nil
+    @items = @items.map do |item|
+      if item[:id] == id
+        { **item, completed: }
+      else
+        item
+      end
     end
   end
 
   def handle_delete(e)
     e => { currentTarget: { name: id } }
 
-    update do |items:|
-      {
-        editing: nil,
-        items: items.reject { |item| item[:id] == id }
-      }
-    end
+    @items = @items.reject { |item| item[:id] == id }
   end
 
   def handle_toggle_all(e)
     e => { target: { checked: completed } }
+    pp e
 
-    update do |items:|
-      {
-        editing: nil,
-        items: items.map do |item|
-          { **item, completed: }
-        end
-      }
+    @items = @items.map do |item|
+      { **item, completed: }
     end
+
+    @editing = nil
   end
 
   def handle_clear_completed
-    update do |items:|
-      {
-        editing: nil,
-        items: items.reject { _1[:completed] }
-      }
-    end
+    @editing = nil,
+    @items = @items.reject { _1[:completed] }
   end
 
   private
 
-  def get_filtered_items(filter = state[:filter])
+  def get_filtered_items(filter = @filter)
     case filter
     in "all"
-      state[:items]
+      @items
     in "active"
-      state[:items].select { !_1[:completed] }
+      @items.select { !_1[:completed] }
     in "completed"
-      state[:items].select { _1[:completed] }
+      @items.select { _1[:completed] }
     end
   end
 
@@ -128,8 +107,8 @@
   end
 
   def toggle_checkbox_state
-    completed_count = state[:items].count { _1[:completed] }
-    remaining_count = state[:items].count { !_1[:completed] }
+    completed_count = @items.count { _1[:completed] }
+    remaining_count = @items.count { !_1[:completed] }
 
     if completed_count == 0
       { checked: false, indeterminate: false }
@@ -141,6 +120,50 @@
       end
     end
   end
+
+%article
+  %Heading(level=2) Todo App
+  %p
+    This is an implementation of the classic
+    %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
+    \.
+  %Card
+    .header
+      %form.form(onsubmit=handle_submit autocomplete="off")[@form_key]
+        %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
+        %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
+    .main
+      %ul
+        = get_filtered_items.map do |item|
+          %li[item[:id]]
+            = if @editing == item[:id]
+              %form.edit(onsubmit=handle_update autocomplete="off"){id: item[:id]}
+                %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
+                  initial_value: item[:description]
+                }
+            = else
+              .row
+                %input.checkbox(type="checkbox" onchange=handle_check){
+                  name: item[:id],
+                  checked: item[:completed],
+                }
+                %p.description(ondblclick=handle_dblclick){
+                  id: item[:id],
+                  class: { completed: item[:completed] },
+                }= item[:description]
+                %button.delete-button(onclick=handle_delete){name: item[:id]}
+    .footer
+      .footer-grid
+        .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
+        .filter
+          = %w[all active completed].map do |name|
+            %button.filter-button(onclick=handle_set_filter name=name title="Show #{name} items"){
+              aria: { current: (@filter == name).to_s }
+            }= name.capitalize
+        .clear-completed
+          - completed = get_filtered_items("completed")
+          = if completed.length.nonzero?
+            %button.clear-button(onclick=handle_clear_completed) Clear completed
 
 :css
   .header {
@@ -288,47 +311,3 @@
   .clear-completed {
     text-align: right;
   }
-
-%article
-  %Heading(level=2) Todo App
-  %p
-    This is an implementation of the classic
-    %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
-    \.
-  %Card
-    .header
-      %form.form(onsubmit=handle_submit autocomplete="off")[state[:form_key]]
-        %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
-        %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
-    .main
-      %ul
-        = get_filtered_items.map do |item|
-          %li[item[:id]]
-            = if state[:editing] == item[:id]
-              %form.edit(onsubmit=handle_update autocomplete="off"){id: item[:id]}
-                %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
-                  initial_value: item[:description]
-                }
-            = else
-              .row
-                %input.checkbox(type="checkbox" onchange=handle_check){
-                  name: item[:id],
-                  checked: item[:completed],
-                }
-                %p.description(ondblclick=handle_dblclick){
-                  id: item[:id],
-                  class: { completed: item[:completed] },
-                }= item[:description]
-                %button.delete-button(onclick=handle_delete){name: item[:id]}
-    .footer
-      .footer-grid
-        .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
-        .filter
-          = %w[all active completed].map do |name|
-            %button.filter-button(onclick=handle_set_filter name=name title="Show #{name} items"){
-              aria: { current: (state[:filter] == name).to_s }
-            }= name.capitalize
-        .clear-completed
-          - completed = get_filtered_items("completed")
-          = if completed.length.nonzero?
-            %button.clear-button(onclick=handle_clear_completed) Clear completed
