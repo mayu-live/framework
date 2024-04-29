@@ -43,13 +43,6 @@ module Mayu
         @environment = Environment.from_config(config)
         @sessions = SessionStore.new
         @client_files = StaticFiles.new(@environment.client_path)
-
-        system = Modules::System.current
-
-        @environment.router.all_templates.each do |template|
-          system.import(File.join("/pages", template))
-        end
-
         @sessions.start_cleanup_task
       end
 
