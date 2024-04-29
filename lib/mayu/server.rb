@@ -50,6 +50,8 @@ module Mayu
 
         @app.stop
         interrupt.default!
+
+        task.stop
       rescue Errno::EADDRINUSE => e
         puts format("\e[3;31m %s \e[0m", e.message)
         exit 1
