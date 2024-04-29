@@ -162,7 +162,7 @@ module Mayu
 
         def update(descriptor)
           @descriptor = descriptor
-          @attributes = update_attributes(@descriptor.props)
+          @attributes = update_attributes(flatten_props(@descriptor.props))
         end
 
         def render
@@ -245,6 +245,23 @@ module Mayu
           end
 
           [prop, new.to_s]
+        end
+
+        def flatten_props(hash, path = [])
+          hash.reduce({}) do |obj, (k, v)|
+            next { **obj, k => v } if k == :style && path.empty?
+
+            current_path = [*path, k]
+
+            obj.merge(
+              case v
+              when Hash
+                flatten_props(v, current_path)
+              else
+                { current_path.join("-") => v }
+              end
+            )
+          end
         end
       end
 
