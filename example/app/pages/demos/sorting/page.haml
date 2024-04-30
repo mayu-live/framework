@@ -9,56 +9,37 @@
   Item = Data.define(:id, :color) do
     def self.create
       new(
-        id: Nanoid.generate(size: 10),
+        id: SecureRandom.alphanumeric(10),
         color: rand * 360
       )
     end
   end
 
-  def self.get_initial_state(**) = {
-    items: Array.new(5) { Item.create }
-  }
+  def initialize =
+    @items = Array.new(5) { Item.create }
 
-  def handle_add
-    update do |state|
-      { items: [*state[:items], *Array.new(5) { Item.create }] }
-    end
-  end
+  def handle_add =
+    @items = [*@items, *Array.new(5) { Item.create }]
 
-  def handle_remove
-    update do |state|
-      { items: state[:items].reject { rand(3).zero? } }
-    end
-  end
+  def handle_remove =
+    @items = @items.reject { rand(3).zero? }
 
-  def handle_shuffle
-    update do |state|
-      { items: state[:items].shuffle }
-    end
-  end
+  def handle_shuffle =
+    @items = @items.shuffle
 
-  def handle_shuffle_slices
-    update do |state|
-      { items: state[:items].each_slice(5).to_a.shuffle.flatten }
-    end
-  end
+  def handle_shuffle_slices =
+    @items = @items.each_slice(5).to_a.shuffle.flatten
 
-  def handle_sort
-    update do |state|
-      { items: state[:items].sort_by(&:id) }
-    end
-  end
+  def handle_sort =
+    @items = @items.sort_by(&:id)
 
-  def handle_sort_by_color
-    update do |state|
-      { items: state[:items].sort_by(&:color) }
-    end
-  end
+  def handle_sort_by_color =
+    @items = @items.sort_by(&:color)
 
 %article
   %Heading(level=2)
     Sorting
-    %span< (#{state[:items].size} items)
+    %span< (#{@items.size} items)
   .flex
     %Button(onclick=handle_add) Add items
     %Button(onclick=handle_remove) Remove items
@@ -67,9 +48,9 @@
     %Button(onclick=handle_sort) Sort
     %Button(onclick=handle_sort_by_color) Sort by color
   .flex
-    %pre= state[:items].map(&:id).join("\n")
+    %pre= @items.map(&:id).join("\n")
     %ul
-      = state[:items].map do |item|
+      = @items.map do |item|
         %li[item.id]{style: { __color: item.color }}
           #{item.id} (#{item.color.to_i})
 :css
@@ -80,7 +61,8 @@
   }
 
   pre {
-    line-height: 2em;
+    font-size: 1rem;
+    line-height: 2rem;
   }
 
   ul {
@@ -101,6 +83,6 @@
     background: hsl(var(--color), 50%, 70%);
     background-image: linear-gradient(0.5turn, #0006 0%, #0003 25%, #0000 100%);
     color: #000;
-    font-size: 1em;
+    font-size: 1rem;
     line-height: 2em;
   }
