@@ -30,7 +30,10 @@ module Mayu
       end
 
       def transfer_all
-        @sessions.each_value(&:transfer!)
+        @sessions.each do |session_id, session|
+          session.transfer!
+          delete(session_id)
+        end
       end
 
       def delete(session_id)
