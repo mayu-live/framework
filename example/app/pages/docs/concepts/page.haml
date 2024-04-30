@@ -138,8 +138,7 @@
       Mayu was designed with hot reloading in mind from the start.
       This is a popular feature in many JavaScript build tools like
       [Webpack](https://webpack.js.org/) and [Vite](https://vitejs.dev/),
-      and it makes web development really fun because of the fast
-      feedback loop.
+      and it makes web development fun because of the fast feedback loop.
 
   %Card
     %figure
@@ -155,27 +154,7 @@
     :plain
       ## Built for the future
 
-      Mayu is using some new browser features and is not designed to
-      work with current browsers, but for the browsers of next year.
-
-      [DecompressionStream](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream)
-      is used to compress the event stream. Not supported everywhere,
-      although [polyfilled](https://github.com/mayu-live/framework/blob/main/lib/mayu/client/src/DecompressionStreamPolyfill.ts)
-      using the very small [fflate](https://github.com/101arrowz/fflate) library.
-
-      This website uses the [`has()`](https://developer.mozilla.org/en-US/docs/Web/CSS/:has)-selector,
-      which can be used to do things you would normally have to use JavaScript for.
-      [Check out this YouTube video](https://www.youtube.com/watch?v=OGJvhpoE8b4 "I never thought this would be possible with CSS")
-      where [Kevin Powell](https://www.youtube.com/kepowob) shows how to make
-      some really cool validations with only HTML and CSS.
-
-      The [Navigation API](https://developer.chrome.com/docs/web-platform/navigation-api/)
-      will be very useful once supported everywhere.
-      [There is an issue on GitHub](https://github.com/mayu-live/framework/issues/12).
-
-      [CSS Module Scripts](https://web.dev/css-module-scripts/)
-      should probably be used for loading CSS as soon as
-      [Firefox ships support for Import Assertions](https://bugzilla.mozilla.org/show_bug.cgi?id=1777526)
+      Mayu uses the latest browser features and does not support older browsers.
 
 :css
   Card {
