@@ -29,7 +29,9 @@
   }
 
 %Button(onclick=handle_click){
-  transform: "translate(#{@x}px, #{@y}px)",
-  transition: "all 200ms"
+  style: {
+    transform: "translate(#{@x}px, #{@y}px)",
+    transition: "all 200ms"
+  }
 }
   = MESSAGES[@count % MESSAGES.size]
