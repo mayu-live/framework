@@ -16,7 +16,7 @@
     # print "\e[0m" if node.has_key?(:children)
     case node
     in type: :root, children:
-      H[:div, *visit_nodes(children)]
+      visit_nodes(children)
     in type: :header, children:, options: { level: }
       build(:header, :"h#{level}", *visit_nodes(children), level:)
     in type: :text | :blank, value:
@@ -62,10 +62,21 @@
     end
 
     return yield if block_given?
-    H[default, *children, class: Styles[default]]
+
+    H[
+      default,
+      *children,
+      **self.class.merge_props({ class: default })
+    ]
   end
 
+.markdown
+  = visit_node(Kramdown::Document.new(Array(__children).join).to_hash_ast)
+
 :css
+  .markdown {
+  }
+
   .unsupported {
     font-family: var(--font-mono), monospace;
     color: red;
@@ -81,5 +92,3 @@
   .li > .p {
     margin: .25em 0;
   }
-
-= visit_node(Kramdown::Document.new(Array(__children).join).to_hash_ast)
