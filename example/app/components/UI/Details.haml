@@ -19,13 +19,13 @@
   end
 
   def handle_toggle(e)
-    if e in { target: { open: true } }
-      @loaded = true
-    end
+    e => { target: { open: } }
+    @open = open
+    @loaded ||= open
   end
 
 %Card(class=$class)
-  %details(ontoggle=handle_toggle){open: @open}
+  %details(ontoggle=handle_toggle open=@open)
     %summary= $summary
     .content
       = if @loaded
