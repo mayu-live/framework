@@ -6,7 +6,7 @@
     %slot(name="breadcrumbs")
   %nav
     %slot(name="menu")
-  %div
+  %MaxWidth#page
     %slot
 
 :css
@@ -47,7 +47,7 @@
     nav {
       border-bottom: 0;
       border-right: var(--thin-border);
-      container-type: size;
+      container-type: inline-size;
     }
   }
 
