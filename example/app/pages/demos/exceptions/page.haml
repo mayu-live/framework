@@ -6,16 +6,13 @@
   Details = import("/components/UI/Details")
   Link = import("/components/UI/Link")
 
-  def self.get_initial_state(**) = {
-    count: 0
-  }
+  def initialize =
+    @count = 0
 
   def handle_click(e) =
     case e
     in { target: { name: "increment" } }
-      update do |state|
-        { count: state[:count] + 1 }
-      end
+      @count += 1
     end
 
 %article
@@ -26,7 +23,7 @@
       Issue for implementing error boundaries
   %p
     Count:
-    %output<= state[:count]
+    %output<= @count
   .buttons
     %Button(onclick=handle_click name="increment") Increment
     %Button(onclick=handle_click name="error") Error
