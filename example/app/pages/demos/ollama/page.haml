@@ -4,7 +4,7 @@
   Message = import("./Message")
 
   MODEL = "llama2"
-  OLLAMA_URL = ENV.fetch("OLLAMA_URL", "http://localhost:11434")
+  OLLAMA_HOST = ENV.fetch("OLLAMA_HOST", "http://localhost:11434")
 
   def initialize
     @key = 0
@@ -13,7 +13,7 @@
     @loading = false
     @ollama = Ollama.new(
       model: MODEL,
-      url: OLLAMA_URL,
+      url: OLLAMA_HOST,
     )
   end
 
