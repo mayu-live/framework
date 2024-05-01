@@ -42,6 +42,19 @@
       H[Highlight, code, language: header]
     in type: :codespan, value:, options: { codespan_delimiter: "`" }
       build(:code, :code, value.strip)
+    in type: :p, children:, **rest
+      children.chunk do |child|
+        child in {
+          type: :codespan,
+          options: { codespan_delimiter: "```" }
+        }
+      end.map do |outside_p, chunk|
+        if outside_p
+          visit_nodes(chunk)
+        else
+          build(:p, :p, *visit_nodes(chunk))
+        end
+      end.flatten
     in type:, children:, **rest
       build(type, type, *visit_nodes(children))
     in type:
