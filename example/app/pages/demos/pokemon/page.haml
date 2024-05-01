@@ -14,7 +14,7 @@
   def mount
     sleep 1
 
-    res = helpers.fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
+    res = fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
     @result = res.json(symbolize_names: true)
   rescue => e
     @error = e.message
@@ -59,7 +59,7 @@
 
   %Pagination(on-change-per-page=handle_set_per_page){
     page:,
-    per_page:,
+    per_page: @per_page,
     total_pages:,
   }
 
