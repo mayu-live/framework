@@ -58,6 +58,7 @@ module Mayu
       end
 
       def run(&)
+        clear_patches!
         @root.start
 
         loop do
@@ -68,6 +69,12 @@ module Mayu
       ensure
         puts "\e[31mSTOPPING ROOT\e[0m"
         @root.stop
+      end
+
+      private
+
+      def clear_patches!
+        @patches.dequeue until @patches.empty?
       end
     end
   end
