@@ -6,6 +6,7 @@
 require_relative "../style_sheet"
 require_relative "../runtime/h"
 require_relative "css_units"
+require_relative "fetch"
 
 module Mayu
   module Component
@@ -13,6 +14,7 @@ module Mayu
       H = Mayu::Runtime::H
 
       using CSSUnits::Refinements
+      include Fetch::Helper
 
       def self.init(**props)
         component = allocate
