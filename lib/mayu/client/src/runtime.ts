@@ -23,16 +23,23 @@ type PatchSet = Patch[];
 export default class Runtime {
   #nodeSet = new NodeSet();
 
-  apply(patches: PatchSet) {
+  async apply(patches: PatchSet) {
     for (const patch of patches) {
       const [name, ...args] = patch;
       console.debug(name, args);
+
       const patchFn = Patches[name as PatchType] as any;
+
       if (!patchFn) {
         throw new Error(`Not implemented: ${name}`);
       }
+
       try {
-        patchFn.apply(this.#nodeSet, args as any);
+        const result = patchFn.apply(this.#nodeSet, args as any);
+
+        if (result instanceof Promise) {
+          await result;
+        }
       } catch (e) {
         console.error(e);
       }
@@ -100,7 +107,11 @@ class NodeSet {
   getElement(id: string) {
     const node = this.getNode(id);
 
-    if (node instanceof Element) {
+    if (node instanceof HTMLElement) {
+      return node;
+    }
+
+    if (node instanceof SVGElement) {
       return node;
     }
 
@@ -290,7 +301,7 @@ const Patches = {
     history.pushState({ path: currentPath }, "", path);
   },
   SetClassName(this: NodeSet, id: string, value: string) {
-    this.getElement(id).className = value;
+    (this.getElement(id) as HTMLElement).className = value;
   },
   SetAttribute(this: NodeSet, id: string, name: string, value: string) {
     const element = this.getElement(id);

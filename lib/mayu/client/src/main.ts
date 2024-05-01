@@ -56,6 +56,7 @@ class Mayu {
     event.preventDefault();
 
     const serializedEvent = serializeEvent(event);
+
     throttle(event.currentTarget!, () => {
       this.#write({
         type: "callback",
@@ -67,6 +68,7 @@ class Mayu {
 
   navigate(href: string, pushState: boolean = true) {
     console.warn("navigate", href);
+
     this.#write({
       type: "navigate",
       payload: { href, pushState },
@@ -151,7 +153,12 @@ async function startPatchStream(runtime: Runtime, endpoint: string) {
 
       for await (const patch of decodeMultiStream(input, { extensionCodec })) {
         updateConnectionStatus("connected");
-        runtime.apply(patch as any);
+
+        try {
+          await runtime.apply(patch as any);
+        } catch (e) {
+          console.error(e);
+        }
       }
     } catch (e: any) {
       failures += 1;
