@@ -3,12 +3,10 @@
   Highlight = import("/components/UI/Highlight")
   Markdown = import("../Markdown")
   Pokemon = import("./Pokemon")
-:css
-  .grid { display: grid; }
-  .scroll {
-    overflow: auto;
-    max-height: 30em;
-  }
+
+%head
+  %title Data fetching
+
 %article
   %Markdown
     :plain
@@ -34,3 +32,10 @@
     .grid
       .scroll
         %Pokemon(id=123)
+
+:css
+  .grid { display: grid; }
+  .scroll {
+    overflow: auto;
+    max-height: 30em;
+  }

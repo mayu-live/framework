@@ -3,6 +3,10 @@
   Highlight = import("/components/UI/Highlight")
   Markdown = import("../Markdown")
   Example = import("./Example")
+
+%head
+  %title Lifecycle methods
+
 %article
   %Markdown
     :plain
@@ -35,11 +39,11 @@
       :ruby
         def mount
           loop do
-            update(time: Time.now.to_s)
+            @time = Time.now.to_s
             sleep 1
           end
         end
-      %p= state[:time]
+      %p= @time
       ```
 
       This component will update the current time every second.
