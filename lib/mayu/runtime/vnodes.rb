@@ -10,6 +10,7 @@ require "async/barrier"
 require "async/queue"
 
 require_relative "dom"
+require_relative "dom_nesting_validation"
 require_relative "h"
 require_relative "descriptors"
 require_relative "inline_style"
@@ -70,6 +71,10 @@ module Mayu
 
         def marshal_load(a)
           @id, @id_counter, @descriptor, @parent, @state = a
+        end
+
+        def ancestor_info
+          @parent.ancestor_info
         end
 
         def running?
@@ -268,6 +273,8 @@ module Mayu
       class VElement < Base
         def initialize(...)
           super
+          validate_dom_nesting!
+
           @children = VChildren.new(@descriptor.children, parent: self)
           @child_ids = @children.child_ids
           @attributes = VAttributes.new(@descriptor, parent: self)
@@ -283,6 +290,10 @@ module Mayu
           @children = children
           @child_ids = child_ids
           @attributes = attributes
+        end
+
+        def ancestor_info
+          @ancestor_info ||= super.update(@descriptor.type)
         end
 
         def traverse(&)
@@ -327,6 +338,18 @@ module Mayu
               @child_ids = new_child_ids
               patch(Patches::ReplaceChildren[id, @child_ids])
             end
+          end
+        end
+
+        private
+
+        def validate_dom_nesting!
+          if warning =
+               DOMNestingValidation.validate(
+                 @descriptor.type,
+                 @parent.ancestor_info
+               )
+            Console.logger.warn(self, warning)
           end
         end
       end
@@ -807,7 +830,7 @@ module Mayu
             end
 
             barrier.async do
-              puts "\e[1mMounting #{component_type_name}\e[0m"
+              # puts "\e[1mMounting #{component_type_name}\e[0m"
 
               handle_errors { @instance.mount }
             end
@@ -936,6 +959,10 @@ module Mayu
           @styles = Set.new
           @head = Set.new
           @html = VComponent.new(H[Html, @descriptor], parent: self)
+        end
+
+        def ancestor_info
+          DOMNestingValidation::AncestorInfo::EMPTY
         end
 
         def add_head(vnode)
