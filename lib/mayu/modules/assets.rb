@@ -30,9 +30,10 @@ module Mayu
 
             filename =
               format(
-                "%s.%s",
-                Base64.urlsafe_encode64(content_hash, padding: false),
-                mime_type.preferred_extension
+                "%s.%s?%s",
+                File.basename(filename, ".*"),
+                mime_type.preferred_extension,
+                Base64.urlsafe_encode64(content_hash, padding: false)[0..10]
               )
 
             new(content_type:, content_hash:, encoded_content:, filename:)
