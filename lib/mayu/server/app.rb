@@ -137,7 +137,12 @@ module Mayu
       end
 
       def handle_asset(request)
-        asset = Modules::System.current.get_asset(File.basename(request.path))
+        asset =
+          request
+            .path
+            .then { File.basename(_1) }
+            .then { CGI.unescape_uri_component(_1) }
+            .then { Modules::System.current.get_asset(_1) }
 
         return text_response(404, "file not found") unless asset
 
@@ -179,8 +184,18 @@ module Mayu
           body,
           "content-type": "text/html; charset=utf-8",
           "x-mayu-session-id": session.id,
+          link: link_header(session),
           **Cookies.set_token_cookie_header(session)
         )
+      end
+
+      def link_header(session)
+        [
+          "<#{@environment.runtime_js_for_session_id(session.id)}>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high",
+          *session.styles.map do
+            "</.mayu/assets/#{CGI.escape_uri_component(_1)}>; rel=preload; as=style"
+          end
+        ].join(", ")
       end
 
       def handle_session_transfer(request, session_id)

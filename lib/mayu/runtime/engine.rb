@@ -53,6 +53,10 @@ module Mayu
         @root.render
       end
 
+      def styles
+        @root.styles
+      end
+
       def stop
         @root.stop
       end

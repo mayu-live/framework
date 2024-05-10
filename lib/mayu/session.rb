@@ -82,6 +82,10 @@ module Mayu
       @engine.render
     end
 
+    def styles
+      @engine.styles
+    end
+
     def handle_callback(id, payload)
       update_last_ping
       @engine.callback(id, payload)

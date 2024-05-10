@@ -70,6 +70,8 @@ module Mayu
 
         H = Mayu::Runtime::H
 
+        attr_reader :styles
+
         def initialize(...)
           super(...)
 
