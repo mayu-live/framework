@@ -163,6 +163,8 @@ async function startPatchStream(runtime: Runtime, endpoint: string) {
     } catch (e: any) {
       failures += 1;
 
+      console.error(e);
+
       if (e.message === "expired" || e.message === "cipher error") {
         console.warn("Resetting session because of:", e.message);
         endpoint = await resetSessionEntirely();
