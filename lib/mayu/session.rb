@@ -127,10 +127,7 @@ module Mayu
 
       layouts = [
         system.import("root.haml"),
-        *match.route.layouts.map do
-          p _1
-          system.import(File.join("/pages", _1))
-        end
+        *match.route.layouts.map { system.import(File.join("/pages", _1)) }
       ]
 
       page =

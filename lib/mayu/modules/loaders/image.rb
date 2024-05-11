@@ -19,9 +19,11 @@ module Mayu
             loading_file.with_digest.transform do
               image_size = ImageSize.path(_1.absolute_path)
 
-              SyntaxTree::Formatter
-                .format("", build_code(_1.path, image_size, _1.digest))
-                .tap { |x| puts x }
+              SyntaxTree::Formatter.format(
+                "",
+                build_code(_1.path, image_size, _1.digest)
+              )
+              # .tap { |x| puts x }
             end
           end
 

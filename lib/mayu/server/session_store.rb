@@ -48,7 +48,10 @@ module Mayu
 
               @sessions.delete_if do |session_id, session|
                 if session.timed_out?
-                  puts "\e[31mDeleting timed out session #{session_id}\e[0m"
+                  Console.logger.info(
+                    self,
+                    "\e[31mDeleting timed out session #{session_id}\e[0m"
+                  )
                   session.stop
                   true
                 end

@@ -76,13 +76,16 @@ module Mayu
 
       def get(filename)
         @assets.fetch(filename) do
-          puts "\e[91;1mAsset not found: \e[0;31m#{filename}\e[0m"
+          Console.logger.error(
+            self,
+            "\e[91;1mAsset not found: \e[0;31m#{filename}\e[0m"
+          )
           nil
         end
       end
 
       def store(asset)
-        puts "\e[34mStoring asset: #{asset.filename}\e[0m"
+        Console.logger.info(self, "\e[34mStoring asset: #{asset.filename}\e[0m")
         @assets.store(asset.filename, asset)
       end
     end
