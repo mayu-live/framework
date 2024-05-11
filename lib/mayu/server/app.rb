@@ -140,7 +140,7 @@ module Mayu
         asset =
           request
             .path
-            .then { File.basename(_1) }
+            .then { _1.delete_prefix("/.mayu/assets/") }
             .then { CGI.unescape_uri_component(_1) }
             .then { Modules::System.current.get_asset(_1) }
 
