@@ -76,8 +76,8 @@
 
       ```haml
       %ul
-         = todos.map do |todo|
-           %li[todo.id]= todo.text
+        = todos.map do |todo|
+          %li[todo.id]= todo.text
       ```
 
       ## Pattern matching
@@ -96,9 +96,8 @@
 
       ```haml
       :ruby
-        def initialize
+        def initialize =
           @count = $initial_count || 0
-        end
         def handle_click(event) =
           case event
           in { target: { name: "increment" } }
