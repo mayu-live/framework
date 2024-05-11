@@ -47,9 +47,9 @@ module Mayu
       end
 
       def call(request)
-        puts "\e[3;33m #{request.method} #{request.path} \e[0m"
-
         return text_response(503, "Server is stopping") if @stopping
+
+        # puts "\e[3;33m #{request.method} #{request.path} \e[0m"
 
         case request
         in path: "/favicon.ico"
@@ -99,8 +99,9 @@ module Mayu
 
       def stop
         @stopping = true
-        puts "#{self.class}##{__method__}"
+        Console.logger.info(self, "\e[1;33mTRANSFERRING ALL SESSIONS\e[0m")
         @sessions.transfer_all
+        Console.logger.info(self, "\e[32mTRANSFERRED ALL SESSIONS\e[0m")
       end
 
       private
@@ -184,8 +185,8 @@ module Mayu
           body,
           "content-type": "text/html; charset=utf-8",
           "x-mayu-session-id": session.id,
-          link: link_header(session),
-          **Cookies.set_token_cookie_header(session)
+          **Cookies.set_token_cookie_header(session),
+          link: link_header(session)
         )
       end
 
@@ -253,6 +254,8 @@ module Mayu
               task.stop
             end
           end
+
+          Console.logger.info(self, "\e[31mStopped session #{session.id}\e[0m")
 
           body.wait
         ensure
