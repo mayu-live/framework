@@ -12,18 +12,21 @@ module Mayu
       Data.define(:name, :views, :children) do
         def regexp = Regexp.escape(name)
         def pathname(params) = name
+        def to_s = name
       end
 
     Group =
       Data.define(:name, :views, :children) do
         def regexp = nil
         def pathname(params) = nil
+        def to_s = name
       end
 
     Param =
       Data.define(:name, :param, :views, :children) do
         def regexp = "(?<#{Regexp.escape(param)}>[^\/]+)"
         def pathname(params) = params.fetch(param)
+        def to_s = name
       end
 
     SplatParam =
@@ -36,12 +39,14 @@ module Mayu
         def regexp = "(?<#{Regexp.escape(param)}>.+)"
         def pathname(params) = Array(params.fetch(param)).join("/")
         def children = []
+        def to_s = name
       end
 
     Root =
       Data.define(:path, :views, :children) do
         def regexp = nil
         def pathname(params) = ""
+        def to_s = ""
       end
 
     Views = Data.define(:page, :layout, :template, :not_found)

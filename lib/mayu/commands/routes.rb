@@ -8,6 +8,8 @@ module Mayu
     class Routes < Samovar::Command
       self.description = "Print routes"
 
+      options { option "--regexp", "Include regexp patterns", default: false }
+
       def call
         require "terminal-table"
         require_relative "../configuration"
@@ -22,12 +24,24 @@ module Mayu
           puts(
             Terminal::Table.new do |t|
               t.style = { all_separators: true, border: :unicode }
-              t.headings = %w[Pattern Page Layouts].map { "\e[1m#{_1}\e[0m" }
+              t.headings =
+                [
+                  "Path",
+                  ("Regexp" if @options[:regexp]),
+                  "Page",
+                  "Layouts"
+                ].compact.map { "\e[1m#{_1}\e[0m" }
 
               environment.router.routes.each do |route|
                 t.add_row(
                   [
-                    route.regexp.inspect,
+                    case route.segments.join("/")
+                    in ""
+                      "/"
+                    in path
+                      path
+                    end,
+                    (route.regexp.inspect if @options[:regexp]),
                     Pathname.new(
                       File.join(environment.pages_dir, route.views.page)
                     ).relative_path_from(config.root),
@@ -39,7 +53,7 @@ module Mayu
                         ).relative_path_from(config.root)
                       end
                       .join("\n")
-                  ]
+                  ].compact
                 )
               end
             end
