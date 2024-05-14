@@ -69,9 +69,7 @@ module Mayu
                 key
               end
             end
-            .transform_values do |value|
-              deep_symbolize_keys(value)
-            end
+            .transform_values { |value| deep_symbolize_keys(value) }
         else
           obj
         end
@@ -128,9 +126,7 @@ module Mayu
 
           routes.each do |route|
             set.add(route.views.page)
-            route.layouts.each do |layout|
-              set.add(layout)
-            end
+            route.layouts.each { |layout| set.add(layout) }
           end
 
           set
@@ -210,6 +206,7 @@ module Mayu
       def traverse_children(dir)
         Dir
           .each_child(dir)
+          .sort
           .map do |entry|
             path = File.join(dir, entry)
 
