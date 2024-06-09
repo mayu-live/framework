@@ -175,59 +175,7 @@ module Mayu
                   unless class_name == "Default"
                     Assign(VarRef(Const("Default")), VarRef(Const(class_name)))
                   end,
-                  MethodAddBlock(
-                    CallNode(
-                      ConstPathRef(VarRef(Const("Default")), Const("Styles")),
-                      Period("."),
-                      Ident("each"),
-                      nil
-                    ),
-                    BlockNode(
-                      BlockVar(Params([], [], [], [], [], [], nil), nil),
-                      nil,
-                      Statements(
-                        [
-                          CallNode(
-                            nil,
-                            nil,
-                            Ident("add_asset"),
-                            ArgParen(
-                              Args(
-                                [
-                                  CallNode(
-                                    ConstPathRef(
-                                      VarRef(Const("Assets")),
-                                      Const("Asset")
-                                    ),
-                                    Period("."),
-                                    Ident("build"),
-                                    ArgParen(
-                                      Args(
-                                        [
-                                          CallNode(
-                                            VarRef(Ident("_1")),
-                                            Period("."),
-                                            Ident("filename"),
-                                            nil
-                                          ),
-                                          CallNode(
-                                            VarRef(Ident("_1")),
-                                            Period("."),
-                                            Ident("content"),
-                                            nil
-                                          )
-                                        ]
-                                      )
-                                    )
-                                  )
-                                ]
-                              )
-                            )
-                          )
-                        ]
-                      )
-                    )
-                  )
+                  assets_code
                 ]
               )
             program.copy(statements:)
@@ -306,6 +254,64 @@ module Mayu
                 Begin(BodyStmt(value))
               end
             end
+          end
+
+          def assets_code
+            MethodAddBlock(
+              CallNode(
+                ConstPathRef(VarRef(Const("Default")), Const("Styles")),
+                Period("."),
+                Ident("each"),
+                nil
+              ),
+              BlockNode(
+                BlockVar(Params([], [], [], [], [], [], nil), nil),
+                nil,
+                Statements(
+                  [
+                    CallNode(
+                      nil,
+                      nil,
+                      Ident("add_asset"),
+                      ArgParen(
+                        Args(
+                          [
+                            ARef(
+                              ConstPathRef(
+                                ConstPathRef(
+                                  ConstPathRef(
+                                    VarRef(Const("Mayu")),
+                                    Const("Modules")
+                                  ),
+                                  Const("Generators")
+                                ),
+                                Const("Text")
+                              ),
+                              Args(
+                                [
+                                  CallNode(
+                                    VarRef(Ident("_1")),
+                                    Period("."),
+                                    Ident("filename"),
+                                    nil
+                                  ),
+                                  CallNode(
+                                    VarRef(Ident("_1")),
+                                    Period("."),
+                                    Ident("content"),
+                                    nil
+                                  )
+                                ]
+                              )
+                            )
+                          ]
+                        )
+                      )
+                    )
+                  ]
+                )
+              )
+            )
           end
 
           private

@@ -40,4 +40,6 @@ class Interpolation < Mayu::Component::Base
   end
 end
 Default = Interpolation
-Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }
+Default::Styles.each do
+  add_asset(Mayu::Modules::Generators::Text[_1.filename, _1.content])
+end

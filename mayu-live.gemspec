@@ -74,4 +74,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "syntax_tree-haml", "~> 4.0"
   spec.add_dependency "syntax_tree-xml", "~> 0.1.0"
   spec.add_dependency "tsort", "~> 0.2.0"
+  spec.add_dependency "rmagick", "~> 6.0.1"
 end

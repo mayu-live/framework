@@ -129,8 +129,8 @@ module Mayu
       end
 
       def add_asset(asset)
-        @assets.add(asset)
-        @system.add_asset(asset, @path)
+        @assets.add(asset.filename)
+        @system.add_asset(asset)
       end
 
       def exports

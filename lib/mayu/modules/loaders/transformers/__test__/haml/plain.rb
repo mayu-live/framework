@@ -22,4 +22,6 @@ PLAIN_3a33e85b1163f921b28fe81f304cf142fa2cffbb0a76a9262e2313211716e37f
   end
 end
 Default = Plain
-Default::Styles.each { add_asset(Assets::Asset.build(_1.filename, _1.content)) }
+Default::Styles.each do
+  add_asset(Mayu::Modules::Generators::Text[_1.filename, _1.content])
+end

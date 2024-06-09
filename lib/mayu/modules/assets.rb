@@ -7,50 +7,18 @@ require "mime/types"
 require "brotli"
 require "digest/sha2"
 require "base64"
+require "async/queue"
+require "async/variable"
+require "async/semaphore"
 
 MIME::Types["application/json"].first.add_extensions(%w[map])
 
 module Mayu
   module Modules
-    class Assets
-      Asset =
-        Data.define(
-          :content_type,
-          :content_hash,
-          :encoded_content,
-          :filename
-        ) do
-          def self.build(filename, content)
-            MIME::Types.type_for(filename).first => MIME::Type => mime_type
+    module Assets
+      Asset = Data.define(:filename, :headers, :encoded_content)
 
-            encoded_content =
-              EncodedContent.for_mime_type_and_content(mime_type, content)
-            content_hash = Digest::SHA256.digest(encoded_content.content)
-            content_type = mime_type.to_s
-
-            filename =
-              format(
-                "%s.%s?%s",
-                File.basename(filename, ".*"),
-                mime_type.preferred_extension,
-                Base64.urlsafe_encode64(content_hash, padding: false)[0..10]
-              )
-
-            new(content_type:, content_hash:, encoded_content:, filename:)
-          end
-
-          def headers
-            {
-              "content-type": content_type,
-              "content-length": content_length,
-              **encoded_content.headers
-            }
-          end
-
-          def content_length
-            encoded_content.content.bytesize
-          end
-        end
+      FileContent = Data.define
 
       EncodedContent =
         Data.define(:encoding, :content) do
@@ -70,23 +38,113 @@ module Mayu
           end
         end
 
-      def initialize
-        @assets = {}
+      module Generators
+        Image =
+          Data.define(:filename, :source_path, :width) do
+            def process(assets_path)
+              require "rmagick"
+
+              target_path = File.join(assets_path, filename)
+
+              Console.logger.info(
+                self,
+                "Generating #{target_path} from #{source_path}"
+              )
+
+              Magick::Image
+                .read(source_path)
+                .first
+                .resize_to_fit(width)
+                .write(target_path) { |options| options.quality = 80 }
+
+              headers = { content_type: mime_type.to_s }
+
+              Assets::Asset.build(
+                filename:,
+                headers:,
+                encoded_content: FileContent.new
+              )
+            end
+          end
+
+        Text =
+          Data.define(:filename, :content) do
+            def process(assets_path)
+              MIME::Types.type_for(filename).first => MIME::Type => mime_type
+
+              encoded_content =
+                EncodedContent.for_mime_type_and_content(mime_type, content)
+              content_hash = Digest::SHA256.hexdigest(encoded_content.content)
+
+              headers = {
+                etag: Digest::SHA256.hexdigest(encoded_content.content),
+                "content-type": mime_type.to_s,
+                "content-length": encoded_content.content.bytesize,
+                **encoded_content.headers
+              }
+
+              Asset[filename:, headers:, encoded_content:]
+            end
+          end
       end
 
-      def get(filename)
-        @assets.fetch(filename) do
-          Console.logger.error(
-            self,
-            "\e[91;1mAsset not found: \e[0;31m#{filename}\e[0m"
-          )
-          nil
+      class Storage
+        def initialize
+          @assets = {}
+          @results = {}
+          @queue = Async::Queue.new
         end
-      end
 
-      def store(asset)
-        Console.logger.info(self, "\e[34mStoring asset: #{asset.filename}\e[0m")
-        @assets.store(asset.filename, asset)
+        def get(filename)
+          puts "Getting #{filename}"
+          @assets[filename]
+        end
+
+        def wait_for(filename)
+          @assets.fetch(filename) do
+            (@results[filename] ||= Async::Variable.new).wait
+          end
+        end
+
+        def enqueue(generator)
+          @queue.enqueue(generator)
+        end
+
+        def all_processed?
+          @queue.empty?
+        end
+
+        def run(
+          assets_dir,
+          forever: false,
+          concurrency: 1,
+          task: Async::Task.current
+        )
+          task.async do
+            semaphore = Async::Semaphore.new(concurrency)
+
+            while forever || !@queue.empty?
+              generator = @queue.dequeue
+
+              semaphore.async { process(generator, assets_dir) }
+            end
+          end
+        end
+
+        private
+
+        def process(generator, assets_dir)
+          puts "Processing #{generator.filename}"
+          if asset = generator.process(assets_dir)
+            @assets.store(asset.filename, asset)
+            var = (@results[asset.filename] ||= Async::Variable.new)
+            var.resolve(asset) unless var.resolved?
+            @results.delete(asset.filename)
+          end
+        rescue => e
+          Console.logger.error(self, e)
+          raise e
+        end
       end
     end
   end

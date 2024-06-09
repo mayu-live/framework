@@ -48,9 +48,9 @@ module Mayu
           klass = @descriptor.type
 
           if mod = get_mod
-            mod.assets.each do |asset|
-              if asset.content_type == "text/css"
-                closest(VDocument).add_stylesheet(asset.filename)
+            mod.assets.each do |filename|
+              if filename.end_with?(".css")
+                closest(VDocument).add_stylesheet(filename)
               end
             end
           end

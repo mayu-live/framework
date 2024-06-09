@@ -21,6 +21,14 @@ module Mayu
 
               system.start_watch
 
+              Async do
+                system.process_assets(
+                  out_dir: ".assets",
+                  concurrency: 2,
+                  forever: true
+                )
+              end
+
               server = Mayu::Server.new(config)
               server.run
             end

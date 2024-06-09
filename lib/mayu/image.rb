@@ -4,15 +4,14 @@
 # License: AGPL-3.0
 
 module Mayu
+  BREAKPOINTS = [120, 240, 320, 640, 768, 960, 1024, 1366, 1600, 1920, 3840]
+
+  ImageVersion = Data.define(:filename, :width)
+
   Image =
-    Data.define(:path, :format, :digest, :width, :height) do
+    Data.define(:versions, :width, :height) do
       def public_path
-        Kernel.format(
-          "/.mayu/assets/%s.%s?%s",
-          File.basename(path, ".*"),
-          format,
-          digest
-        )
+        Kernel.format("/.mayu/assets/%s", versions.first.filename)
       end
 
       def to_s = public_path

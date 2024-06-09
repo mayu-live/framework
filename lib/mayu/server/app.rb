@@ -3,8 +3,7 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
-require "pry"
-
+require "protocol/http/body/file"
 require_relative "request_refinements"
 require_relative "cookies"
 require_relative "session_store"
@@ -143,16 +142,32 @@ module Mayu
             .path
             .then { _1.delete_prefix("/.mayu/assets/") }
             .then { CGI.unescape_uri_component(_1) }
-            .then { Modules::System.current.get_asset(_1) }
+            .tap { puts "Retreiving asset #{_1.inspect}" }
+            .then { Modules::System.current.wait_for_asset(_1) }
 
         return text_response(404, "file not found") unless asset
 
-        response(
-          200,
-          asset.encoded_content.content,
-          **asset.headers,
-          **origin_header(request)
-        )
+        puts "Got asset #{asset.filename}"
+
+        case asset.encoded_content
+        in Modules::Assets::FileContent
+          puts "Reading #{File.join(".assets", asset.filename)}"
+
+          Protocol::HTTP::Response[
+            200,
+            { **asset.headers, **origin_header(request) },
+            Protocol::HTTP::Body::File.open(
+              File.join(".assets", asset.filename)
+            )
+          ]
+        in Modules::Assets::EncodedContent
+          response(
+            200,
+            asset.encoded_content.content,
+            **asset.headers,
+            **origin_header(request)
+          )
+        end
       end
 
       def handle_favicon(request)

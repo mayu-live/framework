@@ -14,6 +14,7 @@ require_relative "loaders"
 require_relative "assets"
 require_relative "watcher"
 require_relative "import"
+require_relative "generators"
 
 module Mayu
   module Modules
@@ -28,7 +29,7 @@ module Mayu
 
       def self.import(path, source) = current.import(path, source)
 
-      def self.add_asset(asset, source) = current.add_asset(asset, source)
+      def self.add_asset(generator) = current.add_asset(generator)
 
       def self.import?(path, source)
         import(path, source)
@@ -42,7 +43,7 @@ module Mayu
         @root = File.expand_path(root)
         @resolver = Resolver.new(@root, extensions:)
         @rules = rules
-        @assets = Assets.new
+        @assets = Assets::Storage.new
         @on_reload = Async::Notification.new
         @mods = {}
       end
@@ -158,8 +159,8 @@ module Mayu
         @mods[source]
       end
 
-      def add_asset(asset, _source)
-        @assets.store(asset)
+      def add_asset(asset)
+        @assets.enqueue(asset)
       end
 
       def overall_order
@@ -188,6 +189,14 @@ module Mayu
 
       def get_asset(filename)
         @assets.get(filename)
+      end
+
+      def wait_for_asset(filename)
+        @assets.wait_for(filename)
+      end
+
+      def process_assets(out_dir:, concurrency: 2, forever: false)
+        @assets.run(out_dir, concurrency:, forever:)
       end
 
       private

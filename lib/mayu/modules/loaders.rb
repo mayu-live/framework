@@ -42,6 +42,7 @@ module Mayu
       autoload :Image, File.join(__dir__, "loaders", "image")
       autoload :JavaScript, File.join(__dir__, "loaders", "java_script")
       autoload :Ruby, File.join(__dir__, "loaders", "ruby")
+      autoload :SVG, File.join(__dir__, "loaders", "svg")
     end
   end
 end

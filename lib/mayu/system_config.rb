@@ -16,9 +16,10 @@ module Mayu
       Mayu::Modules::Rules::Rule[/\.css$/, Mayu::Modules::Loaders::CSS[]],
       Mayu::Modules::Rules::Rule[/\.js$/, Mayu::Modules::Loaders::JavaScript[]],
       Mayu::Modules::Rules::Rule[
-        /\.(png|jpe?g|webp|gif|svg)$/,
+        /\.(png|jpe?g|webp|gif)$/,
         Mayu::Modules::Loaders::Image[]
-      ]
+      ],
+      Mayu::Modules::Rules::Rule[/\.svg$/, Mayu::Modules::Loaders::SVG[]]
     ]
   }
 end
