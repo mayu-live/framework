@@ -14,25 +14,24 @@ module Mayu
 
           def call(loading_file)
             loading_file.maybe_load_source.with_digest.transform do
-              SyntaxTree::Formatter.format(
-                "",
-                build_code(_1.path, _1.source, _1.digest)
-              )
+              SyntaxTree::Formatter.format("", build_code(_1))
             end
           end
 
           private
 
-          def build_code(path, source, digest)
+          def build_code(file)
             filename =
               format(
                 "%s.%s.svg",
-                File.basename(path, ".*"),
-                Base64.urlsafe_encode64(digest)[0..10]
+                File.basename(file.path, ".*"),
+                Base64.urlsafe_encode64(file.digest)[0..10]
               )
 
-            width = 1
-            height = 1
+            require "rmagick"
+            image = Magick::Image.ping(file.absolute_path).first
+            width = image.columns
+            height = image.rows
 
             Statements(
               [
@@ -77,7 +76,7 @@ module Mayu
                           Args(
                             [
                               StringLiteral([TStringContent(filename)], '"'),
-                              StringLiteral([TStringContent(source)], '"')
+                              StringLiteral([TStringContent(file.source)], '"')
                             ]
                           )
                         )
