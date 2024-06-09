@@ -1,5 +1,12 @@
 :ruby
   Icon = import("/components/UI/Icon")
+
+%article
+  %Icon(name=$icon color=$icon_color)
+  .content
+    %h3= $title
+    %slot
+
 :css
   article {
     display: grid;
@@ -21,8 +28,3 @@
   .content {
     font-size: .9em;
   }
-%article
-  %Icon(name=$icon color=$icon_color)
-  .content
-    %h3= $title
-    %slot

@@ -51,7 +51,7 @@ module Mayu
           result[:class] = classnames.join(" ") unless classnames.empty?
         end
 
-        result
+        result.transform_keys { _1.to_s.tr("-", "_").to_sym }
       end
 
       def marshal_dump
