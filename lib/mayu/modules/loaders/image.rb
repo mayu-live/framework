@@ -33,15 +33,16 @@ module Mayu
             loading_file.with_digest.transform do
               image_size = ImageSize.path(_1.absolute_path)
 
-              SyntaxTree::Formatter.format(
-                "",
-                build_code(
-                  _1.absolute_path,
-                  image_size,
-                  Base64.urlsafe_encode64(_1.digest)
+              SyntaxTree::Formatter
+                .format(
+                  "",
+                  build_code(
+                    _1.absolute_path,
+                    image_size,
+                    Base64.urlsafe_encode64(_1.digest)
+                  )
                 )
-              )
-              # .tap { |x| puts x }
+                .tap { |source| puts source }
             end
           end
 
@@ -69,6 +70,17 @@ module Mayu
                             Assoc(
                               Label("height:"),
                               Int((image_size.height || 1).to_s)
+                            ),
+                            Assoc(
+                              Label("blur_src:"),
+                              StringLiteral(
+                                [
+                                  TStringContent(
+                                    build_blur_image_src(absolute_path)
+                                  )
+                                ],
+                                '"'
+                              )
                             )
                           ]
                         )
@@ -79,6 +91,22 @@ module Mayu
                 build_assets(absolute_path)
               ]
             )
+          end
+
+          def build_blur_image_src(absolute_path)
+            format = "webp"
+
+            Magick::Image
+              .read(absolute_path)
+              .first
+              .resize_to_fit(16)
+              .to_blob do |options|
+                options.quality = 80
+                options.format = format
+              end
+              .then do
+                "data:image/#{format};base64,#{Base64.strict_encode64(_1)}"
+              end
           end
 
           def build_versions(absolute_path, image_size, digest)
