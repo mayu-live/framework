@@ -155,7 +155,11 @@ module Mayu
 
           Protocol::HTTP::Response[
             200,
-            { **asset.headers, **origin_header(request) },
+            {
+              **asset.headers,
+              "cache-control": ASSET_CACHE_CONTROL,
+              **origin_header(request)
+            },
             Protocol::HTTP::Body::File.open(
               File.join(".assets", asset.filename)
             )
@@ -165,6 +169,7 @@ module Mayu
             200,
             asset.encoded_content.content,
             **asset.headers,
+            "cache-control": ASSET_CACHE_CONTROL,
             **origin_header(request)
           )
         end
