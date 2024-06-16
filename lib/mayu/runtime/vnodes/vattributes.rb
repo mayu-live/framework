@@ -97,13 +97,13 @@ module Mayu
 
         def update_callback(prop, old, new)
           if old
-            if old.callback.respond_to?(:same?)
+            if old.is_a?(Listener)
               return prop, old if old.callback.same?(new)
+
+              closest(VDocument).remove_listener(old)
+            elsif old.is_a?(String)
+              return prop, old if old == new
             end
-
-            return prop, old if old.callback == new
-
-            closest(VDocument).remove_listener(old)
 
             unless new
               patch(Patches::RemoveAttribute[@parent.id, prop])
@@ -113,10 +113,14 @@ module Mayu
 
           return unless new
 
-          listener = closest(VDocument).add_listener(Listener[new])
-          patch(Patches::SetAttribute[@parent.id, prop, listener.to_js])
-
-          [prop, listener]
+          if new.is_a?(String)
+            patch(Patches::SetAttribute[@parent.id, prop, new])
+            [prop, new]
+          else
+            listener = closest(VDocument).add_listener(Listener[new])
+            patch(Patches::SetAttribute[@parent.id, prop, listener.to_js])
+            [prop, listener]
+          end
         end
 
         def update_attribute(prop, old, new)
