@@ -1,18 +1,4 @@
 :ruby
-  def inline_style
-    return {} if $blur == false
-
-    {
-      background_image: "url('#{$image.blur}')",
-      background_size: "cover",
-    }
-  end
-
-:css
-  img {
-    width: 100%;
-    height: auto;
-  }
 
 :ruby
   loading = $lazy && "lazy"
@@ -22,6 +8,10 @@
     Console.logger.warn(self, "Missing alt-attribute!")
   end
 
+  inline_style = $blur && {
+    background_image: $image.blur_url,
+  }
+
 %img(class=$class style=inline_style loading=loading decoding=decoding alt=$alt){
   src: $image.src,
   sizes: $image.sizes,
@@ -29,3 +19,14 @@
   width: $image.width,
   height: $image.height,
 }
+
+:css
+  img {
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+    font-style: italic;
+    background-size: cover;
+    background-repeat: no-repeat;
+    shape-margin: 1rem;
+  }

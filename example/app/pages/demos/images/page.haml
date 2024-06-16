@@ -5,21 +5,12 @@
   Comuna13 = import("./comuna-13.jpeg")
   ColombiaMap = import("./colombia-map-flag.png")
 
-:css
-  figure {
-    margin: 2em 0;
-  }
-
-  .green-bg {
-    background: var(--green);
-  }
-
 %article
   %Heading(level=2) Images
   %p
     This demo shows some images.
   %figure
-    %Image(image=Comuna13 alt="Comuna 13, Medellín, Colombia")
+    %Image(blur image=Comuna13 alt="Comuna 13, Medellín, Colombia")
     %figcaption
       Comuna 13, Medellín, Colombia.
       %Link(href="https://www.google.com/maps?q=loc:6.2487861,-75.62455" target="_blank")<
@@ -30,3 +21,12 @@
       Colombia Flag Map, found on
       %Link(href="https://openclipart.org/detail/223690/colombia-map-flag" target="_blank")<
         openclipart.com
+
+:css
+  figure {
+    margin: 2em 0;
+  }
+
+  .green-bg {
+    background: var(--green);
+  }
