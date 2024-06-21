@@ -23,5 +23,5 @@ PLAIN_3a33e85b1163f921b28fe81f304cf142fa2cffbb0a76a9262e2313211716e37f
 end
 Default = Plain
 Default::Styles.each do
-  add_asset(Mayu::Modules::Generators::Text[_1.filename, _1.content])
+  add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

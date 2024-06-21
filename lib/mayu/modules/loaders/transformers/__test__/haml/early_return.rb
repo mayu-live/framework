@@ -27,5 +27,5 @@ class Early_return < Mayu::Component::Base
 end
 Default = Early_return
 Default::Styles.each do
-  add_asset(Mayu::Modules::Generators::Text[_1.filename, _1.content])
+  add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

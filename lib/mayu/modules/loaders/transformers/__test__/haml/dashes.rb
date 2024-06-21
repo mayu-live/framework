@@ -27,5 +27,5 @@ class Dashes < Mayu::Component::Base
 end
 Default = Dashes
 Default::Styles.each do
-  add_asset(Mayu::Modules::Generators::Text[_1.filename, _1.content])
+  add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

@@ -19,5 +19,5 @@ class Spacing3 < Mayu::Component::Base
 end
 Default = Spacing3
 Default::Styles.each do
-  add_asset(Mayu::Modules::Generators::Text[_1.filename, _1.content])
+  add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

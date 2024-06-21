@@ -48,5 +48,5 @@ class Class_names < Mayu::Component::Base
 end
 Default = Class_names
 Default::Styles.each do
-  add_asset(Mayu::Modules::Generators::Text[_1.filename, _1.content])
+  add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

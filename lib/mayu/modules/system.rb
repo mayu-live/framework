@@ -11,10 +11,9 @@ require_relative "rules"
 require_relative "resolver"
 require_relative "registry"
 require_relative "loaders"
-require_relative "assets"
 require_relative "watcher"
 require_relative "import"
-require_relative "generators"
+require_relative "../assets"
 
 module Mayu
   module Modules
@@ -43,7 +42,7 @@ module Mayu
         @root = File.expand_path(root)
         @resolver = Resolver.new(@root, extensions:)
         @rules = rules
-        @assets = Assets::Storage.new
+        @assets = Mayu::Assets::Storage.new
         @on_reload = Async::Notification.new
         @mods = {}
       end

@@ -67,7 +67,7 @@ module Mayu
                             ConstPathRef(
                               ConstPathRef(
                                 VarRef(Const("Mayu")),
-                                Const("Modules")
+                                Const("Assets")
                               ),
                               Const("Generators")
                             ),

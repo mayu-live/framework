@@ -4,7 +4,7 @@
 # License: AGPL-3.0
 
 module Mayu
-  module Modules
+  module Assets
     module Generators
       Text =
         Data.define(:filename, :content) do

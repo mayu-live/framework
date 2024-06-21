@@ -147,7 +147,7 @@ module Mayu
         return text_response(404, "file not found") unless asset
 
         case asset.encoded_content
-        in Modules::Assets::FileContent
+        in Assets::FileContent
           Protocol::HTTP::Response[
             200,
             {
@@ -159,7 +159,7 @@ module Mayu
               @environment.asset_path(asset.filename)
             )
           ]
-        in Modules::Assets::EncodedContent
+        in Assets::EncodedContent
           response(
             200,
             asset.encoded_content.content,

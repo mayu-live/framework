@@ -4,7 +4,7 @@
 # License: AGPL-3.0
 
 module Mayu
-  module Modules
+  module Assets
     module Generators
       Image =
         Data.define(:filename, :source_path, :width) do

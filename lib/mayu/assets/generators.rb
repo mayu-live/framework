@@ -4,7 +4,7 @@
 # License: AGPL-3.0
 
 module Mayu
-  module Modules
+  module Assets
     module Generators
       autoload :Image, File.join(__dir__, "generators", "image")
       autoload :Text, File.join(__dir__, "generators", "text")
