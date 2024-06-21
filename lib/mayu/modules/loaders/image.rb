@@ -94,19 +94,25 @@ module Mayu
           end
 
           def build_blur_image_src(absolute_path)
-            format = "webp"
+            Ractor
+              .new(absolute_path) do |absolute_path|
+                format = "webp"
 
-            Magick::Image
-              .read(absolute_path)
-              .first
-              .resize_to_fit(16)
-              .to_blob do |options|
-                options.quality = 80
-                options.format = format
+                Magick::Image.read(absolute_path) => [image]
+
+                image.resize_to_fit!(16)
+
+                blob =
+                  image.to_blob do |options|
+                    options.quality = 80
+                    options.format = format
+                  end
+
+                image.destroy!
+
+                "data:image/#{format};base64,#{Base64.strict_encode64(blob)}"
               end
-              .then do
-                "data:image/#{format};base64,#{Base64.strict_encode64(_1)}"
-              end
+              .take
           end
 
           def build_versions(absolute_path, image_size, digest)

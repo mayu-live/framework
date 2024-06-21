@@ -19,14 +19,24 @@ module Mayu
                 "Generating #{target_path} from #{source_path}"
               )
 
-              Magick::Image
-                .read(source_path)
-                .first
-                .resize_to_fit(width)
-                .write(target_path) { |options| options.quality = 80 }
+              r =
+                Ractor.new(self, target_path) do |generator, target_path|
+                  Magick::Image
+                    .read(generator.source_path)
+                    .first
+                    .resize_to_fit!(generator.width)
+                    .write(target_path) { |options| options.quality = 80 }
+                    .destroy!
+                  nil
+                end
+
+              r.take
             end
 
             build_asset(filename)
+          rescue => e
+            Console.logger(self, e)
+            raise
           end
 
           private
