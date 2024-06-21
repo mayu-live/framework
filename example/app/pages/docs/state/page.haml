@@ -1,6 +1,6 @@
 :ruby
-  Card = import("/app/components/UI/Card")
-  Highlight = import("/app/components/UI/Highlight")
+  Card = import("/components/UI/Card")
+  Highlight = import("/components/UI/Highlight")
   Markdown = import("../Markdown")
   Example = import("./Example")
 
@@ -9,9 +9,11 @@
     :plain
       # State
 
-      Set up state with `self.get_initial_state`,
-      read state with `state`,
-      and update state with `update`,
+      Mayu uses instance variables for state.
+      Any time you update an instance variable inside a component,
+      the component will re-render.
+
+      Set up state in `def initialize`.
 
   %Highlight(language="haml")
     = File.read("app/pages/docs/state/Example.haml")
@@ -20,40 +22,6 @@
 
   %Card.card
     %Example
-
-  %Markdown
-    :plain
-      # Different ways to update
-
-      If you don't need to read state when updating, you can do this:
-
-      ```ruby
-      update(count: 0)
-      ```
-
-      If you need to read state, you can get the entire state object:
-
-      ```ruby
-      update do |state|
-        { count: state[:count] + 1 }
-      end
-      ```
-
-      Or you could extract just the keys you are interested in:
-
-      ```ruby
-      update do |count:|
-        { count: count + 1 }
-      end
-      ```
-
-      You can also use default values:
-
-      ```ruby
-      update do |count: 0|
-        { count: count + 1 }
-      end
-      ```
 
 :css
   Card {

@@ -1,8 +1,9 @@
-# typed: strict
+# frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
 
-require "sorbet-runtime"
 require_relative "mayu/version"
-require_relative "mayu/banner"
 
 module Mayu
 end

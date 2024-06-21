@@ -9,23 +9,20 @@
     "… and much more!",
   ]
 
-  def self.get_initial_state(**props) = {
-    index: 0
-  }
+  def initialize
+    @index = 0
+  end
 
   def mount
     loop do
       sleep 2.2
-
-      update do |state|
-        { index: state[:index].succ % ITEMS.size }
-      end
+      @index = @index.succ % ITEMS.size
     end
   end
 
 %ul
   = ITEMS.map.with_index do |item, index|
-    %li{class: { active: index == state[:index] }}= item
+    %li{class: { active: index == @index }}= item
 
 :css
   ul {}

@@ -1,5 +1,0 @@
---dir
-.
---ignore=/vendor/bundle
---ignore=/example/
---ignore=node_modules

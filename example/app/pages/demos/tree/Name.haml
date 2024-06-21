@@ -1,5 +1,5 @@
 :ruby
-  Icon = import("/app/components/UI/Icon")
+  Icon = import("/components/UI/Icon")
 :css
   label {
     display: inline-flex;
@@ -9,7 +9,7 @@
     gap: .5em;
   }
 :ruby
-  props => { icon: }
+  $* => { icon:, **props }
   color = $color || "var(--dark)"
 %label{**props}
   %Icon(name=icon color=color)

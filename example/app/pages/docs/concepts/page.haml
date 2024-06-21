@@ -1,32 +1,20 @@
 :ruby
-  Card = import("/app/components/UI/Card")
-  Image = import("/app/components/UI/Image")
-  Link = import("/app/components/UI/Link")
-  YouTubeVideo = import("/app/components/UI/YouTubeVideo")
+  Card = import("/components/UI/Card")
+  Image = import("/components/UI/Image")
+  Link = import("/components/UI/Link")
+  YouTubeVideo = import("/components/UI/YouTubeVideo")
   Markdown = import("../Markdown")
-  NoCache = image("./no-cache-fs8.png")
-  DiskCache = image("./disk-cache-fs8.png")
-  MemoryCache = image("./memory-cache-fs8.png")
-  Metrics = image("./metrics-fs8.png")
-  HotReload = image("./hot-reload-fs8.png")
-  GlobalScale = image("./global-scale-fs8.png")
-  Haml = image("./haml-fs8.png")
-:css
-  Card {
-    margin: 2em;
-  }
+  NoCache = import("./no-cache-fs8.png")
+  DiskCache = import("./disk-cache-fs8.png")
+  MemoryCache = import("./memory-cache-fs8.png")
+  Metrics = import("./metrics-fs8.png")
+  HotReload = import("./hot-reload-fs8.png")
+  GlobalScale = import("./global-scale-fs8.png")
+  Haml = import("./haml-fs8.png")
 
-  figure {
-    margin: 0;
-  }
+%head
+  %title Concepts
 
-  figcaption {
-    margin: .5em;
-  }
-
-  Image {
-    display: block;
-  }
 %article
   %Markdown
     :plain
@@ -153,8 +141,7 @@
       Mayu was designed with hot reloading in mind from the start.
       This is a popular feature in many JavaScript build tools like
       [Webpack](https://webpack.js.org/) and [Vite](https://vitejs.dev/),
-      and it makes web development really fun because of the fast
-      feedback loop.
+      and it makes web development fun because of the fast feedback loop.
 
   %Card
     %figure
@@ -170,24 +157,21 @@
     :plain
       ## Built for the future
 
-      Mayu is using some new browser features and is not designed to
-      work with current browsers, but for the browsers of next year.
+      Mayu uses the latest browser features and does not support older browsers.
 
-      [DecompressionStream](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream)
-      is used to compress the event stream. Not supported everywhere,
-      although [polyfilled](https://github.com/mayu-live/framework/blob/main/lib/mayu/client/src/DecompressionStreamPolyfill.ts)
-      using the very small [fflate](https://github.com/101arrowz/fflate) library.
+:css
+  Card {
+    margin: 2em;
+  }
 
-      This website uses the [`has()`](https://developer.mozilla.org/en-US/docs/Web/CSS/:has)-selector,
-      which can be used to do things you would normally have to use JavaScript for.
-      [Check out this YouTube video](https://www.youtube.com/watch?v=OGJvhpoE8b4 "I never thought this would be possible with CSS")
-      where [Kevin Powell](https://www.youtube.com/kepowob) shows how to make
-      some really cool validations with only HTML and CSS.
+  figure {
+    margin: 0;
+  }
 
-      The [Navigation API](https://developer.chrome.com/docs/web-platform/navigation-api/)
-      will be very useful once supported everywhere.
-      [There is an issue on GitHub](https://github.com/mayu-live/framework/issues/12).
+  figcaption {
+    margin: .5em;
+  }
 
-      [CSS Module Scripts](https://web.dev/css-module-scripts/)
-      should probably be used for loading CSS as soon as
-      [Firefox ships support for Import Assertions](https://bugzilla.mozilla.org/show_bug.cgi?id=1777526)
+  Image {
+    display: block;
+  }

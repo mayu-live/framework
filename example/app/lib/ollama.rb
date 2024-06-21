@@ -1,3 +1,5 @@
+require "async/http/client"
+
 class Ollama
   DEFAULT_URL = "http://localhost:11434"
   DEFAULT_MODEL = "llama2"
@@ -18,8 +20,14 @@ class Ollama
     )
 
   def initialize(model: DEFAULT_MODEL, url: DEFAULT_URL)
-    @endpoint =
-      Async::HTTP::Endpoint.parse(url, protocol: Async::HTTP::Protocol::HTTP2)
+    protocol =
+      if url.start_with?("http:")
+        Async::HTTP::Protocol::HTTP11
+      else
+        Async::HTTP::Protocol::HTTP2
+      end
+
+    @endpoint = Async::HTTP::Endpoint.parse(url, protocol:)
     @client = Async::HTTP::Client.new(@endpoint)
     @model = model
     @context = nil

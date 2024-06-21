@@ -1,29 +1,29 @@
 :ruby
-  Spinner = import("/app/components/UI/Spinner")
-  Link = import("/app/components/UI/Link")
+  Spinner = import("/components/UI/Spinner")
+  Link = import("/components/UI/Link")
   Filter = import("./Filter")
   Pagination = import("./Pagination")
 
-  def self.get_initial_state(**props) = {
-    result: nil,
-    error: nil,
-    page: props.dig(:request, :query, :page).to_i,
-    per_page: props.dig(:per_page).to_i.nonzero? || 20,
-  }
+  def initialize
+    @result = nil
+    @error = nil
+    @page = $query[:page].to_i
+    @per_page = $per_page.to_i.nonzero? || 20
+  end
 
   def mount
     sleep 1
 
-    res = helpers.fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
-    result = res.json(symbolize_names: true)
-    update(result:)
+    res = fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
+    @result = res.json(symbolize_names: true)
   rescue => e
-    update(error: e.message)
+    @error = e.message
   end
 
   def handle_set_per_page(e)
     e => { target: { value: } }
-    update(page: 0, per_page: value.to_i)
+    @page = 0
+    @per_page = value.to_i
   end
 
 :css
@@ -36,13 +36,10 @@
     margin: 0.5em 0;
   }
 
-:ruby
-  state => result:, error:
+- return if @error
+  %p Error: #{@error}
 
-- return if error
-  %p Error: #{error}
-
-- return unless result
+- return unless @result
   %div
     %p
       Loading Pokémon from
@@ -51,20 +48,20 @@
     %Spinner
 
 :ruby
-  result => results:
+  @result => results:
 
-  per_page = state[:per_page]
-  total_pages = (results.length / per_page).floor
-  page = props.dig(:request, :query, :page).to_i.clamp(1, total_pages.succ)
-  results_on_this_page = results.slice(page.pred * per_page, per_page) || []
+  total_pages = (results.length / @per_page).floor
+  page = $query[:page].to_i.clamp(1, total_pages.succ)
+  results_on_this_page = results.slice(page.pred * @per_page, @per_page) || []
 
 %article
   %Filter{results:}
 
   %Pagination(on-change-per-page=handle_set_per_page){
     page:,
-    per_page:,
+    per_page: @per_page,
     total_pages:,
+    window_size: 7,
   }
 
   %ul
@@ -78,6 +75,7 @@
 
   %Pagination(on-change-per-page=handle_set_per_page){
     page:,
-    per_page:,
+    per_page: @per_page,
     total_pages:,
+    window_size: 7
   }

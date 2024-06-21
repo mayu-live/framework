@@ -4,15 +4,14 @@
 :ruby
   level = $level.to_i.clamp(1, 6)
   tag = :"h#{level}"
-  classname = styles[:h, tag, styles[:class]]
 
-  Mayu::VDOM::H[
+  return H[
     tag,
-    *children,
-    **mayu.merge_props(
-      props.except(:level),
+    H.slot(self),
+    **self.class.merge_props(
+      $*.except(:level),
+      { class: [:h, tag] },
       { class: $class },
-      { class: classname },
     )
   ]
 :css

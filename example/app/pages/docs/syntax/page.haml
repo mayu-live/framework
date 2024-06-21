@@ -1,5 +1,5 @@
 :ruby
-  Highlight = import("/app/components/UI/Highlight")
+  Highlight = import("/components/UI/Highlight")
   Markdown = import("../Markdown")
 %article
   %Markdown
@@ -8,9 +8,7 @@
 
       ## Props
 
-      To read props passed to a component, you can use `props[:foobar]`
-      as well as `$foobar`. The latter will transform into the former,
-      for convenience.
+      To read props passed to a component, you can use `$foobar`.
 
       ## Self / recursion
 
@@ -78,8 +76,8 @@
 
       ```haml
       %ul
-         = todos.map do |todo|
-           %li[todo.id]= todo.text
+        = todos.map do |todo|
+          %li[todo.id]= todo.text
       ```
 
       ## Pattern matching
@@ -98,21 +96,18 @@
 
       ```haml
       :ruby
-        def self.get_initial_state(initial_count: 0, **) = {
-          count: initial_count
-        }
+        def initialize =
+          @count = $initial_count || 0
         def handle_click(event) =
           case event
           in { target: { name: "increment" } }
-            update { |state| { count: state[:count] + 1 } }
+            @count += 1
           in { target: { name: "decrement" } }
-            update { |state| { count: state[:count] - 1 } }
+            @count -= 1
           end
-      - state => count:
-      %div
-        %output= count
-        %button(onclick=handle_click name="increment")
-        %button(onclick=handle_click name="decrement")
+      %output= @count
+      %button(onclick=handle_click name="increment")
+      %button(onclick=handle_click name="decrement")
       ```
 
       ## Early returns
@@ -123,13 +118,13 @@
 
       ```haml
       :ruby
-        def self.get_initial_state(**) = {
-          clicked: false
-        }
-        def handle_click(event)
-          update(clicked: true)
+        def initialize
+          @clicked = false
         end
-      = return if state[:clicked]
+        def handle_click(event)
+          @clicked = true
+        end
+      = return if @clicked
         %p You clicked the button.
       %button(onclick=handle_click) Click me
       ```

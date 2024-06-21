@@ -1,12 +1,8 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
-  Details = import("/app/components/UI/Details")
-  Link = import("/app/components/UI/Link")
+  Heading = import("/components/Layout/Heading")
+  Details = import("/components/UI/Details")
+  Link = import("/components/UI/Link")
 
-:css
-  Details {
-    margin: 2em 1em;
-  }
 %article
   %Heading(level=2) Frequently asked questions
 
@@ -61,3 +57,8 @@
       could remove the need to reload the page by serializing the current
       browser DOM and deserializing it on the server and then use that as
       a reference for patching.
+
+:css
+  Details {
+    margin: 2em 1em;
+  }

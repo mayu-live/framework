@@ -1,40 +1,36 @@
 :ruby
   require "fuzzy_match"
 
-  Fieldset = import("/app/components/Form/Fieldset")
-  Input = import("/app/components/Form/Input")
-  Button = import("/app/components/Form/Button")
-  Icon = import("/app/components/UI/Icon")
+  Fieldset = import("/components/Form/Fieldset")
+  Input = import("/components/Form/Input")
+  Button = import("/components/Form/Button")
+  Icon = import("/components/UI/Icon")
 
-  def self.get_initial_state(**) = {
-    open: false,
-    value: "",
-    suggestions: [],
-  }
+  def initialize
+    @open = false
+    @value = ""
+    @suggestions = []
+    @fuzzymatch = FuzzyMatch.new($results, read: :name)
+  end
 
   def handle_open =
-    update(open: true)
+    @open = true
 
   def handle_close =
-    update(open: false)
-
-  def fuzzymatch =
-    @fuzzymatch ||= FuzzyMatch.new($results, read: :name)
+    @open = false
 
   def handle_change(e)
     e => { target: { value: } }
 
-    update(
-      value:,
-      suggestions: fuzzymatch.find_all(value).first(10)
-    )
+    @value = value
+    @suggestions = @fuzzymatch.find_all(value).first(10)
   end
 
 %div
   %Button(onclick=handle_open)
     %Icon(name="filter")>
     Filter
-  %dialog(onclose=handle_close){open: state[:open]}
+  %dialog(onclose=handle_close open=@open)
     %form(method="dialog")
       %Fieldset
         %legend Filter
@@ -42,7 +38,7 @@
         %Button Close
         .results
           %ul
-            = state[:suggestions].map do |result|
+            = @suggestions.map do |result|
               - id = result[:url].split("/").last.to_i
               %li
                 %a(href="/demos/pokemon/#{id}")

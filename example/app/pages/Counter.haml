@@ -1,30 +1,23 @@
 :ruby
-  Card = import("/app/components/UI/Card")
+  Card = import("/components/UI/Card")
 
-  def self.get_initial_state(initial_count: 0, **) = {
-    count: initial_count
-  }
-
-  def decrement_disabled = state[:count].zero?
-
-  def handle_decrement
-    update do |state|
-      count = [0, state[:count] - 1].max
-      { count: }
-    end
+  def initialize
+    @count = $initial_count
   end
 
-  def handle_increment
-    update do |state|
-      count = state[:count] + 1
-      { count: }
-    end
-  end
+  def decrement_disabled =
+    @count.zero?
+
+  def handle_decrement =
+    @count = (@count - 1).clamp(0, Float::INFINITY)
+
+  def handle_increment =
+    @count += 1
 
 %Card
   %article
     %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled) －
-    %output= state[:count]
+    %output= @count
     %button(title="Increment" onclick=handle_increment) ＋
 
 :css

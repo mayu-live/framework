@@ -1,6 +1,6 @@
 :ruby
-  Icon = import("/app/components/UI/Icon")
-  Link = import("/app/components/UI/Link")
+  Icon = import("/components/UI/Icon")
+  Link = import("/components/UI/Link")
   Name = import("./Name")
 
   def icon
@@ -25,9 +25,5 @@
     gap: .5em;
   }
 
-:ruby
-  props => path:
-  href = "?file=#{path}"
-
 %Name(icon=icon)
-  %Link(href=href)= File.basename(path)
+  %Link(href="?file=#{$path}")= File.basename($path)

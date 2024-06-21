@@ -1,0 +1,22 @@
+:ruby
+  def initialize
+    @count = $initial_count || 0
+  end
+
+  def handle_increment
+    @count += 1
+  end
+
+%section
+  %h2 Counter
+  %button(onclick=handle_increment)
+    Increment
+  %button(onclick=handle_decrement)
+    Decrement
+
+:css
+  button {
+    background: #ccc;
+    border: 1px solid #000;
+    border-radius: 3px;
+  }

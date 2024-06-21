@@ -1,3 +1,8 @@
+%div
+  %select(type="text" class=$class placeholder=$label){**$*}
+    %slot
+  %label= $label
+
 :css
   div {
     position: relative;
@@ -46,8 +51,3 @@
     font-size: 0.9em;
     opacity: 1;
   }
-
-%div
-  %select(type="text" class=$class placeholder=$label){**props}
-    %slot
-  %label= $label

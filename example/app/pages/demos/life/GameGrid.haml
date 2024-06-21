@@ -19,11 +19,8 @@
     gap: 1px;
   }
 
-:ruby
-  props => grid:, ondraw:
-
 .grid
   = $grid.map.with_index do |row, y|
     .row[y]
       = row.map.with_index do |alive, x|
-        %Cell["#{x}.#{y}"]{ondraw:, alive:, x:, y:}
+        %Cell["#{x}.#{y}"](ondraw=$ondraw){alive:, x:, y:}

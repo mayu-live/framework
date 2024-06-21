@@ -1,3 +1,5 @@
+%a{style: $color && { __link_color: $color }, **$*.except(:color)}
+  %slot
 :css
   a:any-link {
     color: var(--link-color);
@@ -8,7 +10,3 @@
   a:hover {
     text-decoration: underline;
   }
-:ruby
-  style = $color && { __link_color: $color }
-%a(style=style){**props.except(:color)}
-  %slot

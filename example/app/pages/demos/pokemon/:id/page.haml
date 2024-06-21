@@ -1,29 +1,21 @@
 :ruby
-  def self.get_initial_state(props) = {
-    result: nil,
-    error: nil,
-  }
 
   def mount
-    props => { request: { params: { id: /\A\d+\z/ => id } } }
-    res = helpers.fetch("https://pokeapi.co/api/v2/pokemon/#{id}/")
-    result = res.json(symbolize_names: true)
-    update(result:)
+    $params => { id: /\A\d+\z/ => id }
+    res = fetch("https://pokeapi.co/api/v2/pokemon/#{id}/")
+    @pokemon = res.json(symbolize_names: true)
   rescue => e
-    update(error: e.message)
+    @error = e.message
   end
 
-:ruby
-  pokemon = state[:result]
-
-- return unless pokemon
+- return unless @pokemon
   %p Loading pokémon
 
 %article
-  %h1= pokemon[:name]
-  %img{src: pokemon.dig(:sprites, :front_default)}
+  %h1= @pokemon[:name]
+  %img{src: @pokemon.dig(:sprites, :front_default)}
   %dl
     %dt Weight
-    %dd= pokemon[:weight]
+    %dd= @pokemon[:weight]
     %dt Base experience
-    %dd= pokemon[:base_experience]
+    %dd= @pokemon[:base_experience]

@@ -1,0 +1,33 @@
+[development]
+  secret_key = "dev"
+
+  [development.server]
+    listen = "https://localhost:9292"
+
+    hmr = true
+
+    render_exceptions = true
+    self_signed_cert = true
+
+    generate_assets = true
+
+  [development.metrics]
+    enabled = true
+    listen = "http://localhost:9293"
+
+[production]
+  secret_key = "$SECRET_KEY"
+
+  [production.server]
+    listen = "http://localhost:3000"
+
+    hmr = false
+
+    render_exceptions = false
+    self_signed_cert = false
+
+    generate_assets = false
+
+  [production.metrics]
+    enabled = true
+    listen = "http://localhost:9091"

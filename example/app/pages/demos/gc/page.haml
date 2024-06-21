@@ -1,16 +1,16 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
-  Button = import("/app/components/Form/Button")
+  Heading = import("/components/Layout/Heading")
+  Button = import("/components/Form/Button")
   Ellipsis = import("./Ellipsis")
-  Link = import("/app/components/UI/Link")
+  Link = import("/components/UI/Link")
 
-  def self.get_initial_state(**) = {
-    stats: GC.stat,
-    objcount: ObjectSpace.count_objects,
-  }
+  def initialize
+    @stats = GC.stat
+    @objcount = ObjectSpace.count_objects
+  end
 
   def handle_refresh =
-    update(Self.get_initial_state)
+    initialize
 
   # def mount =
   #   loop do
@@ -27,8 +27,7 @@
     %Link(href="https://docs.ruby-lang.org/en/master/GC.html#method-c-stat" target="_blank")
       Documentation for these values
   .flex
-    - state => { stats:, objcount: }
-    = stats.each_slice(stats.size.succ / 3).with_index.map do |slice, i|
+    = @stats.each_slice(@stats.size.succ / 3).with_index.map do |slice, i|
       %table[slice, i]
         %tbody
           = slice.map do |key, value|
@@ -38,7 +37,7 @@
               %td= value.to_s
     %table
       %tbody
-        = objcount.map do |key, value|
+        = @objcount.map do |key, value|
           %tr[key]
             %th= key.to_s
             %td= value.to_s

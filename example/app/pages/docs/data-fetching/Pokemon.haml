@@ -1,22 +1,21 @@
 :ruby
-  def self.get_initial_state(**) = {
-    result: nil,
-    error: nil,
-  }
+  def initialize
+    @result = nil
+    @error = nil
+  end
 
   def mount
-    result = helpers
-      .fetch("https://pokeapi.co/api/v2/pokemon/#{$id}")
+    @result =
+      fetch("https://pokeapi.co/api/v2/pokemon/#{$id}")
       .json(symbolize_names: true)
-    update(result:)
   rescue => e
-    update(error: e.message)
+    @error = e.message
   end
 
 %div
-  = if error = state[:error]
-    %p.error= error
-  = elsif result = state[:result]
-    %pre= JSON.pretty_generate(result)
+  = if @error
+    %p.error= @error
+  = elsif @result
+    %pre= JSON.pretty_generate(@result)
   = else
     %p Loading Pokémon with id #{$id}…

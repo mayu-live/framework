@@ -1,31 +1,31 @@
 :ruby
-  Fieldset = import("/app/components/Form/Fieldset")
-  Details = import("/app/components/UI/Details")
-  YouTubeVideo = import("/app/components/UI/YouTubeVideo")
-  Link = import("/app/components/UI/Link")
+  Fieldset = import("/components/Form/Fieldset")
+  Details = import("/components/UI/Details")
+  YouTubeVideo = import("/components/UI/YouTubeVideo")
+  Link = import("/components/UI/Link")
 
-  def self.get_initial_state(**props) = {
-    user: nil
-  }
+  User = Data.define(:email, :password)
+
+  def initialize
+    @user = nil
+  end
 
   def handle_submit(e)
     e => { target: { formData: { email:, password: } } }
 
-    update(user: { email:, password: })
+    @user = User[email, password]
   end
 
   def handle_log_out
-    update(user: nil)
+    @user = nil
   end
 
-- state => user:
-
-- return if user
+- return if @user
   %div
     %p
-      Logged in as #{user[:email]}.
+      Logged in as #{@user.email}.
     %div
-      %button{on_click: handler(:handle_log_out)}
+      %button(onclick=handle_log_out)
         Log out
 
 %div
@@ -42,7 +42,7 @@
       This is a fake form. Don't enter any real credentials.
       Any combination of email and password will work.
 
-    %form.form{on_submit: handler(:handle_submit)}
+    %form.form(onsubmit=handle_submit)
       .formGroup
         %label.label
           %span Email

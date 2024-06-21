@@ -1,3 +1,18 @@
+:ruby
+  def initialize
+    @id = "checkbox-#{SecureRandom.alphanumeric}"
+  end
+
+%div{class: [:group, $group_class]}
+  %input(id=@id){
+    class: [:checkbox, $class],
+    type: "checkbox",
+    placeholder: $label,
+    **$*.except(:label),
+  }
+  %label(for=@id)
+    = $label
+
 :css
   .group {
     position: relative;
@@ -27,25 +42,3 @@
   label {
   }
 
-:ruby
-  classname = [
-    styles[:checkbox],
-    $class,
-  ].compact.join(" ")
-
-  group_classname = [
-    styles.group,
-    $group_class,
-  ].compact.join(" ")
-
-  id = "checkbox-#{vnode_id}"
-
-%div(class=group_classname)
-  %input(id=id){
-    class: classname,
-    type: "checkbox",
-    placeholder: $label,
-    **props.except(:label),
-  }
-  %label(for=id)
-    = $label

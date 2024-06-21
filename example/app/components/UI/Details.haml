@@ -13,22 +13,22 @@
 
   Card = import("./Card")
 
-  def self.get_initial_state(initial_open: false, lazy: false, **) = {
-    open: initial_open,
-    loaded: initial_open || !lazy
-  }
+  def initialize
+    @open = $initial_open
+    @loaded = $initial_open || $lazy || false
+  end
 
   def handle_toggle(e)
-    if e in { target: { open: true } }
-      update(loaded: true)
-    end
+    e => { target: { open: } }
+    @open = open
+    @loaded ||= open
   end
 
 %Card(class=$class)
-  %details(ontoggle=handle_toggle){open: state[:open]}
+  %details(ontoggle=handle_toggle open=@open)
     %summary= $summary
     .content
-      = if state[:loaded]
+      = if @loaded
         %slot
       = else
         %p Loading…

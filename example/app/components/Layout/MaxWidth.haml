@@ -1,13 +1,12 @@
+:ruby
+:ruby
+  return H[
+    ($as || $tag || :div).to_sym,
+    H.slot(self),
+    **self.class.merge_props($*, { class: :maxWidth })
+  ]
 :css
   .maxWidth {
     width: min(100% - 4rem, var(--page-max-width));
     margin-inline: auto;
   }
-
-:ruby
-  Mayu::VDOM::H[
-    ($as || $tag || :div).to_sym,
-    *children,
-    **props,
-    class: styles[:maxWidth, $class]
-  ]

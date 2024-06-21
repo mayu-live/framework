@@ -1,16 +1,16 @@
 :ruby
-  Fieldset = import("/app/components/Form/Fieldset")
-  Button = import("/app/components/Form/Button")
-  Input = import("/app/components/Form/Input")
-  Select = import("/app/components/Form/Select")
-  Checkbox = import("/app/components/Form/Checkbox")
+  Fieldset = import("/components/Form/Fieldset")
+  Button = import("/components/Form/Button")
+  Input = import("/components/Form/Input")
+  Select = import("/components/Form/Select")
+  Checkbox = import("/components/Form/Checkbox")
 
   ITEMS = %w[ dream friendly chief potato irritate creature pastoral selective lyrical fire seal righteous ]
 
-  def self.get_initial_state(**) = {
-    left: ITEMS.size.times.to_a,
-    right: [],
-  }
+  def initialize
+    @left = ITEMS.size.times.to_a
+    @right = []
+  end
 
   def get_selected(form_data, prefix)
     form_data
@@ -20,42 +20,38 @@
   end
 
   def handle_submit(e)
-    update do |state|
-      case e
-      in { submitter: { name: "action", value: "move_all_left" } }
-        { left: state[:left] + state[:right], right: [] }
-      in { submitter: { name: "action", value: "move_all_right" } }
-        { left: [], right: state[:right] + state[:left] }
-      in { submitter: { name: "action", value: "move_selected_left" }, target: { formData: } }
-        selected = get_selected(formData, "right-")
+    case e
+    in { submitter: { name: "action", value: "move_all_left" } }
+      @left += @right
+      @right = []
+    in { submitter: { name: "action", value: "move_all_right" } }
+      @right += @left
+      @left = []
+    in { submitter: { name: "action", value: "move_selected_left" }, target: { formData: } }
+      selected = get_selected(formData, "right-")
 
-        {
-          left: state[:left].union(selected),
-          right: state[:right].difference(selected),
-        }
-      in { submitter: { name: "action", value: "move_selected_right" }, target: { formData: } }
-        selected = get_selected(formData, "left-")
+      @left |= selected
+      @right -= selected
+    in { submitter: { name: "action", value: "move_selected_right" }, target: { formData: } }
+      selected = get_selected(formData, "left-")
 
-        {
-          left: state[:left].difference(selected),
-          right: state[:right].union(selected),
-        }
-      else
-        {}
-      end
+      @right |= selected
+      @left -= selected
+    else
+      {}
     end
   end
 
 %Fieldset
   %legend Transfer list
-  %form{on_submit: handler(:handle_submit)}
+  %form(onsubmit=handle_submit)
     %ul
-      = state[:left].map do |item|
+      = @left.map do |item|
         %li[item]
           %Checkbox{
             label: ITEMS[item],
             name: "left-#{item}",
-            group_class: styles[:group],
+            group_class: Styles[:group],
           }
 
     .buttons
@@ -65,10 +61,10 @@
       %button(type="submit" name="action" value="move_selected_right" title="Move selected right") ⟩
 
     %ul
-      = state[:right].map do |item|
+      = @right.map do |item|
         %li[item]
           %Checkbox{
             label: ITEMS[item],
             name: "right-#{item}",
-            group_class: styles[:group],
+            group_class: Styles[:group],
           }

@@ -1,66 +1,72 @@
+#!/usr/bin/env ruby -rbundler/setup
+# frozen_string_literal: true
+
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
+
 require "minitest/autorun"
-# require "test_helper"
 
 require_relative "encrypted_marshal"
 
 class Mayu::EncryptedMarshal::Test < Minitest::Test
-  EncryptedMarshal = Mayu::EncryptedMarshal
-
   def test_dump_and_load
-    encrypted_marshal = EncryptedMarshal.new(EncryptedMarshal.random_key)
+    message_cipher = Mayu::EncryptedMarshal.new(generate_key)
 
-    dumped = encrypted_marshal.dump("hello")
-    loaded = encrypted_marshal.load(dumped)
+    dumped = message_cipher.dump("hello")
+    loaded = message_cipher.load(dumped)
 
     assert_equal("hello", loaded)
   end
 
   def test_dump_and_load_object
-    encrypted_marshal = EncryptedMarshal.new(EncryptedMarshal.random_key)
+    message_cipher = Mayu::EncryptedMarshal.new(generate_key)
 
     object = { foo: "hello", bar: { baz: [123.456, :asd] } }
 
-    dumped = encrypted_marshal.dump(object)
-    loaded = encrypted_marshal.load(dumped)
+    dumped = message_cipher.dump(object)
+    loaded = message_cipher.load(dumped)
 
     assert_equal(object, loaded)
   end
 
   def test_issued_in_the_future
-    encrypted_marshal = EncryptedMarshal.new(EncryptedMarshal.random_key)
+    now = Time.now
+    message_cipher = Mayu::EncryptedMarshal.new(generate_key)
 
-    dumped = encrypted_marshal.dump("hello")
+    dumped = message_cipher.dump("hello")
 
     Time.stub(:now, Time.at(Time.now - 1)) do
-      assert_raises(EncryptedMarshal::IssuedInTheFutureError) do
-        encrypted_marshal.load(dumped)
+      assert_raises(Mayu::EncryptedMarshal::IssuedInTheFutureError) do
+        message_cipher.load(dumped)
       end
     end
   end
 
   def test_expiration
-    encrypted_marshal = EncryptedMarshal.new(EncryptedMarshal.random_key)
-    dumped = encrypted_marshal.dump("hello")
+    now = Time.now
+    message_cipher = Mayu::EncryptedMarshal.new(generate_key)
+    dumped = message_cipher.dump("hello")
 
     Time.stub(
       :now,
-      Time.at(Time.now + EncryptedMarshal::DEFAULT_TTL_SECONDS)
+      Time.at(Time.now + Mayu::EncryptedMarshal::DEFAULT_TTL_SECONDS)
     ) do
-      assert_raises(EncryptedMarshal::ExpiredError) do
-        encrypted_marshal.load(dumped)
+      assert_raises(Mayu::EncryptedMarshal::ExpiredError) do
+        message_cipher.load(dumped)
       end
     end
   end
 
   def test_invalid_key
-    em1 = EncryptedMarshal.new(EncryptedMarshal.random_key)
-    em2 = EncryptedMarshal.new(EncryptedMarshal.random_key)
+    cipher1 = Mayu::EncryptedMarshal.new(generate_key)
+    cipher2 = Mayu::EncryptedMarshal.new(generate_key)
 
-    dumped = em1.dump("hello")
+    dumped = cipher1.dump("hello")
 
-    assert_raises(
-      EncryptedMarshal::DecryptError,
-      "Decryption failed. Ciphertext failed verification."
-    ) { em2.load(dumped) }
+    assert_raises(Mayu::EncryptedMarshal::DecryptError) { cipher2.load(dumped) }
   end
+
+  private
+
+  def generate_key = RbNaCl::Random.random_bytes(RbNaCl::SecretBox.key_bytes)
 end

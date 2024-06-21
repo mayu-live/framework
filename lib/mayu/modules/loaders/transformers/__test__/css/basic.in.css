@@ -1,0 +1,15 @@
+ul {
+  background: rgb(0 128 255 / 50%);
+}
+li {
+  border: 1px solid #f0f;
+}
+.foo {
+  border: 1px solid #f0f;
+}
+.bar {
+  background: url("./bar.png");
+}
+.foo-bar {
+  font-weight: bold;
+}

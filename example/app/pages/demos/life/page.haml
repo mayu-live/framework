@@ -1,9 +1,9 @@
 :ruby
-  Heading = import("/app/components/Layout/Heading")
-  Fieldset = import("/app/components/Form/Fieldset")
-  Input = import("/app/components/Form/Input")
-  Button = import("/app/components/Form/Button")
-  Link = import("/app/components/UI/Link")
+  Heading = import("/components/Layout/Heading")
+  Fieldset = import("/components/Form/Fieldset")
+  Input = import("/components/Form/Input")
+  Button = import("/components/Form/Button")
+  Link = import("/components/UI/Link")
   GameGrid = import("./GameGrid")
 
   # b = born
@@ -33,19 +33,20 @@
     end
   end
 
-  def self.get_initial_state(initial_size: DEFAULT_SIZE, **) = {
-    width: initial_size,
-    height: initial_size,
-    grid: init_grid(initial_size, initial_size),
-    running: false,
-    fps: DEFAULT_FPS,
-  }
+  def initialize
+    size = $initial_size || DEFAULT_SIZE
+    @width = size
+    @height = size
+    @grid = self.class.init_grid(size, size)
+    @running = false
+    @fps = DEFAULT_FPS
+  end
 
   def mount
     loop do
-      if state[:running]
+      if @running
         handle_step
-        sleep 1.0 / state[:fps]
+        sleep 1.0 / @fps
       else
         sleep 0.5
       end
@@ -72,54 +73,40 @@
   end
 
   def handle_reset
-    update do |width:, height:|
-      { grid: self.class.init_grid(width, height) }
-    end
+    @grid = self.class.init_grid(@width, @height)
   end
 
   def handle_randomize(event)
-    update do |width:, height:|
-      { grid: self.class.init_grid(width, height) { rand(2).zero? } }
-    end
+    @grid = self.class.init_grid(@width, @height) { rand(2).zero? }
   end
 
   def set_cell_value(x, y, value)
-    update do |state|
-      {
-        grid: state[:grid].dup.tap do |grid|
-          grid[y] = grid[y].dup.tap { |row| row[x] = value }
-        end
-      }
+    @grid = @grid.dup.tap do |grid|
+      grid[y] = grid[y].dup.tap { |row| row[x] = value }
     end
   end
 
   def handle_change_fps(e)
     e => { target: { value: } }
-    update(fps: value.to_i.clamp(MIN_FPS, MAX_FPS))
+    @fps = value.to_i.clamp(MIN_FPS, MAX_FPS)
   end
 
   def handle_change_width(e)
     e => { target: { value: } }
-    width = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    update do |grid:|
-      { grid:
-        grid.map { |row| row.slice(0...width).fill(false, (row.size)...width) }
-      }
+    @width = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
+    @grid = @grid.map do |row|
+      row.slice(0...@width).fill(false, (row.size)...@width)
     end
     handle_reset
   end
 
   def handle_change_height(e)
     e => { target: { value: } }
-    height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    update do |grid:, width:|
-      { grid:
-        if grid.size > height
-          grid.slice(0..height)
-        else
-          grid + this.class.init_grid(width, height - grid.size)
-        end
-      }
+    @height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
+    if @grid.size > @height
+      @grid = grid.slice(0..@height)
+    else
+      @grid = @grid + self.class.init_grid(@width, @height - @grid.size)
     end
     handle_reset
   end
@@ -127,26 +114,23 @@
   def handle_change_size(e)
     e => { target: { value: } }
     size = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    update(width: size, height: size)
+    @width = size
+    @height = size
     handle_reset
   end
 
   def handle_step
-    update do |grid:|
-      { grid: step_grid(grid) }
-    end
+    @grid = step_grid(@grid)
   end
 
   def handle_toggle_running
-    update do |running:|
-      { running: !running }
-    end
+    @running = !@running
   end
 
   private
 
   def step_grid(grid)
-    grid.map.with_index do |row, y|
+    @grid.map.with_index do |row, y|
       row.map.with_index do |alive, x|
         RULES[alive ? :s : :b].include?(count_neighbors(grid, x, y))
       end
@@ -160,7 +144,7 @@
   def each_neighbor(grid, x, y)
     Enumerator.new do |enum|
       -1.upto(1) do |yoff|
-        row = grid[(y + yoff) % grid.size]
+        row = @grid[(y + yoff) % grid.size]
 
         -1.upto(1) do |xoff|
           next if yoff.zero? && xoff.zero?
@@ -177,41 +161,46 @@
     gap: 1em;
   }
 
-:ruby
-  state => grid:, running:
-
 %article
   %Heading(level=2) Game of life
 
   %p
     This is an implementation of
-    %Link(href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life" target="_blank")< Conway's Game of Life
+    %Link{
+      href: "https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life",
+      target: "_blank"
+    }<
+      Conway's Game of Life
     \.
-  %p Use the primary mouse button to draw and the secondary mouse button to erase.
+  %p
+    Use the primary mouse button to draw and the secondary mouse button to erase.
 
   %Fieldset
     %legend Controls
     .buttons
       %Button(onclick=handle_reset) Reset
       %Button(onclick=handle_randomize) Randomize
-      %Button(onclick=handle_step disabled=running) Step
+      %Button(onclick=handle_step disabled=@running) Step
       %Button(onclick=handle_toggle_running){
-        color: running ? "var(--red)" : "var(--green)"
-      }= running ? "Stop" : "Start"
+        color: @running ? "var(--red)" : "var(--green)"
+      }
+        = @running ? "Stop" : "Start"
+
     -#
       %div
         %label(for="grid-width") Grid width
         %br
-        %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: state[:width]}
-        %output= state[:width]
+        %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: @width}
+        %output= @width
       %div
         %label(for="grid-height") Grid height
         %br
-        %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: state[:height]}
-        %output= state[:height]
+        %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: @height}
+        %output= @height
       %div
         %label(for="game-fps") Frames per second
         %br
-        %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: state[:fps]}
-        %output= state[:fps]
-  %GameGrid(grid=grid ondraw=handle_draw)
+        %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
+        %output= @fps
+
+  %GameGrid(grid=@grid ondraw=handle_draw)

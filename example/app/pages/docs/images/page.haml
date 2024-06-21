@@ -5,12 +5,11 @@
     :plain
       # Images
 
-      To load an image, you use the `image()`-method which
-      validates that the resource is an image.
+      To load an image, you just use `import()`.
 
       ```haml
       :ruby
-        Image = image("./río_amazonas.jpeg")
+        Image = import("./río_amazonas.jpeg")
       %img{src: Image.src}
       ```
 
@@ -18,7 +17,7 @@
 
       ```haml
       :ruby
-        Image = image("./río_amazonas.jpeg")
+        Image = import("./río_amazonas.jpeg")
       %img{
         src: Image.src,
         sizes: Image.sizes,
@@ -40,9 +39,6 @@
 
       ## SVGs
 
-      Scalable Vector Graphics are fantastic,
-      and they are really easy to use.
-
-      You can load them using `svg()`.
+      Scalable Vector Graphics are fantastic, and they are really easy to use.
 
       [Source code for the Icon component on this site](https://github.com/mayu-live/framework/blob/main/example/app/components/UI/Icon/Icon.haml)

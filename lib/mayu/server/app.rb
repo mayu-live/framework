@@ -1,498 +1,376 @@
-# typed: strict
 # frozen_string_literal: true
+#
+# Copyright Andreas Alin <andreas.alin@gmail.com>
+# License: AGPL-3.0
 
-require "async/variable"
-require_relative "../event_stream"
-require_relative "file_server"
-require_relative "errors"
+require "protocol/http/body/file"
+require_relative "request_refinements"
+require_relative "cookies"
+require_relative "session_store"
+require_relative "event_stream"
+require_relative "static_files"
+
+require_relative "../environment"
+require_relative "../session"
+require_relative "../modules/system"
 
 module Mayu
-  module Server
+  class Server
     class App
-      extend T::Sig
+      using RequestRefinements
 
-      DEV_ASSETS_TIMEOUT_SECONDS = 4
-      DEV_ASSETS_RETRY_AFTER_SECONDS = 2
-      PING_INTERVAL = 2 # seconds
-      NANOID_RE = /[\w-]{21}/
-
-      MIME_TYPES =
-        T.let(
+      ALLOW_HEADERS =
+        Ractor.make_shareable(
           {
-            eventstream: "application/vnd.mayu.eventstream",
-            session: "application/vnd.mayu.session"
-          },
-          T::Hash[Symbol, String]
+            "access-control-allow-methods": "GET, POST, OPTIONS",
+            "access-control-allow-headers": %w[
+              content-type
+              accept
+              accept-encoding
+            ].join(", ")
+          }
         )
 
-      sig { params(environment: Environment).void }
-      def initialize(environment:)
+      ASSET_CACHE_CONTROL = [
+        "public",
+        "max-age=#{7 * 24 * 60 * 60}",
+        "immutable"
+      ].join(", ").freeze
+
+      def initialize(environment)
         @environment = environment
-        @metrics = T.let(environment.metrics, AppMetrics)
-        @barrier = T.let(Async::Barrier.new, Async::Barrier)
-        @stop = T.let(Async::Variable.new, Async::Variable)
-        @sessions = T.let({}, T::Hash[String, Session])
-
-        @runtime_assets =
-          T.let(FileServer.new(@environment.js_runtime_path), FileServer)
-        @static_assets =
-          T.let(FileServer.new(@environment.path(:assets)), FileServer)
+        @stopping = false
+        @sessions = SessionStore.new
+        @client_files = StaticFiles.new(@environment.client_path)
+        @sessions.start_cleanup_task
       end
 
-      sig { void }
-      def clear_expired_sessions!
-        old_size = @sessions.size
-
-        @sessions.delete_if do |id, session|
-          next unless session.expired?(20)
-
-          Console.logger.warn(self, "Session #{session.id} timed out")
-          session.stop!
-          @metrics.session_timeout_count.increment
-          true
-        end
-
-        unless @sessions.size == old_size
-          Console.logger.warn(self, "Session count: #{@sessions.size}")
-        end
-
-        @metrics.session_count.set(@sessions.size)
-      end
-
-      sig { void }
-      def stop
-        @stop.resolve(true)
-        @barrier.wait
-        Console.logger.info(self, "Stopped sessions")
-      end
-
-      sig { void }
-      def close
-        @barrier.wait
-      end
-
-      sig { returns(Integer) }
-      def time_ping_value
-        Process.clock_gettime(Process::CLOCK_MONOTONIC, :millisecond).to_i &
-          0x0fffffff
-      end
-
-      sig do
-        params(request: Protocol::HTTP::Request).returns(
-          Protocol::HTTP::Response
-        )
-      end
       def call(request)
-        # The following line generates very noisy logs,
-        # but can be useful when debugging.
-        # Console.logger.info(self, "#{request.method} #{request.path}")
+        return text_response(503, "Server is stopping") if @stopping
 
-        Errors.handle_exceptions { handle_request(request) }
-      end
+        # puts "\e[3;33m #{request.method} #{request.path} \e[0m"
 
-      sig { void }
-      def rerender
-        @sessions.values.each(&:rerender)
-      end
-
-      sig do
-        params(
-          id: String,
-          request: Protocol::HTTP::Request,
-          resume: T::Boolean
-        ).returns(Session)
-      end
-      def get_session(id, request, resume: false)
-        session = load_session(id, resume ? request.read.to_s : "")
-        cookie_value = get_token_cookie_value(request)
-
-        if session.authorized?(cookie_value)
-          session
+        case request
+        in path: "/favicon.ico"
+          handle_favicon(request)
+        in { path: "/.mayu", method: "OPTIONS" }
+          handle_options(request)
+        in path: %r{\A\/.mayu\/runtime\/.+\.js(\.map)?}
+          handle_script(request)
+        in { path: %r{\A/\.mayu/assets/(.+)\z}, method: "GET" }
+          handle_asset(request)
+        in {
+             method: "GET",
+             path: %r{\/.mayu\/session\/(?<session_id>[[:alnum:]]+)}
+           }
+          handle_session_resume(request, $~[:session_id])
+        in {
+             method: "POST",
+             path: %r{\/.mayu\/session\/(?<session_id>[[:alnum:]]+)}
+           }
+          handle_session_transfer(request, $~[:session_id])
+        in {
+             path: %r{\/.mayu\/session\/(?<session_id>[[:alnum:]]+)},
+             method: "PATCH"
+           }
+          handle_session_event(request, $~[:session_id])
+        in method: "GET"
+          handle_session_start(request)
         else
-          raise Errors::UnauthorizedSessionCookie,
-                "session with id #{id} had wrong value #{cookie_value.inspect}"
+          handle_404(request)
         end
-      end
-
-      sig do
-        params(request: Protocol::HTTP::Request).returns(
-          Protocol::HTTP::Response
+      rescue SessionStore::SessionNotFoundError
+        error_response(403, "Session not found", **origin_header(request))
+      rescue SessionStore::InvalidTokenError
+        error_response(403, "Invalid token", **origin_header(request))
+      rescue Cookies::TokenCookieNotSetError
+        error_response(403, "Token cookie not set", **origin_header(request))
+      rescue Errno::ENOENT => e
+        text_response(
+          404,
+          "Resource not found: #{request.path}",
+          **origin_header(request)
         )
-      end
-      def handle_request(request)
-        # FIXME: raise_if_shutting_down! should only prevent the following:
-        # * starting new sessions
-        # * updating sessions that have been transferred
-        # * updating sessions that have been paused for transferring
-        raise_if_shutting_down!
-
-        case request.path.delete_prefix("/").split("/")
-        in ["__mayu", "session", NANOID_RE => session_id, *rest]
-          handle_session_post(request, session_id, rest)
-        in ["index.js"]
-          body = File.read(File.join(__dir__, "client", "dist", "live.js"))
-          Protocol::HTTP::Response[
-            200,
-            { "content-type": "application/javascript" },
-            [body]
-          ]
-        in ["robots.txt"]
-          Protocol::HTTP::Response[
-            200,
-            { "content-type" => "text/plain; charset=utf-8" },
-            File.read(File.join(@environment.root, "app", "robots.txt"))
-          ]
-        in ["favicon.ico"]
-          # Idea: Maybe it would be possible to create
-          # an asset from the favicon and redirect to the asset?
-          Protocol::HTTP::Response[
-            200,
-            { "content-type" => "image/png" },
-            Protocol::HTTP::Body::File.open(
-              File.join(@environment.root, "app", "favicon.png")
-            )
-          ]
-        in ["__mayu", "status"]
-          Protocol::HTTP::Response[200, {}, "ok"]
-        in ["__mayu", "runtime", *path]
-          accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
-
-          filename = File.join(*path)
-
-          if filename == "entries.json"
-            return Protocol::HTTP::Response[403, {}, ["forbidden"]]
-          end
-
-          @runtime_assets.serve(filename, accept_encodings:)
-        in ["__mayu", "static", filename]
-          if @environment.config.server.generate_assets
-            begin
-              @environment.resources.wait_for_asset(
-                filename,
-                timeout: DEV_ASSETS_TIMEOUT_SECONDS
-              )
-            rescue Async::TimeoutError => e
-              Console.logger.warn(
-                self,
-                "Asset #{filename} could not be generated in time"
-              )
-              return(
-                Protocol::HTTP::Response[
-                  503,
-                  { "retry-after" => DEV_ASSETS_RETRY_AFTER_SECONDS },
-                  ["asset could not be generated in time"]
-                ]
-              )
-            end
-          end
-
-          accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
-
-          @static_assets.serve(filename, accept_encodings:)
-        in ["__mayu", *]
-          raise Errors::FileNotFound,
-                "Resource not found at: #{request.method} #{request.path}"
-        in [*] if request.method == "GET"
-          raise_if_shutting_down!
-
-          handle_session_init(request)
-        else
-          Protocol::HTTP::Response[404, {}, ["not found"]]
-        end
+      rescue => e
+        Console.logger.error(self, e)
+        error_response(403, "Internal server error", **origin_header(request))
       end
 
-      sig { void }
-      def raise_if_shutting_down!
-        raise Errors::ServerIsShuttingDown if @stop.resolved?
-      end
-
-      sig do
-        params(
-          request: Protocol::HTTP::Request,
-          session_id: String,
-          path: T::Array[String]
-        ).returns(Protocol::HTTP::Response)
-      end
-      def handle_session_post(request, session_id, path)
-        raise Errors::InvalidMethod unless request.method == "POST"
-
-        if ["resume"] === path
-          body = Async::HTTP::Body::Writable.new
-          session = get_session(session_id, request, resume: true)
-          run_event_stream(session, body:)
-
-          return(
-            Protocol::HTTP::Response[
-              200,
-              { "content-type": MIME_TYPES[:eventstream] },
-              body
-            ]
-          )
-        end
-
-        session = get_session(session_id, request, resume: false)
-        session.activity!
-
-        case path
-        in ["init"]
-          body = Async::HTTP::Body::Writable.new
-          run_event_stream(session, body:)
-          Protocol::HTTP::Response[
-            200,
-            { "content-type": MIME_TYPES[:eventstream] },
-            body
-          ]
-        in ["ping"]
-          body = JSON.parse(request.read.to_s)
-          pong = body["pong"].to_f
-          ping = body["ping"]
-          time = time_ping_value
-          server_pong = time_ping_value - body["pong"].to_f
-          headers = {
-            "content-type": "application/json",
-            "set-cookie": set_token_cookie_value(session)
-          }
-          session.log.push(
-            :pong,
-            pong: ping,
-            server: server_pong,
-            region: @environment.config.instance.region,
-            instance: @environment.config.instance.alloc_id.split("-", 2).first
-          )
-          Protocol::HTTP::Response[200, headers, [JSON.generate(ping)]]
-        in ["navigate"]
-          @environment.metrics.session_navigate_count.increment()
-          path = request.read.force_encoding("utf-8")
-          session.handle_callback("navigate", { path: })
-          headers = {
-            "content-type": "text/plain",
-            "set-cookie": set_token_cookie_value(session),
-            "x-request-time": request.headers["x-request-time"]
-          }
-          Protocol::HTTP::Response[200, headers, ["ok"]]
-        in ["callback", String => callback_id]
-          session.handle_callback(
-            callback_id,
-            JSON.parse(request.read, symbolize_names: true)
-          )
-          headers = {
-            "content-type": "text/plain",
-            "set-cookie": set_token_cookie_value(session),
-            "x-request-time": request.headers["x-request-time"]
-          }
-          Protocol::HTTP::Response[200, headers, ["ok"]]
-        end
-      end
-
-      sig do
-        params(request: Protocol::HTTP::Request).returns(
-          Protocol::HTTP::Response
-        )
-      end
-      def handle_session_init(request)
-        Console.logger.info(self) { "Init session: #{request.path}" }
-
-        validate_header!(
-          request.headers,
-          "sec-fetch-mode",
-          "navigate"
-        ) do |value|
-          raise Errors::InvalidSecFetchHeader,
-                "Expected sec-fetch-mode to equal navigate but got #{value.inspect}"
-        end
-
-        validate_header!(
-          request.headers,
-          "sec-fetch-dest",
-          "document"
-        ) do |value|
-          raise Errors::InvalidSecFetchHeader,
-                "Expected sec-fetch-dest to equal document but got #{value.inspect}"
-        end
-
-        session =
-          Session.new(
-            environment: @environment,
-            path: request.path,
-            headers: request.headers.to_h.freeze
-          )
-        body = Async::HTTP::Body::Writable.new
-
-        headers = {
-          "content-type" => "text/html; charset=utf-8",
-          "cache" => "no-cache"
-        }
-
-        accept_encodings = request.headers["accept-encoding"].to_s.split(", ")
-
-        writer =
-          if accept_encodings.include?("br")
-            headers["content-encoding"] = "br"
-            Brotli::Writer.new(body)
-          else
-            body
-          end
-
-        session.initial_render(writer) => { stylesheets: }
-
-        headers["link"] = [
-          "</__mayu/runtime/#{@environment.init_js}##{session.id}>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high",
-          *stylesheets.map { "<#{_1}>; rel=preload; as=style" }
-        ].join(", ")
-
-        headers["set-cookie"] = set_token_cookie_value(session)
-
-        @sessions.store(session.id, session)
-
-        @environment.metrics.session_init_count.increment()
-
-        Protocol::HTTP::Response[200, headers, body]
-      end
-
-      sig do
-        params(session: Session, body: Async::HTTP::Body::Writable).returns(
-          Async::Task
-        )
-      end
-      def run_event_stream(session, body:)
-        @barrier.async do |task|
-          session.activity!
-
-          stream = EventStream::Writable.new(body)
-
-          Console.logger.info(self, "Streaming events to session #{session.id}")
-
-          barrier = Async::Barrier.new
-          stop_notification = Async::Notification.new
-
-          task.async do
-            @stop.wait
-            stop_notification.signal
-          end
-
-          session_task =
-            barrier.async do
-              session
-                .run do |message|
-                  case message
-                  in [event, payload]
-                    session.log.push(:"session.#{event}", payload)
-                  end
-                end
-                .wait
-            ensure
-              stop_notification.signal
-            end
-
-          ping_task =
-            barrier.async do
-              loop do
-                sleep PING_INTERVAL
-                session.log.push(:ping, time_ping_value)
-              end
-            end
-
-          message_task =
-            barrier.async do |subtask|
-              loop { stream.write(session.log.pop.to_a) }
-            ensure
-              barrier.stop
-            end
-
-          stop_notification.wait
-
-          barrier.stop
-          perform_transfer(session, stream)
-          task.stop
-        end
+      def stop
+        @stopping = true
+        Console.logger.info(self, "\e[1;33mTRANSFERRING ALL SESSIONS\e[0m")
+        @sessions.transfer_all
+        Console.logger.info(self, "\e[32mTRANSFERRED ALL SESSIONS\e[0m")
       end
 
       private
 
-      sig do
-        params(
-          headers: Protocol::HTTP::Headers,
-          name: String,
-          expected_value: String,
-          block: T.proc.params(arg0: String).void
-        ).void
-      end
-      def validate_header!(headers, name, expected_value, &block)
-        if actual_value = headers[name]
-          yield actual_value.to_s unless actual_value.to_s == expected_value
-        end
+      # Mayu
+
+      def handle_options(request)
+        response(204, **ALLOW_HEADERS, **origin_header(request))
       end
 
-      sig { params(session_id: String, body: String).returns(Session) }
-      def load_session(session_id, body)
-        if body.empty?
+      def handle_script(request)
+        path =
+          Pathname.new(request.path).relative_path_from("/.mayu/runtime").to_s
+
+        file = @client_files.get(path)
+
+        unless file
           return(
-            @sessions.fetch(session_id) do
-              raise Errors::SessionNotFound, "Session not found: #{session_id}"
-            end
+            response(
+              404,
+              "Resource not found: #{request.path}",
+              "content-type": "text/plain; charset=utf-8",
+              **origin_header(request)
+            )
           )
         end
 
-        @environment.encrypted_marshal.load(body) => String => dumped
-        session = Session.restore(environment: @environment, dumped:)
-        @sessions.store(session.id, session)
+        response(
+          200,
+          file.encoded_content.content,
+          **file.headers,
+          **origin_header(request)
+        )
       end
 
-      sig do
-        params(
-          session: Session,
-          stream: EventStream::Writable,
-          task: Async::Task
-        ).void
-      end
-      def perform_transfer(session, stream, task: Async::Task.current)
-        return if stream.closed?
+      def handle_asset(request)
+        asset =
+          request
+            .path
+            .then { _1.delete_prefix("/.mayu/assets/") }
+            .then { CGI.unescape_uri_component(_1) }
+            .then { Modules::System.current.wait_for_asset(_1) }
 
-        Console.logger.info(self, "Session #{session.id}: Transferring")
+        return text_response(404, "file not found") unless asset
 
-        stream.write(
-          EventStream::Message.new(
-            :"session.transfer",
-            EventStream::Blob.new(
-              @environment.encrypted_marshal.dump(
-                Session::SerializedSession.dump_session(session)
-              )
+        case asset.encoded_content
+        in Modules::Assets::FileContent
+          Protocol::HTTP::Response[
+            200,
+            {
+              **asset.headers,
+              "cache-control": ASSET_CACHE_CONTROL,
+              **origin_header(request)
+            },
+            Protocol::HTTP::Body::File.open(
+              @environment.asset_path(asset.filename)
             )
-          ).to_a
+          ]
+        in Modules::Assets::EncodedContent
+          response(
+            200,
+            asset.encoded_content.content,
+            **asset.headers,
+            "cache-control": ASSET_CACHE_CONTROL,
+            **origin_header(request)
+          )
+        end
+      end
+
+      def handle_favicon(request)
+        send_file(
+          File.read(File.join(@environment.app_dir, "favicon.png")),
+          "image/png",
+          origin_header(request)
+        )
+      end
+
+      def handle_404(request)
+        text_response(404, "file not found")
+      end
+
+      # Session
+
+      def handle_session_start(request)
+        session =
+          Session.new(
+            request_info: Session::RequestInfo.from_request(request),
+            environment: @environment
+          )
+
+        @sessions.store(session)
+
+        body = session.render.to_html
+
+        response(
+          200,
+          body,
+          "content-type": "text/html; charset=utf-8",
+          "x-mayu-session-id": session.id,
+          **Cookies.set_token_cookie_header(session),
+          link: link_header(session)
+        )
+      end
+
+      def link_header(session)
+        [
+          "<#{@environment.runtime_js_for_session_id(session.id)}>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high",
+          *session.styles.map do
+            "</.mayu/assets/#{CGI.escape_uri_component(_1)}>; rel=preload; as=style"
+          end
+        ].join(", ")
+      end
+
+      def handle_session_transfer(request, session_id)
+        encrypted_session = request.read.to_s
+        session = Session.resume_transferred(@environment, encrypted_session)
+
+        unless session.id == session_id
+          return error_response(403, "invalid session id")
+        end
+
+        # TODO: Validate token
+
+        @sessions.store(session)
+
+        run_session_stream(request, session)
+      rescue Mayu::EncryptedMarshal::ExpiredError
+        error_response(403, "expired")
+      rescue Mayu::EncryptedMarshal::DecryptError => e
+        Console.logger.error(self, e)
+        error_response(403, "cipher error")
+      end
+
+      def handle_session_resume(request, session_id)
+        session =
+          @sessions.authenticate(
+            session_id,
+            Cookies.get_token_cookie_value(request)
+          )
+
+        return session_not_found_response unless session
+
+        run_session_stream(request, session)
+      end
+
+      def run_session_stream(request, session)
+        headers = {
+          "content-type": EventStream::CONTENT_TYPE,
+          "content-encoding": EventStream::CONTENT_ENCODING,
+          "set-cookie": Cookies.set_token_cookie_value(session),
+          **origin_header(request)
+        }
+
+        body = EventStream::Writer.new
+
+        body.write(
+          Runtime::Patches::Initialize[session.render.id_node.serialize]
         )
 
-        # Sleep a little bit so that the message
-        # gets sent before the body closes...
-        # This is not ideal though, it would be better
-        # maybe if the client would acknowledge that they
-        # have received it?
-        sleep 0.1
-        stream.close
+        Async do |task|
+          session.run do |patch|
+            body.write(patch)
+
+            if patch in Runtime::Patches::Transfer
+              body.close
+              task.stop
+            end
+          end
+
+          Console.logger.info(self, "\e[31mStopped session #{session.id}\e[0m")
+
+          body.wait
+        ensure
+          task.stop
+        end
+
+        Protocol::HTTP::Response[200, headers, body]
       end
 
-      sig { params(request: Protocol::HTTP::Request).returns(String) }
-      def get_token_cookie_value(request)
-        Array(request.headers["cookie"]).each do |str|
-          if match = str.match(/^mayu-token=(\w+)/)
-            return match[1].to_s.tap { Session.validate_token!(_1) }
+      def session_not_found_response(request)
+        response(
+          404,
+          "Session not found/invalid token",
+          **origin_header(request),
+          "content-type": "text/plain"
+        )
+      end
+
+      def handle_session_event(request, session_id)
+        session =
+          @sessions.authenticate(
+            session_id,
+            Cookies.get_token_cookie_value(request)
+          )
+
+        return session_not_found_response unless session
+
+        Async do
+          session.wait
+        ensure
+          request.body.close
+        end
+
+        EventStream.each_incoming_message(request) do |message|
+          case message
+          in { type: "callback", payload: { id:, event: }, ping: }
+            session.handle_ping(ping)
+            session.handle_callback(id, event)
+          in {
+               type: "navigate",
+               payload: { href:, pushState: push_state },
+               ping:
+             }
+            session.handle_ping(ping)
+            session.handle_navigate(href, push_state:)
+          in { type: "ping", ping: }
+            session.handle_ping(ping)
           end
         end
 
-        raise Errors::CookieNotSet
+        json_response(
+          204,
+          "ok",
+          "set-cookie": Cookies.set_token_cookie_value(session),
+          **origin_header(request)
+        )
       end
 
-      sig { params(session: Session, ttl_seconds: Integer).returns(String) }
-      def set_token_cookie_value(session, ttl_seconds: 60)
-        expires = Time.now.utc + ttl_seconds
+      # Helpers
 
-        [
-          "mayu-token=#{session.token}",
-          "path=/__mayu/session/#{session.id}/",
-          "expires=#{expires.httpdate}",
-          "secure",
-          "HttpOnly",
-          "SameSite=Strict"
-        ].join("; ")
+      def text_response(status, *bodies, **headers)
+        response(
+          status,
+          *bodies,
+          "content-type": "text/plain; charset-utf-8",
+          **headers
+        )
+      end
+
+      def error_response(status, error, **headers)
+        json_response(status, { error: }, **headers)
+      end
+
+      def json_response(status, json, **headers)
+        response(
+          status,
+          JSON.generate(json),
+          "content-type": "application/json",
+          **headers
+        )
+      end
+
+      def response(status, *bodies, **headers)
+        Protocol::HTTP::Response[status, headers, bodies]
+      end
+
+      def origin_header(request)
+        { "access-control-allow-origin": request.headers["origin"] }
+      end
+
+      def send_file(content, content_type, headers = {})
+        Protocol::HTTP::Response[
+          200,
+          {
+            "content-type": content_type,
+            "content-length": content.bytesize,
+            **headers
+          },
+          [content]
+        ]
       end
     end
   end

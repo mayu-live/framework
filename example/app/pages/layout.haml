@@ -2,22 +2,12 @@
   Header = import('../components/Layout/Header')
   Footer = import('../components/Layout/Footer')
 
-.grid
-  %Header
-  %main
-    %slot
-  %Footer
+%Header
+%main
+  %slot
+%Footer
 
 :css
-  .grid {
-    height: 100%;
-    min-height: 100svh;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    grid-template-columns: 1fr;
-    z-index: 0;
-  }
-
   main {
     grid-column: 1;
 

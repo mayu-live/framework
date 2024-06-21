@@ -1,17 +1,17 @@
 :ruby
-  Icon = import("/app/components/UI/Icon")
-  Link = import("/app/components/UI/Link")
-  Card = import("/app/components/UI/Card")
+  Icon = import("/components/UI/Icon")
+  Link = import("/components/UI/Link")
+  Card = import("/components/UI/Card")
 
 %Card(border="var(--yellow)" background="var(--yellow-bright)")
   .flex
     %p
       %Icon(name="person-digging" color="var(--dark)")
       %span This page is under construction!
-    = if props in path:
+    = if $path
       %p
         %Icon(name="github" color="var(--dark)")
-        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/pages#{path}/page.haml" target="_blank")
+        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/pages#{$path}/page.haml" target="_blank")
           Edit on GitHub
 :css
   Card {

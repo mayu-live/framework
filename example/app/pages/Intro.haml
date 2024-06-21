@@ -1,33 +1,31 @@
 :ruby
-  MaxWidth = import("/app/components/Layout/MaxWidth")
-  Text = svg("./mayu.svg")
-  Background = svg("./hexagons.svg")
-
-  def self.get_initial_state(**props) = {
-    angle: rand,
-    word: nil
-  }
+  MaxWidth = import("/components/Layout/MaxWidth")
+  Text = import("./mayu.svg")
+  Background = import("./hexagons.svg")
 
   WORDS = %w[Mayu is a live updating server-side rendering web framework written in Ruby]
+
+  def initialize
+    @angle = rand
+    @word = nil
+  end
 
   def mount
     loop do
       sleep 3
 
-      update do |state|
-        { angle: state[:angle] + (rand - 0.5) * 0.5 }
-      end
+      @angle = (rand - 0.5) * 0.5
 
       WORDS.length.times do |i|
-        update(word: i)
+        @word = i
         sleep 0.15
       end
 
-      update(word: nil)
+      @word = nil
     end
   end
 
-%section{style: { __angle: "#{state[:angle]}turn" }, data: { intro: true }}
+%section{style: { __angle: "#{@angle}turn" }, data: { intro: true }}
   .background{style: { mask_image: "url(#{Background})" }}
   %MaxWidth
     %img(src=Text)
@@ -35,4 +33,4 @@
       Reactive web pages in Ruby
     %h2
       = WORDS.map.with_index do |word, i|
-        %span.word[i]{class: { active: i == state[:word] }}= word
+        %span.word[i]{class: { active: i == @word }}= word
