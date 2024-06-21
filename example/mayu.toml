@@ -1,7 +1,7 @@
-[dev]
+[development]
   secret_key = "dev"
 
-  [dev.server]
+  [development.server]
     listen = "https://localhost:9393"
 
     hmr = true
@@ -11,13 +11,13 @@
 
     generate_assets = true
 
-  [dev.metrics]
+  [development.metrics]
     enabled = true
 
-[prod]
-  secret_key = "prod"
+[production]
+  secret_key = "todo: $MAYU_SECRET_KEY"
 
-  [prod.server]
+  [production.server]
     listen = "http://0.0.0.0:3000"
 
     hmr = false
@@ -27,7 +27,7 @@
 
     generate_assets = false
 
-  [prod.metrics]
+  [production.metrics]
     enabled = true
     port = 9091
     host = "0.0.0.0"

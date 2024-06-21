@@ -11,7 +11,6 @@ require_relative "configuration"
 class Mayu::Configuration::Test < Minitest::Test
   def test_configuration
     filename = File.join(__dir__, "__test__", "configuration", "test.toml")
-    config = Mayu::Configuration.load(filename)
-    pp config
+    config = Mayu::Configuration.load(filename, "development")
   end
 end

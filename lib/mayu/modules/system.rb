@@ -195,8 +195,8 @@ module Mayu
         @assets.wait_for(filename)
       end
 
-      def process_assets(out_dir:, concurrency: 2, forever: false)
-        @assets.run(out_dir, concurrency:, forever:)
+      def generate_assets(asset_dir, **opts)
+        @assets.run(asset_dir, **opts)
       end
 
       private

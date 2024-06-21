@@ -37,9 +37,9 @@ module Mayu
         "immutable"
       ].join(", ").freeze
 
-      def initialize(config)
+      def initialize(environment)
+        @environment = environment
         @stopping = false
-        @environment = Environment.from_config(config)
         @sessions = SessionStore.new
         @client_files = StaticFiles.new(@environment.client_path)
         @sessions.start_cleanup_task
@@ -142,17 +142,12 @@ module Mayu
             .path
             .then { _1.delete_prefix("/.mayu/assets/") }
             .then { CGI.unescape_uri_component(_1) }
-            .tap { puts "Retreiving asset #{_1.inspect}" }
             .then { Modules::System.current.wait_for_asset(_1) }
 
         return text_response(404, "file not found") unless asset
 
-        puts "Got asset #{asset.filename}"
-
         case asset.encoded_content
         in Modules::Assets::FileContent
-          puts "Reading #{File.join(".assets", asset.filename)}"
-
           Protocol::HTTP::Response[
             200,
             {
@@ -161,7 +156,7 @@ module Mayu
               **origin_header(request)
             },
             Protocol::HTTP::Body::File.open(
-              File.join(".assets", asset.filename)
+              @environment.asset_path(asset.filename)
             )
           ]
         in Modules::Assets::EncodedContent

@@ -15,13 +15,13 @@ require_relative "server/app"
 
 module Mayu
   class Server
-    def initialize(config)
-      @uri = URI.parse(config.server.listen)
-      @app = App.new(config)
+    def initialize(environment)
+      @uri = URI.parse(environment.config.server.listen)
+      @app = App.new(environment)
 
       endpoint = Async::HTTP::Endpoint.new(@uri)
 
-      if config.server.self_signed_cert?
+      if environment.config.server.self_signed_cert?
         endpoint = apply_local_certificate(endpoint)
       end
 

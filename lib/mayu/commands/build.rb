@@ -10,22 +10,28 @@ module Mayu
 
       def call
         require_relative "../system_config"
-        require_relative "../configuration"
         require_relative "../environment"
         require_relative "../routes"
         require_relative "../component"
 
-        Mayu::Configuration.with do |config|
-          config = config.fetch(:prod)
+        Sync do
+          Environment.with(:production) do |environment|
+            Modules::System.use("app", **SYSTEM_CONFIG) do |system|
+              environment.router.all_templates.each do |template|
+                system.import(File.join("/pages", template))
+              end
 
-          environment = Mayu::Environment.from_config(config)
+              system.generate_assets(
+                environment.assets_dir,
+                concurrency: 4,
+                forever: false
+              ).wait
 
-          Modules::System.use("app", **SYSTEM_CONFIG) do |system|
-            environment.router.all_templates.each do |template|
-              system.import(File.join("/pages", template))
+              File.write("system.marshal", Marshal.dump(system))
+            rescue => e
+              Console.logger(self, e)
+              raise
             end
-
-            File.write("system.marshal", Marshal.dump(system))
           end
         end
       end

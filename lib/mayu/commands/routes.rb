@@ -12,15 +12,10 @@ module Mayu
 
       def call
         require "terminal-table"
-        require_relative "../configuration"
         require_relative "../environment"
         require_relative "../routes"
 
-        Mayu::Configuration.with do |config|
-          config = config.fetch(:dev)
-
-          environment = Mayu::Environment.from_config(config)
-
+        Environment.with(:development) do |environment|
           puts(
             Terminal::Table.new do |t|
               t.style = { all_separators: true, border: :unicode }
@@ -44,13 +39,13 @@ module Mayu
                     (route.regexp.inspect if @options[:regexp]),
                     Pathname.new(
                       File.join(environment.pages_dir, route.views.page)
-                    ).relative_path_from(config.root),
+                    ).relative_path_from(environment.config.root),
                     route
                       .layouts
                       .map do |layout|
                         Pathname.new(
                           File.join(environment.pages_dir, layout)
-                        ).relative_path_from(config.root)
+                        ).relative_path_from(environment.config.root)
                       end
                       .join("\n")
                   ].compact

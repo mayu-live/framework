@@ -15,26 +15,26 @@ module Mayu
         require_relative "../system_config"
 
         Sync do
-          Modules::System.use("app", **SYSTEM_CONFIG) do |system|
-            Configuration.with do |config|
-              config = config[:dev]
-
+          Environment.with(:development) do |environment|
+            Modules::System.use("app", **SYSTEM_CONFIG) do |system|
               system.start_watch
 
               Async do
-                system.process_assets(
-                  out_dir: ".assets",
-                  concurrency: 2,
+                system.generate_assets(
+                  environment.assets_dir,
+                  concurrency: 1,
                   forever: true
                 )
               end
 
-              server = Mayu::Server.new(config)
-              server.run
+              Mayu::Server.new(environment).run.wait
+            rescue => e
+              Console.logger(self, e)
+              raise
+            ensure
+              puts "\e[44mStopping dev\e[0m"
             end
           end
-
-          Server.new(config.fetch(:dev)).run
         end
       end
     end
