@@ -154,7 +154,8 @@ GEM
       abbrev
     reline (0.4.2)
       io-console (~> 0.5)
-    rexml (3.2.6)
+    rexml (3.2.7)
+      strscan (>= 3.0.9)
     rmagick (5.3.0)
       pkg-config (~> 1.4)
     rouge (4.0.1)
@@ -175,6 +176,7 @@ GEM
       sorbet (>= 0.5.10187)
       sorbet-runtime (>= 0.5.9204)
       thor (>= 0.19.2)
+    strscan (3.1.0)
     syntax_tree (5.3.0)
       prettier_print (>= 1.2.0)
     syntax_tree-haml (3.0.0)
