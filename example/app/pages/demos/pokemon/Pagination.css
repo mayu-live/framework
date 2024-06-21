@@ -2,7 +2,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1em;
+  gap: 2em;
   padding: 1em;
   margin: 1em;
   background: #fff;
@@ -11,24 +11,24 @@
   background: var(--material-color-light-blue-50);
 }
 
-.buttons {
+nav {
   display: flex;
-  flex-direction: row;
   gap: 0.5em;
   align-items: center;
-  align-content: space-between;
+  justify-content: space-between;
   flex: 1;
   border-radius: 2px;
 }
 
-.button[href]:any-link {
-  text-decoration: none;
-  color: var(--blue);
-}
+.button[href] {
+  &:any-link {
+    text-decoration: none;
+    color: var(--blue);
+  }
 
-.button[href]:active,
-.button[href]:hover {
-  text-decoration: underline;
+  &:is(:active, :hover) {
+    text-decoration: underline;
+  }
 }
 
 .per-page {
@@ -37,7 +37,6 @@
 }
 
 .pages {
-  flex: 1;
   list-style-type: none;
   display: flex;
   padding: 0;
@@ -52,24 +51,24 @@
   display: inline-block;
   width: 2em;
   text-align: center;
-}
+  background: transparent;
+  transition: background 500ms;
 
-.page:link,
-.page:visited {
-  text-decoration: none;
-  color: var(--blue);
-}
+  &:any-link {
+    text-decoration: none;
+    color: var(--blue);
+  }
 
-.page:active,
-.page:hover {
-  color: var(--blue);
-  font-weight: bold;
-  text-decoration: underline;
-}
+  &:is(:active, :hover) {
+    color: var(--blue);
+    font-weight: bold;
+    text-decoration: underline;
+  }
 
-.page[aria-current="page"] {
-  background: var(--blue);
-  color: var(--bright);
-  font-weight: bold;
-  border-radius: 2px;
+  &[aria-current="page"] {
+    background: var(--blue);
+    color: var(--bright);
+    font-weight: bold;
+    border-radius: 2px;
+  }
 }
