@@ -33,7 +33,7 @@ module Mayu
         def initialize(...)
           super
           @attributes = {}
-          @attributes = update_attributes(@descriptor.props)
+          @attributes = update_attributes(flatten_props(@descriptor.props))
         ensure
           @initialized = true
         end
