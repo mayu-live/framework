@@ -32,7 +32,11 @@ class Mayu::Modules::Loaders::Transformers::Haml::Test < Minitest::Test
           end
 
       if File.exist?(ruby)
-        assert_equal(File.read(ruby), output)
+        assert_equal(
+          File.read(ruby),
+          output,
+          "#{ruby} does not match transformed output"
+        )
       else
         puts "\e[33mWriting #{ruby}\e[0m"
         File.write(ruby, output)

@@ -26,7 +26,11 @@ class Mayu::Modules::Loaders::Transformers::CSS::Test < Minitest::Test
           .then { SyntaxTree::Formatter.format("", _1) }
 
       if File.exist?(ruby)
-        assert_equal(File.read(ruby).strip, output.strip)
+        assert_equal(
+          File.read(ruby).strip,
+          output.strip,
+          "#{ruby} doesn't match transformed output"
+        )
       else
         puts "\e[33mWriting #{ruby}\e[0m"
         File.write(ruby, output)
