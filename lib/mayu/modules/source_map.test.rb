@@ -11,7 +11,6 @@ class Mayu::Modules::SourceMap::Test < Minitest::Test
   SourceMap = Mayu::Modules::SourceMap
 
   def test_parse
-    skip
     parsed = SourceMap::SourceMap.parse(<<~INPUT, <<~OUTPUT)
         :ruby
           def hello
