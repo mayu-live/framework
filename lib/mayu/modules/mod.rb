@@ -39,6 +39,10 @@ module Mayu
         @assets = Set.new
       end
 
+      def to_s
+        File.join("(mod)", @path)
+      end
+
       def assets = @assets.to_a
 
       def const_missing(const)

@@ -26,6 +26,10 @@ module Mayu
       def self.module_path
       end
 
+      def self.to_s
+        File.join("ROOT", module_path)
+      end
+
       def self.import(filename) =
         Modules::System.import(filename, caller.first.split(":", 2).first)
 
