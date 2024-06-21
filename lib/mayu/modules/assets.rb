@@ -38,56 +38,6 @@ module Mayu
           end
         end
 
-      module Generators
-        Image =
-          Data.define(:filename, :source_path, :width) do
-            def process(assets_path)
-              require "rmagick"
-
-              target_path = File.join(assets_path, filename)
-
-              Console.logger.info(
-                self,
-                "Generating #{target_path} from #{source_path}"
-              )
-
-              Magick::Image
-                .read(source_path)
-                .first
-                .resize_to_fit(width)
-                .write(target_path) { |options| options.quality = 80 }
-
-              headers = { content_type: mime_type.to_s }
-
-              Assets::Asset.build(
-                filename:,
-                headers:,
-                encoded_content: FileContent.new
-              )
-            end
-          end
-
-        Text =
-          Data.define(:filename, :content) do
-            def process(assets_path)
-              MIME::Types.type_for(filename).first => MIME::Type => mime_type
-
-              encoded_content =
-                EncodedContent.for_mime_type_and_content(mime_type, content)
-              content_hash = Digest::SHA256.hexdigest(encoded_content.content)
-
-              headers = {
-                etag: Digest::SHA256.hexdigest(encoded_content.content),
-                "content-type": mime_type.to_s,
-                "content-length": encoded_content.content.bytesize,
-                **encoded_content.headers
-              }
-
-              Asset[filename:, headers:, encoded_content:]
-            end
-          end
-      end
-
       class Storage
         def initialize
           @assets = {}
@@ -134,7 +84,6 @@ module Mayu
         private
 
         def process(generator, assets_dir)
-          puts "Processing #{generator.filename}"
           if asset = generator.process(assets_dir)
             @assets.store(asset.filename, asset)
             var = (@results[asset.filename] ||= Async::Variable.new)
