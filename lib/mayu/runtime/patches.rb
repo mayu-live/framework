@@ -46,6 +46,8 @@ module Mayu
       Event = Data.define(:event, :payload)
       HistoryPushState = Data.define(:path)
 
+      RegisterCustomElement = Data.define(:name, :path)
+
       RenderError =
         Data.define(:file, :type, :message, :backtrace, :source, :tree_path)
     end

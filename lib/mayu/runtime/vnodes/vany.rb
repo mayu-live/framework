@@ -51,6 +51,8 @@ module Mayu
             VBody
           in Descriptors::Element[type: Proc]
             VStateless
+          in Descriptors::Element[type: CustomElement]
+            VCustomElement
           in Descriptors::Element[type: Class]
             VComponent
           in Descriptors::Element

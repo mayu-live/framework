@@ -425,6 +425,14 @@ const Patches = {
   ) {
     renderError(file, type, message, backtrace, source, treePath);
   },
+  RegisterCustomElement(name: string, path: string) {
+    if (customElements.get(name)) return;
+
+    (async () => {
+      const mod = await import(path);
+      customElements.define(name, mod.default);
+    })();
+  },
 } as const;
 
 function handleAutofocus(node: Node) {

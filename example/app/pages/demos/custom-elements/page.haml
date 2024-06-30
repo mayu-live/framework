@@ -1,0 +1,43 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  CustomElement = import("./CustomElement.js")
+
+  COLORS = %w[red blue green purple teal]
+
+  def initialize
+    @color = COLORS.first
+  end
+
+  def set_color(e)
+    @color = e.dig(:currentTarget, :value).to_s
+  end
+
+%article
+  %Heading(level=2)
+    Custom elements
+
+  %p
+    This is a basic example demonstrating how to use
+    %a(href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements")< custom elements
+    \. Some details need to be figured out before this can be considered usable.
+    See
+    %a(href="https://github.com/mayu-live/framework/issues/5")<> this GitHub issue
+    for more details.
+
+  %CustomElement(color=@color)
+
+  .buttons
+    = COLORS.map do |color|
+      %button[color](type="button" onclick=set_color value=color){
+        class: { active: @color == color }
+      }= color
+
+:css
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 5em);
+  }
+
+  .active {
+    font-weight: bold;
+  }

@@ -4,6 +4,7 @@
 # License: AGPL-3.0
 
 require_relative "transformers/css"
+require_relative "../../custom_element"
 
 module Mayu
   module Modules
@@ -32,17 +33,19 @@ module Mayu
                 .then { File.join(File.dirname(_1), File.basename(_1, ".*")) }
                 .sub(%r{\A\./}, "")
                 .sub(%r{\A/}, "")
-                .gsub(%r{/}, "__")
-                .gsub(/([[:lower:]])([[:upper:]])/) { $~.captures.join("__") }
+                .gsub(%r{/}, "-")
+                .gsub(/([[:lower:]])([[:upper:]])/) { $~.captures.join("--") }
 
             custom_element_name =
               format(
-                "%s__%s",
+                "%s--%s",
                 basename,
                 Base64.urlsafe_encode64(loading_file.digest, padding: false)[
                   0..10
                 ]
-              ).downcase
+              ).downcase.sub(/_+$/, "").tr("_", "-")
+
+            filename = "#{custom_element_name}.js"
 
             Statements(
               [
@@ -53,36 +56,38 @@ module Mayu
                   ArgParen(
                     Args(
                       [
-                        CallNode(
-                          ConstPathRef(VarRef(Const("Assets")), Const("Asset")),
-                          Period("."),
-                          Ident("build"),
-                          ArgParen(
-                            Args(
-                              [
-                                StringLiteral(
-                                  [TStringContent(custom_element_name + ".js")],
-                                  '"'
-                                ),
-                                CallNode(
-                                  VarRef(Const("Base64")),
-                                  Period("."),
-                                  Ident("decode64"),
-                                  ArgParen(
-                                    StringLiteral(
-                                      [
-                                        TStringContent(
-                                          Base64.encode64(
-                                            loading_file.source
-                                          ).strip
-                                        )
-                                      ],
-                                      '"'
-                                    )
+                        ARef(
+                          ConstPathRef(
+                            ConstPathRef(
+                              ConstPathRef(
+                                VarRef(Const("Mayu")),
+                                Const("Assets")
+                              ),
+                              Const("Generators")
+                            ),
+                            Const("Text")
+                          ),
+                          Args(
+                            [
+                              StringLiteral([TStringContent(filename)], '"'),
+                              CallNode(
+                                VarRef(Const("Base64")),
+                                Period("."),
+                                Ident("decode64"),
+                                ArgParen(
+                                  StringLiteral(
+                                    [
+                                      TStringContent(
+                                        Base64.encode64(
+                                          loading_file.source
+                                        ).strip
+                                      )
+                                    ],
+                                    '"'
                                   )
                                 )
-                              ]
-                            )
+                              )
+                            ]
                           )
                         )
                       ]
@@ -95,11 +100,15 @@ module Mayu
                     ConstPathRef(VarRef(Const("Mayu")), Const("CustomElement")),
                     Args(
                       [
-                        Args([SymbolLiteral(Ident(custom_element_name))]),
-                        StringLiteral(
-                          [TStringContent(custom_element_name + ".js")],
-                          '"'
-                        )
+                        Args(
+                          [
+                            DynaSymbol(
+                              [TStringContent(custom_element_name)],
+                              '"'
+                            )
+                          ]
+                        ),
+                        StringLiteral([TStringContent(filename)], '"')
                       ]
                     )
                   )
