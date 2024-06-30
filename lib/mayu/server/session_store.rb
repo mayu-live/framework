@@ -40,14 +40,14 @@ module Mayu
         @sessions.delete(session_id)
       end
 
-      def start_cleanup_task
+      def start_cleanup_task(timeout)
         @cleanup_task ||=
           Async do
             loop do
               sleep 1
 
               @sessions.delete_if do |session_id, session|
-                if session.timed_out?
+                if session.timed_out?(timeout)
                   Console.logger.info(
                     self,
                     "\e[31mDeleting timed out session #{session_id}\e[0m"

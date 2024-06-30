@@ -38,7 +38,11 @@ module Mayu
             .fetch("main")
             .then { File.join("/.mayu/runtime", _1) }
 
-        marshaller = EncryptedMarshal.new(config.secret_key, ttl: 5)
+        marshaller =
+          EncryptedMarshal.new(
+            config.secret_key,
+            ttl: config.server.transfer_timeout_seconds
+          )
 
         new(
           config:,

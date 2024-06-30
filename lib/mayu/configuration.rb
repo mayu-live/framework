@@ -46,7 +46,9 @@ module Mayu
         :hmr?,
         :render_exceptions?,
         :self_signed_cert?,
-        :generate_assets?
+        :generate_assets?,
+        :session_timeout_seconds,
+        :transfer_timeout_seconds
       ) do
         def self.parse(config)
           new(
@@ -57,7 +59,11 @@ module Mayu
             hmr?: config.fetch("hmr", false),
             render_exceptions?: config.fetch("render_exceptions", false),
             self_signed_cert?: config.fetch("self_signed_cert", false),
-            generate_assets?: config.fetch("self_signed_cert", false)
+            generate_assets?: config.fetch("self_signed_cert", false),
+            session_timeout_seconds:
+              config.fetch("session_timout_seconds", 10).to_i,
+            transfer_timeout_seconds:
+              config.fetch("transfer_timeout_seconds", 10).to_i
           )
         end
       end

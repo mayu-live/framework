@@ -11,6 +11,9 @@
 
     generate_assets = true
 
+    session_timeout_seconds = 15
+    transfer_timeout_seconds = 10
+
   [development.metrics]
     enabled = true
 

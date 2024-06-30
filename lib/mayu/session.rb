@@ -15,8 +15,6 @@ module Mayu
         end
       end
 
-    TIMEOUT_SECONDS = 5
-
     attr_reader :id
     attr_reader :token
 
@@ -49,7 +47,7 @@ module Mayu
       @id, @token, @engine, @last_ping, @request_info = a
     end
 
-    def timed_out?
+    def timed_out?(timeout_seconds = 5)
       diff = Async::Clock.now - @last_ping
       diff > TIMEOUT_SECONDS
     end

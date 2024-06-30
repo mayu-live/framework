@@ -42,7 +42,9 @@ module Mayu
         @stopping = false
         @sessions = SessionStore.new
         @client_files = StaticFiles.new(@environment.client_path)
-        @sessions.start_cleanup_task
+        @sessions.start_cleanup_task(
+          environment.config.server.session_timeout_seconds
+        )
       end
 
       def call(request)
