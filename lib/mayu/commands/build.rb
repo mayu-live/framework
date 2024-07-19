@@ -17,6 +17,8 @@ module Mayu
         Sync do
           Environment.with(:production) do |environment|
             Modules::System.use("app", **SYSTEM_CONFIG) do |system|
+              system.import("/root.haml")
+
               environment.router.all_templates.each do |template|
                 system.import(File.join("/pages", template))
               end
@@ -27,9 +29,9 @@ module Mayu
                 forever: false
               ).wait
 
-              File.write("system.marshal", Marshal.dump(system))
+              File.write("app.mayu-bundle", Marshal.dump(system))
             rescue => e
-              Console.logger(self, e)
+              Console.logger.error(self, e)
               raise
             end
           end

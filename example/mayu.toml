@@ -21,12 +21,13 @@
   secret_key = "todo: $MAYU_SECRET_KEY"
 
   [production.server]
-    listen = "http://0.0.0.0:3000"
+    # listen = "https://0.0.0.0:3333"
+    listen = "https://localhost:3333"
 
     hmr = false
 
     render_exceptions = false
-    self_signed_cert = false
+    self_signed_cert = true
 
     generate_assets = false
 

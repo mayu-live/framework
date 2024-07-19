@@ -19,6 +19,13 @@ section {
       transparent
     ),
     var(--blue-background);
+
+  background: radial-gradient(
+      ellipse at bottom in oklch,
+      color-mix(in oklab, var(--pink) 60%, var(--blue-background)),
+      transparent
+    ),
+    var(--blue-background);
 }
 
 .background {

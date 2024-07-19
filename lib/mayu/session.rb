@@ -5,6 +5,7 @@
 
 require_relative "runtime"
 require_relative "session/token"
+require_relative "session/error_page"
 
 module Mayu
   class Session
@@ -49,7 +50,7 @@ module Mayu
 
     def timed_out?(timeout_seconds = 5)
       diff = Async::Clock.now - @last_ping
-      diff > TIMEOUT_SECONDS
+      diff > timeout_seconds
     end
 
     def run(&block)
@@ -122,6 +123,8 @@ module Mayu
       system = Modules::System.current
 
       match = @environment.router.match(path)
+
+      return ErrorPage.build("Could not find page for #{path}") unless match
 
       layouts = [
         system.import("root.haml"),

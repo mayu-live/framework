@@ -52,15 +52,14 @@ module Mayu
       end
 
       def marshal_dump
-        [@root, @resolver, @rules, @assets, Marshal.dump(@mods)]
+        [@root, @resolver, @rules, @assets, @mods]
       end
 
       def marshal_load(a)
-        @root, @resolver, @rules, @assets, mods = a
-        @on_reload = Async::Notification.new
-
         use do
-          @mods = Marshal.load(mods)
+          @root, @resolver, @rules, @assets, @mods = a
+          @on_reload = Async::Notification.new
+
           @mods
             .each_value { _1.instance_variable_set(:@system, self) }
             .each_value { _1.reload(reload_source: false) }

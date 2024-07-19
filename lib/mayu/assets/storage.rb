@@ -12,6 +12,20 @@ require "async/semaphore"
 module Mayu
   module Assets
     class Storage
+      Static =
+        Data.define(:assets) do
+          def get(filename)
+            assets[filename]
+          end
+
+          def wait_for(filename)
+            get(filename)
+          end
+
+          def enqueue(_generator)
+          end
+        end
+
       def initialize
         @assets = {}
         @results = {}
@@ -19,7 +33,6 @@ module Mayu
       end
 
       def get(filename)
-        puts "Getting #{filename}"
         @assets[filename]
       end
 
@@ -48,10 +61,17 @@ module Mayu
 
           while forever || !@queue.empty?
             generator = @queue.dequeue
-
             semaphore.async { process(generator, assets_dir) }
           end
         end
+      end
+
+      def _dump(_level)
+        Marshal.dump(@assets)
+      end
+
+      def self._load(data)
+        Static[Marshal.load(data)]
       end
 
       private
