@@ -62,7 +62,7 @@ module Mayu
 
           @mods
             .each_value { _1.instance_variable_set(:@system, self) }
-            .each_value { _1.reload(reload_source: false) }
+            .each_value { _1::Exports }
         end
       end
 
