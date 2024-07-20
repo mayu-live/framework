@@ -303,6 +303,12 @@ const Patches = {
   SetClassName(this: NodeSet, id: string, value: string) {
     (this.getElement(id) as HTMLElement).className = value;
   },
+  AddClass(this: NodeSet, id: string, classes: string[]) {
+    (this.getElement(id) as HTMLElement).classList.add(...classes);
+  },
+  RemoveClass(this: NodeSet, id: string, classes: string[]) {
+    (this.getElement(id) as HTMLElement).classList.remove(...classes);
+  },
   SetAttribute(this: NodeSet, id: string, name: string, value: string) {
     const element = this.getElement(id);
 

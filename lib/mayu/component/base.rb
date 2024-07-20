@@ -52,7 +52,7 @@ module Mayu
         if classes = result.delete(:class)
           classnames = self::Styles[*Array(classes).compact]
 
-          result[:class] = classnames.join(" ") unless classnames.empty?
+          result[:class] = classnames.flatten unless classnames.empty?
         end
 
         result.transform_keys { _1.to_s.tr("-", "_").to_sym }

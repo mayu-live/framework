@@ -74,6 +74,8 @@ module Mayu
 
               if prop == :style
                 update_style(prop, old, new)
+              elsif prop == :class
+                update_class(prop, old, new)
               elsif prop.start_with?("on")
                 update_callback(prop, old, new)
               else
@@ -86,13 +88,36 @@ module Mayu
 
         def update_style(prop, old, new)
           unless new
-            patch(Patches::RemoveAttribute[@parent.id, :style])
+            patch(Patches::RemoveAttribute[@parent.id, :style]) if old
             return
           end
 
           InlineStyle.diff(@parent.id, old || {}, new) { patch(_1) }
 
           [prop, new]
+        end
+
+        def update_class(prop, old, new)
+          if new&.empty?
+            unless old&.empty?
+              patch(Patches::RemoveAttribute[@parent.id, :class])
+            end
+
+            return
+          end
+
+          old = old || []
+
+          added = new - old
+          patch(Patches::AddClass[@parent.id, added]) unless added.empty?
+
+          removed = old - new
+          patch(Patches::RemoveClass[@parent.id, removed]) unless removed.empty?
+
+          return prop, new
+        rescue => e
+          Console.logger.error(self, e)
+          nil
         end
 
         def update_callback(prop, old, new)
@@ -151,7 +176,7 @@ module Mayu
               when Hash
                 flatten_props(v, current_path)
               else
-                { current_path.join("-") => v }
+                { current_path.join("-").to_sym => v }
               end
             )
           end

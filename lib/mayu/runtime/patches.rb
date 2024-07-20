@@ -24,6 +24,8 @@ module Mayu
       RemoveAttribute = Data.define(:id, :name)
 
       SetClassName = Data.define(:id, :class_name)
+      AddClass = Data.define(:id, :classes)
+      RemoveClass = Data.define(:id, :classes)
 
       SetListener = Data.define(:id, :name, :listener_id)
       RemoveListener = Data.define(:id, :name, :listener_id)

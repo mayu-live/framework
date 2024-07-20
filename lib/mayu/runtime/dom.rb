@@ -91,9 +91,7 @@ module Mayu
           end
 
           def find(&block)
-            traverse do |node|
-              return node if yield node
-            end
+            traverse { |node| return node if yield node }
           end
         end
 
@@ -112,11 +110,13 @@ module Mayu
             attrs =
               attributes
                 .except(:slot)
-                .then { {**internal_attributes, **_1} }
+                .then { { **internal_attributes, **_1 } }
                 .map do |attr, value|
                   if attr == :style && value in Hash
                     value = InlineStyle.stringify(value)
                   end
+
+                  value = value.join(" ") if attr == :class && value in Array
 
                   format(
                     ' %s="%s"',
@@ -155,19 +155,13 @@ module Mayu
           end
 
           def find(&block)
-            traverse do |node|
-              return node if yield node
-            end
+            traverse { |node| return node if yield node }
           end
 
           private
 
           def internal_attributes
-            if INJECT_MAYU_ID
-              { mayu_id: id }
-            else
-              {}
-            end
+            INJECT_MAYU_ID ? { mayu_id: id } : {}
           end
         end
 
@@ -188,9 +182,7 @@ module Mayu
           end
 
           def find(&block)
-            traverse do |node|
-              return node if yield node
-            end
+            traverse { |node| return node if yield node }
           end
         end
 
@@ -214,9 +206,7 @@ module Mayu
           def escape_comment(str) = str.to_s.gsub(/--/, "&#45;&#45;")
 
           def find(&block)
-            traverse do |node|
-              return node if yield node
-            end
+            traverse { |node| return node if yield node }
           end
         end
     end
