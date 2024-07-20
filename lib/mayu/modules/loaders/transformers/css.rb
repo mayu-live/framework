@@ -55,7 +55,10 @@ module Mayu
                       [
                         Assoc(
                           Label("source_filename:"),
-                          StringLiteral([TStringContent(@source_path)], '"')
+                          StringLiteral(
+                            [TStringContent(@source_path.delete_prefix("/"))],
+                            '"'
+                          )
                         ),
                         Assoc(
                           Label("content_hash:"),
