@@ -144,15 +144,12 @@ module Mayu
             .path
             .then { _1.delete_prefix("/.mayu/assets/") }
             .then { CGI.unescape_uri_component(_1) }
-            .tap { puts "\e[33mGetting asset #{_1}\e[0m" }
             .then { Modules::System.current.wait_for_asset(_1) }
 
         return text_response(404, "file not found") unless asset
 
         case asset.encoded_content
         in Assets::FileContent
-          puts "Responding with file content for #{@environment.asset_path(asset.filename)}"
-
           Protocol::HTTP::Response[
             200,
             {
@@ -165,7 +162,6 @@ module Mayu
             )
           ]
         in Assets::EncodedContent
-          puts "Responding with encoded content for #{asset.filename}"
           response(
             200,
             asset.encoded_content.content,
