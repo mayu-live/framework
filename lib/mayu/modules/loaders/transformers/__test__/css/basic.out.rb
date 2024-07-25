@@ -1,6 +1,6 @@
 Dep_ZuJKJG = import "./bar.png"
 Mayu::StyleSheet[
-  source_filename: "/app/components/Test.css",
+  source_filename: "app/components/Test.css",
   content_hash: "WjdqSJUhC23gOH-jtXdrLoIxIiKTcg3fDEOuw2Eo3XU",
   classes: {
     __li: "/app/components/Test_li?R-Dxlzoq",

@@ -1,5 +1,5 @@
 Mayu::StyleSheet[
-  source_filename: "/app/components/Test.css",
+  source_filename: "app/components/Test.css",
   content_hash: "LGctv1utflKmwFByuCOwF_KubYgNGJiVEqcRDGYCSqY",
   classes: {
     bar: "/app/components/Test.bar?Q7O0RU6A /app/components/Test.foo?Q7O0RU6A",

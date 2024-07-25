@@ -1,6 +1,6 @@
 add_asset(
-  Assets::Asset.build(
-    "my__element__gpwgkrgfmfm.js",
+  Mayu::Assets::Generators::Text[
+    "my--element--gpwgkrgfmfm.js",
     Base64.decode64(
       "ZXhwb3J0IGRlZmF1bHQgY2xhc3MgZXh0ZW5kcyBIVE1MRWxlbWVudCB7CiAg
 c3RhdGljIG9ic2VydmVkQXR0cmlidXRlcyA9IFsiY29sb3IiLCAic2l6ZSJd
@@ -15,7 +15,10 @@ dyBwYWdlLiIpOwogIH0KCiAgYXR0cmlidXRlQ2hhbmdlZENhbGxiYWNrKG5h
 bWUsIG9sZFZhbHVlLCBuZXdWYWx1ZSkgewogICAgY29uc29sZS5sb2coYEF0
 dHJpYnV0ZSAke25hbWV9IGhhcyBjaGFuZ2VkLmApOwogIH0KfQo="
     )
-  )
+  ]
 )
 Default =
-  Mayu::CustomElement[:my__element__gpwgkrgfmfm, "my__element__gpwgkrgfmfm.js"]
+  Mayu::CustomElement[
+    :"my--element--gpwgkrgfmfm",
+    "my--element--gpwgkrgfmfm.js"
+  ]
