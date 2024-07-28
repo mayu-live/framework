@@ -18,7 +18,7 @@
     enabled = true
 
 [production]
-  secret_key = "todo: $MAYU_SECRET_KEY"
+  secret_key = "$MAYU_SECRET_KEY"
 
   [production.server]
     # listen = "https://0.0.0.0:3333"
