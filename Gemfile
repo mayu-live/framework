@@ -14,10 +14,5 @@ group :development do
   gem "prettier", require: false
   gem "rexml", require: false
   gem "ruby-prof", require: false
-  gem "nokogiri", require: false
   gem "benchmark", require: false
 end
-
-gem "fuzzy_match"
-
-gem "reline", "~> 0.4.2"

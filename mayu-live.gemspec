@@ -61,7 +61,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "filewatcher", "~> 2.1"
   spec.add_dependency "localhost", "~> 1.1"
   spec.add_dependency "minitest", "~> 5.21"
-  spec.add_dependency "nokogiri", "~> 1.16"
+  spec.add_dependency "nokolexbor", "~> 0.5.4"
   spec.add_dependency "pry", "~> 0.14.2"
   spec.add_dependency "rouge", "~> 4.2"
 

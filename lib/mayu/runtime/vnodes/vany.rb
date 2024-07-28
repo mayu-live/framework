@@ -3,6 +3,8 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require_relative "../../custom_element"
+
 module Mayu
   module Runtime
     module VNodes

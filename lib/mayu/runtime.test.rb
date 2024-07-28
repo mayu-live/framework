@@ -1,4 +1,4 @@
-#!/usr/env ruby -rbundler/setup
+#!/usr/bin/env -S ruby -rbundler/setup
 # frozen_string_literal: true
 
 # Copyright Andreas Alin <andreas.alin@gmail.com>
@@ -25,8 +25,8 @@ class Mayu::Runtime::Test < Minitest::Test
         :section,
         H[:output, @count],
         H[:button, "Increment", onclick: H.callback(self, :handle_increment)],
-        (H[:p, "Count is over 3", key: :over] if @count > 3),
-        (H[:p, "Count is below 7", key: :below] if @count < 7)
+        (H[:p, "Count is over 3", class: ["over"]] if @count > 3),
+        (H[:p, "Count is below 7"] if @count < 7)
       ]
     end
   end
@@ -65,18 +65,18 @@ class Mayu::Runtime::Test < Minitest::Test
         H[:footer, H[:p, "Copyright"]]
       ]
 
+    # enable_step!
+
     render(descriptor) do |page|
       input = find!("input", name: "hello")
 
-      input.type_input("hello world".reverse) do
-        # page.step
-      end
+      input.type_input("hello world".reverse) { page.step }
 
       button = find!("button", text: "Increment")
 
       10.times do
         button.click
-        sleep 0.05
+        page.step
       end
 
       assert_equal("10", find!("output").content)
@@ -97,11 +97,16 @@ class Mayu::Runtime::Test < Minitest::Test
       puts "\e[3;34mRENDERING\e[0m"
 
       [
-        (H[:head,
-          H[:title, "TitleThing"],
-          H[:meta, name: "description", value: "title thing description"],
-          H[:meta, name: "keywords", value: "title, thing, titlething"],
-        ] if @enabled),
+        (
+          if @enabled
+            H[
+              :head,
+              H[:title, "TitleThing"],
+              H[:meta, name: "description", value: "title thing description"],
+              H[:meta, name: "keywords", value: "title, thing, titlething"]
+            ]
+          end
+        ),
         (H[:p, "Enabled: #{@enabled.inspect}"]),
         H[:button, "Toggle", onclick: H.callback(self, :handle_toggle)]
       ]
@@ -115,20 +120,19 @@ class Mayu::Runtime::Test < Minitest::Test
         H[
           :head,
           H[:title, "initial title"],
-          H[:meta, name: "description", value: "initial description"],
+          H[:meta, name: "description", value: "initial description"]
         ],
-        H[
-          :main,
-          H[:p, "hello world"],
-          H[TitleThing]
-        ],
+        H[:main, H[:p, "hello world"], H[TitleThing]]
       ]
 
     render(descriptor) do |page|
       # enable_step!
 
       assert_equal("initial title", find!("title").content)
-      assert_equal("initial description", find!("meta", name: "description")[:value])
+      assert_equal(
+        "initial description",
+        find!("meta", name: "description")[:value]
+      )
       assert_nil(find("meta", name: "keywords"))
 
       button = find!("button")
@@ -137,14 +141,23 @@ class Mayu::Runtime::Test < Minitest::Test
       page.step
 
       assert_equal("TitleThing", find!("title").content)
-      assert_equal("title thing description", find!("meta", name: "description")[:value])
-      assert_equal("title, thing, titlething", find!("meta", name: "keywords")[:value])
+      assert_equal(
+        "title thing description",
+        find!("meta", name: "description")[:value]
+      )
+      assert_equal(
+        "title, thing, titlething",
+        find!("meta", name: "keywords")[:value]
+      )
 
       button.click
       page.step
 
       assert_equal("initial title", find!("title").content)
-      assert_equal("initial description", find!("meta", name: "description")[:value])
+      assert_equal(
+        "initial description",
+        find!("meta", name: "description")[:value]
+      )
       assert_nil(find("meta", name: "keywords"))
       page.step
     end
