@@ -98,7 +98,7 @@ module Mayu
         end
 
         def update_class(prop, old, new)
-          if new&.empty?
+          if !new || new.empty?
             unless old&.empty?
               patch(Patches::RemoveAttribute[@parent.id, :class])
             end
@@ -107,6 +107,7 @@ module Mayu
           end
 
           old = old || []
+          new = new || []
 
           added = new - old
           patch(Patches::AddClass[@parent.id, added]) unless added.empty?
