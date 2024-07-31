@@ -26,7 +26,7 @@ module Mayu
           unless class_names.compact.all? {
                    _1.start_with?("__") || String === _1
                  }
-            puts "\e[1;91mNo stylesheet defined\e[0;31m (#{@component.module_path})\e[0m"
+            Console.logger.error(@component, "No stylesheet defined")
           end
 
           return []
@@ -45,6 +45,7 @@ module Mayu
               in Symbol
                 @classes.fetch(class_name) do
                   missing << class_name unless class_name.start_with?("__")
+                  nil
                 end
               end
             end
@@ -58,16 +59,16 @@ module Mayu
               @classes.keys.reject { _1.start_with?("__") }.join(", ")
 
             Console.logger.error(
-              @style_sheets.map(&:source_filename).join(", "),
+              @component,
               format(<<~MSG, missing.join(" "), available_class_names)
               Could not find classes: \e[1;31m.%s\e[0m
               Available class names:
               \e[1;33m%s\e[0m
               MSG
             )
-          end
 
-          @warned = true
+            @warned = true
+          end
         end
 
         result
