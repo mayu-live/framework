@@ -112,82 +112,65 @@ module Mayu
             def assign_styles(styles)
               assign_const(
                 "Styles",
-                if styles.empty?
-                  CallNode(
-                    ARef(
-                      ConstPathRef(
-                        VarRef(Const("Mayu")),
-                        Const("NullStyleSheet")
-                      ),
-                      Args([VarRef(Kw("self"))])
-                    ),
-                    Period("."),
-                    Ident("merge"),
-                    ArgParen(
-                      Args(
-                        [
-                          CallNode(
-                            nil,
-                            nil,
-                            Ident("import?"),
-                            ArgParen(
-                              Args(
-                                [
-                                  StringLiteral(
-                                    [
-                                      TStringContent(
-                                        @options.source_path_without_extension +
-                                          ".css"
-                                      )
-                                    ],
-                                    '"'
+                CallNode(
+                  ConstPathRef(
+                    ConstPathRef(VarRef(Const("Mayu")), Const("Component")),
+                    Const("StyleSheets")
+                  ),
+                  Period("."),
+                  Ident("new"),
+                  ArgParen(
+                    Args(
+                      [
+                        VarRef(Kw("self")),
+                        CallNode(
+                          ArrayLiteral(
+                            LBracket("["),
+                            Args(
+                              [
+                                unless styles.empty?
+                                  CSS.transform_inline(
+                                    @options.source_path_without_extension +
+                                      ".haml (inline css)",
+                                    styles.join("\n"),
+                                    dependency_const_prefix: "CSS_Dep_"
                                   )
-                                ]
-                              )
+                                end,
+                                CallNode(
+                                  nil,
+                                  nil,
+                                  Ident("import?"),
+                                  ArgParen(
+                                    Args(
+                                      [
+                                        StringLiteral(
+                                          [
+                                            TStringContent(
+                                              File.join(
+                                                ".",
+                                                File.basename(
+                                                  @options.source_path_without_extension
+                                                ) + ".css"
+                                              )
+                                            )
+                                          ],
+                                          '"'
+                                        )
+                                      ]
+                                    )
+                                  )
+                                )
+                              ].compact
                             )
-                          )
-                        ]
-                      )
+                          ),
+                          Period("."),
+                          Ident("compact"),
+                          nil
+                        )
+                      ]
                     )
                   )
-                else
-                  CallNode(
-                    CSS.transform_inline(
-                      @options.source_path_without_extension +
-                        ".haml (inline css)",
-                      styles.join("\n"),
-                      dependency_const_prefix: "CSS_Dep_"
-                    ),
-                    Period("."),
-                    Ident("merge"),
-                    ArgParen(
-                      Args(
-                        [
-                          CallNode(
-                            nil,
-                            nil,
-                            Ident("import?"),
-                            ArgParen(
-                              Args(
-                                [
-                                  StringLiteral(
-                                    [
-                                      TStringContent(
-                                        @options.source_path_without_extension +
-                                          ".css"
-                                      )
-                                    ],
-                                    '"'
-                                  )
-                                ]
-                              )
-                            )
-                          )
-                        ]
-                      )
-                    )
-                  )
-                end
+                )
               )
             end
 

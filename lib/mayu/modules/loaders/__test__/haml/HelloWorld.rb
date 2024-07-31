@@ -6,16 +6,22 @@ class HelloWorld < Mayu::Component::Base
   Self = self
   FILENAME = __FILE__
   Styles =
-    Mayu::StyleSheet[
-      source_filename: "HelloWorld.haml (inline css)",
-      content_hash: "_xsfOrzqR-0dWREVaALo-ixZnypIrVXL1tvu828-nTM",
-      classes: {
-        __button: "HelloWorld_button?N2Q7U-wl"
-      },
-      content: <<CSS
+    Mayu::Component::StyleSheets.new(
+      self,
+      [
+        Mayu::StyleSheet[
+          source_filename: "HelloWorld.haml (inline css)",
+          content_hash: "_xsfOrzqR-0dWREVaALo-ixZnypIrVXL1tvu828-nTM",
+          classes: {
+            __button: "HelloWorld_button?N2Q7U-wl"
+          },
+          content: <<CSS
 .HelloWorld_button\\?N2Q7U-wl{background:#ccc;border:1px solid #000;border-radius:3px}
 CSS
-    ].merge(import?("HelloWorld.css"))
+        ],
+        import?("./HelloWorld.css")
+      ].compact
+    )
   begin
     # SourceMapMark:2:ZGVmIGluaXRpYWxpemU=
     def initialize

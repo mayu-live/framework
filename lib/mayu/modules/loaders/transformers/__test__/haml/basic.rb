@@ -5,7 +5,8 @@ class Basic < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("basic.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(self, [import?("./basic.css")].compact)
   public def render
     H[:p, "Hello world", **self.class.merge_props({ class: :__p })]
   end

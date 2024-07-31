@@ -5,7 +5,8 @@ class Spacing < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("spacing.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(self, [import?("./spacing.css")].compact)
   public def render
     H[
       :p,

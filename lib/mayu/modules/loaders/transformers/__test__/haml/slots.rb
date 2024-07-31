@@ -5,7 +5,8 @@ class Slots < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("slots.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(self, [import?("./slots.css")].compact)
   public def render
     H[
       :body,

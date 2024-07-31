@@ -5,7 +5,8 @@ class Dashes < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("dashes.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(self, [import?("./dashes.css")].compact)
   public def render
     H[
       :div,

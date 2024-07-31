@@ -5,7 +5,11 @@ class Class_names < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("class_names.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(
+      self,
+      [import?("./class_names.css")].compact
+    )
   begin
     # SourceMapMark:2:bG9sID0gImxvbCI=
     lol = "lol"

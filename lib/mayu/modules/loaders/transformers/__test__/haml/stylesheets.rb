@@ -6,17 +6,23 @@ class Stylesheets < Mayu::Component::Base
   Self = self
   FILENAME = __FILE__
   Styles =
-    Mayu::StyleSheet[
-      source_filename: "stylesheets.haml (inline css)",
-      content_hash: "R6kIl4_IwYp2R6BekTTwSY18oRRIDM1BaHtBsFX5Zag",
-      classes: {
-        __h1: "stylesheets_h1?ct99ezRm",
-        world: "stylesheets.world?ct99ezRm"
-      },
-      content: <<CSS
+    Mayu::Component::StyleSheets.new(
+      self,
+      [
+        Mayu::StyleSheet[
+          source_filename: "stylesheets.haml (inline css)",
+          content_hash: "R6kIl4_IwYp2R6BekTTwSY18oRRIDM1BaHtBsFX5Zag",
+          classes: {
+            __h1: "stylesheets_h1?ct99ezRm",
+            world: "stylesheets.world?ct99ezRm"
+          },
+          content: <<CSS
 .stylesheets_h1\\?ct99ezRm{color:#f0f}.stylesheets\\.world\\?ct99ezRm{background:#f0f}
 CSS
-    ].merge(import?("stylesheets.css"))
+        ],
+        import?("./stylesheets.css")
+      ].compact
+    )
   public def render
     H[
       :div,

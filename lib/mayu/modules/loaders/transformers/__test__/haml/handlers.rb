@@ -5,7 +5,8 @@ class Handlers < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("handlers.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(self, [import?("./handlers.css")].compact)
   begin
     # SourceMapMark:2:ZGVmIGhhbmRsZV9jbGljayhlKQ==
     def handle_click(e)

@@ -6,17 +6,23 @@ class Css < Mayu::Component::Base
   Self = self
   FILENAME = __FILE__
   Styles =
-    Mayu::StyleSheet[
-      source_filename: "css.haml (inline css)",
-      content_hash: "QRzl4L9HjW2wS-4CE_xH6vXN4WTNT72NL210gVqRO_c",
-      classes: {
-        button: "css.button?Trf1Txj1",
-        "button-text": "css.button-text?Trf1Txj1"
-      },
-      content: <<CSS
+    Mayu::Component::StyleSheets.new(
+      self,
+      [
+        Mayu::StyleSheet[
+          source_filename: "css.haml (inline css)",
+          content_hash: "QRzl4L9HjW2wS-4CE_xH6vXN4WTNT72NL210gVqRO_c",
+          classes: {
+            button: "css.button?Trf1Txj1",
+            "button-text": "css.button-text?Trf1Txj1"
+          },
+          content: <<CSS
 .css\\.button\\?Trf1Txj1{color:#f0f}.css\\.button-text\\?Trf1Txj1{font-weight:700}
 CSS
-    ].merge(import?("css.css"))
+        ],
+        import?("./css.css")
+      ].compact
+    )
   public def render
     H[
       :button,

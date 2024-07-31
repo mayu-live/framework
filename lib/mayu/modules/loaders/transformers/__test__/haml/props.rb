@@ -5,7 +5,8 @@ class Props < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("props.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(self, [import?("./props.css")].compact)
   public def render
     H[
       :div,

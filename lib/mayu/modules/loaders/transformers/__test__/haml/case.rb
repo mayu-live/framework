@@ -5,7 +5,8 @@ class Case < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("case.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(self, [import?("./case.css")].compact)
   public def render
     H[
       :div,

@@ -6,7 +6,10 @@ class Whitespace_preservation < Mayu::Component::Base
   Self = self
   FILENAME = __FILE__
   Styles =
-    Mayu::NullStyleSheet[self].merge(import?("whitespace_preservation.css"))
+    Mayu::Component::StyleSheets.new(
+      self,
+      [import?("./whitespace_preservation.css")].compact
+    )
   public def render
     # SourceMapMark:1:IkZvb1xuPHByZT5CYXJcbkJhejwvcHJlPiI=
     "Foo\n<pre>Bar\nBaz</pre>"

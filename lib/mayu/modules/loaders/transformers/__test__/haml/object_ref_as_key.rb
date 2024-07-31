@@ -5,7 +5,11 @@ class Object_ref_as_key < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("object_ref_as_key.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(
+      self,
+      [import?("./object_ref_as_key.css")].compact
+    )
   public def render
     H[:div, **self.class.merge_props({ class: :__div }, { key: ["hello"] })]
   end

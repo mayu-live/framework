@@ -5,7 +5,11 @@ class Early_return2 < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("early_return2.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(
+      self,
+      [import?("./early_return2.css")].compact
+    )
   public def render
     [
       # SourceMapMark:1:cmV0dXJuIGlmIHByb3BzWzpmb29d

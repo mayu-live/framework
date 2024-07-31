@@ -5,7 +5,11 @@ class For_in_else < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("for_in_else.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(
+      self,
+      [import?("./for_in_else.css")].compact
+    )
   public def render
     [
       begin

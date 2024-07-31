@@ -5,7 +5,11 @@ class Slots_fallback < Mayu::Component::Base
   end
   Self = self
   FILENAME = __FILE__
-  Styles = Mayu::NullStyleSheet[self].merge(import?("slots_fallback.css"))
+  Styles =
+    Mayu::Component::StyleSheets.new(
+      self,
+      [import?("./slots_fallback.css")].compact
+    )
   public def render
     H[
       :div,

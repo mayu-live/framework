@@ -6,16 +6,22 @@ class Multiple_ruby_filters < Mayu::Component::Base
   Self = self
   FILENAME = __FILE__
   Styles =
-    Mayu::StyleSheet[
-      source_filename: "multiple_ruby_filters.haml (inline css)",
-      content_hash: "o8vRkv9EqLa-SClq1zcq3n32AmbUcxJtrPsk5z_TTvI",
-      classes: {
-        default: "multiple_ruby_filters.default?zMcJqVrb"
-      },
-      content: <<CSS
+    Mayu::Component::StyleSheets.new(
+      self,
+      [
+        Mayu::StyleSheet[
+          source_filename: "multiple_ruby_filters.haml (inline css)",
+          content_hash: "o8vRkv9EqLa-SClq1zcq3n32AmbUcxJtrPsk5z_TTvI",
+          classes: {
+            default: "multiple_ruby_filters.default?zMcJqVrb"
+          },
+          content: <<CSS
 .multiple_ruby_filters\\.default\\?zMcJqVrb{font-weight:700}
 CSS
-    ].merge(import?("multiple_ruby_filters.css"))
+        ],
+        import?("./multiple_ruby_filters.css")
+      ].compact
+    )
   begin
     # SourceMapMark:2:ZGVmIGluaXRpYWxpemU=
     def initialize

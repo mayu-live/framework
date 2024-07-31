@@ -7,6 +7,7 @@ require_relative "../style_sheet"
 require_relative "../runtime/h"
 require_relative "css_units"
 require_relative "fetch"
+require_relative "style_sheets"
 
 module Mayu
   module Component
