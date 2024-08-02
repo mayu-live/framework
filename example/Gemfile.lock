@@ -103,8 +103,8 @@ GEM
       ffi (~> 1.0)
     rbnacl (7.1.1)
       ffi
-    rexml (3.2.8)
-      strscan (>= 3.0.9)
+    rexml (3.3.3)
+      strscan
     rmagick (5.3.0)
       pkg-config (~> 1.4)
     rouge (4.0.1)
