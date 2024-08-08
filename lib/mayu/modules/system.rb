@@ -51,12 +51,13 @@ module Mayu
       end
 
       def marshal_dump
-        [@root, @resolver, @rules, @assets, @mods]
+        [@root, @resolver, @assets, @mods]
       end
 
       def marshal_load(a)
         use do
-          @root, @resolver, @rules, @assets, @mods = a
+          @root, @resolver, @assets, @mods = a
+          @rules = []
           @on_reload = Async::Notification.new
 
           @mods
