@@ -249,6 +249,10 @@ module Mayu
       end
 
       def run_session_stream(request, session)
+        Console.logger.info(
+          self,
+          "\e[32mStarting session stream #{session.id}\e[0m"
+        )
         headers = {
           "content-type": EventStream::CONTENT_TYPE,
           "content-encoding": EventStream::CONTENT_ENCODING,
@@ -263,14 +267,16 @@ module Mayu
         )
 
         Async do |task|
-          session.run do |patch|
-            body.write(patch)
+          session
+            .run do |patch|
+              body.write(patch)
 
-            if patch in Runtime::Patches::Transfer
-              body.close
-              task.stop
+              if patch in Runtime::Patches::Transfer
+                body.close
+                task.stop
+              end
             end
-          end
+            .wait
 
           Console.logger.info(self, "\e[31mStopped session #{session.id}\e[0m")
 
