@@ -4,6 +4,7 @@ import {
   initInputStream,
   initCallbackStream,
   JSONEncoderStream,
+  StreamError,
 } from "./stream.js";
 
 import serializeEvent from "./serializeEvent.js";
@@ -163,13 +164,19 @@ async function startPatchStream(runtime: Runtime, endpoint: string) {
     } catch (e: any) {
       failures += 1;
 
-      console.error(e);
+      if (e instanceof StreamError) {
+        console.error("StreamError", e.message);
+      } else {
+        console.error(e);
+      }
 
       if (e.message === "expired" || e.message === "cipher error") {
         console.warn("Resetting session because of:", e.message);
         endpoint = await resetSessionEntirely();
       } else {
-        await sleep(Math.min(10_000, 1000 * failures + 1));
+        const sleepTime = Math.min(10_000, 1000 * failures);
+        console.info(`Attempting to reconnect in`, sleepTime, "ms");
+        await sleep(sleepTime);
       }
     }
   }

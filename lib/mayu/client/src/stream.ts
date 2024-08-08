@@ -13,7 +13,7 @@ const CALLBACK_STREAM_METHOD = "PATCH";
 
 export async function initInputStream(
   endpoint: string,
-  state: Blob | null = null,
+  state: Blob | null = null
 ): Promise<ReadableStream<any>> {
   const res = await connect(endpoint, state);
 
@@ -30,7 +30,7 @@ export class StreamError extends Error {}
 
 export async function connect(
   endpoint: string,
-  state: Blob | null = null,
+  state: Blob | null = null
 ): Promise<Response> {
   console.info("🟡 Connecting to", endpoint);
 
@@ -57,7 +57,11 @@ export async function connect(
           }),
         });
   } catch (e) {
-    throw new StreamError();
+    if (e instanceof Error) {
+      throw new StreamError(e.message);
+    } else {
+      throw new StreamError("Unknown error");
+    }
   }
 
   if (!res.ok) {
@@ -131,7 +135,7 @@ export function initCallbackStream(endpoint: string) {
     duplex: "half",
     mode: "cors",
     body: readable,
-  } as any)
+  } as any);
 
   return writable;
 }
