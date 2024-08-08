@@ -126,7 +126,7 @@ module Mayu
               Args(
                 [image_size.width, *widths].uniq.map do |width|
                   filename =
-                    format("%s-%dw.%s.%s", basename, width, hash, format)
+                    format("%s-%dw.%s?%s", basename, width, format, hash[0..10])
                   ARef(
                     VarRef(Const("ImageVersion")),
                     Args(

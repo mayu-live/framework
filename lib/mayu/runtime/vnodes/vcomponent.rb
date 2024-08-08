@@ -49,7 +49,8 @@ module Mayu
 
           if mod = get_mod
             mod.assets.each do |filename|
-              if filename.end_with?(".css")
+              filename_without_hash = filename.sub(/\?[^?]*$/, "")
+              if filename_without_hash.end_with?(".css")
                 closest(VDocument).add_stylesheet(filename)
               end
             end

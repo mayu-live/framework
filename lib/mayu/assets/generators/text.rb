@@ -9,7 +9,9 @@ module Mayu
       Text =
         Data.define(:filename, :content) do
           def process(assets_path)
-            MIME::Types.type_for(filename).first => MIME::Type => mime_type
+            filename_without_hash = filename.sub(/\?[^?]*$/, "")
+            MIME::Types.type_for(filename_without_hash).first =>
+              MIME::Type => mime_type
 
             encoded_content =
               Assets::EncodedContent.for_mime_type_and_content(

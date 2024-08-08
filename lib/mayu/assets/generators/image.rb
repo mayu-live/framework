@@ -35,14 +35,16 @@ module Mayu
 
             build_asset(filename)
           rescue => e
-            Console.logger(self, e)
+            Console.logger.error(self, e)
             raise
           end
 
           private
 
           def build_asset(filename)
-            MIME::Types.type_for(filename).first => MIME::Type => mime_type
+            filename_without_hash = filename.sub(/\?[^?]*$/, "")
+            MIME::Types.type_for(filename_without_hash).first =>
+              MIME::Type => mime_type
 
             headers = { content_type: mime_type.to_s }
 

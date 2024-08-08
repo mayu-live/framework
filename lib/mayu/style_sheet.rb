@@ -11,7 +11,7 @@ module Mayu
       end
 
       def filename
-        source_filename + ".css"
+        "#{source_filename}.css?#{content_hash[0..10]}"
       end
     end
 end
