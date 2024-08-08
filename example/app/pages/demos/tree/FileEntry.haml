@@ -26,4 +26,5 @@
   }
 
 %Name(icon=icon)
-  %Link(href="?file=#{$path}")= File.basename($path)
+  %Link{href: File.join("/demos/tree", $path)}
+    = File.basename($path)
