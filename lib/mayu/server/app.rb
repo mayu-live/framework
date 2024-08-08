@@ -101,8 +101,13 @@ module Mayu
       def stop
         @stopping = true
         Console.logger.info(self, "\e[1;33mTRANSFERRING ALL SESSIONS\e[0m")
-        @sessions.transfer_all
-        Console.logger.info(self, "\e[32mTRANSFERRED ALL SESSIONS\e[0m")
+
+        elapsed = Async::Clock.measure { @sessions.transfer_all }
+
+        Console.logger.info(
+          self,
+          format("\e[32mTRANSFERRED ALL SESSIONS IN %.2f SECONDS\e[0m", elapsed)
+        )
       end
 
       private
