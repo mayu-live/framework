@@ -19,6 +19,7 @@ module Mayu
 
       def call
         require "rouge"
+        require "syntax_tree"
         require_relative "../modules/loaders"
 
         transform(
@@ -37,6 +38,8 @@ module Mayu
         case extname = File.extname(path)
         when ".haml"
           transform_haml(formatter, source, path)
+        when ".rb"
+          transform_ruby(formatter, source, path)
         when ".css"
           transform_css(formatter, source, path)
         else
@@ -62,6 +65,27 @@ module Mayu
             using: ["Mayu::Component::CSSUnits::Refinements"],
             factory: "H"
           ].call(loading_file)
+
+        puts "\e[1;3mOutput:\e[0m"
+
+        formatter.handle_parse_error(loading_file.source.strip) do
+          puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
+        end
+      end
+
+      def transform_ruby(formatter, source, path)
+        loading_file =
+          Mayu::Modules::Loaders::LoadingFile.new(
+            root: Dir.pwd,
+            path:,
+            source:,
+            digest: nil
+          ).load_source
+
+        puts "\e[1;3mInput:\e[0;2m #{path}\e[0m"
+        puts formatter.format(loading_file.source.strip, Rouge::Lexers::Haml)
+
+        loading_file = Mayu::Modules::Loaders::Ruby[].call(loading_file)
 
         puts "\e[1;3mOutput:\e[0m"
 

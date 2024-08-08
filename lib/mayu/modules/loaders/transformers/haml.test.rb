@@ -27,7 +27,8 @@ class Mayu::Modules::Loaders::Transformers::Haml::Test < Minitest::Test
             Mayu::Modules::Loaders::Transformers::Ruby.transform(
               _1,
               basename,
-              component_base_class: "Mayu::Component::Base"
+              base_class: "Mayu::Component::Base",
+              enable_assets: true
             )
           end
 

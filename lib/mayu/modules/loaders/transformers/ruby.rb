@@ -100,12 +100,20 @@ module Mayu
             SyntaxTree::GVar => "props"
           }
 
-          def self.transform(source, path, using: [], component_base_class:)
+          def self.transform(
+            source,
+            path,
+            using: [],
+            base_class: nil,
+            enable_assets: false
+          )
             transformer = new
             # puts "\e[33m#{source}\e[0m"
-            SyntaxTree.parse(component_base_class).statements.body => [
-              component_base_path
-            ]
+            if base_class
+              SyntaxTree.parse(base_class).statements.body => [base_class_ast]
+            else
+              base_class_ast = nil
+            end
 
             using =
               using.map do
@@ -120,8 +128,9 @@ module Mayu
                 transformer.wrap_in_class(
                   _1,
                   path,
-                  component_base_path:,
-                  using:
+                  base_class_ast:,
+                  using:,
+                  enable_assets:
                 )
               end
               .accept(transformer.frozen_strings)
@@ -136,7 +145,13 @@ module Mayu
 
           def frozen_strings = FrozenStringLiteralsVisitor.new
 
-          def wrap_in_class(program, path, component_base_path:, using:)
+          def wrap_in_class(
+            program,
+            path,
+            base_class_ast:,
+            using:,
+            enable_assets:
+          )
             class_name =
               File.basename(path, ".*").sub(/\A[[:lower:]]/) { _1.upcase }
 
@@ -145,7 +160,7 @@ module Mayu
                 [
                   ClassDeclaration(
                     VarRef(Const(class_name)),
-                    component_base_path,
+                    base_class_ast,
                     BodyStmt(
                       Statements(
                         [
@@ -175,8 +190,8 @@ module Mayu
                   unless class_name == "Default"
                     Assign(VarRef(Const("Default")), VarRef(Const(class_name)))
                   end,
-                  assets_code
-                ]
+                  (assets_code if enable_assets)
+                ].compact
               )
             program.copy(statements:)
           end

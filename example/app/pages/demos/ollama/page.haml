@@ -3,7 +3,9 @@
   Button = import("/components/Form/Button")
   Message = import("./Message")
 
-  MODEL = "llama2"
+  Ollama = import("/lib/Ollama")
+
+  MODEL = "mistral"
   OLLAMA_HOST = ENV.fetch("OLLAMA_HOST", "http://localhost:11434")
 
   def initialize

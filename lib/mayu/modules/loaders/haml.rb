@@ -29,8 +29,9 @@ module Mayu
                 Transformers::Ruby.transform(
                   _1.source,
                   _1.path,
-                  component_base_class:,
-                  using:
+                  base_class: component_base_class,
+                  using:,
+                  enable_assets: true
                 )
               end
           end
