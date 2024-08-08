@@ -7,20 +7,19 @@
   Section = import("./Section")
 
 %Section
-  .article.example
-    %Heading#interactivity(level=2)
-      Interactivity
-    %p This text was rendered on the server at #{Time.now.utc.to_s}.
-    %p
-      The counter below was also rendered on the server.
-      The only JavaScript required to make it interactive is a small
-      runtime that makes a connection to the server and updates
-      the DOM whenever the state changes on the server.
+  %Heading#interactivity(level=2)
+    Interactivity
+  %p This text was rendered on the server at #{Time.now.utc.to_s}.
+  %p
+    The counter below was also rendered on the server.
+    The only JavaScript required to make it interactive is a small
+    runtime that makes a connection to the server and updates
+    the DOM whenever the state changes on the server.
 
-    %Counter(initial_count=7)
+  %Counter(initial_count=7)
 
-    %Details(summary="Show source" lazy)
-      %Highlight(language="haml")= File.read('app/pages/Counter.haml')
+  %Details(summary="Show source" lazy)
+    %Highlight(language="haml")= File.read('app/pages/Counter.haml')
 
 :css
   Section {

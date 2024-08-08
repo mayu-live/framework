@@ -4,8 +4,7 @@
   end
 
 %div{class: [:group, $group_class]}
-  %input(id=@id){
-    class: [:checkbox, $class],
+  %input(id=@id class=$class){
     type: "checkbox",
     placeholder: $label,
     **$*.except(:label),
