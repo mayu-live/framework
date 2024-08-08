@@ -53,27 +53,7 @@ module Mayu
             .compact
             .uniq
 
-        unless @warned
-          unless missing.empty?
-            available_class_names =
-              @classes.keys.reject { _1.start_with?("__") }.join(", ")
-
-            Console.logger.error(
-              @component,
-              format(
-                <<~MSG,
-              Could not find classes: \e[1;31m%s\e[0m
-              Available class names:
-              \e[1;33m%s\e[0m
-              MSG
-                missing.map { ".#{_1}" }.join(", "),
-                available_class_names
-              )
-            )
-
-            @warned = true
-          end
-        end
+        warn_missing(missing)
 
         result
       end
@@ -91,6 +71,27 @@ module Mayu
         end
 
         result
+      end
+
+      def warn_missing(missing)
+        return if @warned || missing.empty?
+
+        available = @classes.keys.reject { _1.start_with?("__") }
+
+        Console.logger.error(
+          @component,
+          format(<<~MSG, join_class_names(missing), join_class_names(available))
+              Could not find classes: \e[1;31m%s\e[0m
+              Available class names:
+              \e[1;33m%s\e[0m
+              MSG
+        )
+
+        @warned = true
+      end
+
+      def join_class_names(class_names)
+        class_names.map { ".#{_1}" }.join(", ")
       end
     end
   end
