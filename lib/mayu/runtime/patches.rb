@@ -41,6 +41,7 @@ module Mayu
       AddStyleSheet = Data.define(:filename)
 
       Transfer = Data.define(:payload)
+      TransferFailed = Data.define()
 
       Ping = Data.define(:timestamp)
       Pong = Data.define(:timestamp)

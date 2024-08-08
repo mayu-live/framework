@@ -24,6 +24,8 @@ module Mayu
     end
     class DecryptError < Error
     end
+    class DumpError < Error
+    end
 
     def initialize(key, ttl: DEFAULT_TTL_SECONDS)
       validate_ttl!(ttl)
@@ -33,6 +35,8 @@ module Mayu
 
     def dump(payload, ttl: @default_ttl_seconds)
       encode_message(Marshal.dump(payload), ttl: @default_ttl_seconds)
+    rescue TypeError => e
+      raise DumpError, "Could not dump payload: #{e.message}"
     end
 
     def load(data)

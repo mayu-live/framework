@@ -111,6 +111,9 @@ module Mayu
           Mayu::Server::EventStream::Blob[@environment.marshaller.dump(self)]
         ]
       )
+    rescue EncryptedMarshal::DumpError => e
+      Console.logger.error(self, "Error transferring session: #{@id}", e)
+      @engine.patch(Runtime::Patches::TransferFailed[])
     rescue => e
       Console.logger.error(self, e)
     end
