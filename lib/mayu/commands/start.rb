@@ -31,15 +31,14 @@ module Mayu
         require_relative "../system_config"
 
         Sync do
-          Environment.with(:production) do |environment|
-            load_system.use do |system|
-              Mayu::Server.new(environment).run.wait
-            rescue => e
-              Console.logger(self, e)
-              raise
-            ensure
-              puts "\e[44mStopping dev\e[0m"
-            end
+          load_environment do |environment|
+            Console.logger.info(self, "Starting server")
+            Mayu::Server.new(environment).run.wait
+          rescue => e
+            Console.logger(self, e)
+            raise
+          ensure
+            puts "\e[44mStopping dev\e[0m"
           end
         end
       end
@@ -58,10 +57,12 @@ module Mayu
         end
       end
 
-      def load_system
-        options[:filename]
-          .then { File.read(_1, encoding: "binary") }
-          .then { Marshal.load(_1) }
+      def load_environment
+        dumped = File.read(options[:filename], encoding: "binary")
+
+        Environment.load(:production, dumped) do |environment|
+          yield environment
+        end
       end
     end
   end

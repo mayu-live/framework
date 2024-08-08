@@ -29,35 +29,36 @@ module Mayu
         require_relative "../component"
 
         Sync do
-          Environment.with(:development) do |environment|
-            Modules::System.use("app", **SYSTEM_CONFIG) do |system|
-              elapsed =
-                Async::Clock.measure do
-                  system.import("/root.haml")
+          elapsed =
+            Async::Clock.measure do
+              Environment.with(:development) do |environment|
+                environment.modules.import("/root.haml")
 
-                  environment.router.all_templates.each do |template|
-                    system.import(File.join("/pages", template))
-                  end
+                environment.router.all_templates.each do |template|
+                  environment.modules.import(File.join("/pages", template))
+                end
 
-                  system.generate_assets(
+                environment
+                  .modules
+                  .generate_assets(
                     environment.assets_dir,
                     concurrency: options[:concurrency],
                     forever: false
-                  ).wait
+                  )
+                  .wait
 
-                  File.write(options[:filename], Marshal.dump(system))
-                end
-
-              puts format(
-                     "\e[32mBuilt \e[1m%s\e[22m in \e[1m%.2fs\e[0m",
-                     options[:filename],
-                     elapsed
-                   )
+                File.write(options[:filename], environment.dump)
+              end
             rescue => e
               Console.logger.error(self, e)
               raise
             end
-          end
+
+          puts format(
+                 "\e[32mBuilt \e[1m%s\e[22m in \e[1m%.2fs\e[0m",
+                 options[:filename],
+                 elapsed
+               )
         end
       end
     end

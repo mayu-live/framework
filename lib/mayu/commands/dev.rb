@@ -12,28 +12,25 @@ module Mayu
         require_relative "../configuration"
         require_relative "../server"
         require_relative "../component"
-        require_relative "../system_config"
 
         Sync do
           Environment.with(:development) do |environment|
-            Modules::System.use("app", **SYSTEM_CONFIG) do |system|
-              system.start_watch
+            environment.modules.start_watch
 
-              Async do
-                system.generate_assets(
-                  environment.assets_dir,
-                  concurrency: 1,
-                  forever: true
-                )
-              end
-
-              Mayu::Server.new(environment).run.wait
-            rescue => e
-              Console.logger(self, e)
-              raise
-            ensure
-              puts "\e[44mStopping dev\e[0m"
+            Async do
+              environment.modules.generate_assets(
+                environment.assets_dir,
+                concurrency: 1,
+                forever: true
+              )
             end
+
+            Mayu::Server.new(environment).run.wait
+          rescue => e
+            Console.logger(self, e)
+            raise
+          ensure
+            puts "\e[44mStopping dev\e[0m"
           end
         end
       end

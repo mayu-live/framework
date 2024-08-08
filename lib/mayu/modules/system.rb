@@ -66,6 +66,10 @@ module Mayu
         end
       end
 
+      def use!
+        Fiber[CURRENT_KEY] = self
+      end
+
       def use(&)
         prev = Fiber[CURRENT_KEY]
         Fiber[CURRENT_KEY] = self
