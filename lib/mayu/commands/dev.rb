@@ -27,8 +27,6 @@ module Mayu
           rescue => e
             Console.logger(self, e)
             raise
-          ensure
-            puts "\e[44mStopping dev\e[0m"
           end
         end
       end

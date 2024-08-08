@@ -71,7 +71,6 @@ module Mayu
           end
         end
       ensure
-        puts "\e[31mSTOPPING ROOT\e[0m"
         @root.stop
       end
 
