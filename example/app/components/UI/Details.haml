@@ -15,7 +15,7 @@
 
   def initialize
     @open = $initial_open
-    @loaded = $initial_open || $lazy || false
+    @loaded = $initial_open || !$lazy || false
   end
 
   def handle_toggle(e)
@@ -27,7 +27,7 @@
 %Card(class=$class)
   %details(ontoggle=handle_toggle open=@open)
     %summary= $summary
-    .content
+    %div
       = if @loaded
         %slot
       = else
