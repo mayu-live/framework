@@ -32,6 +32,15 @@ def initialize(model: DEFAULT_MODEL, url: DEFAULT_URL)
   @context = nil
 end
 
+def marshal_dump
+  [@endpoint, @model, @context]
+end
+
+def marshal_load(state)
+  @endpoint, @model, @context = state
+  @client = Async::HTTP::Client.new(@endpoint)
+end
+
 def generate(prompt, system: nil, template: nil, options: {})
   res =
     @client.post(
