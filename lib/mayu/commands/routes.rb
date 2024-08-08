@@ -6,6 +6,11 @@
 module Mayu
   module Commands
     class Routes < Samovar::Command
+      RESET = "\e[0m"
+      FORMATTED_SLASH = "\e[2m/#{RESET}"
+      PARAM_FORMAT = "\e[1;34m%s#{RESET}"
+      SPLAT_PARAM_FORMAT = "\e[1;33m%s#{RESET}"
+
       self.description = "Print routes"
 
       options { option "--regexp", "Include regexp patterns", default: false }
@@ -30,9 +35,9 @@ module Mayu
               environment.router.routes.each do |route|
                 t.add_row(
                   [
-                    case route.segments.join("/")
+                    case format_segments(route.segments)
                     in ""
-                      "/"
+                      FORMATTED_SLASH
                     in path
                       path
                     end,
@@ -54,6 +59,26 @@ module Mayu
             end
           )
         end
+      end
+
+      private
+
+      def format_segments(segments)
+        segments
+          .map do |segment|
+            case segment
+            in Mayu::Routes::Param
+              format(PARAM_FORMAT, segment)
+            in Mayu::Routes::SplatParam
+              format(SPLAT_PARAM_FORMAT, segment)
+            in Mayu::Routes::Group
+              nil
+            else
+              segment
+            end
+          end
+          .compact
+          .join(FORMATTED_SLASH)
       end
     end
   end
