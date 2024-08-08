@@ -142,7 +142,7 @@ module Mayu
             barrier.wait
           ensure
             barrier.stop
-            puts "\e[2mUnmounting #{component_type_name}\e[0m"
+            # puts "\e[2mUnmounting #{component_type_name}\e[0m"
             @instance.unmount
           end
         end

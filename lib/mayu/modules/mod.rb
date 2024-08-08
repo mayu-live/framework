@@ -85,11 +85,11 @@ module Mayu
 
       def reload(reload_source: true)
         if const_defined?(:Exports)
-          puts "Reloading #{@path}"
+          # Console.logger.info(self, "Reloading #{@path}")
           old_exports = const_get(:Exports)
           remove_const(:Exports)
         else
-          Console.logger.info(self, "Loading #{@path}")
+          # Console.logger.info(self, "Loading #{@path}")
         end
 
         if reload_source

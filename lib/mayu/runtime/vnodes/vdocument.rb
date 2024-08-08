@@ -97,7 +97,7 @@ module Mayu
 
         def add_stylesheet(filename)
           if @styles.add?(filename)
-            puts "\e[3;36mAdding stylesheet: #{filename}\e[0m"
+            # puts "\e[3;36mAdding stylesheet: #{filename}\e[0m"
             update_head
           end
         end

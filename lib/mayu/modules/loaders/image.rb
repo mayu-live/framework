@@ -33,16 +33,15 @@ module Mayu
             loading_file.with_digest.transform do
               image_size = ImageSize.path(_1.absolute_path)
 
-              SyntaxTree::Formatter
-                .format(
-                  "",
-                  build_code(
-                    _1.absolute_path,
-                    image_size,
-                    Base64.urlsafe_encode64(_1.digest)
-                  )
+              SyntaxTree::Formatter.format(
+                "",
+                build_code(
+                  _1.absolute_path,
+                  image_size,
+                  Base64.urlsafe_encode64(_1.digest)
                 )
-                .tap { |source| puts source }
+              )
+              # .tap { |source| puts source }
             end
           end
 

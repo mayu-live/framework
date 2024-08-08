@@ -17,10 +17,8 @@ module Mayu
             # TODO: Use swc or something to support TypeScript and minification.
 
             loading_file.maybe_load_source.with_digest.transform do
-              SyntaxTree::Formatter
-                .format("", build_code(_1))
-                .+("\n")
-                .tap { |x| puts "\e[93m#{x}\e[0m" }
+              SyntaxTree::Formatter.format("", build_code(_1)).+("\n")
+              # .tap { |x| puts "\e[93m#{x}\e[0m" }
             end
           end
 
