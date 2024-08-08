@@ -9,9 +9,10 @@ require_relative "style_sheets"
 
 class Mayu::Component::StyleSheets::Test < Minitest::Test
   def test_classes
+    component = Object.new
     style_sheets =
       Mayu::Component::StyleSheets.new(
-        Object.new,
+        component,
         [
           Mayu::StyleSheet[
             source_filename: "foo.css",
@@ -44,6 +45,7 @@ class Mayu::Component::StyleSheets::Test < Minitest::Test
 
     assert_output(nil, /Could not find classes:/) do
       style_sheets[:non_existant]
+      sleep 0.1
     end
   end
 end

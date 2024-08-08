@@ -60,11 +60,15 @@ module Mayu
 
             Console.logger.error(
               @component,
-              format(<<~MSG, missing.join(" "), available_class_names)
-              Could not find classes: \e[1;31m.%s\e[0m
+              format(
+                <<~MSG,
+              Could not find classes: \e[1;31m%s\e[0m
               Available class names:
               \e[1;33m%s\e[0m
               MSG
+                missing.map { ".#{_1}" }.join(", "),
+                available_class_names
+              )
             )
 
             @warned = true
