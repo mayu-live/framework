@@ -56,10 +56,12 @@ module Mayu
     def run(&block)
       @task =
         Async do |task|
-          task.async do
-            while Modules::System.current.wait_for_reload
-              puts "\e[30;103mCode update detected, reloading.\e[0m"
-              @engine.update(resolve_route(@request_info.path))
+          if @environment.config.server.hmr?
+            task.async do
+              while Modules::System.current.wait_for_reload
+                puts "\e[30;103mCode update detected, reloading.\e[0m"
+                @engine.update(resolve_route(@request_info.path))
+              end
             end
           end
 

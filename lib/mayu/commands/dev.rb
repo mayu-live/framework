@@ -15,8 +15,6 @@ module Mayu
 
         Sync do
           Environment.with(:development) do |environment|
-            environment.modules.start_watch
-
             Async do
               environment.modules.generate_assets(
                 environment.assets_dir,

@@ -32,7 +32,6 @@ module Mayu
         @path = path
         @dependants = Set.new
         @dependencies = Set.new
-        @state = :dirty
         @system.register(@path, self)
         @source = nil
         @source_map = nil
@@ -63,7 +62,6 @@ module Mayu
           @path,
           @dependants,
           @dependencies,
-          @state,
           @source,
           @assets,
           @source_map
@@ -75,7 +73,6 @@ module Mayu
         @path,
         @dependants,
         @dependencies,
-        @state,
         @source,
         @assets,
         @source_map =
@@ -117,16 +114,11 @@ module Mayu
           end
 
         const_set(:Exports, exports)
-      ensure
-        @dirty = false
       end
 
       def reload_source!
         @source, @source_map = @system.read_source(@path)
       end
-
-      def dirty? = @dirty
-      def dirty! = @dirty = true
 
       def import(path)
         @system.import(path, @path)

@@ -7,6 +7,7 @@ require_relative "routes"
 require_relative "encrypted_marshal"
 require_relative "configuration"
 require_relative "system_config"
+require_relative "watcher"
 
 module Mayu
   class Environment
@@ -42,8 +43,8 @@ module Mayu
           ttl: config.server.transfer_timeout_seconds
         )
 
-      @router = router || Mayu::Routes::Router.build(pages_dir)
-      @modules = modules || Modules::System.new(app_dir, **SYSTEM_CONFIG)
+      @router = router || Mayu::Routes::Router.build(@pages_dir)
+      @modules = modules || Modules::System.new(@app_dir, **SYSTEM_CONFIG)
     end
 
     def runtime_js_for_session_id(session_id)
@@ -67,7 +68,7 @@ module Mayu
     end
 
     def use(&)
-      @modules.use { yield self }
+      @modules.use { run_watcher { yield self } }
     end
 
     private
@@ -78,6 +79,40 @@ module Mayu
         .then { JSON.parse(_1) }
         .fetch("main")
         .then { File.join("/.mayu/runtime", _1) }
+    end
+
+    def run_watcher
+      yield and return unless config.server.hmr?
+
+      task =
+        Async do
+          Mayu::Watcher.run(@modules) do |events|
+            if events.any? { |event| is_route_event?(event) }
+              Console.logger.info(self, "Rebuilding routes")
+              @router = Mayu::Routes::Router.build(@pages_dir)
+            end
+
+            @modules.handle_watch_events(events)
+          end
+        end
+
+      begin
+        yield
+      ensure
+        task.stop
+      end
+    end
+
+    def is_route_event?(event)
+      if event in Watcher::Events::Created | Watcher::Events::Deleted
+        if event.path.start_with?("/pages/")
+          File.basename(event.path) in "page.haml" | "layout.haml"
+        else
+          false
+        end
+      else
+        false
+      end
     end
   end
 end

@@ -11,7 +11,6 @@ require_relative "rules"
 require_relative "resolver"
 require_relative "registry"
 require_relative "loaders"
-require_relative "watcher"
 require_relative "import"
 require_relative "../assets"
 
@@ -106,7 +105,7 @@ module Mayu
       end
 
       def unregister(path)
-        @mods.each do |mod|
+        @mods.each do |path, mod|
           mod.dependants.delete(path)
           mod.dependencies.delete(path)
         end
@@ -115,32 +114,43 @@ module Mayu
         @mods.delete(path)
       end
 
-      def start_watch(task: Async::Task.current)
-        task.async do
-          Watcher.run(self, task:) do |events|
-            events.each do |event|
-              puts event.to_s
+      def handle_watch_events(events)
+        dirty_paths = Set.new
 
-              case event
-              in Watcher::Events::Created[path:]
-              in Watcher::Events::Updated[path:]
-                if mod = @mods[path]
-                  mod.dirty!
-                  visit_dependants(mod, &:dirty!)
-                else
-                  puts "\e[31mModule not found: #{path}\e[0m"
-                end
-              in Watcher::Events::Deleted[path:]
-                if mod = @mods.delete(path)
-                  visit_dependants(mod, &:dirty?)
-                  delete_mod(path)
-                end
-              end
+        events.each do |event|
+          # puts event
+
+          case event
+          in Watcher::Events::Created[path:]
+          in Watcher::Events::Updated[path:]
+            if mod = @mods[path]
+              dirty_paths.add(mod.path)
+              visit_dependants(mod) { dirty_paths.add(_1.path) }
             end
-
-            reload_dirty
+          in Watcher::Events::Deleted[path:]
+            if mod = @mods.delete(path)
+              dirty_paths.add(path)
+              visit_dependants(mod) { dirty_paths.add(_1.path) }
+              unregister(path)
+            end
           end
         end
+
+        return if dirty_paths.empty?
+
+        modules_to_reload =
+          overall_order
+            .select { dirty_paths.include?(_1) }
+            .reverse
+            .map { @mods[_1] }
+            .compact
+
+        unless modules_to_reload.empty?
+          Console.logger.info(self, "Reloading modules:", *modules_to_reload)
+          modules_to_reload.each(&:reload)
+        end
+
+        @on_reload.signal(true)
       end
 
       def import(path, source = "/")
@@ -204,13 +214,6 @@ module Mayu
       private
 
       def reload_dirty
-        overall_order
-          .reverse
-          .map { @mods[_1] }
-          .compact
-          .select(&:dirty?)
-          .each(&:reload)
-        @on_reload.signal(true)
       end
 
       def get_or_load_mod(path, source = "/")
