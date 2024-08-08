@@ -128,11 +128,11 @@
     %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
     \.
   %Card
-    .header
+    %header
       %form.form(onsubmit=handle_submit autocomplete="off")[@form_key]
         %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
         %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
-    .main
+    %div
       %ul
         = get_filtered_items.map do |item|
           %li[item[:id]]
@@ -152,7 +152,7 @@
                   class: { completed: item[:completed] },
                 }= item[:description]
                 %button.delete-button(onclick=handle_delete){name: item[:id]}
-    .footer
+    %footer
       .footer-grid
         .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
         .filter
@@ -166,7 +166,7 @@
             %button.clear-button(onclick=handle_clear_completed) Clear completed
 
 :css
-  .header {
+  header {
     border-bottom: 1px solid #0003;
     padding: 1em;
   }
@@ -177,7 +177,7 @@
     margin: 0;
   }
 
-  .footer {
+  footer {
     padding: 1em;
     background: #fefefe;
     box-shadow: inset 0 0 15px -10px #000;
@@ -310,4 +310,8 @@
 
   .clear-completed {
     text-align: right;
+  }
+
+  .items-left {
+    opacity: .8;
   }
