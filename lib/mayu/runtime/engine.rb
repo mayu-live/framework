@@ -11,7 +11,7 @@ module Mayu
   module Runtime
     class Engine
       attr_reader :runtime_js
-      attr_reader :metrics
+      attr_accessor :metrics
 
       def initialize(descriptor, metrics:, runtime_js:)
         @patches = Async::Queue.new

@@ -36,9 +36,16 @@ module Mayu
     end
 
     def self.resume_transferred(environment, encrypted_state)
-      session = environment.marshaller.load(encrypted_state)
-      session.instance_variable_set(:@environment, environment)
-      session
+      environment
+        .marshaller
+        .load(encrypted_state)
+        .resume_transferred(environment)
+    end
+
+    def resume_transferred(environment)
+      @environment = environment
+      @engine.metrics = environment.metrics
+      self
     end
 
     def marshal_dump
