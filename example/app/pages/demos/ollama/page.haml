@@ -65,12 +65,12 @@
       %p.type-your-message Type a message to chat with #{MODEL}
     %ul
       = unless @words.empty?
-        %Message.model[:temp]{
+        %Message[:temp]{
           role: "model",
           text: @words.join.strip
         }
       = @messages.reverse.map do |message|
-        %Message.model[message[:id]]{
+        %Message[message[:id]]{
           role: message[:role],
           text: message[:text],
         }
@@ -91,9 +91,6 @@
     min-height: 20em;
     height: 100%;
     gap: 1em;
-  }
-
-  .scroller {
   }
 
   Heading {
