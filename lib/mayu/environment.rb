@@ -3,6 +3,7 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require "msgpack"
 require_relative "routes"
 require_relative "encrypted_marshal"
 require_relative "configuration"
@@ -11,6 +12,13 @@ require_relative "watcher"
 
 module Mayu
   class Environment
+    class MsgPackWrapper < MessagePack::Factory
+      def initialize
+        super()
+        self.register_type(0x00, Symbol)
+      end
+    end
+
     attr_reader :config
     attr_reader :app_dir
     attr_reader :pages_dir
@@ -56,15 +64,35 @@ module Mayu
     end
 
     def dump
-      Marshal.dump({ modules: @modules, router: @router })
+      MsgPackWrapper.new.pack(
+        {
+          mayu_version: Mayu::VERSION,
+          data: Marshal.dump({ modules: @modules, router: @router })
+        }
+      )
     end
 
-    def self.load(mayu_env, dumped)
+    def self.load(mayu_env, bundle)
+      data = load_bundle(bundle)
+
       Mayu::Configuration.with(mayu_env) do |config|
-        Marshal.load(dumped) => { modules:, router: }
+        Marshal.load(data) => { modules:, router: }
 
         new(config, router:, modules:).use { |environment| yield environment }
       end
+    end
+
+    private_class_method def self.load_bundle(bundle)
+      MsgPackWrapper.new.unpack(bundle) => { mayu_version:, data: }
+
+      unless mayu_version == Mayu::VERSION
+        Console.logger.warn(
+          self,
+          "App was built with Mayu #{mayu_version}. Running Mayu #{Mayu::VERSION}."
+        )
+      end
+
+      data
     end
 
     def use(&)
