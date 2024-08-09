@@ -13,6 +13,9 @@ module Mayu
       CONTENT_TYPE = "application/vnd.mayu.event-stream"
       CONTENT_ENCODING = "deflate-raw"
 
+      class ClosedStreamError < StandardError
+      end
+
       class MsgPackWrapper < MessagePack::Factory
         def initialize
           super()
@@ -41,8 +44,9 @@ module Mayu
 
         def write(buf)
           if @closed
-            puts "Attempting to write #{buf.inspect} to closed #{self.class.name}"
-            return
+            # puts "Attempting to write #{buf.inspect} to closed #{self.class.name}"
+            raise ClosedStreamError,
+                  "Attempted to write to a closed #{self.class.name}"
           end
 
           buf
@@ -77,7 +81,8 @@ module Mayu
 
       PatchSet =
         Data.define(:id, :patches) do
-          def self.[](patches) = new(SecureRandom.alphanumeric, [patches].flatten)
+          def self.[](patches) =
+            new(SecureRandom.alphanumeric, [patches].flatten)
 
           def to_a
             patches.map do |patch|
