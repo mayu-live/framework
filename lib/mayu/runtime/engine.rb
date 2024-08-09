@@ -11,9 +11,11 @@ module Mayu
   module Runtime
     class Engine
       attr_reader :runtime_js
+      attr_reader :metrics
 
-      def initialize(descriptor, runtime_js:)
+      def initialize(descriptor, metrics:, runtime_js:)
         @patches = Async::Queue.new
+        @metrics = metrics
         @runtime_js = runtime_js
         @root = VNodes::VDocument.new(descriptor, parent: self)
       end

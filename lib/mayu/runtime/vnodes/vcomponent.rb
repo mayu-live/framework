@@ -96,6 +96,11 @@ module Mayu
         def child_ids = @children.child_ids
 
         def update_sync(descriptor)
+          # TODO: Better would be to track what what props and states are being
+          # read while being rendered, and only update if they have been changed.
+          # next_state = {} # TODO: implement
+          # return unless @instance.should_update?(descriptor.props, next_state)
+
           @descriptor = descriptor
 
           old_props = @instance.instance_variable_get(:@__props)
@@ -107,7 +112,7 @@ module Mayu
           )
           @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
 
-          @children.update(render_children)
+          update_children
         end
 
         def start_children
@@ -121,7 +126,7 @@ module Mayu
 
             barrier.async do
               while x = queue.dequeue
-                @children.update(render_children) if x == :rerender
+                update_children if x == :rerender
               end
             end
 
@@ -133,7 +138,11 @@ module Mayu
             end
 
             barrier.async do
-              # puts "\e[1mMounting #{component_type_name}\e[0m"
+              metrics.component_mount_count.increment(
+                labels: {
+                  component: @instance.class.module_path
+                }
+              )
 
               handle_errors { @instance.mount }
             end
@@ -172,12 +181,32 @@ module Mayu
           nil
         end
 
+        def update_children
+          children = render_children
+
+          metrics.update_summary(
+            metrics.component_children_update_times,
+            labels: {
+              component: @instance.class.module_path
+            }
+          ) { @children.update(children) }
+        end
+
         def render_children
-          handle_errors { @instance.render }
+          metrics.update_summary(
+            metrics.component_patch_times,
+            labels: {
+              component: @instance.class.module_path
+            }
+          ) { handle_errors { @instance.render } }
         end
 
         def get_mod
-          if module_path = @descriptor.type.module_path
+          module_path = @descriptor.type.module_path
+
+          if module_path.start_with?("(internal)")
+            nil
+          else
             Modules::System.current.get_mod(module_path)
           end
         end

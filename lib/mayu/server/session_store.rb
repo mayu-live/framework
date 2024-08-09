@@ -11,7 +11,8 @@ module Mayu
       class InvalidTokenError < StandardError
       end
 
-      def initialize
+      def initialize(metrics:)
+        @metrics = metrics
         @sessions = {}
       end
 
@@ -53,9 +54,12 @@ module Mayu
                     "\e[31mDeleting timed out session #{session_id}\e[0m"
                   )
                   session.stop
+                  @metrics.session_timeout_count.increment
                   true
                 end
               end
+
+              @metrics.session_count.set(@sessions.size)
             end
           end
       end

@@ -67,6 +67,8 @@ module Mayu
           @descriptor.type.to_s.downcase.delete_prefix("__").tr("_", "-")
 
         def update_child_ids
+          metrics.update_child_id_count.increment(labels: { tag_name: })
+
           @updater&.async do
             new_child_ids = @children.child_ids.flatten
 

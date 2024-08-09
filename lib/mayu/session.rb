@@ -28,6 +28,7 @@ module Mayu
       @engine =
         Runtime.init(
           resolve_route(@request_info.path),
+          metrics: @environment.metrics,
           runtime_js: environment.runtime_js_for_session_id(@id)
         )
 
@@ -93,6 +94,8 @@ module Mayu
     end
 
     def handle_navigate(path, push_state: true)
+      @environment.metrics.session_navigate_count.increment(labels: { path: })
+
       update_last_ping
       @request_info = @request_info.with(path:)
       descriptor = resolve_route(path)
@@ -100,6 +103,7 @@ module Mayu
     end
 
     def handle_ping(timestamp)
+      @environment.metrics.session_ping_count.increment
       update_last_ping
       @engine.ping(timestamp)
     end

@@ -28,6 +28,13 @@ module Mayu
                 method.call(**payload)
               end
             end
+
+            def metric_labels
+              {
+                component: callback.component.class.module_path,
+                method: callback.method_name
+              }
+            end
           end
 
         def initialize(...)

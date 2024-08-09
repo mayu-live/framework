@@ -7,13 +7,19 @@ module Mayu
   module Runtime
     module VNodes
       class VDocument < Base
-        class Html < Mayu::Component::Base
+        class InternalComponentBase < Mayu::Component::Base
+          def self.module_path = "(internal)::#{self.name}"
+        end
+
+        class Html < InternalComponentBase
           def render
             H[:html, H[:slot]]
           end
         end
 
-        class Head < Mayu::Component::Base
+        class Head < InternalComponentBase
+          def self.module_path = "(internal)::#{self.name}"
+
           def render
             grouped =
               @__props[:descriptors]
@@ -111,7 +117,13 @@ module Mayu
         end
 
         def call_listener(id, payload)
-          case @listeners.fetch(id).call(payload)
+          listener = @listeners.fetch(id)
+
+          metrics.session_callback_count.increment(
+            labels: listener.metric_labels
+          )
+
+          case listener.call(payload)
           in Patches::RenderError => e
             patch(e)
           else

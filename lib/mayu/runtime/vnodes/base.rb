@@ -62,6 +62,10 @@ module Mayu
           @id, @id_counter, @descriptor, @parent = a
         end
 
+        def metrics
+          @metrics ||= @parent.metrics
+        end
+
         def ancestor_info
           @parent.ancestor_info
         end

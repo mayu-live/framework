@@ -9,6 +9,7 @@ require_relative "encrypted_marshal"
 require_relative "configuration"
 require_relative "system_config"
 require_relative "watcher"
+require_relative "metrics"
 
 module Mayu
   class Environment
@@ -28,6 +29,7 @@ module Mayu
     attr_reader :modules
     attr_reader :router
     attr_reader :marshaller
+    attr_reader :metrics
 
     def self.with(mayu_env)
       Configuration.with(mayu_env) do |config|
@@ -44,6 +46,8 @@ module Mayu
       @assets_dir = File.join(config.root, ".assets")
 
       @runtime_js = load_runtime_js_path
+
+      @metrics = Metrics::AppMetrics.setup(Prometheus::Client.registry)
 
       @marshaller =
         EncryptedMarshal.new(

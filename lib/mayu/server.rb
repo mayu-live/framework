@@ -12,6 +12,7 @@ require "async/http/protocol/response"
 require "async/http/server"
 
 require_relative "server/app"
+require_relative "metrics/server"
 
 module Mayu
   class Server
@@ -32,6 +33,12 @@ module Mayu
           scheme: @uri.scheme,
           protocol: Async::HTTP::Protocol::HTTP2
         )
+
+      @metrics_server =
+        Metrics::Server.new(
+          registry: Prometheus::Client.registry,
+          listen: environment.config.metrics.listen
+        ) if environment.config.metrics.enabled?
     end
 
     def run(task: Async::Task.current)
@@ -44,6 +51,7 @@ module Mayu
         barrier = Async::Barrier.new
 
         listeners = @server.run
+        @metrics_server.run
 
         interrupt.wait
         Console.logger.info("Got interrupt")

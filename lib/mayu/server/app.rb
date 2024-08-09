@@ -40,7 +40,7 @@ module Mayu
       def initialize(environment)
         @environment = environment
         @stopping = false
-        @sessions = SessionStore.new
+        @sessions = SessionStore.new(metrics: @environment.metrics)
         @client_files = StaticFiles.new(@environment.client_path)
         @sessions.start_cleanup_task(
           environment.config.server.session_timeout_seconds
@@ -199,6 +199,8 @@ module Mayu
           )
 
         @sessions.store(session)
+
+        @environment.metrics.session_init_count.increment
 
         body = session.render.to_html
 

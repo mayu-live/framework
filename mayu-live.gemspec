@@ -30,12 +30,13 @@ Gem::Specification.new do |spec|
         "COPYING",
         "README.md",
         *Dir.glob("exe/**/*"),
-        *Dir.glob("lib/**/*")
+        *Dir
+          .glob("lib/**/*")
           .grep_v("/node_modules")
           .grep_v("/mayu/client/")
           .grep_v("/__test__")
-          .grep_v(%r{\.test\.rb\z}),
-        *Dir.glob("lib/mayu/client/dist/**/*"),
+          .grep_v(/\.test\.rb\z/),
+        *Dir.glob("lib/mayu/client/dist/**/*")
       ]
     end
   spec.bindir = "exe"
@@ -50,6 +51,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "toml", "~> 0.3.0"
   spec.add_dependency "samovar", "~> 2.3"
   spec.add_dependency "terminal-table", "~> 3.0.1"
+  spec.add_dependency "prometheus-client", "~> 4.2.3"
 
   # Server
   spec.add_dependency "brotli", "~> 0.4.0"
