@@ -231,7 +231,9 @@ module Mayu
           return error_response(403, "invalid session id")
         end
 
-        # TODO: Validate token
+        unless session.token == Cookies.get_token_cookie_value(request)
+          return error_response(403, "invalid token")
+        end
 
         @sessions.store(session)
 
