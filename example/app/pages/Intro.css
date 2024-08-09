@@ -34,6 +34,7 @@ section {
   position: absolute;
   inset: 0;
   background: radial-gradient(ellipse at bottom, #0002, transparent);
+  mask-image: url(./hexagons.svg);
   mask-position: 50% 50%;
   mask-size: 2rem auto;
 }

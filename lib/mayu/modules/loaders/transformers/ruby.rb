@@ -274,7 +274,7 @@ module Mayu
           def assets_code
             MethodAddBlock(
               CallNode(
-                ConstPathRef(VarRef(Const("Default")), Const("Styles")),
+                ConstPathRef(VarRef(Const("Default")), Const("INLINE_STYLES")),
                 Period("."),
                 Ident("each"),
                 nil

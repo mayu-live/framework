@@ -101,7 +101,7 @@ module Mayu
                     #     nil
                     #   )
                     # ),
-                    assign_styles(styles),
+                    *assign_styles(styles),
                     *setup,
                     create_render(render)
                   ].select { !!_1 }
@@ -110,68 +110,81 @@ module Mayu
             end
 
             def assign_styles(styles)
-              assign_const(
-                "Styles",
-                CallNode(
-                  ConstPathRef(
-                    ConstPathRef(VarRef(Const("Mayu")), Const("Component")),
-                    Const("StyleSheets")
-                  ),
-                  Period("."),
-                  Ident("new"),
-                  ArgParen(
+              [
+                assign_const(
+                  "INLINE_STYLES",
+                  ArrayLiteral(
+                    LBracket("["),
                     Args(
                       [
-                        VarRef(Kw("self")),
-                        CallNode(
-                          ArrayLiteral(
-                            LBracket("["),
-                            Args(
-                              [
-                                unless styles.empty?
-                                  CSS.transform_inline(
-                                    @options.source_path_without_extension +
-                                      ".haml (inline css)",
-                                    styles.join("\n"),
-                                    dependency_const_prefix: "CSS_Dep_"
-                                  )
-                                end,
-                                CallNode(
-                                  nil,
-                                  nil,
-                                  Ident("import?"),
-                                  ArgParen(
-                                    Args(
-                                      [
-                                        StringLiteral(
-                                          [
-                                            TStringContent(
-                                              File.join(
-                                                ".",
-                                                File.basename(
-                                                  @options.source_path_without_extension
-                                                ) + ".css"
+                        unless styles.empty?
+                          CSS.transform_inline(
+                            @options.source_path_without_extension +
+                              ".haml (inline css)",
+                            styles.join("\n"),
+                            dependency_const_prefix: "CSS_Dep_"
+                          )
+                        end
+                      ].compact
+                    )
+                  )
+                ),
+                assign_const(
+                  "Styles",
+                  CallNode(
+                    ConstPathRef(
+                      ConstPathRef(VarRef(Const("Mayu")), Const("Component")),
+                      Const("StyleSheets")
+                    ),
+                    Period("."),
+                    Ident("new"),
+                    ArgParen(
+                      Args(
+                        [
+                          VarRef(Kw("self")),
+                          CallNode(
+                            ArrayLiteral(
+                              LBracket("["),
+                              Args(
+                                [
+                                  ArgStar(VarRef(Const("INLINE_STYLES"))),
+                                  CallNode(
+                                    nil,
+                                    nil,
+                                    Ident("import?"),
+                                    ArgParen(
+                                      Args(
+                                        [
+                                          StringLiteral(
+                                            [
+                                              TStringContent(
+                                                File.join(
+                                                  ".",
+                                                  File.basename(
+                                                    @options.source_path_without_extension
+                                                  ) + ".css"
+                                                )
                                               )
-                                            )
-                                          ],
-                                          '"'
-                                        )
-                                      ]
+                                            ],
+                                            '"'
+                                          )
+                                        ]
+                                      )
                                     )
                                   )
-                                )
-                              ].compact
-                            )
-                          ),
-                          Period("."),
-                          Ident("compact"),
-                          nil
-                        )
-                      ]
+                                ].compact
+                              )
+                            ),
+                            Period("."),
+                            Ident("compact"),
+                            nil
+                          )
+                        ]
+                      )
                     )
                   )
                 )
-              )
+              ]
             end
 
             def const_path(*names)

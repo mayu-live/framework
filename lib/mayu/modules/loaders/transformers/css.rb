@@ -76,11 +76,14 @@ module Mayu
               [
                 *build_imports,
                 if assign_default
-                  Assign(VarField(Const("Default")), VarRef(new_style_sheet))
+                  [
+                    Assign(VarField(Const("Default")), VarRef(new_style_sheet)),
+                    build_assets_code
+                  ]
                 else
                   new_style_sheet
                 end
-              ]
+              ].flatten.compact
             )
           end
 
@@ -221,6 +224,45 @@ module Mayu
             parts.push(TStringContent(remains)) unless remains.empty?
 
             parts
+          end
+
+          def build_assets_code
+            CallNode(
+              nil,
+              nil,
+              Ident("add_asset"),
+              ArgParen(
+                Args(
+                  [
+                    ARef(
+                      ConstPathRef(
+                        ConstPathRef(
+                          ConstPathRef(VarRef(Const("Mayu")), Const("Assets")),
+                          Const("Generators")
+                        ),
+                        Const("Text")
+                      ),
+                      Args(
+                        [
+                          CallNode(
+                            VarField(Const("Default")),
+                            Period("."),
+                            Ident("filename"),
+                            nil
+                          ),
+                          CallNode(
+                            VarField(Const("Default")),
+                            Period("."),
+                            Ident("content"),
+                            nil
+                          )
+                        ]
+                      )
+                    )
+                  ]
+                )
+              )
+            )
           end
         end
       end
