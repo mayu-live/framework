@@ -19,7 +19,7 @@ module Mayu
     end
 
     class Mod < Module
-      attr_reader :order
+      attr_accessor :order
       attr_reader :path
       attr_reader :dependants
       attr_reader :dependencies

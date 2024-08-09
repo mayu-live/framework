@@ -38,6 +38,8 @@ module Mayu
                   environment.modules.import(File.join("/pages", template))
                 end
 
+                environment.modules.update_overall_order
+
                 environment
                   .modules
                   .generate_assets(

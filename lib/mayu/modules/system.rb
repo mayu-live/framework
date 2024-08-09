@@ -117,6 +117,7 @@ module Mayu
 
       def handle_watch_events(events)
         dirty_paths = Set.new
+        removed_paths = Set.new
 
         events.each do |event|
           # puts event
@@ -130,7 +131,7 @@ module Mayu
             end
           in Watcher::Events::Deleted[path:]
             if mod = @mods.delete(path)
-              dirty_paths.add(path)
+              removed_paths.add(path)
               visit_dependants(mod) { dirty_paths.add(_1.path) }
               unregister(path)
             end
@@ -144,12 +145,22 @@ module Mayu
             .select { dirty_paths.include?(_1) }
             .reverse
             .map { @mods[_1] }
-            .compact
+
+        messages = []
 
         unless modules_to_reload.empty?
-          Console.logger.info(self, "Reloading modules:", *modules_to_reload)
-          modules_to_reload.each(&:reload)
+          messages.push("\e[1;33mReloading modules:\e[0m", *modules_to_reload)
         end
+
+        unless removed_paths.empty?
+          messages.push("\e[1;31mRemoved modules:\e[0m", *removed_paths)
+        end
+
+        Console.logger.info(self, *messages) unless messages.empty?
+
+        modules_to_reload.each(&:reload)
+
+        update_overall_order
 
         @on_reload.signal(true)
       end
@@ -183,8 +194,11 @@ module Mayu
         )
       end
 
-      def update_order
-        overall_order.each_with_index { |mod, index| mod.order = index }
+      def update_overall_order
+        overall_order
+          .map { @mods[_1] }
+          .compact
+          .each_with_index { |mod, index| mod.order = index }
       end
 
       def delete_mod(id)
