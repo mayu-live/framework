@@ -9,6 +9,7 @@ require_relative "commands/transform"
 require_relative "commands/routes"
 require_relative "commands/build"
 require_relative "commands/start"
+require_relative "version"
 
 module Mayu
   module Commands
@@ -23,7 +24,15 @@ module Mayu
              }
 
       def call
+        print_header
+
         @command.call if @command
+      end
+
+      private
+
+      def print_header
+        puts "\e[1;95mMayu v#{Mayu::VERSION}\e[0m"
       end
     end
 
