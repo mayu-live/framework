@@ -17,25 +17,14 @@ module Mayu
       using CSSUnits::Refinements
       include Fetch::Helper
 
-      def self.init(**props)
-        component = allocate
-        component.instance_variable_set(:@__props, props)
-        component.send(:initialize)
-        component
-      end
+      def self.module_path = nil
 
-      def self.module_path
-      end
+      def self.to_s = File.join("MAYU_ROOT", module_path)
 
-      def self.to_s
-        File.join("ROOT", module_path)
-      end
-
-      def self.import(filename) =
-        Modules::System.import(filename, caller.first.split(":", 2).first)
+      def self.import(filename) = Modules::System.import(filename, module_path)
 
       def self.import?(filename) =
-        Modules::System.import?(filename, caller.first.split(":", 2).first)
+        Modules::System.import?(filename, module_path)
 
       def self.merge_props(*sources)
         result =

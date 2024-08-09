@@ -25,6 +25,7 @@ module Mayu
       attr_reader :dependencies
       attr_reader :system
       attr_reader :source_map
+      attr_reader :assets
 
       def initialize(system, path)
         @order = Float::INFINITY
@@ -39,10 +40,8 @@ module Mayu
       end
 
       def to_s
-        File.join("(mod)", @path)
+        File.join("MAYU_ROOT", @path)
       end
-
-      def assets = @assets.to_a
 
       def const_missing(const)
         if const == :Exports
