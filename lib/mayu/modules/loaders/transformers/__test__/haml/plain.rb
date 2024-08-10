@@ -4,9 +4,12 @@ class Plain < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = []
   Styles =
-    Mayu::Component::StyleSheets.new(self, [import?("./plain.css")].compact)
+    Mayu::Component::StyleSheets.new(
+      self,
+      [*INLINE_STYLES, import?("./plain.css")].compact
+    )
   public def render
     [
       H[
@@ -23,6 +26,6 @@ PLAIN_3a33e85b1163f921b28fe81f304cf142fa2cffbb0a76a9262e2313211716e37f
   end
 end
 Default = Plain
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

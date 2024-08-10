@@ -88,7 +88,7 @@ module Mayu
                 Statements(
                   [
                     assign_const("Self", VarRef(Kw("self"))),
-                    assign_const("FILENAME", VarRef(Kw("__FILE__"))),
+                    # assign_const("FILENAME", VarRef(Kw("__FILE__"))),
                     # assign_const(
                     #   "PROVIDES_CONTEXT",
                     #   CallNode(
@@ -118,11 +118,19 @@ module Mayu
                     Args(
                       [
                         unless styles.empty?
-                          CSS.transform_inline(
-                            @options.source_path_without_extension +
-                              ".haml (inline css)",
-                            styles.join("\n"),
-                            dependency_const_prefix: "CSS_Dep_"
+                          Begin(
+                            BodyStmt(
+                              CSS.transform_inline(
+                                @options.source_path_without_extension +
+                                  ".haml (inline css)",
+                                styles.join("\n"),
+                                dependency_const_prefix: "CSS_Dep_"
+                              ),
+                              nil,
+                              nil,
+                              nil,
+                              nil
+                            )
                           )
                         end
                       ].compact

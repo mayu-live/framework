@@ -4,11 +4,11 @@ class Early_return2 < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = []
   Styles =
     Mayu::Component::StyleSheets.new(
       self,
-      [import?("./early_return2.css")].compact
+      [*INLINE_STYLES, import?("./early_return2.css")].compact
     )
   public def render
     [
@@ -24,6 +24,6 @@ class Early_return2 < Mayu::Component::Base
   end
 end
 Default = Early_return2
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

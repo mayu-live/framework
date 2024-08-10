@@ -4,9 +4,12 @@ class Spacing3 < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = []
   Styles =
-    Mayu::Component::StyleSheets.new(self, [import?("./spacing3.css")].compact)
+    Mayu::Component::StyleSheets.new(
+      self,
+      [*INLINE_STYLES, import?("./spacing3.css")].compact
+    )
   public def render
     H[
       :p,
@@ -19,6 +22,6 @@ class Spacing3 < Mayu::Component::Base
   end
 end
 Default = Spacing3
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

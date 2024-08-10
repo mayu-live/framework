@@ -4,9 +4,12 @@ class Case < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = []
   Styles =
-    Mayu::Component::StyleSheets.new(self, [import?("./case.css")].compact)
+    Mayu::Component::StyleSheets.new(
+      self,
+      [*INLINE_STYLES, import?("./case.css")].compact
+    )
   public def render
     H[
       :div,
@@ -23,6 +26,6 @@ class Case < Mayu::Component::Base
   end
 end
 Default = Case
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

@@ -4,6 +4,7 @@
 # License: AGPL-3.0
 
 require_relative "../../svg"
+require_relative "transformers/frozen_string_literal_visitor"
 
 module Mayu
   module Modules
@@ -85,7 +86,7 @@ module Mayu
                   )
                 )
               ]
-            )
+            ).accept(Transformers::FrozenStringLiteralVisitor.new)
           end
         end
     end

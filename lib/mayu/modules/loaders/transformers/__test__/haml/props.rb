@@ -4,9 +4,12 @@ class Props < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = []
   Styles =
-    Mayu::Component::StyleSheets.new(self, [import?("./props.css")].compact)
+    Mayu::Component::StyleSheets.new(
+      self,
+      [*INLINE_STYLES, import?("./props.css")].compact
+    )
   public def render
     H[
       :div,
@@ -37,6 +40,6 @@ class Props < Mayu::Component::Base
   end
 end
 Default = Props
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

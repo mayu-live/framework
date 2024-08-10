@@ -4,24 +4,25 @@ class Css < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = [
+    begin
+      Mayu::StyleSheet[
+        source_filename: "css.haml (inline css)",
+        content_hash: "QRzl4L9HjW2wS-4CE_xH6vXN4WTNT72NL210gVqRO_c",
+        classes: {
+          button: "css.button?Trf1Txj1",
+          "button-text": "css.button-text?Trf1Txj1"
+        },
+        content: <<CSS
+.css\\.button\\?Trf1Txj1{color:#f0f}.css\\.button-text\\?Trf1Txj1{font-weight:700}
+CSS
+      ]
+    end
+  ]
   Styles =
     Mayu::Component::StyleSheets.new(
       self,
-      [
-        Mayu::StyleSheet[
-          source_filename: "css.haml (inline css)",
-          content_hash: "QRzl4L9HjW2wS-4CE_xH6vXN4WTNT72NL210gVqRO_c",
-          classes: {
-            button: "css.button?Trf1Txj1",
-            "button-text": "css.button-text?Trf1Txj1"
-          },
-          content: <<CSS
-.css\\.button\\?Trf1Txj1{color:#f0f}.css\\.button-text\\?Trf1Txj1{font-weight:700}
-CSS
-        ],
-        import?("./css.css")
-      ].compact
+      [*INLINE_STYLES, import?("./css.css")].compact
     )
   public def render
     H[
@@ -36,6 +37,6 @@ CSS
   end
 end
 Default = Css
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

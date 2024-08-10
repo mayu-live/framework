@@ -4,11 +4,11 @@ class Whitespace_preservation < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = []
   Styles =
     Mayu::Component::StyleSheets.new(
       self,
-      [import?("./whitespace_preservation.css")].compact
+      [*INLINE_STYLES, import?("./whitespace_preservation.css")].compact
     )
   public def render
     # SourceMapMark:1:IkZvb1xuPHByZT5CYXJcbkJhejwvcHJlPiI=
@@ -16,6 +16,6 @@ class Whitespace_preservation < Mayu::Component::Base
   end
 end
 Default = Whitespace_preservation
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

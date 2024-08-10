@@ -6,6 +6,7 @@
 require "syntax_tree"
 require_relative "mutation_visitor"
 require_relative "xml_utils"
+require_relative "frozen_string_literal_visitor"
 
 module Mayu
   module Modules
@@ -74,25 +75,6 @@ module Mayu
             end
           end
 
-          class FrozenStringLiteralsVisitor < SyntaxTree::Visitor
-            def visit_program(node)
-              node.copy(statements: visit(node.statements))
-            end
-
-            def visit_statements(node)
-              node.copy(
-                body: [
-                  SyntaxTree::Comment.new(
-                    value: "# frozen_string_literal: true",
-                    inline: false,
-                    location: node.location
-                  ),
-                  *node.body
-                ]
-              )
-            end
-          end
-
           include SyntaxTree::DSL
 
           COLLECTIONS = {
@@ -143,7 +125,7 @@ module Mayu
             raise
           end
 
-          def frozen_strings = FrozenStringLiteralsVisitor.new
+          def frozen_strings = FrozenStringLiteralVisitor.new
 
           def wrap_in_class(
             program,

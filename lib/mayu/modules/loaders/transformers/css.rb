@@ -8,6 +8,7 @@ require "digest/sha2"
 require "mayu/css"
 require "syntax_tree"
 require_relative "../../../style_sheet"
+require_relative "frozen_string_literal_visitor"
 
 module Mayu
   module Modules
@@ -22,6 +23,7 @@ module Mayu
               .then do
                 new(source_path, _1).build_inline_ast(assign_default: true)
               end
+              .accept(FrozenStringLiteralVisitor.new)
               .then { SyntaxTree::Formatter.format("", _1).rstrip + "\n" }
           end
 
@@ -94,10 +96,14 @@ module Mayu
               dep => { placeholder:, url: }
 
               Assign(
-                VarField(Const(@dependency_const_prefix + placeholder)),
+                VarField(placeholder_const(placeholder)),
                 build_import(url)
               )
             end
+          end
+
+          def placeholder_const(placeholder)
+            Const(@dependency_const_prefix + placeholder.tr("-", "_"))
           end
 
           def build_import(url)
@@ -204,11 +210,9 @@ module Mayu
                           Args(
                             [
                               CallNode(
-                                VarRef(
-                                  Const(@dependency_const_prefix + placeholder)
-                                ),
+                                VarRef(placeholder_const(placeholder)),
                                 Period("."),
-                                Ident("public_path"),
+                                Ident("to_s"),
                                 nil
                               )
                             ]

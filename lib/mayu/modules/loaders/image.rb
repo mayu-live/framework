@@ -7,6 +7,7 @@ require "image_size"
 require "syntax_tree"
 
 require_relative "../../image"
+require_relative "transformers/frozen_string_literal_visitor"
 
 module Mayu
   module Modules
@@ -38,7 +39,7 @@ module Mayu
                 build_code(
                   _1.absolute_path,
                   image_size,
-                  Base64.urlsafe_encode64(_1.digest)
+                  Base64.urlsafe_encode64(_1.digest)[0..10]
                 )
               )
               # .tap { |source| puts source }
@@ -89,7 +90,7 @@ module Mayu
                 ),
                 build_assets(absolute_path)
               ]
-            )
+            ).accept(Transformers::FrozenStringLiteralVisitor.new)
           end
 
           def build_blur_image_src(absolute_path)
@@ -114,19 +115,18 @@ module Mayu
               .take
           end
 
-          def build_versions(absolute_path, image_size, digest)
+          def build_versions(absolute_path, image_size, hash)
             widths =
               IMAGE_BREAKPOINTS.select { _1 < image_size.width }.sort.reverse
             basename = File.basename(absolute_path, ".*")
             format = "webp"
-            hash = Base64.urlsafe_encode64(digest)[0..10]
 
             ArrayLiteral(
               LBracket("["),
               Args(
                 [image_size.width, *widths].uniq.map do |width|
                   filename =
-                    format("%s-%dw.%s?%s", basename, width, format, hash[0..10])
+                    format("%s-%dw.%s?%s", basename, width, format, hash)
                   ARef(
                     VarRef(Const("ImageVersion")),
                     Args(

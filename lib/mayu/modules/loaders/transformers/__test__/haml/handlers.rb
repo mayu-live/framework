@@ -4,9 +4,12 @@ class Handlers < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = []
   Styles =
-    Mayu::Component::StyleSheets.new(self, [import?("./handlers.css")].compact)
+    Mayu::Component::StyleSheets.new(
+      self,
+      [*INLINE_STYLES, import?("./handlers.css")].compact
+    )
   begin
     # SourceMapMark:2:ZGVmIGhhbmRsZV9jbGljayhlKQ==
     def handle_click(e)
@@ -28,6 +31,6 @@ class Handlers < Mayu::Component::Base
   end
 end
 Default = Handlers
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

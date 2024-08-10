@@ -4,23 +4,24 @@ class HelloWorld < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = [
+    begin
+      Mayu::StyleSheet[
+        source_filename: "HelloWorld.haml (inline css)",
+        content_hash: "_xsfOrzqR-0dWREVaALo-ixZnypIrVXL1tvu828-nTM",
+        classes: {
+          __button: "HelloWorld_button?N2Q7U-wl"
+        },
+        content: <<CSS
+.HelloWorld_button\\?N2Q7U-wl{background:#ccc;border:1px solid #000;border-radius:3px}
+CSS
+      ]
+    end
+  ]
   Styles =
     Mayu::Component::StyleSheets.new(
       self,
-      [
-        Mayu::StyleSheet[
-          source_filename: "HelloWorld.haml (inline css)",
-          content_hash: "_xsfOrzqR-0dWREVaALo-ixZnypIrVXL1tvu828-nTM",
-          classes: {
-            __button: "HelloWorld_button?N2Q7U-wl"
-          },
-          content: <<CSS
-.HelloWorld_button\\?N2Q7U-wl{background:#ccc;border:1px solid #000;border-radius:3px}
-CSS
-        ],
-        import?("./HelloWorld.css")
-      ].compact
+      [*INLINE_STYLES, import?("./HelloWorld.css")].compact
     )
   begin
     # SourceMapMark:2:ZGVmIGluaXRpYWxpemU=
@@ -70,6 +71,6 @@ CSS
   end
 end
 Default = HelloWorld
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

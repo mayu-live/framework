@@ -201,7 +201,7 @@ module Mayu
         end
 
         def get_mod(module_path = @descriptor.type.module_path)
-          if module_path.start_with?("(internal)")
+          if module_path.nil? || module_path.start_with?("(internal)")
             nil
           else
             Modules::System.current.get_mod(module_path)

@@ -4,9 +4,12 @@ class State < Mayu::Component::Base
     __FILE__
   end
   Self = self
-  FILENAME = __FILE__
+  INLINE_STYLES = []
   Styles =
-    Mayu::Component::StyleSheets.new(self, [import?("./state.css")].compact)
+    Mayu::Component::StyleSheets.new(
+      self,
+      [*INLINE_STYLES, import?("./state.css")].compact
+    )
   begin
     # SourceMapMark:2:QnV0dG9uID0gaW1wb3J0ICIvY29tcG9uZW50cy9CdXR0b24i
     Button = import "/components/Button"
@@ -107,6 +110,6 @@ class State < Mayu::Component::Base
   end
 end
 Default = State
-Default::Styles.each do
+Default::INLINE_STYLES.each do
   add_asset(Mayu::Assets::Generators::Text[_1.filename, _1.content])
 end

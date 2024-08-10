@@ -10,6 +10,6 @@ Mayu::StyleSheet[
     "foo-bar": "/app/components/Test.foo-bar?R-Dxlzoq"
   },
   content: <<CSS
-.\\/app\\/components\\/Test_ul\\?R-Dxlzoq{background:#0080ff80}.\\/app\\/components\\/Test_li\\?R-Dxlzoq,.\\/app\\/components\\/Test\\.foo\\?R-Dxlzoq{border:1px solid #f0f}.\\/app\\/components\\/Test\\.bar\\?R-Dxlzoq{background:url("#{Mayu::StyleSheet.encode_url(Dep_ZuJKJG.public_path)}")}.\\/app\\/components\\/Test\\.foo-bar\\?R-Dxlzoq{font-weight:700}
+.\\/app\\/components\\/Test_ul\\?R-Dxlzoq{background:#0080ff80}.\\/app\\/components\\/Test_li\\?R-Dxlzoq,.\\/app\\/components\\/Test\\.foo\\?R-Dxlzoq{border:1px solid #f0f}.\\/app\\/components\\/Test\\.bar\\?R-Dxlzoq{background:url("#{Mayu::StyleSheet.encode_url(Dep_ZuJKJG.to_s)}")}.\\/app\\/components\\/Test\\.foo-bar\\?R-Dxlzoq{font-weight:700}
 CSS
 ]
