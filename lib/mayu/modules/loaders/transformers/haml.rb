@@ -122,7 +122,7 @@ module Mayu
                             BodyStmt(
                               CSS.transform_inline(
                                 @options.source_path_without_extension +
-                                  ".haml (inline css)",
+                                  ".haml.css",
                                 styles.join("\n"),
                                 dependency_const_prefix: "CSS_Dep_"
                               ),
