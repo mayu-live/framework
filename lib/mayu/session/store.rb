@@ -3,14 +3,11 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
-module Mayu
-  class Server
-    class SessionStore
-      class SessionNotFoundError < StandardError
-      end
-      class InvalidTokenError < StandardError
-      end
+require_relative "errors"
 
+module Mayu
+  class Session
+    class Store
       def initialize(metrics:)
         @metrics = metrics
         @sessions = {}
@@ -21,20 +18,30 @@ module Mayu
       end
 
       def authenticate(id, token)
-        session = @sessions.fetch(id) { raise SessionNotFoundError }
+        session = @sessions.fetch(id) { raise Errors::SessionNotFoundError }
 
-        unless Session::Token.equal?(session.token, token)
-          raise InvalidTokenError
-        end
+        raise Errors::InvalidTokenError unless session.valid_token?(token)
 
         session
       end
 
       def transfer_all
-        @sessions.each do |session_id, session|
-          session.transfer!
-          delete(session_id)
-        end
+        return if @sessions.empty?
+
+        Console.logger.info(
+          self,
+          format("\e[1;33mTRANSFERRING %d SESSIONS\e[0m", @sessions.size)
+        )
+
+        elapsed =
+          Async::Clock.measure do
+            @sessions.each { |session_id, session| session.transfer! }.clear
+          end
+
+        Console.logger.info(
+          self,
+          format("\e[32mTRANSFERRED SESSIONS IN %.2f SECONDS\e[0m", elapsed)
+        )
       end
 
       def delete(session_id)

@@ -6,6 +6,7 @@
 require_relative "runtime"
 require_relative "session/token"
 require_relative "session/error_page"
+require_relative "session/transfer_state"
 
 module Mayu
   class Session
@@ -25,6 +26,11 @@ module Mayu
       @environment = environment
       @request_info = request_info
 
+      Console.logger.info(
+        self,
+        "Initializing session at \e[1;34m#{@request_info.path}\e[0m"
+      )
+
       @engine =
         Runtime.init(
           resolve_route(@request_info.path),
@@ -35,17 +41,14 @@ module Mayu
       @last_ping = Async::Clock.now
     end
 
-    def self.resume_transferred(environment, encrypted_state)
-      environment
-        .marshaller
-        .load(encrypted_state)
-        .resume_transferred(environment)
-    end
-
     def resume_transferred(environment)
       @environment = environment
       @engine.metrics = environment.metrics
       self
+    end
+
+    def valid_token?(token)
+      Session::Token.equal?(@token, token)
     end
 
     def marshal_dump
@@ -101,6 +104,8 @@ module Mayu
     end
 
     def handle_navigate(path, push_state: true)
+      Console.logger.info(self, "Navigating to \e[1;34m#{path}\e[0m")
+
       @environment.metrics.session_navigate_count.increment(labels: { path: })
 
       update_last_ping
@@ -119,7 +124,9 @@ module Mayu
       @engine.stop
       @engine.patch(
         Runtime::Patches::Transfer[
-          Mayu::Server::EventStream::Blob[@environment.marshaller.dump(self)]
+          Mayu::Server::EventStream::Blob[
+            TransferState.from_session(self).encrypt(@environment.marshaller)
+          ]
         ]
       )
     rescue EncryptedMarshal::DumpError => e

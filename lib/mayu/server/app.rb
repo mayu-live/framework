@@ -6,12 +6,12 @@
 require "protocol/http/body/file"
 require_relative "request_refinements"
 require_relative "cookies"
-require_relative "session_store"
 require_relative "event_stream"
 require_relative "static_files"
 
 require_relative "../environment"
 require_relative "../session"
+require_relative "../session/store"
 require_relative "../modules/system"
 
 module Mayu
@@ -40,7 +40,7 @@ module Mayu
       def initialize(environment)
         @environment = environment
         @stopping = false
-        @sessions = SessionStore.new(metrics: @environment.metrics)
+        @sessions = Session::Store.new(metrics: @environment.metrics)
         @client_files = StaticFiles.new(@environment.client_path)
         @sessions.start_cleanup_task(
           environment.config.server.session_timeout_seconds
@@ -81,9 +81,11 @@ module Mayu
         else
           handle_404(request)
         end
-      rescue SessionStore::SessionNotFoundError
+      rescue Session::Errors::SessionNotFoundError
         error_response(403, "Session not found", **origin_header(request))
-      rescue SessionStore::InvalidTokenError
+      rescue Session::Errors::SessionIdMismatchError
+        error_response(403, "Session id mismatch", **origin_header(request))
+      rescue Session::Errors::InvalidTokenError
         error_response(403, "Invalid token", **origin_header(request))
       rescue Cookies::TokenCookieNotSetError
         error_response(403, "Token cookie not set", **origin_header(request))
@@ -100,14 +102,7 @@ module Mayu
 
       def stop
         @stopping = true
-        Console.logger.info(self, "\e[1;33mTRANSFERRING ALL SESSIONS\e[0m")
-
-        elapsed = Async::Clock.measure { @sessions.transfer_all }
-
-        Console.logger.info(
-          self,
-          format("\e[32mTRANSFERRED ALL SESSIONS IN %.2f SECONDS\e[0m", elapsed)
-        )
+        @sessions.transfer_all
       end
 
       private
@@ -224,18 +219,21 @@ module Mayu
       end
 
       def handle_session_transfer(request, session_id)
-        encrypted_session = request.read.to_s
-        session = Session.resume_transferred(@environment, encrypted_session)
-
-        unless session.id == session_id
-          return error_response(403, "invalid session id")
-        end
-
-        unless session.token == Cookies.get_token_cookie_value(request)
-          return error_response(403, "invalid token")
-        end
+        session =
+          Session::TransferState
+            .decrypt(@environment.marshaller, request.read.to_s)
+            .authenticate!(
+              session_id:,
+              session_token: Cookies.get_token_cookie_value(request)
+            )
+            .resume(@environment)
 
         @sessions.store(session)
+
+        Console.logger.info(
+          self,
+          "\e[32mResuming transferred session stream #{session.id}\e[0m"
+        )
 
         run_session_stream(request, session)
       rescue Mayu::EncryptedMarshal::ExpiredError
@@ -254,14 +252,15 @@ module Mayu
 
         return session_not_found_response unless session
 
+        Console.logger.info(
+          self,
+          "\e[32mResuming session stream #{session.id}\e[0m"
+        )
+
         run_session_stream(request, session)
       end
 
       def run_session_stream(request, session)
-        Console.logger.info(
-          self,
-          "\e[32mStarting session stream #{session.id}\e[0m"
-        )
         headers = {
           "content-type": EventStream::CONTENT_TYPE,
           "content-encoding": EventStream::CONTENT_ENCODING,
