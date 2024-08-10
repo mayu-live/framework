@@ -16,15 +16,19 @@ require_relative "runtime"
 require_relative "runtime/h"
 require_relative "runtime/dom"
 require_relative "component"
+require_relative "metrics"
 
 module Mayu
   module Test
     module Helpers
       def render(descriptor)
         Sync do
+          metrics =
+            Mayu::Metrics::AppMetrics.setup(Prometheus::Client::Registry.new)
+
           page =
             Mayu::Test::Page.new(
-              Mayu::Runtime.init(descriptor, runtime_js: "test.js")
+              Mayu::Runtime.init(descriptor, metrics:, runtime_js: "test.js")
             )
 
           Fiber[:current_test_page] = page
