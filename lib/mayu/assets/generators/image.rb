@@ -46,7 +46,7 @@ module Mayu
             MIME::Types.type_for(filename_without_hash).first =>
               MIME::Type => mime_type
 
-            headers = { content_type: mime_type.to_s }
+            headers = { "content-type": mime_type.to_s }
 
             Assets::Asset[
               filename:,

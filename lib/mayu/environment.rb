@@ -10,6 +10,7 @@ require_relative "configuration"
 require_relative "system_config"
 require_relative "watcher"
 require_relative "metrics"
+require_relative "utils"
 
 module Mayu
   class Environment

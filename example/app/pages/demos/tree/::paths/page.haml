@@ -24,7 +24,7 @@
     \-file
 
 - source = File.read(absolute_path)
-- language = extname.delete_prefix(".").to_sym
+- language = extname == ".txt" ? nil : extname.delete_prefix(".").to_sym
 
 %article.article
   %h3.path= full_path

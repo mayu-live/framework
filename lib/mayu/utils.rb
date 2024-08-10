@@ -1,0 +1,19 @@
+module Mayu
+  module Utils
+    module DeepFreeze
+      def self.deep_freeze(obj)
+        case obj
+        when Hash
+          obj
+            .transform_keys { deep_freeze(_1) }
+            .transform_values { deep_freeze(_1) }
+            .freeze
+        when Array
+          obj.map { |elem| deep_freeze(elem) }.freeze
+        else
+          obj.freeze
+        end
+      end
+    end
+  end
+end

@@ -1,0 +1,70 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+
+  def initialize
+    @font_size = 16
+    @font_weight = 300
+  end
+
+  def handle_font_size(e)
+    @font_size = e.dig(:target, :value).to_i
+  end
+
+  def handle_font_weight(e)
+    @font_weight = e.dig(:target, :value).to_i
+  end
+
+%article
+  %Heading(level=2) Fonts
+
+  .display
+    %p.roboto-condensed{
+      style: { font_weight: @font_weight, font_size: @font_size }
+    }
+      Roboto Condensed
+
+  .fields
+    %label Font size
+    %input(min=8 max=300 value=@font_size oninput=handle_font_size){
+      type: "range"
+    }/
+    %output= @font_size
+
+    %label Font weight
+    %input(min=100 max=900 value=@font_weight oninput=handle_font_weight){
+      type: "range"
+    }/
+
+    %output= @font_weight
+
+:css
+  @font-face {
+    font-family: "Roboto Condensed";
+    font-style: normal;
+    font-weight: 100 900;
+    src: url("./RobotoCondensed-VariableFont_wght.ttf");
+  }
+
+  .roboto-condensed {
+    font-family: "Roboto Condensed";
+    margin: 0;
+    line-height: 1.2em
+  }
+
+  .display {
+    display: grid;
+    align-content: center;
+    justify-content: center;
+    text-align: center;
+    aspect-ratio: 2 / 1;
+    border: 1px solid #000;
+    background: #333;
+    color: #ccc;
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: auto 1fr 3rem;
+    gap: 1rem;
+    margin: 1rem 0;
+  }

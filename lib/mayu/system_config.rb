@@ -24,7 +24,12 @@ module Mayu
         /\.(png|jpe?g|webp|gif)$/,
         Mayu::Modules::Loaders::Image[]
       ],
-      Mayu::Modules::Rules::Rule[/\.svg$/, Mayu::Modules::Loaders::SVG[]]
+      Mayu::Modules::Rules::Rule[/\.svg$/, Mayu::Modules::Loaders::SVG[]],
+      Mayu::Modules::Rules::Rule[/\.json$/, Mayu::Modules::Loaders::JSON[]],
+      Mayu::Modules::Rules::Rule[
+        /\.(ttf|woff2)$/,
+        Mayu::Modules::Loaders::StaticFile[]
+      ]
     ]
   }
 end

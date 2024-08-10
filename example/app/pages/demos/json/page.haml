@@ -1,0 +1,17 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Highlight = import("/components/UI/Highlight")
+  ImportedJSON = import("./data.json")
+
+%article
+  %Heading(level=2) Importing JSON
+
+  %p This page imports a JSON file into Ruby.
+
+  %p As Ruby:
+  %Highlight(language="ruby")
+    = ImportedJSON.pretty_inspect
+
+  %p As JSON:
+  %Highlight(language="json")
+    = JSON.pretty_generate(ImportedJSON)

@@ -8,6 +8,7 @@ module Mayu
     module Generators
       autoload :Image, File.join(__dir__, "generators", "image")
       autoload :Text, File.join(__dir__, "generators", "text")
+      autoload :WriteFile, File.join(__dir__, "generators", "write_file")
     end
   end
 end
