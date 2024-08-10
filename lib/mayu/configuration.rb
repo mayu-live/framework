@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby -rbundler/setup
 # frozen_string_literal: true
 
 # Copyright Andreas Alin <andreas.alin@gmail.com>
