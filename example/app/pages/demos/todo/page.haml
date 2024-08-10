@@ -77,7 +77,7 @@
   end
 
   def handle_clear_completed
-    @editing = nil,
+    @editing = nil
     @items = @items.reject { _1[:completed] }
   end
 
