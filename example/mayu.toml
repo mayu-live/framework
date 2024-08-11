@@ -2,7 +2,7 @@
   secret_key = "dev"
 
   [development.server]
-    listen = "https://localhost:9393"
+    listen = "https://localhost:9292"
 
     hmr = true
 
@@ -13,16 +13,17 @@
 
     session_timeout_seconds = 15
     transfer_timeout_seconds = 10
+    cookie_timeout_seconds = 60
 
   [development.metrics]
     enabled = true
+    listen = "http://localhost:9091"
 
 [production]
   secret_key = "$MAYU_SECRET_KEY"
 
   [production.server]
-    # listen = "https://0.0.0.0:3333"
-    listen = "https://localhost:3333"
+    listen = "https://0.0.0.0:3333"
 
     hmr = false
 
@@ -31,7 +32,10 @@
 
     generate_assets = false
 
+    session_timeout_seconds = 15
+    transfer_timeout_seconds = 10
+    cookie_timeout_seconds = 60
+
   [production.metrics]
     enabled = true
-    port = 9091
-    host = "0.0.0.0"
+    listen = "http://0.0.0.0:9091"

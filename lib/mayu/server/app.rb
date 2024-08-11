@@ -41,6 +41,10 @@ module Mayu
         @environment = environment
         @stopping = false
         @sessions = Session::Store.new(metrics: @environment.metrics)
+        @cookies =
+          Cookies.new(
+            timeout_seconds: environment.config.server.cookie_timeout_seconds
+          )
         @client_files = StaticFiles.new(@environment.client_path)
         @sessions.start_cleanup_task(
           environment.config.server.session_timeout_seconds
@@ -204,7 +208,7 @@ module Mayu
           body,
           "content-type": "text/html; charset=utf-8",
           "x-mayu-session-id": session.id,
-          **Cookies.set_token_cookie_header(session),
+          **@cookies.set_token_cookie_header(session),
           link: link_header(session)
         )
       end
@@ -224,7 +228,7 @@ module Mayu
             .decrypt(@environment.marshaller, request.read.to_s)
             .authenticate!(
               session_id:,
-              session_token: Cookies.get_token_cookie_value(request)
+              session_token: @cookies.get_token_cookie_value(request)
             )
             .resume(@environment)
 
@@ -247,7 +251,7 @@ module Mayu
         session =
           @sessions.authenticate(
             session_id,
-            Cookies.get_token_cookie_value(request)
+            @cookies.get_token_cookie_value(request)
           )
 
         return session_not_found_response unless session
@@ -264,7 +268,7 @@ module Mayu
         headers = {
           "content-type": EventStream::CONTENT_TYPE,
           "content-encoding": EventStream::CONTENT_ENCODING,
-          "set-cookie": Cookies.set_token_cookie_value(session),
+          **@cookies.set_token_cookie_header(session),
           **origin_header(request)
         }
 
@@ -309,7 +313,7 @@ module Mayu
         session =
           @sessions.authenticate(
             session_id,
-            Cookies.get_token_cookie_value(request)
+            @cookies.get_token_cookie_value(request)
           )
 
         return session_not_found_response unless session
@@ -340,7 +344,7 @@ module Mayu
         json_response(
           204,
           "ok",
-          "set-cookie": Cookies.set_token_cookie_value(session),
+          **@cookies.set_token_cookie_header(session),
           **origin_header(request)
         )
       end

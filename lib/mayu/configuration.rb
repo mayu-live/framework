@@ -47,7 +47,8 @@ module Mayu
         :self_signed_cert?,
         :generate_assets?,
         :session_timeout_seconds,
-        :transfer_timeout_seconds
+        :transfer_timeout_seconds,
+        :cookie_timeout_seconds
       ) do
         def self.parse(config)
           new(
@@ -62,6 +63,8 @@ module Mayu
             session_timeout_seconds:
               config.fetch("session_timout_seconds", 10).to_i,
             transfer_timeout_seconds:
+              config.fetch("transfer_timeout_seconds", 10).to_i,
+            cookie_timeout_seconds:
               config.fetch("transfer_timeout_seconds", 10).to_i
           )
         end
@@ -72,7 +75,7 @@ module Mayu
         def self.parse(config)
           new(
             enabled?: config.fetch("enabled", true),
-            listen: config.fetch("listen", "http://localhost:9293")
+            listen: config.fetch("listen", "http://localhost:9091")
           )
         end
       end

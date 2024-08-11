@@ -5,11 +5,15 @@
 
 module Mayu
   class Server
-    module Cookies
+    class Cookies
       class TokenCookieNotSetError < StandardError
       end
 
-      def self.get_token_cookie_value(request)
+      def initialize(timeout_seconds: 60)
+        @timeout_seconds = 60
+      end
+
+      def get_token_cookie_value(request)
         Array(request.headers["cookie"]).each do |str|
           if match = str.match(/^mayu-token=(\w+)/)
             return match[1].to_s.tap { Session::Token.validate!(_1) }
@@ -19,12 +23,12 @@ module Mayu
         raise TokenCookieNotSetError
       end
 
-      def self.set_token_cookie_header(session, ttl_seconds: 60)
-        { "set-cookie": set_token_cookie_value(session, ttl_seconds:) }
+      def set_token_cookie_header(session)
+        { "set-cookie": set_token_cookie_value(session) }
       end
 
-      def self.set_token_cookie_value(session, ttl_seconds: 60)
-        expires = Time.now.utc + ttl_seconds
+      def set_token_cookie_value(session)
+        expires = Time.now.utc + @timeout_seconds
 
         [
           "mayu-token=#{session.token}",
