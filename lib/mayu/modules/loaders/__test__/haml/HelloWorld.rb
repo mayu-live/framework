@@ -7,13 +7,13 @@ class HelloWorld < Mayu::Component::Base
   INLINE_STYLES = [
     begin
       Mayu::StyleSheet[
-        source_filename: "HelloWorld.haml (inline css)",
-        content_hash: "_xsfOrzqR-0dWREVaALo-ixZnypIrVXL1tvu828-nTM",
+        source_filename: "HelloWorld.haml.css",
+        content_hash: "mJspXVoY5P2oKgeSOglNdPcM8Woi0kqUxHo3h1Og7kg",
         classes: {
-          __button: "HelloWorld_button?N2Q7U-wl"
+          __button: "HelloWorld.haml_button?N2Q7U-wl"
         },
         content: <<CSS
-.HelloWorld_button\\?N2Q7U-wl{background:#ccc;border:1px solid #000;border-radius:3px}
+.HelloWorld\\.haml_button\\?N2Q7U-wl{background:#ccc;border:1px solid #000;border-radius:3px}
 CSS
       ]
     end

@@ -7,14 +7,14 @@ class Stylesheets < Mayu::Component::Base
   INLINE_STYLES = [
     begin
       Mayu::StyleSheet[
-        source_filename: "stylesheets.haml (inline css)",
-        content_hash: "R6kIl4_IwYp2R6BekTTwSY18oRRIDM1BaHtBsFX5Zag",
+        source_filename: "stylesheets.haml.css",
+        content_hash: "FQys2Q5RnhZa37nLWM1e9JhBZWHC6QgY8LQUnW3rdY4",
         classes: {
-          __h1: "stylesheets_h1?ct99ezRm",
-          world: "stylesheets.world?ct99ezRm"
+          __h1: "stylesheets.haml_h1?ct99ezRm",
+          world: "stylesheets.haml.world?ct99ezRm"
         },
         content: <<CSS
-.stylesheets_h1\\?ct99ezRm{color:#f0f}.stylesheets\\.world\\?ct99ezRm{background:#f0f}
+.stylesheets\\.haml_h1\\?ct99ezRm{color:#f0f}.stylesheets\\.haml\\.world\\?ct99ezRm{background:#f0f}
 CSS
       ]
     end

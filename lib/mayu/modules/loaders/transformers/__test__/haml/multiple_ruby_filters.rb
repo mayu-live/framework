@@ -7,13 +7,13 @@ class Multiple_ruby_filters < Mayu::Component::Base
   INLINE_STYLES = [
     begin
       Mayu::StyleSheet[
-        source_filename: "multiple_ruby_filters.haml (inline css)",
-        content_hash: "o8vRkv9EqLa-SClq1zcq3n32AmbUcxJtrPsk5z_TTvI",
+        source_filename: "multiple_ruby_filters.haml.css",
+        content_hash: "CyWW9z5tvlNECWADHyH7PQ5Q9ghLW4-ANO72pSwA5UM",
         classes: {
-          default: "multiple_ruby_filters.default?zMcJqVrb"
+          default: "multiple_ruby_filters.haml.default?zMcJqVrb"
         },
         content: <<CSS
-.multiple_ruby_filters\\.default\\?zMcJqVrb{font-weight:700}
+.multiple_ruby_filters\\.haml\\.default\\?zMcJqVrb{font-weight:700}
 CSS
       ]
     end

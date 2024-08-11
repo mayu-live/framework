@@ -7,14 +7,14 @@ class Css < Mayu::Component::Base
   INLINE_STYLES = [
     begin
       Mayu::StyleSheet[
-        source_filename: "css.haml (inline css)",
-        content_hash: "QRzl4L9HjW2wS-4CE_xH6vXN4WTNT72NL210gVqRO_c",
+        source_filename: "css.haml.css",
+        content_hash: "EBs7RoAYfBSDj2sC3blS79YHXlExe5hl3x_N9IfwMt0",
         classes: {
-          button: "css.button?Trf1Txj1",
-          "button-text": "css.button-text?Trf1Txj1"
+          button: "css.haml.button?Trf1Txj1",
+          "button-text": "css.haml.button-text?Trf1Txj1"
         },
         content: <<CSS
-.css\\.button\\?Trf1Txj1{color:#f0f}.css\\.button-text\\?Trf1Txj1{font-weight:700}
+.css\\.haml\\.button\\?Trf1Txj1{color:#f0f}.css\\.haml\\.button-text\\?Trf1Txj1{font-weight:700}
 CSS
       ]
     end
