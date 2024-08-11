@@ -23,12 +23,6 @@ module Mayu
       def self.slot(component, name = nil)
         component.__children.slots.fetch(name) { yield if block_given? }
       end
-
-      # H.provide(theme: "dark") do
-      # end
-      def self.set_context(**vars)
-        Descriptors::Context::Provider[vars, yield]
-      end
     end
   end
 end

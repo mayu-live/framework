@@ -54,15 +54,6 @@ module Mayu
 
       Slot = Data.define(:component, :name, :fallback)
 
-      module Context
-        Provider =
-          Data.define(:children, :variables) do
-            def self.[](*children, **variables)
-              new(children, variables)
-            end
-          end
-      end
-
       def self.same?(a, b)
         case [a, b]
         in [Element, Element]
