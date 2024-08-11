@@ -144,6 +144,14 @@ function configureLink(a: HTMLAnchorElement) {
       return;
     }
 
+    if (a.target === "_blank") {
+      return;
+    }
+
+    if (e.metaKey) {
+      return;
+    }
+
     e.preventDefault();
     window.Mayu.navigate(a.pathname + a.search);
   });
