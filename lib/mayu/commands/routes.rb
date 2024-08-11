@@ -20,7 +20,9 @@ module Mayu
         require_relative "../environment"
         require_relative "../routes"
 
-        Environment.with(:development) do |environment|
+        Configuration.with(:development) do |config|
+          environment = Environment.new(config)
+
           puts(
             Terminal::Table.new do |t|
               t.style = { all_separators: true, border: :unicode }
