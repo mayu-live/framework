@@ -1,0 +1,42 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Highlight = import("/components/UI/Highlight")
+  Consumer = import("./Consumer")
+  Hello = import("./Hello")
+
+  THEMES = %w[light dark]
+
+  def initialize
+    @@theme = THEMES.first
+  end
+
+  def handle_set_theme(e)
+    @@theme = e.dig(:currentTarget, :value)
+  end
+
+%article
+  %Heading(level=2) Context
+
+  %p This demo shows how to use context in a component.
+
+  %p This is what the tree looks like:
+
+  %ul
+    %li
+      page.haml
+      %ul
+        %li Consumer.haml
+        %li
+          Hello.haml
+          %ul
+            %li Consumer.haml
+
+  %div
+    Theme:
+    = THEMES.map do |theme|
+      %label[theme]
+        %input(type="radio" name="theme" value=theme onchange=handle_set_theme){checked: @@theme == theme}
+        = theme.to_s.capitalize
+
+  %Consumer
+  %Hello
