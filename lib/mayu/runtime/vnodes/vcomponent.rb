@@ -164,7 +164,7 @@ module Mayu
           mod = get_mod
           raise unless mod
 
-          puts mod.source_map.format_exception(e, mod.path)
+          puts Modules::System.current.format_exception(e)
 
           patch(
             Patches::RenderError[

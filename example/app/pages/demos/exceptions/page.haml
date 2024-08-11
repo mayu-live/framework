@@ -15,6 +15,12 @@
       @count += 1
     end
 
+  def raise_if_over(x)
+    if @count >= x
+      raise "#{@count} => #{x}"
+    end
+  end
+
 %article
   %Heading(level=2) Exceptions
   %p This demo shows how exceptions are handled.
@@ -30,6 +36,7 @@
   %Details(summary="Show source")
     %Highlight(language="haml")
       = File.read("app/pages/demos/exceptions/page.haml")
+  - raise_if_over(5)
 :css
   .buttons {
     display: flex;

@@ -123,11 +123,25 @@ module Mayu
             labels: listener.metric_labels
           )
 
-          case listener.call(payload)
-          in Patches::RenderError => e
-            patch(e)
-          else
-            nil
+          begin
+            listener.call(payload)
+          rescue => e
+            puts Modules::System.current.format_exception(e)
+
+            if module_path = listener.callback.component.class.module_path
+              mod = Modules::System.current.get_mod(module_path)
+
+              patch(
+                Patches::RenderError[
+                  module_path,
+                  e.class.name,
+                  e.message,
+                  e.backtrace,
+                  mod.source_map.input,
+                  []
+                ]
+              )
+            end
           end
         end
 

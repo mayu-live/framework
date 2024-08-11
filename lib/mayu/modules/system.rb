@@ -12,6 +12,7 @@ require_relative "resolver"
 require_relative "registry"
 require_relative "loaders"
 require_relative "import"
+require_relative "backtrace_rewriter"
 require_relative "../assets"
 
 module Mayu
@@ -226,10 +227,15 @@ module Mayu
         @assets.run(asset_dir, **opts)
       end
 
-      private
-
-      def reload_dirty
+      def format_exception(e)
+        BacktraceRewriter.new(@mods).format_exception(e)
       end
+
+      def rewrite_backtrace(backtrace)
+        BacktraceRewriter.new(@mods).rewrite(backtrace)
+      end
+
+      private
 
       def get_or_load_mod(path, source = "/")
         resolved_path = @resolver.resolve(path, source)
