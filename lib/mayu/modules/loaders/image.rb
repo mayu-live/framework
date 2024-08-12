@@ -12,22 +12,8 @@ require_relative "transformers/frozen_string_literal_visitor"
 module Mayu
   module Modules
     module Loaders
-      IMAGE_BREAKPOINTS = [
-        120,
-        240,
-        320,
-        640,
-        768,
-        960,
-        1024,
-        1366,
-        1600,
-        1920,
-        3840
-      ]
-
       Image =
-        Data.define do
+        Data.define(:sizes) do
           include SyntaxTree::DSL
 
           def call(loading_file)
@@ -116,8 +102,7 @@ module Mayu
           end
 
           def build_versions(absolute_path, image_size, hash)
-            widths =
-              IMAGE_BREAKPOINTS.select { _1 < image_size.width }.sort.reverse
+            widths = sizes.select { _1 < image_size.width }.sort.reverse
             basename = File.basename(absolute_path, ".*")
             format = "webp"
 

@@ -22,7 +22,9 @@ module Mayu
       Mayu::Modules::Rules::Rule[/\.js$/, Mayu::Modules::Loaders::JavaScript[]],
       Mayu::Modules::Rules::Rule[
         /\.(png|jpe?g|webp|gif)$/,
-        Mayu::Modules::Loaders::Image[]
+        Mayu::Modules::Loaders::Image[
+          sizes: [120, 240, 320, 640, 768, 960, 1024, 1366, 1600, 1920, 3840]
+        ]
       ],
       Mayu::Modules::Rules::Rule[/\.svg$/, Mayu::Modules::Loaders::SVG[]],
       Mayu::Modules::Rules::Rule[/\.json$/, Mayu::Modules::Loaders::JSON[]],
