@@ -17,16 +17,19 @@ module Mayu
 
         def initialize(...)
           super
+          @children_are_updating = false
+          @should_update_child_ids = false
           update_children([], @descriptor)
         end
 
         def marshal_dump
-          [super, @children]
+          [super, @cached_child_ids, @children]
         end
 
         def marshal_load(a)
-          a => [a, children]
+          a => [a, cached_child_ids, children]
           super(a)
+          @cached_child_ids = cached_child_ids
           @children = children
         end
 
@@ -36,7 +39,7 @@ module Mayu
         end
 
         def child_ids
-          @children.map(&:child_ids).flatten
+          @cached_child_ids ||= child_ids_uncached
         end
 
         def start_children
@@ -52,9 +55,35 @@ module Mayu
         def remove = @children.map { _1.remove }
         def render = @children.map { _1.render }
 
+        def update_child_ids
+          return unless running?
+
+          if @children_are_updating
+            @should_update_child_ids = true
+            return
+          end
+
+          @should_update_child_ids = false
+
+          super if update_cached_child_ids!
+        end
+
         private
 
+        def update_cached_child_ids!
+          new_child_ids = child_ids_uncached
+          return false if new_child_ids == @cached_child_ids
+          @cached_child_ids = new_child_ids
+        end
+
+        def child_ids_uncached
+          @children.map(&:child_ids)
+        end
+
         def update_children(old_children, descriptors)
+          @children_are_updating = true
+          @should_update_child_ids = false
+
           diff = diff_children(old_children, normalize_descriptors(descriptors))
 
           created = []
@@ -83,7 +112,9 @@ module Mayu
             removed.stop
           end
 
-          update_child_ids
+          @should_update_child_ids = true unless diff.removed.empty?
+
+          @should_update_child_ids = true unless created.empty?
 
           # puts "\e[31m#{diff.removed.map(&:child_ids).join(", ")}\e[0m"
           # puts "\e[33m#{diff.children.select { Updated === _1 }.map(&:node).map(&:child_ids).join(", ")}\e[0m"
@@ -91,6 +122,9 @@ module Mayu
           #
 
           @children
+        ensure
+          @children_are_updating = false
+          update_child_ids
         end
 
         def diff_children(old_children, descriptors)

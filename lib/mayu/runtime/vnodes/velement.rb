@@ -12,19 +12,17 @@ module Mayu
           validate_dom_nesting!
 
           @children = VChildren.new(@descriptor.children, parent: self)
-          @child_ids = @children.child_ids
           @attributes = VAttributes.new(@descriptor, parent: self)
         end
 
         def marshal_dump
-          [super, @children, @child_ids, @attributes]
+          [super, @children, @attributes]
         end
 
         def marshal_load(a)
-          a => [a, children, child_ids, attributes]
+          a => [a, children, attributes]
           super(a)
           @children = children
-          @child_ids = child_ids
           @attributes = attributes
         end
 
@@ -37,7 +35,7 @@ module Mayu
           @children.traverse(&)
         end
 
-        def child_ids = [id]
+        def child_ids = [@id]
 
         def start_children
           @children.start
@@ -69,14 +67,7 @@ module Mayu
         def update_child_ids
           metrics.update_child_id_count.increment(labels: { tag_name: })
 
-          @updater&.async do
-            new_child_ids = @children.child_ids.flatten
-
-            unless new_child_ids == @child_ids
-              @child_ids = new_child_ids
-              patch(Patches::ReplaceChildren[id, @child_ids])
-            end
-          end
+          patch(Patches::ReplaceChildren[id, @children.child_ids.flatten])
         end
 
         private

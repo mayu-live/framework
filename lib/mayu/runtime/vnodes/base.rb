@@ -40,7 +40,6 @@ module Mayu
             def stop = task.stop
 
             def _dump = nil
-            def _load = nil
           end
 
         attr_reader :id
@@ -51,7 +50,6 @@ module Mayu
           @descriptor = descriptor
           @parent = parent
           @id = SecureRandom.alphanumeric
-          @id_counter = 0
         end
 
         def marshal_dump
@@ -98,7 +96,7 @@ module Mayu
         end
 
         def start
-          @updater = Updater.for_vnode(self)
+          @updater ||= Updater.for_vnode(self)
         end
 
         def start_children
