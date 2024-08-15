@@ -249,12 +249,10 @@ module Mayu
 
       def handle_session_resume(request, session_id)
         session =
-          @sessions.authenticate(
+          @sessions.authenticate!(
             session_id,
             @cookies.get_token_cookie_value(request)
           )
-
-        return session_not_found_response unless session
 
         Console.logger.info(
           self,
@@ -300,23 +298,12 @@ module Mayu
         Protocol::HTTP::Response[200, headers, body]
       end
 
-      def session_not_found_response(request)
-        response(
-          404,
-          "Session not found/invalid token",
-          **origin_header(request),
-          "content-type": "text/plain"
-        )
-      end
-
       def handle_session_event(request, session_id)
         session =
-          @sessions.authenticate(
+          @sessions.authenticate!(
             session_id,
             @cookies.get_token_cookie_value(request)
           )
-
-        return session_not_found_response unless session
 
         Async do
           session.wait
@@ -325,20 +312,9 @@ module Mayu
         end
 
         EventStream.each_incoming_message(request) do |message|
-          case message
-          in { type: "callback", payload: { id:, event: }, ping: }
-            session.handle_ping(ping)
-            session.handle_callback(id, event)
-          in {
-               type: "navigate",
-               payload: { href:, pushState: push_state },
-               ping:
-             }
-            session.handle_ping(ping)
-            session.handle_navigate(href, push_state:)
-          in { type: "ping", ping: }
-            session.handle_ping(ping)
-          end
+          Session::Events
+            .from_message(message)
+            .each { |event| session.enqueue_event(event) }
         end
 
         json_response(

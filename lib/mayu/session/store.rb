@@ -17,7 +17,7 @@ module Mayu
         @sessions[session.id] = session
       end
 
-      def authenticate(id, token)
+      def authenticate!(id, token)
         session = @sessions.fetch(id) { raise Errors::SessionNotFoundError }
 
         raise Errors::InvalidTokenError unless session.valid_token?(token)

@@ -67,11 +67,7 @@ module Mayu
         clear_patches!
         @root.start
 
-        loop do
-          if patch = @patches.dequeue
-            yield patch
-          end
-        end
+        loop { yield @patches.dequeue }
       ensure
         @root.stop
       end

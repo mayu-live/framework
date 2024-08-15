@@ -10,6 +10,28 @@ require_relative "session/transfer_state"
 
 module Mayu
   class Session
+    module Events
+      CallbackEvent = Data.define(:id, :payload)
+      NavigateEvent = Data.define(:path, :push_state)
+      PingEvent = Data.define(:ping)
+
+      def self.from_message(message)
+        case message
+        in { type: "callback", payload: { id:, event: }, ping: }
+          [PingEvent[ping], CallbackEvent[id, event]]
+        in {
+             type: "navigate", payload: { href:, pushState: push_state }, ping:
+           }
+          [PingEvent[ping], NavigateEvent[href, push_state]]
+        in { type: "ping", ping: }
+          [PingEvent[ping]]
+        else
+          Console.logger.error(self, "Unknown message: #{message.inspect}")
+          []
+        end
+      end
+    end
+
     RequestInfo =
       Data.define(:path, :headers) do
         def self.from_request(request)
@@ -28,7 +50,7 @@ module Mayu
 
       Console.logger.info(
         self,
-        "Initializing session at \e[1;34m#{@request_info.path}\e[0m"
+        "Initializing session #{@id} at \e[1;34m#{@request_info.path}\e[0m"
       )
 
       @engine =
@@ -64,20 +86,27 @@ module Mayu
       diff > timeout_seconds
     end
 
+    def enqueue_event(event)
+      @incoming_events.enqueue(event)
+    end
+
     def run(&block)
+      raise "Session already running" if @task
+
       @task =
         Async do |task|
-          if @environment.config.server.hmr?
-            task.async do
-              while Modules::System.current.wait_for_reload
-                puts "\e[30;103mCode update detected, reloading.\e[0m"
-                @engine.update(resolve_route(@request_info.path))
-              end
-            end
-          end
+          task.annotate("Session #{@id}")
+
+          barrier = Async::Barrier.new
+
+          run_code_reload_task(barrier) if @environment.config.server.hmr?
+
+          run_incoming_events_task(barrier)
 
           @engine.run(&block)
         ensure
+          barrier.stop
+          Console.logger.error(self, "Stop session")
           @task = nil
         end
     end
@@ -98,28 +127,6 @@ module Mayu
       @engine.styles
     end
 
-    def handle_callback(id, payload)
-      update_last_ping
-      @engine.callback(id, payload)
-    end
-
-    def handle_navigate(path, push_state: true)
-      Console.logger.info(self, "Navigating to \e[1;34m#{path}\e[0m")
-
-      @environment.metrics.session_navigate_count.increment(labels: { path: })
-
-      update_last_ping
-      @request_info = @request_info.with(path:)
-      descriptor = resolve_route(path)
-      @engine.navigate(path, descriptor, push_state:)
-    end
-
-    def handle_ping(timestamp)
-      @environment.metrics.session_ping_count.increment
-      update_last_ping
-      @engine.ping(timestamp)
-    end
-
     def transfer!
       @engine.stop
       @engine.patch(
@@ -138,8 +145,55 @@ module Mayu
 
     private
 
-    def update_last_ping
-      @last_ping = Async::Clock.now
+    def run_code_reload_task(parent)
+      parent.async do |task|
+        task.annotate("Session #{@id}: HMR")
+
+        while Modules::System.current.wait_for_reload
+          puts "\e[30;103mCode update detected, reloading.\e[0m"
+          @engine.update(resolve_route(@request_info.path))
+        end
+      end
+    end
+
+    def run_incoming_events_task(parent)
+      parent.async do |task|
+        task.annotate("Session #{@id}: Handle incoming events")
+
+        @incoming_events = Async::Queue.new
+
+        loop do
+          event = @incoming_events.dequeue
+
+          task.annotate(
+            "Session #{@id}: Handling #{event.class.name.split("::").last}"
+          ) { handle_event(event) }
+        end
+      ensure
+        @incoming_events = nil
+        Console.logger.error(self, "Stop handling incoming events")
+      end
+    end
+
+    def handle_event(event)
+      case event
+      in Events::PingEvent[ping:]
+        @environment.metrics.session_ping_count.increment
+        @last_ping = Async::Clock.now
+        @engine.ping(ping)
+      in Events::CallbackEvent[id:, payload:]
+        @engine.callback(id, payload)
+      in Events::NavigateEvent[path:, push_state:]
+        Console.logger.info(self, "Navigating to \e[1;34m#{path}\e[0m")
+
+        @environment.metrics.session_navigate_count.increment(labels: { path: })
+
+        @request_info = @request_info.with(path:)
+        descriptor = resolve_route(path)
+        @engine.navigate(path, descriptor, push_state:)
+      end
+    rescue => e
+      Console.logger.error(self, e)
     end
 
     def resolve_route(path)
