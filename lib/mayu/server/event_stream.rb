@@ -42,14 +42,13 @@ module Mayu
           @on_close.wait
         end
 
-        def write(buf)
+        def write(patch)
           if @closed
-            # puts "Attempting to write #{buf.inspect} to closed #{self.class.name}"
             raise ClosedStreamError,
                   "Attempted to write to a closed #{self.class.name}"
           end
 
-          buf
+          patch
             .then { PatchSet[_1].to_a }
             .then { @wrapper.pack(_1) }
             .then { @deflate.deflate(_1, Zlib::SYNC_FLUSH) }
@@ -57,6 +56,8 @@ module Mayu
         end
 
         def close(reason = nil)
+          return if closed?
+
           @on_close.signal(reason)
 
           begin
@@ -64,11 +65,13 @@ module Mayu
           rescue StandardError
             nil
           end
+
           begin
             @deflate.close
           rescue StandardError
             nil
           end
+
           super
         end
       end

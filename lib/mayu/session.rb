@@ -90,25 +90,38 @@ module Mayu
       @incoming_events.enqueue(event)
     end
 
-    def run(&block)
+    def dequeue_patch
+      @engine.dequeue_patch
+    end
+
+    def start
       raise "Session already running" if @task
 
       @task =
         Async do |task|
           task.annotate("Session #{@id}")
+          Console.logger.info(self, "Starting session")
 
           barrier = Async::Barrier.new
 
           run_code_reload_task(barrier) if @environment.config.server.hmr?
-
           run_incoming_events_task(barrier)
 
-          @engine.run(&block)
+          @engine.start
+
+          barrier.wait
+        rescue => e
+          Console.logger.error(self, e)
         ensure
+          Console.logger.info(self, "Stopping session")
+          @engine.stop
           barrier.stop
-          Console.logger.error(self, "Stop session")
           @task = nil
         end
+    end
+
+    def running?
+      !!@task
     end
 
     def wait
@@ -171,7 +184,6 @@ module Mayu
         end
       ensure
         @incoming_events = nil
-        Console.logger.error(self, "Stop handling incoming events")
       end
     end
 

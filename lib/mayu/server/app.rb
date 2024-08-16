@@ -41,6 +41,7 @@ module Mayu
         @environment = environment
         @stopping = false
         @sessions = Session::Store.new(metrics: @environment.metrics)
+        @body_barrier = Async::Barrier.new
         @cookies =
           Cookies.new(
             timeout_seconds: environment.config.server.cookie_timeout_seconds
@@ -107,6 +108,8 @@ module Mayu
       def stop
         @stopping = true
         @sessions.transfer_all
+      ensure
+        @body_barrier.wait
       end
 
       private
@@ -270,29 +273,44 @@ module Mayu
           **origin_header(request)
         }
 
+        if session.running?
+          return(
+            error_response(
+              409,
+              "Session already running",
+              **origin_header(request)
+            )
+          )
+        end
+
         body = EventStream::Writer.new
 
         body.write(
           Runtime::Patches::Initialize[session.render.id_node.serialize]
         )
 
-        Async do |task|
-          session
-            .run do |patch|
-              body.write(patch)
+        @body_barrier.async do |task|
+          session.start
 
-              if patch in Runtime::Patches::Transfer
-                body.close
-                task.stop
-              end
-            end
-            .wait
+          task.async do
+            body.wait
+            task.stop
+          end
 
-          Console.logger.info(self, "\e[31mStopped session #{session.id}\e[0m")
+          loop do
+            patch = session.dequeue_patch
 
-          body.wait
+            break if body.closed?
+
+            body.write(patch)
+
+            break if patch in Runtime::Patches::Transfer
+          end
+        rescue => e
+          Console.logger.error(self, e)
         ensure
-          task.stop
+          session.stop
+          body.close
         end
 
         Protocol::HTTP::Response[200, headers, body]
