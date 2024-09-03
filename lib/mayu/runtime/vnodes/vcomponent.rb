@@ -94,7 +94,7 @@ module Mayu
         def remove = @children.remove
         def child_ids = @children.child_ids
 
-        def update_sync(descriptor)
+        def update(descriptor)
           # TODO: Better would be to track what what props and states are being
           # read while being rendered, and only update if they have been changed.
           # next_state = {} # TODO: implement
@@ -188,7 +188,7 @@ module Mayu
             labels: {
               component: @instance.class.module_path
             }
-          ) { @children.update(children) }
+          ) { @children.apply(children) }
         end
 
         def render_children

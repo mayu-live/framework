@@ -117,7 +117,11 @@ module Mayu
         end
 
         def call_listener(id, payload)
-          listener = @listeners.fetch(id)
+          listener =
+            @listeners.fetch(id) do
+              Console.logger.error(self, "Listener #{id} not found")
+              return
+            end
 
           metrics.session_callback_count.increment(
             labels: listener.metric_labels
@@ -165,9 +169,9 @@ module Mayu
           @html.start
         end
 
-        def update_sync(descriptor)
+        def update(descriptor)
           @descriptor = descriptor
-          @html.update(init_html)
+          @html.apply(init_html)
         end
 
         def closest(type)
@@ -179,7 +183,7 @@ module Mayu
         end
 
         def render
-          @html.update(init_html)
+          @html.apply(init_html)
           DOM::Document[*@html.render, id: @id]
         end
 
@@ -202,7 +206,7 @@ module Mayu
           @html&.traverse do |v|
             if v.descriptor in Descriptors::Element
               if v.descriptor.type == Head
-                v.update(init_head)
+                v.apply(init_head)
                 break
               end
             end

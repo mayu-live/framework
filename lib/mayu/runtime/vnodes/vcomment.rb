@@ -7,7 +7,7 @@ module Mayu
   module Runtime
     module VNodes
       class VComment < Base
-        def update_sync(descriptor)
+        def update(descriptor)
           @descriptor = descriptor
         end
 

@@ -34,9 +34,9 @@ module Mayu
         def remove = @children.remove
         def render = @children.render
 
-        def update_sync(descriptor)
+        def update(descriptor)
           @descriptor = descriptor
-          @children.update(get_children)
+          @children.apply(get_children)
         end
 
         private

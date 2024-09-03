@@ -28,9 +28,9 @@ module Mayu
         def child_ids = @children.child_ids
         def start_children = @children.start_children
 
-        def update_sync(descriptor)
+        def update(descriptor)
           @descriptor = descriptor
-          @children.update(rerender)
+          @children.apply(rerender)
         end
 
         private

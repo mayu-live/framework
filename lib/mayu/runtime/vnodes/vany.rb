@@ -39,7 +39,7 @@ module Mayu
         def render = @child.render
 
         def start_children = @child.start
-        def update_sync(descriptor) = @child.update(descriptor)
+        def apply(descriptor) = @child.apply(descriptor)
 
         private
 

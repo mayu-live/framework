@@ -21,7 +21,7 @@ module Mayu
                   vnode.start_children
 
                   while descriptor = queue.dequeue
-                    vnode.update_sync(descriptor)
+                    vnode.update(descriptor)
                   end
                 end
 
@@ -33,13 +33,19 @@ module Mayu
             end
 
             def enqueue(descriptor)
-              queue.dequeue until queue.empty?
+              clear_queue!
               queue.enqueue(descriptor)
             end
 
             def stop = task.stop
 
             def _dump = nil
+
+            private
+
+            def clear_queue!
+              queue.dequeue until queue.empty?
+            end
           end
 
         attr_reader :id
@@ -79,8 +85,8 @@ module Mayu
         def start_children
         end
 
-        def update(descriptor)
-          @updater ? @updater.enqueue(descriptor) : update_sync(descriptor)
+        def apply(descriptor)
+          @updater ? @updater.enqueue(descriptor) : update(descriptor)
         end
 
         def closest(type)

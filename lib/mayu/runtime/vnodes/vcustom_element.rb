@@ -34,9 +34,9 @@ module Mayu
         def remove = @element.remove
         def render = @element.render
 
-        def update_sync(descriptor)
+        def update(descriptor)
           @descriptor = descriptor
-          @element.update_sync(@descriptor.with(type: @descriptor.type.name))
+          @element.update(@descriptor.with(type: @descriptor.type.name))
         end
       end
     end

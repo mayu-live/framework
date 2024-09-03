@@ -48,7 +48,7 @@ module Mayu
       end
 
       def update(descriptor)
-        @root.update(descriptor)
+        @root.apply(descriptor)
       end
 
       def render
@@ -63,13 +63,13 @@ module Mayu
         @root.stop
       end
 
-      def run(&)
+      def start
         clear_patches!
         @root.start
+      end
 
-        loop { yield @patches.dequeue }
-      ensure
-        @root.stop
+      def dequeue_patch
+        @patches.dequeue
       end
 
       private

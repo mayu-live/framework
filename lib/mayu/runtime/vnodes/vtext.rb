@@ -7,7 +7,7 @@ module Mayu
   module Runtime
     module VNodes
       class VText < Base
-        def update_sync(descriptor)
+        def update(descriptor)
           return if @descriptor.to_s === descriptor.to_s
           @descriptor = descriptor
           patch(Patches::SetTextContent[id, @descriptor.to_s])

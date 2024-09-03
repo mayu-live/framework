@@ -24,7 +24,7 @@ module Mayu
 
         def children = @descriptor.children
 
-        def update_sync(descriptor)
+        def update(descriptor)
           unless @descriptor.children == descriptor.children
             @descriptor = descriptor
             add_to_document

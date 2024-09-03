@@ -13,7 +13,7 @@ module Mayu
           super(inject_mayu_ping(descriptor), parent:)
         end
 
-        def update_sync(descriptor)
+        def update(descriptor)
           super(inject_mayu_ping(descriptor))
         end
 

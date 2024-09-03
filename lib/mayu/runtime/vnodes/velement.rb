@@ -55,10 +55,10 @@ module Mayu
           DOM::Element[@id, tag_name, *@children.render, **@attributes.render]
         end
 
-        def update_sync(descriptor)
+        def update(descriptor)
           @descriptor = descriptor
-          @attributes.update(descriptor)
-          @children.update(descriptor.children)
+          @attributes.apply(descriptor)
+          @children.apply(descriptor.children)
         end
 
         def tag_name =

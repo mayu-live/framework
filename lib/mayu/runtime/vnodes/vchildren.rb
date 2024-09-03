@@ -46,7 +46,7 @@ module Mayu
           @children.each { |child| Async { child.start } }
         end
 
-        def update_sync(descriptor)
+        def update(descriptor)
           @descriptor = descriptor
           update_children(@children, @descriptor)
         end
@@ -92,7 +92,7 @@ module Mayu
             diff.children.map do |update|
               case update
               in Updated[node:, descriptor:]
-                node.update(descriptor)
+                node.apply(descriptor)
                 node
               in Created[node:]
                 created << node
