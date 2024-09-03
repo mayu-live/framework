@@ -363,7 +363,7 @@ module Mayu
                       in SyntaxTree::ArrayLiteral
                         value
                       in TrueClass | FalseClass | NilClass
-                        VarRef(Kw(value.to_s))
+                        VarRef(Kw(value.inspect))
                       end
                     )
                   end
