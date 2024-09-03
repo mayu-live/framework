@@ -49,7 +49,11 @@ module Mayu
         def to_s = ""
       end
 
-    Views = Data.define(:page, :layout, :template, :not_found)
+    Views =
+      Data.define(:page, :layout, :template, :not_found) do
+        def not_found! = with(page: not_found)
+        def not_found? = page == not_found
+      end
 
     Match = Data.define(:route, :params, :query)
 
@@ -83,9 +87,7 @@ module Mayu
 
     Route =
       Data.define(:regexp, :segments, :views, :layouts) do
-        def match(request_path)
-          path, query = request_path.split("?", 2)
-
+        def match(path, query)
           if match = regexp.match(path)
             Match[
               self,
@@ -116,9 +118,11 @@ module Mayu
           new(root_dir, Builder.build(root_dir))
         end
 
-        def match(path)
+        def match(request_path)
           routes.each do |route|
-            if match = route.match(path)
+            path, query = request_path.split("?", 2)
+
+            if match = route.match(path, query)
               return match
             end
           end
@@ -155,26 +159,52 @@ module Mayu
             traverse_children(@root_dir)
           )
 
-        routes = []
+        page_routes = []
+        not_found_routes = []
 
-        build_routes(root) { |route| routes << route if route.views.page }
+        build_routes(root) do |route|
+          if route.views.not_found?
+            not_found_routes << route
+          else
+            page_routes << route
+          end
+        end
 
-        routes
+        page_routes + not_found_routes.reverse
       end
 
       def build_routes(node, parents = [], &block)
         segments = [*parents, node].compact
 
-        yield(
-          Route[
-            Regexp.compile(
-              '\A/' + segments.map(&:regexp).compact.join('\/') + '\z'
-            ),
-            segments,
-            node.views,
-            segments.map(&:views).map(&:layout).compact
-          ]
-        )
+        re_parts = segments.map(&:regexp).compact.join("/")
+
+        if node.views.page
+          yield(
+            Route[
+              Regexp.compile('\A/' + re_parts + '\z'),
+              segments,
+              node.views,
+              segments.map(&:views).map(&:layout).compact
+            ]
+          )
+        end
+
+        if node.views.not_found
+          yield(
+            Route[
+              Regexp.compile(
+                if segments.size == 1
+                  '\A/' + re_parts + '.*\z'
+                else
+                  '\A/' + re_parts + '/.*\z'
+                end
+              ),
+              segments,
+              node.views.not_found!,
+              segments.map(&:views).map(&:layout).compact
+            ]
+          )
+        end
 
         node.children.each { |child| build_routes(child, segments, &block) }
       end
@@ -185,6 +215,10 @@ module Mayu
         Dir
           .entries(dir)
           .map do |entry|
+            full_path = File.join(dir, entry)
+
+            next unless File.file?(full_path)
+
             path =
               Pathname
                 .new(File.join(dir, entry))
@@ -198,7 +232,7 @@ module Mayu
               views[:layout] = path
             in "template.haml"
               views[:template] = path
-            in "not-found.haml"
+            in "not_found.haml"
               views[:not_found] = path
             else
               nil

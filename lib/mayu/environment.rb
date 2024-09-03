@@ -139,7 +139,8 @@ module Mayu
     def is_route_event?(event)
       if event in Watcher::Events::Created | Watcher::Events::Deleted
         if event.path.start_with?("/pages/")
-          File.basename(event.path) in "page.haml" | "layout.haml"
+          File.basename(event.path) in
+            "page.haml" | "layout.haml" | "not_found.haml" | "template.haml"
         else
           false
         end
