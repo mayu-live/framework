@@ -3,6 +3,14 @@
   Card = import("/components/UI/Card")
   Link = import("/components/UI/Link")
 
+  Item = Data.define(:id, :description, :completed) do
+    def self.create(description)
+      new(id: SecureRandom.alphanumeric(10), description:, completed: false)
+    end
+
+    alias :completed? :completed
+  end
+
   def initialize
     @items = []
     @editing = nil
@@ -14,7 +22,7 @@
     e => { target: { formData: { new_todo: String => description } } }
 
     @items = [
-      { id: SecureRandom.alphanumeric(10), description: },
+      Item.create(description),
       *@items
     ]
 
@@ -38,8 +46,8 @@
 
     @editing = nil
     @items = @items.map do |item|
-      if item[:id] == id
-        { **item, description: }
+      if item.id == id
+        item.with(description:)
       else
         item
       end
@@ -51,8 +59,8 @@
 
     @editing = nil
     @items = @items.map do |item|
-      if item[:id] == id
-        { **item, completed: }
+      if item.id == id
+        item.with(completed:)
       else
         item
       end
@@ -62,15 +70,14 @@
   def handle_delete(e)
     e => { currentTarget: { name: id } }
 
-    @items = @items.reject { |item| item[:id] == id }
+    @items = @items.reject { |item| item.id == id }
   end
 
   def handle_toggle_all(e)
     e => { target: { checked: completed } }
-    pp e
 
     @items = @items.map do |item|
-      { **item, completed: }
+      item.with(completed:)
     end
 
     @editing = nil
@@ -78,7 +85,7 @@
 
   def handle_clear_completed
     @editing = nil
-    @items = @items.reject { _1[:completed] }
+    @items = @items.reject(&:completed?)
   end
 
   private
@@ -88,9 +95,9 @@
     in "all"
       @items
     in "active"
-      @items.select { !_1[:completed] }
+      @items.select { !_1.completed? }
     in "completed"
-      @items.select { _1[:completed] }
+      @items.select { _1.completed? }
     end
   end
 
@@ -107,16 +114,19 @@
   end
 
   def toggle_checkbox_state
-    completed_count = @items.count { _1[:completed] }
-    remaining_count = @items.count { !_1[:completed] }
-
-    if completed_count == 0
-      { checked: false, indeterminate: false }
+    if @items.empty?
+      { disabled: true }
     else
-      if remaining_count == 0
-        { checked: true, indeterminate: false }
+      completed_count = @items.count { _1.completed? }
+      remaining_count = @items.size - completed_count
+
+      case
+      when completed_count == 0
+        {}
+      when remaining_count == 0
+        { checked: true }
       else
-        { checked: false, indeterminate: true }
+        { indeterminate: true }
       end
     end
   end
@@ -135,23 +145,23 @@
     %div
       %ul
         = get_filtered_items.map do |item|
-          %li[item[:id]]
-            = if @editing == item[:id]
-              %form.edit(onsubmit=handle_update autocomplete="off"){id: item[:id]}
+          %li[item.id]
+            = if @editing == item.id
+              %form.edit(onsubmit=handle_update autocomplete="off"){id: item.id}
                 %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
-                  initial_value: item[:description]
+                  initial_value: item.description
                 }
             = else
               .row
                 %input.checkbox(type="checkbox" onchange=handle_check){
-                  name: item[:id],
-                  checked: item[:completed],
+                  name: item.id,
+                  checked: item.completed?,
                 }
                 %p.description(ondblclick=handle_dblclick){
-                  id: item[:id],
-                  class: { completed: item[:completed] },
-                }= item[:description]
-                %button.delete-button(onclick=handle_delete){name: item[:id]}
+                  id: item.id,
+                  class: { completed: item.completed? },
+                }= item.description
+                %button.delete-button(onclick=handle_delete){name: item.id}
     %footer
       .footer-grid
         .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
