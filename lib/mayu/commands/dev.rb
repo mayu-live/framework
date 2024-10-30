@@ -15,19 +15,17 @@ module Mayu
 
         Sync do
           Environment.with(:development) do |environment|
-            Async do
-              environment.modules.generate_assets(
-                environment.assets_dir,
-                concurrency: 1,
-                forever: true
-              )
-            end
+            environment.modules.generate_assets(
+              environment.assets_dir,
+              concurrency: 1,
+              forever: true
+            )
 
             Mayu::Server.new(environment).run.wait
-          rescue => e
-            Console.logger(self, e)
-            raise
           end
+        rescue => e
+          Console.logger(self, e)
+          raise
         end
       end
     end
