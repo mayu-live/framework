@@ -20,11 +20,13 @@ module Mayu
     class System
       CURRENT_KEY = :modules_system
 
-      def self.use(root, **options, &)
-        new(root, **options).use(&)
+      def self.current
+        Thread.current.thread_variable_get(CURRENT_KEY)
       end
 
-      def self.current = Fiber[CURRENT_KEY]
+      def self.use(root, **, &)
+        new(root, **).use(&)
+      end
 
       def self.import(path, source) = current.import(path, source)
 
@@ -47,6 +49,19 @@ module Mayu
         @mods = {}
       end
 
+      def use(&)
+        if self.class.current
+          raise "There is already an active #{self.class.name}"
+        end
+
+        begin
+          Thread.current.thread_variable_set(CURRENT_KEY, self)
+          yield self
+        ensure
+          Thread.current.thread_variable_set(CURRENT_KEY, nil)
+        end
+      end
+
       def wait_for_reload
         @on_reload.wait
       end
@@ -65,18 +80,6 @@ module Mayu
             .each_value { _1.instance_variable_set(:@system, self) }
             .each_value { _1::Exports }
         end
-      end
-
-      def use!
-        Fiber[CURRENT_KEY] = self
-      end
-
-      def use(&)
-        prev = Fiber[CURRENT_KEY]
-        Fiber[CURRENT_KEY] = self
-        yield self
-      ensure
-        Fiber[CURRENT_KEY] = prev
       end
 
       def read_source(path)
