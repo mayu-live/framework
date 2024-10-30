@@ -117,7 +117,10 @@ module Mayu
     end
 
     def run_watcher
-      yield and return unless config.server.hmr?
+      unless config.server.hmr?
+        yield
+        return
+      end
 
       task =
         Async do
