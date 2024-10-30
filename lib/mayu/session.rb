@@ -57,10 +57,14 @@ module Mayu
         Runtime.init(
           resolve_route(@request_info.path),
           metrics: @environment.metrics,
-          runtime_js: environment.runtime_js_for_session_id(@id)
+          runtime_js: init_js_path
         )
 
       @last_ping = Async::Clock.now
+    end
+
+    def init_js_path
+      "/.mayu/init.js##{@id}"
     end
 
     def resume_transferred(environment)

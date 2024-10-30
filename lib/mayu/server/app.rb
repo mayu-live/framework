@@ -37,6 +37,10 @@ module Mayu
         "immutable"
       ].join(", ").freeze
 
+      ASSET_CACHE_CONTROL_HEADER = {
+        "cache-control": ASSET_CACHE_CONTROL
+      }.freeze
+
       def initialize(environment)
         @environment = environment
         @stopping = false
@@ -52,6 +56,8 @@ module Mayu
         )
       end
 
+      SESSION_PATH_RE = %r{\A/.mayu/session/(?<session_id>[[:alnum:]]+)\z}
+
       def call(request)
         return text_response(503, "Server is stopping") if @stopping
 
@@ -62,26 +68,19 @@ module Mayu
           handle_favicon(request)
         in { path: "/.mayu", method: "OPTIONS" }
           handle_options(request)
-        in path: %r{\A\/.mayu\/runtime\/.+\.js(\.map)?}
+        in { method: "GET", path: "/.mayu/init.js" }
+          handle_init_js(request)
+        in path: %r{\A/.mayu/runtime/.+\.js(\.map)?}
           handle_script(request)
         in { path: %r{\A/\.mayu/assets/(.+)\z}, method: "GET" }
           handle_asset(request)
-        in {
-             method: "GET",
-             path: %r{\/.mayu\/session\/(?<session_id>[[:alnum:]]+)}
-           }
+        in { method: "GET", path: SESSION_PATH_RE }
           handle_session_resume(request, $~[:session_id])
-        in {
-             method: "POST",
-             path: %r{\/.mayu\/session\/(?<session_id>[[:alnum:]]+)}
-           }
+        in { method: "POST", path: SESSION_PATH_RE }
           handle_session_transfer(request, $~[:session_id])
-        in {
-             path: %r{\/.mayu\/session\/(?<session_id>[[:alnum:]]+)},
-             method: "PATCH"
-           }
+        in { method: "PATCH", path: SESSION_PATH_RE }
           handle_session_event(request, $~[:session_id])
-        in method: "GET"
+        in method: "GET" if is_new_session_request?(request)
           handle_session_start(request)
         else
           handle_404(request)
@@ -92,7 +91,7 @@ module Mayu
         error_response(403, "Session id mismatch", **origin_header(request))
       rescue Session::Errors::InvalidTokenError
         error_response(403, "Invalid token", **origin_header(request))
-      rescue Cookies::TokenCookieNotSetError
+      rescue Cookies::TokenCookieNotSetError => e
         error_response(403, "Token cookie not set", **origin_header(request))
       rescue Errno::ENOENT => e
         text_response(
@@ -114,15 +113,35 @@ module Mayu
 
       private
 
+      def is_new_session_request?(request)
+        !request.path.start_with?("/.mayu") &&
+          request.headers["accept"].include?("text/html")
+      end
+
       # Mayu
 
       def handle_options(request)
         response(204, **ALLOW_HEADERS, **origin_header(request))
       end
 
+      def handle_init_js(request)
+        Protocol::HTTP::Response[
+          200,
+          {
+            "content-type": "application/javascript",
+            "cache-control": "no-store",
+            **origin_header(request)
+          },
+          @environment.init_js_body
+        ]
+      end
+
       def handle_script(request)
         path =
-          Pathname.new(request.path).relative_path_from("/.mayu/runtime").to_s
+          Pathname
+            .new(request.path)
+            .relative_path_from("/.mayu/runtime")
+            .then { File.absolute_path(_1, "/") }
 
         file = @client_files.get(path)
 
@@ -140,6 +159,7 @@ module Mayu
         response(
           200,
           file.encoded_content.content,
+          "cache-control": ASSET_CACHE_CONTROL,
           **file.headers,
           **origin_header(request)
         )
@@ -183,7 +203,7 @@ module Mayu
         send_file(
           File.read(File.join(@environment.app_dir, "favicon.png")),
           "image/png",
-          origin_header(request)
+          { **origin_header(request), **ASSET_CACHE_CONTROL_HEADER }
         )
       end
 
@@ -201,7 +221,6 @@ module Mayu
           )
 
         @sessions.store(session)
-
         @environment.metrics.session_init_count.increment
 
         body = session.render.to_html
@@ -218,11 +237,19 @@ module Mayu
 
       def link_header(session)
         [
-          "<#{@environment.runtime_js_for_session_id(session.id)}>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high",
+          # "<%s>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high" %
+          #   escape_link_header_path(session.init_js_path),
+          "<%s>; rel=modulepreload; as=script; crossorigin=same-origin; fetchpriority=high" %
+            escape_link_header_path(@environment.runtime_js_path),
           *session.styles.map do
-            "</.mayu/assets/#{CGI.escape_uri_component(_1)}>; rel=preload; as=style"
+            "<%s>; rel=preload; as=style" %
+              escape_link_header_path("/.mayu/assets/#{_1}")
           end
         ].join(", ")
+      end
+
+      def escape_link_header_path(path)
+        path.gsub("<", "%3C").gsub(">", "%3E")
       end
 
       def handle_session_transfer(request, session_id)
@@ -274,6 +301,8 @@ module Mayu
         }
 
         if session.running?
+          Console.logger.error(self, "already running")
+
           return(
             error_response(
               409,
@@ -372,17 +401,17 @@ module Mayu
       end
 
       def origin_header(request)
-        { "access-control-allow-origin": request.headers["origin"] }
+        if request.headers["origin"] in [origin]
+          { "access-control-allow-origin": origin }
+        else
+          {}
+        end
       end
 
       def send_file(content, content_type, headers = {})
         Protocol::HTTP::Response[
           200,
-          {
-            "content-type": content_type,
-            "content-length": content.bytesize,
-            **headers
-          },
+          { "content-type": content_type, **headers },
           [content]
         ]
       end

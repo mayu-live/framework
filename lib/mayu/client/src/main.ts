@@ -198,7 +198,15 @@ function createExtensionCodec() {
   return extensionCodec;
 }
 
-function main() {
+export default function init(sessionId: string) {
+  if (window.Mayu) {
+    console.error(
+      "%cwindow.Mayu is already defined",
+      "font-size: 1.5em; color: #c00;"
+    );
+    throw "window.Mayu is already defined";
+  }
+
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(`
   ::view-transition-old(root),
@@ -212,16 +220,6 @@ function main() {
 
   window.Mayu = new Mayu();
 
-  const sessionId = import.meta.url.split("#").at(-1);
   const endpoint = `${SESSION_PATH}/${sessionId}`;
   startPatchStream(runtime, endpoint);
-}
-
-if (window.Mayu) {
-  console.error(
-    "%cwindow.Mayu is already defined",
-    "font-size: 1.5em; color: #c00;"
-  );
-} else {
-  main();
 }

@@ -26,7 +26,8 @@ module Mayu
     attr_reader :pages_dir
     attr_reader :assets_dir
     attr_reader :client_path
-    attr_reader :runtime_js
+    attr_reader :runtime_js_path
+    attr_reader :init_js_body
     attr_reader :modules
     attr_reader :router
     attr_reader :marshaller
@@ -46,7 +47,12 @@ module Mayu
       @client_path = File.join(__dir__, "client", "dist")
       @assets_dir = File.join(config.root, ".assets")
 
-      @runtime_js = load_runtime_js_path
+      @runtime_js_path = load_runtime_js_path
+      @init_js_body = <<~JS.freeze
+        import init from #{JSON.generate(@runtime_js_path)};
+        const sessionId = new URL(import.meta.url).hash.slice(1);
+        init(sessionId);
+      JS
 
       @metrics = Metrics::AppMetrics.setup(Prometheus::Client.registry)
 
@@ -58,10 +64,6 @@ module Mayu
 
       @router = router || Mayu::Routes::Router.build(@pages_dir)
       @modules = modules || Modules::System.new(@app_dir, **SYSTEM_CONFIG)
-    end
-
-    def runtime_js_for_session_id(session_id)
-      [runtime_js, session_id].join("#")
     end
 
     def asset_path(filename)
