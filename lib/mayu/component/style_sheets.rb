@@ -11,10 +11,11 @@ require_relative "fetch"
 module Mayu
   module Component
     class StyleSheets
-      def initialize(component, style_sheets)
+      def initialize(component, style_sheets, logger: nil)
         @component = component
         @style_sheets = style_sheets
         @classes = merge_classes(style_sheets.map(&:classes))
+        @logger = logger
       end
 
       def each(&)
@@ -78,13 +79,13 @@ module Mayu
 
         available = @classes.keys.reject { _1.start_with?("__") }
 
-        Console.logger.error(
+        logger.warn(
           @component,
           format(<<~MSG, join_class_names(missing), join_class_names(available))
-              Could not find classes: \e[1;31m%s\e[0m
-              Available class names:
-              \e[1;33m%s\e[0m
-              MSG
+            Could not find classes: \e[1;31m%s\e[0m
+            Available class names:
+            \e[1;33m%s\e[0m
+          MSG
         )
 
         @warned = true
@@ -92,6 +93,10 @@ module Mayu
 
       def join_class_names(class_names)
         class_names.map { ".#{_1}" }.join(", ")
+      end
+
+      def logger
+        @logger || Console.logger
       end
     end
   end

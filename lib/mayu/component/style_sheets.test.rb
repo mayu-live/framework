@@ -5,11 +5,14 @@
 # License: AGPL-3.0
 
 require "minitest/autorun"
+# require "minitest/mock"
 require_relative "style_sheets"
 
 class Mayu::Component::StyleSheets::Test < Minitest::Test
   def test_classes
     component = Object.new
+    logger = Minitest::Mock.new
+
     style_sheets =
       Mayu::Component::StyleSheets.new(
         component,
@@ -34,7 +37,8 @@ class Mayu::Component::StyleSheets::Test < Minitest::Test
               hello: "hello2"
             }
           ]
-        ]
+        ],
+        logger:
       )
 
     assert_equal(%w[item], style_sheets[:item])
@@ -43,9 +47,12 @@ class Mayu::Component::StyleSheets::Test < Minitest::Test
     assert_equal(%w[hello1 hello2], style_sheets[:hello])
     assert_equal(%w[tag-li foobar], style_sheets[:__li, "foobar" => true])
 
-    assert_output(nil, /Could not find classes:/) do
-      style_sheets[:non_existant]
-      sleep 0.1
+    logger.expect(:warn, nil) do |c, msg|
+      c == component && msg.start_with?("Could not find classes:")
     end
+
+    style_sheets[:non_existant]
+
+    logger.verify
   end
 end
