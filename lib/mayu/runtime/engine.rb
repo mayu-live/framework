@@ -59,13 +59,13 @@ module Mayu
         @root.styles
       end
 
-      def stop
-        @root.stop
-      end
-
       def start
         clear_patches!
         @root.start
+      end
+
+      def stop
+        @root.stop
       end
 
       def dequeue_patch

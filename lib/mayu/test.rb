@@ -216,7 +216,11 @@ module Mayu
       def start
         @task ||=
           Async do
-            @engine.run do |patch|
+            @engine.start
+
+            loop do
+              patch = @engine.dequeue_patch
+
               puts format(
                      "\e[33m%s\e[0m %s",
                      patch.class.name.split("::").last,
@@ -261,6 +265,7 @@ module Mayu
               end
             end
           ensure
+            @engine.stop
             @task = nil
           end
       end
