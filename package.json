@@ -24,7 +24,7 @@
   ],
   "devDependencies": {
     "@prettier/plugin-ruby": "^3.2.2",
-    "happy-dom": "^8.1.1",
+    "happy-dom": "^15.10.2",
     "husky": "^8.0.2",
     "lint-staged": "^13.1.0",
     "prettier": "^2.8.1"
