@@ -52,6 +52,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "samovar", "~> 2.3"
   spec.add_dependency "terminal-table", "~> 3.0.1"
   spec.add_dependency "prometheus-client", "~> 4.2.3"
+  spec.add_dependency "reline", "~> 0.6.0"
 
   # Server
   spec.add_dependency "brotli", "~> 0.4.0"
@@ -69,7 +70,7 @@ Gem::Specification.new do |spec|
 
   # Modules
   spec.add_dependency "image_size", "~> 3.4"
-  spec.add_dependency "mayu-css", "~> 0.1.2"
+  spec.add_dependency "mayu-css", "~> 0.1.4"
   spec.add_dependency "mime-types", "~> 3.5"
   spec.add_dependency "rake", "~> 13.1"
   spec.add_dependency "syntax_tree", "~> 6.2"
