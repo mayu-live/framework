@@ -21,7 +21,7 @@ module Mayu
             case line
             in BacktraceString
               line
-            in /\A(?<file>.*):(?<line>\d+):in `(?<description>.*)'\z/
+            in /\A(?<file>.*):(?<line>\d+):in [`'](?<description>.*)'\z/
               new($~[:file], $~[:line].to_i, $~[:description])
             end
           end
