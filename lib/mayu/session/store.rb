@@ -8,6 +8,10 @@ require_relative "errors"
 module Mayu
   class Session
     class Store
+      TRANSFER_CONCURRENCY = 4
+      TRANSFER_TIMEOUT_SECONDS = 1
+      SESSION_CLEANUP_INTERVAL_SECONDS = 1
+
       def initialize(metrics:)
         @metrics = metrics
         @sessions = {}
@@ -35,7 +39,35 @@ module Mayu
 
         elapsed =
           Async::Clock.measure do
-            @sessions.each { |session_id, session| session.transfer! }.clear
+            barrier = Async::Barrier.new
+            semaphore =
+              Async::Semaphore.new(TRANSFER_CONCURRENCY, parent: barrier)
+
+            @sessions
+              .each do |session_id, session|
+                semaphore.async do |task|
+                  task.with_timeout(TRANSFER_TIMEOUT_SECONDS) do
+                    Console.logger.info(
+                      self,
+                      "Transferring session #{session_id}"
+                    )
+                    session.transfer!
+                  rescue Async::TimeoutError
+                    Console.logger.error(
+                      self,
+                      "Transfer of session #{session_id} timed out"
+                    )
+                  else
+                    Console.logger.info(
+                      self,
+                      "Transferred session #{session_id}"
+                    )
+                  end
+                end
+              end
+              .clear
+
+            barrier.wait
           end
 
         Console.logger.info(
@@ -52,7 +84,7 @@ module Mayu
         @cleanup_task ||=
           Async do
             loop do
-              sleep 1
+              sleep SESSION_CLEANUP_INTERVAL_SECONDS
 
               @sessions.delete_if do |session_id, session|
                 if session.timed_out?(timeout)
