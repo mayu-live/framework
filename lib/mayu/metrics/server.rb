@@ -23,7 +23,7 @@ module Mayu
       end
 
       def run
-        puts "\e[3m Starting metrics server #{@server.endpoint.url} \e[0m"
+        puts "\e[32mStarting metrics server on \e[34m#{@server.endpoint.url}\e[0m"
         @server.run
       end
 

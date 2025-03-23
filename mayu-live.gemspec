@@ -44,38 +44,37 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Core
-  spec.add_dependency "async", "~> 2.8"
-  spec.add_dependency "async-http", "~> 0.62.0"
-  spec.add_dependency "async-io", "~> 1.41"
+  spec.add_dependency "async", "~> 2.21"
+  spec.add_dependency "async-http", "~> 0.65.0"
   spec.add_dependency "base64", "~> 0.2.0"
   spec.add_dependency "toml", "~> 0.3.0"
   spec.add_dependency "samovar", "~> 2.3"
-  spec.add_dependency "terminal-table", "~> 3.0.1"
-  spec.add_dependency "prometheus-client", "~> 4.2.3"
+  spec.add_dependency "terminal-table", "~> 4.0"
+  spec.add_dependency "prometheus-client", "~> 4.2.4"
   spec.add_dependency "reline", "~> 0.6.0"
 
   # Server
-  spec.add_dependency "brotli", "~> 0.4.0"
-  spec.add_dependency "msgpack", "~> 1.7"
-  spec.add_dependency "rack", ">= 3.0.4.1", "< 3.0.10.0"
+  spec.add_dependency "brotli", "~> 0.6.0"
+  spec.add_dependency "msgpack", "~> 1.8"
+  spec.add_dependency "rack", ">= 3.1.12"
   spec.add_dependency "rbnacl", "~> 7.1"
 
   # Development
   spec.add_dependency "filewatcher", "~> 2.1"
-  spec.add_dependency "localhost", "~> 1.1"
-  spec.add_dependency "minitest", "~> 5.21"
-  spec.add_dependency "nokolexbor", "~> 0.5.4"
-  spec.add_dependency "pry", "~> 0.14.2"
-  spec.add_dependency "rouge", "~> 4.2"
+  spec.add_dependency "localhost", "~> 1.3"
+  spec.add_dependency "minitest", "~> 5.25"
+  spec.add_dependency "nokolexbor", "~> 0.6"
+  spec.add_dependency "pry", "~> 0.15"
+  spec.add_dependency "rouge", "~> 4.5"
 
   # Modules
   spec.add_dependency "image_size", "~> 3.4"
   spec.add_dependency "mayu-css", "~> 0.1.4"
-  spec.add_dependency "mime-types", "~> 3.5"
-  spec.add_dependency "rake", "~> 13.1"
+  spec.add_dependency "mime-types", "~> 3.6"
+  spec.add_dependency "rake", "~> 13.2"
   spec.add_dependency "syntax_tree", "~> 6.2"
   spec.add_dependency "syntax_tree-haml", "~> 4.0"
   spec.add_dependency "syntax_tree-xml", "~> 0.1.0"
   spec.add_dependency "tsort", "~> 0.2.0"
-  spec.add_dependency "rmagick", "~> 6.0.1"
+  spec.add_dependency "rmagick", "~> 6.1.1"
 end

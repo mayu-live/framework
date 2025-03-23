@@ -21,15 +21,11 @@ declare global {
   interface Window {
     Mayu: Mayu;
   }
-
-  interface Document {
-    startViewTransition?: (callback: () => void) => void;
-  }
 }
 
 class Mayu {
   #writer: WritableStreamDefaultWriter<any> | null;
-  #pingTimer: NodeJS.Timeout;
+  #pingTimer: number;
 
   constructor() {
     this.#writer = null;

@@ -8,7 +8,6 @@ module Mayu
     class Exports < Module
       def initialize(mod, source, path)
         @mod = mod
-        @source = source
         @path = path
         module_eval(source, path, 1)
       end

@@ -3,7 +3,7 @@ const TIMEOUT_MS = 1_000 / 30;
 const ThrottledNodes = new WeakMap<EventTarget, ThrottleEntry>();
 
 type ThrottleEntry = {
-  timeout: NodeJS.Timeout;
+  timeout: number;
   cb: (() => void) | null;
 };
 
@@ -18,14 +18,14 @@ export default function throttle(target: EventTarget, cb: () => void) {
   ThrottledNodes.set(target, {
     timeout: setTimeout(() => {
       const entry = ThrottledNodes.get(target);
-      ThrottledNodes.delete(target)
+      ThrottledNodes.delete(target);
       if (entry) {
-        clearTimeout(entry.timeout)
-        entry?.cb?.()
+        clearTimeout(entry.timeout);
+        entry?.cb?.();
       }
     }, TIMEOUT_MS),
-    cb: null
-  })
+    cb: null,
+  });
 
   cb();
 }
