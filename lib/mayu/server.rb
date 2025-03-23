@@ -8,6 +8,7 @@ require "async/barrier"
 require "async/queue"
 require "async/variable"
 require "async/http/endpoint"
+require "async/http/protocol/http"
 require "async/http/protocol/response"
 require "async/http/server"
 
@@ -34,7 +35,7 @@ module Mayu
           @app,
           endpoint,
           scheme: @uri.scheme,
-          protocol: Async::HTTP::Protocol::HTTP2
+          protocol: Async::HTTP::Protocol::HTTP.new
         )
 
       @metrics_server =
@@ -82,7 +83,7 @@ module Mayu
       ssl_context = authority.server_context
 
       ssl_context.alpn_select_cb = ->(protocols) do
-        protocols.include?("h2") ? "h2" : nil
+        protocols.include?("h2") ? "h2" : protocols.first
       end
 
       ssl_context.alpn_protocols = ["h2"]

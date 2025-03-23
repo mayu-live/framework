@@ -44,8 +44,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Core
-  spec.add_dependency "async", "~> 2.21"
-  spec.add_dependency "async-http", "~> 0.65.0"
+  spec.add_dependency "async", "~> 2.23"
+  spec.add_dependency "async-http", "~> 0.88.0"
   spec.add_dependency "base64", "~> 0.2.0"
   spec.add_dependency "toml", "~> 0.3.0"
   spec.add_dependency "samovar", "~> 2.3"

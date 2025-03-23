@@ -220,8 +220,10 @@ module Mayu
             environment: @environment
           )
 
-        @sessions.store(session)
-        @environment.metrics.session_init_count.increment
+        if request.version == "HTTP/2"
+          @sessions.store(session)
+          @environment.metrics.session_init_count.increment
+        end
 
         body = session.render.to_html
 

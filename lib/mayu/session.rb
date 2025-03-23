@@ -33,9 +33,13 @@ module Mayu
     end
 
     RequestInfo =
-      Data.define(:path, :headers) do
+      Data.define(:path, :headers, :http2) do
         def self.from_request(request)
-          new(path: request.path, headers: request.headers.to_h.freeze)
+          new(
+            path: request.path,
+            headers: request.headers.to_h.freeze,
+            http2: request.version == "HTTP/2"
+          )
         end
       end
 
@@ -57,7 +61,7 @@ module Mayu
         Runtime.init(
           resolve_route(@request_info.path),
           metrics: @environment.metrics,
-          runtime_js: init_js_path
+          runtime_js: @request_info.http2 && init_js_path
         )
 
       @last_ping = Async::Clock.now

@@ -60,13 +60,15 @@ module Mayu
             H[
               :__head,
               H[:meta, charset: "utf-8"],
-              H[
-                :script,
-                type: "module",
-                src: @__props[:runtime_js],
-                async: true,
-                key: "main_js"
-              ],
+              if runtime_js = @__props[:runtime_js]
+                H[
+                  :script,
+                  type: "module",
+                  src: runtime_js,
+                  async: true,
+                  key: "runtime_js"
+                ]
+              end,
               title,
               *styles,
               *tags
