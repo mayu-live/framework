@@ -40,6 +40,8 @@
     %dd #{::Mayu::VERSION}
     %dt Ruby
     %dd #{::RUBY_VERSION}
+    %dt YJIT
+    %dd #{RubyVM::YJIT.enabled? ? "enabled" : "disabled"}
 
   %p.badges
     = BADGES.map do |badge|
