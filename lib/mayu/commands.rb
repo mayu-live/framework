@@ -9,6 +9,7 @@ require_relative "commands/transform"
 require_relative "commands/routes"
 require_relative "commands/build"
 require_relative "commands/start"
+require_relative "commands/init"
 require_relative "version"
 
 module Mayu
@@ -20,7 +21,8 @@ module Mayu
                "transform" => Transform,
                "routes" => Routes,
                "build" => Build,
-               "start" => Start
+               "start" => Start,
+               "init" => Init
              }
 
       def call
