@@ -170,7 +170,16 @@ module Mayu
           def text_content = content.to_s
 
           def type = "#text"
-          def to_html = CGI.escape_html(content.to_s)
+
+          def to_html
+            case content.to_s
+            in ""
+              "&ZeroWidthSpace;"
+            else
+              CGI.escape_html(content)
+            end
+          end
+
           def id_node = IdNode[id, type]
 
           def patch_insert = Patches::CreateTextNode[id, content]
