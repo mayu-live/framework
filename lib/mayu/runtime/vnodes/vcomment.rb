@@ -17,6 +17,10 @@ module Mayu
           patch(render.patch_insert)
         end
 
+        def remove
+          patch(render.patch_remove)
+        end
+
         def render
           DOM::Comment[@id, @descriptor.to_s]
         end
