@@ -87,7 +87,7 @@
     ]
   end
 
-.markdown
+.markdown{ class: $class }
   = visit_node(Kramdown::Document.new(Array(__children).join).to_hash_ast)
 
 :css

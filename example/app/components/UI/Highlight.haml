@@ -25,6 +25,9 @@
       Rouge::Lexers::JSON.new
     in :svg
       Rouge::Lexers::XML.new
+    else
+      Console.logger.error(self, "No lexer found for #{language}")
+      nil
     end
   end
 

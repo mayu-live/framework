@@ -1,0 +1,160 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Button = import("/components/Form/Button")
+  Link = import("/components/UI/Link")
+  Message = import("./Message")
+
+  GithubModelsChat = import("/lib/GithubModelsChat")
+
+  MODEL = "Ministral-3B"
+  SYSTEM_MESSAGE = <<~TEXT.strip
+    You are an assistant at https://mayu.live/.
+    Mayu Live is a web framework for making reactive web pages in Ruby.
+    Mayu is inspired by React.
+    Everything runs on the server, except for a tiny little runtime that deals with the connection to the server and updates the DOM.
+    The Github repository can be found at https://github.com/mayu-live/framework.
+    Keep your responses short and concise.
+    Instead of saying how to do something, please refer to the official documentation at https://mayu.live/docs.
+    Documentation for getting started can be found at https://mayu.live/docs/getting-started
+  TEXT
+
+  def initialize
+    @key = 0
+    @error = nil
+    @messages = []
+    @words = []
+    @loading = false
+    @chat = GithubModelsChat.new(model: MODEL, system_message: SYSTEM_MESSAGE)
+  end
+
+  def handle_submit(e)
+    return if @loading
+
+    begin
+      text = e.dig(:currentTarget, :formData, :message)
+
+      @key += 1
+      @loading = true
+
+      @messages = [
+        *@messages,
+        { id: SecureRandom.alphanumeric, role: :user, text: }
+      ]
+
+      chunks = []
+
+      response = @chat.complete(text) do |word|
+        @words = [*@words, word]
+      end
+
+      @words = []
+
+      @messages = [
+        *@messages,
+        {
+          id: SecureRandom.alphanumeric,
+          role: :assistant,
+          text: response
+        }
+      ]
+    rescue GithubModelsChat::UnauthorizedError => e
+      @error = e.message
+    rescue => e
+      Console.logger.error(self, e)
+      @error = "Unknown error"
+    ensure
+      @loading = false
+    end
+  end
+
+%section
+  %Heading(level=2)
+    %span LLM chat
+
+  = if @error
+    %p.error= @error
+  = else
+    .scroller
+      = if @messages.empty?
+        %div.type-your-message
+          %p
+            %strong Type a message to chat with #{MODEL}
+          %p
+            This is using the free tier of
+            %Link(href="https://github.com/marketplace/models")< Github Models
+            \.
+      %ul
+        = unless @words.empty?
+          %Message[:temp]{
+            role: :assistant,
+            text: @words.join.strip
+          }
+        = @messages.reverse.map do |message|
+          %Message[message[:id]]{
+            role: message[:role],
+            text: message[:text],
+          }
+    %form(onsubmit=handle_submit)
+      %input[@key]{
+        autofocus: true,
+        type: "text",
+        name: "message",
+        autocomplete: "off",
+        placeholder: "Type your message here…"
+      }
+      %Button(type="submit"){disabled: @loading} Send
+
+:css
+  section {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 20em;
+    height: 100%;
+    gap: 1em;
+  }
+
+  Heading {
+    margin-bottom: 0;
+  }
+
+  .scroller {
+    position: relative;
+  }
+
+  ul {
+    position: absolute;
+    inset: 0;
+    overflow-y: scroll;
+    font-family: "Roboto Mono";
+    border: 1px solid #0003;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column-reverse;
+    margin: 0;
+    padding: 0;
+  }
+
+  form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1em;
+  }
+
+  input {
+    padding: .5em;
+  }
+
+  .type-your-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+  }
+
+  .error {
+    background-color: var(--material-color-red-50);
+    border: 1px solid var(--material-color-red-500);
+    border-radius: 3px;
+    padding: 1em;
+  }

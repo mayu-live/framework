@@ -1,0 +1,38 @@
+:ruby
+  Markdown = import("/components/Markdown")
+
+%li{class: $role}
+  %strong= $role
+  %Markdown= $text
+
+:css
+  li {
+    display: flex;
+    gap: .5em;
+    padding: .5em;
+    margin: 0;
+  }
+
+  strong {
+    &::after {
+      content: ": ";
+    }
+  }
+
+  .user {
+    background: #0063;
+  }
+
+  .assistant {
+    background: #0603;
+  }
+
+  Markdown {
+    & > :first-child {
+      margin-top: 0;
+    }
+
+    & > :last-child {
+      margin-bottom: 0;
+    }
+  }
