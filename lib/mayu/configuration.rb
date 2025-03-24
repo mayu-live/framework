@@ -7,6 +7,8 @@ require "toml"
 
 module Mayu
   module Configuration
+    DOTENV_FILES = { development: %w[.env .env.local], production: %w[.env] }
+
     class ConfigNotFound < StandardError
     end
 
@@ -80,15 +82,15 @@ module Mayu
         end
       end
 
-    def self.load(path, env)
-      path
+    def self.load(filename, env)
+      filename
         .then { File.read(_1) }
         .then { TOML.load(_1) }
         .fetch(env.to_s) do
           raise EnvironmentNotDefined,
                 "Could not find environment #{env} in #{path}"
         end
-        .then { Config.parse(File.dirname(path), _1) }
+        .then { Config.parse(Dir.pwd, _1) }
     end
 
     def self.with(env, &)
@@ -96,9 +98,16 @@ module Mayu
 
       raise ConfigNotFound, "Could not find mayu.toml in #{Dir.pwd}" unless path
 
-      config = self.load(path, env)
+      root, filename = File.split(path)
 
-      Dir.chdir(File.dirname(path)) { yield config }
+      Dir.chdir(root) do
+        if dotenv_files = DOTENV_FILES[env]
+          require "dotenv"
+          Dotenv.load(*dotenv_files)
+        end
+
+        yield self.load(filename, env)
+      end
     end
 
     def self.find(filename = "mayu.toml", dir = Dir.pwd)

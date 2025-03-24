@@ -9,9 +9,6 @@ module Mayu
       self.description = "Start the development server"
 
       def call
-        require "dotenv"
-        Dotenv.load(".env", ".env.local")
-
         require_relative "../configuration"
         require_relative "../server"
         require_relative "../component"
