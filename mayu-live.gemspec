@@ -66,6 +66,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "nokolexbor", "~> 0.6"
   spec.add_dependency "pry", "~> 0.15"
   spec.add_dependency "rouge", "~> 4.5"
+  spec.add_dependency "dotenv", "~> 3.1.7"
 
   # Modules
   spec.add_dependency "image_size", "~> 3.4"

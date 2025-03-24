@@ -25,6 +25,8 @@ module Mayu
 
         print_yjit_message
 
+        require "dotenv/load"
+
         require_relative "../configuration"
         require_relative "../server"
         require_relative "../component"
