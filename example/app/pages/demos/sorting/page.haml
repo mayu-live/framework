@@ -56,22 +56,24 @@
 :css
   .flex {
     display: flex;
-    gap: .25em;
+    gap: 1em;
     flex-wrap: wrap;
+    margin: 1em 0;
   }
 
   pre {
+    margin: 0;
     font-size: 1rem;
     line-height: 2rem;
   }
 
   ul {
     list-style-type: none;
+    margin: 0;
     padding: 0;
     flex: 1 1 5em;
     gap: 1px;
     font-family: monospace;
-    line-height: 2em;
     border-radius: 3px;
     overflow: hidden;
     box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
@@ -80,9 +82,9 @@
   li {
     margin: 0;
     padding: 0 .5em;
-    background: hsl(var(--color), 50%, 70%);
+    background: hsl(var(--color), 90%, 70%);
     background-image: linear-gradient(0.5turn, #0006 0%, #0003 25%, #0000 100%);
     color: #000;
     font-size: 1rem;
-    line-height: 2em;
+    line-height: 2rem;
   }
