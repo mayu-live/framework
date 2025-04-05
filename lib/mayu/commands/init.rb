@@ -6,7 +6,7 @@
 module Mayu
   module Commands
     class Init < Samovar::Command
-      NewAppConfig = Data.define(:name, :path, :primary_region, :enable_yjit)
+      NewAppConfig = Data.define(:name, :path, :fly_region, :enable_yjit)
 
       self.description = "Initialize a new Mayu app"
 
@@ -14,8 +14,8 @@ module Mayu
         option("--name <string>", "Application name")
 
         option(
-          "--primary-region <string>",
-          "Primary region, https://fly.io/docs/reference/regions/#fly-io-regions"
+          "--fly-region <string>",
+          "Primary fly.io region, https://fly.io/docs/reference/regions/#fly-io-regions"
         )
       end
 
@@ -25,13 +25,13 @@ module Mayu
         require "json"
 
         name = read_app_name
-        primary_region = read_fly_region(options[:primary_region])
+        fly_region = read_fly_region(options[:fly_region])
 
         config =
           NewAppConfig.new(
             name:,
             path: File.expand_path(name),
-            primary_region:,
+            fly_region:,
             enable_yjit: true
           )
 
@@ -75,10 +75,10 @@ module Mayu
         name in /\A[a-z][a-z0-9_-]*\z/i
       end
 
-      def read_fly_region(primary_region = options[:primary_region])
+      def read_fly_region(fly_region = options[:fly_region])
         fly_regions = load_fly_regions
 
-        until valid_fly_region?(fly_regions, primary_region)
+        until valid_fly_region?(fly_regions, fly_region)
           begin
             if fly_regions
               Reline.autocompletion = true
@@ -87,14 +87,14 @@ module Mayu
               end
             end
 
-            primary_region = ask("Primary region:")
+            fly_region = ask("Fly.io primary region:")
           ensure
             Reline.completion_proc = nil
             Reline.autocompletion = false
           end
         end
 
-        primary_region
+        fly_region
       end
 
       def load_fly_regions
@@ -122,7 +122,7 @@ module Mayu
           .sub(/^app\s*=.*/, "app = \"#{config.name}\"")
           .sub(
             /^primary_region\s*=.*/,
-            "primary_region = \"#{config.primary_region}\""
+            "primary_region = \"#{config.fly_region}\""
           )
           .sub(/^(\s+ENABLE_YJIT)\s*=.*/) do
             "#{$1} = #{config.enable_yjit.to_s.inspect}"
