@@ -1,23 +1,33 @@
-# example
+# [mayu.live](https://mayu.live/)
 
-## setup
+## Setup
 
-    bundle install
+Install dependencies
 
-## dev
+```bash
+bundle install
+```
 
-start dev server
+## Development
 
-    bin/mayu dev
+Start the development server
 
-## build
+```bash
+bin/mayu dev
+```
 
-builds a production bundle
+## Build
 
-    bin/mayu build
+Builds a production bundle
 
-## serve
+```bash
+bin/mayu build
+```
 
-loads a production bundle
+## Start
 
-    bin/mayu serve
+Loads a production bundle and starts the server in production mode.
+
+```bash
+bin/mayu start
+```
