@@ -17,18 +17,18 @@ module Mayu
     class Application < Samovar::Command
       nested :command,
              {
+               "init" => Init,
                "dev" => Dev,
                "transform" => Transform,
                "routes" => Routes,
                "build" => Build,
-               "start" => Start,
-               "init" => Init
+               "start" => Start
              }
 
       def call
         print_header
 
-        @command.call if @command
+        @command ? @command.call : print_usage
       end
 
       private
