@@ -36,7 +36,7 @@
     @editing = nil
   end
 
-  def handle_dblclick(e)
+  def handle_start_edit(e)
     e => { currentTarget: { id: } }
     @editing = id
   end
@@ -44,12 +44,19 @@
   def handle_update(e)
     e => { currentTarget: { id:, formData: { description: } } }
 
+    description = description.strip
+
     @editing = nil
-    @items = @items.map do |item|
-      if item.id == id
-        item.with(description:)
-      else
-        item
+
+    if description.empty?
+      @items = @items.reject { |item| item.id == id }
+    else
+      @items = @items.map do |item|
+        if item.id == id
+          item.with(description:)
+        else
+          item
+        end
       end
     end
   end
@@ -137,31 +144,35 @@
     This is an implementation of the classic
     %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
     \.
+    Double-click to edit a todo.
   %Card
     %header
-      %form.form(onsubmit=handle_submit autocomplete="off")[@form_key]
-        %input.toggle-all(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
-        %input.input(required autofocus name="new_todo" placeholder="What needs to be done?" value="")
-    %div
-      %ul
-        = get_filtered_items.map do |item|
-          %li[item.id]
-            = if @editing == item.id
-              %form.edit(onsubmit=handle_update autocomplete="off"){id: item.id}
-                %input.input(type="text" name="description" autofocus onfocus="event.target.select()" required){
-                  initial_value: item.description
-                }
-            = else
-              .row
-                %input.checkbox(type="checkbox" onchange=handle_check){
-                  name: item.id,
-                  checked: item.completed?,
-                }
-                %p.description(ondblclick=handle_dblclick){
-                  id: item.id,
-                  class: { completed: item.completed? },
-                }= item.description
-                %button.delete-button(onclick=handle_delete){name: item.id}
+      %form.add-todo-form(onsubmit=handle_submit autocomplete="off")[@form_key]
+        %input(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
+        %input(type="text" required autofocus name="new_todo" placeholder="What needs to be done?" value="")
+    %ul
+      = get_filtered_items.map do |item|
+        %li[item.id]
+          = if @editing == item.id
+            %input(type="checkbox" disabled){
+              name: item.id,
+              checked: item.completed?,
+            }
+            %form.edit-todo-form(onsubmit=handle_update autocomplete="off"){id: item.id}
+              %input(type="text" name="description" autofocus onfocus="event.target.select()" required){
+                value: item.description
+              }
+            %button.delete-button{name: item.id}
+          = else
+            %input(type="checkbox" onchange=handle_check){
+              name: item.id,
+              checked: item.completed?,
+            }
+            %p.description(ondblclick=handle_start_edit){
+              id: item.id,
+              class: { completed: item.completed? },
+            }= item.description
+            %button.delete-button(onclick=handle_delete){name: item.id}
     %footer
       .footer-grid
         .items-left #{pluralize(get_filtered_items("active").size, "item", "items")} left
@@ -194,21 +205,27 @@
   }
 
   .footer-grid {
-    font-size: .8em;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     align-items: center;
+    font-size: .8em;
   }
 
   ul {
     padding: 0;
     margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
   }
 
   li {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 1em;
     padding: 1em;
     margin: 0;
-    display: block;
     background: linear-gradient(0turn, #0001 0%, #0000 100%);
     border-bottom: 1px solid #0003;
   }
@@ -222,62 +239,60 @@
     transition: opacity 200ms;
     cursor: pointer;
     position: relative;
+
+    &::after {
+      content: "×";
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      color: var(--material-color-red-500);
+      transform: translate(-50%, -50%) scale(2.0);
+    }
+
+    li:is(:hover, :focus-within) & {
+      opacity: 1;
+    }
+
+    &:not([onclick]) {
+      visibility: hidden;
+    }
   }
 
-  .delete-button::after {
-    content: "×";
-    display: block;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(2.0);
+  .add-todo-form {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1em;
   }
 
-  li:hover .delete-button,
-  li:focus-within .delete-button {
-    opacity: 1;
-  }
-
-  .row {
-    padding: 0;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: .5em;
-  }
-
-  .form {
-    composes: row;
-  }
-
-  .edit {
-    composes: row;
-    padding-left: 3em;
+  .edit-todo-form {
   }
 
   .description {
     margin: 0;
-    flex: 1;
   }
 
-  .checkbox {
-    width: 2em;
-    aspect-ratio: 1;
-  }
+  input {
+    &[type="checkbox"] {
+      margin: 0;
+      width: 2em;
+      aspect-ratio: 1;
 
-  .toggle-all {
-    composes: checkbox;
+      &:not([onchange]) {
+        visibility: hidden;
+      }
+    }
+
+    &[type="text"] {
+      display: block;
+      width: 100%;
+      height: 2em;
+    }
   }
 
   .completed {
     text-decoration: line-through;
     opacity: .5;
-  }
-
-  .input {
-    display: block;
-    flex: 1;
-    height: 2em;
   }
 
   .filter {
