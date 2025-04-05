@@ -16,6 +16,6 @@
   = if @error
     %p.error= @error
   = elsif @result
-    %pre= JSON.pretty_generate(@result)
+    %pre= SyntaxTree.format(@result.inspect)
   = else
     %p Loading Pokémon with id #{$id}…
