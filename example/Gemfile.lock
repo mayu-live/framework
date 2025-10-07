@@ -127,7 +127,7 @@ GEM
     pry (0.15.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
-    rack (3.1.12)
+    rack (3.1.17)
     rake (13.2.1)
     rbnacl (7.1.2)
       ffi (~> 1)
