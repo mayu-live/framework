@@ -34,7 +34,7 @@ jobs:
           bundler-cache: true
       - name: Run tests
         run: bundle exec rake test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: profile
           path: profile/
