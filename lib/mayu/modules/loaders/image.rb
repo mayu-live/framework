@@ -98,7 +98,8 @@ module Mayu
 
                 "data:image/#{format};base64,#{Base64.strict_encode64(blob)}"
               end
-              .take
+              .join
+              .value
           end
 
           def build_versions(absolute_path, image_size, hash)

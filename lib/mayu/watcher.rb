@@ -38,27 +38,34 @@ module Mayu
     end
 
     def self.run(system, task: Async::Task.current, &)
-      require "filewatcher"
-
-      Filewatcher.class_eval do
-        # Filewatcher traps signals we need
-        def trap(_signal) = nil
-      end
+      require "listen"
 
       queue = Async::Queue.new
 
       watcher =
-        task.async do
-          fw = Filewatcher.new([system.root])
-          fw.watch do |changes|
-            queue.enqueue(
-              changes.map do |path, event|
-                Events.build(event, system.relative_from_root(path))
+        task.async do |subtask|
+          listener =
+            Listen.to(system.root) do |updated, created, deleted|
+              subtask.async do
+                queue.enqueue(
+                  [
+                    updated.map { Events::Updated[it] },
+                    created.map { Events::Created[it] },
+                    deleted.map { Events::Deleted[it] }
+                  ].flatten
+                )
               end
-            )
-          end
+            end
+
+          Console.logger.info(self, "Starting watcher")
+          listener.start
+          sleep
+        rescue => e
+          Console.logger.error(self, e)
+          raise
         ensure
-          fw.stop
+          Console.logger.info(self, "Stopping watcher")
+          listener&.stop
         end
 
       loop { yield queue.dequeue }

@@ -23,7 +23,8 @@ module Mayu
           exit 1
         end
 
-        print_yjit_message
+        print_jit_message(:YJIT)
+        print_jit_message(:ZJIT)
 
         require "dotenv/load"
 
@@ -45,15 +46,15 @@ module Mayu
 
       private
 
-      def print_yjit_message
-        if RubyVM.const_defined?(:YJIT)
-          if RubyVM::YJIT.enabled?
-            puts "\e[1mYJIT is enabled!\e[0m"
+      def print_jit_message(const_name)
+        if RubyVM.const_defined?(const_name)
+          if RubyVM.const_get(const_name).enabled?
+            puts "\e[1m#{const_name} is enabled!\e[0m"
           else
-            puts "\e[2mYJIT is disabled!\e[0m"
+            puts "\e[2m#{const_name} is disabled!\e[0m"
           end
         else
-          puts "\e[2mYJIT is not supported!\e[0m"
+          puts "\e[2m#{const_name} is not supported\e[0m"
         end
       end
 

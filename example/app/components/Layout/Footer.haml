@@ -41,7 +41,17 @@
     %dt Ruby
     %dd #{::RUBY_VERSION}
     %dt YJIT
-    %dd #{RubyVM::YJIT.enabled? ? "enabled" : "disabled"}
+    %dd
+      = if defined?(RubyVM::YJIT)
+        = RubyVM::YJIT.enabled? ? "enabled" : "disabled"
+      = else
+        = "Unsupported"
+    %dt ZJIT
+    %dd
+      = if defined?(RubyVM::ZJIT)
+        = RubyVM::ZJIT.enabled? ? "enabled" : "disabled"
+      = else
+        = "Unsupported"
 
   %p.badges
     = BADGES.map do |badge|

@@ -19,8 +19,8 @@ module Mayu
                 "Generating #{target_path} from #{source_path}"
               )
 
-              r =
-                Ractor.new(self, target_path) do |generator, target_path|
+              Ractor
+                .new(self, target_path) do |generator, target_path|
                   Magick::Image
                     .read(generator.source_path)
                     .first
@@ -29,8 +29,8 @@ module Mayu
                     .destroy!
                   nil
                 end
-
-              r.take
+                .join
+                .value
             end
 
             build_asset(filename)

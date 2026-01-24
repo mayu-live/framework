@@ -5,6 +5,7 @@
 # License: AGPL-3.0
 
 require "minitest/autorun"
+require "minitest/mock"
 
 require_relative "encrypted_marshal"
 

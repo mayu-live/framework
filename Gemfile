@@ -10,9 +10,11 @@ group :development do
   gem "guard", require: false
   gem "localhost", require: false
   gem "minitest", require: false
+  gem "minitest-mock", require: false
   gem "minitest-reporters", require: false
   gem "prettier", require: false
   gem "rexml", require: false
   gem "ruby-prof", require: false
   gem "benchmark", require: false
+  gem "rb-readline", require: false
 end

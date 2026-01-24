@@ -6,7 +6,7 @@
 
 require "async"
 require "async/notification"
-require "nokolexbor"
+# require "nokolexbor"
 require "syntax_tree/xml"
 require "pry"
 
