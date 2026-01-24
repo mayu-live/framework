@@ -16,5 +16,5 @@ group :development do
   gem "rexml", require: false
   gem "ruby-prof", require: false
   gem "benchmark", require: false
-  gem "rb-readline", require: false
+  gem "pry-coolline", require: false
 end

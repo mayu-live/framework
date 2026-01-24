@@ -14,6 +14,7 @@ PATH
       mime-types (~> 3.7)
       minitest (~> 6.0)
       msgpack (~> 1.8)
+      oga (~> 3.4)
       prometheus-client (~> 4.2.4)
       pry (~> 0.15)
       rack (>= 3.2.4)
@@ -34,6 +35,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     ansi (1.5.0)
+    ast (2.4.3)
     async (2.36.0)
       console (~> 1.29)
       fiber-annotation
@@ -62,6 +64,8 @@ GEM
       fiber-annotation
       fiber-local (~> 1.1)
       json
+    coolline (0.5.0)
+      unicode_utils (~> 1.4)
     dotenv (3.2.0)
     ffi (1.17.1)
     fiber-annotation (0.2.0)
@@ -121,6 +125,9 @@ GEM
       nenv (~> 0.1)
       shellany (~> 0.0)
     observer (0.1.2)
+    oga (3.4)
+      ast
+      ruby-ll (~> 2.1)
     parslet (2.0.0)
     pkg-config (1.5.6)
     prettier (4.0.4)
@@ -142,12 +149,14 @@ GEM
     pry (0.15.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
+    pry-coolline (0.2.6)
+      coolline (~> 0.5)
+      pry (~> 0.13)
     rack (3.2.4)
     rake (13.3.1)
     rb-fsevent (0.11.2)
     rb-inotify (0.11.1)
       ffi (~> 1.0)
-    rb-readline (0.5.5)
     rbnacl (7.1.1)
       ffi
     rbs (3.5.1)
@@ -160,6 +169,9 @@ GEM
       observer (~> 0.1)
       pkg-config (~> 1.4)
     rouge (4.7.0)
+    ruby-ll (2.1.4)
+      ansi
+      ast
     ruby-prof (1.7.0)
     ruby-progressbar (1.13.0)
     samovar (2.4.1)
@@ -190,6 +202,7 @@ GEM
     traces (0.18.2)
     tsort (0.2.0)
     unicode-display_width (2.5.0)
+    unicode_utils (1.4.0)
 
 PLATFORMS
   aarch64-linux
@@ -216,7 +229,7 @@ DEPENDENCIES
   minitest-mock
   minitest-reporters
   prettier
-  rb-readline
+  pry-coolline
   rexml
   ruby-prof
 

@@ -64,6 +64,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "localhost", "~> 1.7"
   spec.add_dependency "minitest", "~> 6.0"
   # spec.add_dependency "nokolexbor", "~> 0.6"
+  spec.add_dependency "oga", "~> 3.4"
   spec.add_dependency "pry", "~> 0.15"
   spec.add_dependency "rouge", "~> 4.7"
   spec.add_dependency "dotenv", "~> 3.2"

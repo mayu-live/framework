@@ -14,6 +14,7 @@ PATH
       mime-types (~> 3.7)
       minitest (~> 6.0)
       msgpack (~> 1.8)
+      oga (~> 3.4)
       prometheus-client (~> 4.2.4)
       pry (~> 0.15)
       rack (>= 3.2.4)
@@ -33,6 +34,8 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
+    ansi (1.5.0)
+    ast (2.4.3)
     async (2.36.0)
       console (~> 1.29)
       fiber-annotation
@@ -110,6 +113,9 @@ GEM
       prism (~> 1.5)
     msgpack (1.8.0)
     observer (0.1.2)
+    oga (3.4)
+      ast
+      ruby-ll (~> 2.1)
     parslet (2.0.0)
     pkg-config (1.6.0)
     prettier_print (1.2.1)
@@ -141,6 +147,9 @@ GEM
       observer (~> 0.1)
       pkg-config (~> 1.4)
     rouge (4.7.0)
+    ruby-ll (2.1.4)
+      ansi
+      ast
     samovar (2.4.1)
       console (~> 1.0)
       mapping (~> 1.0)

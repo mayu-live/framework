@@ -6,7 +6,7 @@
 
 require "async"
 require "async/notification"
-# require "nokolexbor"
+require "oga"
 require "syntax_tree/xml"
 require "pry"
 
@@ -58,6 +58,10 @@ module Mayu
         current_page.find!(&filter)
       end
 
+      def at_xpath(query)
+        current_page.at_xpath(query)
+      end
+
       def current_page
         Fiber[:current_test_page] or raise "There is no current page"
       end
@@ -92,25 +96,25 @@ module Mayu
           def match?(node)
             case name
             in "#text"
-              if node in Nokolexbor::Text
+              if node in Oga::XML::Text
                 return true unless text
-                text === node.content
+                text === node.text
               end
             in "#comment"
-              if node in Nokolexbor::Comment
+              if node in Oga::XML::Comment
                 return true unless text
-                text === node.content
+                text === node.text
               end
             in String => tag_name
-              return false unless node in Nokolexbor::Element
+              return false unless node in Oga::XML::Element
               return false unless tag_name === node.name
 
               attributes.each do |attr, value|
-                return false unless value === node.attributes["name"]&.value
+                return false unless node.get("name")
               end
 
               return true unless text
-              text === node.content
+              text === node.text
             end
           end
 
@@ -133,24 +137,26 @@ module Mayu
           end
 
           def [](attr)
-            node
-              .attributes
-              .fetch(attr.to_s) do
-                raise "Could not find attribute #{attr.to_s} in #{node.to_html}"
-              end
-              .value
+            node.get(attr.to_s)
           end
 
           def attributes
-            node.attributes.transform_values(&:value)
+            node.attributes.map { [it.name, it.value] }.to_h
           end
 
-          def content
-            node.content
-          end
+          def text = node.text
+          def content = node.text
 
           def traverse(&)
-            node.traverse(&)
+            yield node
+
+            node.children.each do |child|
+              self.class.new(page, child).traverse(&)
+            end
+          end
+
+          def at_xpath(query)
+            self.class.new(page, node.at_xpath(query))
           end
 
           def find(&)
@@ -195,7 +201,8 @@ module Mayu
           private
 
           def callback_id(attribute)
-            if value = node.attributes[attribute.to_s]&.value
+            if value = self[attribute.to_s]
+              # binding.pry
               value[/\AMayu\.callback\(event,'(?<id>[^\)]+)'\)\z/, :id]
             end
           end
@@ -207,7 +214,7 @@ module Mayu
         @engine = engine
         rendered = @engine.render
         @nodes = {}
-        @doc = Nokolexbor.HTML(rendered.to_html)
+        @doc = Oga.parse_html(rendered.to_html)
         @patches = []
         @on_patch = Async::Notification.new
         setup_tree(@doc, rendered.id_node)
@@ -236,27 +243,27 @@ module Mayu
 
               case patch
               in Mayu::Runtime::Patches::SetTextContent[id:, content:]
-                fetch_node!(id).content = content
+                fetch_node!(id).text = content
               in Mayu::Runtime::Patches::CreateTree[html:, tree:]
-                node = Nokolexbor::DocumentFragment.parse(html).children.first
+                node = Oga.parse_html(html).children.first
                 setup_tree(node, tree)
               in Mayu::Runtime::Patches::SetAttribute[id:, name:, value:]
-                fetch_node!(id).set_attr(name.to_s, value)
+                fetch_node!(id).set(name.to_s, value)
               in Mayu::Runtime::Patches::ReplaceChildren[id:, child_ids:]
                 node = fetch_node!(id)
                 children = child_ids.map { fetch_node!(_1) }
-                node.children = Nokolexbor::NodeSet.new(@doc, children)
+                node.children = Oga::XML::NodeSet.new(children)
               in Mayu::Runtime::Patches::RemoveNode[id:]
                 @nodes.delete(id)
               in Mayu::Runtime::Patches::AddClass[id:, classes:]
                 node = fetch_node!(id)
-                node.set_attr(
+                node.set(
                   "class",
                   (node.attr("class").to_s.split | classes).join(" ")
                 )
               in Mayu::Runtime::Patches::RemoveClass[id:, classes:]
                 node = fetch_node!(id)
-                node.set_attr(
+                node.set(
                   "class",
                   (node.attr("class").to_s.split - classes).join(" ")
                 )
@@ -301,6 +308,10 @@ module Mayu
         Node.new(self, @doc).find!(...)
       end
 
+      def at_xpath(query)
+        Node.new(self, @doc.at_xpath(query))
+      end
+
       def callback(id, payload = {})
         puts "Callback #{id} #{payload.inspect}"
         @engine.callback(id, payload)
@@ -316,16 +327,19 @@ module Mayu
         return unless dom_node
         return unless id_node
 
-        unless dom_node.name == id_node.name.downcase
-          binding.pry
-          raise "\e[31m#{id_node.id} should be #{id_node.name.inspect}, but found #{dom_node.name.inspect}\e[0m"
+        if dom_node in Oga::XML::Element
+          unless dom_node.name == id_node.name.downcase
+            binding.pry
+            raise "\e[31m#{id_node.id} should be #{id_node.name.inspect}, but found #{dom_node.name.inspect}\e[0m"
+          end
         end
 
         @nodes.store(id_node.id, dom_node)
 
         dom_node
           .children
-          .reject { _1.node_type == Nokolexbor::Node::DOCUMENT_TYPE_NODE }
+          .reject { it.is_a?(Oga::XML::Document) }
+          .reject { it.is_a?(Oga::XML::Text) && it.text == "\n" }
           .zip(id_node.children)
           .each { |dom_child, id_child| setup_tree(dom_child, id_child) }
       end

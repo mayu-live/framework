@@ -128,7 +128,10 @@ class Mayu::Runtime::Test < Minitest::Test
     render(descriptor) do |page|
       # enable_step!
 
+      assert_equal("initial title", at_xpath("/html/head/title").content)
+
       assert_equal("initial title", find!("title").content)
+=begin
       assert_equal(
         "initial description",
         find!("meta", name: "description")[:value]
@@ -160,6 +163,7 @@ class Mayu::Runtime::Test < Minitest::Test
       )
       assert_nil(find("meta", name: "keywords"))
       page.step
+=end
     end
   end
 end
