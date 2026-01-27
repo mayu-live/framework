@@ -31,6 +31,15 @@ module Mayu
           @child.update(patcher, descriptor)
         end
 
+        def start
+          pp [:vany_start, @child.class.name]
+          @child.start
+        end
+
+        def stop
+          @child.stop
+        end
+
         def write_html(out)
           @child.write_html(out)
         end

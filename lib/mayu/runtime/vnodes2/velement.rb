@@ -29,6 +29,14 @@ module Mayu
           @children.update(patcher, @descriptor.children)
         end
 
+        def start
+          @children.start
+        end
+
+        def stop
+          @children.stop
+        end
+
         def write_html(out)
           tag_name = self.tag_name
           attributes = render_attributes

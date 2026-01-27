@@ -27,6 +27,14 @@ module Mayu
           )
         end
 
+        def start
+          @element.start
+        end
+
+        def stop
+          @element.stop
+        end
+
         def write_html(out)
           @element.write_html(out)
         end

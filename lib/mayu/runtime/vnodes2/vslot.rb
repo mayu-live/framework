@@ -22,6 +22,14 @@ module Mayu
           @children.update(patcher, get_children)
         end
 
+        def start
+          @children.start
+        end
+
+        def stop
+          @children.stop
+        end
+
         def write_html(out)
           @children.write_html(out)
         end

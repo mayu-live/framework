@@ -22,15 +22,14 @@ module Mayu
           @is_removed = false
         end
 
-        def task
-          @task || @parent&.task
-        end
+        def task = @task || parent_task
+        def parent_task = @parent&.task || Async::Task.current
 
         def closest(type)
           if type === self
             self
           else
-            @parent&.respond_to?(:closest) ? @parent.closest(type) : nil
+            @parent&.closest(type)
           end
         end
 

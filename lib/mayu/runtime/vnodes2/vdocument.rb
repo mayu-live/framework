@@ -94,6 +94,14 @@ module Mayu
           @html.update(patcher, init_html)
         end
 
+        def start
+          @html.start
+        end
+
+        def stop
+          @html.stop
+        end
+
         def write_html(out)
           out << "<!DOCTYPE html>\n"
           @html.write_html(out)
@@ -109,7 +117,7 @@ module Mayu
         def init_head
           H[
             Head,
-            runtime_js: @parent.runtime_js,
+            runtime_js: @engine.runtime_js,
             styles: @styles,
             descriptors: @head.map(&:children).flatten.compact
           ]

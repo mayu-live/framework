@@ -13,6 +13,8 @@ module Mayu
       class VChildren < Base
         STRING_SEPARATOR = Descriptors::Comment[""]
 
+        private def instance_variables_to_inspect = %i[@id @children]
+
         attr_reader :children
 
         def initialize(descriptor, parent:, engine:)
@@ -24,6 +26,14 @@ module Mayu
           return unless descriptors
           @descriptor = descriptors
           update_children(patcher, @children, descriptors)
+        end
+
+        def start
+          @children.each(&:start)
+        end
+
+        def stop
+          @children.each(&:stop)
         end
 
         def write_html(out)

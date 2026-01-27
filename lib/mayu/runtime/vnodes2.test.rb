@@ -4,6 +4,7 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require "async"
 require "minitest/autorun"
 require "stringio"
 require_relative "../test"
@@ -13,7 +14,46 @@ require_relative "vnodes2/patcher"
 class Mayu::Runtime::VNodes2Test < Minitest::Test
   H = Mayu::Runtime::H
 
-  EngineStub = Struct.new(:runtime_js)
+  class EngineStub
+    attr_reader :runtime_js, :updates
+
+    def initialize(runtime_js)
+      @runtime_js = runtime_js
+      @updates = []
+    end
+
+    def enqueue_update(node)
+      @updates << node
+    end
+
+    def task
+      Async::Task.current
+    end
+  end
+
+  class MountProbe < Mayu::Component::Base
+    attr_reader :mounted, :unmounted
+
+    def mount
+      puts "\e[1mSetting @mounted = true\e[0m"
+      @mounted = true
+    end
+
+    def unmount
+      puts "\e[1mSetting @unmounted = true\e[0m"
+      @unmounted = true
+    end
+
+    def render
+      H[:div, "probe"]
+    end
+  end
+
+  class RenderProbe < Mayu::Component::Base
+    def render
+      H[:section, H[:h2, "Rendered"], H[:p, "From component"]]
+    end
+  end
 
   def test_write_html
     descriptor =
@@ -29,7 +69,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     document =
       Mayu::Runtime::VNodes2::VDocument.new(
         descriptor,
-        parent: engine,
+        parent: nil,
         engine: engine
       )
 
@@ -69,7 +109,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     document =
       Mayu::Runtime::VNodes2::VDocument.new(
         initial,
-        parent: engine,
+        parent: nil,
         engine: engine
       )
 
@@ -101,7 +141,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     document =
       Mayu::Runtime::VNodes2::VDocument.new(
         initial,
-        parent: engine,
+        parent: nil,
         engine: engine
       )
 
@@ -124,5 +164,95 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
 
     refute_nil(set_text)
     assert_equal("World", set_text.content)
+  end
+
+  def test_component_renders_html
+    descriptor = H[:body, H[RenderProbe]]
+
+    engine = EngineStub.new(nil)
+    document =
+      Mayu::Runtime::VNodes2::VDocument.new(
+        descriptor,
+        parent: nil,
+        engine: engine
+      )
+
+    out = StringIO.new
+    document.write_html(out)
+
+    html = out.tap(&:rewind).read
+
+    assert_match(
+      "<section><h2>Rendered</h2><p>From component</p></section>",
+      html
+    )
+  end
+
+  def test_component_start_stop_and_rerender
+    descriptor = H[:body, H[MountProbe]]
+
+    engine = EngineStub.new(nil)
+    document =
+      Mayu::Runtime::VNodes2::VDocument.new(
+        descriptor,
+        parent: nil,
+        engine: engine
+      )
+
+    Async do
+      puts "\e[3mstart\e[0m"
+
+      document.start
+
+      puts "\e[3mafter start\e[0m"
+
+      component = find_component(document, MountProbe)
+      instance = component.instance_variable_get(:@instance)
+      pp instance
+      puts "\e[1mAsserting instance.mounted\e[0m"
+      pp instance
+
+      assert_equal(true, instance.mounted)
+
+      instance.rerender!
+      assert_equal([component], engine.updates)
+
+      document.stop
+      assert_equal(true, instance.unmounted)
+    end.wait
+  end
+
+  private
+
+  def find_component(node, klass)
+    if node.is_a?(Mayu::Runtime::VNodes2::VComponent)
+      instance = node.instance_variable_get(:@instance)
+      return node if instance.is_a?(klass)
+    end
+
+    case node
+    when Mayu::Runtime::VNodes2::VDocument
+      find_component(node.instance_variable_get(:@html), klass)
+    when Mayu::Runtime::VNodes2::VAny
+      find_component(node.instance_variable_get(:@child), klass)
+    when Mayu::Runtime::VNodes2::VComponent
+      find_component(node.instance_variable_get(:@children), klass)
+    when Mayu::Runtime::VNodes2::VElement
+      find_component(node.instance_variable_get(:@children), klass)
+    when Mayu::Runtime::VNodes2::VCustomElement
+      find_component(node.instance_variable_get(:@element), klass)
+    when Mayu::Runtime::VNodes2::VSlot, Mayu::Runtime::VNodes2::VStateless
+      find_component(node.instance_variable_get(:@children), klass)
+    when Mayu::Runtime::VNodes2::VChildren
+      node
+        .instance_variable_get(:@children)
+        .each do |child|
+          found = find_component(child, klass)
+          return found if found
+        end
+      nil
+    else
+      nil
+    end
   end
 end

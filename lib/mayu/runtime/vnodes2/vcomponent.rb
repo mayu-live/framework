@@ -3,6 +3,8 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require "async"
+
 require_relative "base"
 require_relative "vchildren"
 
@@ -46,12 +48,33 @@ module Mayu
             VChildren.new(render_children, parent: self, engine: @engine)
         end
 
+        private def instance_variables_to_inspect =
+          [:@id, @instance, :@children]
+
         attr_reader :context
 
         def start
+          pp [:component_start, @instance.class.name]
+          parent_task&.async do |task|
+            @task = task
+
+            vnode = self
+            @instance.define_singleton_method(:rerender!) do
+              vnode.engine.enqueue_update(vnode)
+            end
+
+            @children.start
+            puts "Calling @instance.mount"
+            pp [:calling_mount, @instance.class.name]
+            @instance.mount
+          end
         end
 
         def stop
+          @children.stop
+          @task&.stop
+          @task = nil
+          @instance.unmount
         end
 
         def update(patcher, descriptor = nil)
