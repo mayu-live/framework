@@ -26,7 +26,7 @@ module Mayu
         end
 
         def start
-          @updater.start
+          @updater.start(engine: self)
           @root.start
         end
 
@@ -37,6 +37,10 @@ module Mayu
 
         def enqueue_update(vnode)
           @updater.enqueue(vnode)
+        end
+
+        def flush_head(patcher)
+          @root.flush_head(patcher)
         end
 
         def dequeue_patches

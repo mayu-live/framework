@@ -74,6 +74,32 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     end
   end
 
+  class HeadToggleProbe < Mayu::Component::Base
+    def initialize
+      @mode = :a
+    end
+
+    def set_mode(mode)
+      @mode = mode
+      rerender!
+    end
+
+    def render
+      case @mode
+      when :a
+        [
+          H[:head, H[:title, "A"]],
+          H[:head, H[:title, "B"]],
+          H[:main, "content"]
+        ]
+      when :b
+        [H[:head, H[:title, "C"]], H[:main, "content"]]
+      else
+        [H[:main, "content"]]
+      end
+    end
+  end
+
   class MountUpdateProbe < Mayu::Component::Base
     def initialize
       @value = "before"
@@ -256,6 +282,36 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     html = render_html(engine.root)
 
     assert_match("<title>Static</title>", html)
+  end
+
+  def test_head_updates_with_multiple_titles
+    descriptor = H[:body, H[HeadToggleProbe]]
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+    html = render_html(engine.root)
+    assert_equal(1, html.scan("<title>").length)
+    assert_match("<title>B</title>", html)
+
+    component = find_component(engine.root, HeadToggleProbe)
+    instance = component.instance_variable_get(:@instance)
+
+    Async do
+      engine.start
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.set_mode(:b)
+
+      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      refute_nil(patches)
+      refute_empty(patches)
+
+      html = render_html(engine.root)
+      assert_equal(1, html.scan("<title>").length)
+      assert_match("<title>C</title>", html)
+    ensure
+      engine.stop
+    end.wait
   end
 
   def test_component_start_stop_and_rerender

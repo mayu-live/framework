@@ -86,6 +86,7 @@ module Mayu
           @listeners = {}
           @styles = Set.new
           @head = Set.new
+          @head_dirty = false
           @html = VComponent.new(init_html, parent: self, engine: @engine)
         end
 
@@ -99,10 +100,18 @@ module Mayu
 
         def add_head(vnode)
           @head.add(vnode)
+          @head_dirty = true
         end
 
         def remove_head(vnode)
           @head.delete(vnode)
+          @head_dirty = true
+        end
+
+        def flush_head(patcher)
+          return unless @head_dirty
+          @html.update(patcher, init_html)
+          @head_dirty = false
         end
 
         def start

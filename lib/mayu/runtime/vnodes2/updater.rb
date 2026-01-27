@@ -17,9 +17,11 @@ module Mayu
           @queue = Async::Queue.new
           @output_queue = output_queue
           @task = nil
+          @engine = nil
         end
 
-        def start(parent_task: Async::Task.current)
+        def start(parent_task: Async::Task.current, engine: nil)
+          @engine = engine
           @task =
             parent_task.async do
               loop do
@@ -29,6 +31,7 @@ module Mayu
 
                 patcher = Patcher.new
                 batch.uniq.each { |node| node.update(patcher) }
+                @engine&.flush_head(patcher)
 
                 @output_queue.enqueue(patcher.patches)
               end
