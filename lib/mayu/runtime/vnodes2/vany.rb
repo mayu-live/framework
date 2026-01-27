@@ -32,7 +32,6 @@ module Mayu
         end
 
         def start
-          pp [:vany_start, @child.class.name]
           @child.start
         end
 

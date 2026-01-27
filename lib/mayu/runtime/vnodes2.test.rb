@@ -35,12 +35,10 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     attr_reader :mounted, :unmounted
 
     def mount
-      puts "\e[1mSetting @mounted = true\e[0m"
       @mounted = true
     end
 
     def unmount
-      puts "\e[1mSetting @unmounted = true\e[0m"
       @unmounted = true
     end
 
@@ -199,18 +197,20 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         engine: engine
       )
 
+    out = StringIO.new
+    document.write_html(out)
+
+    html = out.tap(&:rewind).read
+
     Async do
-      puts "\e[3mstart\e[0m"
-
       document.start
-
-      puts "\e[3mafter start\e[0m"
 
       component = find_component(document, MountProbe)
       instance = component.instance_variable_get(:@instance)
-      pp instance
-      puts "\e[1mAsserting instance.mounted\e[0m"
-      pp instance
+
+      wait_until { instance.mounted }
+
+      instance = component.instance_variable_get(:@instance)
 
       assert_equal(true, instance.mounted)
 
@@ -223,6 +223,15 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
   end
 
   private
+
+  def wait_until(timeout: 0.2)
+    deadline = Async::Clock.now + timeout
+
+    until yield
+      raise "timed out waiting for condition" if Async::Clock.now >= deadline
+      Async::Task.current.sleep(0)
+    end
+  end
 
   def find_component(node, klass)
     if node.is_a?(Mayu::Runtime::VNodes2::VComponent)

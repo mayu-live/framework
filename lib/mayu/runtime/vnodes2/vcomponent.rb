@@ -54,7 +54,6 @@ module Mayu
         attr_reader :context
 
         def start
-          pp [:component_start, @instance.class.name]
           parent_task&.async do |task|
             @task = task
 
@@ -64,8 +63,6 @@ module Mayu
             end
 
             @children.start
-            puts "Calling @instance.mount"
-            pp [:calling_mount, @instance.class.name]
             @instance.mount
           end
         end
