@@ -91,7 +91,10 @@ module Mayu
         def update(_patcher)
         end
 
-        def write_html(_out)
+        def write_html(out)
+          out << "<!DOCTYPE html>\n"
+          @html.write_html(out)
+          out << "\n"
         end
 
         private

@@ -28,7 +28,8 @@ module Mayu
         def update(_patcher)
         end
 
-        def write_html(_out)
+        def write_html(out)
+          @child.write_html(out)
         end
 
         def dom_id_tree

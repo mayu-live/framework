@@ -12,7 +12,8 @@ module Mayu
         def update(_patcher)
         end
 
-        def write_html(_out)
+        def write_html(out)
+          out << "<!--#{escape_comment(@descriptor.to_s)}-->"
         end
 
         def dom_id
@@ -21,6 +22,12 @@ module Mayu
 
         def dom_id_tree
           dom_id
+        end
+
+        private
+
+        def escape_comment(str)
+          str.to_s.gsub(/--/, "&#45;&#45;")
         end
       end
     end

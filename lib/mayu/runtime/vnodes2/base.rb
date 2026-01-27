@@ -30,7 +30,7 @@ module Mayu
           if type === self
             self
           else
-            @parent&.closest(type)
+            @parent&.respond_to?(:closest) ? @parent.closest(type) : nil
           end
         end
 

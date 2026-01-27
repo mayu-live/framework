@@ -3,6 +3,8 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require "cgi"
+
 require_relative "base"
 
 module Mayu
@@ -12,7 +14,11 @@ module Mayu
         def update(_patcher)
         end
 
-        def write_html(_out)
+        def write_html(out)
+          content = @descriptor.to_s
+          out << (
+            content.empty? ? "&ZeroWidthSpace;" : CGI.escape_html(content)
+          )
         end
 
         def dom_id
