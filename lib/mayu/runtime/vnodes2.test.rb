@@ -71,8 +71,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         engine: engine
       )
 
-    out = StringIO.new
-    document.write_html(out)
+    html = render_html(document)
 
     assert_equal(
       "<!DOCTYPE html>\n" \
@@ -81,7 +80,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         "<main><p>Welcome</p></main>" \
         "<footer><p>Copyright</p></footer>" \
         "<mayu-ping ping=\"N/A\"></mayu-ping></body></html>\n",
-      out.tap(&:rewind).read
+      html
     )
   end
 
@@ -175,10 +174,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         engine: engine
       )
 
-    out = StringIO.new
-    document.write_html(out)
-
-    html = out.tap(&:rewind).read
+    html = render_html(document)
 
     assert_match(
       "<section><h2>Rendered</h2><p>From component</p></section>",
@@ -197,10 +193,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         engine: engine
       )
 
-    out = StringIO.new
-    document.write_html(out)
-
-    html = out.tap(&:rewind).read
+    html = render_html(document)
 
     Async do
       document.start
@@ -231,6 +224,12 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
       raise "timed out waiting for condition" if Async::Clock.now >= deadline
       Async::Task.current.sleep(0)
     end
+  end
+
+  def render_html(document)
+    out = StringIO.new
+    document.write_html(out)
+    out.tap(&:rewind).read
   end
 
   def find_component(node, klass)
