@@ -75,14 +75,15 @@ module Mayu
         end
 
         def update(patcher, descriptor = nil)
-          return unless descriptor
-          @descriptor = descriptor
+          if descriptor
+            @descriptor = descriptor
 
-          @instance.instance_variable_set(
-            :@__children,
-            @descriptor.children.freeze
-          )
-          @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
+            @instance.instance_variable_set(
+              :@__children,
+              @descriptor.children.freeze
+            )
+            @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
+          end
 
           @children.update(patcher, render_children)
         end

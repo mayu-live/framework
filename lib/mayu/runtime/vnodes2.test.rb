@@ -9,6 +9,7 @@ require "minitest/autorun"
 require "stringio"
 require_relative "../test"
 require_relative "vnodes2/vdocument"
+require_relative "vnodes2/engine"
 require_relative "vnodes2/patcher"
 
 class Mayu::Runtime::VNodes2Test < Minitest::Test
@@ -50,6 +51,21 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
   class RenderProbe < Mayu::Component::Base
     def render
       H[:section, H[:h2, "Rendered"], H[:p, "From component"]]
+    end
+  end
+
+  class MountUpdateProbe < Mayu::Component::Base
+    def initialize
+      @value = "before"
+    end
+
+    def mount
+      @value = "after"
+      rerender!
+    end
+
+    def render
+      H[:p, @value]
     end
   end
 
@@ -212,6 +228,27 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
 
       document.stop
       assert_equal(true, instance.unmounted)
+    end.wait
+  end
+
+  def test_component_update_queue_emits_patches
+    descriptor = H[:body, H[MountUpdateProbe]]
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+    Async do
+      engine.start
+
+      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      set_text =
+        patches.find do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+        end
+
+      refute_nil(set_text)
+      assert_equal("after", set_text.content)
+    ensure
+      engine.stop
     end.wait
   end
 
