@@ -31,6 +31,7 @@ module Mayu
 
                 patcher = Patcher.new
                 batch.uniq.each { |node| node.update(patcher) }
+                @engine&.flush_dirty_elements(patcher)
                 @engine&.flush_head(patcher)
 
                 @output_queue.enqueue(patcher.patches)

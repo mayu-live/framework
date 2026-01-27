@@ -52,6 +52,10 @@ module Mayu
           @children.map(&:dom_id_tree)
         end
 
+        def dom_id_list
+          dom_id_tree.flatten.compact
+        end
+
         private
 
         def build_children(descriptors)
@@ -61,6 +65,7 @@ module Mayu
         end
 
         def update_children(patcher, old_children, descriptors)
+          previous_ids = dom_id_list_for(old_children)
           diff = diff_children(old_children, normalize_descriptors(descriptors))
 
           @children =
@@ -77,6 +82,8 @@ module Mayu
             end
 
           diff[:removed].each { |removed| remove_node(patcher, removed) }
+
+          mark_parent_children_dirty if previous_ids != dom_id_list
         end
 
         def diff_children(old_children, descriptors)
@@ -130,6 +137,14 @@ module Mayu
             .map { Descriptors.descriptor_or_string(_1) }
             .compact
             .then { insert_comments_between_strings(_1) }
+        end
+
+        def mark_parent_children_dirty
+          closest(VElement)&.mark_children_dirty
+        end
+
+        def dom_id_list_for(children)
+          children.map(&:dom_id_tree).flatten.compact
         end
 
         def insert_comments_between_strings(descriptors)

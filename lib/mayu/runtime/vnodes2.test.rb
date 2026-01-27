@@ -15,23 +15,6 @@ require_relative "vnodes2/patcher"
 class Mayu::Runtime::VNodes2Test < Minitest::Test
   H = Mayu::Runtime::H
 
-  class EngineStub
-    attr_reader :runtime_js, :updates
-
-    def initialize(runtime_js)
-      @runtime_js = runtime_js
-      @updates = []
-    end
-
-    def enqueue_update(node)
-      @updates << node
-    end
-
-    def task
-      Async::Task.current
-    end
-  end
-
   class MountProbe < Mayu::Component::Base
     attr_reader :mounted, :unmounted
 
@@ -124,16 +107,8 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         H[:footer, H[:p, "Copyright"]]
       ]
 
-    engine = EngineStub.new(nil)
-
-    document =
-      Mayu::Runtime::VNodes2::VDocument.new(
-        descriptor,
-        parent: nil,
-        engine: engine
-      )
-
-    html = render_html(document)
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    html = render_html(engine.root)
 
     assert_equal(
       "<!DOCTYPE html>\n" \
@@ -163,14 +138,8 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         H[:section, H[:h2, "News"]]
       ]
 
-    engine = EngineStub.new(nil)
-
-    document =
-      Mayu::Runtime::VNodes2::VDocument.new(
-        initial,
-        parent: nil,
-        engine: engine
-      )
+    engine = Mayu::Runtime::VNodes2::Engine.new(initial)
+    document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new
 
@@ -196,13 +165,8 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     initial = H[:body, H[:p, "Hello", class: ["greeting"]]]
     updated = H[:body, H[:p, "World", class: ["farewell"]]]
 
-    engine = EngineStub.new(nil)
-    document =
-      Mayu::Runtime::VNodes2::VDocument.new(
-        initial,
-        parent: nil,
-        engine: engine
-      )
+    engine = Mayu::Runtime::VNodes2::Engine.new(initial)
+    document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new
 
@@ -228,15 +192,8 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
   def test_component_renders_html
     descriptor = H[:body, H[RenderProbe]]
 
-    engine = EngineStub.new(nil)
-    document =
-      Mayu::Runtime::VNodes2::VDocument.new(
-        descriptor,
-        parent: nil,
-        engine: engine
-      )
-
-    html = render_html(document)
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    html = render_html(engine.root)
 
     assert_match(
       "<section><h2>Rendered</h2><p>From component</p></section>",
@@ -317,18 +274,12 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
   def test_component_start_stop_and_rerender
     descriptor = H[:body, H[MountProbe]]
 
-    engine = EngineStub.new(nil)
-    document =
-      Mayu::Runtime::VNodes2::VDocument.new(
-        descriptor,
-        parent: nil,
-        engine: engine
-      )
-
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    document = engine.root
     html = render_html(document)
 
     Async do
-      document.start
+      engine.start
 
       component = find_component(document, MountProbe)
       instance = component.instance_variable_get(:@instance)
@@ -340,9 +291,12 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
       assert_equal(true, instance.mounted)
 
       instance.rerender!
-      assert_equal([component], engine.updates)
 
-      document.stop
+      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      assert_equal([], patches)
+
+      engine.stop
       assert_equal(true, instance.unmounted)
     end.wait
   end

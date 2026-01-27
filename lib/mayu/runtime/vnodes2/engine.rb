@@ -4,6 +4,7 @@
 # License: AGPL-3.0
 
 require "async/queue"
+require "set"
 
 require_relative "vdocument"
 require_relative "updater"
@@ -18,6 +19,7 @@ module Mayu
           @runtime_js = runtime_js
           @output_queue = Async::Queue.new
           @updater = Updater.new(@output_queue)
+          @dirty_elements = Set.new
           @root = VDocument.new(descriptor, parent: nil, engine: self)
         end
 
@@ -41,6 +43,18 @@ module Mayu
 
         def flush_head(patcher)
           @root.flush_head(patcher)
+        end
+
+        def register_dirty_element(element)
+          @dirty_elements.add(element)
+        end
+
+        def flush_dirty_elements(patcher)
+          return if @dirty_elements.empty?
+          @dirty_elements.each do |element|
+            element.emit_replace_children(patcher)
+          end
+          @dirty_elements.clear
         end
 
         def dequeue_patches

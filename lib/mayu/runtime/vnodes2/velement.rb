@@ -7,6 +7,7 @@ require "cgi"
 require_relative "base"
 require_relative "../dom"
 require_relative "../inline_style"
+require_relative "../patches"
 require_relative "vattributes"
 require_relative "vchildren"
 
@@ -65,6 +66,19 @@ module Mayu
 
         def dom_id_tree
           [dom_id, @children.children.map(&:dom_id_tree)]
+        end
+
+        def mark_children_dirty
+          return if @children_dirty
+          @children_dirty = true
+          @engine.register_dirty_element(self)
+        end
+
+        def emit_replace_children(patcher)
+          return unless @children_dirty
+          child_ids = @children.dom_id_list
+          patcher << Patches::ReplaceChildren[dom_id, child_ids]
+          @children_dirty = false
         end
 
         private
