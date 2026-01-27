@@ -38,4 +38,4 @@
 
   [production.metrics]
     enabled = true
-    listen = "http://0.0.0.0:9091"
+    listen = "http://0.0.0.0:9092"

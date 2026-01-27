@@ -8,9 +8,7 @@ module Mayu
     module VNodes
       class VText < Base
         def update(descriptor)
-          return if @descriptor.to_s === descriptor.to_s
           @descriptor = descriptor
-          patch(Patches::SetTextContent[id, @descriptor.to_s])
         end
 
         def child_ids = [@id]
@@ -24,7 +22,7 @@ module Mayu
         end
 
         def render
-          DOM::Text[@id, @descriptor.to_s]
+          DOM::Comment[@id, @descriptor.to_s]
         end
       end
     end

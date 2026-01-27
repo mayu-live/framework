@@ -3,83 +3,68 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require_relative "base"
+require_relative "vchildren"
+require_relative "vattributes"
+
 module Mayu
   module Runtime
     module VNodes
       class VElement < Base
+        VOID_ELEMENTS = %w[
+          area
+          base
+          br
+          col
+          embed
+          hr
+          img
+          input
+          link
+          meta
+          param
+          source
+          track
+          wbr
+        ].freeze
+
         def initialize(...)
           super
-          validate_dom_nesting!
 
           @children = VChildren.new(@descriptor.children, parent: self)
           @attributes = VAttributes.new(@descriptor, parent: self)
+          @tag_name =
+            @descriptor.type.to_s.downcase.delete_prefix("__").tr("_", "-")
         end
 
-        def marshal_dump
-          [super, @children, @attributes]
-        end
-
-        def marshal_load(a)
-          a => [a, children, attributes]
-          super(a)
-          @children = children
-          @attributes = attributes
-        end
-
-        def ancestor_info
-          @ancestor_info ||= super.update(@descriptor.type)
-        end
+        attr_reader :tag_name
 
         def traverse(&)
           yield self
           @children.traverse(&)
         end
 
-        def child_ids = [@id]
-
-        def start_children
+        def start
           @children.start
         end
 
-        def insert
-          patch(render.patch_insert)
+        def stop
+          @children.stop
         end
 
-        def remove
-          patch(render.patch_remove)
+        def update(patches)
         end
 
-        def render
-          tag_name = self.tag_name
+        def render_html(out)
+          out << "<" << @tag_name
+          @attributes.render_html(out)
+          out << ">"
 
-          DOM::Element[@id, tag_name, *@children.render, **@attributes.render]
-        end
+          return if VOID_ELEMENTS.include?(@tag_name)
 
-        def update(descriptor)
-          @descriptor = descriptor
-          @attributes.apply(descriptor)
-          @children.apply(descriptor.children)
-        end
+          @children.render_html(out)
 
-        def tag_name =
-          @descriptor.type.to_s.downcase.delete_prefix("__").tr("_", "-")
-
-        def update_child_ids
-          metrics.update_child_id_count.increment(labels: { tag_name: })
-
-          patch(Patches::ReplaceChildren[id, @children.child_ids.flatten])
-        end
-
-        private
-
-        def validate_dom_nesting!
-          if warning =
-               DOMNestingValidation.validate(
-                 @descriptor.type,
-                 @parent.ancestor_info
-               )
-            Console.logger.warn(self, warning)
-          end
+          out << "</" << @tag_name << ">"
         end
       end
     end

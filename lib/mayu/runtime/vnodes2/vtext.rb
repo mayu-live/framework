@@ -6,9 +6,11 @@
 module Mayu
   module Runtime
     module VNodes
-      class VComment < Base
+      class VText < Base
         def update(descriptor)
+          return if @descriptor.to_s === descriptor.to_s
           @descriptor = descriptor
+          patch(Patches::SetTextContent[id, @descriptor.to_s])
         end
 
         def child_ids = [@id]
@@ -21,13 +23,9 @@ module Mayu
           patch(render.patch_remove)
         end
 
-        def render_html(out)
-          out << "<!--#{escape_comment(content)}-->"
+        def render
+          DOM::Text[@id, @descriptor.to_s]
         end
-
-        private
-
-        def escape_comment(str) = str.to_s.gsub(/--/, "&#45;&#45;")
       end
     end
   end

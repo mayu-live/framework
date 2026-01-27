@@ -11,11 +11,14 @@ module Mayu
     TransferState =
       Data.define(:id, :token, :state) do
         def self.from_session(session)
-          new(
-            id: session.id,
-            token: session.token,
-            state: Marshal.dump(session)
-          )
+          state =
+            begin
+              Marshal.dump(session)
+            rescue TypeError
+              "hejsna"
+            end
+          raise if state == "hejsna"
+          new(id: session.id, token: session.token, state: state)
         end
 
         def authenticate!(session_id:, session_token:)
