@@ -31,6 +31,10 @@ module Mayu
         def write_html(_out)
         end
 
+        def dom_id_tree
+          @child.dom_id_tree
+        end
+
         private
 
         def node_type_from_descriptor(descriptor)

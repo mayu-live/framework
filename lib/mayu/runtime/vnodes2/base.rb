@@ -46,6 +46,10 @@ module Mayu
         def write_html(_out)
         end
 
+        def dom_id_tree
+          nil
+        end
+
         def inserted?
           @is_inserted
         end

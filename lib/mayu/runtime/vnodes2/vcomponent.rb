@@ -60,6 +60,10 @@ module Mayu
         def write_html(_out)
         end
 
+        def dom_id_tree
+          @children.dom_id_tree
+        end
+
         private
 
         def render_children

@@ -25,6 +25,10 @@ module Mayu
         def write_html(_out)
         end
 
+        def dom_id_tree
+          @children.map(&:dom_id_tree)
+        end
+
         private
 
         def build_children(descriptors)

@@ -14,6 +14,14 @@ module Mayu
 
         def write_html(_out)
         end
+
+        def dom_id
+          @id
+        end
+
+        def dom_id_tree
+          dom_id
+        end
       end
     end
   end

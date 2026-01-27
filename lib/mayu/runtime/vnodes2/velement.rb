@@ -24,6 +24,14 @@ module Mayu
 
         def write_html(_out)
         end
+
+        def dom_id
+          @id
+        end
+
+        def dom_id_tree
+          [dom_id, @children.children.map(&:dom_id_tree)]
+        end
       end
     end
   end
