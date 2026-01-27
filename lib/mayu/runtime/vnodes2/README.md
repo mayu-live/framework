@@ -81,3 +81,45 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 - Structure
   - vnodes2 provides new base and child classes mirroring vnodes/, but rewritten to
     fit the new engine + patcher design.
+
+## Implemented so far
+
+- Base vnodes2 structure with stubs in `lib/mayu/runtime/vnodes2/`.
+- VNode constructors now build child trees immediately (no implicit start).
+- `write_html(out)` implemented for elements, text, comments, components, children,
+  custom elements, and document.
+- `dom_id` and `dom_id_tree` support for HTML-backed nodes.
+- Minimal `Patcher` class (`<<` into an array) for collecting patches.
+- Diff/patch emission for:
+  - insertions/removals via `Patches::CreateTree` and `Patches::RemoveNode`
+  - text updates via `Patches::SetTextContent`
+  - attribute updates via `Patches::SetAttribute` / `Patches::RemoveAttribute`
+- `start/stop` propagation and VComponent lifecycle (mount/unmount) with rerender!
+  forwarding to `engine.enqueue_update(self)`.
+- Tests in `lib/mayu/runtime/vnodes2.test.rb` for:
+  - HTML rendering
+  - patch creation on insert/remove
+  - patch creation on attribute/text update
+  - component rendering
+  - component start/stop + rerender queueing
+
+## TODO (next steps)
+
+- Queueing/engine integration:
+  - Implement `Engine#enqueue_update` for vnodes2 and update scheduling.
+  - Define how updates are batched/coalesced (similar to old Updater queue).
+- Attribute patch parity:
+  - `class`/`style` diff patches (AddClass/RemoveClass, SetCSSProperty, etc).
+  - Event listener updates (`on*`) and listener registry in vnodes2 VDocument.
+- DOM patch parity:
+  - ReplaceChildren / child id tracking (tree ids) if still needed.
+  - Proper handling of keyed reordering (not just insert/remove).
+- VHead/VDocument behavior:
+  - Head aggregation, stylesheets, and runtime JS patches.
+- Context/state:
+  - Context invalidation + rerender scheduling when context values change.
+- Custom elements:
+  - `RegisterCustomElement` patch and update semantics in vnodes2.
+- Error handling / RenderError patches on exceptions.
+- Metrics integration.
+- Bring remaining nodes to parity (VBody, VSlot, VStateless, etc).
