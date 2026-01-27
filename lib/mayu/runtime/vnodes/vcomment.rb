@@ -21,13 +21,9 @@ module Mayu
           patch(render.patch_remove)
         end
 
-        def render_html(out)
-          out << "<!--#{escape_comment(content)}-->"
+        def render
+          DOM::Comment[@id, @descriptor.to_s]
         end
-
-        private
-
-        def escape_comment(str) = str.to_s.gsub(/--/, "&#45;&#45;")
       end
     end
   end

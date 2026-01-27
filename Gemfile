@@ -17,5 +17,4 @@ group :development do
   gem "ruby-prof", require: false
   gem "benchmark", require: false
   gem "pry-coolline", require: false
-  gem "irb", require: false
 end
