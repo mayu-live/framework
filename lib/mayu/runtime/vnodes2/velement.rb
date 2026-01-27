@@ -22,7 +22,10 @@ module Mayu
             VAttributes.new(@descriptor, parent: self, engine: @engine)
         end
 
-        def update(_patcher)
+        def update(patcher, descriptor = nil)
+          return unless descriptor
+          @descriptor = descriptor
+          @children.update(patcher, @descriptor.children)
         end
 
         def write_html(out)

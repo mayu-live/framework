@@ -5,8 +5,10 @@
 # License: AGPL-3.0
 
 require "minitest/autorun"
+require "stringio"
 require_relative "../test"
 require_relative "vnodes2/vdocument"
+require_relative "vnodes2/patcher"
 
 class Mayu::Runtime::VNodes2Test < Minitest::Test
   H = Mayu::Runtime::H
@@ -43,5 +45,51 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         "<mayu-ping ping=\"N/A\"></mayu-ping></body></html>\n",
       out.tap(&:rewind).read
     )
+  end
+
+  def test_update_patches_for_insert_and_remove
+    initial =
+      H[
+        :body,
+        H[:header, H[:h1, "My webpage"]],
+        H[:main, H[:p, "Welcome"]],
+        H[:footer, H[:p, "Copyright"]]
+      ]
+
+    updated =
+      H[
+        :body,
+        H[:header, H[:h1, "My webpage"]],
+        H[:main, H[:p, "Welcome"]],
+        H[:section, H[:h2, "News"]]
+      ]
+
+    engine = EngineStub.new(nil)
+
+    document =
+      Mayu::Runtime::VNodes2::VDocument.new(
+        initial,
+        parent: engine,
+        engine: engine
+      )
+
+    patcher = Mayu::Runtime::VNodes2::Patcher.new
+
+    document.update(patcher, updated)
+
+    create_patch =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::CreateTree)
+      end
+    remove_patch =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::RemoveNode)
+      end
+
+    refute_nil(create_patch)
+    refute_nil(remove_patch)
+
+    assert_match("<section><h2>News</h2></section>", create_patch.html)
+    refute_nil(remove_patch.id)
   end
 end

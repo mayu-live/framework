@@ -9,7 +9,9 @@ module Mayu
   module Runtime
     module VNodes2
       class VComment < Base
-        def update(_patcher)
+        def update(_patcher, descriptor = nil)
+          return unless descriptor
+          @descriptor = descriptor
         end
 
         def write_html(out)

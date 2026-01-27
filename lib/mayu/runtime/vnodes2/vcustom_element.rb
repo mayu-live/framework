@@ -18,7 +18,13 @@ module Mayu
           @element = VElement.new(descriptor, parent: self, engine: @engine)
         end
 
-        def update(_patcher)
+        def update(patcher, descriptor = nil)
+          return unless descriptor
+          @descriptor = descriptor
+          @element.update(
+            patcher,
+            @descriptor.with(type: @descriptor.type.name)
+          )
         end
 
         def write_html(out)

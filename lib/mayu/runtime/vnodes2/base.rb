@@ -40,7 +40,7 @@ module Mayu
         def stop
         end
 
-        def update(_patcher)
+        def update(_patcher, _descriptor = nil)
         end
 
         def write_html(_out)

@@ -15,7 +15,10 @@ module Mayu
           @children = VChildren.new(rerender, parent: self, engine: @engine)
         end
 
-        def update(_patcher)
+        def update(patcher, descriptor = nil)
+          return unless descriptor
+          @descriptor = descriptor
+          @children.update(patcher, rerender)
         end
 
         def write_html(out)

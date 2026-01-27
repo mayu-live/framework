@@ -88,7 +88,10 @@ module Mayu
           @html = VComponent.new(init_html, parent: self, engine: @engine)
         end
 
-        def update(_patcher)
+        def update(patcher, descriptor = nil)
+          return unless descriptor
+          @descriptor = descriptor
+          @html.update(patcher, init_html)
         end
 
         def write_html(out)

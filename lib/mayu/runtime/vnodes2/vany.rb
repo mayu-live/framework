@@ -25,11 +25,18 @@ module Mayu
           @child = @type.new(@descriptor, parent: self, engine: @engine)
         end
 
-        def update(_patcher)
+        def update(patcher, descriptor = nil)
+          return unless descriptor
+          @descriptor = descriptor
+          @child.update(patcher, descriptor)
         end
 
         def write_html(out)
           @child.write_html(out)
+        end
+
+        def dom_id
+          @child.respond_to?(:dom_id) ? @child.dom_id : nil
         end
 
         def dom_id_tree

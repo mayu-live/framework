@@ -11,7 +11,9 @@ module Mayu
   module Runtime
     module VNodes2
       class VText < Base
-        def update(_patcher)
+        def update(_patcher, descriptor = nil)
+          return unless descriptor
+          @descriptor = descriptor
         end
 
         def write_html(out)
