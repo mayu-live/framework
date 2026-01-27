@@ -25,6 +25,7 @@ module Mayu
         def update(patcher, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
+          @attributes.update(patcher, @descriptor)
           @children.update(patcher, @descriptor.children)
         end
 

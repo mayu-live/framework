@@ -92,4 +92,37 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     assert_match("<section><h2>News</h2></section>", create_patch.html)
     refute_nil(remove_patch.id)
   end
+
+  def test_update_patches_for_attribute_and_text
+    initial = H[:body, H[:p, "Hello", class: ["greeting"]]]
+    updated = H[:body, H[:p, "World", class: ["farewell"]]]
+
+    engine = EngineStub.new(nil)
+    document =
+      Mayu::Runtime::VNodes2::VDocument.new(
+        initial,
+        parent: engine,
+        engine: engine
+      )
+
+    patcher = Mayu::Runtime::VNodes2::Patcher.new
+
+    document.update(patcher, updated)
+
+    set_attribute =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::SetAttribute) &&
+          patch.name == :class
+      end
+    set_text =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+      end
+
+    refute_nil(set_attribute)
+    assert_equal("farewell", set_attribute.value)
+
+    refute_nil(set_text)
+    assert_equal("World", set_text.content)
+  end
 end

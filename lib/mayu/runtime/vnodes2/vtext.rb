@@ -6,14 +6,17 @@
 require "cgi"
 
 require_relative "base"
+require_relative "../patches"
 
 module Mayu
   module Runtime
     module VNodes2
       class VText < Base
-        def update(_patcher, descriptor = nil)
+        def update(patcher, descriptor = nil)
           return unless descriptor
+          return if @descriptor.to_s == descriptor.to_s
           @descriptor = descriptor
+          patcher << Patches::SetTextContent[@id, @descriptor.to_s]
         end
 
         def write_html(out)
