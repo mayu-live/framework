@@ -26,6 +26,14 @@ module Mayu
           @task || @parent&.task
         end
 
+        def closest(type)
+          if type === self
+            self
+          else
+            @parent&.closest(type)
+          end
+        end
+
         def start
         end
 

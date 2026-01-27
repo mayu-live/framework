@@ -9,6 +9,11 @@ module Mayu
   module Runtime
     module VNodes2
       class VHead < Base
+        def initialize(descriptor, parent:, engine:)
+          super
+          @children = @descriptor.children
+        end
+
         def update(_patcher)
         end
 

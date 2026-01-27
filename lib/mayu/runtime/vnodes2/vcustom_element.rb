@@ -4,6 +4,8 @@
 # License: AGPL-3.0
 
 require_relative "base"
+require_relative "velement"
+require_relative "../../custom_element"
 
 module Mayu
   module Runtime
@@ -11,6 +13,9 @@ module Mayu
       class VCustomElement < Base
         def initialize(descriptor, parent:, engine:)
           super
+          custom_element = @descriptor.type
+          descriptor = @descriptor.with(type: custom_element.name)
+          @element = VElement.new(descriptor, parent: self, engine: @engine)
         end
 
         def update(_patcher)

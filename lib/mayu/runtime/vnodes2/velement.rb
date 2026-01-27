@@ -4,6 +4,8 @@
 # License: AGPL-3.0
 
 require_relative "base"
+require_relative "vattributes"
+require_relative "vchildren"
 
 module Mayu
   module Runtime
@@ -11,6 +13,10 @@ module Mayu
       class VElement < Base
         def initialize(descriptor, parent:, engine:)
           super
+          @children =
+            VChildren.new(@descriptor.children, parent: self, engine: @engine)
+          @attributes =
+            VAttributes.new(@descriptor, parent: self, engine: @engine)
         end
 
         def update(_patcher)
