@@ -15,6 +15,10 @@ module Mayu
           super(inject_mayu_ping(descriptor), parent:, engine:)
         end
 
+        def update(patcher, descriptor)
+          super(patcher, inject_mayu_ping(descriptor))
+        end
+
         private
 
         def inject_mayu_ping(descriptor)

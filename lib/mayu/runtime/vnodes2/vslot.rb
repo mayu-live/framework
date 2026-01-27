@@ -30,6 +30,14 @@ module Mayu
           @children.stop
         end
 
+        def insert
+          @children.insert
+        end
+
+        def remove
+          @children.remove
+        end
+
         def write_html(out)
           @children.write_html(out)
         end

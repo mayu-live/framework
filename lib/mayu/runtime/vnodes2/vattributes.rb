@@ -60,9 +60,7 @@ module Mayu
         def normalize_attribute_value(key, value)
           return if value.nil?
 
-          return if key == :class && value.respond_to?(:empty?) && value.empty?
-
-          return if key == :style && value.respond_to?(:empty?) && value.empty?
+          return if value == "" && key in :class | :style
 
           if key == :style && value.is_a?(Hash)
             return InlineStyle.stringify(value)

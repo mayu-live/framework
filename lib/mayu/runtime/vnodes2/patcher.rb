@@ -17,6 +17,11 @@ module Mayu
           @patches << patch
         end
       end
+
+      class NullPatcher
+        def <<(_patch)
+        end
+      end
     end
   end
 end

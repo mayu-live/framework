@@ -5,6 +5,7 @@
 
 require "set"
 require_relative "base"
+require_relative "patcher"
 require_relative "vcomponent"
 
 module Mayu
@@ -88,10 +89,20 @@ module Mayu
           @html = VComponent.new(init_html, parent: self, engine: @engine)
         end
 
+        attr_reader :head
+
         def update(patcher, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
           @html.update(patcher, init_html)
+        end
+
+        def add_head(vnode)
+          @head.add(vnode)
+        end
+
+        def remove_head(vnode)
+          @head.delete(vnode)
         end
 
         def start
@@ -103,6 +114,7 @@ module Mayu
         end
 
         def write_html(out)
+          @html.update(NullPatcher.new, init_html)
           out << "<!DOCTYPE html>\n"
           @html.write_html(out)
           out << "\n"

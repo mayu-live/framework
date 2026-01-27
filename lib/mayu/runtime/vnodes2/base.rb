@@ -39,6 +39,12 @@ module Mayu
         def stop
         end
 
+        def insert
+        end
+
+        def remove
+        end
+
         def update(_patcher, _descriptor = nil)
         end
 

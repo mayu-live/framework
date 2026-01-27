@@ -54,6 +54,26 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     end
   end
 
+  class HeadProbe < Mayu::Component::Base
+    def initialize
+      @enabled = false
+    end
+
+    def enable!
+      @enabled = true
+      rerender!
+    end
+
+    def disable!
+      @enabled = false
+      rerender!
+    end
+
+    def render
+      [(@enabled ? H[:head, H[:title, "Enabled"]] : nil), H[:main, "content"]]
+    end
+  end
+
   class MountUpdateProbe < Mayu::Component::Base
     def initialize
       @value = "before"
@@ -196,6 +216,46 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
       "<section><h2>Rendered</h2><p>From component</p></section>",
       html
     )
+  end
+
+  def test_head_nodes_register_and_unregister
+    descriptor = H[:body, H[HeadProbe]]
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+    document = engine.root
+    component = find_component(document, HeadProbe)
+    instance = component.instance_variable_get(:@instance)
+
+    assert_equal(0, document.head.size)
+
+    Async do
+      engine.start
+
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.enable!
+
+      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      refute_nil(patches)
+      assert_equal(1, document.head.size)
+
+      instance.disable!
+      Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      assert_equal(0, document.head.size)
+    ensure
+      engine.stop
+    end.wait
+  end
+
+  def test_head_render_without_start
+    descriptor = H[:body, H[:head, H[:title, "Static"]], H[:main, "content"]]
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+    html = render_html(engine.root)
+
+    assert_match("<title>Static</title>", html)
   end
 
   def test_component_start_stop_and_rerender

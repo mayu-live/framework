@@ -37,6 +37,14 @@ module Mayu
           @children.stop
         end
 
+        def insert
+          @children.insert
+        end
+
+        def remove
+          @children.remove
+        end
+
         def write_html(out)
           tag_name = self.tag_name
           attributes = render_attributes

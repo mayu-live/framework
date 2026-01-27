@@ -35,6 +35,14 @@ module Mayu
           @element.stop
         end
 
+        def insert
+          @element.insert
+        end
+
+        def remove
+          @element.remove
+        end
+
         def write_html(out)
           @element.write_html(out)
         end

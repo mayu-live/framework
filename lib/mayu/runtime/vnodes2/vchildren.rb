@@ -36,6 +36,14 @@ module Mayu
           @children.each(&:stop)
         end
 
+        def insert
+          @children.each(&:insert)
+        end
+
+        def remove
+          @children.each(&:remove)
+        end
+
         def write_html(out)
           @children.each { |child| child.write_html(out) }
         end
@@ -92,20 +100,27 @@ module Mayu
         end
 
         def insert_node(patcher, node)
-          return unless node.respond_to?(:write_html)
-          return unless node.respond_to?(:dom_id_tree)
+          node.insert if node.respond_to?(:insert)
 
-          html = +""
-          node.write_html(html)
-          patcher << Patches::CreateTree[html, node.dom_id_tree]
+          if node.respond_to?(:write_html) && node.respond_to?(:dom_id_tree)
+            id_tree = node.dom_id_tree
+            if id_tree
+              html = +""
+              node.write_html(html)
+              patcher << Patches::CreateTree[html, id_tree]
+            end
+          end
+
           node.mark_inserted if node.respond_to?(:mark_inserted)
         end
 
         def remove_node(patcher, node)
-          return unless node.respond_to?(:dom_id)
-          return unless node.dom_id
+          node.remove if node.respond_to?(:remove)
 
-          patcher << Patches::RemoveNode[node.dom_id]
+          if node.respond_to?(:dom_id) && node.dom_id
+            patcher << Patches::RemoveNode[node.dom_id]
+          end
+
           node.mark_removed if node.respond_to?(:mark_removed)
         end
 

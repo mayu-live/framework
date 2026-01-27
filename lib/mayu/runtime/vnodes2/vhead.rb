@@ -11,13 +11,34 @@ module Mayu
       class VHead < Base
         def initialize(descriptor, parent:, engine:)
           super
-          @children = @descriptor.children
+          add_to_document
         end
 
-        def update(_patcher)
+        def children = @descriptor.children
+
+        def update(_patcher, descriptor)
+          @descriptor = descriptor
         end
 
         def write_html(_out)
+        end
+
+        def insert
+          add_to_document
+        end
+
+        def remove
+          remove_from_document
+        end
+
+        private
+
+        def add_to_document
+          closest(VDocument)&.add_head(self)
+        end
+
+        def remove_from_document
+          closest(VDocument)&.remove_head(self)
         end
       end
     end

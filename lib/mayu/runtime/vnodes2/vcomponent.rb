@@ -74,6 +74,14 @@ module Mayu
           @instance.unmount
         end
 
+        def insert
+          @children.insert
+        end
+
+        def remove
+          @children.remove
+        end
+
         def update(patcher, descriptor = nil)
           if descriptor
             @descriptor = descriptor
