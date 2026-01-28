@@ -82,18 +82,6 @@ module Mayu
           def to_msgpack_ext = data
         end
 
-      PatchSet =
-        Data.define(:id, :patches) do
-          def self.[](patches) =
-            new(SecureRandom.alphanumeric, [patches].flatten)
-
-          def to_a
-            patches.map do |patch|
-              [patch.class.name[/[^:]+\z/], *patch.deconstruct]
-            end
-          end
-        end
-
       def self.each_incoming_message(request)
         buf = String.new
 
