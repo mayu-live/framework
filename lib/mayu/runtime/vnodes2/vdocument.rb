@@ -90,6 +90,10 @@ module Mayu
           @html = VComponent.new(init_html, parent: self, engine: @engine)
         end
 
+        def dom_id_tree
+          @html.dom_id_tree
+        end
+
         attr_reader :head
 
         def update(patcher, descriptor = nil)

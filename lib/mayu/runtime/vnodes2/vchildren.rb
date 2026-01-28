@@ -53,7 +53,9 @@ module Mayu
         end
 
         def dom_id_list
-          dom_id_tree.flatten.compact
+          @children
+            .map { |child| child.respond_to?(:dom_id) ? child.dom_id : nil }
+            .compact
         end
 
         private
@@ -144,7 +146,9 @@ module Mayu
         end
 
         def dom_id_list_for(children)
-          children.map(&:dom_id_tree).flatten.compact
+          children
+            .map { |child| child.respond_to?(:dom_id) ? child.dom_id : nil }
+            .compact
         end
 
         def insert_comments_between_strings(descriptors)

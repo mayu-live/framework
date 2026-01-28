@@ -98,6 +98,26 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     end
   end
 
+  class ReplaceChildrenProbe < Mayu::Component::Base
+    def initialize
+      @mode = :a
+    end
+
+    def set_mode(mode)
+      @mode = mode
+      rerender!
+    end
+
+    def render
+      case @mode
+      when :a
+        H[:section, H[:div, "a"], H[:div, "b"]]
+      else
+        H[:section, H[:div, "c"]]
+      end
+    end
+  end
+
   def test_write_html
     descriptor =
       H[
@@ -317,6 +337,32 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
 
       refute_nil(set_text)
       assert_equal("after", set_text.content)
+    ensure
+      engine.stop
+    end.wait
+  end
+
+  def test_replace_children_emitted_once_per_batch
+    descriptor = H[:body, H[ReplaceChildrenProbe]]
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+    component = find_component(engine.root, ReplaceChildrenProbe)
+    instance = component.instance_variable_get(:@instance)
+
+    Async do
+      engine.start
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.set_mode(:b)
+
+      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      replace_children =
+        patches.select do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+        end
+
+      assert_equal(1, replace_children.count)
     ensure
       engine.stop
     end.wait
