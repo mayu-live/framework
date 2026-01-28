@@ -3,6 +3,8 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require_relative "../dom"
+
 require_relative "base"
 
 module Mayu
@@ -23,7 +25,7 @@ module Mayu
         end
 
         def dom_id_tree
-          dom_id
+          Mayu::Runtime::DOM::IdNode[dom_id, "#comment"]
         end
 
         private

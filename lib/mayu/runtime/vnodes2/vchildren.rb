@@ -58,6 +58,10 @@ module Mayu
             .compact
         end
 
+        def dom_id_trees
+          @children.map(&:dom_id_tree)
+        end
+
         private
 
         def build_children(descriptors)

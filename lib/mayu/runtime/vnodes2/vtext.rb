@@ -4,6 +4,7 @@
 # License: AGPL-3.0
 
 require "cgi"
+require_relative "../dom"
 
 require_relative "base"
 require_relative "../patches"
@@ -31,7 +32,7 @@ module Mayu
         end
 
         def dom_id_tree
-          dom_id
+          Mayu::Runtime::DOM::IdNode[dom_id, "#text"]
         end
       end
     end

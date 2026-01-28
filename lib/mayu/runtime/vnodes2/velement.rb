@@ -65,7 +65,7 @@ module Mayu
         end
 
         def dom_id_tree
-          [dom_id, @children.children.map(&:dom_id_tree)]
+          DOM::IdNode[dom_id, tag_name.upcase, @children.dom_id_trees]
         end
 
         def mark_children_dirty
