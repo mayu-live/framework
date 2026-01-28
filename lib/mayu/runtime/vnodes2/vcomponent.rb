@@ -87,6 +87,8 @@ module Mayu
           parent_task&.async do |task|
             @task = task
             @instance.instance_variable_set(:@__vnode_task, task)
+            queue = Async::Queue.new
+            @instance.instance_variable_set(:@__vnode_queue, queue)
 
             vnode = self
             @instance.define_singleton_method(:rerender!) do
@@ -101,6 +103,12 @@ module Mayu
               @instance.mount
               @mounted = true
             end
+
+            loop do
+              work = queue.dequeue
+              break if work == :__stop__
+              task.async { work.call }
+            end
           end
         end
 
@@ -109,9 +117,13 @@ module Mayu
           @children.stop
           @instance.unmount if @mounted
           @mounted = false
+          if queue = @instance.instance_variable_get(:@__vnode_queue)
+            queue.enqueue(:__stop__)
+          end
           @task.stop
           @task = nil
           @instance.instance_variable_set(:@__vnode_task, nil)
+          @instance.instance_variable_set(:@__vnode_queue, nil)
         end
 
         def insert
