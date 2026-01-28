@@ -122,7 +122,16 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 - DOM patch parity:
   - Proper handling of keyed reordering (not just insert/remove).
 - VHead/VDocument behavior:
-  - Head aggregation edge cases and runtime JS patches.
+  - Define head aggregation rules:
+    - Always inject one `<meta charset="utf-8">` at the top.
+    - Runtime JS `<script type="module">` should be present once (if configured).
+    - For `<title>`, keep only the last title across all head nodes.
+    - For `<meta name=...>`, keep only the last per `name`.
+    - For `<meta property=...>`, keep only the last per `property`.
+    - For `<link>` (e.g., stylesheets), keep only the last per `key` if provided,
+      otherwise allow multiples (or define a dedupe key).
+    - Preserve a stable ordering: runtime/meta/title/links first, then user tags
+      in descriptor order of the last occurrence.
 - Context/state:
   - Context invalidation + rerender scheduling when context values change.
 - Custom elements:
