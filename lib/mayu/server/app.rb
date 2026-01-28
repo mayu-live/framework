@@ -331,6 +331,8 @@ module Mayu
 
             break if body.closed?
 
+            next unless patch
+
             body.write(patch)
 
             break if patch in Runtime::Patches::Transfer

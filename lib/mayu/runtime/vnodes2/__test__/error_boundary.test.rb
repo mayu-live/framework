@@ -46,7 +46,8 @@ class Mayu::Runtime::VNodes2::ErrorBoundaryTest < Minitest::Test
 
       instance.trigger_error
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
 
       refute_nil(patches)
 

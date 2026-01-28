@@ -63,9 +63,11 @@ class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
         wait_until { instance.respond_to?(:rerender!) }
 
         instance.bump
-        Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+        batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+        unwrap_patches(batch)
         instance.bump
-        Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+        batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+        unwrap_patches(batch)
 
         assert_equal(2, instance.count)
         assert_equal(1, instance.mount_count)
@@ -132,8 +134,9 @@ class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
         refute_nil(listener)
 
         restored.callback(listener.id, {})
-        patches =
+        batch =
           Async::Task.current.with_timeout(0.5) { restored.dequeue_patches }
+        patches = unwrap_patches(batch)
 
         set_text =
           patches.find do |patch|

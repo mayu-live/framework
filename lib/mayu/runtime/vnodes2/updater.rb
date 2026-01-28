@@ -36,6 +36,9 @@ module Mayu
                 @engine&.flush_dirty_elements(patcher)
                 @engine&.flush_head(patcher)
 
+                patches = patcher.patches
+                next if patches.empty?
+
                 if unique.any? { |node|
                      node.instance_variable_get(:@__view_transition_pending)
                    }
@@ -43,10 +46,10 @@ module Mayu
                     node.instance_variable_set(:@__view_transition_pending, nil)
                   end
                   @output_queue.enqueue(
-                    [Patches::ViewTransition[patcher.patches]]
+                    Patches::ViewTransition[Patches::Batch[patches]]
                   )
                 else
-                  @output_queue.enqueue(patcher.patches)
+                  @output_queue.enqueue(Patches::Batch[patches])
                 end
               end
             end

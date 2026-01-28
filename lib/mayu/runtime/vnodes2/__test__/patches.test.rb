@@ -152,7 +152,8 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     descriptor = H[:body, H[MountUpdateProbe]]
 
     run_engine(descriptor) do |engine|
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
 
       set_text =
         patches.find do |patch|
@@ -175,7 +176,8 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
 
       instance.set_mode(:b)
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
 
       replace_children =
         patches.select do |patch|

@@ -102,7 +102,8 @@ class Mayu::Runtime::VNodes2::CallbacksTest < Minitest::Test
 
       engine.callback(listener.id, {})
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
 
       set_text =
         patches.find do |patch|

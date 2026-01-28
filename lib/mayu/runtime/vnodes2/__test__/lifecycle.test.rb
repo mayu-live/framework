@@ -63,7 +63,8 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
 
       instance.rerender!
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
 
       assert_equal([], patches)
     end
@@ -97,7 +98,8 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
 
       engine.callback(listener.id, {})
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
       refute_nil(patches)
 
       wait_until { instance.listener_task }

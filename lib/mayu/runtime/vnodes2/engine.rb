@@ -149,8 +149,8 @@ module Mayu
         def ensure_patch_buffer!
           @patch_buffer ||= []
           if @patch_buffer.empty?
-            patches = @output_queue.dequeue
-            @patch_buffer = (patches.is_a?(Array) ? patches.dup : [patches])
+            patch = @output_queue.dequeue
+            @patch_buffer = [patch]
           end
         end
       end

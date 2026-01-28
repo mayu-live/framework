@@ -54,6 +54,19 @@ module Mayu
           out.tap(&:rewind).read
         end
 
+        def unwrap_patches(patch)
+          case patch
+          when Mayu::Runtime::Patches::ViewTransition
+            unwrap_patches(patch.patches)
+          when Mayu::Runtime::Patches::Batch
+            patch.patches
+          when Array
+            patch
+          else
+            [patch]
+          end
+        end
+
         def with_modules_system(component_class)
           mod = Module.new
           exports = Module.new

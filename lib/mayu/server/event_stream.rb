@@ -49,7 +49,7 @@ module Mayu
           end
 
           patch
-            .then { PatchSet[_1].to_a }
+            .then { Array(_1) }
             .then { @wrapper.pack(_1) }
             .then { @deflate.deflate(_1, Zlib::SYNC_FLUSH) }
             .then { super(_1) }

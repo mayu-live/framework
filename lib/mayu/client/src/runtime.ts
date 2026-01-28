@@ -24,26 +24,7 @@ export default class Runtime {
   #nodeSet = new NodeSet();
 
   async apply(patches: PatchSet) {
-    for (const patch of patches) {
-      const [name, ...args] = patch;
-      console.debug(name, args);
-
-      const patchFn = Patches[name as PatchType] as any;
-
-      if (!patchFn) {
-        throw new Error(`Not implemented: ${name}`);
-      }
-
-      try {
-        const result = patchFn.apply(this.#nodeSet, args as any);
-
-        if (result instanceof Promise) {
-          await result;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    await Patches.Batch.call(this.#nodeSet, patches);
   }
 }
 
@@ -272,6 +253,29 @@ function updateHead(
 }
 
 const Patches = {
+  async Batch(this: NodeSet, patches: Patch[]) {
+    for (const patch of patches) {
+      const [name, ...args] = patch;
+      console.debug(name, args);
+
+      const patchFn = Patches[name as PatchType] as any;
+
+      if (!patchFn) {
+        throw new Error(`Not implemented: ${name}`);
+      }
+
+      try {
+        const result = patchFn.apply(this, args as any);
+
+        if (result instanceof Promise) {
+          await result;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  },
+
   Initialize(this: NodeSet, tree: IdNode) {
     console.debug(`%c${debugTree(tree)}`, "color: #6cf;");
 

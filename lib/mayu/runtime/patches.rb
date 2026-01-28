@@ -8,53 +8,68 @@
 module Mayu
   module Runtime
     module Patches
-      Initialize = Data.define(:id_tree)
+      class PatchData < Data
+        def to_msgpack(packer)
+          packer.pack([self.class.name[/[^:]+\z/], *deconstruct])
+        end
+      end
 
-      CreateTree = Data.define(:html, :tree)
+      Initialize = PatchData.define(:id_tree)
 
-      CreateElement = Data.define(:id, :type)
-      CreateTextNode = Data.define(:id, :content)
-      CreateComment = Data.define(:id, :content)
+      CreateTree = PatchData.define(:html, :tree)
 
-      ReplaceChildren = Data.define(:id, :child_ids)
+      CreateElement = PatchData.define(:id, :type)
+      CreateTextNode = PatchData.define(:id, :content)
+      CreateComment = PatchData.define(:id, :content)
 
-      RemoveNode = Data.define(:id)
+      ReplaceChildren = PatchData.define(:id, :child_ids)
 
-      SetAttribute = Data.define(:id, :name, :value)
-      RemoveAttribute = Data.define(:id, :name)
+      RemoveNode = PatchData.define(:id)
 
-      SetClassName = Data.define(:id, :class_name)
-      AddClass = Data.define(:id, :classes)
-      RemoveClass = Data.define(:id, :classes)
+      SetAttribute = PatchData.define(:id, :name, :value)
+      RemoveAttribute = PatchData.define(:id, :name)
 
-      SetListener = Data.define(:id, :name, :listener_id)
-      RemoveListener = Data.define(:id, :name, :listener_id)
+      SetClassName = PatchData.define(:id, :class_name)
+      AddClass = PatchData.define(:id, :classes)
+      RemoveClass = PatchData.define(:id, :classes)
 
-      SetCSSProperty = Data.define(:id, :name, :value)
-      RemoveCSSProperty = Data.define(:id, :name)
+      SetListener = PatchData.define(:id, :name, :listener_id)
+      RemoveListener = PatchData.define(:id, :name, :listener_id)
 
-      SetTextContent = Data.define(:id, :content)
-      ReplaceData = Data.define(:id, :offset, :count, :data)
-      InsertData = Data.define(:id, :offset, :data)
-      DeleteData = Data.define(:id, :offset, :count)
+      SetCSSProperty = PatchData.define(:id, :name, :value)
+      RemoveCSSProperty = PatchData.define(:id, :name)
 
-      AddStyleSheet = Data.define(:filename)
+      SetTextContent = PatchData.define(:id, :content)
+      ReplaceData = PatchData.define(:id, :offset, :count, :data)
+      InsertData = PatchData.define(:id, :offset, :data)
+      DeleteData = PatchData.define(:id, :offset, :count)
 
-      Transfer = Data.define(:payload)
-      TransferFailed = Data.define()
+      AddStyleSheet = PatchData.define(:filename)
 
-      Ping = Data.define(:timestamp)
-      Pong = Data.define(:timestamp)
+      Transfer = PatchData.define(:payload)
+      TransferFailed = PatchData.define()
 
-      Event = Data.define(:event, :payload)
-      HistoryPushState = Data.define(:path)
+      Ping = PatchData.define(:timestamp)
+      Pong = PatchData.define(:timestamp)
 
-      RegisterCustomElement = Data.define(:name, :path)
+      Event = PatchData.define(:event, :payload)
+      HistoryPushState = PatchData.define(:path)
+
+      RegisterCustomElement = PatchData.define(:name, :path)
 
       RenderError =
-        Data.define(:file, :type, :message, :backtrace, :source, :tree_path)
+        PatchData.define(
+          :file,
+          :type,
+          :message,
+          :backtrace,
+          :source,
+          :tree_path
+        )
 
-      ViewTransition = Data.define(:patches)
+      ViewTransition = PatchData.define(:patches)
+
+      Batch = PatchData.define(:patches)
     end
   end
 end

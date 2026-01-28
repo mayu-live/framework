@@ -74,13 +74,15 @@ class Mayu::Runtime::VNodes2::HeadTest < Minitest::Test
 
       instance.enable!
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
 
       refute_nil(patches)
       assert_equal(1, document.head.size)
 
       instance.disable!
-      Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      unwrap_patches(batch)
 
       assert_equal(0, document.head.size)
     end
@@ -111,7 +113,8 @@ class Mayu::Runtime::VNodes2::HeadTest < Minitest::Test
 
       instance.set_mode(:b)
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
 
       refute_nil(patches)
       refute_empty(patches)

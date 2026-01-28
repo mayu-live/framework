@@ -40,12 +40,11 @@ class Mayu::Runtime::VNodes2::ViewTransitionsTest < Minitest::Test
 
       instance.increment
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
 
-      assert_equal(1, patches.size)
-      assert_kind_of(Mayu::Runtime::Patches::ViewTransition, patches.first)
+      assert_kind_of(Mayu::Runtime::Patches::ViewTransition, batch)
 
-      inner = patches.first.patches
+      inner = unwrap_patches(batch)
       set_text =
         inner.find do |patch|
           patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
@@ -68,10 +67,12 @@ class Mayu::Runtime::VNodes2::ViewTransitionsTest < Minitest::Test
       instance.instance_variable_set(:@value, 1)
       instance.rerender!
 
-      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      patches = unwrap_patches(batch)
 
       refute_empty(patches)
-      refute_kind_of(Mayu::Runtime::Patches::ViewTransition, patches.first)
+      refute_kind_of(Mayu::Runtime::Patches::ViewTransition, batch)
     end
   end
 end
