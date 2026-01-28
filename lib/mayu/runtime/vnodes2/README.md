@@ -88,34 +88,41 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 - VNode constructors now build child trees immediately (no implicit start).
 - `write_html(out)` implemented for elements, text, comments, components, children,
   custom elements, and document.
-- `dom_id` and `dom_id_tree` support for HTML-backed nodes.
-- Minimal `Patcher` class (`<<` into an array) for collecting patches.
+- `dom_id` and `dom_id_tree` now emit `DOM::IdNode` trees for DOM-backed nodes.
+- `Patcher` and `NullPatcher` for collecting or discarding patches.
 - Diff/patch emission for:
   - insertions/removals via `Patches::CreateTree` and `Patches::RemoveNode`
   - text updates via `Patches::SetTextContent`
   - attribute updates via `Patches::SetAttribute` / `Patches::RemoveAttribute`
+- ReplaceChildren batching:
+  - VChildren marks nearest VElement dirty when direct child ids change.
+  - Engine flushes dirty elements once per batch to emit `ReplaceChildren`.
 - `start/stop` propagation and VComponent lifecycle (mount/unmount) with rerender!
   forwarding to `engine.enqueue_update(self)`.
+- Insert/remove propagation independent of mount/unmount.
+- Head registration via `VHead` insert/remove; head flush happens after batch updates.
+- Stylesheet collection from component modules and injection into `<head>`.
+- Updater + Engine queueing for batch updates and patch output.
 - Tests in `lib/mayu/runtime/vnodes2.test.rb` for:
   - HTML rendering
   - patch creation on insert/remove
   - patch creation on attribute/text update
   - component rendering
   - component start/stop + rerender queueing
+  - head registration and updates (including multiple titles)
+  - update queue patch emission
+  - ReplaceChildren emitted once per batch
+  - stylesheet injection into head
 
 ## TODO (next steps)
 
-- Queueing/engine integration:
-  - Implement `Engine#enqueue_update` for vnodes2 and update scheduling.
-  - Define how updates are batched/coalesced (similar to old Updater queue).
 - Attribute patch parity:
   - `class`/`style` diff patches (AddClass/RemoveClass, SetCSSProperty, etc).
   - Event listener updates (`on*`) and listener registry in vnodes2 VDocument.
 - DOM patch parity:
-  - ReplaceChildren / child id tracking (tree ids) if still needed.
   - Proper handling of keyed reordering (not just insert/remove).
 - VHead/VDocument behavior:
-  - Head aggregation, stylesheets, and runtime JS patches.
+  - Head aggregation edge cases and runtime JS patches.
 - Context/state:
   - Context invalidation + rerender scheduling when context values change.
 - Custom elements:
