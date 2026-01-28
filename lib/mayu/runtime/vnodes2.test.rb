@@ -247,16 +247,12 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
 
   def test_head_nodes_register_and_unregister
     descriptor = H[:body, H[HeadProbe]]
-    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    run_engine(descriptor) do |engine|
+      document = engine.root
+      component = find_component(document, HeadProbe)
+      instance = component.instance_variable_get(:@instance)
 
-    document = engine.root
-    component = find_component(document, HeadProbe)
-    instance = component.instance_variable_get(:@instance)
-
-    assert_equal(0, document.head.size)
-
-    Async do
-      engine.start
+      assert_equal(0, document.head.size)
 
       wait_until { instance.respond_to?(:rerender!) }
 
@@ -271,9 +267,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
       Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
 
       assert_equal(0, document.head.size)
-    ensure
-      engine.stop
-    end.wait
+    end
   end
 
   def test_head_render_without_start
@@ -288,16 +282,14 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
   def test_head_updates_with_multiple_titles
     descriptor = H[:body, H[HeadToggleProbe]]
     engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
-
     html = render_html(engine.root)
     assert_equal(1, html.scan("<title>").length)
     assert_match("<title>B</title>", html)
 
-    component = find_component(engine.root, HeadToggleProbe)
-    instance = component.instance_variable_get(:@instance)
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, HeadToggleProbe)
+      instance = component.instance_variable_get(:@instance)
 
-    Async do
-      engine.start
       wait_until { instance.respond_to?(:rerender!) }
 
       instance.set_mode(:b)
@@ -310,9 +302,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
       html = render_html(engine.root)
       assert_equal(1, html.scan("<title>").length)
       assert_match("<title>C</title>", html)
-    ensure
-      engine.stop
-    end.wait
+    end
   end
 
   def test_component_start_stop_and_rerender
@@ -322,15 +312,14 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     document = engine.root
     html = render_html(document)
 
-    Async do
-      engine.start
+    instance = nil
 
+    run_engine(descriptor) do |engine|
+      document = engine.root
       component = find_component(document, MountProbe)
       instance = component.instance_variable_get(:@instance)
 
       wait_until { instance.mounted }
-
-      instance = component.instance_variable_get(:@instance)
 
       assert_equal(true, instance.mounted)
 
@@ -339,19 +328,14 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
       patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
 
       assert_equal([], patches)
+    end
 
-      engine.stop
-      assert_equal(true, instance.unmounted)
-    end.wait
+    assert_equal(true, instance.unmounted)
   end
 
   def test_component_update_queue_emits_patches
     descriptor = H[:body, H[MountUpdateProbe]]
-    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
-
-    Async do
-      engine.start
-
+    run_engine(descriptor) do |engine|
       patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
 
       set_text =
@@ -361,20 +345,15 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
 
       refute_nil(set_text)
       assert_equal("after", set_text.content)
-    ensure
-      engine.stop
-    end.wait
+    end
   end
 
   def test_replace_children_emitted_once_per_batch
     descriptor = H[:body, H[ReplaceChildrenProbe]]
-    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, ReplaceChildrenProbe)
+      instance = component.instance_variable_get(:@instance)
 
-    component = find_component(engine.root, ReplaceChildrenProbe)
-    instance = component.instance_variable_get(:@instance)
-
-    Async do
-      engine.start
       wait_until { instance.respond_to?(:rerender!) }
 
       instance.set_mode(:b)
@@ -387,9 +366,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         end
 
       assert_equal(1, replace_children.count)
-    ensure
-      engine.stop
-    end.wait
+    end
   end
 
   def test_component_stylesheet_registration
@@ -482,11 +459,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
   def test_engine_callback_emits_patches
     initial = H[:body, H[CallbackProbe]]
 
-    engine = Mayu::Runtime::VNodes2::Engine.new(initial)
-
-    Async do
-      engine.start
-
+    run_engine(initial) do |engine|
       document = engine.root
 
       patcher = Mayu::Runtime::VNodes2::Patcher.new
@@ -514,12 +487,21 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
 
       refute_nil(set_text)
       assert_equal("Click 1", set_text.content)
+    end
+  end
+
+  private
+
+  def run_engine(descriptor)
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+    Async do
+      engine.start
+      yield engine
     ensure
       engine.stop
     end.wait
   end
-
-  private
 
   def wait_until(timeout: 0.2)
     deadline = Async::Clock.now + timeout
