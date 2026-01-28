@@ -46,4 +46,22 @@ class Mayu::Runtime::VNodes2::RenderingTest < Minitest::Test
       html
     )
   end
+
+  def test_dom_id_tree_structure
+    descriptor =
+      H[:body, H[:header, H[:h1, "Title"]], H[:main, H[:p, "Content"]]]
+
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    tree = engine.dom_id_tree
+
+    assert_equal("#document", tree.name)
+    assert_equal("HTML", tree.children.first.name)
+
+    html_node = tree.children.first
+    body_node = html_node.children.find { |node| node.name == "BODY" }
+
+    refute_nil(body_node)
+    assert(body_node.children.any? { |node| node.name == "HEADER" })
+    assert(body_node.children.any? { |node| node.name == "MAIN" })
+  end
 end

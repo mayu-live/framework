@@ -5,9 +5,12 @@
 
 require "async/queue"
 require "set"
+require "stringio"
 
 require_relative "vdocument"
 require_relative "updater"
+require_relative "patcher"
+require_relative "../patches"
 
 module Mayu
   module Runtime
@@ -103,6 +106,52 @@ module Mayu
 
         def dequeue_patches
           @output_queue.dequeue
+        end
+
+        def dequeue_patch
+          ensure_patch_buffer!
+          @patch_buffer.shift
+        end
+
+        def render
+          out = StringIO.new
+          @root.write_html(out)
+          out.tap(&:rewind).read
+        end
+
+        def dom_id_tree
+          @root.dom_id_tree
+        end
+
+        def styles
+          @root.styles
+        end
+
+        def update(descriptor)
+          @root.update(NullPatcher.new, descriptor)
+        end
+
+        def navigate(path, descriptor, push_state: true)
+          update(descriptor)
+          patch(Patches::HistoryPushState[path]) if push_state
+        end
+
+        def patch(patches)
+          Array(patches).flatten.each { |patch| @output_queue.enqueue(patch) }
+        end
+
+        def ping(timestamp)
+          patch(Patches::Pong[timestamp])
+        end
+
+        private
+
+        def ensure_patch_buffer!
+          @patch_buffer ||= []
+          if @patch_buffer.empty?
+            patches = @output_queue.dequeue
+            @patch_buffer = (patches.is_a?(Array) ? patches.dup : [patches])
+          end
         end
       end
     end

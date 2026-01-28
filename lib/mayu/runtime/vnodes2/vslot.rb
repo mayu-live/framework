@@ -42,6 +42,10 @@ module Mayu
           @children.write_html(out)
         end
 
+        def dom_id_tree
+          @children.dom_id_tree
+        end
+
         def traverse(&block)
           yield self
           @children.traverse(&block)

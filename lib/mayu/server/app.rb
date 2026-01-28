@@ -225,7 +225,7 @@ module Mayu
           @environment.metrics.session_init_count.increment
         end
 
-        body = session.render.to_html
+        body = session.render
 
         response(
           200,
@@ -316,9 +316,7 @@ module Mayu
 
         body = EventStream::Writer.new
 
-        body.write(
-          Runtime::Patches::Initialize[session.render.id_node.serialize]
-        )
+        body.write(Runtime::Patches::Initialize[session.dom_id_tree.serialize])
 
         @body_barrier.async do |task|
           session.start

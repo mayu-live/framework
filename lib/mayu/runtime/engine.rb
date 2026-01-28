@@ -55,6 +55,10 @@ module Mayu
         @root.render
       end
 
+      def dom_id_tree
+        render.id_node
+      end
+
       def styles
         @root.styles
       end

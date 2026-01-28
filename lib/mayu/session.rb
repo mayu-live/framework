@@ -4,9 +4,11 @@
 # License: AGPL-3.0
 
 require_relative "runtime"
+require_relative "runtime/vnodes2/engine"
 require_relative "session/token"
 require_relative "session/error_page"
 require_relative "session/transfer_state"
+require_relative "modules"
 
 module Mayu
   class Session
@@ -57,12 +59,15 @@ module Mayu
         "Initializing session #{@id} at \e[1;34m#{@request_info.path}\e[0m"
       )
 
+      descriptor = resolve_route(@request_info.path)
+      runtime_js = @request_info.http2 && init_js_path
+
       @engine =
-        Runtime.init(
-          resolve_route(@request_info.path),
-          metrics: @environment.metrics,
-          runtime_js: @request_info.http2 && init_js_path
-        )
+        if use_vnodes2?
+          Runtime::VNodes2::Engine.new(descriptor, runtime_js:)
+        else
+          Runtime.init(descriptor, metrics: @environment.metrics, runtime_js:)
+        end
 
       @last_ping = Async::Clock.now
     end
@@ -73,7 +78,7 @@ module Mayu
 
     def resume_transferred(environment)
       @environment = environment
-      @engine.metrics = environment.metrics
+      @engine.metrics = environment.metrics if @engine.respond_to?(:metrics=)
       self
     end
 
@@ -142,6 +147,10 @@ module Mayu
 
     def render
       @engine.render
+    end
+
+    def dom_id_tree
+      @engine.dom_id_tree
     end
 
     def styles
@@ -246,6 +255,10 @@ module Mayu
             path:
           ]
         end
+    end
+
+    def use_vnodes2?
+      ENV["MAYU_VNODES2"] == "1"
     end
   end
 end

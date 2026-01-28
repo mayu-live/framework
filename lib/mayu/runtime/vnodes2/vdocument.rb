@@ -28,7 +28,7 @@ module Mayu
         end
 
         def dom_id_tree
-          @html.dom_id_tree
+          DOM::IdNode[@id, "#document", @html.dom_id_tree]
         end
 
         attr_reader :head, :styles
