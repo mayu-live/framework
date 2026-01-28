@@ -77,6 +77,14 @@ module Mayu
           @root.call_listener(id, payload)
         end
 
+        def add_listener(listener)
+          @root.add_listener(listener)
+        end
+
+        def remove_listener(listener)
+          @root.remove_listener(listener)
+        end
+
         def flush_head(patcher)
           @root.flush_head(patcher)
         end
