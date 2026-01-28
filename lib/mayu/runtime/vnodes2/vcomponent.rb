@@ -83,6 +83,7 @@ module Mayu
 
             @children.start
             @instance.mount
+            @mounted = true
           end
         end
 
@@ -90,7 +91,8 @@ module Mayu
           @children.stop
           @task&.stop
           @task = nil
-          @instance.unmount
+          @instance.unmount if @mounted
+          @mounted = false
         end
 
         def insert

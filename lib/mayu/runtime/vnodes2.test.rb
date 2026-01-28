@@ -6,6 +6,7 @@
 
 require "async"
 require "minitest/autorun"
+require "minitest/focus"
 require "stringio"
 require_relative "../test"
 require_relative "../modules/system"
@@ -541,8 +542,8 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         assert_equal(0, instance.unmount_count)
       end
 
-      dumped = Marshal.dump(engine)
-      restored = Marshal.load(dumped)
+      dumped = engine.dump!
+      restored = Mayu::Runtime::VNodes2::Engine.restore(dumped)
 
       html = render_html(restored.root)
       assert_match("<p>2</p>", html)
@@ -578,8 +579,8 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         wait_until { document.instance_variable_get(:@listeners).any? }
       end
 
-      dumped = Marshal.dump(engine)
-      restored = Marshal.load(dumped)
+      dumped = engine.dump!
+      restored = Mayu::Runtime::VNodes2::Engine.restore(dumped)
 
       listeners = restored.root.instance_variable_get(:@listeners)
       assert_equal(0, listeners.size)

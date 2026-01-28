@@ -35,6 +35,25 @@ module Mayu
           @root.rehydrate(parent: nil, engine: self)
         end
 
+        def dump
+          Marshal.dump(self)
+        end
+
+        def dump!
+          stop
+          dump
+        end
+
+        def self.restore(data)
+          Marshal.load(data)
+        end
+
+        def self.restore!(data)
+          engine = restore(data)
+          engine.start
+          engine
+        end
+
         def task
           @updater.task
         end
@@ -47,6 +66,7 @@ module Mayu
         def stop
           @root.stop
           @updater.stop
+          @task&.stop
         end
 
         def enqueue_update(vnode)
