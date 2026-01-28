@@ -172,6 +172,35 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     end
   end
 
+  class ErrorChild < Mayu::Component::Base
+    def render
+      raise "boom" if @__props[:should_fail]
+      H[:span, "ok"]
+    end
+  end
+
+  class ErrorBoundaryProbe < Mayu::Component::Base
+    def initialize
+      @should_fail = false
+      @handled = false
+    end
+
+    def handle_error(_error)
+      @handled = true
+      true
+    end
+
+    def trigger_error
+      @should_fail = true
+      rerender!
+    end
+
+    def render
+      return H[:div, "Error handled"] if @handled
+      H[ErrorChild, should_fail: @should_fail]
+    end
+  end
+
   def test_write_html
     descriptor =
       H[
@@ -616,6 +645,26 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
         refute_nil(set_text)
         assert_equal("Click 1", set_text.content)
       end
+    end
+  end
+
+  def test_error_boundary_rerenders_on_error
+    descriptor = H[:body, H[ErrorBoundaryProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, ErrorBoundaryProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.trigger_error
+
+      patches = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      refute_nil(patches)
+
+      html = render_html(engine.root)
+      assert_match("<div>Error handled</div>", html)
     end
   end
 

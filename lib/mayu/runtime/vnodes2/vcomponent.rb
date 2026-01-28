@@ -13,6 +13,15 @@ module Mayu
   module Runtime
     module VNodes2
       class VComponent < Base
+        ErrorHandled =
+          Class.new(StandardError) do
+            attr_reader :boundary
+
+            def initialize(boundary)
+              @boundary = boundary
+              super()
+            end
+          end
         class Context
           def initialize(parent: nil)
             @vars = {}
@@ -106,17 +115,28 @@ module Mayu
         end
 
         def update(patcher, descriptor = nil)
-          if descriptor
-            @descriptor = descriptor
+          retried = false
 
-            @instance.instance_variable_set(
-              :@__children,
-              @descriptor.children.freeze
-            )
-            @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
+          begin
+            if descriptor
+              @descriptor = descriptor
+
+              @instance.instance_variable_set(
+                :@__children,
+                @descriptor.children.freeze
+              )
+              @instance.instance_variable_set(
+                :@__props,
+                @descriptor.props.freeze
+              )
+            end
+
+            @children.update(patcher, render_children)
+          rescue ErrorHandled => e
+            raise if retried || e.boundary != self
+            retried = true
+            retry
           end
-
-          @children.update(patcher, render_children)
         end
 
         def write_html(out)
@@ -195,7 +215,35 @@ module Mayu
         private
 
         def render_children
-          @instance.render
+          retried = false
+
+          begin
+            @instance.render
+          rescue ErrorHandled => e
+            raise if retried
+            retried = true
+
+            if e.boundary == self
+              retry
+            else
+              raise
+            end
+          rescue => e
+            raise if retried
+            retried = true
+
+            boundary = handle_error_up_tree(e)
+
+            if boundary
+              if boundary == self
+                retry
+              else
+                raise ErrorHandled, boundary
+              end
+            else
+              raise
+            end
+          end
         end
 
         def resolve_component_class(module_path, class_name)
@@ -213,6 +261,22 @@ module Mayu
           mod = Modules::System.current.get_mod(module_path)
           exports = mod.const_get(:Exports)
           exports.const_get(const_name)
+        end
+
+        def handle_error_up_tree(error)
+          node = self
+
+          while node
+            instance = node.instance_variable_get(:@instance)
+            if instance.respond_to?(:handle_error)
+              handled = instance.handle_error(error)
+              return node if handled
+            end
+
+            node = node.parent&.closest(VComponent)
+          end
+
+          nil
         end
 
         def get_mod(module_path = @descriptor.type.module_path)
