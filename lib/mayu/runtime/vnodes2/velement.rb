@@ -3,10 +3,8 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
-require "cgi"
 require_relative "base"
 require_relative "../dom"
-require_relative "../inline_style"
 require_relative "../patches"
 require_relative "vattributes"
 require_relative "vchildren"
@@ -48,14 +46,17 @@ module Mayu
 
         def write_html(out)
           tag_name = self.tag_name
-          attributes = render_attributes
 
           if Mayu::Runtime::DOM::VOID_ELEMENTS.include?(tag_name)
-            out << "<#{tag_name}#{attributes}>"
+            out << "<#{tag_name}"
+            @attributes.write_html(out)
+            out << ">"
             return
           end
 
-          out << "<#{tag_name}#{attributes}>"
+          out << "<#{tag_name}"
+          @attributes.write_html(out)
+          out << ">"
           @children.write_html(out)
           out << "</#{tag_name}>"
         end
@@ -115,35 +116,6 @@ module Mayu
 
         def tag_name
           @descriptor.type.to_s.downcase.delete_prefix("__").tr("_", "-")
-        end
-
-        def render_attributes
-          attributes = @descriptor.props || {}
-          internal = Mayu::Runtime::DOM::INJECT_MAYU_ID ? { mayu_id: @id } : {}
-
-          (internal.merge(attributes))
-            .except(:slot)
-            .map do |attr, value|
-              next if value.nil?
-
-              if attr == :style && value.is_a?(Hash)
-                value = InlineStyle.stringify(value)
-              end
-
-              value = value.join(" ") if attr == :class && value.is_a?(Array)
-
-              rendered_value =
-                if value.respond_to?(:to_js)
-                  value.to_js
-                else
-                  CGI.escape_html(value.to_s)
-                end
-
-              name = CGI.escape_html(attr.to_s.tr("_", "-"))
-              format(' %s="%s"', name, rendered_value)
-            end
-            .compact
-            .join
         end
       end
     end

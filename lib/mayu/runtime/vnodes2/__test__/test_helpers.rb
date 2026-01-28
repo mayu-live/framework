@@ -67,6 +67,13 @@ module Mayu
           end
         end
 
+        def assert_no_patches(engine, timeout: 0.2)
+          wait_until { engine.instance_variable_get(:@updater).queue.empty? }
+          assert_raises(Async::TimeoutError) do
+            Async::Task.current.with_timeout(timeout) { engine.dequeue_patches }
+          end
+        end
+
         def with_modules_system(component_class)
           mod = Module.new
           exports = Module.new

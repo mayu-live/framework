@@ -4,6 +4,7 @@
 # License: AGPL-3.0
 
 require "securerandom"
+require "cgi"
 
 require_relative "base"
 require_relative "../inline_style"
@@ -119,7 +120,60 @@ module Mayu
           @attributes = updated_attributes
         end
 
-        def write_html(_out)
+        def write_html(out)
+          document = @parent.closest(VDocument)
+          attributes =
+            (document ? render_for_html(document) : @descriptor.props || {})
+          internal =
+            Mayu::Runtime::DOM::INJECT_MAYU_ID ? { mayu_id: @parent.id } : {}
+
+          (internal.merge(attributes))
+            .except(:slot)
+            .each do |attr, value|
+              next if value.nil?
+
+              if attr == :style && value.is_a?(Hash)
+                value = InlineStyle.stringify(value)
+              end
+
+              value = value.join(" ") if attr == :class && value.is_a?(Array)
+
+              rendered_value =
+                if value.respond_to?(:to_js)
+                  value.to_js
+                else
+                  CGI.escape_html(value.to_s)
+                end
+
+              name = CGI.escape_html(attr.to_s.tr("_", "-"))
+              out << format(' %s="%s"', name, rendered_value)
+            end
+        end
+
+        def render_for_html(document)
+          attrs = normalize_attributes(flatten_props(@descriptor.props))
+
+          attrs
+            .transform_values do |value|
+              case value
+              when Listener
+                value.to_js
+              else
+                value
+              end
+            end
+            .tap do |hash|
+              hash.each do |key, value|
+                next unless key.to_s.start_with?("on")
+                next if value.is_a?(String)
+                next unless value
+
+                listener = Listener[value]
+                document.add_listener(listener)
+                hash[key] = listener.to_js
+                @attributes[key] = listener
+              end
+            end
         end
 
         def rehydrate_listeners(document, component_map)
