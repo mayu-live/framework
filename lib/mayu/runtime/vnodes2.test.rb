@@ -321,7 +321,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
 
       wait_until { instance.mounted }
 
-      assert_equal(true, instance.mounted)
+      assert(instance.mounted)
 
       instance.rerender!
 
@@ -330,7 +330,7 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
       assert_equal([], patches)
     end
 
-    assert_equal(true, instance.unmounted)
+    assert(instance.unmounted)
   end
 
   def test_component_update_queue_emits_patches
