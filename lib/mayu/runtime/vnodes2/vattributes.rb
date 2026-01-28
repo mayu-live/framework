@@ -77,6 +77,26 @@ module Mayu
               next
             end
 
+            if key == :class
+              updated_attributes[key] = update_class(
+                patcher,
+                key,
+                old_value,
+                new_value
+              )
+              next
+            end
+
+            if key == :style
+              updated_attributes[key] = update_style(
+                patcher,
+                key,
+                old_value,
+                new_value
+              )
+              next
+            end
+
             if new_value.nil?
               if old_value
                 patcher << Patches::RemoveAttribute[@parent.dom_id, key]
@@ -116,6 +136,10 @@ module Mayu
           attrs.each_with_object({}) do |(key, value), obj|
             if key.to_s.start_with?("on")
               obj[key] = value
+            elsif key == :style
+              obj[key] = value
+            elsif key == :class
+              obj[key] = Array(value).flatten.compact
             else
               obj[key] = normalize_attribute_value(key, value)
             end
@@ -169,6 +193,69 @@ module Mayu
           listener = closest(VDocument)&.add_listener(Listener[new_value])
           patcher << Patches::SetAttribute[@parent.dom_id, key, listener.to_js]
           listener
+        end
+
+        def update_class(patcher, key, old_value, new_value)
+          old_classes = Array(old_value).flatten.compact
+          new_classes = Array(new_value).flatten.compact
+
+          if new_classes.empty?
+            unless old_classes.empty?
+              patcher << Patches::RemoveAttribute[@parent.dom_id, key]
+            end
+            return nil
+          end
+
+          added = new_classes - old_classes
+          removed = old_classes - new_classes
+
+          unless added.empty?
+            patcher << Patches::AddClass[@parent.dom_id, added]
+          end
+          unless removed.empty?
+            patcher << Patches::RemoveClass[@parent.dom_id, removed]
+          end
+
+          new_classes
+        end
+
+        def update_style(patcher, key, old_value, new_value)
+          old_styles = old_value.is_a?(Hash) ? old_value : {}
+          new_styles = new_value.is_a?(Hash) ? new_value : {}
+
+          if new_styles.empty?
+            unless old_styles.empty?
+              patcher << Patches::RemoveAttribute[@parent.dom_id, key]
+            end
+            return nil
+          end
+
+          added = new_styles.keys - old_styles.keys
+          removed = old_styles.keys - new_styles.keys
+
+          added.each do |name|
+            patcher << Patches::SetCSSProperty[
+              @parent.dom_id,
+              name.to_s,
+              new_styles[name]
+            ]
+          end
+
+          removed.each do |name|
+            patcher << Patches::RemoveCSSProperty[@parent.dom_id, name.to_s]
+          end
+
+          changed = new_styles.keys & old_styles.keys
+          changed.each do |name|
+            next if new_styles[name] == old_styles[name]
+            patcher << Patches::SetCSSProperty[
+              @parent.dom_id,
+              name.to_s,
+              new_styles[name]
+            ]
+          end
+
+          new_styles
         end
 
         def flatten_props(hash, path = [])

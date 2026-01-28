@@ -83,7 +83,8 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
 
   def test_update_patches_for_attribute_and_text
     initial = H[:body, H[:p, "Hello", class: ["greeting"]]]
-    updated = H[:body, H[:p, "World", class: ["farewell"]]]
+    updated =
+      H[:body, H[:p, "World", class: ["farewell"], style: { color: "red" }]]
 
     engine = Mayu::Runtime::VNodes2::Engine.new(initial)
     document = engine.root
@@ -92,18 +93,30 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
 
     document.update(patcher, updated)
 
-    set_attribute =
+    add_class =
       patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::SetAttribute) &&
-          patch.name == :class
+        patch.is_a?(Mayu::Runtime::Patches::AddClass)
+      end
+    remove_class =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::RemoveClass)
+      end
+    set_css =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::SetCSSProperty)
       end
     set_text =
       patcher.patches.find do |patch|
         patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
       end
 
-    refute_nil(set_attribute)
-    assert_equal("farewell", set_attribute.value)
+    refute_nil(add_class)
+    assert_equal(["farewell"], add_class.classes)
+    refute_nil(remove_class)
+    assert_equal(["greeting"], remove_class.classes)
+    refute_nil(set_css)
+    assert_equal("color", set_css.name)
+    assert_equal("red", set_css.value)
 
     refute_nil(set_text)
     assert_equal("World", set_text.content)
