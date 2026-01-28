@@ -3,6 +3,8 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require "securerandom"
+
 require_relative "base"
 require_relative "../inline_style"
 require_relative "../patches"
@@ -11,6 +13,25 @@ module Mayu
   module Runtime
     module VNodes2
       class VAttributes < Base
+        Listener =
+          Data.define(:id, :callback) do
+            def self.[](callback) = new(SecureRandom.alphanumeric(32), callback)
+
+            def to_js = "Mayu.callback(event,'#{id}')"
+
+            def call(payload)
+              method = callback.component.method(callback.method_name)
+
+              case method.parameters
+              in []
+                method.call
+              in [[:req, Symbol]]
+                method.call(payload)
+              in [[:keyrest, Symbol]]
+                method.call(**payload)
+              end
+            end
+          end
         def initialize(descriptor, parent:, engine:)
           super
           @attributes = normalize_attributes(flatten_props(@descriptor.props))
@@ -22,15 +43,27 @@ module Mayu
 
           new_attributes =
             normalize_attributes(flatten_props(@descriptor.props))
+          updated_attributes = @attributes.dup
 
           (@attributes.keys | new_attributes.keys).each do |key|
             old_value = @attributes[key]
             new_value = new_attributes[key]
 
+            if key.to_s.start_with?("on")
+              updated_attributes[key] = update_callback(
+                patcher,
+                key,
+                old_value,
+                new_value
+              )
+              next
+            end
+
             if new_value.nil?
               if old_value
                 patcher << Patches::RemoveAttribute[@parent.dom_id, key]
               end
+              updated_attributes[key] = nil
               next
             end
 
@@ -41,9 +74,11 @@ module Mayu
               key,
               new_value.to_s
             ]
+
+            updated_attributes[key] = new_value
           end
 
-          @attributes = new_attributes
+          @attributes = updated_attributes
         end
 
         def write_html(_out)
@@ -53,7 +88,11 @@ module Mayu
 
         def normalize_attributes(attrs)
           attrs.each_with_object({}) do |(key, value), obj|
-            obj[key] = normalize_attribute_value(key, value)
+            if key.to_s.start_with?("on")
+              obj[key] = value
+            else
+              obj[key] = normalize_attribute_value(key, value)
+            end
           end
         end
 
@@ -71,6 +110,29 @@ module Mayu
           return value.to_js if value.respond_to?(:to_js)
 
           value.to_s
+        end
+
+        def update_callback(patcher, key, old_value, new_value)
+          if old_value.is_a?(Listener)
+            return old_value if old_value.callback.same?(new_value)
+            closest(VDocument)&.remove_listener(old_value)
+          elsif old_value.is_a?(String)
+            return old_value if old_value == new_value
+          end
+
+          if new_value.nil?
+            patcher << Patches::RemoveAttribute[@parent.dom_id, key]
+            return nil
+          end
+
+          if new_value.is_a?(String)
+            patcher << Patches::SetAttribute[@parent.dom_id, key, new_value]
+            return new_value
+          end
+
+          listener = closest(VDocument)&.add_listener(Listener[new_value])
+          patcher << Patches::SetAttribute[@parent.dom_id, key, listener.to_js]
+          listener
         end
 
         def flatten_props(hash, path = [])

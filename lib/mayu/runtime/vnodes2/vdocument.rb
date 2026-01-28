@@ -53,6 +53,14 @@ module Mayu
           @head_dirty = true if @styles.add?(filename)
         end
 
+        def add_listener(listener)
+          @listeners.store(listener.id, listener)
+        end
+
+        def remove_listener(listener)
+          @listeners.delete(listener.id)
+        end
+
         def flush_head(patcher)
           return unless @head_dirty
           @html.update(patcher, init_html)

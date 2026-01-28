@@ -127,6 +127,15 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     end
   end
 
+  class CallbackProbe < Mayu::Component::Base
+    def render
+      H[:button, "Click", onclick: H.callback(self, :handle_click)]
+    end
+
+    def handle_click
+    end
+  end
+
   def test_write_html
     descriptor =
       H[
@@ -403,6 +412,65 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     )
   ensure
     Thread.current.thread_variable_set(key, previous)
+  end
+
+  def test_event_callback_attribute
+    component = CallbackProbe.new
+    initial = H[:body, H[:button, "Click"]]
+    updated =
+      H[
+        :body,
+        H[:button, "Click", onclick: H.callback(component, :handle_click)]
+      ]
+
+    engine = Mayu::Runtime::VNodes2::Engine.new(initial)
+    document = engine.root
+
+    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    document.update(patcher, updated)
+
+    set_attribute =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::SetAttribute) &&
+          patch.name == :onclick
+      end
+
+    refute_nil(set_attribute)
+    assert_match(
+      /\AMayu\.callback\(event,'[A-Za-z0-9]+'\)\z/,
+      set_attribute.value
+    )
+  end
+
+  def test_event_listener_unregistered_on_change
+    component = CallbackProbe.new
+    initial =
+      H[
+        :body,
+        H[:button, "Click", onclick: H.callback(component, :handle_click)]
+      ]
+    updated = H[:body, H[:button, "Click", onclick: nil]]
+
+    engine = Mayu::Runtime::VNodes2::Engine.new(initial)
+    document = engine.root
+
+    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    document.update(patcher, initial)
+
+    listeners = document.instance_variable_get(:@listeners)
+    assert_equal(1, listeners.size)
+
+    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    document.update(patcher, updated)
+
+    remove_attribute =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::RemoveAttribute) &&
+          patch.name == :onclick
+      end
+
+    refute_nil(remove_attribute)
+    assert_equal(0, listeners.size)
   end
 
   private
