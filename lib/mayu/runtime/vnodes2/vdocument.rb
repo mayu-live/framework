@@ -61,6 +61,16 @@ module Mayu
           @listeners.delete(listener.id)
         end
 
+        def call_listener(id, payload)
+          listener =
+            @listeners.fetch(id) do
+              Console.logger.error(self, "Listener #{id} not found")
+              return
+            end
+
+          listener.call(payload)
+        end
+
         def flush_head(patcher)
           return unless @head_dirty
           @html.update(patcher, init_html)

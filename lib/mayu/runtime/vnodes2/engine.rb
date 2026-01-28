@@ -41,6 +41,10 @@ module Mayu
           @updater.enqueue(vnode)
         end
 
+        def callback(id, payload)
+          @root.call_listener(id, payload)
+        end
+
         def flush_head(patcher)
           @root.flush_head(patcher)
         end
