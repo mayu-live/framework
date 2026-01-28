@@ -68,7 +68,10 @@ module Mayu
               return
             end
 
-          listener.call(payload)
+          component = listener.callback&.component
+          task = component&.instance_variable_get(:@__vnode_task)
+
+          task ? task.async { listener.call(payload) } : listener.call(payload)
         end
 
         def flush_head(patcher)

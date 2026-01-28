@@ -86,6 +86,7 @@ module Mayu
 
           parent_task&.async do |task|
             @task = task
+            @instance.instance_variable_set(:@__vnode_task, task)
 
             vnode = self
             @instance.define_singleton_method(:rerender!) do
@@ -96,17 +97,21 @@ module Mayu
             end
 
             @children.start
-            @instance.mount
-            @mounted = true
+            task.async do
+              @instance.mount
+              @mounted = true
+            end
           end
         end
 
         def stop
+          return unless @task
           @children.stop
-          @task&.stop
-          @task = nil
           @instance.unmount if @mounted
           @mounted = false
+          @task.stop
+          @task = nil
+          @instance.instance_variable_set(:@__vnode_task, nil)
         end
 
         def insert
