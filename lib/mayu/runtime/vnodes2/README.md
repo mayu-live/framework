@@ -124,6 +124,10 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - stylesheet injection into head
   - event callback wiring and listener removal
   - engine callback dispatch emitting patches
+  - error boundary behavior
+  - view transition wrapping
+  - serialization round-trips and listener restore
+  - tests are split under `lib/mayu/runtime/vnodes2/__test__/`
 
 ## TODO (next steps)
 
@@ -132,6 +136,8 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - Event listener patches parity (SetListener/RemoveListener vs SetAttribute).
 - DOM patch parity:
   - Proper handling of keyed reordering (not just insert/remove).
+- Serialization follow-ups:
+  - Decide if listeners should be rehydrated without calling `update`.
 - VHead/VDocument behavior:
   - Define head aggregation rules:
     - Always inject one `<meta charset="utf-8">` at the top.
