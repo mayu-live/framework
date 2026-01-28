@@ -94,7 +94,7 @@ module Mayu
           @html.dom_id_tree
         end
 
-        attr_reader :head
+        attr_reader :head, :styles
 
         def update(patcher, descriptor = nil)
           return unless descriptor
@@ -110,6 +110,10 @@ module Mayu
         def remove_head(vnode)
           @head.delete(vnode)
           @head_dirty = true
+        end
+
+        def add_stylesheet(filename)
+          @head_dirty = true if @styles.add?(filename)
         end
 
         def flush_head(patcher)

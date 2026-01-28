@@ -8,6 +8,7 @@ require "async"
 require "minitest/autorun"
 require "stringio"
 require_relative "../test"
+require_relative "../modules/system"
 require_relative "vnodes2/vdocument"
 require_relative "vnodes2/engine"
 require_relative "vnodes2/patcher"
@@ -115,6 +116,14 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
       else
         H[:section, H[:div, "c"]]
       end
+    end
+  end
+
+  class StylesProbe < Mayu::Component::Base
+    def self.module_path = "/styles/probe"
+
+    def render
+      H[:div, "styles"]
     end
   end
 
@@ -366,6 +375,34 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     ensure
       engine.stop
     end.wait
+  end
+
+  def test_component_stylesheet_registration
+    mod = Data.define(:assets, :dependencies).new(["styles.css"], [])
+    system =
+      Data
+        .define(:mod) do
+          def get_mod(_path)
+            mod
+          end
+        end
+        .new(mod)
+
+    key = Mayu::Modules::System::CURRENT_KEY
+    previous = Thread.current.thread_variable_get(key)
+    Thread.current.thread_variable_set(key, system)
+
+    descriptor = H[:body, H[StylesProbe]]
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+    html = render_html(engine.root)
+
+    assert_match(
+      '<link rel="stylesheet" href="/.mayu/assets/styles.css">',
+      html
+    )
+  ensure
+    Thread.current.thread_variable_set(key, previous)
   end
 
   private
