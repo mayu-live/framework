@@ -110,6 +110,8 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - Engine and vnode trees are marshalable without async tasks.
   - Component state marshals via `Component::Base#marshal_dump`.
   - Rehydrate pass restores parent/engine links and listeners.
+  - Engine `dump`/`dump!` and `restore`/`restore!` helpers.
+  - VComponent stop is idempotent (mount/unmount only once).
 - Tests in `lib/mayu/runtime/vnodes2.test.rb` for:
   - HTML rendering
   - patch creation on insert/remove
@@ -127,7 +129,7 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 
 - Attribute patch parity:
   - `class`/`style` diff patches (AddClass/RemoveClass, SetCSSProperty, etc).
-  - Event listener updates (`on*`) and listener registry in vnodes2 VDocument.
+  - Event listener patches parity (SetListener/RemoveListener vs SetAttribute).
 - DOM patch parity:
   - Proper handling of keyed reordering (not just insert/remove).
 - VHead/VDocument behavior:
