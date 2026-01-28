@@ -100,6 +100,7 @@ module Mayu
 
         def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
           super
+          @attributes.rehydrate(parent: self, engine: engine)
           @children.rehydrate(
             parent: self,
             engine: engine,

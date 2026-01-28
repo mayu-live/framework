@@ -150,7 +150,7 @@ module Mayu
 
         def update_callback(patcher, key, old_value, new_value)
           if old_value.is_a?(Listener)
-            return old_value if old_value.callback.same?(new_value)
+            return old_value if old_value.callback&.same?(new_value)
             closest(VDocument)&.remove_listener(old_value)
           elsif old_value.is_a?(String)
             return old_value if old_value == new_value

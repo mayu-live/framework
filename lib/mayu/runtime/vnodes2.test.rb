@@ -564,6 +564,60 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     end
   end
 
+  def test_serialization_restores_callback_listeners
+    descriptor = H[:body, H[CallbackProbe]]
+
+    with_modules_system(CallbackProbe) do
+      engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+      run_engine_instance(engine) do
+        document = engine.root
+        patcher = Mayu::Runtime::VNodes2::Patcher.new
+        document.update(patcher, descriptor)
+
+        wait_until { document.instance_variable_get(:@listeners).any? }
+      end
+
+      dumped = Marshal.dump(engine)
+      restored = Marshal.load(dumped)
+
+      listeners = restored.root.instance_variable_get(:@listeners)
+      assert_equal(0, listeners.size)
+
+      listener = listeners.values.first
+      assert_nil(listener)
+
+      run_engine_instance(restored) do
+        document = restored.root
+        patcher = Mayu::Runtime::VNodes2::Patcher.new
+        document.update(patcher, descriptor)
+
+        component = find_component(document, CallbackProbe)
+        instance = component.instance_variable_get(:@instance)
+
+        wait_until do
+          document.instance_variable_get(:@listeners).any? &&
+            instance.singleton_methods.include?(:rerender!)
+        end
+
+        listener = document.instance_variable_get(:@listeners).values.first
+        refute_nil(listener)
+
+        restored.callback(listener.id, {})
+        patches =
+          Async::Task.current.with_timeout(0.5) { restored.dequeue_patches }
+
+        set_text =
+          patches.find do |patch|
+            patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+          end
+
+        refute_nil(set_text)
+        assert_equal("Click 1", set_text.content)
+      end
+    end
+  end
+
   private
 
   def run_engine(descriptor)
