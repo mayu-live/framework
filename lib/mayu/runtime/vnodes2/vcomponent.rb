@@ -73,6 +73,8 @@ module Mayu
         attr_reader :context
 
         def start
+          return if @task
+
           parent_task&.async do |task|
             @task = task
 
