@@ -12,6 +12,8 @@ module Mayu
   module Runtime
     module VNodes2
       class Updater
+        Navigation = Data.define(:path, :descriptor, :push_state)
+
         attr_reader :queue, :task, :output_queue
 
         def initialize(output_queue)
@@ -31,7 +33,20 @@ module Mayu
                 batch << @queue.dequeue until @queue.empty?
 
                 patcher = Patcher.new
-                unique = batch.uniq
+                navigations = batch.select { |item| item.is_a?(Navigation) }
+                nodes = batch.reject { |item| item.is_a?(Navigation) }
+
+                navigations.each do |nav|
+                  @engine.root.update(patcher, nav.descriptor)
+                  if nav.push_state
+                    patcher << Patches::HistoryPushState[nav.path]
+                  end
+                end
+
+                unique = nodes.uniq
+                if navigations.any?
+                  unique.reject! { |node| node.equal?(@engine.root) }
+                end
                 unique.each { |node| node.update(patcher) }
                 @engine&.flush_dirty_elements(patcher)
                 @engine&.flush_head(patcher)

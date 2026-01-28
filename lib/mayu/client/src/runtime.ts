@@ -141,7 +141,13 @@ function configureLink(a: HTMLAnchorElement) {
 function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
   if (!domNode) return;
 
-  // console.log("Visiting", domNode, domNode.nodeName, idNode.name, JSON.stringify(domNode.textContent));
+  console.log(
+    "Visiting",
+    domNode,
+    domNode.nodeName,
+    idNode.name,
+    JSON.stringify(domNode.textContent)
+  );
 
   if (domNode.nodeName.toUpperCase() !== idNode.name.toUpperCase()) {
     console.error(
