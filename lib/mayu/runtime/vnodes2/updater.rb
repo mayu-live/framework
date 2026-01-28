@@ -6,6 +6,7 @@
 require "async/queue"
 
 require_relative "patcher"
+require_relative "../patches"
 
 module Mayu
   module Runtime
@@ -30,11 +31,23 @@ module Mayu
                 batch << @queue.dequeue until @queue.empty?
 
                 patcher = Patcher.new
-                batch.uniq.each { |node| node.update(patcher) }
+                unique = batch.uniq
+                unique.each { |node| node.update(patcher) }
                 @engine&.flush_dirty_elements(patcher)
                 @engine&.flush_head(patcher)
 
-                @output_queue.enqueue(patcher.patches)
+                if unique.any? { |node|
+                     node.instance_variable_get(:@__view_transition_pending)
+                   }
+                  unique.each do |node|
+                    node.instance_variable_set(:@__view_transition_pending, nil)
+                  end
+                  @output_queue.enqueue(
+                    [Patches::ViewTransition[patcher.patches]]
+                  )
+                else
+                  @output_queue.enqueue(patcher.patches)
+                end
               end
             end
         end

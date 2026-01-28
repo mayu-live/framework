@@ -53,6 +53,8 @@ module Mayu
 
       RenderError =
         Data.define(:file, :type, :message, :backtrace, :source, :tree_path)
+
+      ViewTransition = Data.define(:patches)
     end
   end
 end

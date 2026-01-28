@@ -84,6 +84,13 @@ module Mayu
         rerender!
         value
       end
+
+      def view_transition
+        @__view_transition = true
+        yield
+      ensure
+        @__view_transition = false
+      end
     end
   end
 end

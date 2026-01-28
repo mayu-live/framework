@@ -89,6 +89,9 @@ module Mayu
 
             vnode = self
             @instance.define_singleton_method(:rerender!) do
+              if @__view_transition
+                vnode.instance_variable_set(:@__view_transition_pending, true)
+              end
               vnode.engine.enqueue_update(vnode)
             end
 
