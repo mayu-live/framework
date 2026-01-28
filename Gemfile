@@ -12,9 +12,10 @@ group :development do
   gem "minitest", require: false
   gem "minitest-mock", require: false
   gem "minitest-reporters", require: false
+  gem "minitest-focus", require: false
   gem "prettier", require: false
   gem "rexml", require: false
   gem "ruby-prof", require: false
   gem "benchmark", require: false
-  gem "pry-coolline", require: false
+  gem "irb", require: false
 end
