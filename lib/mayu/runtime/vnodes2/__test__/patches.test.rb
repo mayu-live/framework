@@ -122,6 +122,32 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     assert_equal("World", set_text.content)
   end
 
+  def test_class_and_style_removal_patches
+    initial =
+      H[:body, H[:p, "Hello", class: ["greeting"], style: { color: "red" }]]
+    updated = H[:body, H[:p, "Hello", class: [], style: {}]]
+
+    engine = Mayu::Runtime::VNodes2::Engine.new(initial)
+    document = engine.root
+
+    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    document.update(patcher, updated)
+
+    remove_class_attr =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::RemoveAttribute) &&
+          patch.name == :class
+      end
+    remove_style_attr =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::RemoveAttribute) &&
+          patch.name == :style
+      end
+
+    refute_nil(remove_class_attr)
+    refute_nil(remove_style_attr)
+  end
+
   def test_component_update_queue_emits_patches
     descriptor = H[:body, H[MountUpdateProbe]]
 
