@@ -59,6 +59,26 @@ module Mayu
           @child.dom_id_tree
         end
 
+        def traverse(&block)
+          yield self
+          @child.traverse(&block)
+        end
+
+        def marshal_dump
+          [super, @child]
+        end
+
+        def marshal_load(a)
+          a => [base, child]
+          super(base)
+          @child = child
+        end
+
+        def rehydrate(parent:, engine:, **)
+          super
+          @child.rehydrate(parent: self, engine: engine, **)
+        end
+
         private
 
         def node_type_from_descriptor(descriptor)

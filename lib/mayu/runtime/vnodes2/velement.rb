@@ -81,6 +81,34 @@ module Mayu
           @children_dirty = false
         end
 
+        def traverse(&block)
+          yield self
+          @children.traverse(&block)
+        end
+
+        def marshal_dump
+          [super, @children, @attributes, @children_dirty]
+        end
+
+        def marshal_load(a)
+          a => [base, children, attributes, children_dirty]
+          super(base)
+          @children = children
+          @attributes = attributes
+          @children_dirty = children_dirty
+        end
+
+        def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
+          super
+          @children.rehydrate(
+            parent: self,
+            engine: engine,
+            document:,
+            component_map:
+          )
+          @attributes.rehydrate_listeners(document, component_map) if document
+        end
+
         private
 
         def tag_name

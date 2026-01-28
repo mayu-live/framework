@@ -23,6 +23,20 @@ module Mayu
         def write_html(_out)
         end
 
+        def marshal_dump
+          [super, @children]
+        end
+
+        def marshal_load(a)
+          a => [base, children]
+          super(base)
+          @children = children
+        end
+
+        def rehydrate(parent:, engine:, **)
+          super
+        end
+
         def insert
           add_to_document
         end

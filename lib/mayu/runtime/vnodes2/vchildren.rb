@@ -48,6 +48,11 @@ module Mayu
           @children.each { |child| child.write_html(out) }
         end
 
+        def traverse(&block)
+          yield self
+          @children.each { |child| child.traverse(&block) }
+        end
+
         def dom_id_tree
           @children.map(&:dom_id_tree)
         end
@@ -60,6 +65,23 @@ module Mayu
 
         def dom_id_trees
           @children.map(&:dom_id_tree)
+        end
+
+        def marshal_dump
+          [super, @children]
+        end
+
+        def marshal_load(a)
+          a => [base, children]
+          super(base)
+          @children = children
+        end
+
+        def rehydrate(parent:, engine:, **)
+          super
+          @children.each do |child|
+            child.rehydrate(parent: self, engine: engine, **)
+          end
         end
 
         private

@@ -92,6 +92,34 @@ module Mayu
           out << "\n"
         end
 
+        def marshal_dump
+          [super, @html, @styles]
+        end
+
+        def marshal_load(a)
+          a => [base, html, styles]
+          super(base)
+          @html = html
+          @styles = styles
+          @head = Set.new
+          @listeners = {}
+          @head_dirty = false
+        end
+
+        def rehydrate(parent:, engine:, **)
+          super
+
+          component_map = {}
+          @html.rehydrate(
+            parent: self,
+            engine: engine,
+            document: self,
+            component_map:
+          )
+
+          rebuild_head_and_listeners(component_map)
+        end
+
         private
 
         def init_html
@@ -105,6 +133,31 @@ module Mayu
             styles: @styles,
             descriptors: @head.map(&:children).flatten.compact
           ]
+        end
+
+        def traverse(&block)
+          @html.traverse(&block)
+        end
+
+        def rebuild_head_and_listeners(component_map)
+          @head.clear
+          @listeners.clear
+
+          traverse do |node|
+            case node
+            when VHead
+              @head.add(node)
+            when VElement
+              node.instance_variable_get(:@attributes).rehydrate_listeners(
+                self,
+                component_map
+              )
+            end
+          end
+        end
+
+        def traverse(&block)
+          @html.traverse(&block)
         end
       end
     end

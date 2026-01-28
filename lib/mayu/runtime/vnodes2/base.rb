@@ -76,6 +76,22 @@ module Mayu
           @is_removed = true
           @is_inserted = false
         end
+
+        def marshal_dump
+          [@id, @descriptor, @is_new, @is_inserted, @is_removed]
+        end
+
+        def marshal_load(a)
+          @id, @descriptor, @is_new, @is_inserted, @is_removed = a
+          @parent = nil
+          @engine = nil
+          @task = nil
+        end
+
+        def rehydrate(parent:, engine:, **)
+          @parent = parent
+          @engine = engine
+        end
       end
     end
   end

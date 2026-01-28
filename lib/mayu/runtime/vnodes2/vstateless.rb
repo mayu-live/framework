@@ -41,6 +41,26 @@ module Mayu
           @children.write_html(out)
         end
 
+        def traverse(&block)
+          yield self
+          @children.traverse(&block)
+        end
+
+        def marshal_dump
+          [super, @children]
+        end
+
+        def marshal_load(a)
+          a => [base, children]
+          super(base)
+          @children = children
+        end
+
+        def rehydrate(parent:, engine:, **)
+          super
+          @children.rehydrate(parent: self, engine: engine, **)
+        end
+
         private
 
         def rerender

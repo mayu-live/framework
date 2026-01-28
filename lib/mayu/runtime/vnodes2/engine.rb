@@ -23,6 +23,18 @@ module Mayu
           @root = VDocument.new(descriptor, parent: nil, engine: self)
         end
 
+        def marshal_dump
+          [@runtime_js, @root]
+        end
+
+        def marshal_load(a)
+          @runtime_js, @root = a
+          @output_queue = Async::Queue.new
+          @updater = Updater.new(@output_queue)
+          @dirty_elements = Set.new
+          @root.rehydrate(parent: nil, engine: self)
+        end
+
         def task
           @updater.task
         end

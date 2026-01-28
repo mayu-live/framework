@@ -34,6 +34,18 @@ module Mayu
         def dom_id_tree
           Mayu::Runtime::DOM::IdNode[dom_id, "#text"]
         end
+
+        def traverse(&block)
+          yield self
+        end
+
+        def marshal_dump
+          super
+        end
+
+        def marshal_load(a)
+          super(a)
+        end
       end
     end
   end

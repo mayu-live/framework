@@ -54,6 +54,26 @@ module Mayu
         def dom_id_tree
           @element.dom_id_tree
         end
+
+        def traverse(&block)
+          yield self
+          @element.traverse(&block)
+        end
+
+        def marshal_dump
+          [super, @element]
+        end
+
+        def marshal_load(a)
+          a => [base, element]
+          super(base)
+          @element = element
+        end
+
+        def rehydrate(parent:, engine:, **)
+          super
+          @element.rehydrate(parent: self, engine: engine, **)
+        end
       end
     end
   end

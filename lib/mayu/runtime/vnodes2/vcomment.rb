@@ -28,6 +28,18 @@ module Mayu
           Mayu::Runtime::DOM::IdNode[dom_id, "#comment"]
         end
 
+        def traverse(&block)
+          yield self
+        end
+
+        def marshal_dump
+          super
+        end
+
+        def marshal_load(a)
+          super(a)
+        end
+
         private
 
         def escape_comment(str)

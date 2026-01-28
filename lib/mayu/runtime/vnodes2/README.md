@@ -103,6 +103,13 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 - Head registration via `VHead` insert/remove; head flush happens after batch updates.
 - Stylesheet collection from component modules and injection into `<head>`.
 - Updater + Engine queueing for batch updates and patch output.
+- Event callback support:
+  - `on*` attributes produce listener registration and JS callback wiring.
+  - `Engine#callback` dispatches to listeners and triggers rerenders.
+- Serialization support:
+  - Engine and vnode trees are marshalable without async tasks.
+  - Component state marshals via `Component::Base#marshal_dump`.
+  - Rehydrate pass restores parent/engine links and listeners.
 - Tests in `lib/mayu/runtime/vnodes2.test.rb` for:
   - HTML rendering
   - patch creation on insert/remove
@@ -113,6 +120,8 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - update queue patch emission
   - ReplaceChildren emitted once per batch
   - stylesheet injection into head
+  - event callback wiring and listener removal
+  - engine callback dispatch emitting patches
 
 ## TODO (next steps)
 

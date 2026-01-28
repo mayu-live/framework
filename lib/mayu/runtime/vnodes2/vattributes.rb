@@ -31,7 +31,25 @@ module Mayu
                 method.call(**payload)
               end
             end
+
+            def marshal_dump
+              component_id =
+                callback.component.instance_variable_get(:@__vnode_id)
+              [@id, component_id, callback.method_name]
+            end
+
+            def marshal_load(a)
+              @id, @component_id, @method_name = a
+              @callback = nil
+            end
+
+            def rehydrate(component_map)
+              component = component_map[@component_id]
+              return unless component
+              @callback = Descriptors::Callback[component, @method_name]
+            end
           end
+
         def initialize(descriptor, parent:, engine:)
           super
           @attributes = normalize_attributes(flatten_props(@descriptor.props))
@@ -110,6 +128,24 @@ module Mayu
           return value.to_js if value.respond_to?(:to_js)
 
           value.to_s
+        end
+
+        def marshal_dump
+          [super, @attributes]
+        end
+
+        def marshal_load(a)
+          a => [base, attributes]
+          super(base)
+          @attributes = attributes
+        end
+
+        def rehydrate_listeners(document, component_map)
+          @attributes.each_value do |value|
+            next unless value.is_a?(Listener)
+            value.rehydrate(component_map)
+            document.add_listener(value) if value.callback
+          end
         end
 
         def update_callback(patcher, key, old_value, new_value)
