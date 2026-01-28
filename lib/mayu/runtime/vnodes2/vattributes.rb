@@ -121,9 +121,7 @@ module Mayu
         end
 
         def write_html(out)
-          document = @parent.closest(VDocument)
-          attributes =
-            (document ? render_for_html(document) : @descriptor.props || {})
+          attributes = render_for_html
           internal =
             Mayu::Runtime::DOM::INJECT_MAYU_ID ? { mayu_id: @parent.id } : {}
 
@@ -150,8 +148,8 @@ module Mayu
             end
         end
 
-        def render_for_html(document)
-          attrs = normalize_attributes(flatten_props(@descriptor.props))
+        def render_for_html
+          attrs = normalize_attributes(flatten_props(@descriptor.props || {}))
 
           attrs
             .transform_values do |value|
@@ -169,18 +167,18 @@ module Mayu
                 next unless value
 
                 listener = Listener[value]
-                document.add_listener(listener)
+                @engine.add_listener(listener)
                 hash[key] = listener.to_js
                 @attributes[key] = listener
               end
             end
         end
 
-        def rehydrate_listeners(document, component_map)
+        def rehydrate_listeners(component_map)
           @attributes.each_value do |value|
             next unless value.is_a?(Listener)
             value.rehydrate(component_map)
-            document.add_listener(value) if value.callback
+            @engine.add_listener(value) if value.callback
           end
         end
 
@@ -189,7 +187,7 @@ module Mayu
         def normalize_attributes(attrs)
           attrs.each_with_object({}) do |(key, value), obj|
             if key.to_s.start_with?("on")
-              obj[key] = value
+              obj[key] = (value == false ? nil : value)
             elsif key == :style
               obj[key] = value
             elsif key == :class
@@ -202,6 +200,7 @@ module Mayu
 
         def normalize_attribute_value(key, value)
           return if value.nil?
+          return if value == false
 
           return if value == "" && key in :class | :style
 

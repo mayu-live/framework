@@ -109,7 +109,7 @@ module Mayu
             document:,
             component_map:
           )
-          @attributes.rehydrate_listeners(document, component_map) if document
+          @attributes.rehydrate_listeners(component_map)
         end
 
         private

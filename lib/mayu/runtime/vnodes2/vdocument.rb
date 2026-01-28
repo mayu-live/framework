@@ -159,7 +159,6 @@ module Mayu
               @head.add(node)
             when VElement
               node.instance_variable_get(:@attributes).rehydrate_listeners(
-                self,
                 component_map
               )
             end
