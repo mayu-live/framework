@@ -195,18 +195,20 @@ module Mayu
         end
 
         def resolve_component_class(module_path, class_name)
+          const_name = class_name.to_s.split("::").last
+
           if module_path.nil?
             return @descriptor.type if @descriptor.type.is_a?(Class)
             raise "Missing component module_path for #{@descriptor.inspect}"
           end
 
           if module_path.start_with?("(internal)::")
-            return InternalComponents.const_get(class_name)
+            return InternalComponents.const_get(const_name)
           end
 
           mod = Modules::System.current.get_mod(module_path)
           exports = mod.const_get(:Exports)
-          exports.const_get(class_name)
+          exports.const_get(const_name)
         end
 
         def get_mod(module_path = @descriptor.type.module_path)

@@ -127,6 +127,35 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     end
   end
 
+  class SerializeProbe < Mayu::Component::Base
+    def self.module_path = "/tests/serialize"
+
+    attr_reader :count, :mount_count, :unmount_count
+
+    def initialize
+      @count = 0
+      @mount_count = 0
+      @unmount_count = 0
+    end
+
+    def mount
+      @mount_count += 1
+    end
+
+    def unmount
+      @unmount_count += 1
+    end
+
+    def bump
+      @count += 1
+      rerender!
+    end
+
+    def render
+      H[:p, @count.to_s]
+    end
+  end
+
   class CallbackProbe < Mayu::Component::Base
     def initialize
       @count = 0
@@ -490,6 +519,51 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     end
   end
 
+  def test_engine_serialization_round_trip
+    descriptor = H[:body, H[SerializeProbe]]
+
+    with_modules_system(SerializeProbe) do
+      engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+
+      run_engine_instance(engine) do
+        component = find_component(engine.root, SerializeProbe)
+        instance = component.instance_variable_get(:@instance)
+
+        wait_until { instance.respond_to?(:rerender!) }
+
+        instance.bump
+        Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+        instance.bump
+        Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+        assert_equal(2, instance.count)
+        assert_equal(1, instance.mount_count)
+        assert_equal(0, instance.unmount_count)
+      end
+
+      dumped = Marshal.dump(engine)
+      restored = Marshal.load(dumped)
+
+      html = render_html(restored.root)
+      assert_match("<p>2</p>", html)
+
+      run_engine_instance(restored) do
+        component = find_component(restored.root, SerializeProbe)
+        instance = component.instance_variable_get(:@instance)
+
+        wait_until { instance.respond_to?(:rerender!) }
+
+        assert_equal(2, instance.count)
+        assert_equal(2, instance.mount_count)
+        assert_equal(1, instance.unmount_count)
+      end
+
+      component = find_component(restored.root, SerializeProbe)
+      instance = component.instance_variable_get(:@instance)
+      assert_equal(2, instance.unmount_count)
+    end
+  end
+
   private
 
   def run_engine(descriptor)
@@ -501,6 +575,41 @@ class Mayu::Runtime::VNodes2Test < Minitest::Test
     ensure
       engine.stop
     end.wait
+  end
+
+  def run_engine_instance(engine)
+    Async do
+      engine.start
+      yield
+    ensure
+      engine.stop
+    end.wait
+  end
+
+  def with_modules_system(component_class)
+    mod = Module.new
+    exports = Module.new
+    exports.const_set(component_class.name.split("::").last, component_class)
+    mod.const_set(:Exports, exports)
+    mod.define_singleton_method(:assets) { [] }
+    mod.define_singleton_method(:dependencies) { [] }
+
+    system =
+      Data
+        .define(:mod) do
+          def get_mod(_path)
+            mod
+          end
+        end
+        .new(mod)
+
+    key = Mayu::Modules::System::CURRENT_KEY
+    previous = Thread.current.thread_variable_get(key)
+    Thread.current.thread_variable_set(key, system)
+
+    yield
+  ensure
+    Thread.current.thread_variable_set(key, previous)
   end
 
   def wait_until(timeout: 0.2)

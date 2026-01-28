@@ -102,6 +102,14 @@ module Mayu
         def write_html(_out)
         end
 
+        def rehydrate_listeners(document, component_map)
+          @attributes.each_value do |value|
+            next unless value.is_a?(Listener)
+            value.rehydrate(component_map)
+            document.add_listener(value) if value.callback
+          end
+        end
+
         private
 
         def normalize_attributes(attrs)
@@ -138,14 +146,6 @@ module Mayu
           a => [base, attributes]
           super(base)
           @attributes = attributes
-        end
-
-        def rehydrate_listeners(document, component_map)
-          @attributes.each_value do |value|
-            next unless value.is_a?(Listener)
-            value.rehydrate(component_map)
-            document.add_listener(value) if value.callback
-          end
         end
 
         def update_callback(patcher, key, old_value, new_value)
