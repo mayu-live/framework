@@ -45,10 +45,18 @@ module Mayu
 
                 updates.each do |node, descriptor|
                   next if node.removed?
-                  if descriptor
-                    node.update(patcher, descriptor)
-                  else
-                    node.update(patcher)
+                  begin
+                    if descriptor
+                      node.update(patcher, descriptor)
+                    else
+                      node.update(patcher)
+                    end
+                  rescue VComponent::UnhandledRenderError => e
+                    @engine&.root&.emit_render_error(
+                      patcher,
+                      e.error,
+                      e.component
+                    )
                   end
                 end
 

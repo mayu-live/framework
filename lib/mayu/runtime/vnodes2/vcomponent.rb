@@ -22,6 +22,18 @@ module Mayu
               super()
             end
           end
+
+        UnhandledRenderError =
+          Class.new(StandardError) do
+            attr_reader :error, :component
+
+            def initialize(error, component)
+              @error = error
+              @component = component
+              super(error.message)
+              set_backtrace(error.backtrace)
+            end
+          end
         class Context
           def initialize(parent: nil)
             @vars = {}
@@ -276,7 +288,7 @@ module Mayu
                 raise ErrorHandled, boundary
               end
             else
-              raise
+              raise UnhandledRenderError.new(e, self)
             end
           end
         end

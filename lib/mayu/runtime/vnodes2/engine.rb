@@ -20,7 +20,7 @@ module Mayu
         attr_writer :metrics
         attr_writer :update_budget
 
-        def initialize(descriptor, runtime_js: nil, metrics:, update_budget: 10)
+        def initialize(descriptor, runtime_js: nil, metrics:, update_budget: 30)
           @runtime_js = runtime_js
           @metrics = metrics
           @update_budget = update_budget

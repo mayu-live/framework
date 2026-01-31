@@ -36,6 +36,8 @@ module Mayu
         def update(patcher, descriptor = nil)
           @descriptor = descriptor if descriptor
           @html.update(patcher, init_html)
+        rescue VComponent::UnhandledRenderError => e
+          emit_render_error(patcher, e.error, e.component)
         end
 
         def assign_descriptor(descriptor)
@@ -83,12 +85,14 @@ module Mayu
           task = component&.instance_variable_get(:@__vnode_task)
           queue = component&.instance_variable_get(:@__vnode_queue)
 
+          call = -> { listener.call(payload) }
+
           if task && queue
-            queue.enqueue(-> { listener.call(payload) })
+            queue.enqueue(-> { call_listener_safely(call, listener) })
           elsif task
-            task.async { listener.call(payload) }
+            task.async { call_listener_safely(call, listener) }
           else
-            listener.call(payload)
+            call_listener_safely(call, listener)
           end
         end
 
@@ -153,6 +157,13 @@ module Mayu
           rebuild_head_and_listeners(component_map)
         end
 
+        def emit_render_error(patcher, error, component_vnode)
+          component = component_vnode.instance_variable_get(:@instance)
+          patch = render_error_patch(error, component)
+          raise error unless patch
+          patcher << patch
+        end
+
         private
 
         def init_html
@@ -190,6 +201,33 @@ module Mayu
 
         def traverse(&block)
           @html.traverse(&block)
+        end
+
+        def render_error_patch(error, component)
+          module_path =
+            component.class.respond_to?(:module_path) &&
+              component.class.module_path
+          return nil unless module_path
+
+          mod = Modules::System.current.get_mod(module_path)
+          puts Modules::System.current.format_exception(error)
+
+          Patches::RenderError[
+            module_path,
+            error.class.name,
+            error.message,
+            error.backtrace,
+            mod.source_map.input,
+            []
+          ]
+        end
+
+        def call_listener_safely(call, listener)
+          call.call
+        rescue => e
+          component = listener.callback&.component
+          patch = render_error_patch(e, component) if component
+          @engine.patch(patch) if patch
         end
       end
     end
