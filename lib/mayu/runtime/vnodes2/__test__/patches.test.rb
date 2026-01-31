@@ -293,4 +293,54 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
 
     assert_raises(RuntimeError) { document.update(patcher, descriptor) }
   end
+
+  class HeadNavProbe < Mayu::Component::Base
+    def initialize
+      @title = "A"
+    end
+
+    def set_title(value)
+      @title = value
+      rerender!
+    end
+
+    def render
+      [H[:head, H[:title, @title]], H[:main, H[:p, "Content"]]]
+    end
+  end
+
+  def test_navigation_emits_history_before_head
+    initial = H[:body, H[HeadNavProbe]]
+    updated = H[:body, H[HeadNavProbe]]
+
+    run_engine(initial) do |engine|
+      component = find_component(engine.root, HeadNavProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.instance_variable_get(:@__vnode_task) }
+      instance.set_title("B")
+
+      engine.navigate("/nav", updated)
+
+      history_batch =
+        Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      head_batch =
+        Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      history_patches = unwrap_patches(history_batch)
+      head_patches = unwrap_patches(head_batch)
+
+      assert(
+        history_patches.all? do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::HistoryPushState)
+        end
+      )
+
+      assert(
+        head_patches.any? do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+        end
+      )
+    end
+  end
 end

@@ -86,6 +86,10 @@ module Mayu
           @head_dirty = false
         end
 
+        def head_dirty?
+          @head_dirty
+        end
+
         def start
           @html.start
         end

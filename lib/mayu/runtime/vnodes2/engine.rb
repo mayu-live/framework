@@ -92,6 +92,10 @@ module Mayu
           @root.flush_head(patcher)
         end
 
+        def head_dirty?
+          @root.head_dirty?
+        end
+
         def register_dirty_element(element)
           @dirty_elements.add(element)
         end

@@ -56,10 +56,31 @@ module Mayu
                     patcher << Patches::HistoryPushState[nav.path]
                   end
                 end
-                @engine&.flush_head(patcher)
+
+                history_patches = []
+                if navigations.any?
+                  history_patches =
+                    patcher.patches.select do |patch|
+                      patch.is_a?(Patches::HistoryPushState)
+                    end
+                  patcher.patches.reject! do |patch|
+                    patch.is_a?(Patches::HistoryPushState)
+                  end
+                  unless history_patches.empty?
+                    @output_queue.enqueue(Patches::Batch[history_patches])
+                  end
+                end
+
+                head_patches = []
+                if @engine&.head_dirty?
+                  head_patcher = Patcher.new
+                  @engine.flush_head(head_patcher)
+                  head_patches = head_patcher.patches
+                end
                 @engine&.flush_dirty_elements(patcher)
 
                 patches = patcher.patches
+                patches = head_patches + patches if head_patches.any?
                 next if patches.empty?
 
                 if updates.keys.any? { |node|
