@@ -34,8 +34,7 @@ module Mayu
         attr_reader :head, :styles
 
         def update(patcher, descriptor = nil)
-          return unless descriptor
-          @descriptor = descriptor
+          @descriptor = descriptor if descriptor
           @html.update(patcher, init_html)
         end
 

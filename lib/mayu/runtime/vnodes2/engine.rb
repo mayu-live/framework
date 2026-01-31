@@ -132,8 +132,16 @@ module Mayu
         end
 
         def navigate(path, descriptor, push_state: true)
-          update(descriptor)
-          patch(Patches::HistoryPushState[path]) if push_state
+          if @updater&.task
+            @root.instance_variable_set(:@descriptor, descriptor)
+            enqueue_update(@root)
+            @updater.enqueue(
+              Updater::Navigation.new(path, descriptor, push_state)
+            )
+          else
+            update(descriptor)
+            patch(Patches::HistoryPushState[path]) if push_state
+          end
         end
 
         def patch(patches)

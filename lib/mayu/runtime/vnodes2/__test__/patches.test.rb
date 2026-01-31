@@ -187,4 +187,30 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
       assert_equal(1, replace_children.count)
     end
   end
+
+  def test_navigation_emits_history_and_dom_patches
+    initial = H[:body, H[:p, "before"]]
+    updated = H[:body, H[:p, "after"]]
+
+    run_engine(initial) do |engine|
+      engine.navigate("/next", updated)
+
+      # puts render_html(engine.root)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
+
+      history =
+        patches.find do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::HistoryPushState)
+        end
+      dom_patches =
+        patches.reject do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::HistoryPushState)
+        end
+
+      refute_nil(history)
+      assert_equal("/next", history.path)
+      refute_empty(dom_patches)
+    end
+  end
 end

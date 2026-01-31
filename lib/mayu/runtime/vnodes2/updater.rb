@@ -28,36 +28,44 @@ module Mayu
           @task =
             parent_task.async do
               loop do
-                vnode = @queue.dequeue
-                batch = [vnode]
+                batch = [@queue.dequeue]
                 batch << @queue.dequeue until @queue.empty?
 
                 patcher = Patcher.new
-                navigations = batch.select { |item| item.is_a?(Navigation) }
-                nodes = batch.reject { |item| item.is_a?(Navigation) }
+                navigations = []
+                updates = {}
+
+                batch.each do |item|
+                  if item.is_a?(Navigation)
+                    navigations << item
+                  else
+                    updates[item] ||= nil
+                  end
+                end
+
+                updates.each do |node, descriptor|
+                  if descriptor
+                    node.update(patcher, descriptor)
+                  else
+                    node.update(patcher)
+                  end
+                end
 
                 navigations.each do |nav|
-                  @engine.root.update(patcher, nav.descriptor)
                   if nav.push_state
                     patcher << Patches::HistoryPushState[nav.path]
                   end
                 end
-
-                unique = nodes.uniq
-                if navigations.any?
-                  unique.reject! { |node| node.equal?(@engine.root) }
-                end
-                unique.each { |node| node.update(patcher) }
                 @engine&.flush_dirty_elements(patcher)
                 @engine&.flush_head(patcher)
 
                 patches = patcher.patches
                 next if patches.empty?
 
-                if unique.any? { |node|
+                if updates.keys.any? { |node|
                      node.instance_variable_get(:@__view_transition_pending)
                    }
-                  unique.each do |node|
+                  updates.keys.each do |node|
                     node.instance_variable_set(:@__view_transition_pending, nil)
                   end
                   @output_queue.enqueue(

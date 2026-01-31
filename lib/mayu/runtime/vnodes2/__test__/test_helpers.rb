@@ -2,6 +2,7 @@
 
 require "async"
 require "minitest/autorun"
+require "minitest/focus"
 require "stringio"
 
 require_relative "../../../test"
