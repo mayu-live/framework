@@ -8,7 +8,7 @@ require "stringio"
 require_relative "../../../test"
 require_relative "../../../modules/system"
 
-require_relative "../engine"
+require_relative "../../engine"
 require_relative "../patcher"
 require_relative "../vdocument"
 
@@ -45,10 +45,7 @@ module Mayu
 
         def run_engine(descriptor)
           engine =
-            Mayu::Runtime::VNodes2::Engine.new(
-              descriptor,
-              metrics: NullMetrics.new
-            )
+            Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
 
           Async do
             engine.start

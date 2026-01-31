@@ -30,8 +30,7 @@ class Mayu::Runtime::VNodes2::CallbacksTest < Minitest::Test
         H[:button, "Click", onclick: H.callback(component, :handle_click)]
       ]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new
@@ -59,8 +58,7 @@ class Mayu::Runtime::VNodes2::CallbacksTest < Minitest::Test
       ]
     updated = H[:body, H[:button, "Click", onclick: nil]]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new

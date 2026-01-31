@@ -58,8 +58,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
         H[:section, H[:h2, "News"]]
       ]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new
@@ -87,8 +86,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     initial = H[:body]
     updated = H[:body, H[custom, H[:span, "Hello"]]]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new
@@ -109,8 +107,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     updated =
       H[:body, H[:p, "World", class: ["farewell"], style: { color: "red" }]]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new
@@ -151,8 +148,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
       H[:body, H[:p, "Hello", class: ["greeting"], style: { color: "red" }]]
     updated = H[:body, H[:p, "Hello", class: [], style: {}]]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new
@@ -312,8 +308,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     initial = H[:body]
     updated = H[:body, H[MultiRootProbe]]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new

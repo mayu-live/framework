@@ -76,8 +76,7 @@ class Mayu::Runtime::VNodes2::ErrorBoundaryTest < Minitest::Test
 
   def test_error_boundary_render_html
     descriptor = H[:body, H[ErrorBoundaryProbe]]
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
 
     component = find_component(engine.root, ErrorBoundaryProbe)
     instance = component.instance_variable_get(:@instance)

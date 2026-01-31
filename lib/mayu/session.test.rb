@@ -38,7 +38,7 @@ class Mayu::SessionTest < Minitest::Test
     end
   end
 
-  def test_session_uses_vnodes2_engine
+  def test_session_uses_runtime_engine
     env = FakeEnvironment.new
     request_info =
       Mayu::Session::RequestInfo.new(
@@ -47,21 +47,17 @@ class Mayu::SessionTest < Minitest::Test
         },
         http2: false
       )
-
-    ENV["MAYU_VNODES2"] = "1"
 
     session = Mayu::Session.new(environment: env, request_info: request_info)
     engine = session.instance_variable_get(:@engine)
 
-    assert_instance_of(Mayu::Runtime::VNodes2::Engine, engine)
+    assert_instance_of(Mayu::Runtime::Engine, engine)
 
     html = session.render
     assert_includes(html, "Error: Could not find page")
-  ensure
-    ENV.delete("MAYU_VNODES2")
   end
 
-  def test_session_start_stop_with_vnodes2
+  def test_session_start_stop
     env = FakeEnvironment.new
     request_info =
       Mayu::Session::RequestInfo.new(
@@ -70,8 +66,6 @@ class Mayu::SessionTest < Minitest::Test
         },
         http2: false
       )
-
-    ENV["MAYU_VNODES2"] = "1"
 
     session = Mayu::Session.new(environment: env, request_info: request_info)
 
@@ -82,7 +76,5 @@ class Mayu::SessionTest < Minitest::Test
     end.wait
 
     refute(session.running?)
-  ensure
-    ENV.delete("MAYU_VNODES2")
   end
 end

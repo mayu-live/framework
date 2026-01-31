@@ -4,7 +4,6 @@
 # License: AGPL-3.0
 
 require_relative "runtime"
-require_relative "runtime/vnodes2/engine"
 require_relative "session/token"
 require_relative "session/error_page"
 require_relative "session/transfer_state"
@@ -63,7 +62,7 @@ module Mayu
       runtime_js = @request_info.http2 && init_js_path
 
       @engine =
-        Runtime::VNodes2::Engine.new(
+        Runtime::Engine.new(
           descriptor,
           runtime_js:,
           metrics: @environment.metrics

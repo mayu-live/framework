@@ -16,8 +16,7 @@ class Mayu::Runtime::VNodes2::SlotsTest < Minitest::Test
     initial = H[:body, H[SlotProbe, H[:p, "before"]]]
     updated = H[:body, H[SlotProbe, H[:p, "after"]]]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new

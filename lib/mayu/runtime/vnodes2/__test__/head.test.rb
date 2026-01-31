@@ -90,8 +90,7 @@ class Mayu::Runtime::VNodes2::HeadTest < Minitest::Test
 
   def test_head_render_without_start
     descriptor = H[:body, H[:head, H[:title, "Static"]], H[:main, "content"]]
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
 
     html = render_html(engine.root)
 
@@ -100,8 +99,7 @@ class Mayu::Runtime::VNodes2::HeadTest < Minitest::Test
 
   def test_head_updates_with_multiple_titles
     descriptor = H[:body, H[HeadToggleProbe]]
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
 
     html = render_html(engine.root)
     assert_equal(1, html.scan("<title>").length)
@@ -143,8 +141,7 @@ class Mayu::Runtime::VNodes2::HeadTest < Minitest::Test
     Thread.current.thread_variable_set(key, system)
 
     descriptor = H[:body, H[StylesProbe]]
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
 
     html = render_html(engine.root)
 
@@ -160,8 +157,7 @@ class Mayu::Runtime::VNodes2::HeadTest < Minitest::Test
     custom = Mayu::CustomElement["my-element", "my-element.js"]
     descriptor = H[:body, H[custom, H[:span, "Hello"]]]
 
-    engine =
-      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
 
     html = render_html(engine.root)
 
