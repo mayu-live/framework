@@ -343,4 +343,42 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
       )
     end
   end
+
+  class ReloadProbe < Mayu::Component::Base
+    def initialize
+      @value = "A"
+    end
+
+    def set_value(value)
+      @value = value
+    end
+
+    def render
+      H[:p, @value]
+    end
+  end
+
+  def test_engine_refresh_enqueues_root_update
+    descriptor = H[:body, H[ReloadProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, ReloadProbe)
+      instance = component.instance_variable_get(:@instance)
+      instance.set_value("B")
+
+      updated = H[:body, H[ReloadProbe]]
+      engine.refresh(updated)
+
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
+
+      set_text =
+        patches.find do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+        end
+
+      refute_nil(set_text)
+      assert_equal("B", set_text.content)
+    end
+  end
 end

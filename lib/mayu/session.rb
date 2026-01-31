@@ -181,7 +181,12 @@ module Mayu
 
         while Modules::System.current.wait_for_reload
           puts "\e[30;103mCode update detected, reloading.\e[0m"
-          @engine.update(resolve_route(@request_info.path))
+          descriptor = resolve_route(@request_info.path)
+          if @engine.respond_to?(:refresh)
+            @engine.refresh(descriptor)
+          else
+            @engine.update(descriptor)
+          end
         end
       end
     end
