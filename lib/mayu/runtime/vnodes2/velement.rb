@@ -116,8 +116,6 @@ module Mayu
           @attributes.rehydrate_listeners(component_map)
         end
 
-        private
-
         def tag_name
           @descriptor.type.to_s.downcase.delete_prefix("__").tr("_", "-")
         end
