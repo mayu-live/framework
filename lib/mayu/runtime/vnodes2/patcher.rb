@@ -5,7 +5,7 @@
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class Patcher
         attr_reader :patches
 

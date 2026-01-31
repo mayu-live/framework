@@ -12,7 +12,7 @@ require_relative "internal_components/head"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VDocument < Base
         H = Mayu::Runtime::H
         Html = InternalComponents::Html

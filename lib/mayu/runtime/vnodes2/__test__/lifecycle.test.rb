@@ -3,8 +3,8 @@
 
 require_relative "test_helpers"
 
-class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
-  include Mayu::Runtime::VNodes2::TestHelpers
+class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
 
   class MountProbe < Mayu::Component::Base
     attr_reader :mounted, :unmounted
@@ -217,7 +217,7 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
       refute_equal(task, instance.mount_task)
 
       document = engine.root
-      patcher = Mayu::Runtime::VNodes2::Patcher.new
+      patcher = Mayu::Runtime::VNodes::Patcher.new
       document.update(patcher, descriptor)
 
       wait_until { document.instance_variable_get(:@listeners).any? }
@@ -325,7 +325,7 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
       assert_equal(1, instance.renders)
 
       document = engine.root
-      patcher = Mayu::Runtime::VNodes2::Patcher.new
+      patcher = Mayu::Runtime::VNodes::Patcher.new
       document.update(patcher, descriptor)
 
       wait_until { document.instance_variable_get(:@listeners).any? }

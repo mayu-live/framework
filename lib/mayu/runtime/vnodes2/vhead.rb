@@ -7,7 +7,7 @@ require_relative "base"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VHead < Base
         def initialize(descriptor, parent:, engine:)
           super

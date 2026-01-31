@@ -18,7 +18,7 @@ require_relative "../../custom_element"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VAny < Base
         def initialize(descriptor, parent:, engine:)
           super

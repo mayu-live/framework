@@ -3,8 +3,8 @@
 
 require_relative "test_helpers"
 
-class Mayu::Runtime::VNodes2::HeadTest < Minitest::Test
-  include Mayu::Runtime::VNodes2::TestHelpers
+class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
 
   class HeadProbe < Mayu::Component::Base
     def initialize

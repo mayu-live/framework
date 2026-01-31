@@ -8,7 +8,7 @@ require_relative "../patches"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VRawText < Base
         def update(patcher, descriptor = nil)
           return unless descriptor

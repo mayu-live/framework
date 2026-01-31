@@ -3,8 +3,8 @@
 
 require_relative "test_helpers"
 
-class Mayu::Runtime::VNodes2::ErrorBoundaryTest < Minitest::Test
-  include Mayu::Runtime::VNodes2::TestHelpers
+class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
 
   class ErrorChild < Mayu::Component::Base
     def render

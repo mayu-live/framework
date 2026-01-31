@@ -3,8 +3,8 @@
 
 require_relative "test_helpers"
 
-class Mayu::Runtime::VNodes2::CallbacksTest < Minitest::Test
-  include Mayu::Runtime::VNodes2::TestHelpers
+class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
 
   class CallbackProbe < Mayu::Component::Base
     def initialize
@@ -33,7 +33,7 @@ class Mayu::Runtime::VNodes2::CallbacksTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
     document.update(patcher, updated)
 
     set_attribute =
@@ -61,13 +61,13 @@ class Mayu::Runtime::VNodes2::CallbacksTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
     document.update(patcher, initial)
 
     listeners = document.instance_variable_get(:@listeners)
     assert_equal(1, listeners.size)
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
     document.update(patcher, updated)
 
     remove_attribute =
@@ -86,7 +86,7 @@ class Mayu::Runtime::VNodes2::CallbacksTest < Minitest::Test
     run_engine(initial) do |engine|
       document = engine.root
 
-      patcher = Mayu::Runtime::VNodes2::Patcher.new
+      patcher = Mayu::Runtime::VNodes::Patcher.new
       document.update(patcher, initial)
 
       component = find_component(document, CallbackProbe)

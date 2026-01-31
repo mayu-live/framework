@@ -3,8 +3,8 @@
 
 require_relative "test_helpers"
 
-class Mayu::Runtime::VNodes2::SlotsTest < Minitest::Test
-  include Mayu::Runtime::VNodes2::TestHelpers
+class Mayu::Runtime::VNodes::SlotsTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
 
   class SlotProbe < Mayu::Component::Base
     def render
@@ -19,7 +19,7 @@ class Mayu::Runtime::VNodes2::SlotsTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
     document.update(patcher, updated)
 
     set_text =

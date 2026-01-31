@@ -8,7 +8,7 @@ require_relative "raw_text"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       module InternalComponents
         class Script < Base
           def render

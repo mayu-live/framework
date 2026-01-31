@@ -7,7 +7,7 @@ require "securerandom"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class Base
         attr_reader :id, :descriptor, :parent, :engine
 

@@ -10,7 +10,7 @@ require_relative "../patches"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class Updater
         Navigation = Data.define(:path, :descriptor, :push_state)
 

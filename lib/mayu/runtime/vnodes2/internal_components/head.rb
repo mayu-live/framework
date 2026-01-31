@@ -8,7 +8,7 @@ require_relative "script"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       module InternalComponents
         class Head < Base
           Script = InternalComponents::Script

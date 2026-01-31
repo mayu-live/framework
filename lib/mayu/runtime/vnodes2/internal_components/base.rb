@@ -7,7 +7,7 @@ require_relative "../../../component/base"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       module InternalComponents
         class Base < Mayu::Component::Base
           def self.module_path = "(internal)::#{name}"

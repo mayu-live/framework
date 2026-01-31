@@ -9,7 +9,7 @@ require_relative "vcomponent"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VSlot < Base
         def initialize(descriptor, parent:, engine:)
           super

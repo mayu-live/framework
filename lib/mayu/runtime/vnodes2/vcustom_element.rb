@@ -10,7 +10,7 @@ require_relative "../patches"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VCustomElement < Base
         def initialize(descriptor, parent:, engine:)
           super

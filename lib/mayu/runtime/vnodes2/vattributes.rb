@@ -12,7 +12,7 @@ require_relative "../patches"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VAttributes < Base
         Listener =
           Data.define(:id, :callback) do

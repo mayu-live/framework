@@ -14,7 +14,7 @@ require_relative "../vdocument"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       module TestHelpers
         H = Mayu::Runtime::H
 
@@ -145,25 +145,25 @@ module Mayu
         end
 
         def find_component(node, klass)
-          if node.is_a?(Mayu::Runtime::VNodes2::VComponent)
+          if node.is_a?(Mayu::Runtime::VNodes::VComponent)
             instance = node.instance_variable_get(:@instance)
             return node if instance.is_a?(klass)
           end
 
           case node
-          when Mayu::Runtime::VNodes2::VDocument
+          when Mayu::Runtime::VNodes::VDocument
             find_component(node.instance_variable_get(:@html), klass)
-          when Mayu::Runtime::VNodes2::VAny
+          when Mayu::Runtime::VNodes::VAny
             find_component(node.instance_variable_get(:@child), klass)
-          when Mayu::Runtime::VNodes2::VComponent
+          when Mayu::Runtime::VNodes::VComponent
             find_component(node.instance_variable_get(:@children), klass)
-          when Mayu::Runtime::VNodes2::VElement
+          when Mayu::Runtime::VNodes::VElement
             find_component(node.instance_variable_get(:@children), klass)
-          when Mayu::Runtime::VNodes2::VCustomElement
+          when Mayu::Runtime::VNodes::VCustomElement
             find_component(node.instance_variable_get(:@element), klass)
-          when Mayu::Runtime::VNodes2::VSlot, Mayu::Runtime::VNodes2::VStateless
+          when Mayu::Runtime::VNodes::VSlot, Mayu::Runtime::VNodes::VStateless
             find_component(node.instance_variable_get(:@children), klass)
-          when Mayu::Runtime::VNodes2::VChildren
+          when Mayu::Runtime::VNodes::VChildren
             node
               .instance_variable_get(:@children)
               .each do |child|
@@ -177,25 +177,25 @@ module Mayu
         end
 
         def find_element(node, type)
-          if node.is_a?(Mayu::Runtime::VNodes2::VElement)
+          if node.is_a?(Mayu::Runtime::VNodes::VElement)
             descriptor = node.instance_variable_get(:@descriptor)
             return node if descriptor&.type == type
           end
 
           case node
-          when Mayu::Runtime::VNodes2::VDocument
+          when Mayu::Runtime::VNodes::VDocument
             find_element(node.instance_variable_get(:@html), type)
-          when Mayu::Runtime::VNodes2::VAny
+          when Mayu::Runtime::VNodes::VAny
             find_element(node.instance_variable_get(:@child), type)
-          when Mayu::Runtime::VNodes2::VComponent
+          when Mayu::Runtime::VNodes::VComponent
             find_element(node.instance_variable_get(:@children), type)
-          when Mayu::Runtime::VNodes2::VElement
+          when Mayu::Runtime::VNodes::VElement
             find_element(node.instance_variable_get(:@children), type)
-          when Mayu::Runtime::VNodes2::VCustomElement
+          when Mayu::Runtime::VNodes::VCustomElement
             find_element(node.instance_variable_get(:@element), type)
-          when Mayu::Runtime::VNodes2::VSlot, Mayu::Runtime::VNodes2::VStateless
+          when Mayu::Runtime::VNodes::VSlot, Mayu::Runtime::VNodes::VStateless
             find_element(node.instance_variable_get(:@children), type)
-          when Mayu::Runtime::VNodes2::VChildren
+          when Mayu::Runtime::VNodes::VChildren
             node
               .instance_variable_get(:@children)
               .each do |child|

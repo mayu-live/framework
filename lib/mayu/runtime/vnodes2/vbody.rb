@@ -7,7 +7,7 @@ require_relative "velement"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VBody < VElement
         H = Mayu::Runtime::H
 

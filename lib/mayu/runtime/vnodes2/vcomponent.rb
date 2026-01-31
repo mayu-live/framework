@@ -11,7 +11,7 @@ require_relative "vchildren"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VComponent < Base
         ErrorHandled =
           Class.new(StandardError) do

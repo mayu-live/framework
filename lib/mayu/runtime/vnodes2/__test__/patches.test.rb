@@ -3,8 +3,8 @@
 
 require_relative "test_helpers"
 
-class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
-  include Mayu::Runtime::VNodes2::TestHelpers
+class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
 
   class MountUpdateProbe < Mayu::Component::Base
     def initialize
@@ -61,7 +61,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
 
     document.update(patcher, updated)
 
@@ -89,7 +89,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
     document.update(patcher, updated)
 
     register =
@@ -110,7 +110,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
 
     document.update(patcher, updated)
 
@@ -151,7 +151,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
     document.update(patcher, updated)
 
     remove_class_attr =
@@ -311,7 +311,7 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    patcher = Mayu::Runtime::VNodes::Patcher.new
 
     assert_raises(RuntimeError) { document.update(patcher, updated) }
   end

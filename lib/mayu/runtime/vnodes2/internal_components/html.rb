@@ -7,7 +7,7 @@ require_relative "base"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       module InternalComponents
         class Html < Base
           def render

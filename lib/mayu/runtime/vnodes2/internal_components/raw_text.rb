@@ -8,7 +8,7 @@ require_relative "../../descriptors"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       module InternalComponents
         class RawText < Base
           def render

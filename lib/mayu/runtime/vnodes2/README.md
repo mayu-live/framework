@@ -1,4 +1,4 @@
-# VNodes2 Rewrite Notes
+# VNodes Rewrite Notes
 
 This directory is the new virtual DOM implementation. The notes below summarize how the
 current (vnodes/) implementation works and what we are changing for vnodes2.
@@ -49,7 +49,7 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 - VText/VComment/VHead/VBody/VSlot/VStateless/VCustomElement
   - Each implements render/update/insert/remove in the current patch model.
 
-## Changes planned for VNodes2
+## Changes planned for VNodes
 
 - No Updater per vnode.
 

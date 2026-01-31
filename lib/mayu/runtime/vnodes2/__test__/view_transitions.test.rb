@@ -3,8 +3,8 @@
 
 require_relative "test_helpers"
 
-class Mayu::Runtime::VNodes2::ViewTransitionsTest < Minitest::Test
-  include Mayu::Runtime::VNodes2::TestHelpers
+class Mayu::Runtime::VNodes::ViewTransitionsTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
 
   class ViewTransitionChildProbe < Mayu::Component::Base
     def render

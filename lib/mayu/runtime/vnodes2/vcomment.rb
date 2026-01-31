@@ -9,7 +9,7 @@ require_relative "base"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VComment < Base
         def update(_patcher, descriptor = nil)
           return unless descriptor

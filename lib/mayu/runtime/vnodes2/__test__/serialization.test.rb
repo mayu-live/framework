@@ -3,8 +3,8 @@
 
 require_relative "test_helpers"
 
-class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
-  include Mayu::Runtime::VNodes2::TestHelpers
+class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
 
   class SerializeProbe < Mayu::Component::Base
     def self.module_path = "/tests/serialize"
@@ -105,7 +105,7 @@ class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
 
       run_engine_instance(engine) do
         document = engine.root
-        patcher = Mayu::Runtime::VNodes2::Patcher.new
+        patcher = Mayu::Runtime::VNodes::Patcher.new
         document.update(patcher, descriptor)
 
         wait_until { document.instance_variable_get(:@listeners).any? }
@@ -119,7 +119,7 @@ class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
 
       run_engine_instance(restored) do
         document = restored.root
-        patcher = Mayu::Runtime::VNodes2::Patcher.new
+        patcher = Mayu::Runtime::VNodes::Patcher.new
         document.update(patcher, descriptor)
 
         component = find_component(document, CallbackProbe)

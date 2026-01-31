@@ -11,7 +11,7 @@ require_relative "vchildren"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VElement < Base
         def initialize(descriptor, parent:, engine:)
           super

@@ -24,10 +24,10 @@ module Mayu
         @metrics = metrics
         @update_budget = update_budget
         @output_queue = Async::Queue.new
-        @updater = VNodes2::Updater.new(@output_queue)
+        @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @pending_custom_elements = Set.new
-        @root = VNodes2::VDocument.new(descriptor, parent: nil, engine: self)
+        @root = VNodes::VDocument.new(descriptor, parent: nil, engine: self)
         @pending_custom_elements.each do |custom_element|
           @root.add_custom_element(custom_element)
         end
@@ -41,7 +41,7 @@ module Mayu
       def marshal_load(a)
         @runtime_js, @root, @update_budget = a
         @output_queue = Async::Queue.new
-        @updater = VNodes2::Updater.new(@output_queue)
+        @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @root.rehydrate(parent: nil, engine: self)
       end
@@ -154,7 +154,7 @@ module Mayu
       end
 
       def update(descriptor)
-        @root.update(VNodes2::NullPatcher.new, descriptor)
+        @root.update(VNodes::NullPatcher.new, descriptor)
       end
 
       def refresh(descriptor)
@@ -171,7 +171,7 @@ module Mayu
           @root.assign_descriptor(descriptor)
           enqueue_update(@root)
           @updater.enqueue(
-            VNodes2::Updater::Navigation.new(path, descriptor, push_state)
+            VNodes::Updater::Navigation.new(path, descriptor, push_state)
           )
         else
           update(descriptor)

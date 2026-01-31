@@ -9,7 +9,7 @@ require_relative "../patches"
 
 module Mayu
   module Runtime
-    module VNodes2
+    module VNodes
       class VChildren < Base
         STRING_SEPARATOR = Descriptors::Comment[""]
         UpdateState =
