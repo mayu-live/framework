@@ -284,30 +284,8 @@ module Mayu
             end
             return nil
           end
-
-          added = new_styles.keys - old_styles.keys
-          removed = old_styles.keys - new_styles.keys
-
-          added.each do |name|
-            patcher << Patches::SetCSSProperty[
-              @parent.dom_id,
-              name.to_s,
-              new_styles[name]
-            ]
-          end
-
-          removed.each do |name|
-            patcher << Patches::RemoveCSSProperty[@parent.dom_id, name.to_s]
-          end
-
-          changed = new_styles.keys & old_styles.keys
-          changed.each do |name|
-            next if new_styles[name] == old_styles[name]
-            patcher << Patches::SetCSSProperty[
-              @parent.dom_id,
-              name.to_s,
-              new_styles[name]
-            ]
+          InlineStyle.diff(@parent.dom_id, old_styles, new_styles) do |patch|
+            patcher << patch
           end
 
           new_styles
