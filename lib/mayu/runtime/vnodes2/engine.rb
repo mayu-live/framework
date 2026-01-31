@@ -16,12 +16,14 @@ module Mayu
   module Runtime
     module VNodes2
       class Engine
-        attr_reader :runtime_js, :root, :output_queue, :metrics
+        attr_reader :runtime_js, :root, :output_queue, :metrics, :update_budget
         attr_writer :metrics
+        attr_writer :update_budget
 
-        def initialize(descriptor, runtime_js: nil, metrics:)
+        def initialize(descriptor, runtime_js: nil, metrics:, update_budget: 10)
           @runtime_js = runtime_js
           @metrics = metrics
+          @update_budget = update_budget
           @output_queue = Async::Queue.new
           @updater = Updater.new(@output_queue)
           @dirty_elements = Set.new
@@ -29,11 +31,11 @@ module Mayu
         end
 
         def marshal_dump
-          [@runtime_js, @root]
+          [@runtime_js, @root, @update_budget]
         end
 
         def marshal_load(a)
-          @runtime_js, @root = a
+          @runtime_js, @root, @update_budget = a
           @output_queue = Async::Queue.new
           @updater = Updater.new(@output_queue)
           @dirty_elements = Set.new
@@ -63,6 +65,10 @@ module Mayu
 
         def task
           @updater.task
+        end
+
+        def update_budget=(value)
+          @update_budget = value
         end
 
         def start

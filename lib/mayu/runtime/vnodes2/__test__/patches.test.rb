@@ -464,4 +464,46 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
       assert(removed_instance.touched)
     end
   end
+
+  class BudgetProbe < Mayu::Component::Base
+    def initialize
+      @count = 1
+    end
+
+    def expand!
+      @count = 3
+      rerender!
+    end
+
+    def render
+      H[:ul, (1..@count).map { |i| H[:li, "Item #{i}"] }]
+    end
+  end
+
+  def test_update_budget_splits_batches
+    descriptor = H[:body, H[BudgetProbe]]
+
+    run_engine(descriptor) do |engine|
+      engine.update_budget = 1
+
+      component = find_component(engine.root, BudgetProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.instance_variable_get(:@__vnode_task) }
+      instance.expand!
+
+      first =
+        dequeue_until(engine, max_batches: 1) do |batch_patches|
+          !batch_patches.empty?
+        end
+
+      second =
+        dequeue_until(engine, max_batches: 2) do |batch_patches|
+          !batch_patches.empty?
+        end
+
+      refute_nil(first)
+      refute_nil(second)
+    end
+  end
 end

@@ -17,6 +17,7 @@ module Mayu
         :component_patch_times,
         :component_children_update_times,
         :update_child_id_count,
+        :update_chunk_count,
         :error_count
       ) do
         def self.setup(registry, **preset_labels)
@@ -95,6 +96,13 @@ module Mayu
               registry.counter(
                 :mayu_update_child_id_count,
                 docstring: "Number of child IDs updated",
+                labels: [:tag_name, *preset_labels.keys],
+                preset_labels:
+              ),
+            update_chunk_count:
+              registry.counter(
+                :mayu_update_chunk_count,
+                docstring: "Number of chunked child update resumes",
                 labels: [:tag_name, *preset_labels.keys],
                 preset_labels:
               )

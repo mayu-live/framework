@@ -93,6 +93,8 @@ module Mayu
                 else
                   @output_queue.enqueue(Patches::Batch[patches])
                 end
+
+                Fiber.scheduler.yield
               end
             end
         end

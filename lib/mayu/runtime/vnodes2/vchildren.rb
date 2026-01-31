@@ -12,6 +12,14 @@ module Mayu
     module VNodes2
       class VChildren < Base
         STRING_SEPARATOR = Descriptors::Comment[""]
+        UpdateState =
+          Data.define(
+            :diff_children,
+            :removed,
+            :previous_ids,
+            :cursor,
+            :new_children
+          )
 
         private def instance_variables_to_inspect = %i[@id @children]
 
@@ -23,9 +31,21 @@ module Mayu
         end
 
         def update(patcher, descriptors = nil)
-          return unless descriptors
-          @descriptor = descriptors
-          update_children(patcher, @children, descriptors)
+          return unless descriptors || @pending_update
+
+          if @pending_update
+            @pending_descriptor = descriptors if descriptors
+            @pending_enqueued = false
+            update_children(patcher, @children, @descriptor)
+            return
+          end
+
+          if descriptors
+            @descriptor = descriptors
+            @pending_enqueued = false
+          end
+
+          update_children(patcher, @children, @descriptor)
         end
 
         def start
@@ -91,11 +111,31 @@ module Mayu
         end
 
         def update_children(patcher, old_children, descriptors)
-          previous_ids = dom_id_list_for(old_children)
-          diff = diff_children(old_children, normalize_descriptors(descriptors))
+          if @pending_update
+            state = @pending_update
+          else
+            previous_ids = dom_id_list_for(old_children)
+            diff =
+              diff_children(old_children, normalize_descriptors(descriptors))
+            state =
+              UpdateState.new(
+                diff[:children],
+                diff[:removed],
+                previous_ids,
+                0,
+                []
+              )
+          end
 
-          @children =
-            diff[:children].map do |update|
+          budget_remaining = @engine.update_budget
+
+          while state.cursor < state.diff_children.length
+            break if budget_remaining && budget_remaining <= 0
+
+            update = state.diff_children[state.cursor]
+            state = state.with(cursor: state.cursor + 1)
+
+            node =
               case update[:type]
               when :updated
                 update[:node].update(patcher, update[:descriptor])
@@ -105,11 +145,54 @@ module Mayu
                 insert_node(patcher, node)
                 node
               end
-            end
 
-          diff[:removed].each { |removed| remove_node(patcher, removed) }
+            state.new_children << node
 
-          mark_parent_children_dirty if previous_ids != dom_id_list
+            budget_remaining -= 1 if budget_remaining
+          end
+
+          remaining =
+            state
+              .diff_children
+              .drop(state.cursor)
+              .map { |update| update[:type] == :updated ? update[:node] : nil }
+              .compact
+
+          if state.cursor < state.diff_children.length
+            @children = state.new_children + remaining
+            @pending_update = state
+            enqueue_resume
+            return
+          end
+
+          @children = state.new_children
+
+          state.removed.each { |removed| remove_node(patcher, removed) }
+
+          mark_parent_children_dirty if state.previous_ids != dom_id_list
+
+          @pending_update = nil
+          @pending_enqueued = false
+
+          if @pending_descriptor
+            descriptor = @pending_descriptor
+            @pending_descriptor = nil
+            @descriptor = descriptor
+            update_children(patcher, @children, @descriptor)
+          end
+        end
+
+        def enqueue_resume
+          return if @pending_enqueued
+          @pending_enqueued = true
+          if (element = closest(VElement))
+            metrics.update_chunk_count.increment(
+              labels: {
+                tag_name: element.tag_name
+              }
+            )
+          end
+          @engine.enqueue_update(self)
         end
 
         def diff_children(old_children, descriptors)

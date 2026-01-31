@@ -36,6 +36,7 @@ module Mayu
             def component_children_update_times = NullSummary.new
             def component_patch_times = NullSummary.new
             def update_child_id_count = NullCounter.new
+            def update_chunk_count = NullCounter.new
             def session_callback_count = NullCounter.new
             def update_summary(_summary, labels: {})
               yield
