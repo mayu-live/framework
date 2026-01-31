@@ -142,12 +142,9 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 ## TODO (next steps)
 
 - Attribute patch parity:
-  - `class`/`style` diff patches (AddClass/RemoveClass, SetCSSProperty, etc).
   - Event listener patches parity (SetListener/RemoveListener vs SetAttribute).
 - DOM patch parity:
   - Proper handling of keyed reordering (not just insert/remove).
-- Patch ordering:
-  - Confirm/Create tests for head-before-body ordering when both mutate.
 - Performance:
   - Evaluate update budget defaults and chunked update metrics in production.
 - Serialization follow-ups:
@@ -168,5 +165,4 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 - Custom elements:
   - `RegisterCustomElement` patch and update semantics in vnodes2.
 - Error handling / RenderError patches on exceptions.
-- Metrics integration.
 - Bring remaining nodes to parity (VBody, VSlot, VStateless, etc).
