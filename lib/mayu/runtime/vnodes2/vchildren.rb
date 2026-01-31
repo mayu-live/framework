@@ -93,13 +93,11 @@ module Mayu
         end
 
         def update_children(patcher, old_children, descriptors)
-          Console.logger.info(self, "Update children")
           previous_ids = dom_id_list_for(old_children)
           diff = diff_children(old_children, normalize_descriptors(descriptors))
 
           @children =
             diff[:children].map do |update|
-              pp update[:type]
               case update[:type]
               when :updated
                 update[:node].update(patcher, update[:descriptor])

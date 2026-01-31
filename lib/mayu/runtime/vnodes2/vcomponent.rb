@@ -135,7 +135,6 @@ module Mayu
         end
 
         def update(patcher, descriptor = nil)
-          Console.logger.info(self, "Update #{@descriptor.type.name}")
           retried = false
 
           begin

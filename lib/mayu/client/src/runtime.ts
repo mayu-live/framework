@@ -142,11 +142,12 @@ function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
   if (!domNode) return;
 
   console.log(
-    "Visiting",
+    "setupTree",
     domNode,
     domNode.nodeName,
     idNode.name,
-    JSON.stringify(domNode.textContent)
+    idNode
+    // JSON.stringify(domNode.textContent)
   );
 
   if (domNode.nodeName.toUpperCase() !== idNode.name.toUpperCase()) {
@@ -294,6 +295,10 @@ const Patches = {
       .createContextualFragment(`<template>${html}</template>`)
       .firstElementChild!;
     const content = (template as HTMLTemplateElement).content;
+
+    if (Array.isArray(tree)) {
+      tree = tree[0];
+    }
 
     setupTree(this, content.firstChild!, tree);
   },
