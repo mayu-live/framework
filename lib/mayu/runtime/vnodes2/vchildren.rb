@@ -160,7 +160,7 @@ module Mayu
 
           patcher << Patches::RemoveNode[node.dom_id] if node.dom_id
 
-          node.mark_removed
+          node.traverse { |child| child.mark_removed }
         end
 
         def normalize_descriptors(descriptors)

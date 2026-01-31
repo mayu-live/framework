@@ -98,6 +98,39 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
     end
   end
 
+  class GrandchildUnmountProbe < Mayu::Component::Base
+    attr_reader :unmounted
+
+    def unmount
+      @unmounted = true
+    end
+
+    def render
+      H[:span, "grandchild"]
+    end
+  end
+
+  class NestedRemoveProbe < Mayu::Component::Base
+    def render
+      H[:div, H[GrandchildUnmountProbe]]
+    end
+  end
+
+  class ParentNestedRemoveProbe < Mayu::Component::Base
+    def initialize
+      @show = true
+    end
+
+    def hide!
+      @show = false
+      rerender!
+    end
+
+    def render
+      @show ? H[:section, H[NestedRemoveProbe]] : H[:section]
+    end
+  end
+
   def test_component_start_stop_and_rerender
     descriptor = H[:body, H[MountProbe]]
 
@@ -196,6 +229,30 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
 
       wait_until { child_instance.unmounted }
       assert(child_instance.unmounted)
+    end
+  end
+
+  def test_nested_children_unmounted_after_remove
+    descriptor = H[:body, H[ParentNestedRemoveProbe]]
+
+    run_engine(descriptor) do |engine|
+      parent = find_component(engine.root, ParentNestedRemoveProbe)
+      parent_instance = parent.instance_variable_get(:@instance)
+
+      wait_until { parent_instance.instance_variable_get(:@__vnode_task) }
+
+      grandchild = find_component(engine.root, GrandchildUnmountProbe)
+      grandchild_instance = grandchild.instance_variable_get(:@instance)
+      span = find_element(engine.root, :span)
+      refute_nil(span)
+
+      parent_instance.hide!
+
+      wait_until { grandchild_instance.unmounted }
+      assert(grandchild_instance.unmounted)
+      wait_until { grandchild.removed? && span.removed? }
+      assert(grandchild.removed?)
+      assert(span.removed?)
     end
   end
 end
