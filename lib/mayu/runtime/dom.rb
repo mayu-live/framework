@@ -10,7 +10,7 @@ require_relative "inline_style"
 module Mayu
   module Runtime
     module DOM
-      INJECT_MAYU_ID = false
+      INJECT_MAYU_ID = ENV["INJECT_MAYU_ID"] == "1"
 
       VOID_ELEMENTS = %w[
         area
