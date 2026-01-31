@@ -26,10 +26,9 @@
 
 :css
   @keyframes alive {
-    0% { background-color: hsl(0deg 50% 50%); }
-    33% { background-color: hsl(120deg 50% 50%); }
-    66% { background-color: hsl(240deg 50% 60%); }
-    100% { background-color: hsl(360deg 50% 50%); }
+    0% { background-color: #0c0; }
+    1% { background-color: #000; }
+    100% { background-color: #999; }
   }
 
   button {
@@ -43,10 +42,11 @@
 
   .alive {
     background-color: #000;
-    animation-duration: 2s;
+    animation-duration: 5s;
     animation-name: alive;
-    animation-iteration-count: infinite;
-    animation-timing-function: linear;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-out;
   }
 
   .alive:hover {
