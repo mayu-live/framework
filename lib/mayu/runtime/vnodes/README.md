@@ -1,168 +1,100 @@
-# VNodes Rewrite Notes
+# VNodes (current implementation)
 
-This directory is the new virtual DOM implementation. The notes below summarize how the
-current (vnodes/) implementation works and what we are changing for vnodes.
+This directory contains the active virtual DOM implementation. It replaces the
+legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 
-## Current VNode implementation (vnodes/)
+## What we implemented
 
-- Base class
+### Core architecture
 
-  - Each vnode owns an `Updater` (Async task + queue). `apply` enqueues updates when
-    running; otherwise it calls `update` directly.
-  - `start` creates the updater; `stop` stops it.
-  - `patch` delegates to parent; metrics and ancestor info are pulled from parent.
+- Engine-driven updates (single updater queue).
+- VComponent is the only vnode with a long-lived async task.
+- Every vnode exposes `task` via parent fallback.
+- `write_html(out)` renders the full tree without starting tasks.
+- VNodes hold an Engine reference for updates/metrics/listeners.
+- Base vnode lifecycle flags: new/inserted/removed.
 
-- VAny
+### Patching and diffing
 
-  - Dispatches by descriptor type into one of VElement/VComponent/VText/etc.
-
-- VChildren
-
-  - Normalizes descriptors, inserts comment separators between adjacent strings.
-  - Diffs by `Descriptors.same?` and produces Updated/Created/Removed sets.
-  - Inserts/removes nodes and starts/stops them if the tree is running.
-  - Maintains cached child ids and emits `ReplaceChildren` patches.
-
-- VElement
-
-  - Owns VAttributes + VChildren.
-  - Uses DOM nesting validation; renders a DOM::Element.
-  - Updates attributes and children on descriptor changes.
-
-- VAttributes
-
-  - Flattens props into attribute names.
-  - Special cases `style`, `class`, and `on*` handlers (listener registry in VDocument).
-  - Emits Set/Remove attribute patches on changes.
-
-- VComponent
-
-  - Allocates component instance, injects props/context/children.
-  - Starts an async task to watch context changes, queue rerenders, and call mount.
-  - On update, re-renders children and diffs them.
-
-- VDocument
-
-  - Root node; owns head/styles/registry for event listeners.
-  - Internal Head component renders meta/title/links/stylesheets.
-
-- VText/VComment/VHead/VBody/VSlot/VStateless/VCustomElement
-  - Each implements render/update/insert/remove in the current patch model.
-
-## Changes planned for VNodes
-
-- No Updater per vnode.
-
-  - Only VComponent has an async task for lifecycle and rerendering.
-  - Every vnode exposes `task`, which returns its own task or its parent’s task.
-
-- Engine-owned updates
-
-  - Each vnode stores a reference to the current Engine.
-  - State changes (only in VComponent) call `@engine.enqueue_update(self)`.
-
-- HTML writer API
-
-  - Each vnode implements `write_html(out)` to render itself and children into a
-    mutable output buffer.
-
-- Tree initialization
-
-  - The whole tree can be initialized without starting.
-  - When a VComponent starts, it calls `mount`; when stopped, it calls `unmount`.
-
-- New patching flow
-
-  - Each vnode tracks whether it is new/inserted/removed.
-  - `update(patcher)` will emit patches by appending to `patcher`:
-    `patcher << Patches::InsertNode[...]`, etc.
-  - No `patch(...)` delegation method on Base; patch emission is explicit.
-
-- Structure
-  - vnodes provides new base and child classes mirroring vnodes/, but rewritten to
-    fit the new engine + patcher design.
-
-## Implemented so far
-
-- Base vnodes structure with stubs in `lib/mayu/runtime/vnodes/`.
-- VNode constructors now build child trees immediately (no implicit start).
-- `write_html(out)` implemented for elements, text, comments, components, children,
-  custom elements, and document.
-- `dom_id` and `dom_id_tree` now emit `DOM::IdNode` trees for DOM-backed nodes.
-- `Patcher` and `NullPatcher` for collecting or discarding patches.
-- Diff/patch emission for:
-  - insertions/removals via `Patches::CreateTree` and `Patches::RemoveNode`
-  - text updates via `Patches::SetTextContent`
-  - attribute updates via `Patches::SetAttribute` / `Patches::RemoveAttribute`
+- `Patcher`/`NullPatcher` for collecting patches.
+- Insert/remove: `CreateTree` + `RemoveNode`.
+- Text updates: `SetTextContent`.
+- Attribute updates: `SetAttribute`, `RemoveAttribute`, `AddClass`, `RemoveClass`,
+  `SetCSSProperty`, `RemoveCSSProperty`.
 - ReplaceChildren batching:
   - VChildren marks nearest VElement dirty when direct child ids change.
-  - Engine flushes dirty elements once per batch to emit `ReplaceChildren`.
-- `start/stop` propagation and VComponent lifecycle (mount/unmount) with rerender!
-  forwarding to `engine.enqueue_update(self)`.
-- Insert/remove propagation independent of mount/unmount.
-- Head registration via `VHead` insert/remove; head flush happens after batch updates.
-- Head patches are prepended to batches, with HistoryPushState first.
-- Stylesheet collection from component modules and injection into `<head>`.
-- Updater + Engine queueing for batch updates and patch output.
-- Navigation handling:
-  - Navigation events enqueue document updates and emit HistoryPushState patches.
-  - HistoryPushState patches are prepended before head/body patches in a batch.
-- Event callback support:
-  - `on*` attributes produce listener registration and JS callback wiring.
-  - `Engine#callback` dispatches to listeners and triggers rerenders.
-- Serialization support:
-  - Engine and vnode trees are marshalable without async tasks.
-  - Component state marshals via `Component::Base#marshal_dump`.
-  - Rehydrate pass restores parent/engine links and listeners.
-  - Engine `dump`/`dump!` and `restore`/`restore!` helpers.
-  - VComponent stop is idempotent (mount/unmount only once).
-- Tests in `lib/mayu/runtime/vnodes.test.rb` for:
-  - HTML rendering
-  - patch creation on insert/remove
-  - patch creation on attribute/text update
-  - component rendering
-  - component start/stop + rerender queueing
-  - head registration and updates (including multiple titles)
-  - update queue patch emission
-  - ReplaceChildren emitted once per batch
-  - stylesheet injection into head
-  - event callback wiring and listener removal
-  - engine callback dispatch emitting patches
-  - error boundary behavior
-  - view transition wrapping
-  - serialization round-trips and listener restore
-  - slot update behavior
-  - navigation patch ordering + complex tree replace-children
-  - chunked update budgeting and removed-node update skipping
-  - tests are split under `lib/mayu/runtime/vnodes/__test__/`
-  - `CreateTree` enforces a single `IdNode` (no array fallback).
-  - head patch batching order (HistoryPushState -> Head -> DOM).
-  - removed nodes are marked and not updated after removal.
+  - Engine flushes dirty elements once per batch.
+- Batch ordering:
+  - `HistoryPushState` patches are first.
+  - Head patches come before body patches.
+- `CreateTree` enforces a single `DOM::IdNode` root.
+- Chunked updates with a configurable `update_budget` and metrics.
 
-## TODO (next steps)
+### Lifecycle + updates
 
-- Attribute patch parity:
-  - Event listener patches parity (SetListener/RemoveListener vs SetAttribute).
-- DOM patch parity:
-  - Proper handling of keyed reordering (not just insert/remove).
-- Performance:
-  - Evaluate update budget defaults and chunked update metrics in production.
-- Serialization follow-ups:
-  - Decide if listeners should be rehydrated without calling `update`.
-- VHead/VDocument behavior:
-  - Define head aggregation rules:
-    - Always inject one `<meta charset="utf-8">` at the top.
-    - Runtime JS `<script type="module">` should be present once (if configured).
-    - For `<title>`, keep only the last title across all head nodes.
-    - For `<meta name=...>`, keep only the last per `name`.
-    - For `<meta property=...>`, keep only the last per `property`.
-    - For `<link>` (e.g., stylesheets), keep only the last per `key` if provided,
-      otherwise allow multiples (or define a dedupe key).
-    - Preserve a stable ordering: runtime/meta/title/links first, then user tags
-      in descriptor order of the last occurrence.
-- Context/state:
-  - Context invalidation + rerender scheduling when context values change.
+- Start/stop propagate through tree.
+- VComponent handles mount/unmount and rerender! → engine queue.
+- Insert/remove propagate independently of mount/unmount.
+- Components added while running start immediately; removed components stop.
+- Removed nodes are marked and skipped during updates.
+
+### Head + assets
+
+- VHead registers with VDocument; insert/remove manage head set.
+- Stylesheets collected from component modules.
 - Custom elements:
-  - `RegisterCustomElement` patch and update semantics in vnodes.
-- Error handling / RenderError patches on exceptions.
-- Bring remaining nodes to parity (VBody, VSlot, VStateless, etc).
+  - `RegisterCustomElement` patches emitted for updates.
+  - Inline registration scripts injected via head rendering.
+  - Raw text vnode for script bodies.
+
+### Events + callbacks
+
+- `on*` attributes register listeners and emit JS callback wiring.
+- `Engine#callback` dispatches into component tasks.
+- Listener ids are serialized and rehydrated with component_map.
+- Listener registration now happens during VAttributes init (not just render).
+
+### Serialization
+
+- Engine and vnode trees are marshalable (async tasks excluded).
+- Component state marshals via `Component::Base#marshal_dump`.
+- Rehydrate restores parent/engine links, component_map, and listeners.
+- Engine helpers: `dump`, `dump!`, `restore`, `restore!`.
+
+### Error handling + UX
+
+- Error boundaries (component `handle_error`).
+- Unhandled render errors emit `RenderError` patch with tree path.
+- ViewTransition wrapper patch for queued component updates.
+
+### Testing
+
+- Tests are split under `lib/mayu/runtime/vnodes/__test__/`.
+- Coverage includes:
+  - HTML rendering + dom_id_tree
+  - CreateTree/RemoveNode + ReplaceChildren
+  - Attribute/class/style patches
+  - Lifecycle (start/stop/mount/unmount)
+  - Head aggregation and updates
+  - Navigation patch ordering
+  - Callback wiring + listener removal
+  - Serialization round-trip + listener restore
+  - Error boundaries + RenderError patch tree_path
+  - Update budget chunking and removed-node skipping
+
+## What changed recently
+
+- Listener ids now serialize correctly and rehydrate to callbacks.
+- Listeners register during attribute initialization.
+- Engine queues listeners created before root exists.
+- Serialization tests expect listeners to survive restore.
+- Debug logging for listener restore removed.
+
+## TODO / Follow-ups
+
+- Event patch parity: `SetListener`/`RemoveListener` vs `SetAttribute`.
+- Keyed reordering improvements beyond insert/remove.
+- Head aggregation rules refinement (dedupe/ordering for title/meta/link).
+- Context invalidation + rerender scheduling on context updates.
+- Custom element registration on initial render without relying on updates.
+- Evaluate update_budget defaults in production.
