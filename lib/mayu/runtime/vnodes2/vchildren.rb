@@ -138,6 +138,14 @@ module Mayu
 
           if node.respond_to?(:write_html) && node.respond_to?(:dom_id_tree)
             id_tree = node.dom_id_tree
+            if id_tree.is_a?(Array)
+              id_tree = id_tree.flatten.compact
+              if id_tree.length == 1
+                id_tree = id_tree.first
+              else
+                raise "CreateTree expects a single IdNode, got #{id_tree.length}"
+              end
+            end
             if id_tree
               html = +""
               node.write_html(html)

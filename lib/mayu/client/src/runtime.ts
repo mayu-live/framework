@@ -295,10 +295,6 @@ const Patches = {
       .firstElementChild!;
     const content = (template as HTMLTemplateElement).content;
 
-    if (Array.isArray(tree)) {
-      tree = tree[0];
-    }
-
     setupTree(this, content.firstChild!, tree);
   },
   CreateElement(this: NodeSet, id: string, type: string) {

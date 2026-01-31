@@ -277,4 +277,20 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
       assert_includes(create_trees.first.html, "<span>Nested</span>")
     end
   end
+
+  class MultiRootProbe < Mayu::Component::Base
+    def render
+      [H[:p, "a"], H[:p, "b"]]
+    end
+  end
+
+  def test_createtree_requires_single_root
+    descriptor = H[:body, H[MultiRootProbe]]
+    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    document = engine.root
+
+    patcher = Mayu::Runtime::VNodes2::Patcher.new
+
+    assert_raises(RuntimeError) { document.update(patcher, descriptor) }
+  end
 end
