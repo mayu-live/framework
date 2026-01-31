@@ -149,6 +149,7 @@ module Mayu
         end
 
         def remove_node(patcher, node)
+          node.stop # if @engine&.task
           node.remove if node.respond_to?(:remove)
 
           if node.respond_to?(:dom_id) && node.dom_id

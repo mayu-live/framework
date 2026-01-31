@@ -71,6 +71,33 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
     end
   end
 
+  class UnmountProbe < Mayu::Component::Base
+    attr_reader :unmounted
+
+    def unmount
+      @unmounted = true
+    end
+
+    def render
+      H[:div, "gone"]
+    end
+  end
+
+  class ParentRemoveProbe < Mayu::Component::Base
+    def initialize
+      @show = true
+    end
+
+    def hide!
+      @show = false
+      rerender!
+    end
+
+    def render
+      @show ? H[:section, H[UnmountProbe]] : H[:section]
+    end
+  end
+
   def test_component_start_stop_and_rerender
     descriptor = H[:body, H[MountProbe]]
 
@@ -149,6 +176,25 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
       wait_until { dynamic_instance.mounted }
 
       assert(dynamic_instance.mounted)
+    end
+  end
+
+  def test_component_unmounted_after_remove
+    descriptor = H[:body, H[ParentRemoveProbe]]
+
+    run_engine(descriptor) do |engine|
+      parent = find_component(engine.root, ParentRemoveProbe)
+      parent_instance = parent.instance_variable_get(:@instance)
+
+      wait_until { parent_instance.instance_variable_get(:@__vnode_task) }
+
+      child = find_component(engine.root, UnmountProbe)
+      child_instance = child.instance_variable_get(:@instance)
+
+      parent_instance.hide!
+
+      wait_until { child_instance.unmounted }
+      assert(child_instance.unmounted)
     end
   end
 end
