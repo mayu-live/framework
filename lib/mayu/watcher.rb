@@ -49,9 +49,15 @@ module Mayu
               subtask.async do
                 queue.enqueue(
                   [
-                    updated.map { Events::Updated[it] },
-                    created.map { Events::Created[it] },
-                    deleted.map { Events::Deleted[it] }
+                    updated.map do
+                      Events::Updated[it.delete_prefix(system.root)]
+                    end,
+                    created.map do
+                      Events::Created[it.delete_prefix(system.root)]
+                    end,
+                    deleted.map do
+                      Events::Deleted[it.delete_prefix(system.root)]
+                    end
                   ].flatten
                 )
               end
