@@ -31,6 +31,8 @@ module Mayu
           DOM::IdNode[@id, "#document", @html.dom_id_tree]
         end
 
+        def tree_path = ["#document"]
+
         attr_reader :head, :styles
 
         def update(patcher, descriptor = nil)
@@ -159,7 +161,8 @@ module Mayu
 
         def emit_render_error(patcher, error, component_vnode)
           component = component_vnode.instance_variable_get(:@instance)
-          patch = render_error_patch(error, component)
+          tree_path = component_vnode.tree_path
+          patch = render_error_patch(error, component, tree_path)
           raise error unless patch
           patcher << patch
         end
@@ -203,7 +206,7 @@ module Mayu
           @html.traverse(&block)
         end
 
-        def render_error_patch(error, component)
+        def render_error_patch(error, component, tree_path = [])
           module_path =
             component.class.respond_to?(:module_path) &&
               component.class.module_path
@@ -211,7 +214,10 @@ module Mayu
             module_path.empty?
 
           mod = Modules::System.current.get_mod(module_path) if module_path
-          puts Modules::System.current.format_exception(error)
+          Console.logger.error(
+            component,
+            Modules::System.current.format_exception(error)
+          )
 
           Patches::RenderError[
             module_path,
@@ -219,7 +225,7 @@ module Mayu
             error.message,
             error.backtrace,
             mod&.source_map&.input,
-            []
+            tree_path
           ]
         end
 
@@ -227,8 +233,25 @@ module Mayu
           call.call
         rescue => e
           component = listener.callback&.component
-          patch = render_error_patch(e, component) if component
+          component_vnode = find_component_vnode(component)
+          tree_path = component_vnode ? component_vnode.tree_path : []
+          patch = render_error_patch(e, component, tree_path) if component
           @engine.patch(patch) if patch
+        end
+
+        def find_component_vnode(component)
+          return nil unless component
+          id = component.instance_variable_get(:@__vnode_id)
+          return nil unless id
+
+          found = nil
+          traverse do |node|
+            if node.is_a?(VComponent) && node.id == id
+              found = node
+              break
+            end
+          end
+          found
         end
       end
     end

@@ -73,6 +73,10 @@ module Mayu
           ]
         end
 
+        def tree_path
+          [tag_name, *@parent&.tree_path].compact
+        end
+
         def mark_children_dirty
           return if @children_dirty
           @children_dirty = true

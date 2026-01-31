@@ -64,6 +64,10 @@ module Mayu
           nil
         end
 
+        def tree_path
+          @parent&.tree_path || []
+        end
+
         def inserted?
           @is_inserted
         end

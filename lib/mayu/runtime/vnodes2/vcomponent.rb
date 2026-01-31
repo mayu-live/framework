@@ -189,6 +189,10 @@ module Mayu
           @children.dom_id_tree
         end
 
+        def tree_path
+          [component_label, *@parent&.tree_path].compact
+        end
+
         def traverse(&block)
           yield self
           @children.traverse(&block)
