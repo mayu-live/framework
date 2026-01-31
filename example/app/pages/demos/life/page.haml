@@ -22,15 +22,12 @@
   MAX_FPS = 20
   DEFAULT_FPS = 4
 
-  def self.init_grid(width, height, &block)
-    Array.new(height) do |y|
-      Array.new(width) do |x|
-        if block_given?
-          yield x, y
-        else
-          false
-        end
-      end
+  def self.init_grid(width, height)
+    Array.new(width * height) do |i|
+      next false unless block_given?
+      x = i % width
+      y = i / width
+      yield x, y
     end
   end
 
@@ -82,9 +79,8 @@
   end
 
   def set_cell_value(x, y, value)
-    @grid = @grid.dup.tap do |grid|
-      grid[y] = grid[y].dup.tap { |row| row[x] = value }
-    end
+    idx = y * @width + x
+    @grid = @grid.dup.tap { |grid| grid[idx] = value }
   end
 
   def handle_change_fps(e)
@@ -95,20 +91,12 @@
   def handle_change_width(e)
     e => { target: { value: } }
     @width = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    @grid = @grid.map do |row|
-      row.slice(0...@width).fill(false, (row.size)...@width)
-    end
     handle_reset
   end
 
   def handle_change_height(e)
     e => { target: { value: } }
     @height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    if @grid.size > @height
-      @grid = @grid.slice(0..@height)
-    else
-      @grid = @grid + self.class.init_grid(@width, @height - @grid.size)
-    end
     handle_reset
   end
 
@@ -131,29 +119,41 @@
   private
 
   def step_grid(grid)
-    @grid.map.with_index do |row, y|
-      row.map.with_index do |alive, x|
-        RULES[alive ? :s : :b].include?(count_neighbors(@grid, x, y))
+    width = @width
+    height = @height
+    next_grid = Array.new(width * height, false)
+
+    height.times do |y|
+      width.times do |x|
+        alive = grid[y * width + x]
+        neighbors = count_neighbors(grid, x, y, width, height)
+        next_grid[y * width + x] =
+          RULES[alive ? :s : :b].include?(neighbors)
       end
     end
+
+    next_grid
   end
 
-  def count_neighbors(grid, x, y)
-    each_neighbor(grid, x, y).count { _1[:value] }
-  end
+  def count_neighbors(grid, x, y, width, height)
+    count = 0
 
-  def each_neighbor(grid, x, y)
-    Enumerator.new do |enum|
-      -1.upto(1) do |yoff|
-        row = @grid[(y + yoff) % grid.size]
+    (-1..1).each do |yoff|
+      ny = y + yoff
+      ny += height if ny < 0
+      ny -= height if ny >= height
 
-        -1.upto(1) do |xoff|
-          next if yoff.zero? && xoff.zero?
-          value = row[(x + xoff) % row.size]
-          enum.yield(x:, y:, value:)
-        end
+      (-1..1).each do |xoff|
+        next if yoff.zero? && xoff.zero?
+        nx = x + xoff
+        nx += width if nx < 0
+        nx -= width if nx >= width
+
+        count += 1 if grid[ny * width + nx]
       end
     end
+
+    count
   end
 
 :css
@@ -204,4 +204,4 @@
         %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
         %output= @fps
 
-  %GameGrid(grid=@grid ondraw=handle_draw)
+  %GameGrid(ondraw=handle_draw){grid: @grid.each_slice(@width).to_a}
