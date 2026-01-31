@@ -119,7 +119,11 @@ function debugTree(node: IdNode, level = 0): string {
     .join("\n");
 }
 
+const configuredLinks = new WeakSet<HTMLAnchorElement>();
+
 function configureLink(a: HTMLAnchorElement) {
+  if (configuredLinks.has(a)) return;
+  configuredLinks.add(a);
   a.addEventListener("click", (e) => {
     if (a.host !== location.host) {
       return;
