@@ -74,7 +74,7 @@ module Mayu
         end
 
         def tree_path
-          [tag_name, *@parent&.tree_path].compact
+          [*@parent&.tree_path, { name: tag_name }].compact
         end
 
         def mark_children_dirty

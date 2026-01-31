@@ -31,7 +31,7 @@ module Mayu
           DOM::IdNode[@id, "#document", @html.dom_id_tree]
         end
 
-        def tree_path = ["#document"]
+        def tree_path = [{ name: "#document" }]
 
         attr_reader :head, :styles
 

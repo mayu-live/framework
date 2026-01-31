@@ -190,7 +190,14 @@ module Mayu
         end
 
         def tree_path
-          [component_label, *@parent&.tree_path].compact
+          node = { name: component_label }
+
+          if @instance.class.respond_to?(:module_path)
+            path = @instance.class.module_path
+            node[:path] = path if path && !path.empty?
+          end
+
+          [*@parent&.tree_path, node].compact
         end
 
         def traverse(&block)

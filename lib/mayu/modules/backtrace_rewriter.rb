@@ -27,7 +27,7 @@ module Mayu
           end
 
           def to_s
-            "#{file}:#{line}:in `#{description}'"
+            "#{file}:#{line}:in `#{description.sub(/^Mayu::Modules::Registry::.+::/, "")}'"
           end
 
           def to_backtrace_string
