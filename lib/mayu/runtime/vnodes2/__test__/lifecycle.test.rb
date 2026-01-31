@@ -131,6 +131,50 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
     end
   end
 
+  class DoubleRerenderProbe < Mayu::Component::Base
+    attr_reader :renders
+
+    def initialize
+      @renders = 0
+      @a = 0
+      @b = 0
+    end
+
+    def mount
+      @a = 1
+      rerender!
+      @b = 2
+      rerender!
+    end
+
+    def render
+      @renders += 1
+      H[:div, "#{@a}-#{@b}"]
+    end
+  end
+
+  class DoubleRerenderCallbackProbe < Mayu::Component::Base
+    attr_reader :renders
+
+    def initialize
+      @renders = 0
+      @a = 0
+      @b = 0
+    end
+
+    def trigger
+      @a = 3
+      rerender!
+      @b = 4
+      rerender!
+    end
+
+    def render
+      @renders += 1
+      H[:button, "#{@a}-#{@b}", onclick: H.callback(self, :trigger)]
+    end
+  end
+
   def test_component_start_stop_and_rerender
     descriptor = H[:body, H[MountProbe]]
 
@@ -253,6 +297,49 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
       wait_until { grandchild.removed? && span.removed? }
       assert(grandchild.removed?)
       assert(span.removed?)
+    end
+  end
+
+  def test_multiple_rerender_calls_coalesce_in_same_tick
+    descriptor = H[:body, H[DoubleRerenderProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, DoubleRerenderProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.renders >= 2 }
+      assert_equal(2, instance.renders)
+
+      Async::Task.current.sleep(0.05)
+      assert_equal(2, instance.renders)
+    end
+  end
+
+  def test_multiple_rerender_calls_in_callback_coalesce
+    descriptor = H[:body, H[DoubleRerenderCallbackProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, DoubleRerenderCallbackProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.renders >= 1 }
+      assert_equal(1, instance.renders)
+
+      document = engine.root
+      patcher = Mayu::Runtime::VNodes2::Patcher.new
+      document.update(patcher, descriptor)
+
+      wait_until { document.instance_variable_get(:@listeners).any? }
+      listener = document.instance_variable_get(:@listeners).values.first
+      refute_nil(listener)
+
+      engine.callback(listener.id, {})
+
+      wait_until { instance.renders >= 2 }
+      assert_equal(2, instance.renders)
+
+      Async::Task.current.sleep(0.05)
+      assert_equal(2, instance.renders)
     end
   end
 end
