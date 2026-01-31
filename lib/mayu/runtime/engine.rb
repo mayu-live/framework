@@ -7,9 +7,9 @@ require "async/queue"
 require "set"
 require "stringio"
 
-require_relative "vnodes2/vdocument"
-require_relative "vnodes2/updater"
-require_relative "vnodes2/patcher"
+require_relative "vnodes/vdocument"
+require_relative "vnodes/updater"
+require_relative "vnodes/patcher"
 require_relative "patches"
 
 module Mayu

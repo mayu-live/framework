@@ -1,7 +1,7 @@
 # VNodes Rewrite Notes
 
 This directory is the new virtual DOM implementation. The notes below summarize how the
-current (vnodes/) implementation works and what we are changing for vnodes2.
+current (vnodes/) implementation works and what we are changing for vnodes.
 
 ## Current VNode implementation (vnodes/)
 
@@ -79,12 +79,12 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - No `patch(...)` delegation method on Base; patch emission is explicit.
 
 - Structure
-  - vnodes2 provides new base and child classes mirroring vnodes/, but rewritten to
+  - vnodes provides new base and child classes mirroring vnodes/, but rewritten to
     fit the new engine + patcher design.
 
 ## Implemented so far
 
-- Base vnodes2 structure with stubs in `lib/mayu/runtime/vnodes2/`.
+- Base vnodes structure with stubs in `lib/mayu/runtime/vnodes/`.
 - VNode constructors now build child trees immediately (no implicit start).
 - `write_html(out)` implemented for elements, text, comments, components, children,
   custom elements, and document.
@@ -116,7 +116,7 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - Rehydrate pass restores parent/engine links and listeners.
   - Engine `dump`/`dump!` and `restore`/`restore!` helpers.
   - VComponent stop is idempotent (mount/unmount only once).
-- Tests in `lib/mayu/runtime/vnodes2.test.rb` for:
+- Tests in `lib/mayu/runtime/vnodes.test.rb` for:
   - HTML rendering
   - patch creation on insert/remove
   - patch creation on attribute/text update
@@ -134,7 +134,7 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - slot update behavior
   - navigation patch ordering + complex tree replace-children
   - chunked update budgeting and removed-node update skipping
-  - tests are split under `lib/mayu/runtime/vnodes2/__test__/`
+  - tests are split under `lib/mayu/runtime/vnodes/__test__/`
   - `CreateTree` enforces a single `IdNode` (no array fallback).
   - head patch batching order (HistoryPushState -> Head -> DOM).
   - removed nodes are marked and not updated after removal.
@@ -163,6 +163,6 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 - Context/state:
   - Context invalidation + rerender scheduling when context values change.
 - Custom elements:
-  - `RegisterCustomElement` patch and update semantics in vnodes2.
+  - `RegisterCustomElement` patch and update semantics in vnodes.
 - Error handling / RenderError patches on exceptions.
 - Bring remaining nodes to parity (VBody, VSlot, VStateless, etc).
