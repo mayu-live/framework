@@ -17,6 +17,7 @@ module Mayu
           custom_element = @descriptor.type
           descriptor = @descriptor.with(type: custom_element.name)
           @element = VElement.new(descriptor, parent: self, engine: @engine)
+          @engine.add_custom_element(custom_element)
         end
 
         def update(patcher, descriptor = nil)

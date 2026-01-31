@@ -13,6 +13,7 @@ require_relative "vhead"
 require_relative "vslot"
 require_relative "vstateless"
 require_relative "vtext"
+require_relative "vraw_text"
 require_relative "../../custom_element"
 
 module Mayu
@@ -103,6 +104,8 @@ module Mayu
             VElement
           in Descriptors::Comment
             VComment
+          in Descriptors::RawText
+            VRawText
           else
             VText
           end

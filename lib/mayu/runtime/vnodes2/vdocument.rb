@@ -22,6 +22,7 @@ module Mayu
           super
           @listeners = {}
           @styles = Set.new
+          @custom_elements = Set.new
           @head = Set.new
           @head_dirty = false
           @html = VComponent.new(init_html, parent: self, engine: @engine)
@@ -33,7 +34,7 @@ module Mayu
 
         def tree_path = [{ name: "#document" }]
 
-        attr_reader :head, :styles
+        attr_reader :head, :styles, :custom_elements
 
         def update(patcher, descriptor = nil)
           @descriptor = descriptor if descriptor
@@ -58,6 +59,10 @@ module Mayu
 
         def add_stylesheet(filename)
           @head_dirty = true if @styles.add?(filename)
+        end
+
+        def add_custom_element(custom_element)
+          @head_dirty = true if @custom_elements.add?(custom_element)
         end
 
         def add_listener(listener)
@@ -132,14 +137,15 @@ module Mayu
         end
 
         def marshal_dump
-          [super, @html, @styles]
+          [super, @html, @styles, @custom_elements]
         end
 
         def marshal_load(a)
-          a => [base, html, styles]
+          a => [base, html, styles, custom_elements]
           super(base)
           @html = html
           @styles = styles
+          @custom_elements = custom_elements
           @head = Set.new
           @listeners = {}
           @head_dirty = false
@@ -178,6 +184,7 @@ module Mayu
             Head,
             runtime_js: @engine.runtime_js,
             styles: @styles,
+            custom_elements: @custom_elements,
             descriptors: @head.map(&:children).flatten.compact
           ]
         end

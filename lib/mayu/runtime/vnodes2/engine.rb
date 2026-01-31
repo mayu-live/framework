@@ -27,7 +27,12 @@ module Mayu
           @output_queue = Async::Queue.new
           @updater = Updater.new(@output_queue)
           @dirty_elements = Set.new
+          @pending_custom_elements = Set.new
           @root = VDocument.new(descriptor, parent: nil, engine: self)
+          @pending_custom_elements.each do |custom_element|
+            @root.add_custom_element(custom_element)
+          end
+          @pending_custom_elements.clear
         end
 
         def marshal_dump
@@ -96,6 +101,14 @@ module Mayu
 
         def remove_listener(listener)
           @root.remove_listener(listener)
+        end
+
+        def add_custom_element(custom_element)
+          if @root
+            @root.add_custom_element(custom_element)
+          else
+            @pending_custom_elements.add(custom_element)
+          end
         end
 
         def flush_head(patcher)

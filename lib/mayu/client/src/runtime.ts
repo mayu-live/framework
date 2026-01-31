@@ -141,14 +141,6 @@ function configureLink(a: HTMLAnchorElement) {
 function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
   if (!domNode) return;
 
-  console.debug(
-    "setupTree",
-    domNode,
-    domNode.nodeName,
-    idNode.name,
-    JSON.stringify(domNode.textContent)
-  );
-
   if (domNode.nodeName.toUpperCase() !== idNode.name.toUpperCase()) {
     console.error(
       `Node ${idNode.id} should be ${idNode.name}, but found ${domNode.nodeName}`

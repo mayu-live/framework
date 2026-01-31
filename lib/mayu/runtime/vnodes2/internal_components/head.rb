@@ -4,12 +4,15 @@
 # License: AGPL-3.0
 
 require_relative "base"
+require_relative "script"
 
 module Mayu
   module Runtime
     module VNodes2
       module InternalComponents
         class Head < Base
+          Script = InternalComponents::Script
+
           def render
             H[:__head, *fixed_tags, *user_tags]
           end
@@ -20,7 +23,8 @@ module Mayu
             [
               H[:meta, charset: "utf-8"],
               runtime_script,
-              *stylesheet_links
+              *stylesheet_links,
+              *custom_element_scripts
             ].compact
           end
 
@@ -45,6 +49,25 @@ module Mayu
                 href: "/.mayu/assets/#{filename}"
               ]
             end
+          end
+
+          def custom_element_scripts
+            custom_elements = @__props[:custom_elements] || []
+            custom_elements.map do |custom_element|
+              H[
+                Script,
+                key: "custom-element-#{custom_element.name}",
+                content: custom_element_script(custom_element)
+              ]
+            end
+          end
+
+          def custom_element_script(custom_element)
+            format(
+              "customElements.define(%p, (await import(%p)).default)",
+              custom_element.name.to_s,
+              custom_element.path.to_s
+            )
           end
 
           def user_tags

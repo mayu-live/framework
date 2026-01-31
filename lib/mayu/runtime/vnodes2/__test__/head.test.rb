@@ -155,4 +155,18 @@ class Mayu::Runtime::VNodes2::HeadTest < Minitest::Test
   ensure
     Thread.current.thread_variable_set(key, previous)
   end
+
+  def test_custom_element_inline_registration_script
+    custom = Mayu::CustomElement["my-element", "my-element.js"]
+    descriptor = H[:body, H[custom, H[:span, "Hello"]]]
+
+    engine =
+      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
+
+    html = render_html(engine.root)
+
+    assert_match('<script type="module"', html)
+    assert_match('customElements.define("my-element"', html)
+    assert_match("/.mayu/assets/my-element.js", html)
+  end
 end
