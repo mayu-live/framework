@@ -195,7 +195,6 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     run_engine(initial) do |engine|
       engine.navigate("/next", updated)
 
-      # puts render_html(engine.root)
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
       patches = unwrap_patches(batch)
 
@@ -285,13 +284,15 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
   end
 
   def test_createtree_requires_single_root
-    descriptor = H[:body, H[MultiRootProbe]]
-    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    initial = H[:body]
+    updated = H[:body, H[MultiRootProbe]]
+
+    engine = Mayu::Runtime::VNodes2::Engine.new(initial)
     document = engine.root
 
     patcher = Mayu::Runtime::VNodes2::Patcher.new
 
-    assert_raises(RuntimeError) { document.update(patcher, descriptor) }
+    assert_raises(RuntimeError) { document.update(patcher, updated) }
   end
 
   class HeadNavProbe < Mayu::Component::Base
@@ -322,22 +323,18 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
 
       engine.navigate("/nav", updated)
 
-      history_batch =
-        Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      head_batch =
-        Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
 
-      history_patches = unwrap_patches(history_batch)
-      head_patches = unwrap_patches(head_batch)
-
+      assert(patches.first.is_a?(Mayu::Runtime::Patches::HistoryPushState))
       assert(
-        history_patches.all? do |patch|
+        patches.any? do |patch|
           patch.is_a?(Mayu::Runtime::Patches::HistoryPushState)
         end
       )
 
       assert(
-        head_patches.any? do |patch|
+        patches.any? do |patch|
           patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
         end
       )
@@ -369,11 +366,15 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
       updated = H[:body, H[ReloadProbe]]
       engine.refresh(updated)
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      patches =
+        dequeue_until(engine) do |batch_patches|
+          batch_patches.any? do |patch|
+            patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+          end
+        end
 
       set_text =
-        patches.find do |patch|
+        patches&.find do |patch|
           patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
         end
 

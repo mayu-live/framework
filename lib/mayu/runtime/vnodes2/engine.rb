@@ -136,8 +136,12 @@ module Mayu
         end
 
         def refresh(descriptor)
-          update(descriptor)
-          enqueue_update(@root) if @updater&.task
+          if @updater&.task
+            @root.instance_variable_set(:@descriptor, descriptor)
+            enqueue_update(@root)
+          else
+            update(descriptor)
+          end
         end
 
         def navigate(path, descriptor, push_state: true)

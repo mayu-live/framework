@@ -75,6 +75,18 @@ module Mayu
           end
         end
 
+        def dequeue_until(engine, max_batches: 3, timeout: 0.5)
+          max_batches.times do
+            batch =
+              Async::Task
+                .current
+                .with_timeout(timeout) { engine.dequeue_patches }
+            patches = unwrap_patches(batch)
+            return patches if yield(patches)
+          end
+          nil
+        end
+
         def with_modules_system(component_class)
           mod = Module.new
           exports = Module.new

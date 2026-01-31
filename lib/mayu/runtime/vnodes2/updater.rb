@@ -66,9 +66,6 @@ module Mayu
                   patcher.patches.reject! do |patch|
                     patch.is_a?(Patches::HistoryPushState)
                   end
-                  unless history_patches.empty?
-                    @output_queue.enqueue(Patches::Batch[history_patches])
-                  end
                 end
 
                 head_patches = []
@@ -80,7 +77,7 @@ module Mayu
                 @engine&.flush_dirty_elements(patcher)
 
                 patches = patcher.patches
-                patches = head_patches + patches if head_patches.any?
+                patches = history_patches + head_patches + patches
                 next if patches.empty?
 
                 if updates.keys.any? { |node|
