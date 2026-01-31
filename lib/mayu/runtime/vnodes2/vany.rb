@@ -52,7 +52,7 @@ module Mayu
         end
 
         def dom_id
-          @child.respond_to?(:dom_id) ? @child.dom_id : nil
+          @child.dom_id
         end
 
         def dom_id_tree

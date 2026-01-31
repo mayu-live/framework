@@ -52,6 +52,10 @@ module Mayu
         def write_html(_out)
         end
 
+        def dom_id
+          nil
+        end
+
         def dom_id_tree
           nil
         end

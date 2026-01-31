@@ -134,37 +134,33 @@ module Mayu
 
         def insert_node(patcher, node)
           node.start if @engine&.task
-          node.insert if node.respond_to?(:insert)
+          node.insert
 
-          if node.respond_to?(:write_html) && node.respond_to?(:dom_id_tree)
-            id_tree = node.dom_id_tree
-            if id_tree.is_a?(Array)
-              id_tree = id_tree.flatten.compact
-              if id_tree.length == 1
-                id_tree = id_tree.first
-              else
-                raise "CreateTree expects a single IdNode, got #{id_tree.length}"
-              end
-            end
-            if id_tree
-              html = +""
-              node.write_html(html)
-              patcher << Patches::CreateTree[html, id_tree]
+          id_tree = node.dom_id_tree
+          if id_tree.is_a?(Array)
+            id_tree = id_tree.flatten.compact
+            if id_tree.length == 1
+              id_tree = id_tree.first
+            else
+              raise "CreateTree expects a single IdNode, got #{id_tree.length}"
             end
           end
+          if id_tree
+            html = +""
+            node.write_html(html)
+            patcher << Patches::CreateTree[html, id_tree]
+          end
 
-          node.mark_inserted if node.respond_to?(:mark_inserted)
+          node.mark_inserted
         end
 
         def remove_node(patcher, node)
-          node.stop # if @engine&.task
-          node.remove if node.respond_to?(:remove)
+          node.stop if @engine&.task
+          node.remove
 
-          if node.respond_to?(:dom_id) && node.dom_id
-            patcher << Patches::RemoveNode[node.dom_id]
-          end
+          patcher << Patches::RemoveNode[node.dom_id] if node.dom_id
 
-          node.mark_removed if node.respond_to?(:mark_removed)
+          node.mark_removed
         end
 
         def normalize_descriptors(descriptors)
