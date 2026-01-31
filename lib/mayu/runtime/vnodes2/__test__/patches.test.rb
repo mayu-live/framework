@@ -213,4 +213,68 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
       refute_empty(dom_patches)
     end
   end
+
+  def test_navigation_emits_replace_children_for_complex_tree
+    initial =
+      H[
+        :body,
+        H[:main, H[:section, H[:h1, "Title"]], H[:section, H[:p, "Intro"]]],
+        H[:footer, H[:p, "Footer"]]
+      ]
+
+    updated =
+      H[
+        :body,
+        H[
+          :main,
+          H[:section, H[:h1, "Title"]],
+          H[:section, H[:p, "Intro"]],
+          H[:section, H[:p, "New"]]
+        ],
+        H[:footer, H[:p, "Footer"]]
+      ]
+
+    run_engine(initial) do |engine|
+      engine.navigate("/complex", updated)
+
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
+
+      create_tree =
+        patches.find { |patch| patch.is_a?(Mayu::Runtime::Patches::CreateTree) }
+      replace_children =
+        patches.find do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+        end
+
+      refute_nil(create_tree)
+      assert_includes(create_tree.html, "<p>New</p>")
+      refute_nil(replace_children)
+      main = find_element(engine.root, :main)
+      refute_nil(main)
+      assert_equal(main.dom_id, replace_children.id)
+      assert_includes(replace_children.child_ids, create_tree.tree.id)
+      assert_equal(3, replace_children.child_ids.length)
+    end
+  end
+
+  def test_navigation_creates_single_tree_for_nested_insert
+    initial = H[:body, H[:main]]
+    updated = H[:body, H[:main, H[:section, H[:div, H[:span, "Nested"]]]]]
+
+    run_engine(initial) do |engine|
+      engine.navigate("/tree", updated)
+
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      patches = unwrap_patches(batch)
+
+      create_trees =
+        patches.select do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::CreateTree)
+        end
+
+      assert_equal(1, create_trees.length)
+      assert_includes(create_trees.first.html, "<span>Nested</span>")
+    end
+  end
 end

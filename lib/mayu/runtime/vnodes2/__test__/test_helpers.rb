@@ -135,6 +135,38 @@ module Mayu
             nil
           end
         end
+
+        def find_element(node, type)
+          if node.is_a?(Mayu::Runtime::VNodes2::VElement)
+            descriptor = node.instance_variable_get(:@descriptor)
+            return node if descriptor&.type == type
+          end
+
+          case node
+          when Mayu::Runtime::VNodes2::VDocument
+            find_element(node.instance_variable_get(:@html), type)
+          when Mayu::Runtime::VNodes2::VAny
+            find_element(node.instance_variable_get(:@child), type)
+          when Mayu::Runtime::VNodes2::VComponent
+            find_element(node.instance_variable_get(:@children), type)
+          when Mayu::Runtime::VNodes2::VElement
+            find_element(node.instance_variable_get(:@children), type)
+          when Mayu::Runtime::VNodes2::VCustomElement
+            find_element(node.instance_variable_get(:@element), type)
+          when Mayu::Runtime::VNodes2::VSlot, Mayu::Runtime::VNodes2::VStateless
+            find_element(node.instance_variable_get(:@children), type)
+          when Mayu::Runtime::VNodes2::VChildren
+            node
+              .instance_variable_get(:@children)
+              .each do |child|
+                found = find_element(child, type)
+                return found if found
+              end
+            nil
+          else
+            nil
+          end
+        end
       end
     end
   end
