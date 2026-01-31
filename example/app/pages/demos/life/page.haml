@@ -3,6 +3,7 @@
   Fieldset = import("/components/Form/Fieldset")
   Input = import("/components/Form/Input")
   Button = import("/components/Form/Button")
+  Details = import("/components/UI/Details")
   Link = import("/components/UI/Link")
   GameGrid = import("./GameGrid")
 
@@ -13,12 +14,12 @@
   # RULES = { b: 3..3, s: 2..5 }
   # RULES = { b: 3..4, s: 3..5 }
 
-  MIN_SIZE = 5
-  MAX_SIZE = 20
-  DEFAULT_SIZE = MAX_SIZE
+  MIN_SIZE = 8
+  MAX_SIZE = 48
+  DEFAULT_SIZE = 24
 
   MIN_FPS = 1
-  MAX_FPS = 10
+  MAX_FPS = 20
   DEFAULT_FPS = 4
 
   def self.init_grid(width, height, &block)
@@ -104,7 +105,7 @@
     e => { target: { value: } }
     @height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
     if @grid.size > @height
-      @grid = grid.slice(0..@height)
+      @grid = @grid.slice(0..@height)
     else
       @grid = @grid + self.class.init_grid(@width, @height - @grid.size)
     end
@@ -132,7 +133,7 @@
   def step_grid(grid)
     @grid.map.with_index do |row, y|
       row.map.with_index do |alive, x|
-        RULES[alive ? :s : :b].include?(count_neighbors(grid, x, y))
+        RULES[alive ? :s : :b].include?(count_neighbors(@grid, x, y))
       end
     end
   end
@@ -186,7 +187,7 @@
       }
         = @running ? "Stop" : "Start"
 
-    -#
+    %Details(summary="Advanced controls")
       %div
         %label(for="grid-width") Grid width
         %br
