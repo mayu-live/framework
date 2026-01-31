@@ -44,6 +44,33 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
     attr_reader :mount_task, :listener_task
   end
 
+  class DynamicMountProbe < Mayu::Component::Base
+    attr_reader :mounted
+
+    def mount
+      @mounted = true
+    end
+
+    def render
+      H[:div, "dynamic"]
+    end
+  end
+
+  class ParentToggleProbe < Mayu::Component::Base
+    def initialize
+      @show = false
+    end
+
+    def show!
+      @show = true
+      rerender!
+    end
+
+    def render
+      @show ? H[:section, H[DynamicMountProbe]] : H[:section]
+    end
+  end
+
   def test_component_start_stop_and_rerender
     descriptor = H[:body, H[MountProbe]]
 
@@ -99,6 +126,29 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
       wait_until { instance.listener_task }
       refute_nil(instance.listener_task)
       refute_equal(task, instance.listener_task)
+    end
+  end
+
+  def test_new_component_started_after_insert
+    descriptor = H[:body, H[ParentToggleProbe]]
+
+    run_engine(descriptor) do |engine|
+      parent = find_component(engine.root, ParentToggleProbe)
+      parent_instance = parent.instance_variable_get(:@instance)
+
+      wait_until { parent_instance.instance_variable_get(:@__vnode_task) }
+      parent_instance.show!
+
+      dynamic = nil
+      wait_until do
+        dynamic = find_component(engine.root, DynamicMountProbe)
+        dynamic
+      end
+
+      dynamic_instance = dynamic.instance_variable_get(:@instance)
+      wait_until { dynamic_instance.mounted }
+
+      assert(dynamic_instance.mounted)
     end
   end
 end

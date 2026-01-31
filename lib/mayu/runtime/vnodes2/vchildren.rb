@@ -133,6 +133,7 @@ module Mayu
         end
 
         def insert_node(patcher, node)
+          node.start if @engine&.task
           node.insert if node.respond_to?(:insert)
 
           if node.respond_to?(:write_html) && node.respond_to?(:dom_id_tree)

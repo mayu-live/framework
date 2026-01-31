@@ -141,13 +141,12 @@ function configureLink(a: HTMLAnchorElement) {
 function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
   if (!domNode) return;
 
-  console.log(
+  console.debug(
     "setupTree",
     domNode,
     domNode.nodeName,
     idNode.name,
-    idNode
-    // JSON.stringify(domNode.textContent)
+    JSON.stringify(domNode.textContent)
   );
 
   if (domNode.nodeName.toUpperCase() !== idNode.name.toUpperCase()) {
@@ -263,7 +262,7 @@ const Patches = {
   async Batch(this: NodeSet, patches: Patch[]) {
     for (const patch of patches) {
       const [name, ...args] = patch;
-      console.debug(name, args);
+      console.log(name, args);
 
       const patchFn = Patches[name as PatchType] as any;
 
