@@ -207,9 +207,10 @@ module Mayu
           module_path =
             component.class.respond_to?(:module_path) &&
               component.class.module_path
-          return nil unless module_path
+          module_path = component.class.name if module_path.nil? ||
+            module_path.empty?
 
-          mod = Modules::System.current.get_mod(module_path)
+          mod = Modules::System.current.get_mod(module_path) if module_path
           puts Modules::System.current.format_exception(error)
 
           Patches::RenderError[
@@ -217,7 +218,7 @@ module Mayu
             error.class.name,
             error.message,
             error.backtrace,
-            mod.source_map.input,
+            mod&.source_map&.input,
             []
           ]
         end
