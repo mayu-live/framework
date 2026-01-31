@@ -38,6 +38,10 @@ module Mayu
           @html.update(patcher, init_html)
         end
 
+        def assign_descriptor(descriptor)
+          @descriptor = descriptor
+        end
+
         def add_head(vnode)
           @head.add(vnode)
           @head_dirty = true
