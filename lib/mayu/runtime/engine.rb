@@ -5,7 +5,7 @@
 
 require "async/queue"
 
-require_relative "vnodes"
+require_relative "vnodes2/engine"
 
 module Mayu
   module Runtime
@@ -14,73 +14,65 @@ module Mayu
       attr_accessor :metrics
 
       def initialize(descriptor, metrics:, runtime_js:)
-        @patches = Async::Queue.new
         @metrics = metrics
         @runtime_js = runtime_js
-        @root = VNodes::VDocument.new(descriptor, parent: self)
+        @engine =
+          VNodes2::Engine.new(descriptor, metrics:, runtime_js: runtime_js)
       end
 
       def marshal_dump
-        [@runtime_js, @root]
+        [@runtime_js, @engine]
       end
 
       def marshal_load(a)
-        @runtime_js, @root = a
-        @patches = Async::Queue.new
+        @runtime_js, @engine = a
       end
 
       def patch(patches)
-        Array(patches).flatten.each { |patch| @patches.enqueue(patch) }
+        @engine.patch(patches)
       end
 
       def callback(id, payload)
-        @root.call_listener(id, payload)
+        @engine.callback(id, payload)
       end
 
       def navigate(path, descriptor, push_state: true)
-        update(descriptor)
-
-        @patches.enqueue(Patches::HistoryPushState[path]) if push_state
+        @engine.navigate(path, descriptor, push_state:)
       end
 
       def ping(timestamp)
-        @patches.enqueue(Patches::Pong[timestamp])
+        @engine.ping(timestamp)
       end
 
       def update(descriptor)
-        @root.apply(descriptor)
+        @engine.update(descriptor)
       end
 
       def render
-        @root.render
+        @engine.render
       end
 
       def dom_id_tree
-        render.id_node
+        @engine.dom_id_tree
       end
 
       def styles
-        @root.styles
+        @engine.styles
       end
 
       def start
-        clear_patches!
-        @root.start
+        @engine.start
       end
 
       def stop
-        @root.stop
+        @engine.stop
       end
 
       def dequeue_patch
-        @patches.dequeue
+        @engine.dequeue_patch
       end
 
       private
-
-      def clear_patches!
-        @patches.dequeue until @patches.empty?
-      end
     end
   end
 end
