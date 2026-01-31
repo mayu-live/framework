@@ -58,9 +58,7 @@ module Mayu
         end
 
         def dom_id_list
-          @children
-            .map { |child| child.respond_to?(:dom_id) ? child.dom_id : nil }
-            .compact
+          dom_id_list_for(@children)
         end
 
         def dom_id_trees
@@ -172,9 +170,18 @@ module Mayu
         end
 
         def dom_id_list_for(children)
-          children
-            .map { |child| child.respond_to?(:dom_id) ? child.dom_id : nil }
-            .compact
+          children.flat_map { |child| dom_id_list_from_tree(child.dom_id_tree) }
+        end
+
+        def dom_id_list_from_tree(tree)
+          case tree
+          when Array
+            tree.flat_map { |node| dom_id_list_from_tree(node) }
+          when DOM::IdNode
+            [tree.id]
+          else
+            []
+          end
         end
 
         def insert_comments_between_strings(descriptors)
