@@ -82,6 +82,28 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
     refute_nil(remove_patch.id)
   end
 
+  def test_register_custom_element_patch
+    custom = Mayu::CustomElement["my-element", "my-element.js"]
+    initial = H[:body]
+    updated = H[:body, H[custom, H[:span, "Hello"]]]
+
+    engine =
+      Mayu::Runtime::VNodes2::Engine.new(initial, metrics: NullMetrics.new)
+    document = engine.root
+
+    patcher = Mayu::Runtime::VNodes2::Patcher.new
+    document.update(patcher, updated)
+
+    register =
+      patcher.patches.find do |patch|
+        patch.is_a?(Mayu::Runtime::Patches::RegisterCustomElement)
+      end
+
+    refute_nil(register)
+    assert_equal("my-element", register.name)
+    assert_equal("/.mayu/assets/my-element.js", register.path)
+  end
+
   def test_update_patches_for_attribute_and_text
     initial = H[:body, H[:p, "Hello", class: ["greeting"]]]
     updated =

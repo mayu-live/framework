@@ -6,6 +6,7 @@
 require_relative "base"
 require_relative "velement"
 require_relative "../../custom_element"
+require_relative "../patches"
 
 module Mayu
   module Runtime
@@ -25,6 +26,14 @@ module Mayu
             patcher,
             @descriptor.with(type: @descriptor.type.name)
           )
+        end
+
+        def register_custom_element(patcher)
+          custom_element = @descriptor.type
+          patcher << Patches::RegisterCustomElement[
+            custom_element.name,
+            custom_element.path
+          ]
         end
 
         def start

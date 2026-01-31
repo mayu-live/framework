@@ -31,6 +31,10 @@ module Mayu
           @child.update(patcher, descriptor)
         end
 
+        def register_custom_element(patcher)
+          @child.register_custom_element(patcher)
+        end
+
         def start
           @child.start
         end

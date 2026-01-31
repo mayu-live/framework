@@ -68,6 +68,9 @@ module Mayu
           @parent&.tree_path || []
         end
 
+        def register_custom_element(_patcher)
+        end
+
         def inserted?
           @is_inserted
         end

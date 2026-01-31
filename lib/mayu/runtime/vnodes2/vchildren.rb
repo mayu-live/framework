@@ -216,6 +216,7 @@ module Mayu
         end
 
         def insert_node(patcher, node)
+          node.traverse { |child| child.register_custom_element(patcher) }
           node.start if @engine&.task
           node.insert
 
