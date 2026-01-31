@@ -56,8 +56,8 @@ module Mayu
                     patcher << Patches::HistoryPushState[nav.path]
                   end
                 end
-                @engine&.flush_dirty_elements(patcher)
                 @engine&.flush_head(patcher)
+                @engine&.flush_dirty_elements(patcher)
 
                 patches = patcher.patches
                 next if patches.empty?

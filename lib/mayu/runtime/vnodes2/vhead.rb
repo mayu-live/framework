@@ -18,6 +18,7 @@ module Mayu
 
         def update(_patcher, descriptor)
           @descriptor = descriptor
+          add_to_document
         end
 
         def write_html(_out)
