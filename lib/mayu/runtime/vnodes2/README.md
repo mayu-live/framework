@@ -103,6 +103,9 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
 - Head registration via `VHead` insert/remove; head flush happens after batch updates.
 - Stylesheet collection from component modules and injection into `<head>`.
 - Updater + Engine queueing for batch updates and patch output.
+- Navigation handling:
+  - Navigation events enqueue document updates and emit HistoryPushState patches.
+  - HistoryPushState patches are emitted before head/body patch batches.
 - Event callback support:
   - `on*` attributes produce listener registration and JS callback wiring.
   - `Engine#callback` dispatches to listeners and triggers rerenders.
@@ -127,7 +130,10 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - error boundary behavior
   - view transition wrapping
   - serialization round-trips and listener restore
+  - slot update behavior
+  - navigation patch ordering + complex tree replace-children
   - tests are split under `lib/mayu/runtime/vnodes2/__test__/`
+  - `CreateTree` enforces a single `IdNode` (no array fallback).
 
 ## TODO (next steps)
 
@@ -136,6 +142,8 @@ current (vnodes/) implementation works and what we are changing for vnodes2.
   - Event listener patches parity (SetListener/RemoveListener vs SetAttribute).
 - DOM patch parity:
   - Proper handling of keyed reordering (not just insert/remove).
+- Patch ordering:
+  - Confirm/Create tests for head-before-body ordering when both mutate.
 - Serialization follow-ups:
   - Decide if listeners should be rehydrated without calling `update`.
 - VHead/VDocument behavior:
