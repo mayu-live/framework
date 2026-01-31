@@ -386,4 +386,82 @@ class Mayu::Runtime::VNodes2::PatchesTest < Minitest::Test
       assert_equal("B", set_text.content)
     end
   end
+
+  class RemovedUpdateProbe < Mayu::Component::Base
+    attr_reader :touched
+
+    def initialize
+      @touched = false
+    end
+
+    def touch
+      @touched = true
+      rerender!
+    end
+
+    def render
+      H[:div, @touched ? "touched" : "idle"]
+    end
+  end
+
+  class RemoveParentProbe < Mayu::Component::Base
+    def initialize
+      @show = true
+    end
+
+    def hide!
+      @show = false
+      rerender!
+    end
+
+    def render
+      @show ? H[:section, H[RemovedUpdateProbe]] : H[:section]
+    end
+  end
+
+  def test_removed_nodes_are_not_updated
+    descriptor = H[:body, H[RemoveParentProbe]]
+
+    run_engine(descriptor) do |engine|
+      parent = find_component(engine.root, RemoveParentProbe)
+      parent_instance = parent.instance_variable_get(:@instance)
+
+      wait_until { parent_instance.instance_variable_get(:@__vnode_task) }
+
+      removed = find_component(engine.root, RemovedUpdateProbe)
+      removed_instance = removed.instance_variable_get(:@instance)
+
+      removed_instance.touch
+      parent_instance.hide!
+
+      wait_until { removed.removed? }
+
+      first_batch =
+        dequeue_until(engine, max_batches: 3) do |batch_patches|
+          batch_patches.any? do |patch|
+            patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+          end
+        end
+
+      refute_nil(first_batch)
+      replace =
+        first_batch.find do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+        end
+      refute_nil(replace)
+      assert_equal([], replace.child_ids)
+
+      engine.enqueue_update(removed)
+
+      second_batch =
+        dequeue_until(engine, max_batches: 1) do |batch_patches|
+          batch_patches.any? do |patch|
+            patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+          end
+        end
+
+      assert_nil(second_batch)
+      assert(removed_instance.touched)
+    end
+  end
 end

@@ -44,6 +44,7 @@ module Mayu
                 end
 
                 updates.each do |node, descriptor|
+                  next if node.removed?
                   if descriptor
                     node.update(patcher, descriptor)
                   else

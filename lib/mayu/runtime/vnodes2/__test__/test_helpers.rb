@@ -113,6 +113,8 @@ module Mayu
             return patches if yield(patches)
           end
           nil
+        rescue Async::TimeoutError
+          nil
         end
 
         def with_modules_system(component_class)
