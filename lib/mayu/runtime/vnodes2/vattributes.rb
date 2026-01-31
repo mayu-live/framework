@@ -28,6 +28,8 @@ module Mayu
                 method.call
               in [[:req, Symbol]]
                 method.call(payload)
+              in [[:rest, :args]]
+                method.call(payload)
               in [[:keyrest, Symbol]]
                 method.call(**payload)
               end
