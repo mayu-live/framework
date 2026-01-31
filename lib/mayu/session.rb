@@ -63,15 +63,11 @@ module Mayu
       runtime_js = @request_info.http2 && init_js_path
 
       @engine =
-        if use_vnodes2?
-          Runtime::VNodes2::Engine.new(
-            descriptor,
-            runtime_js:,
-            metrics: @environment.metrics
-          )
-        else
-          Runtime.init(descriptor, metrics: @environment.metrics, runtime_js:)
-        end
+        Runtime::VNodes2::Engine.new(
+          descriptor,
+          runtime_js:,
+          metrics: @environment.metrics
+        )
 
       @last_ping = Async::Clock.now
     end
@@ -186,11 +182,7 @@ module Mayu
         while Modules::System.current.wait_for_reload
           puts "\e[30;103mCode update detected, reloading.\e[0m"
           descriptor = resolve_route(@request_info.path)
-          if @engine.respond_to?(:refresh)
-            @engine.refresh(descriptor)
-          else
-            @engine.update(descriptor)
-          end
+          @engine.refresh(descriptor)
         end
       end
     end
@@ -264,10 +256,6 @@ module Mayu
             path:
           ]
         end
-    end
-
-    def use_vnodes2?
-      ENV["MAYU_VNODES2"] == "1"
     end
   end
 end
