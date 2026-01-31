@@ -115,7 +115,7 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
       restored = Mayu::Runtime::Engine.restore(dumped, metrics: NullMetrics.new)
 
       listeners = restored.root.instance_variable_get(:@listeners)
-      assert_equal(0, listeners.size)
+      assert(listeners.any?)
 
       run_engine_instance(restored) do
         document = restored.root

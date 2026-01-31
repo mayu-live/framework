@@ -14,48 +14,56 @@ module Mayu
   module Runtime
     module VNodes
       class VAttributes < Base
-        Listener =
-          Data.define(:id, :callback) do
-            def self.[](callback) = new(SecureRandom.alphanumeric(32), callback)
+        class Listener
+          def self.[](callback) = new(SecureRandom.alphanumeric(32), callback)
 
-            def to_js = "Mayu.callback(event,'#{id}')"
+          def initialize(id, callback)
+            @id = id
+            @callback = callback
+          end
 
-            def call(payload)
-              method = callback.component.method(callback.method_name)
+          attr_reader :id
+          attr_reader :callback
 
-              case method.parameters
-              in []
-                method.call
-              in [[:req, Symbol]]
-                method.call(payload)
-              in [[:rest, :args]]
-                method.call(payload)
-              in [[:keyrest, Symbol]]
-                method.call(**payload)
-              end
-            end
+          def to_js = "Mayu.callback(event,'#{id}')"
 
-            def marshal_dump
-              component_id =
-                callback.component.instance_variable_get(:@__vnode_id)
-              [@id, component_id, callback.method_name]
-            end
+          def call(payload)
+            method = callback.component.method(callback.method_name)
 
-            def marshal_load(a)
-              @id, @component_id, @method_name = a
-              @callback = nil
-            end
-
-            def rehydrate(component_map)
-              component = component_map[@component_id]
-              return unless component
-              @callback = Descriptors::Callback[component, @method_name]
+            case method.parameters
+            in []
+              method.call
+            in [[:req, Symbol]]
+              method.call(payload)
+            in [[:rest, :args]]
+              method.call(payload)
+            in [[:keyrest, Symbol]]
+              method.call(**payload)
             end
           end
+
+          def marshal_dump
+            component_id =
+              callback.component.instance_variable_get(:@__vnode_id)
+            [id, component_id, callback.method_name]
+          end
+
+          def marshal_load(a)
+            @id, @component_id, @method_name = a
+            @callback = nil
+          end
+
+          def rehydrate(component_map)
+            component = component_map[@component_id]
+            return unless component
+            @callback = Descriptors::Callback[component, @method_name]
+          end
+        end
 
         def initialize(descriptor, parent:, engine:)
           super
           @attributes = normalize_attributes(flatten_props(@descriptor.props))
+          register_listeners!(@attributes)
         end
 
         def update(patcher, descriptor = nil)
@@ -157,6 +165,7 @@ module Mayu
             .transform_values do |value|
               case value
               when Listener
+                @engine.add_listener(value)
                 value.to_js
               else
                 value
@@ -185,6 +194,22 @@ module Mayu
         end
 
         private
+
+        def register_listeners!(attrs)
+          attrs.each do |key, value|
+            next unless key.to_s.start_with?("on")
+            next if value.nil? || value.is_a?(String)
+
+            if value.is_a?(Listener)
+              @engine.add_listener(value)
+              next
+            end
+
+            listener = Listener[value]
+            @engine.add_listener(listener)
+            attrs[key] = listener
+          end
+        end
 
         def normalize_attributes(attrs)
           attrs.each_with_object({}) do |(key, value), obj|

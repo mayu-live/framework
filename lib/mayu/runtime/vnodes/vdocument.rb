@@ -137,17 +137,17 @@ module Mayu
         end
 
         def marshal_dump
-          [super, @html, @styles, @custom_elements]
+          [super, @html, @styles, @custom_elements, @listeners]
         end
 
         def marshal_load(a)
-          a => [base, html, styles, custom_elements]
+          a => [base, html, styles, custom_elements, listeners]
           super(base)
           @html = html
           @styles = styles
           @custom_elements = custom_elements
+          @listeners = listeners || {}
           @head = Set.new
-          @listeners = {}
           @head_dirty = false
         end
 
@@ -163,6 +163,8 @@ module Mayu
           )
 
           rebuild_head_and_listeners(component_map)
+          @listeners.each_value { |listener| listener.rehydrate(component_map) }
+          @listeners.delete_if { |_id, listener| listener.callback.nil? }
         end
 
         def emit_render_error(patcher, error, component_vnode)
@@ -195,7 +197,6 @@ module Mayu
 
         def rebuild_head_and_listeners(component_map)
           @head.clear
-          @listeners.clear
 
           traverse do |node|
             case node

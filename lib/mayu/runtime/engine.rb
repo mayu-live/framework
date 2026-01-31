@@ -27,11 +27,14 @@ module Mayu
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @pending_custom_elements = Set.new
+        @pending_listeners = []
         @root = VNodes::VDocument.new(descriptor, parent: nil, engine: self)
         @pending_custom_elements.each do |custom_element|
           @root.add_custom_element(custom_element)
         end
         @pending_custom_elements.clear
+        @pending_listeners.each { |listener| @root.add_listener(listener) }
+        @pending_listeners.clear
       end
 
       def marshal_dump
@@ -95,7 +98,7 @@ module Mayu
       end
 
       def add_listener(listener)
-        @root.add_listener(listener)
+        @root ? @root.add_listener(listener) : @pending_listeners << listener
       end
 
       def remove_listener(listener)
