@@ -82,6 +82,7 @@ module Mayu
         def emit_replace_children(patcher)
           return unless @children_dirty
           child_ids = @children.dom_id_list
+          metrics.update_child_id_count.increment(labels: { tag_name: })
           patcher << Patches::ReplaceChildren[dom_id, child_ids]
           @children_dirty = false
         end

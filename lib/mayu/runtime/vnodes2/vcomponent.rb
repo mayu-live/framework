@@ -100,6 +100,11 @@ module Mayu
 
             @children.start
             task.async do
+              metrics.component_mount_count.increment(
+                labels: {
+                  component: component_label
+                }
+              )
               @instance.mount
               @mounted = true
             end
@@ -151,7 +156,12 @@ module Mayu
               )
             end
 
-            @children.update(patcher, render_children)
+            metrics.update_summary(
+              metrics.component_children_update_times,
+              labels: {
+                component: component_label
+              }
+            ) { @children.update(patcher, render_children) }
           rescue ErrorHandled => e
             raise if retried || e.boundary != self
             retried = true
@@ -238,7 +248,12 @@ module Mayu
           retried = false
 
           begin
-            @instance.render
+            metrics.update_summary(
+              metrics.component_patch_times,
+              labels: {
+                component: component_label
+              }
+            ) { @instance.render }
           rescue ErrorHandled => e
             raise if retried
             retried = true
@@ -317,6 +332,14 @@ module Mayu
               .select { |path| path.end_with?(".css") }
               .map { |path| find_stylesheets(get_mod(path)) }
           ].flatten.compact
+        end
+
+        def component_label
+          label =
+            @instance.class.respond_to?(:module_path) &&
+              @instance.class.module_path
+          return label unless label.nil? || label.empty?
+          @instance.class.name
         end
       end
     end

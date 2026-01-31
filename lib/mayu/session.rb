@@ -64,7 +64,11 @@ module Mayu
 
       @engine =
         if use_vnodes2?
-          Runtime::VNodes2::Engine.new(descriptor, runtime_js:)
+          Runtime::VNodes2::Engine.new(
+            descriptor,
+            runtime_js:,
+            metrics: @environment.metrics
+          )
         else
           Runtime.init(descriptor, metrics: @environment.metrics, runtime_js:)
         end

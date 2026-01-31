@@ -24,6 +24,7 @@ module Mayu
 
         def task = @task || parent_task
         def parent_task = @parent&.task || Async::Task.current
+        def metrics = @engine.metrics
 
         def closest(type)
           if type === self

@@ -70,6 +70,14 @@ module Mayu
               Console.logger.error(self, "Listener #{id} not found")
               return
             end
+          if callback = listener.callback
+            metrics.session_callback_count.increment(
+              labels: {
+                component: component_label_for(callback.component),
+                method: callback.method_name
+              }
+            )
+          end
 
           component = listener.callback&.component
           task = component&.instance_variable_get(:@__vnode_task)
@@ -92,6 +100,14 @@ module Mayu
 
         def head_dirty?
           @head_dirty
+        end
+
+        def component_label_for(component)
+          label =
+            component.class.respond_to?(:module_path) &&
+              component.class.module_path
+          return label unless label.nil? || label.empty?
+          component.class.name
         end
 
         def start

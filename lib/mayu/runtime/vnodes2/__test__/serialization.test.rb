@@ -54,7 +54,8 @@ class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
     descriptor = H[:body, H[SerializeProbe]]
 
     with_modules_system(SerializeProbe) do
-      engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+      engine =
+        Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
 
       run_engine_instance(engine) do
         component = find_component(engine.root, SerializeProbe)
@@ -75,7 +76,8 @@ class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
       end
 
       dumped = engine.dump!
-      restored = Mayu::Runtime::VNodes2::Engine.restore(dumped)
+      restored =
+        Mayu::Runtime::VNodes2::Engine.restore(dumped, metrics: NullMetrics.new)
 
       html = render_html(restored.root)
       assert_match("<p>2</p>", html)
@@ -101,7 +103,8 @@ class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
     descriptor = H[:body, H[CallbackProbe]]
 
     with_modules_system(CallbackProbe) do
-      engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+      engine =
+        Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
 
       run_engine_instance(engine) do
         document = engine.root
@@ -112,7 +115,8 @@ class Mayu::Runtime::VNodes2::SerializationTest < Minitest::Test
       end
 
       dumped = engine.dump!
-      restored = Mayu::Runtime::VNodes2::Engine.restore(dumped)
+      restored =
+        Mayu::Runtime::VNodes2::Engine.restore(dumped, metrics: NullMetrics.new)
 
       listeners = restored.root.instance_variable_get(:@listeners)
       assert_equal(0, listeners.size)

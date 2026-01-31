@@ -18,8 +18,36 @@ module Mayu
       module TestHelpers
         H = Mayu::Runtime::H
 
+        NullCounter =
+          Data.define do
+            def increment(**)
+            end
+          end
+
+        NullSummary =
+          Data.define do
+            def observe(_value = nil, **)
+            end
+          end
+
+        NullMetrics =
+          Data.define do
+            def component_mount_count = NullCounter.new
+            def component_children_update_times = NullSummary.new
+            def component_patch_times = NullSummary.new
+            def update_child_id_count = NullCounter.new
+            def session_callback_count = NullCounter.new
+            def update_summary(_summary, labels: {})
+              yield
+            end
+          end
+
         def run_engine(descriptor)
-          engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+          engine =
+            Mayu::Runtime::VNodes2::Engine.new(
+              descriptor,
+              metrics: NullMetrics.new
+            )
 
           Async do
             engine.start

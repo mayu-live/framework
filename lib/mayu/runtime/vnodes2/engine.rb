@@ -16,10 +16,12 @@ module Mayu
   module Runtime
     module VNodes2
       class Engine
-        attr_reader :runtime_js, :root, :output_queue
+        attr_reader :runtime_js, :root, :output_queue, :metrics
+        attr_writer :metrics
 
-        def initialize(descriptor, runtime_js: nil)
+        def initialize(descriptor, runtime_js: nil, metrics:)
           @runtime_js = runtime_js
+          @metrics = metrics
           @output_queue = Async::Queue.new
           @updater = Updater.new(@output_queue)
           @dirty_elements = Set.new
@@ -47,12 +49,14 @@ module Mayu
           dump
         end
 
-        def self.restore(data)
-          Marshal.load(data)
+        def self.restore(data, metrics: nil)
+          engine = Marshal.load(data)
+          engine.metrics = metrics if metrics
+          engine
         end
 
-        def self.restore!(data)
-          engine = restore(data)
+        def self.restore!(data, metrics: nil)
+          engine = restore(data, metrics: metrics)
           engine.start
           engine
         end

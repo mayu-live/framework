@@ -21,7 +21,8 @@ class Mayu::Runtime::VNodes2::RenderingTest < Minitest::Test
         H[:footer, H[:p, "Copyright"]]
       ]
 
-    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    engine =
+      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
     html = render_html(engine.root)
 
     assert_equal(
@@ -38,7 +39,8 @@ class Mayu::Runtime::VNodes2::RenderingTest < Minitest::Test
   def test_component_renders_html
     descriptor = H[:body, H[RenderProbe]]
 
-    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    engine =
+      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
     html = render_html(engine.root)
 
     assert_match(
@@ -51,7 +53,8 @@ class Mayu::Runtime::VNodes2::RenderingTest < Minitest::Test
     descriptor =
       H[:body, H[:header, H[:h1, "Title"]], H[:main, H[:p, "Content"]]]
 
-    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    engine =
+      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
     tree = engine.dom_id_tree
 
     assert_equal("#document", tree.name)

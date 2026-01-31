@@ -101,7 +101,8 @@ class Mayu::Runtime::VNodes2::LifecycleTest < Minitest::Test
   def test_component_start_stop_and_rerender
     descriptor = H[:body, H[MountProbe]]
 
-    engine = Mayu::Runtime::VNodes2::Engine.new(descriptor)
+    engine =
+      Mayu::Runtime::VNodes2::Engine.new(descriptor, metrics: NullMetrics.new)
     document = engine.root
 
     instance = nil
