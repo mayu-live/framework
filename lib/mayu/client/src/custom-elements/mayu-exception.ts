@@ -5,6 +5,7 @@ template.innerHTML = html;
 
 export default class MayuException extends HTMLElement {
   dialog?: HTMLDialogElement;
+  closeButton?: HTMLButtonElement;
 
   connectedCallback() {
     if (!this.shadowRoot) {
@@ -14,9 +15,16 @@ export default class MayuException extends HTMLElement {
     this.shadowRoot!.appendChild(template.content.cloneNode(true));
 
     this.dialog = this.shadowRoot!.querySelector<HTMLDialogElement>("dialog")!;
+    this.closeButton = this.shadowRoot!.querySelector<HTMLButtonElement>(
+      "[data-action='close']"
+    );
 
-    this.dialog!.addEventListener("close", this.remove);
-    this.dialog!.showModal();
+    this.closeButton?.addEventListener("click", () => this.dialog?.close());
+    this.dialog!.addEventListener("close", () => this.remove());
+
+    if (!this.dialog!.open) {
+      this.dialog!.showModal();
+    }
   }
 
   disconnectedCallback() {

@@ -6,10 +6,10 @@ export default function renderError(
   message: string,
   backtrace: string[],
   source: string,
-  treePath: { name: string; path?: string }[],
+  treePath: { name: string; path?: string }[]
 ) {
-  const formats = [];
-  const buf = [];
+  const formats: string[] = [];
+  const buf: string[] = [];
 
   buf.push(`%c${type}: ${message}`);
   formats.push("font-size: 1.25em");
@@ -18,10 +18,10 @@ export default function renderError(
     const indent = "  ".repeat(i);
     if (path.path) {
       buf.push(`%c${indent}%%%c${path.name} %c(${path.path})`);
-      formats.push("color: deeppink;", "color: deepskyblue;", "color: gray;");
+      formats.push("color: #ff4d6d;", "color: #7fd1ff;", "color: #9aa3b2;");
     } else {
       buf.push(`%c${indent}%%%c${path.name}`);
-      formats.push("color: deeppink;", "color: deepskyblue;");
+      formats.push("color: #ff4d6d;", "color: #7fd1ff;");
     }
   });
 
@@ -31,20 +31,14 @@ export default function renderError(
     formats.push(
       line.startsWith(`${file}:`)
         ? "font-size: 1em; font-weight: 600; text-shadow: 0 0 3px #000;"
-        : "font-size: 1em;",
+        : "font-size: 1em;"
     );
   });
 
   console.error(buf.join("\n"), ...formats);
 
-  const existing = Array.from(document.getElementsByTagName("mayu-exception"));
-  existing.forEach((e) => {
-    e.remove();
-  });
-
-  const element =
-    document.getElementsByTagName("mayu-exception")[0] ||
-    document.createElement("mayu-exception");
+  document.querySelectorAll("mayu-exception").forEach((e) => e.remove());
+  const element = document.createElement("mayu-exception");
 
   const interestingLines = new Set<number>();
 
@@ -54,52 +48,51 @@ export default function renderError(
     }
   });
 
-  console.log("INTERESTING LINES", interestingLines);
+  const title = h("span", [`${type}: ${message}`], {
+    slot: "title",
+    class: "title",
+  });
+
+  const treeItems = treePath.map((path, i) => {
+    const indent = "  ".repeat(i);
+    const line =
+      indent + "% " + path.name + (path.path ? ` (${path.path})` : "");
+
+    return h("li", [line], { slot: "tree-path", class: "tree-item" });
+  });
+
+  const backtraceItems = backtrace.map((line) => {
+    const isInteresting = line.startsWith(`${file}:`);
+    const className = isInteresting
+      ? "trace-item is-interesting"
+      : "trace-item";
+
+    return h("li", [line], {
+      slot: "backtrace",
+      class: className,
+    });
+  });
+
+  const sourceItems = source.split("\n").map((line, i) => {
+    const isInteresting = interestingLines.has(i + 1);
+    const className = isInteresting
+      ? "source-line is-interesting"
+      : "source-line";
+    const number = String(i + 1).padStart(4, " ");
+    const content = `${number}  ${line}`;
+
+    return h("li", [content], {
+      slot: "source",
+      class: className,
+    });
+  });
 
   element.replaceChildren(
-    h("span", [`${type}: ${message}`], { slot: "title" }),
-    ...treePath.map((path, i) =>
-      h(
-        "li",
-        [
-          h("span", ["  ".repeat(i)]),
-          h("span", ["%"], { style: "color: deeppink;" }),
-          h("span", [path.name], { style: "color: deepskyblue;" }),
-          " ",
-          path.path &&
-            h("span", [`(${path.path})`], { style: "opacity: 50%;" }),
-        ],
-        { slot: "tree-path" },
-      ),
-    ),
-    ...backtrace.map((line) =>
-      h(
-        "li",
-        [
-          line.startsWith(`${file}:`)
-            ? h("strong", [line], { style: "color: red;" })
-            : line,
-        ],
-        {
-          slot: "backtrace",
-        },
-      ),
-    ),
-    ...source.split("\n").map((line, i) =>
-      h(
-        "li",
-        [
-          interestingLines.has(i + 1)
-            ? h("strong", [line], { style: "color: red;" })
-            : line,
-        ],
-        {
-          slot: "source",
-        },
-      ),
-    ),
+    title,
+    ...treeItems,
+    ...backtraceItems,
+    ...sourceItems
   );
-  console.log("FILE", file);
 
   document.body.appendChild(element);
 }

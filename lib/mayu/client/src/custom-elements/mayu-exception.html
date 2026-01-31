@@ -1,132 +1,202 @@
 <style>
+  :host {
+    --panel-bg: #0f1117;
+    --panel-border: #232834;
+    --panel-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    --text: #e6e8ef;
+    --muted: #9aa3b2;
+    --accent: #ff4d6d;
+    --accent-strong: #ff2d55;
+    --line: #2a3140;
+    --code-bg: #121621;
+    --code-line: #1c2333;
+    --highlight: #32151b;
+    --badge-bg: #2b0f15;
+    --badge-text: #ff99ab;
+    font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+    color: var(--text);
+  }
+
   dialog {
-    container-type: inline-size;
     position: fixed;
-    width: 80vw;
-    top: 50%;
-    left: 50%;
+    inset: 50% auto auto 50%;
     transform: translate(-50%, -50%);
-    z-index: 10001;
-    background: #fff;
-    border: 5px solid #c00;
-    border-radius: 3px;
-    font-family: monospace;
-    overflow: hidden;
-    font-size: 0.9rem;
-    display: flex;
-    flex-direction: column;
+    width: min(92vw, 1100px);
+    max-height: 85vh;
     margin: 0;
     padding: 0;
-    box-shadow:
-      #0000003f 0px 54px 55px,
-      #0000001e 0px -12px 30px,
-      #0000001e 0px 4px 6px,
-      #0000002b 0px 12px 13px,
-      #00000016 0px -3px 5px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--panel-shadow);
+    z-index: 10001;
   }
 
   dialog::backdrop {
-    backdrop-filter: brightness(30%) blur(5px);
+    background: rgba(8, 10, 15, 0.7);
+    backdrop-filter: blur(6px);
   }
 
   header {
     display: flex;
     align-items: center;
-    background: #c00;
-    color: #fff;
-    text-shadow:
-      0 0 15px #fff,
-      0 0 2px #000;
-    padding-bottom: 5px;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #1b0f17, #1c1324 55%, #141722);
+    border-bottom: 1px solid var(--line);
   }
 
-  header > button {
-    flex: 0;
-    background: transparent;
-    font-size: 2em;
-    font-weight: bold;
-    opacity: 0.5;
-    border: 0;
-    cursor: pointer;
-  }
-
-  header > button:hover {
-    opacity: 1;
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   h1 {
-    font-size: 1.2em;
     margin: 0;
-    padding: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
     flex: 1;
+    color: var(--text);
+  }
+
+  .close {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 0.3rem 0.55rem;
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+
+  .close:hover {
+    color: var(--text);
+    border-color: var(--accent);
   }
 
   main {
-    overflow-y: scroll;
-    flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
-    padding: 1em;
-    gap: 1em;
+    grid-template-columns: repeat(auto-fit, minmax(30em, 1fr));
+    gap: 1rem;
+    padding: 1.25rem 1.5rem 1.5rem;
+    overflow: auto;
   }
 
-  /*
-  pre {
-    white-space: pre-wrap;
-    margin: 1rem;
-    flex: 1;
-    overflow: hidden;
+  .source-panel {
+    grid-column: span 2;
   }
-  */
 
-  .tree-path {
-    list-style-type: none;
-    white-space: pre-wrap;
+  @media (max-width: 60em) {
+    .source-panel {
+      grid-column: auto;
+    }
+  }
+
+  section {
+    background: rgba(16, 19, 28, 0.6);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 0.9rem 0.9rem 0.8rem;
+    display: grid;
+    gap: 0.6rem;
+    min-height: 8em;
+    overflow-x: auto;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  ul,
+  ol {
     margin: 0;
     padding: 0;
+    list-style: none;
   }
 
-  .backtrace {
-    list-style-type: none;
-    font-size: 1em;
-    white-space: pre-wrap;
-    margin: 0;
-    padding: 0;
+  ol {
+    counter-reset: line;
   }
 
-  .source {
-    padding: 0.5em;
-    background: #333;
-    color: #fff;
-    list-style-type: decimal;
-    white-space: pre-wrap;
+  ::slotted(.tree-item),
+  ::slotted(.trace-item) {
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px;
+    color: var(--text);
+    display: grid;
+    gap: 0.25rem;
+    line-height: 1.35;
+  }
+
+  ::slotted(.tree-item) {
+    color: #7fd1ff;
+  }
+
+  ::slotted(.trace-item.is-interesting) {
+    background: var(--highlight);
+    color: #ffd6dd;
+    border: 1px solid #52212c;
+  }
+
+  ::slotted(.source-line) {
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px;
+    background: #0f121a;
+    color: #f5f7ff;
+    white-space: pre;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::slotted(.source-line.is-interesting) {
+    background: #261018;
+    border: 1px solid #ff5f7a;
+    color: #ffe2e8;
+  }
+
+  ::slotted(.title) {
+    font-weight: 600;
   }
 </style>
 <dialog>
   <header>
-    <h1>
-      <slot name="title"></slot>
-    </h1>
-    <button onclick="console.log(this.getRootNode().host.remove())">⨉</button>
+    <span class="badge">Runtime Error</span>
+    <h1><slot name="title"></slot></h1>
+    <button class="close" data-action="close">Close</button>
   </header>
   <main>
-    <div>
-      <h2>Backtrace:</h2>
-      <ul class="backtrace">
+    <section>
+      <h2>Backtrace</h2>
+      <ul>
         <slot name="backtrace"></slot>
       </ul>
-    </div>
-    <div>
-      <h2>Tree path:</h2>
-      <ul class="tree-path">
+    </section>
+    <section>
+      <h2>Tree Path</h2>
+      <ul>
         <slot name="tree-path"></slot>
       </ul>
-    </div>
-    <div>
+    </section>
+    <section class="source-panel">
       <h2>Source</h2>
-      <ol class="source">
+      <ol>
         <slot name="source"></slot>
       </ol>
-    </div>
+    </section>
   </main>
 </dialog>
