@@ -191,10 +191,17 @@ module Mayu
 
         def tree_path
           node = { name: component_label }
-
-          if @instance.class.respond_to?(:module_path)
-            path = @instance.class.module_path
-            node[:path] = path if path && !path.empty?
+          path = @instance.class.module_path
+          if path && !path.empty?
+            node[:path] = path
+            class_name = @instance.class.name
+            node[:name] = (
+              if class_name
+                class_name.split("::").last
+              else
+                component_label
+              end
+            )
           end
 
           [*@parent&.tree_path, node].compact

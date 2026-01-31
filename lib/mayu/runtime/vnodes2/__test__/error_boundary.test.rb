@@ -120,6 +120,43 @@ class Mayu::Runtime::VNodes2::ErrorBoundaryTest < Minitest::Test
     end
   end
 
+  def test_render_error_tree_path_order
+    descriptor = H[:body, H[RenderErrorProbe]]
+
+    with_modules_system_with_source_map(RenderErrorProbe) do
+      run_engine(descriptor) do |engine|
+        component = find_component(engine.root, RenderErrorProbe)
+        instance = component.instance_variable_get(:@instance)
+
+        wait_until { instance.respond_to?(:rerender!) }
+        instance.trigger_error
+
+        patches =
+          dequeue_until(engine) do |batch|
+            batch.any? do |patch|
+              patch.is_a?(Mayu::Runtime::Patches::RenderError)
+            end
+          end
+
+        refute_nil(patches)
+
+        render_error =
+          patches.find do |patch|
+            patch.is_a?(Mayu::Runtime::Patches::RenderError)
+          end
+
+        tree_path = render_error.tree_path
+        assert_equal({ name: "#document" }, tree_path.first)
+        assert_equal(
+          { name: "RenderErrorProbe", path: "/tests/render_error" },
+          tree_path.last
+        )
+        assert(tree_path.any? { |node| node[:name] == "body" })
+        assert(tree_path.any? { |node| node[:name] == "html" })
+      end
+    end
+  end
+
   private
 
   def with_modules_system_with_source_map(component_class)
