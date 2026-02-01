@@ -53,11 +53,10 @@ class Mayu::Routes::Test < Minitest::Test
   end
 
   def test_not_found
-    skip "TODO: Fix this implementation"
     router = setup_router
 
     match = router.match("/non-existant-route")
-    assert(match, "match should return some sort of route object")
+    assert_equal(match.route.views.page, match.route.views.not_found)
   end
 
   private
