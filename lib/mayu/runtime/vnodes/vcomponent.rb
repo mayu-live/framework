@@ -50,6 +50,24 @@ module Mayu
             @vars[var] = value
           end
 
+          def with(values)
+            previous = {}
+            values.each do |key, value|
+              previous[key] = @vars.key?(key) ? @vars[key] : :__missing__
+              @vars[key] = value
+            end
+
+            yield
+          ensure
+            previous.each do |key, value|
+              if value == :__missing__
+                @vars.delete(key)
+              else
+                @vars[key] = value
+              end
+            end
+          end
+
           def marshal_dump
             [@vars]
           end

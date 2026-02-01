@@ -45,6 +45,7 @@ module Mayu
 
       Comment = Data.define(:content) { alias to_s content }
       RawText = Data.define(:content) { alias to_s content }
+      Context = Data.define(:values, :children)
 
       Callback =
         Data.define(:component, :method_name) do
@@ -68,7 +69,7 @@ module Mayu
 
       def self.descriptor_or_string(descriptor)
         case descriptor
-        in Element | RawText
+        in Element | RawText | Context
           descriptor
         else
           (descriptor && descriptor.to_s) || nil

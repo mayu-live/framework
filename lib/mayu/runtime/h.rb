@@ -20,6 +20,11 @@ module Mayu
         Descriptors::Callback[component, name]
       end
 
+      def self.context(**values, &block)
+        children = block ? Array(block.call) : []
+        Descriptors::Context.new(values, Descriptors::Children[children])
+      end
+
       def self.slot(component, name = nil)
         component.__children.slots.fetch(name) { yield if block_given? }
       end

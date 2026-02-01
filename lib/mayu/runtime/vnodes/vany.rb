@@ -7,6 +7,7 @@ require_relative "base"
 require_relative "vbody"
 require_relative "vcomment"
 require_relative "vcomponent"
+require_relative "vcontext"
 require_relative "vcustom_element"
 require_relative "velement"
 require_relative "vhead"
@@ -106,6 +107,8 @@ module Mayu
             VComment
           in Descriptors::RawText
             VRawText
+          in Descriptors::Context
+            VContext
           else
             VText
           end

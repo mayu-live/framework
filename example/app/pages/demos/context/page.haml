@@ -7,11 +7,11 @@
   THEMES = %w[light dark]
 
   def initialize
-    @@theme = THEMES.first
+    @theme = THEMES.first
   end
 
   def handle_set_theme(e)
-    @@theme = e.dig(:currentTarget, :value)
+    @theme = e.dig(:currentTarget, :value)
   end
 
 %article
@@ -35,8 +35,9 @@
     Theme:
     = THEMES.map do |theme|
       %label[theme]
-        %input(type="radio" name="theme" value=theme onchange=handle_set_theme){checked: @@theme == theme}
+        %input(type="radio" name="theme" value=theme onchange=handle_set_theme){checked: @theme == theme}
         = theme.to_s.capitalize
 
-  %Consumer
-  %Hello
+  = H.context(theme: @theme) do
+    %Consumer
+    %Hello
