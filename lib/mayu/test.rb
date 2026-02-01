@@ -20,6 +20,31 @@ require_relative "metrics"
 
 module Mayu
   module Test
+    class FakeMetrics
+      NullCounter =
+        Data.define do
+          def increment(**)
+          end
+        end
+
+      NullSummary =
+        Data.define do
+          def observe(_value = nil, **)
+          end
+        end
+
+      def component_mount_count = NullCounter.new
+      def component_children_update_times = NullSummary.new
+      def component_patch_times = NullSummary.new
+      def update_child_id_count = NullCounter.new
+      def update_chunk_count = NullCounter.new
+      def session_callback_count = NullCounter.new
+
+      def update_summary(_summary, labels: {})
+        yield
+      end
+    end
+
     module Helpers
       def render(descriptor)
         Sync do
@@ -214,10 +239,10 @@ module Mayu
         @engine = engine
         rendered = @engine.render
         @nodes = {}
-        @doc = Oga.parse_html(rendered.to_html)
+        @doc = Oga.parse_html(rendered)
         @patches = []
         @on_patch = Async::Notification.new
-        setup_tree(@doc, rendered.id_node)
+        setup_tree(@doc, @engine.dom_id_tree)
       end
 
       def start
@@ -227,48 +252,49 @@ module Mayu
 
             loop do
               patch = @engine.dequeue_patch
+              each_patch(patch) do |item|
+                puts format(
+                       "\e[33m%s\e[0m %s",
+                       item.class.name.split("::").last,
+                       item
+                         .to_h
+                         .map do |k, v|
+                           format("\e[34m%s\e[0m: \e[94m%s\e[0m", k, v.inspect)
+                         end
+                         .join(", ")
+                     )
 
-              puts format(
-                     "\e[33m%s\e[0m %s",
-                     patch.class.name.split("::").last,
-                     patch
-                       .to_h
-                       .map do |k, v|
-                         format("\e[34m%s\e[0m: \e[94m%s\e[0m", k, v.inspect)
-                       end
-                       .join(", ")
-                   )
+                @patches.push(item)
 
-              @patches.push(patch)
-
-              case patch
-              in Mayu::Runtime::Patches::SetTextContent[id:, content:]
-                fetch_node!(id).text = content
-              in Mayu::Runtime::Patches::CreateTree[html:, tree:]
-                node = Oga.parse_html(html).children.first
-                setup_tree(node, tree)
-              in Mayu::Runtime::Patches::SetAttribute[id:, name:, value:]
-                fetch_node!(id).set(name.to_s, value)
-              in Mayu::Runtime::Patches::ReplaceChildren[id:, child_ids:]
-                node = fetch_node!(id)
-                children = child_ids.map { fetch_node!(_1) }
-                node.children = Oga::XML::NodeSet.new(children)
-              in Mayu::Runtime::Patches::RemoveNode[id:]
-                @nodes.delete(id)
-              in Mayu::Runtime::Patches::AddClass[id:, classes:]
-                node = fetch_node!(id)
-                node.set(
-                  "class",
-                  (node.attr("class").to_s.split | classes).join(" ")
-                )
-              in Mayu::Runtime::Patches::RemoveClass[id:, classes:]
-                node = fetch_node!(id)
-                node.set(
-                  "class",
-                  (node.attr("class").to_s.split - classes).join(" ")
-                )
-              else
-                puts "\e[33mUnhandled #{patch.inspect}\e[0m"
+                case item
+                in Mayu::Runtime::Patches::SetTextContent[id:, content:]
+                  fetch_node!(id).text = content
+                in Mayu::Runtime::Patches::CreateTree[html:, tree:]
+                  node = Oga.parse_html(html).children.first
+                  setup_tree(node, tree)
+                in Mayu::Runtime::Patches::SetAttribute[id:, name:, value:]
+                  fetch_node!(id).set(name.to_s, value)
+                in Mayu::Runtime::Patches::ReplaceChildren[id:, child_ids:]
+                  node = fetch_node!(id)
+                  children = child_ids.map { fetch_node!(_1) }
+                  node.children = Oga::XML::NodeSet.new(children)
+                in Mayu::Runtime::Patches::RemoveNode[id:]
+                  @nodes.delete(id)
+                in Mayu::Runtime::Patches::AddClass[id:, classes:]
+                  node = fetch_node!(id)
+                  node.set(
+                    "class",
+                    (node.attr("class").to_s.split | classes).join(" ")
+                  )
+                in Mayu::Runtime::Patches::RemoveClass[id:, classes:]
+                  node = fetch_node!(id)
+                  node.set(
+                    "class",
+                    (node.attr("class").to_s.split - classes).join(" ")
+                  )
+                else
+                  puts "\e[33mUnhandled #{item.inspect}\e[0m"
+                end
               end
             end
           ensure
@@ -322,6 +348,19 @@ module Mayu
       end
 
       private
+
+      def each_patch(patch, &block)
+        case patch
+        when Mayu::Runtime::Patches::ViewTransition
+          each_patch(patch.patches, &block)
+        when Mayu::Runtime::Patches::Batch
+          patch.patches.each { |item| each_patch(item, &block) }
+        when Array
+          patch.each { |item| each_patch(item, &block) }
+        else
+          yield patch
+        end
+      end
 
       def setup_tree(dom_node, id_node)
         return unless dom_node

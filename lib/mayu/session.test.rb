@@ -7,6 +7,7 @@
 require "minitest/autorun"
 
 require_relative "session"
+require_relative "test"
 
 class Mayu::SessionTest < Minitest::Test
   class FakeServerConfig
@@ -33,7 +34,7 @@ class Mayu::SessionTest < Minitest::Test
     def initialize
       @config = FakeConfig.new
       @router = FakeRouter.new
-      @metrics = nil
+      @metrics = Mayu::Test::FakeMetrics.new
       @marshaller = nil
     end
   end
