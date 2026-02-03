@@ -10,6 +10,9 @@
     self_signed_cert = true
 
     generate_assets = true
+    session_timeout_seconds = 11
+    transfer_timeout_seconds = 12
+    cookie_timeout_seconds = 13
 
   [development.metrics]
     enabled = true
@@ -27,6 +30,9 @@
     self_signed_cert = false
 
     generate_assets = false
+    session_timeout_seconds = 21
+    transfer_timeout_seconds = 22
+    cookie_timeout_seconds = 23
 
   [production.metrics]
     enabled = true

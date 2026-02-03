@@ -61,13 +61,13 @@ module Mayu
             hmr?: config.fetch("hmr", false),
             render_exceptions?: config.fetch("render_exceptions", false),
             self_signed_cert?: config.fetch("self_signed_cert", false),
-            generate_assets?: config.fetch("self_signed_cert", false),
+            generate_assets?: config.fetch("generate_assets", false),
             session_timeout_seconds:
-              config.fetch("session_timout_seconds", 10).to_i,
+              config.fetch("session_timeout_seconds", 10).to_i,
             transfer_timeout_seconds:
               config.fetch("transfer_timeout_seconds", 10).to_i,
             cookie_timeout_seconds:
-              config.fetch("transfer_timeout_seconds", 10).to_i
+              config.fetch("cookie_timeout_seconds", 10).to_i
           )
         end
       end
@@ -88,7 +88,7 @@ module Mayu
         .then { TOML.load(_1) }
         .fetch(env.to_s) do
           raise EnvironmentNotDefined,
-                "Could not find environment #{env} in #{path}"
+                "Could not find environment #{env} in #{filename}"
         end
         .then { Config.parse(Dir.pwd, _1) }
     end
