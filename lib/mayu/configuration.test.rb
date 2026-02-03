@@ -45,4 +45,28 @@ class Mayu::Configuration::Test < Minitest::Test
   ensure
     ENV.delete("SECRET_KEY")
   end
+
+  def test_configuration_missing_environment
+    filename = File.join(__dir__, "__test__", "configuration", "test.toml")
+
+    error =
+      assert_raises(Mayu::Configuration::EnvironmentNotDefined) do
+        Mayu::Configuration.load(filename, "staging")
+      end
+
+    assert_match(/staging/, error.message)
+  end
+
+  def test_configuration_missing_env_var
+    filename = File.join(__dir__, "__test__", "configuration", "test.toml")
+
+    ENV.delete("SECRET_KEY")
+
+    error =
+      assert_raises(Mayu::Configuration::EnvironmentVariableNotDefined) do
+        Mayu::Configuration.load(filename, "production")
+      end
+
+    assert_match(/\$SECRET_KEY/, error.message)
+  end
 end
