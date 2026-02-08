@@ -20,17 +20,17 @@ module Mayu
         Controller.new(config:, mayu_env:, endpoint:, bundle_filename:)
     end
 
-    def run(task: Async::Task.current)
-      task.async do
-        puts "\e[33mStarting server on \e[94m#{@uri}\e[0m"
+    def run
+      puts "\e[33mStarting server on \e[94m#{@uri}\e[0m"
 
-        @controller.run
-      rescue Errno::EADDRINUSE => e
-        puts format("\e[3;31m %s \e[0m", e.message)
-        exit 1
-      ensure
-        Console.logger.info(self, "Stopped server")
-      end
+      @controller.run
+    rescue Interrupt
+      # Interrupt is expected when Ctrl+C is used for shutdown.
+    rescue Errno::EADDRINUSE => e
+      puts format("\e[3;31m %s \e[0m", e.message)
+      exit 1
+    ensure
+      Console.logger.info(self, "Stopped server")
     end
 
     private

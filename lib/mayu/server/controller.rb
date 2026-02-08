@@ -30,6 +30,7 @@ module Mayu
         @endpoint = endpoint
         @bundle_filename = bundle_filename
         @bound_endpoint = nil
+        @graceful_stop = 10
       end
 
       def create_container
@@ -67,6 +68,7 @@ module Mayu
         ) do |instance|
           Async do |task|
             Metrics::AppMetrics.setup(Prometheus::Client.registry)
+
             metrics_server =
               Metrics::Server.new(
                 registry: Prometheus::Client.registry,
@@ -82,19 +84,35 @@ module Mayu
       end
 
       def setup_worker(instance)
-        with_environment do |environment|
-          Async do |task|
-            app = App.new(environment)
-            server_task = nil
+        environment =
+          case @mayu_env
+          in :development
+            Environment.with_config(@config)
+          in :production
+            bundle_filename =
+              @bundle_filename || raise("Missing bundle filename")
+            bundle = File.read(bundle_filename, encoding: "binary")
+            Environment.load_with_config(@config, bundle)
+          end
 
-            if @mayu_env == :development &&
-                 environment.config.server.generate_assets?
-              environment.modules.generate_assets(
-                environment.assets_dir,
-                concurrency: 1,
-                forever: true
-              )
+        Async do |task|
+          asset_task = nil
+
+          if @mayu_env == :development
+            if environment.config.server.generate_assets?
+              asset_task =
+                environment.modules.generate_assets(
+                  environment.assets_dir,
+                  concurrency: 1,
+                  forever: true
+                )
             end
+
+            environment.start_watcher if environment.config.server.hmr?
+          end
+
+          environment.use do
+            app = App.new(environment)
 
             server =
               Async::HTTP::Server.for(
@@ -104,38 +122,27 @@ module Mayu
               ) { |request| app.call(request) }
 
             server_task = server.run
-
             instance.ready!
 
-            task.children.each(&:wait)
+            task.wait_all
           ensure
             app&.stop
             server_task&.stop
           end
+        ensure
+          asset_task&.stop
         end
-      end
 
-      def with_environment
-        case @mayu_env
-        in :development
-          Environment.with_config(@config) { |environment| yield environment }
-        in :production
-          bundle_filename = @bundle_filename || raise("Missing bundle filename")
-          bundle = File.read(bundle_filename, encoding: "binary")
-
-          Environment.load_with_config(@config, bundle) do |environment|
-            yield environment
-          end
-        end
+        puts "Started task"
       end
 
       def worker_count
         return 1 if @mayu_env == :development
 
-        ENV
-          .fetch("WEB_CONCURRENCY") { Async::Container.processor_count }
-          .to_i
-          .yield_self { _1 > 0 ? _1 : 1 }
+        [
+          1,
+          ENV.fetch("WEB_CONCURRENCY") { Async::Container.processor_count }.to_i
+        ].max
       end
     end
   end

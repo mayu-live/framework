@@ -29,22 +29,14 @@ module Mayu
         require_relative "../configuration"
         require_relative "../server"
 
-        Sync do
-          Configuration.with(:production) do |config|
-            Console.logger.info(self, "Starting server")
-            Mayu::Server
-              .new(
-                config:,
-                mayu_env: :production,
-                bundle_filename: options[:filename]
-              )
-              .run
-              .wait
-          rescue => e
-            Console.logger(self, e)
-            raise
-          end
+        Configuration.with(:production) do |config|
+          Mayu::Server.new(
+            config:,
+            mayu_env: :production,
+            bundle_filename: options[:filename]
+          ).run
         end
+      rescue Interrupt
       end
 
       private

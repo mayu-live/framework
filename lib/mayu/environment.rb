@@ -36,12 +36,12 @@ module Mayu
 
     def self.with(mayu_env)
       Configuration.with(mayu_env) do |config|
-        with_config(config) { |environment| yield environment }
+        with_config(config).use { |environment| yield environment }
       end
     end
 
     def self.with_config(config)
-      new(config).use { |environment| yield environment }
+      new(config)
     end
 
     def initialize(config, router: nil, modules: nil)
@@ -86,7 +86,7 @@ module Mayu
 
     def self.load(mayu_env, bundle)
       Mayu::Configuration.with(mayu_env) do |config|
-        load_with_config(config, bundle) { |environment| yield environment }
+        load_with_config(config, bundle).use { |environment| yield environment }
       end
     end
 
@@ -95,7 +95,7 @@ module Mayu
 
       Marshal.load(data) => { modules:, router: }
 
-      new(config, router:, modules:).use { |environment| yield environment }
+      new(config, router:, modules:)
     end
 
     private_class_method def self.load_bundle(bundle)
@@ -112,7 +112,20 @@ module Mayu
     end
 
     def use(&)
-      @modules.use { run_watcher { yield self } }
+      @modules.use { yield self }
+    end
+
+    def start_watcher
+      Async do
+        Mayu::Watcher.run(@modules) do |events|
+          if events.any? { |event| is_route_event?(event) }
+            Console.logger.info(self, "Rebuilding routes")
+            @router = Mayu::Routes::Router.build(@pages_dir)
+          end
+
+          @modules.handle_watch_events(events)
+        end
+      end
     end
 
     private
@@ -123,31 +136,6 @@ module Mayu
         .then { JSON.parse(_1) }
         .fetch("main")
         .then { File.join("/.mayu/runtime", _1) }
-    end
-
-    def run_watcher
-      unless config.server.hmr?
-        yield
-        return
-      end
-
-      task =
-        Async do
-          Mayu::Watcher.run(@modules) do |events|
-            if events.any? { |event| is_route_event?(event) }
-              Console.logger.info(self, "Rebuilding routes")
-              @router = Mayu::Routes::Router.build(@pages_dir)
-            end
-
-            @modules.handle_watch_events(events)
-          end
-        end
-
-      begin
-        yield
-      ensure
-        task.stop
-      end
     end
 
     def is_route_event?(event)

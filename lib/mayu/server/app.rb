@@ -106,6 +106,7 @@ module Mayu
 
       def stop
         @stopping = true
+        @sessions.stop
         @sessions.transfer_all
       ensure
         @body_barrier.wait

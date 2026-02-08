@@ -12,13 +12,8 @@ module Mayu
         require_relative "../configuration"
         require_relative "../server"
 
-        Sync do
-          Configuration.with(:development) do |config|
-            Mayu::Server.new(config:, mayu_env: :development).run.wait
-          end
-        rescue => e
-          Console.logger(self, e)
-          raise
+        Configuration.with(:development) do |config|
+          Mayu::Server.new(config:, mayu_env: :development).run
         end
       end
     end

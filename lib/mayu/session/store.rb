@@ -102,6 +102,11 @@ module Mayu
             end
           end
       end
+
+      def stop
+        @cleanup_task&.stop
+        @cleanup_task = nil
+      end
     end
   end
 end
