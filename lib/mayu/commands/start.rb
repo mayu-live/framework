@@ -26,17 +26,20 @@ module Mayu
         print_jit_message(:YJIT)
         print_jit_message(:ZJIT)
 
-        require "dotenv/load"
-
         require_relative "../configuration"
         require_relative "../server"
-        require_relative "../component"
-        require_relative "../system_config"
 
         Sync do
-          load_environment do |environment|
+          Configuration.with(:production) do |config|
             Console.logger.info(self, "Starting server")
-            Mayu::Server.new(environment).run.wait
+            Mayu::Server
+              .new(
+                config:,
+                mayu_env: :production,
+                bundle_filename: options[:filename]
+              )
+              .run
+              .wait
           rescue => e
             Console.logger(self, e)
             raise
@@ -55,14 +58,6 @@ module Mayu
           end
         else
           puts "\e[2m#{const_name} is not supported\e[0m"
-        end
-      end
-
-      def load_environment
-        dumped = File.read(options[:filename], encoding: "binary")
-
-        Environment.load(:production, dumped) do |environment|
-          yield environment
         end
       end
     end

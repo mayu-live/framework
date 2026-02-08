@@ -11,17 +11,10 @@ module Mayu
       def call
         require_relative "../configuration"
         require_relative "../server"
-        require_relative "../component"
 
         Sync do
-          Environment.with(:development) do |environment|
-            environment.modules.generate_assets(
-              environment.assets_dir,
-              concurrency: 1,
-              forever: true
-            )
-
-            Mayu::Server.new(environment).run.wait
+          Configuration.with(:development) do |config|
+            Mayu::Server.new(config:, mayu_env: :development).run.wait
           end
         rescue => e
           Console.logger(self, e)

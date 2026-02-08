@@ -4,67 +4,27 @@
 # License: AGPL-3.0
 
 require "async"
-require "async/barrier"
-require "async/queue"
-require "async/variable"
 require "async/http/endpoint"
-require "async/http/protocol/http"
-require "async/http/protocol/response"
-require "async/http/server"
 
-require_relative "server/app"
-require_relative "metrics/server"
+require_relative "server/controller"
 
 module Mayu
   class Server
-    def initialize(environment)
-      @uri = URI.parse(environment.config.server.listen)
-      @app = App.new(environment)
-
-      ssl_context =
-        if environment.config.server.self_signed_cert?
-          self_signed_cert_ssl_context(@uri.hostname)
-        else
-          nil
-        end
+    def initialize(config:, mayu_env:, bundle_filename: nil)
+      @uri = URI.parse(config.server.listen)
+      ssl_context = ssl_context_for(config)
 
       endpoint = Async::HTTP::Endpoint.new(@uri, ssl_context:)
 
-      @server =
-        Async::HTTP::Server.new(
-          @app,
-          endpoint,
-          scheme: @uri.scheme,
-          protocol: Async::HTTP::Protocol::HTTP.new
-        )
-
-      @metrics_server =
-        Metrics::Server.new(
-          registry: Prometheus::Client.registry,
-          listen: environment.config.metrics.listen
-        ) if environment.config.metrics.enabled?
+      @controller =
+        Controller.new(config:, mayu_env:, endpoint:, bundle_filename:)
     end
 
     def run(task: Async::Task.current)
       task.async do
-        interrupt = trap(:INT)
-
         puts "\e[33mStarting server on \e[94m#{@uri}\e[0m"
 
-        @server.run
-        @metrics_server&.run
-
-        Console.logger.info(self, "Application started")
-
-        interrupt.wait
-
-        Console.logger.info("Got interrupt, stopping app")
-
-        begin
-          @app.stop
-        ensure
-          task.stop
-        end
+        @controller.run
       rescue Errno::EADDRINUSE => e
         puts format("\e[3;31m %s \e[0m", e.message)
         exit 1
@@ -75,7 +35,13 @@ module Mayu
 
     private
 
-    def self_signed_cert_ssl_context(hostname)
+    def ssl_context_for(config)
+      return nil unless config.server.self_signed_cert?
+
+      self.class.self_signed_cert_ssl_context(@uri.hostname)
+    end
+
+    def self.self_signed_cert_ssl_context(hostname)
       require "localhost"
 
       authority = Localhost::Authority.fetch(hostname)
@@ -90,19 +56,6 @@ module Mayu
       ssl_context.session_id_context = "mayu"
 
       ssl_context
-    end
-
-    def trap(signal)
-      variable = Async::Variable.new
-
-      previous =
-        Signal.trap(signal) do
-          Signal.trap(signal, previous)
-        ensure
-          variable.resolve(signal)
-        end
-
-      variable
     end
   end
 end

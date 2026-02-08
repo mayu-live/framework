@@ -8,6 +8,7 @@ require_relative "routes"
 require_relative "encrypted_marshal"
 require_relative "configuration"
 require_relative "system_config"
+require_relative "component"
 require_relative "watcher"
 require_relative "metrics"
 require_relative "utils"
@@ -35,8 +36,12 @@ module Mayu
 
     def self.with(mayu_env)
       Configuration.with(mayu_env) do |config|
-        new(config).use { |environment| yield environment }
+        with_config(config) { |environment| yield environment }
       end
+    end
+
+    def self.with_config(config)
+      new(config).use { |environment| yield environment }
     end
 
     def initialize(config, router: nil, modules: nil)
@@ -80,13 +85,17 @@ module Mayu
     end
 
     def self.load(mayu_env, bundle)
+      Mayu::Configuration.with(mayu_env) do |config|
+        load_with_config(config, bundle) { |environment| yield environment }
+      end
+    end
+
+    def self.load_with_config(config, bundle)
       data = load_bundle(bundle)
 
-      Mayu::Configuration.with(mayu_env) do |config|
-        Marshal.load(data) => { modules:, router: }
+      Marshal.load(data) => { modules:, router: }
 
-        new(config, router:, modules:).use { |environment| yield environment }
-      end
+      new(config, router:, modules:).use { |environment| yield environment }
     end
 
     private_class_method def self.load_bundle(bundle)
