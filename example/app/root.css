@@ -369,3 +369,7 @@ body {
 :is(pre, code) {
   font-family: var(--font-mono), monospace;
 }
+
+::view-transition-group(root) {
+  animation-duration: 200ms;
+}
