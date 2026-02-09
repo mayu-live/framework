@@ -34,7 +34,7 @@ module Mayu
 
       class Client
         def self.connect(collector_endpoint, &block)
-          Console.logger.info(
+          Console.logger.debug(
             self,
             "Connecting to #{File.expand_path(collector_endpoint.path)}"
           )
@@ -59,8 +59,11 @@ module Mayu
                   end
                 end
               rescue Errno::ECONNREFUSED, Errno::EPIPE, Errno::ENOENT => error
+                break if task.stopped?
                 Console.logger.warn(self, "Metrics sync error: #{error.class}")
                 sleep(reconnect_delay)
+              rescue Interrupt, Async::Stop
+                break
               end
             end
           end

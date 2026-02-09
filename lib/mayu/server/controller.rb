@@ -127,10 +127,13 @@ module Mayu
 
               task.wait_all
             ensure
+              reporter&.stop
               app&.stop
               server_task&.stop
             end
           end
+          # rescue Interrupt
+          #   Console.logger.info(self, "Got interrupt")
         ensure
           watcher_task&.stop
           asset_task&.stop

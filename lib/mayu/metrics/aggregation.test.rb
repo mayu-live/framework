@@ -84,6 +84,40 @@ class Mayu::Metrics::AggregationTest < Minitest::Test
     end
   end
 
+  def test_retries_metrics_port_when_unavailable
+    Dir.mktmpdir("mayu-metrics-test") do |root|
+      collector_endpoint = Mayu::Metrics.collector_endpoint(root)
+      reserved_socket = TCPServer.new("127.0.0.1", 0)
+      unavailable_port = reserved_socket.addr[1]
+
+      listen = "http://127.0.0.1:#{unavailable_port}"
+      fallback_uri = URI("http://127.0.0.1:#{unavailable_port + 1}/metrics")
+
+      container = Async::Container::Forked.new
+
+      Mayu::Metrics.start_collect_and_export(
+        container,
+        collector_endpoint:,
+        listen:
+      ) { |_registry| }
+
+      container.wait_until_ready
+
+      wait_until(
+        timeout: 8,
+        message: "Timed out waiting for metrics server fallback port"
+      ) do
+        response = Net::HTTP.get_response(fallback_uri)
+        response.is_a?(Net::HTTPSuccess)
+      rescue Errno::ECONNREFUSED, EOFError
+        false
+      end
+    ensure
+      reserved_socket&.close
+      container&.stop(2)
+    end
+  end
+
   private
 
   def allocate_port
