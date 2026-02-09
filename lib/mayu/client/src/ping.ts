@@ -9,7 +9,7 @@ function getPingElement() {
 }
 
 export function updatePing(value: number) {
-  getPingElement()?.setAttribute("ping", `${value}ms`);
+  getPingElement()?.setAttribute("ping", `${Math.round(value)}ms`);
 }
 
 export function updateConnectionStatus(status: ConnectionStatus) {
