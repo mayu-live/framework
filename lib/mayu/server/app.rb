@@ -116,7 +116,7 @@ module Mayu
 
       def is_new_session_request?(request)
         !request.path.start_with?("/.mayu") &&
-          request.headers["accept"].include?("text/html")
+          request.headers["accept"]&.include?("text/html")
       end
 
       # Mayu
