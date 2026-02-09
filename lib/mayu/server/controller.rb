@@ -12,6 +12,7 @@ require "async/http/server"
 require_relative "app"
 require_relative "../metrics"
 require_relative "../environment"
+require_relative "../disable_io_buffer_warning"
 
 module Mayu
   class Server
@@ -24,7 +25,6 @@ module Mayu
         **options
       )
         super(**options)
-
         @config = config
         @mayu_env = mayu_env
         @endpoint = endpoint
@@ -102,10 +102,8 @@ module Mayu
                 )
             end
 
-            watcher_task = environment.start_watcher if environment
-              .config
-              .server
-              .hmr?
+            watcher_task =
+              (environment.start_watcher if environment.config.server.hmr?)
           end
 
           environment.use do
