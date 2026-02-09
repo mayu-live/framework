@@ -49,54 +49,48 @@ module Mayu
       end
 
       def setup(container)
-        # setup_metrics_server(container) if @config.metrics.enabled?
+        collector_endpoint = nil
+
+        if @config.metrics.enabled?
+          collector_endpoint = Metrics.collector_endpoint(@config.root)
+          setup_metrics_server(container, collector_endpoint)
+        end
 
         container.run(
           name: self.class.name,
           count: worker_count,
           restart: true
-        ) { |instance| setup_worker(instance) }
+        ) { |instance| setup_worker(instance, collector_endpoint:) }
       end
 
       private
 
-      def setup_metrics_server(container)
-        container.run(
-          name: "Mayu metrics",
-          count: 1,
-          restart: true
-        ) do |instance|
-          Async do |task|
-            Metrics::AppMetrics.setup(Prometheus::Client.registry)
-
-            metrics_server =
-              Metrics::Server.new(
-                registry: Prometheus::Client.registry,
-                listen: @config.metrics.listen
-              )
-
-            instance.ready!
-            metrics_server.run
-
-            task.children.each(&:wait)
-          end
-        end
+      def setup_metrics_server(container, collector_endpoint)
+        Metrics.start_collect_and_export(
+          container,
+          collector_endpoint:,
+          listen: @config.metrics.listen
+        ) { |registry| Metrics::AppMetrics.setup(registry) }
       end
 
-      def setup_worker(instance)
-        environment =
-          case @mayu_env
-          in :development
-            Environment.with_config(@config)
-          in :production
-            bundle_filename =
-              @bundle_filename || raise("Missing bundle filename")
-            bundle = File.read(bundle_filename, encoding: "binary")
-            Environment.load_with_config(@config, bundle)
+      def setup_worker(instance, collector_endpoint:)
+        Async do |task|
+          reporter = nil
+          metrics = nil
+          environment = nil
+          asset_task = nil
+          watcher_task = nil
+
+          if collector_endpoint
+            reporter =
+              Metrics::Reporter.run(collector_endpoint, task:) do |registry|
+                Metrics::AppMetrics.setup(registry)
+              end
+
+            metrics = reporter.metrics
           end
 
-        Async do |task|
-          asset_task = nil
+          environment = load_environment(metrics:)
 
           if @mayu_env == :development
             if environment.config.server.generate_assets?
@@ -108,32 +102,51 @@ module Mayu
                 )
             end
 
-            environment.start_watcher if environment.config.server.hmr?
+            watcher_task = environment.start_watcher if environment
+              .config
+              .server
+              .hmr?
           end
 
           environment.use do
-            app = App.new(environment)
+            app = nil
+            server_task = nil
 
-            server =
-              Async::HTTP::Server.for(
-                @bound_endpoint,
-                protocol: @endpoint.protocol,
-                scheme: @endpoint.scheme
-              ) { |request| app.call(request) }
+            begin
+              app = App.new(environment)
 
-            server_task = server.run
-            instance.ready!
+              server =
+                Async::HTTP::Server.for(
+                  @bound_endpoint,
+                  protocol: @endpoint.protocol,
+                  scheme: @endpoint.scheme
+                ) { |request| app.call(request) }
 
-            task.wait_all
-          ensure
-            app&.stop
-            server_task&.stop
+              server_task = server.run
+              instance.ready!
+
+              task.wait_all
+            ensure
+              app&.stop
+              server_task&.stop
+            end
           end
         ensure
+          watcher_task&.stop
           asset_task&.stop
+          reporter&.stop
         end
+      end
 
-        puts "Started task"
+      def load_environment(metrics:)
+        case @mayu_env
+        in :development
+          Environment.with_config(@config, metrics:)
+        in :production
+          bundle_filename = @bundle_filename || raise("Missing bundle filename")
+          bundle = File.read(bundle_filename, encoding: "binary")
+          Environment.load_with_config(@config, bundle, metrics:)
+        end
       end
 
       def worker_count

@@ -21,13 +21,23 @@ module Mayu
         :error_count
       ) do
         def self.setup(registry, **preset_labels)
+          gauge_store_settings =
+            if Prometheus::Client.config.data_store.is_a?(
+                 Prometheus::Client::DataStores::Synchronized
+               )
+              {}
+            else
+              { aggregation: :sum }
+            end
+
           new(
             session_count:
               registry.gauge(
                 :mayu_session_count,
                 docstring: "Number of active sessions",
                 labels: [*preset_labels.keys],
-                preset_labels:
+                preset_labels:,
+                store_settings: gauge_store_settings
               ),
             session_init_count:
               registry.counter(

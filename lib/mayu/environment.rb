@@ -40,11 +40,11 @@ module Mayu
       end
     end
 
-    def self.with_config(config)
-      new(config)
+    def self.with_config(config, metrics: nil)
+      new(config, metrics:)
     end
 
-    def initialize(config, router: nil, modules: nil)
+    def initialize(config, router: nil, modules: nil, metrics: nil)
       @config = config
       @app_dir = File.join(config.root, "app")
       @pages_dir = File.join(app_dir, "pages")
@@ -59,7 +59,8 @@ module Mayu
         init(sessionId);
       JS
 
-      @metrics = Metrics::AppMetrics.setup(Prometheus::Client.registry)
+      @metrics =
+        metrics || Metrics::AppMetrics.setup(Prometheus::Client.registry)
 
       @marshaller =
         EncryptedMarshal.new(
@@ -90,12 +91,12 @@ module Mayu
       end
     end
 
-    def self.load_with_config(config, bundle)
+    def self.load_with_config(config, bundle, metrics: nil)
       data = load_bundle(bundle)
 
       Marshal.load(data) => { modules:, router: }
 
-      new(config, router:, modules:)
+      new(config, router:, modules:, metrics:)
     end
 
     private_class_method def self.load_bundle(bundle)
