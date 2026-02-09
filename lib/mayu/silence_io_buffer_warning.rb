@@ -4,8 +4,8 @@
 # License: AGPL-3.0
 
 module Mayu
-  module DisableIOBufferWarning
-    def self.disable_experimental_warning!
+  module SilenceIOBufferWarning
+    def self.silence_experimental_warning!
       previous = Warning[:experimental]
       Warning[:experimental] = false
       IO::Buffer.new(0) # warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
@@ -14,4 +14,4 @@ module Mayu
   end
 end
 
-Mayu::DisableIOBufferWarning.disable_experimental_warning!
+Mayu::SilenceIOBufferWarning.silence_experimental_warning!

@@ -12,7 +12,7 @@ require "async/http/server"
 require_relative "app"
 require_relative "../metrics"
 require_relative "../environment"
-require_relative "../disable_io_buffer_warning"
+require_relative "../silence_io_buffer_warning"
 
 module Mayu
   class Server
