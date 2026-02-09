@@ -74,37 +74,20 @@ In `startPatchStream(...)`:
 
 - `failures` resets to `0` on successful connection.
 - On error:
-  - if message is `"expired"` or `"cipher error"`:
+  - if `shouldResetSession(error)` is true for:
+    - `"expired"`
+    - `"cipher error"`
+    - `"Session not found"`
+    - `"Token cookie not set"`
     - call `resetSessionEntirely()`,
     - fetch full HTML page + `x-mayu-session-id`,
     - morph DOM with `morphdom`,
     - clear transfer state,
-    - continue with new endpoint.
+    - continue with new endpoint,
+    - if reset fails, log the reset failure and continue with normal backoff/retry.
   - otherwise:
     - wait with linear backoff (`1s .. 10s`),
     - retry same endpoint.
-
-## Suggested Improvement: Centralized Reset Policy
-
-You noted two additional errors that should trigger full reset:
-
-- `"Session not found"`
-- `"Token cookie not set"`
-
-Recommend extracting policy into one function in `main.ts`, e.g.:
-
-```ts
-function shouldResetSession(error: unknown): boolean;
-```
-
-and handling all reset-worthy messages in one place:
-
-- `"expired"`
-- `"cipher error"`
-- `"Session not found"`
-- `"Token cookie not set"`
-
-This reduces string checks spread in the loop and makes behavior easy to test.
 
 ## Better Long-Term Error Contract (Server + Client)
 

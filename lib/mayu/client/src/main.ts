@@ -89,6 +89,26 @@ async function sleep(milliseconds: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
 
+const RESET_SESSION_ERROR_MESSAGES = new Set([
+  "expired",
+  "cipher error",
+  "session not found",
+  "token cookie not set",
+]);
+
+function getErrorMessage(error: unknown): string | null {
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message;
+  return null;
+}
+
+function shouldResetSession(error: unknown): boolean {
+  const message = getErrorMessage(error);
+  if (!message) return false;
+
+  return RESET_SESSION_ERROR_MESSAGES.has(message.toLowerCase());
+}
+
 async function resetSessionEntirely() {
   const [morphdom, res] = await Promise.all([
     import("morphdom"),
@@ -103,6 +123,10 @@ async function resetSessionEntirely() {
 
   const html = (await res.text()).replace(/^<!DOCTYPE html>\n/, "");
   const sessionId = res.headers.get("x-mayu-session-id");
+
+  if (!sessionId) {
+    throw new Error("Missing x-mayu-session-id header during session reset");
+  }
 
   console.warn(
     `%cmorphing dom`,
@@ -157,8 +181,9 @@ async function startPatchStream(runtime: Runtime, endpoint: string) {
           console.error(e);
         }
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       failures += 1;
+      const message = getErrorMessage(e);
 
       if (e instanceof StreamError) {
         console.error("StreamError", e.message);
@@ -166,14 +191,21 @@ async function startPatchStream(runtime: Runtime, endpoint: string) {
         console.error(e);
       }
 
-      if (e.message === "expired" || e.message === "cipher error") {
-        console.warn("Resetting session because of:", e.message);
-        endpoint = await resetSessionEntirely();
-      } else {
-        const sleepTime = Math.min(10_000, 1000 * failures);
-        console.info(`Attempting to reconnect in`, sleepTime, "ms");
-        await sleep(sleepTime);
+      if (shouldResetSession(e)) {
+        console.warn("Resetting session because of:", message);
+
+        try {
+          endpoint = await resetSessionEntirely();
+          failures = 0;
+          continue;
+        } catch (resetError) {
+          console.error("Session reset failed", resetError);
+        }
       }
+
+      const sleepTime = Math.min(10_000, 1000 * failures);
+      console.info(`Attempting to reconnect in`, sleepTime, "ms");
+      await sleep(sleepTime);
     }
   }
 }
