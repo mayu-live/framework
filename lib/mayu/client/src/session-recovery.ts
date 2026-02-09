@@ -2,12 +2,18 @@ import { SESSION_PATH } from "./constants";
 import { setTransferState } from "./transfer";
 import withViewTransition from "./view-transition";
 
-const RESET_SESSION_ERROR_MESSAGES = new Set([
-  "expired",
-  "cipher error",
-  "session not found",
-  "token cookie not set",
+const RESET_SESSION_ERROR_CODES = new Set([
+  "EXPIRED",
+  "SESSION_EXPIRED",
+  "CIPHER_ERROR",
+  "SESSION_CIPHER_ERROR",
+  "SESSION_NOT_FOUND",
+  "TOKEN_COOKIE_NOT_SET",
 ]);
+
+function normalizeErrorToken(value: string): string {
+  return value.trim().toUpperCase().replaceAll(/\s+/g, "_");
+}
 
 export function getErrorMessage(error: unknown): string | null {
   if (typeof error === "string") return error;
@@ -15,11 +21,24 @@ export function getErrorMessage(error: unknown): string | null {
   return null;
 }
 
+export function getErrorCode(error: unknown): string | null {
+  if (!error || typeof error !== "object") return null;
+  if (!("code" in error)) return null;
+
+  return typeof error.code === "string" ? error.code : null;
+}
+
 export function shouldResetSession(error: unknown): boolean {
+  const code = getErrorCode(error);
+
+  if (code && RESET_SESSION_ERROR_CODES.has(normalizeErrorToken(code))) {
+    return true;
+  }
+
   const message = getErrorMessage(error);
   if (!message) return false;
 
-  return RESET_SESSION_ERROR_MESSAGES.has(message.toLowerCase());
+  return RESET_SESSION_ERROR_CODES.has(normalizeErrorToken(message));
 }
 
 export async function resetSessionEntirely() {

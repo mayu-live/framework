@@ -86,13 +86,13 @@ module Mayu
           handle_404(request)
         end
       rescue Session::Errors::SessionNotFoundError
-        error_response(403, "Session not found", **origin_header(request))
+        error_response(403, "SESSION_NOT_FOUND", **origin_header(request))
       rescue Session::Errors::SessionIdMismatchError
-        error_response(403, "Session id mismatch", **origin_header(request))
+        error_response(403, "SESSION_ID_MISMATCH", **origin_header(request))
       rescue Session::Errors::InvalidTokenError
-        error_response(403, "Invalid token", **origin_header(request))
+        error_response(403, "INVALID_TOKEN", **origin_header(request))
       rescue Cookies::TokenCookieNotSetError => e
-        error_response(403, "Token cookie not set", **origin_header(request))
+        error_response(403, "TOKEN_COOKIE_NOT_SET", **origin_header(request))
       rescue Errno::ENOENT => e
         text_response(
           404,
@@ -101,7 +101,7 @@ module Mayu
         )
       rescue => e
         Console.logger.error(self, e)
-        error_response(403, "Internal server error", **origin_header(request))
+        error_response(403, "INTERNAL_SERVER_ERROR", **origin_header(request))
       end
 
       def stop
@@ -274,10 +274,10 @@ module Mayu
 
         run_session_stream(request, session)
       rescue Mayu::EncryptedMarshal::ExpiredError
-        error_response(403, "expired")
+        error_response(403, "SESSION_EXPIRED")
       rescue Mayu::EncryptedMarshal::DecryptError => e
         Console.logger.error(self, e)
-        error_response(403, "cipher error")
+        error_response(403, "SESSION_CIPHER_ERROR")
       end
 
       def handle_session_resume(request, session_id)
@@ -309,7 +309,7 @@ module Mayu
           return(
             error_response(
               409,
-              "Session already running",
+              "SESSION_ALREADY_RUNNING",
               **origin_header(request)
             )
           )

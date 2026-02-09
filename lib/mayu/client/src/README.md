@@ -80,11 +80,9 @@ In `SessionConnection.run(...)`:
 - `failures` resets to `0` on successful connection.
 - each loop iteration creates one `AbortController` for input/callback requests.
 - On error:
-  - if `shouldResetSession(error)` is true for:
-    - `"expired"`
-    - `"cipher error"`
-    - `"Session not found"`
-    - `"Token cookie not set"`
+  - if `shouldResetSession(error)` is true:
+    - checks structured `error.code` first (e.g. `SESSION_EXPIRED`, `SESSION_CIPHER_ERROR`, `SESSION_NOT_FOUND`, `TOKEN_COOKIE_NOT_SET`),
+    - falls back to normalized message matching (`"expired"`, `"cipher error"`, `"Session not found"`, `"Token cookie not set"`, and SCREAMING_SNAKE_CASE variants),
     - call `resetSessionEntirely()`,
     - fetch full HTML page + `x-mayu-session-id`,
     - morph DOM with `morphdom`,
@@ -99,16 +97,15 @@ In `SessionConnection.run(...)`:
   - abort/release callback writer,
   - clear `window.Mayu` writer reference.
 
-## Better Long-Term Error Contract (Server + Client)
+## Structured Stream Errors
 
-String matching is fragile. A safer protocol is to return structured stream errors, e.g.:
+Server stream errors now return JSON with:
 
-- `code: "SESSION_EXPIRED"`
-- `code: "SESSION_NOT_FOUND"`
-- `code: "TOKEN_COOKIE_MISSING"`
-- `code: "CIPHER_ERROR"`
+- `code` (stable machine-readable error code),
+- `message` (human-readable message),
+- `error` (legacy field kept for backward compatibility).
 
-Then client policy can branch on `code` instead of free-form messages.
+Client parsing in `stream.ts` supports both new and legacy payload shapes.
 
 ## Client Tests
 
@@ -117,6 +114,7 @@ Then client policy can branch on `code` instead of free-form messages.
 - test files:
   - `lib/mayu/client/src/session-recovery.test.ts`
   - `lib/mayu/client/src/session-connection.test.ts`
+  - `lib/mayu/client/src/stream.test.ts`
 
 Run:
 
@@ -131,9 +129,9 @@ Run:
    - Keep `Mayu` as a small client API surface (`callback`, `navigate`, `ping`).
 2. Unify view-transition handling in a shared helper. (Done)
    - Use the same helper from both `session-recovery.ts` (full session reset morph) and `runtime.ts` (`ViewTransition` patch).
-3. Move from message matching to structured stream error codes.
-   - Return `{code, message}` from server-side stream errors.
-   - Branch on `code` in client reset/retry policy.
+3. Move from message matching to structured stream error codes. (Done)
+   - Server returns `{ code, message }` and also keeps legacy `error`.
+   - Client reset/retry policy checks `code` first, then falls back to messages.
 4. Add explicit connection teardown/cancellation. (Done)
    - Each connection attempt now has an `AbortController`.
    - Teardown aborts stream requests and clears callback writer resources.
@@ -155,6 +153,5 @@ Run:
 3. Step 5 (retry policy extraction).
 4. Step 4 (connection teardown model).
 5. Step 8 (tests around current behavior).
-6. Step 3 (structured error contract, requires server/client changes).
-7. Step 6 (typing hardening).
-8. Step 7 (logging cleanup).
+6. Step 6 (typing hardening).
+7. Step 7 (logging cleanup).

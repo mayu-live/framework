@@ -27,7 +27,41 @@ export async function initInputStream(
   return res.body.pipeThrough(new DecompressionStream(contentEncoding as any));
 }
 
-export class StreamError extends Error {}
+export class StreamError extends Error {
+  code: string | null;
+
+  constructor(message: string, code: string | null = null) {
+    super(message);
+    this.name = "StreamError";
+    this.code = code;
+  }
+}
+
+function parseErrorResponse(payload: unknown): {
+  message: string;
+  code: string | null;
+} {
+  if (payload && typeof payload === "object") {
+    const code =
+      "code" in payload && typeof payload.code === "string"
+        ? payload.code
+        : null;
+
+    if ("message" in payload && typeof payload.message === "string") {
+      return { message: payload.message, code };
+    }
+
+    if ("error" in payload && typeof payload.error === "string") {
+      return { message: payload.error, code };
+    }
+  }
+
+  if (typeof payload === "string") {
+    return { message: payload, code: null };
+  }
+
+  return { message: "Unknown stream error", code: null };
+}
 
 export async function connect(
   endpoint: string,
@@ -69,8 +103,14 @@ export async function connect(
   }
 
   if (!res.ok) {
-    const message = await res.json();
-    throw new StreamError(message.error);
+    let payload: unknown = null;
+
+    try {
+      payload = await res.json();
+    } catch (_error) {}
+
+    const { message, code } = parseErrorResponse(payload);
+    throw new StreamError(message, code);
   }
 
   const contentType = res.headers.get("content-type");
