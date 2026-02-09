@@ -177,6 +177,8 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
+    readline (0.0.4)
+      reline
     reline (0.6.0)
       io-console (~> 0.5)
     rexml (3.3.0)
@@ -247,6 +249,8 @@ DEPENDENCIES
   minitest-mock
   minitest-reporters
   prettier
+  readline
+  reline
   rexml
   ruby-prof
 

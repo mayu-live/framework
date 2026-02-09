@@ -18,4 +18,7 @@ group :development do
   gem "ruby-prof", require: false
   gem "benchmark", require: false
   gem "irb", require: false
+
+  gem "readline", require: false
+  gem "reline", require: false
 end
