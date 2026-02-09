@@ -15,9 +15,10 @@ export default class MayuException extends HTMLElement {
     this.shadowRoot!.appendChild(template.content.cloneNode(true));
 
     this.dialog = this.shadowRoot!.querySelector<HTMLDialogElement>("dialog")!;
-    this.closeButton = this.shadowRoot!.querySelector<HTMLButtonElement>(
-      "[data-action='close']"
-    );
+    this.closeButton =
+      this.shadowRoot!.querySelector<HTMLButtonElement>(
+        "[data-action='close']"
+      ) || undefined;
 
     this.closeButton?.addEventListener("click", () => this.dialog?.close());
     this.dialog!.addEventListener("close", () => this.remove());
