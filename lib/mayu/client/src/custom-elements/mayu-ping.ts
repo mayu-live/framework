@@ -7,6 +7,8 @@ class MayuPing extends HTMLElement {
   #div?: HTMLDivElement;
   #ping?: HTMLSpanElement;
   #disconnectDialog?: HTMLDialogElement;
+  #disconnectTitle?: HTMLParagraphElement;
+  #disconnectText?: HTMLParagraphElement;
 
   static observedAttributes = ["ping", "status"];
 
@@ -22,8 +24,14 @@ class MayuPing extends HTMLElement {
     this.#disconnectDialog = this.shadowRoot!.querySelector(
       ".disconnect-dialog"
     ) as HTMLDialogElement;
+    this.#disconnectTitle = this.shadowRoot!.querySelector(
+      ".disconnect-title"
+    ) as HTMLParagraphElement;
+    this.#disconnectText = this.shadowRoot!.querySelector(
+      ".disconnect-text"
+    ) as HTMLParagraphElement;
     this.#disconnectDialog?.addEventListener("cancel", (event) => {
-      // Keep this modal non-cancelable while disconnected.
+      // Keep this modal non-cancelable while connection is unavailable.
       event.preventDefault();
     });
 
@@ -50,16 +58,29 @@ class MayuPing extends HTMLElement {
         if (newValue) {
           classList?.add(`status-${newValue}`);
         }
-        this.#updateDisconnectedDialog(newValue);
+        this.#updateConnectionDialog(newValue);
         break;
     }
   }
 
-  #updateDisconnectedDialog(status: string) {
+  #updateConnectionDialog(status: string) {
     const dialog = this.#disconnectDialog;
-    if (!dialog) return;
+    const title = this.#disconnectTitle;
+    const text = this.#disconnectText;
+    if (!dialog || !title || !text) return;
 
     if (status === "disconnected") {
+      title.textContent = "Disconnected";
+      text.textContent = "Trying to reconnect…";
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+      return;
+    }
+
+    if (status === "transferring") {
+      title.textContent = "Transferring";
+      text.textContent = "Trying to restore connection…";
       if (!dialog.open) {
         dialog.showModal();
       }
