@@ -20,6 +20,10 @@ export default class Mayu {
     this.#writer = writer;
   }
 
+  clearWriter() {
+    this.#writer = null;
+  }
+
   async #write(message: any) {
     try {
       await this.#writer?.write(message);

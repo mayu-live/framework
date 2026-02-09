@@ -43,6 +43,10 @@ type SessionConnectionOptions = {
   endpoint: string;
 };
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 export default class SessionConnection {
   #runtime: Runtime;
   #mayu: Mayu;
@@ -59,24 +63,41 @@ export default class SessionConnection {
     let failures = 0;
 
     while (true) {
+      const abortController = new AbortController();
+      let callbackWriter: WritableStreamDefaultWriter<any> | null = null;
+      let callbackPipeline: Promise<void> | null = null;
+
       try {
         const state = getTransferState();
 
         updateConnectionStatus(state ? "transferring" : "disconnected");
 
-        const input = await initInputStream(this.#endpoint, state);
+        const input = await initInputStream(
+          this.#endpoint,
+          state,
+          abortController.signal
+        );
         setTransferState(null);
 
         const callbackStream = new TransformStream();
-        this.#mayu.setWriter(callbackStream.writable.getWriter());
-        const output = initCallbackStream(this.#endpoint);
+        callbackWriter = callbackStream.writable.getWriter();
+        this.#mayu.setWriter(callbackWriter);
+        const output = initCallbackStream(
+          this.#endpoint,
+          abortController.signal
+        );
 
         failures = 0;
 
-        callbackStream.readable
+        callbackPipeline = callbackStream.readable
           .pipeThrough(new JSONEncoderStream())
           .pipeThrough(new TextEncoderStream())
-          .pipeTo(output);
+          .pipeTo(output)
+          .catch((error) => {
+            if (!isAbortError(error)) {
+              console.error("Callback pipeline error", error);
+            }
+          });
 
         updateConnectionStatus("connected");
 
@@ -116,6 +137,22 @@ export default class SessionConnection {
         const sleepTime = Math.min(10_000, 1000 * failures);
         console.info(`Attempting to reconnect in`, sleepTime, "ms");
         await sleep(sleepTime);
+      } finally {
+        abortController.abort();
+        this.#mayu.clearWriter();
+
+        if (callbackWriter) {
+          try {
+            await callbackWriter.abort();
+          } catch (_error) {
+          } finally {
+            callbackWriter.releaseLock();
+          }
+        }
+
+        if (callbackPipeline) {
+          await callbackPipeline;
+        }
       }
     }
   }

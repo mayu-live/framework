@@ -13,9 +13,10 @@ const CALLBACK_STREAM_METHOD = "PATCH";
 
 export async function initInputStream(
   endpoint: string,
-  state: Blob | null = null
+  state: Blob | null = null,
+  signal?: AbortSignal
 ): Promise<ReadableStream<any>> {
-  const res = await connect(endpoint, state);
+  const res = await connect(endpoint, state, signal);
 
   if (!res.body) throw new Error("No body");
 
@@ -30,7 +31,8 @@ export class StreamError extends Error {}
 
 export async function connect(
   endpoint: string,
-  state: Blob | null = null
+  state: Blob | null = null,
+  signal?: AbortSignal
 ): Promise<Response> {
   console.info("🟡 Connecting to", endpoint);
 
@@ -41,6 +43,7 @@ export async function connect(
       ? await fetch(endpoint, {
           method: "POST",
           credentials: "include",
+          signal,
           headers: new Headers({
             accept: STREAM_MIME_TYPE,
             "accept-encoding": STREAM_CONTENT_ENCODING,
@@ -51,6 +54,7 @@ export async function connect(
       : await fetch(endpoint, {
           method: "GET",
           credentials: "include",
+          signal,
           headers: new Headers({
             accept: STREAM_MIME_TYPE,
             "accept-encoding": STREAM_CONTENT_ENCODING,
@@ -117,16 +121,20 @@ export class JSONEncoderStream extends TransformStream {
   }
 }
 
-export function initCallbackStream(endpoint: string) {
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+export function initCallbackStream(endpoint: string, signal?: AbortSignal) {
   if (!supportsRequestStreams) {
     console.warn("Request streams not supported, using fallback.");
-    return initCallbackStreamFetchFallback(endpoint);
+    return initCallbackStreamFetchFallback(endpoint, signal);
   }
 
   const contentEncoding = "identity"; // STREAM_CONTENT_ENCODING;
   const { readable, writable } = new TransformStream(); // new CompressionStream(contentEncoding);
 
-  fetch(endpoint, {
+  void fetch(endpoint, {
     method: CALLBACK_STREAM_METHOD,
     headers: new Headers({
       "content-type": STREAM_MIME_TYPE,
@@ -134,23 +142,36 @@ export function initCallbackStream(endpoint: string) {
     }),
     duplex: "half",
     mode: "cors",
+    signal,
     body: readable,
-  } as any);
+  } as any).catch((error) => {
+    if (isAbortError(error)) return;
+    console.error("Callback stream error", error);
+  });
 
   return writable;
 }
 
-function initCallbackStreamFetchFallback(endpoint: string) {
+function initCallbackStreamFetchFallback(
+  endpoint: string,
+  signal?: AbortSignal
+) {
   return new WritableStream({
-    write(body) {
-      fetch(endpoint, {
-        method: CALLBACK_STREAM_METHOD,
-        headers: new Headers({
-          "content-type": "application/json",
-        }),
-        mode: "cors",
-        body: body,
-      });
+    async write(body) {
+      try {
+        await fetch(endpoint, {
+          method: CALLBACK_STREAM_METHOD,
+          headers: new Headers({
+            "content-type": "application/json",
+          }),
+          mode: "cors",
+          signal,
+          body: body,
+        });
+      } catch (error) {
+        if (isAbortError(error)) return;
+        throw error;
+      }
     },
   });
 }

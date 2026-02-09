@@ -29,7 +29,7 @@ This directory contains the browser-side runtime that:
 ## Module Map
 
 - `main.ts`: minimal bootstrap and wiring.
-- `mayu.ts`: browser API used by runtime and app (`callback`, `navigate`, `ping`, `setWriter`).
+- `mayu.ts`: browser API used by runtime and app (`callback`, `navigate`, `ping`, writer accessors).
 - `session-connection.ts`: stream loop, patch decode/apply, reconnect/backoff.
 - `session-recovery.ts`: reset policy (`shouldResetSession`) and full session reset (`resetSessionEntirely`).
 - `view-transition.ts`: shared transition wrapper with fallback when View Transitions API is unavailable.
@@ -78,6 +78,7 @@ This directory contains the browser-side runtime that:
 In `SessionConnection.run(...)`:
 
 - `failures` resets to `0` on successful connection.
+- each loop iteration creates one `AbortController` for input/callback requests.
 - On error:
   - if `shouldResetSession(error)` is true for:
     - `"expired"`
@@ -93,6 +94,10 @@ In `SessionConnection.run(...)`:
   - otherwise:
     - wait with linear backoff (`1s .. 10s`),
     - retry same endpoint.
+- at iteration teardown (`finally`):
+  - abort active requests/streams,
+  - abort/release callback writer,
+  - clear `window.Mayu` writer reference.
 
 ## Better Long-Term Error Contract (Server + Client)
 
@@ -116,8 +121,9 @@ Then client policy can branch on `code` instead of free-form messages.
 3. Move from message matching to structured stream error codes.
    - Return `{code, message}` from server-side stream errors.
    - Branch on `code` in client reset/retry policy.
-4. Add explicit connection teardown/cancellation.
-   - Introduce a per-connection context with `abort()` and cleanup for input/output streams.
+4. Add explicit connection teardown/cancellation. (Done)
+   - Each connection attempt now has an `AbortController`.
+   - Teardown aborts stream requests and clears callback writer resources.
 5. Isolate retry/backoff policy.
    - Extract backoff calculation so reconnect timing is easy to test and tune.
 6. Tighten patch typing.
