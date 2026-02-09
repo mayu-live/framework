@@ -110,6 +110,19 @@ String matching is fragile. A safer protocol is to return structured stream erro
 
 Then client policy can branch on `code` instead of free-form messages.
 
+## Client Tests
+
+- test runner: Vitest (`jsdom` environment).
+- config: `lib/mayu/client/vitest.config.ts`.
+- test files:
+  - `lib/mayu/client/src/session-recovery.test.ts`
+  - `lib/mayu/client/src/session-connection.test.ts`
+
+Run:
+
+- `npm run test --workspace lib/mayu/client`
+- `npm run test:watch --workspace lib/mayu/client`
+
 ## Refactor Plan
 
 1. Split `main.ts` into focused modules. (Done)
@@ -130,7 +143,7 @@ Then client policy can branch on `code` instead of free-form messages.
    - Replace broad tuples/`any` with stronger patch payload types so runtime patch dispatch is type-safe.
 7. Gate debug logging.
    - Route noisy `console.*` calls through a debug logger flag to keep production output clean.
-8. Add targeted tests for critical recovery behavior.
+8. Add targeted tests for critical recovery behavior. (Done)
    - `shouldResetSession` cases.
    - missing `x-mayu-session-id` during reset.
    - reset failure falls back to reconnect backoff.

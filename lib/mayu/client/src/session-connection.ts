@@ -41,6 +41,7 @@ type SessionConnectionOptions = {
   runtime: Runtime;
   mayu: Mayu;
   endpoint: string;
+  sleep?: (milliseconds: number) => Promise<void>;
 };
 
 function isAbortError(error: unknown): boolean {
@@ -51,11 +52,18 @@ export default class SessionConnection {
   #runtime: Runtime;
   #mayu: Mayu;
   #endpoint: string;
+  #sleep: (milliseconds: number) => Promise<void>;
 
-  constructor({ runtime, mayu, endpoint }: SessionConnectionOptions) {
+  constructor({
+    runtime,
+    mayu,
+    endpoint,
+    sleep: sleepFn,
+  }: SessionConnectionOptions) {
     this.#runtime = runtime;
     this.#mayu = mayu;
     this.#endpoint = endpoint;
+    this.#sleep = sleepFn || sleep;
   }
 
   async run() {
@@ -136,7 +144,7 @@ export default class SessionConnection {
 
         const sleepTime = Math.min(10_000, 1000 * failures);
         console.info(`Attempting to reconnect in`, sleepTime, "ms");
-        await sleep(sleepTime);
+        await this.#sleep(sleepTime);
       } finally {
         abortController.abort();
         this.#mayu.clearWriter();

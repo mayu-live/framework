@@ -6,6 +6,8 @@
   "description": "Main package.json for mayu",
   "scripts": {
     "build": "npm -w lib/mayu/client run build:production",
+    "test": "npm -w lib/mayu/client run test",
+    "test:watch": "npm -w lib/mayu/client run test:watch",
     "prettier": "prettier --write '**/*'",
     "prepare": "husky install"
   },

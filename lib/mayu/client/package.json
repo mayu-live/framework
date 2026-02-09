@@ -17,7 +17,8 @@
     "watch": "npm run build -- --watch",
     "build": "rollup -c rollup.config.js",
     "build:production": "npm run build -- --compact",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
   },
@@ -33,6 +34,8 @@
     "msgpackr": "^1.11.2",
     "rollup": "^4.36.0",
     "rollup-plugin-delete": "^3.0.1",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.0",
+    "jsdom": "^26.0.0"
   }
 }
