@@ -39,7 +39,41 @@
   .status-transferring {
     border-color: #6aa8ff;
   }
+
+  .disconnect-dialog {
+    border: 1px solid #ffffff1a;
+    border-radius: 12px;
+    background: #0f1218ee;
+    color: #f2f5fc;
+    font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    padding: 1rem 1.1rem;
+    min-width: 16rem;
+    box-shadow: 0 0.8rem 2.2rem #00000080;
+    user-select: none;
+  }
+
+  .disconnect-dialog::backdrop {
+    background: rgba(10, 14, 20, 0.52);
+    backdrop-filter: blur(2px);
+  }
+
+  .disconnect-title {
+    margin: 0;
+    font-weight: 700;
+    color: #ff90a3;
+  }
+
+  .disconnect-text {
+    margin: 0.55rem 0 0;
+    color: #d7deee;
+  }
 </style>
 <div class="mayu-ping">
   <span class="ping">N/A</span>
 </div>
+<dialog class="disconnect-dialog" closedby="none" aria-label="Connection lost">
+  <p class="disconnect-title">Disconnected</p>
+  <p class="disconnect-text">Trying to reconnect…</p>
+</dialog>

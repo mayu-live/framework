@@ -6,6 +6,7 @@ template.innerHTML = html;
 class MayuPing extends HTMLElement {
   #div?: HTMLDivElement;
   #ping?: HTMLSpanElement;
+  #disconnectDialog?: HTMLDialogElement;
 
   static observedAttributes = ["ping", "status"];
 
@@ -18,6 +19,13 @@ class MayuPing extends HTMLElement {
 
     this.#div = this.shadowRoot!.querySelector(".mayu-ping") as HTMLDivElement;
     this.#ping = this.shadowRoot!.querySelector(".ping") as HTMLSpanElement;
+    this.#disconnectDialog = this.shadowRoot!.querySelector(
+      ".disconnect-dialog"
+    ) as HTMLDialogElement;
+    this.#disconnectDialog?.addEventListener("cancel", (event) => {
+      // Keep this modal non-cancelable while disconnected.
+      event.preventDefault();
+    });
 
     const status = this.getAttribute("status");
 
@@ -42,7 +50,24 @@ class MayuPing extends HTMLElement {
         if (newValue) {
           classList?.add(`status-${newValue}`);
         }
+        this.#updateDisconnectedDialog(newValue);
         break;
+    }
+  }
+
+  #updateDisconnectedDialog(status: string) {
+    const dialog = this.#disconnectDialog;
+    if (!dialog) return;
+
+    if (status === "disconnected") {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+      return;
+    }
+
+    if (dialog.open) {
+      dialog.close();
     }
   }
 }
