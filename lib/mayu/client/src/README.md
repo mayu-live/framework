@@ -12,9 +12,10 @@ This directory contains the browser-side runtime that:
 1. `init(sessionId)` in `main.ts`:
    - installs a default view-transition stylesheet,
    - creates `Runtime`,
-   - creates `window.Mayu` API instance,
-   - starts patch streaming at `/.mayu/session/:sessionId`.
-2. `startPatchStream(runtime, endpoint)` loop:
+   - creates `Mayu` API instance and stores it on `window.Mayu`,
+   - creates `SessionConnection`,
+   - starts session connection loop at `/.mayu/session/:sessionId`.
+2. `SessionConnection.run()` loop:
    - opens input stream (`GET` or `POST` with transfer state),
    - opens callback output stream (`PATCH`),
    - decodes MessagePack patch batches,
@@ -27,7 +28,11 @@ This directory contains the browser-side runtime that:
 
 ## Module Map
 
-- `main.ts`: bootstrap + stream lifecycle + recovery policy.
+- `main.ts`: minimal bootstrap and wiring.
+- `mayu.ts`: browser API used by runtime and app (`callback`, `navigate`, `ping`, `setWriter`).
+- `session-connection.ts`: stream loop, patch decode/apply, reconnect/backoff.
+- `session-recovery.ts`: reset policy (`shouldResetSession`) and full session reset (`resetSessionEntirely`).
+- `view-transition.ts`: shared transition wrapper with fallback when View Transitions API is unavailable.
 - `stream.ts`: HTTP stream connect logic + callback stream transport.
 - `runtime.ts`: patch dispatcher and DOM mutation engine.
 - `serializeEvent.ts`: serializes event/currentTarget/target payloads.
@@ -40,7 +45,7 @@ This directory contains the browser-side runtime that:
 
 ### Server -> Client (patch stream)
 
-- `startPatchStream` calls `initInputStream(endpoint, transferState)`.
+- `SessionConnection.run` calls `initInputStream(endpoint, transferState)`.
 - `connect(...)` validates:
   - HTTP success,
   - `content-type === application/vnd.mayu.event-stream`.
@@ -70,7 +75,7 @@ This directory contains the browser-side runtime that:
 
 ## Reconnect and Recovery (Current)
 
-In `startPatchStream(...)`:
+In `SessionConnection.run(...)`:
 
 - `failures` resets to `0` on successful connection.
 - On error:
@@ -100,11 +105,37 @@ String matching is fragile. A safer protocol is to return structured stream erro
 
 Then client policy can branch on `code` instead of free-form messages.
 
-## Small Refactor Opportunities
+## Refactor Plan
 
-- Split `main.ts` responsibilities:
-  - `SessionConnection` (stream/connect/retry),
-  - `SessionRecovery` (reset/morphdom/new endpoint),
-  - `MayuAPI` (callback/navigate/ping writer).
-- Make retry strategy injectable/testable.
-- Keep one helper for view transitions used both in runtime patches and full-session reset.
+1. Split `main.ts` into focused modules. (Done)
+   - Extract `SessionConnection` (connect/decode/apply/retry loop).
+   - Extract `SessionRecovery` (`shouldResetSession`, `resetSessionEntirely`).
+   - Keep `Mayu` as a small client API surface (`callback`, `navigate`, `ping`).
+2. Unify view-transition handling in a shared helper. (Done)
+   - Use the same helper from both `session-recovery.ts` (full session reset morph) and `runtime.ts` (`ViewTransition` patch).
+3. Move from message matching to structured stream error codes.
+   - Return `{code, message}` from server-side stream errors.
+   - Branch on `code` in client reset/retry policy.
+4. Add explicit connection teardown/cancellation.
+   - Introduce a per-connection context with `abort()` and cleanup for input/output streams.
+5. Isolate retry/backoff policy.
+   - Extract backoff calculation so reconnect timing is easy to test and tune.
+6. Tighten patch typing.
+   - Replace broad tuples/`any` with stronger patch payload types so runtime patch dispatch is type-safe.
+7. Gate debug logging.
+   - Route noisy `console.*` calls through a debug logger flag to keep production output clean.
+8. Add targeted tests for critical recovery behavior.
+   - `shouldResetSession` cases.
+   - missing `x-mayu-session-id` during reset.
+   - reset failure falls back to reconnect backoff.
+
+### Suggested Order
+
+1. Step 1 (split responsibilities).
+2. Step 2 (shared view transition helper).
+3. Step 5 (retry policy extraction).
+4. Step 4 (connection teardown model).
+5. Step 8 (tests around current behavior).
+6. Step 3 (structured error contract, requires server/client changes).
+7. Step 6 (typing hardening).
+8. Step 7 (logging cleanup).

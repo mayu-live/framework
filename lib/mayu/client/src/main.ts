@@ -1,19 +1,7 @@
 import Runtime from "./runtime.js";
-
-import {
-  initInputStream,
-  initCallbackStream,
-  JSONEncoderStream,
-  StreamError,
-} from "./stream.js";
-
-import serializeEvent from "./serializeEvent.js";
-import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
-
-import { SESSION_MIME_TYPE, SESSION_PATH, PING_INTERVAL } from "./constants";
-import { updateConnectionStatus } from "./ping";
-import { getTransferState, setTransferState } from "./transfer";
-import throttle from "./throttle";
+import { SESSION_PATH } from "./constants";
+import Mayu from "./mayu.js";
+import SessionConnection from "./session-connection.js";
 
 import "./custom-elements/mayu-exception";
 
@@ -21,209 +9,6 @@ declare global {
   interface Window {
     Mayu: Mayu;
   }
-}
-
-class Mayu {
-  #writer: WritableStreamDefaultWriter<any> | null;
-  #pingTimer: number;
-
-  constructor() {
-    this.#writer = null;
-
-    window.addEventListener("popstate", () => {
-      this.navigate(location.pathname + location.search, false);
-    });
-
-    this.#pingTimer = setTimeout(() => this.ping(), 100);
-  }
-
-  setWriter(writer: WritableStreamDefaultWriter<any>) {
-    this.#writer = writer;
-  }
-
-  async #write(message: any) {
-    try {
-      await this.#writer?.write(message);
-    } catch (e) {
-      console.error("Write error");
-    }
-  }
-
-  callback(event: Event, id: string) {
-    event.preventDefault();
-
-    const serializedEvent = serializeEvent(event);
-
-    throttle(event.currentTarget!, () => {
-      this.#write({
-        type: "callback",
-        payload: { id, event: serializedEvent },
-        ping: performance.now(),
-      });
-    });
-  }
-
-  navigate(href: string, pushState: boolean = true) {
-    console.warn("navigate", href);
-
-    this.#write({
-      type: "navigate",
-      payload: { href, pushState },
-      ping: performance.now(),
-    });
-  }
-
-  ping() {
-    clearTimeout(this.#pingTimer);
-
-    this.#pingTimer = setTimeout(() => this.ping(), PING_INTERVAL);
-
-    this.#write({
-      type: "ping",
-      ping: performance.now(),
-    });
-  }
-}
-
-async function sleep(milliseconds: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
-}
-
-const RESET_SESSION_ERROR_MESSAGES = new Set([
-  "expired",
-  "cipher error",
-  "session not found",
-  "token cookie not set",
-]);
-
-function getErrorMessage(error: unknown): string | null {
-  if (typeof error === "string") return error;
-  if (error instanceof Error) return error.message;
-  return null;
-}
-
-function shouldResetSession(error: unknown): boolean {
-  const message = getErrorMessage(error);
-  if (!message) return false;
-
-  return RESET_SESSION_ERROR_MESSAGES.has(message.toLowerCase());
-}
-
-async function resetSessionEntirely() {
-  const [morphdom, res] = await Promise.all([
-    import("morphdom"),
-    fetch(location.pathname + location.search, {
-      method: "GET",
-      credentials: "include",
-      headers: new Headers({
-        accept: "text/html",
-      }),
-    }),
-  ]);
-
-  const html = (await res.text()).replace(/^<!DOCTYPE html>\n/, "");
-  const sessionId = res.headers.get("x-mayu-session-id");
-
-  if (!sessionId) {
-    throw new Error("Missing x-mayu-session-id header during session reset");
-  }
-
-  console.warn(
-    `%cmorphing dom`,
-    "font-size: 4em; font-weight: bold; font-family: monospace;"
-  );
-
-  if (document.startViewTransition) {
-    document.startViewTransition(async () => {
-      morphdom.default(document.documentElement, html);
-    });
-  } else {
-    morphdom.default(document.documentElement, html);
-  }
-
-  setTransferState(null);
-
-  return `${SESSION_PATH}/${sessionId}`;
-}
-
-async function startPatchStream(runtime: Runtime, endpoint: string) {
-  const extensionCodec = createExtensionCodec();
-  let failures = 0;
-
-  while (true) {
-    try {
-      const state = getTransferState();
-
-      updateConnectionStatus(state ? "transferring" : "disconnected");
-
-      const input = await initInputStream(endpoint, state);
-      setTransferState(null);
-
-      const callbackStream = new TransformStream();
-      window.Mayu.setWriter(callbackStream.writable.getWriter());
-      const output = initCallbackStream(endpoint);
-
-      failures = 0;
-
-      callbackStream.readable
-        .pipeThrough(new JSONEncoderStream())
-        .pipeThrough(new TextEncoderStream())
-        .pipeTo(output);
-
-      updateConnectionStatus("connected");
-
-      for await (const patch of decodeMultiStream(input, { extensionCodec })) {
-        updateConnectionStatus("connected");
-
-        try {
-          await runtime.apply(patch as any);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    } catch (e: unknown) {
-      failures += 1;
-      const message = getErrorMessage(e);
-
-      if (e instanceof StreamError) {
-        console.error("StreamError", e.message);
-      } else {
-        console.error(e);
-      }
-
-      if (shouldResetSession(e)) {
-        console.warn("Resetting session because of:", message);
-
-        try {
-          endpoint = await resetSessionEntirely();
-          failures = 0;
-          continue;
-        } catch (resetError) {
-          console.error("Session reset failed", resetError);
-        }
-      }
-
-      const sleepTime = Math.min(10_000, 1000 * failures);
-      console.info(`Attempting to reconnect in`, sleepTime, "ms");
-      await sleep(sleepTime);
-    }
-  }
-}
-
-function createExtensionCodec() {
-  const extensionCodec = new ExtensionCodec();
-
-  extensionCodec.register({
-    type: 0x01,
-    encode() {
-      throw new Error("Not implemented");
-    },
-    decode(buffer) {
-      return new Blob([buffer], { type: SESSION_MIME_TYPE });
-    },
-  });
-
-  return extensionCodec;
 }
 
 export default function init(sessionId: string) {
@@ -245,9 +30,10 @@ export default function init(sessionId: string) {
   document.adoptedStyleSheets.push(sheet);
 
   const runtime = new Runtime();
-
-  window.Mayu = new Mayu();
+  const mayu = new Mayu();
+  window.Mayu = mayu;
 
   const endpoint = `${SESSION_PATH}/${sessionId}`;
-  startPatchStream(runtime, endpoint);
+  const connection = new SessionConnection({ runtime, mayu, endpoint });
+  void connection.run();
 }

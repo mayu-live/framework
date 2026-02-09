@@ -4,24 +4,7 @@
 import { updatePing } from "./ping";
 import { setTransferState } from "./transfer";
 import renderError from "./renderError";
-
-type DocumentWithViewTransition = Document & {
-  startViewTransition?: (
-    update: () => void | Promise<void>
-  ) => { updateCallbackDone?: Promise<void> } | void;
-};
-
-async function startViewTransition(update: () => void | Promise<void>) {
-  const start = (document as DocumentWithViewTransition).startViewTransition;
-
-  if (!start) {
-    await update();
-    return;
-  }
-
-  const transition = start.call(document, update);
-  await transition?.updateCallbackDone;
-}
+import withViewTransition from "./view-transition";
 
 type IdNode = {
   id: string;
@@ -292,8 +275,8 @@ const Patches = {
       }
     }
   },
-  async ViewTransition(this: NodeSet, ...patches: Patch[]) {
-    return startViewTransition(() => Patches.Batch.call(this, patches));
+  async ViewTransition(this: NodeSet, patches: Patch[]) {
+    return withViewTransition(() => Patches.Batch.call(this, patches));
   },
 
   Initialize(this: NodeSet, tree: IdNode) {
