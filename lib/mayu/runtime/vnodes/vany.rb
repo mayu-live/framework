@@ -57,6 +57,10 @@ module Mayu
           @child.write_html(out)
         end
 
+        def write_html_with_id_tree(out)
+          @child.write_html_with_id_tree(out)
+        end
+
         def dom_id
           @child.dom_id
         end

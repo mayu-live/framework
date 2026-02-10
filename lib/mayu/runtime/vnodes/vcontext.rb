@@ -50,6 +50,10 @@ module Mayu
           with_context { @children.write_html(out) }
         end
 
+        def write_html_with_id_tree(out)
+          with_context { @children.write_html_with_id_tree(out) }
+        end
+
         def traverse(&block)
           yield self
           @children.traverse(&block)

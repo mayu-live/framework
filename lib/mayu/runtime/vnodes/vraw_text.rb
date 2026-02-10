@@ -21,6 +21,11 @@ module Mayu
           out << @descriptor.to_s
         end
 
+        def write_html_with_id_tree(out)
+          write_html(out)
+          dom_id_tree
+        end
+
         def dom_id
           @id
         end

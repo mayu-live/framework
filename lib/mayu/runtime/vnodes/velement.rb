@@ -61,6 +61,25 @@ module Mayu
           out << "</#{tag_name}>"
         end
 
+        def write_html_with_id_tree(out)
+          tag_name = self.tag_name
+
+          out << "<#{tag_name}"
+          @attributes.write_html(out)
+
+          if Mayu::Runtime::DOM::VOID_ELEMENTS.include?(tag_name)
+            out << ">"
+            return DOM::IdNode[dom_id, tag_name.upcase, []]
+          end
+
+          out << ">"
+          children_trees =
+            @children.write_html_with_id_tree(out).flatten.compact
+          out << "</#{tag_name}>"
+
+          DOM::IdNode[dom_id, tag_name.upcase, children_trees]
+        end
+
         def dom_id
           @id
         end

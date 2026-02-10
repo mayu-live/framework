@@ -52,6 +52,11 @@ module Mayu
         def write_html(_out)
         end
 
+        def write_html_with_id_tree(out)
+          write_html(out)
+          dom_id_tree
+        end
+
         def traverse(&block)
           yield self
         end

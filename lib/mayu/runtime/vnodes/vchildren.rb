@@ -68,6 +68,10 @@ module Mayu
           @children.each { |child| child.write_html(out) }
         end
 
+        def write_html_with_id_tree(out)
+          @children.map { |child| child.write_html_with_id_tree(out) }
+        end
+
         def traverse(&block)
           yield self
           @children.each { |child| child.traverse(&block) }
@@ -220,7 +224,8 @@ module Mayu
           node.start if @engine&.task
           node.insert
 
-          id_tree = node.dom_id_tree
+          html = +""
+          id_tree = node.write_html_with_id_tree(html)
           if id_tree.is_a?(Array)
             id_tree = id_tree.flatten.compact
             if id_tree.length == 1
@@ -229,11 +234,7 @@ module Mayu
               raise "CreateTree expects a single IdNode, got #{id_tree.length}"
             end
           end
-          if id_tree
-            html = +""
-            node.write_html(html)
-            patcher << Patches::CreateTree[html, id_tree]
-          end
+          patcher << Patches::CreateTree[html, id_tree] if id_tree
 
           node.mark_inserted
         end
