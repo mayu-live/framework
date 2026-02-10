@@ -2,29 +2,34 @@
   Heading = import("/components/Layout/Heading")
   Image = import("/components/UI/Image")
   Link = import("/components/UI/Link")
-  Comuna13 = import("./comuna-13.jpeg")
-  ColombiaMap = import("./colombia-map-flag.png")
+  MayuDolphin = import("./mayu-dolphin.jpeg")
+  MayuDolphin2 = import("./mayu-dolphin2.jpeg")
 
 %article
   %Heading(level=2) Images
   %p
     This demo shows some images.
-  %figure
-    %Image(blur image=Comuna13 alt="Comuna 13, Medellín, Colombia")
-    %figcaption
-      Comuna 13, Medellín, Colombia.
-      %Link(href="https://www.google.com/maps?q=loc:6.2487861,-75.62455" target="_blank")<
-        Google Maps
-  %figure
-    %Image.green-bg(image=ColombiaMap alt="Colombia Flag Map from openclipart.org")
-    %figcaption
-      Colombia Flag Map, found on
-      %Link(href="https://openclipart.org/detail/223690/colombia-map-flag" target="_blank")<
-        openclipart.com
+  .grid
+    %figure
+      %Image(blur image=MayuDolphin alt="The Mayu dolphin")
+      %figcaption
+        The Mayu dolphin reimagined in the jungle.
+        = " (#{MayuDolphin.width}x#{MayuDolphin.height})"
+    %figure
+      %Image(blur image=MayuDolphin2 alt="The Mayu dolphin")
+      %figcaption
+        The Mayu dolphin reimagined in a retro landscape.
+        = " (#{MayuDolphin2.width}x#{MayuDolphin2.height})"
 
 :css
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: 2rem;
+  }
+
   figure {
-    margin: 2em 0;
+    margin: 0;
   }
 
   .green-bg {
