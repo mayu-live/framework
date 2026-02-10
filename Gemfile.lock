@@ -221,6 +221,7 @@ GEM
     traces (0.18.2)
     tsort (0.2.0)
     unicode-display_width (2.5.0)
+    vernier (1.9.0)
 
 PLATFORMS
   aarch64-linux
@@ -253,6 +254,7 @@ DEPENDENCIES
   reline
   rexml
   ruby-prof
+  vernier
 
 BUNDLED WITH
    2.5.11

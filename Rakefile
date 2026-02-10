@@ -26,3 +26,10 @@ task :build do
   system("npm", "-w", "lib/mayu/client", "run", "build:production")
   system("gem", "build")
 end
+
+namespace :profile do
+  desc "Profile vnode update path with Vernier"
+  task :vnodes_update do
+    sh "bundle", "exec", "ruby", "lib/mayu/runtime/vnodes/__test__/update_profile.rb"
+  end
+end

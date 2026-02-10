@@ -149,6 +149,7 @@ module Mayu
             .select { dirty_paths.include?(_1) }
             .reverse
             .map { @mods[_1] }
+            .compact
 
         messages = []
 

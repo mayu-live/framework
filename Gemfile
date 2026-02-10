@@ -17,6 +17,7 @@ group :development do
   gem "rexml", require: false
   gem "ruby-prof", require: false
   gem "benchmark", require: false
+  gem "vernier", require: false
   gem "irb", require: false
 
   gem "readline", require: false
