@@ -1,0 +1,251 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Button = import("/components/Form/Button")
+
+  GRID_WIDTH = 32
+  GRID_HEIGHT = 16
+
+  DEFAULT_FPS = 8
+  MIN_FPS = 2
+  MAX_FPS = 20
+
+  def initialize
+    reset_game
+    @fps = DEFAULT_FPS
+  end
+
+  def mount
+    loop do
+      if @running && !@game_over
+        handle_tick
+        sleep 1.0 / @fps
+      else
+        sleep 0.1
+      end
+    end
+  end
+
+  def reset_game
+    mid_x = GRID_WIDTH / 2
+    mid_y = GRID_HEIGHT / 2
+
+    @snake = [[mid_x, mid_y], [mid_x - 1, mid_y], [mid_x - 2, mid_y]]
+    @direction = [1, 0]
+    @queued_direction = [1, 0]
+    @food = random_free_cell(@snake)
+    @score = 0
+    @running = false
+    @game_over = false
+  end
+
+  def random_free_cell(snake)
+    occupied = snake.each_with_object({}) { |(x, y), memo| memo["#{x},#{y}"] = true }
+    free = []
+
+    GRID_HEIGHT.times do |y|
+      GRID_WIDTH.times do |x|
+        free << [x, y] unless occupied["#{x},#{y}"]
+      end
+    end
+
+    free.sample
+  end
+
+  def handle_change_fps(event)
+    event => { target: { value: } }
+    @fps = value.to_i.clamp(MIN_FPS, MAX_FPS)
+  end
+
+  def handle_toggle_running
+    return if @game_over
+    @running = !@running
+  end
+
+  def handle_reset
+    reset_game
+  end
+
+  def handle_turn_up
+    queue_direction(0, -1)
+  end
+
+  def handle_turn_down
+    queue_direction(0, 1)
+  end
+
+  def handle_turn_left
+    queue_direction(-1, 0)
+  end
+
+  def handle_turn_right
+    queue_direction(1, 0)
+  end
+
+  def handle_keydown(event)
+    event => { key: }
+
+    case key
+    when "ArrowUp", "w", "W"
+      handle_turn_up
+    when "ArrowDown", "s", "S"
+      handle_turn_down
+    when "ArrowLeft", "a", "A"
+      handle_turn_left
+    when "ArrowRight", "d", "D"
+      handle_turn_right
+    when " "
+      handle_toggle_running
+    end
+  end
+
+  def queue_direction(dx, dy)
+    return if @game_over
+
+    cur_dx, cur_dy = @queued_direction
+    return if cur_dx == -dx && cur_dy == -dy
+
+    @queued_direction = [dx, dy]
+    @running = true unless @running
+  end
+
+  def handle_tick
+    @direction = @queued_direction
+    dx, dy = @direction
+    head_x, head_y = @snake.first
+
+    next_head = [head_x + dx, head_y + dy]
+    next_x, next_y = next_head
+
+    if next_x < 0 || next_x >= GRID_WIDTH || next_y < 0 || next_y >= GRID_HEIGHT
+      @running = false
+      @game_over = true
+      return
+    end
+
+    growing = next_head == @food
+    collision_body = growing ? @snake : @snake[0...-1]
+
+    if collision_body.include?(next_head)
+      @running = false
+      @game_over = true
+      return
+    end
+
+    new_snake = [next_head, *@snake]
+    new_snake.pop unless growing
+
+    if growing
+      @score += 1
+      @food = random_free_cell(new_snake)
+
+      if @food.nil?
+        @running = false
+        @game_over = true
+      end
+    end
+
+    @snake = new_snake
+  end
+
+%article
+  %Heading(level=2) Snake
+  %p
+    Arrow keys or WASD to steer. Space toggles pause. Click the grid first to focus keyboard controls.
+
+  .controls
+    %Button(onclick=handle_toggle_running disabled=@game_over){
+      color: @running ? "var(--red)" : "var(--green)"
+    }
+      = @running ? "Pause" : "Start"
+    %Button(onclick=handle_reset) Reset
+    .fps
+      %label(for="snake-fps") Speed
+      %input(id="snake-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
+      %output= @fps
+
+  %p
+    Score:
+    %strong<= @score
+
+  - snake_map = @snake.each_with_object({}) { |(x, y), memo| memo["#{x},#{y}"] = true }
+  - head_x, head_y = @snake.first
+  - food_x, food_y = @food || [-1, -1]
+
+  .grid(tabindex=0 onkeydown=handle_keydown){
+    style: { __grid_cols: GRID_WIDTH, __grid_rows: GRID_HEIGHT }
+  }
+    = GRID_HEIGHT.times.map do |y|
+      = GRID_WIDTH.times.map do |x|
+        - key = "#{x}.#{y}"
+        - is_head = (x == head_x && y == head_y)
+        - is_snake = snake_map["#{x},#{y}"]
+        - is_food = (x == food_x && y == food_y)
+        .cell[key]{class: { snake: is_snake, head: is_head, food: is_food }}
+    = if @game_over
+      %p.game-over Game over
+
+:css
+  article {
+    max-width: 42rem;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-block: 1rem;
+  }
+
+  .fps {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    color: #ff5f7a;
+    font-weight: 700;
+    font-size: 4em;
+    margin: 0;
+    filter: drop-shadow(0 0 .2em #000);
+  }
+
+  .grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--grid-cols), 1fr);
+    grid-template-rows: repeat(var(--grid-rows), 1fr);
+    gap: 1px;
+    background: #0d0f14;
+    border: 1px solid #0d0f14;
+    width: 100%;
+    outline: none;
+    padding: 0;
+    user-select: none;
+    border-radius: 2px;
+    contain: paint;
+
+    &:focus {
+      outline: 2px solid AccentColor;
+    }
+  }
+
+  .cell {
+    aspect-ratio: 1;
+    background: #f0f2f7;
+
+    &.snake {
+      background: #3fdb86;
+    }
+    &.head {
+      background: #22b86a;
+    }
+    &.food {
+      background: #ff5f7a;
+    }
+  }

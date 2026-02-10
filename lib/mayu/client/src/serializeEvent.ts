@@ -14,6 +14,16 @@ export default function serializeEvent(e: Event) {
     payload.target = serializeElement(e.target as Element);
   }
 
+  if (e instanceof KeyboardEvent) {
+    payload.key = e.key;
+    payload.keyCode = e.keyCode;
+    payload.ctrlKey = e.ctrlKey;
+    payload.metaKey = e.metaKey;
+    payload.shiftKey = e.shiftKey;
+    payload.altKey = e.altKey;
+    payload.repeat = e.repeat;
+  }
+
   if (e instanceof MouseEvent) {
     payload.buttons = e.buttons;
   }

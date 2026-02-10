@@ -275,7 +275,7 @@ const Patches = {
       }
     }
   },
-  async ViewTransition(this: NodeSet, patches: Patch[]) {
+  async ViewTransition(this: NodeSet, ...patches: Patch[]) {
     return withViewTransition(() => Patches.Batch.call(this, patches));
   },
 

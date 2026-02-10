@@ -3,60 +3,57 @@
     position: fixed;
     bottom: 1rem;
     right: 1rem;
+
     z-index: 10000;
-    display: inline-flex;
-    align-items: center;
-    padding: 0.35rem 0.55rem;
-    border-radius: 999px;
-    background: rgba(16, 20, 28, 0.65);
-    backdrop-filter: blur(6px);
-    border: 3px solid #8a92a6;
-    outline: 1px solid #0003;
-    color: #e9eef7;
-    font-size: 0.75rem;
-    font-weight: 600;
-    font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
-    letter-spacing: 0.02em;
-    box-shadow: 0 0 1em -0.1em #000;
-    transition: background 200ms ease, border-color 500ms ease,
-      opacity 200ms ease;
+    padding: 0.25rem 0.5rem;
+
+    color: #fffc;
+    font-size: 12px;
+    font-family: monospace;
+    background: #0006;
+    backdrop-filter: blur(5px);
+
+    border: 3px solid #0003;
+    border-radius: 100vw;
+    outline: 1px solid #0006;
+
+    box-shadow: 0 0 1em #0006;
+    transition: background-color 500ms;
     opacity: 0.85;
-    min-width: 4em;
-    justify-content: space-between;
   }
 
   .ping {
     width: 6ch;
+    display: block;
     text-align: right;
   }
 
   .status-disconnected {
-    border-color: #ff5f7a;
+    background-color: #e53935;
   }
   .status-connected {
-    border-color: #33d17a;
+    background-color: #8bc34a;
   }
   .status-transferring {
-    border-color: #6aa8ff;
+    background-color: #2196f3;
   }
 
   .disconnect-dialog {
-    border: 1px solid #ffffff1a;
+    font: inherit;
+
+    border: 1px solid #fff1;
     border-radius: 12px;
     background: #0f1218ee;
-    color: #f2f5fc;
-    font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
-    font-size: 0.95rem;
-    letter-spacing: 0.01em;
-    padding: 1rem 1.1rem;
+    color: #fffc;
+    padding: 1rem;
     min-width: 16rem;
-    box-shadow: 0 0.8rem 2.2rem #00000080;
+    box-shadow: 0 1rem 2rem #0008;
     user-select: none;
   }
 
   .disconnect-dialog::backdrop {
-    background: rgba(10, 14, 20, 0.52);
-    backdrop-filter: blur(2px);
+    background: rgb(10 14 20 / 0.52);
+    backdrop-filter: blur(5px);
   }
 
   .disconnect-title {
