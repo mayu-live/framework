@@ -108,6 +108,83 @@ class NodeSet {
   }
 }
 
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const SVG_TAGS = new Set([
+  "svg",
+  "g",
+  "path",
+  "rect",
+  "text",
+  "tspan",
+  "textpath",
+  "circle",
+  "line",
+  "polyline",
+  "polygon",
+  "ellipse",
+  "defs",
+  "marker",
+  "symbol",
+  "use",
+  "image",
+  "pattern",
+  "clippath",
+  "mask",
+  "filter",
+  "lineargradient",
+  "radialgradient",
+  "stop",
+  "foreignobject",
+]);
+
+function createDomElement(type: string): Element {
+  const tag = type.toLowerCase();
+  if (SVG_TAGS.has(tag)) {
+    return document.createElementNS(SVG_NAMESPACE, type);
+  }
+
+  return document.createElement(type);
+}
+
+function createTreeRootNode(html: string, tree: IdNode): Node {
+  const rootTag = tree.name.toLowerCase();
+  const isSvgRoot = SVG_TAGS.has(rootTag);
+  const wrappedHtml = isSvgRoot
+    ? `<svg xmlns="${SVG_NAMESPACE}">${html}</svg>`
+    : html;
+
+  const template = document
+    .createRange()
+    .createContextualFragment(`<template>${wrappedHtml}</template>`)
+    .firstElementChild!;
+  const content = (template as HTMLTemplateElement).content;
+
+  if (!isSvgRoot) {
+    const root = content.firstChild;
+    if (!root)
+      throw new Error(`CreateTree: missing root node for ${tree.name}`);
+    return root;
+  }
+
+  const svgWrapper = content.firstElementChild;
+  if (!svgWrapper) throw new Error("CreateTree: missing svg wrapper");
+
+  const svgChildren = Array.from(svgWrapper.childNodes).filter((child) => {
+    if (child.nodeType === Node.DOCUMENT_TYPE_NODE) return false;
+    if (
+      child.nodeType === Node.TEXT_NODE &&
+      (child.textContent == null || child.textContent.trim() === "")
+    ) {
+      return false;
+    }
+    return true;
+  });
+  const root = svgChildren[0] || svgWrapper.firstChild;
+  if (!root)
+    throw new Error(`CreateTree: missing SVG root node for ${tree.name}`);
+  return root;
+}
+
 function debugTree(node: IdNode, level = 0): string {
   return [
     ["  ".repeat(level), node.name, " (", node.id, ")"].join(""),
@@ -286,16 +363,10 @@ const Patches = {
     setupTree(this, document, tree);
   },
   CreateTree(this: NodeSet, html: string, tree: IdNode) {
-    const template = document
-      .createRange()
-      .createContextualFragment(`<template>${html}</template>`)
-      .firstElementChild!;
-    const content = (template as HTMLTemplateElement).content;
-
-    setupTree(this, content.firstChild!, tree);
+    setupTree(this, createTreeRootNode(html, tree), tree);
   },
   CreateElement(this: NodeSet, id: string, type: string) {
-    this.setNode(id, document.createElement(type));
+    this.setNode(id, createDomElement(type));
   },
   CreateTextNode(this: NodeSet, id: string, content: string) {
     this.setNode(id, document.createTextNode(content));
