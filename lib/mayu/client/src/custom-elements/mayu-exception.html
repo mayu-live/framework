@@ -29,10 +29,11 @@
     grid-template-rows: auto 1fr;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
     box-shadow: var(--panel-shadow);
     z-index: 10001;
+    font-size: 0.84rem;
   }
 
   dialog::backdrop {
@@ -42,43 +43,56 @@
 
   header {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.65rem 0.9rem;
     background: linear-gradient(135deg, #1b0f17, #1c1324 55%, #141722);
     border-bottom: 1px solid var(--line);
   }
 
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.2rem 0.55rem;
+  .header-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.3rem 0.45rem;
+  }
+
+  .exception-class {
+    display: inline-block;
+    padding: 0.12rem 0.4rem;
     border-radius: 999px;
     background: var(--badge-bg);
     color: var(--badge-text);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-size: 0.74em;
+    letter-spacing: 0.05em;
+    overflow-wrap: anywhere;
   }
 
   h1 {
     margin: 0;
-    font-size: 1.05rem;
+    flex: 1 1 22rem;
+    min-width: 12rem;
+    font-size: 0.94em;
     font-weight: 600;
     letter-spacing: 0.01em;
-    flex: 1;
     color: var(--text);
+    overflow-wrap: anywhere;
   }
 
   .close {
     border: 1px solid var(--line);
     background: transparent;
     color: var(--muted);
-    border-radius: 8px;
-    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    padding: 0.18rem 0.4rem;
+    font-size: 0.88em;
+    line-height: 1.2;
     cursor: pointer;
     transition: all 120ms ease;
+    flex: 0 0 auto;
   }
 
   .close:hover {
@@ -89,8 +103,8 @@
   main {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(30em, 1fr));
-    gap: 1rem;
-    padding: 1.25rem 1.5rem 1.5rem;
+    gap: 0.65rem;
+    padding: 0.75rem 0.9rem 0.9rem;
     overflow: auto;
   }
 
@@ -98,8 +112,22 @@
     grid-column: span 2;
   }
 
+  .message-panel {
+    grid-column: span 2;
+  }
+
+  .message-body {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    min-height: 0;
+    overflow: auto;
+  }
+
   @media (max-width: 60em) {
-    .source-panel {
+    .source-panel,
+    .message-panel {
       grid-column: auto;
     }
   }
@@ -107,20 +135,20 @@
   section {
     background: rgba(16, 19, 28, 0.6);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 0.9rem 0.9rem 0.8rem;
+    border-radius: 10px;
+    padding: 0.55rem 0.6rem 0.5rem;
     display: grid;
-    gap: 0.6rem;
-    min-height: 8em;
-    overflow-x: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0.35rem;
+    overflow: hidden;
   }
 
   h2 {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.76em;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.08em;
   }
 
   ul,
@@ -128,20 +156,32 @@
     margin: 0;
     padding: 0;
     list-style: none;
+    min-height: 0;
+    overflow: auto;
+    font-size: 0.9em;
+    line-height: 1.15em;
   }
 
   ol {
     counter-reset: line;
+    scroll-snap-type: y proximity;
+    scroll-padding: 2rem;
+  }
+
+  ::slotted(.tree-item),
+  ::slotted(.trace-item),
+  ::slotted(.source-line) {
+    font-size: inherit;
+    line-height: inherit;
   }
 
   ::slotted(.tree-item),
   ::slotted(.trace-item) {
-    padding: 0.2rem 0.35rem;
-    border-radius: 6px;
+    padding: 0.12rem 0.28rem;
+    border-radius: 4px;
     color: var(--text);
     display: grid;
-    gap: 0.25rem;
-    line-height: 1.35;
+    gap: 0.12rem;
   }
 
   ::slotted(.tree-item) {
@@ -155,8 +195,8 @@
   }
 
   ::slotted(.source-line) {
-    padding: 0.2rem 0.35rem;
-    border-radius: 6px;
+    padding: 0.1rem 0.25rem;
+    border-radius: 4px;
     background: #0f121a;
     color: #f5f7ff;
     white-space: pre;
@@ -169,17 +209,34 @@
     color: #ffe2e8;
   }
 
-  ::slotted(.title) {
-    font-weight: 600;
+  ::slotted(.is-interesting) {
+    scroll-snap-align: start;
+  }
+
+  ::slotted(.exception-class),
+  ::slotted(.filename) {
+    overflow-wrap: anywhere;
+  }
+
+  ::slotted(.message) {
+    color: inherit;
   }
 </style>
 <dialog>
   <header>
-    <span class="badge">Runtime Error</span>
-    <h1><slot name="title"></slot></h1>
+    <div class="header-main">
+      <span class="exception-class">
+        <slot name="exception-class">Runtime Error</slot>
+      </span>
+      <h1><slot name="filename"></slot></h1>
+    </div>
     <button class="close" data-action="close">Close</button>
   </header>
   <main>
+    <section class="message-panel">
+      <h2>Message</h2>
+      <p class="message-body"><slot name="message"></slot></p>
+    </section>
     <section>
       <h2>Backtrace</h2>
       <ul>

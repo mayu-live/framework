@@ -52,9 +52,19 @@ export default function renderError(
     }
   });
 
-  const title = h("span", [`${type}: ${message}`], {
-    slot: "title",
-    class: "title",
+  const exceptionClass = h("span", [type], {
+    slot: "exception-class",
+    class: "exception-class",
+  });
+
+  const filename = h("span", [file || "Runtime Error"], {
+    slot: "filename",
+    class: "filename",
+  });
+
+  const errorMessage = h("span", [message], {
+    slot: "message",
+    class: "message",
   });
 
   const treeItems = treePath.map((path, i) => {
@@ -92,7 +102,9 @@ export default function renderError(
   });
 
   element.replaceChildren(
-    title,
+    exceptionClass,
+    filename,
+    errorMessage,
     ...treeItems,
     ...backtraceItems,
     ...sourceItems
