@@ -3,7 +3,7 @@
 
 import { updatePing } from "./ping";
 import { setTransferState } from "./transfer";
-import renderError from "./renderError";
+import renderError, { clearRenderError } from "./renderError";
 import withViewTransition from "./view-transition";
 
 type IdNode = {
@@ -516,6 +516,11 @@ const Patches = {
     treePath: { name: string; path?: string }[]
   ) {
     renderError(file, type, message, backtrace, source, treePath);
+  },
+  Event(this: NodeSet, event: string, _payload: unknown) {
+    if (event === "reload:success") {
+      clearRenderError();
+    }
   },
   RegisterCustomElement(name: string, path: string) {
     if (customElements.get(name)) return;

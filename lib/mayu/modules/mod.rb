@@ -25,6 +25,8 @@ module Mayu
       attr_reader :system
       attr_reader :source_map
       attr_reader :assets
+      attr_reader :imports
+      attr_reader :dependency_nodes
 
       def initialize(system, path)
         @order = Float::INFINITY
@@ -36,6 +38,8 @@ module Mayu
         @source = nil
         @source_map = nil
         @assets = Set.new
+        @imports = {}
+        @dependency_nodes = Set.new
       end
 
       def to_s
@@ -62,7 +66,9 @@ module Mayu
           @dependencies,
           @source,
           @assets,
-          @source_map
+          @source_map,
+          @imports,
+          @dependency_nodes
         ]
       end
 
@@ -73,25 +79,29 @@ module Mayu
         @dependencies,
         @source,
         @assets,
-        @source_map =
+        @source_map,
+        @imports,
+        @dependency_nodes =
           a
+        @imports ||= {}
+        @dependency_nodes ||= Set.new
         Registry[@path] = self
       end
 
       def reload(reload_source: true)
-        if const_defined?(:Exports)
-          # Console.logger.info(self, "Reloading #{@path}")
-          old_exports = const_get(:Exports)
-          remove_const(:Exports)
-        else
-          # Console.logger.info(self, "Loading #{@path}")
-        end
+        old_exports =
+          if const_defined?(:Exports)
+            # Console.logger.info(self, "Reloading #{@path}")
+            const_get(:Exports)
+          else
+            # Console.logger.info(self, "Loading #{@path}")
+            nil
+          end
 
         if reload_source
           begin
             reload_source!
           rescue => e
-            const_set(:Exports, old_exports) if old_exports
             pp e
             puts e.backtrace
             return
@@ -108,14 +118,35 @@ module Mayu
           rescue => e
             puts e
             puts e.backtrace.first(5)
-            Exports.new(self, "", path)
+            return
           end
 
+        remove_const(:Exports) if const_defined?(:Exports)
         const_set(:Exports, exports)
       end
 
       def reload_source!
-        @source, @source_map = @system.read_source(@path)
+        if staged_source_update?
+          @source = @staged_source
+          @source_map = @staged_source_map
+          @imports = @staged_imports
+          clear_staged_source_update!
+        else
+          @source, @source_map, @imports = @system.read_source(@path)
+        end
+
+        @dependency_nodes = @system.resolve_dependencies_for(self, @imports)
+      end
+
+      def stage_source_update!
+        source, source_map, imports = @system.read_source(@path)
+        return false if source == @source
+
+        @staged_source = source
+        @staged_source_map = source_map
+        @staged_imports = imports
+
+        true
       end
 
       def import(path)
@@ -133,6 +164,19 @@ module Mayu
 
       def absolute_path
         File.join(@system.root, @path)
+      end
+
+      private
+
+      def staged_source_update?
+        defined?(@staged_source) && defined?(@staged_source_map) &&
+          defined?(@staged_imports)
+      end
+
+      def clear_staged_source_update!
+        remove_instance_variable(:@staged_source)
+        remove_instance_variable(:@staged_source_map)
+        remove_instance_variable(:@staged_imports)
       end
     end
   end

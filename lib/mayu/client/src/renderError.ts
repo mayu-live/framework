@@ -1,5 +1,9 @@
 import h from "./h";
 
+export function clearRenderError() {
+  document.querySelectorAll("mayu-exception").forEach((e) => e.remove());
+}
+
 export default function renderError(
   file: string,
   type: string,
@@ -37,7 +41,7 @@ export default function renderError(
 
   console.error(buf.join("\n"), ...formats);
 
-  document.querySelectorAll("mayu-exception").forEach((e) => e.remove());
+  clearRenderError();
   const element = document.createElement("mayu-exception");
 
   const interestingLines = new Set<number>();

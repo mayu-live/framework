@@ -178,10 +178,8 @@ module Mayu
       parent.async do |task|
         task.annotate("Session #{@id}: HMR")
 
-        while Modules::System.current.wait_for_reload
-          puts "\e[30;103mCode update detected, reloading.\e[0m"
-          descriptor = resolve_route(@request_info.path)
-          @engine.refresh(descriptor)
+        while (reload_result = Modules::System.current.wait_for_reload)
+          handle_reload_result(reload_result)
         end
       end
     end
@@ -223,6 +221,34 @@ module Mayu
       end
     rescue => e
       Console.logger.error(self, e)
+    end
+
+    def handle_reload_result(reload_result)
+      if reload_result.success?
+        puts "\e[30;103mCode update detected, reloading.\e[0m"
+        descriptor = resolve_route(@request_info.path)
+        @engine.refresh(descriptor)
+        @engine.patch(Runtime::Patches::Event["reload:success", nil])
+      else
+        emit_reload_error_patches(reload_result)
+      end
+    rescue => e
+      Console.logger.error(self, e)
+    end
+
+    def emit_reload_error_patches(reload_result)
+      Array(reload_result.errors).each do |reload_error|
+        @engine.patch(
+          Runtime::Patches::RenderError[
+            reload_error.file,
+            reload_error.type,
+            reload_error.message,
+            Array(reload_error.backtrace),
+            reload_error.source.to_s,
+            [{ name: "CodeReload", path: reload_error.file }]
+          ]
+        )
+      end
     end
 
     def resolve_route(path)

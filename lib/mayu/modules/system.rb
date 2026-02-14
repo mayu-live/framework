@@ -12,6 +12,8 @@ require_relative "resolver"
 require_relative "registry"
 require_relative "loaders"
 require_relative "import"
+require_relative "dependency"
+require_relative "import_rewriter"
 require_relative "backtrace_rewriter"
 require_relative "../assets"
 
@@ -19,6 +21,20 @@ module Mayu
   module Modules
     class System
       CURRENT_KEY = :modules_system
+      ReloadFailure =
+        Data.define(
+          :file,
+          :type,
+          :message,
+          :backtrace,
+          :source,
+          :line,
+          :column
+        ) { def success? = false }
+      ReloadResult =
+        Data.define(:changed_paths, :removed_paths, :errors) do
+          def success? = errors.empty?
+        end
 
       def self.current
         Thread.current.thread_variable_get(CURRENT_KEY)
@@ -92,12 +108,16 @@ module Mayu
 
         transformed =
           matching_rules.reduce(file) { |file, rule| rule.call(file) }.source
+        rewritten =
+          ImportRewriter.new(resolver: @resolver, source_path: path).call(
+            transformed
+          )
         # .tap do
         #   puts "\e[3m#{path}\e[0m\e[35m\n#{_1}\e[0m"
         # end
 
-        source_map = SourceMap::SourceMap.parse(input, transformed)
-        [transformed, source_map]
+        source_map = SourceMap::SourceMap.parse(input, rewritten.source)
+        [rewritten.source, source_map, rewritten.imports]
       end
 
       def relative_from_root(path)
@@ -107,6 +127,13 @@ module Mayu
       def register(path, mod)
         Registry[path] = mod
         @mods[path] = mod
+
+        @mods.each_value do |other_mod|
+          next if other_mod.equal?(mod)
+          next unless other_mod.dependencies.include?(path)
+
+          mod.dependants.add(other_mod.path)
+        end
       end
 
       def unregister(path)
@@ -122,6 +149,7 @@ module Mayu
       def handle_watch_events(events)
         dirty_paths = Set.new
         removed_paths = Set.new
+        reload_failures = []
 
         events.each do |event|
           # puts event
@@ -129,10 +157,20 @@ module Mayu
           case event
           in Watcher::Events::Created[path:]
           in Watcher::Events::Updated[path:]
-            if mod = @mods[path]
-              dirty_paths.add(mod.path)
-              visit_dependants(mod) { dirty_paths.add(_1.path) }
-            end
+            next unless mod = @mods[path]
+
+            changed =
+              begin
+                mod.stage_source_update!
+              rescue => e
+                reload_failures << build_reload_failure(path, e)
+                false
+              end
+
+            next unless changed
+
+            dirty_paths.add(mod.path)
+            visit_dependants(mod) { dirty_paths.add(_1.path) }
           in Watcher::Events::Deleted[path:]
             if mod = @mods.delete(path)
               removed_paths.add(path)
@@ -140,6 +178,14 @@ module Mayu
               unregister(path)
             end
           end
+        end
+
+        unless reload_failures.empty?
+          reload_failures.each { log_reload_error(_1) }
+          @on_reload.signal(
+            ReloadResult[[], removed_paths.to_a, reload_failures]
+          )
+          return
         end
 
         return if dirty_paths.empty?
@@ -167,15 +213,33 @@ module Mayu
 
         update_overall_order
 
-        @on_reload.signal(true)
+        @on_reload.signal(
+          ReloadResult[modules_to_reload.map(&:path), removed_paths.to_a, []]
+        )
       end
 
       def import(path, source = "/")
         # puts "\e[35mimport(#{path.inspect}, #{source.inspect})\e[0m"
 
+        source_mod = @mods[source]
+
+        if source_mod && import_hash?(path)
+          path =
+            source_mod
+              .dependency_nodes
+              .find { _1.import_hash == path }
+              &.resolved_path ||
+              source_mod
+                .imports
+                .fetch(path) do
+                  raise Resolver::ResolveError,
+                        "Could not resolve import hash #{path.inspect} from #{source.inspect}"
+                end
+        end
+
         mod = get_or_load_mod(path, File.dirname(source))
 
-        if source_mod = @mods[source]
+        if source_mod
           mod.dependants.add(source_mod.path)
           source_mod.dependencies.add(mod.path)
         end
@@ -239,7 +303,85 @@ module Mayu
         BacktraceRewriter.new(@mods).rewrite(backtrace)
       end
 
+      def format_reload_error(reload_failure)
+        if reload_failure.line && reload_failure.column
+          "Failed to reload #{reload_failure.file} (#{reload_failure.type}): #{reload_failure.message} at #{reload_failure.file}:#{reload_failure.line}:#{reload_failure.column}"
+        elsif reload_failure.line
+          "Failed to reload #{reload_failure.file} (#{reload_failure.type}): #{reload_failure.message} at #{reload_failure.file}:#{reload_failure.line}"
+        else
+          "Failed to reload #{reload_failure.file} (#{reload_failure.type}): #{reload_failure.message}"
+        end
+      end
+
+      def log_reload_error(reload_failure)
+        message = format_reload_error(reload_failure)
+
+        defined?(Console) ? Console.logger.error(self, message) : warn(message)
+      end
+
+      def resolve_dependencies_for(mod, imports)
+        mod.dependency_nodes.each do |dependency|
+          mod.dependencies.delete(dependency.resolved_path)
+          @mods[dependency.resolved_path]&.dependants&.delete(mod.path)
+        end
+
+        dependency_nodes =
+          imports
+            .map do |import_hash, resolved_path|
+              Dependency.new(mod.path, import_hash, resolved_path)
+            end
+            .to_set
+
+        dependency_nodes.each do |dependency|
+          mod.dependencies.add(dependency.resolved_path)
+          @mods[dependency.resolved_path]&.dependants&.add(mod.path)
+        end
+
+        dependency_nodes
+      end
+
       private
+
+      def build_reload_failure(path, error)
+        line = error.respond_to?(:lineno) ? error.lineno : nil
+        column = error.respond_to?(:column) ? error.column : nil
+        source = read_raw_source(path)
+        backtrace = normalize_reload_backtrace(error.backtrace)
+
+        if line
+          location = [path, line, column].compact.join(":")
+          unless backtrace.any? { _1.start_with?("#{path}:#{line}") }
+            backtrace.unshift(location)
+          end
+        end
+
+        ReloadFailure[
+          path,
+          error.class.name,
+          error.message,
+          backtrace,
+          source,
+          line,
+          column
+        ]
+      end
+
+      def read_raw_source(path)
+        relative_path = path.sub(%r{\A/+}, "")
+        File.read(File.join(@root, relative_path))
+      rescue StandardError
+        ""
+      end
+
+      def normalize_reload_backtrace(backtrace)
+        rewrite_backtrace(Array(backtrace)).map(&:to_s)
+      rescue => e
+        Array(backtrace).map(&:to_s) + [e.message]
+      end
+
+      def import_hash?(path)
+        path.is_a?(String) && path.start_with?(ImportRewriter::PREFIX)
+      end
 
       def get_or_load_mod(path, source = "/")
         resolved_path = @resolver.resolve(path, source)
