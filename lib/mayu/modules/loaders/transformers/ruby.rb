@@ -159,6 +159,7 @@ module Mayu
                               nil
                             )
                           ),
+                          import_statement(base_class_ast),
                           using_statements(using),
                           program.statements.body
                         ].compact.flatten
@@ -180,6 +181,18 @@ module Mayu
 
           def using_statements(using)
             using.map { Command(Ident("using"), Args([_1]), nil) }
+          end
+
+          def import_statement(base_class_ast)
+            return unless base_class_ast.nil?
+
+            SyntaxTree
+              .parse(
+                "def self.import(path) = ::Mayu::Modules::System.import(path, module_path)"
+              )
+              .statements
+              .body
+              .first
           end
 
           def heredoc_html
