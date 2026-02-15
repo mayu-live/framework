@@ -34,7 +34,7 @@ module Mayu
     end
 
     def dump(payload, ttl: @default_ttl_seconds)
-      encode_message(Marshal.dump(payload), ttl: @default_ttl_seconds)
+      encode_message(Marshal.dump(payload), ttl:)
     rescue TypeError => e
       raise DumpError, "Could not dump payload: #{e.message}"
     end
@@ -79,7 +79,7 @@ module Mayu
     end
 
     def validate_ttl!(ttl)
-      raise ArgumentError, "ttl must be positive" if ttl < 0
+      raise ArgumentError, "ttl must be positive" if ttl <= 0
     end
 
     def validate_iss!(now, iss)
@@ -90,9 +90,9 @@ module Mayu
     end
 
     def validate_exp!(now, exp)
-      if exp < now
+      if exp <= now
         raise ExpiredError,
-              "The message expired at #{Time.at(exp).iso8601}, which is in the past"
+              "The message expired at #{Time.at(exp).iso8601}, which is in the past or present"
       end
     end
   end

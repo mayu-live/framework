@@ -31,7 +31,6 @@ class Mayu::EncryptedMarshal::Test < Minitest::Test
   end
 
   def test_issued_in_the_future
-    now = Time.now
     message_cipher = Mayu::EncryptedMarshal.new(generate_key)
 
     dumped = message_cipher.dump("hello")
@@ -44,7 +43,6 @@ class Mayu::EncryptedMarshal::Test < Minitest::Test
   end
 
   def test_expiration
-    now = Time.now
     message_cipher = Mayu::EncryptedMarshal.new(generate_key)
     dumped = message_cipher.dump("hello")
 
@@ -56,6 +54,50 @@ class Mayu::EncryptedMarshal::Test < Minitest::Test
         message_cipher.load(dumped)
       end
     end
+  end
+
+  def test_custom_ttl_can_extend_validity
+    message_cipher = Mayu::EncryptedMarshal.new(generate_key)
+    base_time = Time.at(1_700_000_000)
+
+    dumped =
+      Time.stub(:now, base_time) do
+        message_cipher.dump(
+          "hello",
+          ttl: Mayu::EncryptedMarshal::DEFAULT_TTL_SECONDS + 5
+        )
+      end
+
+    loaded =
+      Time.stub(
+        :now,
+        Time.at(base_time + Mayu::EncryptedMarshal::DEFAULT_TTL_SECONDS)
+      ) { message_cipher.load(dumped) }
+
+    assert_equal("hello", loaded)
+  end
+
+  def test_custom_ttl_can_shorten_validity
+    message_cipher = Mayu::EncryptedMarshal.new(generate_key)
+    base_time = Time.at(1_700_000_000)
+
+    dumped = Time.stub(:now, base_time) { message_cipher.dump("hello", ttl: 1) }
+
+    Time.stub(:now, Time.at(base_time + 1)) do
+      assert_raises(Mayu::EncryptedMarshal::ExpiredError) do
+        message_cipher.load(dumped)
+      end
+    end
+  end
+
+  def test_ttl_must_be_positive
+    assert_raises(ArgumentError) do
+      Mayu::EncryptedMarshal.new(generate_key, ttl: 0)
+    end
+
+    message_cipher = Mayu::EncryptedMarshal.new(generate_key)
+
+    assert_raises(ArgumentError) { message_cipher.dump("hello", ttl: 0) }
   end
 
   def test_invalid_key
