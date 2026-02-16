@@ -3,6 +3,8 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require_relative "marshalling"
+
 module Mayu
   module Runtime
     module Descriptors
@@ -25,6 +27,27 @@ module Mayu
               false
             end
           end
+
+          def marshal_dump
+            [
+              Marshalling.dump_value(type),
+              key,
+              slot,
+              children,
+              Marshalling.dump_value(props)
+            ]
+          end
+
+          def marshal_load(a)
+            type, key, slot, children, props = a
+            initialize(
+              type: Marshalling.load_value(type),
+              key:,
+              slot:,
+              children:,
+              props: Marshalling.load_value(props)
+            )
+          end
         end
 
       Children =
@@ -41,11 +64,36 @@ module Mayu
           def to_ary
             descriptors
           end
+
+          def marshal_dump
+            [descriptors]
+          end
+
+          def marshal_load(a)
+            descriptors = a.first || []
+            initialize(
+              descriptors:,
+              slots:
+                descriptors.group_by do |descriptor|
+                  (descriptor in Element[slot:]) ? slot : nil
+                end
+            )
+          end
         end
 
       Comment = Data.define(:content) { alias to_s content }
       RawText = Data.define(:content) { alias to_s content }
-      Context = Data.define(:values, :children)
+      Context =
+        Data.define(:values, :children) do
+          def marshal_dump
+            [Marshalling.dump_value(values), children]
+          end
+
+          def marshal_load(a)
+            values, children = a
+            initialize(values: Marshalling.load_value(values), children:)
+          end
+        end
 
       Callback =
         Data.define(:component, :method_name) do

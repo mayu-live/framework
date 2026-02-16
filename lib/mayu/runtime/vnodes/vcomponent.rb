@@ -6,6 +6,7 @@
 require "async"
 
 require_relative "base"
+require_relative "../marshalling"
 require_relative "internal_components/base"
 require_relative "vchildren"
 
@@ -13,27 +14,26 @@ module Mayu
   module Runtime
     module VNodes
       class VComponent < Base
-        ErrorHandled =
-          Class.new(StandardError) do
-            attr_reader :boundary
+        class ErrorHandled < StandardError
+          attr_reader :boundary
 
-            def initialize(boundary)
-              @boundary = boundary
-              super()
-            end
+          def initialize(boundary)
+            @boundary = boundary
+            super()
           end
+        end
 
-        UnhandledRenderError =
-          Class.new(StandardError) do
-            attr_reader :error, :component
+        class UnhandledRenderError < StandardError
+          attr_reader :error, :component
 
-            def initialize(error, component)
-              @error = error
-              @component = component
-              super(error.message)
-              set_backtrace(error.backtrace)
-            end
+          def initialize(error, component)
+            @error = error
+            @component = component
+            super(error.message)
+            set_backtrace(error.backtrace)
           end
+        end
+
         class Context
           def initialize(parent: nil)
             @vars = {}
@@ -237,32 +237,27 @@ module Mayu
         def marshal_dump
           [
             super,
-            @descriptor.type.module_path,
-            @descriptor.type.name,
-            @instance.marshal_dump,
+            Marshalling.dump_value(@descriptor.type),
+            Marshalling.dump_value(@instance.marshal_dump),
             @children,
             @context
           ]
         end
 
         def marshal_load(a)
-          a => [
-            base,
-            component_module_path,
-            component_class_name,
-            component_state,
-            children,
-            context
-          ]
+          a => [base, component_marshaled, component_state, children, context]
           super(base)
+          component_class =
+            Marshalling.load_value(
+              component_marshaled,
+              fallback_class: @descriptor.type
+            )
 
+          @descriptor = @descriptor.with(type: component_class)
           @context = context
           @children = children
 
-          klass =
-            resolve_component_class(component_module_path, component_class_name)
-
-          @instance = klass.allocate
+          @instance = component_class.allocate
           @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
           @instance.instance_variable_set(:@__context, @context)
           @instance.instance_variable_set(
@@ -270,7 +265,7 @@ module Mayu
             @descriptor.children.freeze
           )
           @instance.instance_variable_set(:@__vnode_id, @id)
-          @instance.send(:marshal_load, component_state)
+          @instance.send(:marshal_load, Marshalling.load_value(component_state))
         end
 
         def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
@@ -331,23 +326,6 @@ module Mayu
               raise UnhandledRenderError.new(e, self)
             end
           end
-        end
-
-        def resolve_component_class(module_path, class_name)
-          const_name = class_name.to_s.split("::").last
-
-          if module_path.nil?
-            return @descriptor.type if @descriptor.type.is_a?(Class)
-            raise "Missing component module_path for #{@descriptor.inspect}"
-          end
-
-          if module_path.start_with?("(internal)::")
-            return InternalComponents.const_get(const_name)
-          end
-
-          mod = Modules::System.current.get_mod(module_path)
-          exports = mod.const_get(:Exports)
-          exports.const_get(const_name)
         end
 
         def handle_error_up_tree(error)
