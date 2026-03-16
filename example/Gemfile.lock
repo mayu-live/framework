@@ -145,7 +145,7 @@ GEM
       ffi (~> 1)
     reline (0.6.0)
       io-console (~> 0.5)
-    rexml (3.4.1)
+    rexml (3.4.2)
     rmagick (6.1.1)
       observer (~> 0.1)
       pkg-config (~> 1.4)
