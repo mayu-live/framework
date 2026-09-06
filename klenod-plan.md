@@ -126,6 +126,13 @@ the existing VDOM engine, including stateful callbacks and slots.
       the development provider plus stable root and router entry handles.
 - [ ] Resolve pages, layouts, slots, closest not-found views, and closest error
       views from `virtual:router`. Route imports remain lazy.
+  - [x] Render Klenod parallel-route matches as named children of the layout
+        that owns each slot, and include their modules in route asset traversal.
+  - [x] Resolve Klenod's closest `+not-found` and `+error` views, including
+        their layout chains, when page resolution fails before a session starts.
+  - [ ] Decide how initial and live VDOM render failures should transition to a
+        `+error` view without discarding Mayu's component error-boundary and
+        render-error-patch behavior.
 - [x] Return a resolved-page value containing the VDOM descriptor, HTTP status,
       canonical route module IDs, CSS references, and JavaScript references.
 - [ ] Query assets from the root, rendered layouts, page, and rendered slot
@@ -169,6 +176,9 @@ work.
   - hybrid responses vary on `Accept`.
 - [ ] Render Klenod's closest not-found and error views with their own layout
       chains and correct 404/500 status codes.
+  - [x] Render route-resolution failures through the closest `+error` view.
+  - [ ] Cover initial and live VDOM render failures with an explicit error-view
+        transition policy.
 - [x] Reimplement `mayu routes` from the Klenod router manifest and include the
       additional segment, handler, and special-view information.
 
@@ -289,6 +299,11 @@ milestone spans them.
   the Klenod provider.
 - 2026-09-06: Renamed the custom-element demo source to `.jsx` and added an
   example-session regression test for its generated tag and module asset.
+- 2026-09-06: Render Klenod parallel route matches in their owning Mayu layout
+  slots and collect their route modules as assets.
+- 2026-09-06: Added Klenod special-view resolution for 404s and page-resolution
+  failures. A page that fails during resolution now renders the nearest
+  `+error` view with status 500 and the original exception as a prop.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

@@ -22,11 +22,42 @@ module Mayu
 
       def resolve(path)
         uri = URI.parse(path)
-        match = match(path) || router.not_found(uri.path)
+        match = match(path)
+        return resolved_page_for(match, path, uri) if match
+
+        not_found(path)
+      end
+
+      def not_found(path)
+        uri = URI.parse(path)
+        resolved_page_for(
+          router.not_found(uri.path),
+          path,
+          uri,
+          props: {
+            path:,
+            status: 404
+          }
+        )
+      end
+
+      def error(path, error: nil)
+        uri = URI.parse(path)
+        resolved_page_for(
+          router.error(uri.path),
+          path,
+          uri,
+          props: { path:, status: 500, error: }.compact
+        )
+      end
+
+      private
+
+      def resolved_page_for(match, path, uri, props: {})
         return unless match&.page
         query = URI.decode_www_form(uri.query.to_s).to_h
 
-        page = Runtime::H[match.page, params: match.params, query:]
+        page = Runtime::H[match.page, params: match.params, query:, **props]
 
         layouts = [
           [root_component, @root_entry],
@@ -56,8 +87,6 @@ module Mayu
           asset_urls(module_ids, :javascript)
         )
       end
-
-      private
 
       public def match(path)
         router.match(URI.parse(path).path)

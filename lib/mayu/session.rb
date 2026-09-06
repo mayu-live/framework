@@ -328,12 +328,9 @@ module Mayu
 
     def resolve_route(path)
       if provider = module_provider
-        resolved_page = Klenod::Router.new(provider).resolve(path)
-        if resolved_page
-          @resolved_page = resolved_page
-          @route_status = resolved_page.status
-          return resolved_page.descriptor
-        end
+        router = Klenod::Router.new(provider)
+        resolved_page = router.resolve(path)
+        return apply_resolved_page(resolved_page) if resolved_page
       end
 
       @resolved_page = nil
@@ -372,6 +369,20 @@ module Mayu
             path:
           ]
         end
+    rescue => error
+      raise unless provider
+
+      Console.logger.error(self, error)
+      resolved_page = router.error(path, error:)
+      raise unless resolved_page
+
+      apply_resolved_page(resolved_page)
+    end
+
+    def apply_resolved_page(resolved_page)
+      @resolved_page = resolved_page
+      @route_status = resolved_page.status
+      resolved_page.descriptor
     end
 
     def route_stylesheets = @resolved_page&.stylesheets || []

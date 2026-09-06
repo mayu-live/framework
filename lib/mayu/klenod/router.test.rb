@@ -148,6 +148,30 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     assert_equal("app:/pages/+not-found.haml", resolved.module_ids.last)
   end
 
+  def test_resolves_an_error_page_with_error_props_and_status
+    error_match =
+      SpecialMatch.new(
+        Page,
+        [Layout],
+        {},
+        SpecialRoute.new("app:/pages/+error.haml", ["app:/pages/+layout.haml"]),
+        500
+      )
+    exception = RuntimeError.new("boom")
+
+    resolved =
+      router(error: error_match).error("/posts/42?draft=true", error: exception)
+    layout = resolved.descriptor.children.descriptors.fetch(0)
+    page = layout.children.descriptors.fetch(0)
+
+    assert_equal(500, resolved.status)
+    assert_equal("/posts/42?draft=true", page.props[:path])
+    assert_equal(500, page.props[:status])
+    assert_same(exception, page.props[:error])
+    assert_equal({ "draft" => "true" }, page.props[:query])
+    assert_equal("app:/pages/+error.haml", resolved.module_ids.last)
+  end
+
   def test_resolves_a_klenod_page_through_the_development_provider
     Dir.mktmpdir("mayu-klenod-router") do |root|
       FileUtils.mkdir_p(File.join(root, "app", "pages"))
@@ -176,11 +200,13 @@ class Mayu::Klenod::RouterTest < Minitest::Test
       Route.new("app:/pages/posts/+page.haml", ["app:/pages/+layout.haml"]),
       {}
     ),
-    not_found: nil
+    not_found: nil,
+    error: nil
   )
     router = Module.new
     router.define_singleton_method(:match) { |_path| match }
     router.define_singleton_method(:not_found) { |_path| not_found }
+    router.define_singleton_method(:error) { |_path| error }
     exports = Module.new
     exports.const_set(:Default, router)
     root_exports = Module.new

@@ -5,6 +5,8 @@
 # License: AGPL-3.0
 
 require "minitest/autorun"
+require "fileutils"
+require "tmpdir"
 
 require_relative "session"
 require_relative "test"
@@ -166,6 +168,26 @@ class Mayu::SessionTest < Minitest::Test
     assert_includes(html, "<klenod-")
     assert_includes(html, "CustomElement_jsx")
     assert_includes(html, "Custom elements")
+  end
+
+  def test_session_renders_the_klenod_error_view_after_page_resolution_failure
+    Dir.mktmpdir("mayu-klenod-error") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(pages)
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(pages, "+page.rb"), "raise \"boom\"\n")
+      File.write(File.join(pages, "+error.haml"), "%p= $error.message\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info =
+        Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_equal(500, session.route_status)
+      assert_includes(session.render, "boom")
+    end
   end
 
   def test_reload_failure_emits_render_error_patch
