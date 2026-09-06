@@ -206,7 +206,7 @@ callback, and transfer a session between workers.
 init` template.
 - [ ] Update explicit stylesheet maps from `Styles` to `ClassNames`.
 - [ ] Update image rendering to Klenod metadata and its inline placeholder.
-- [ ] Rename the current custom-element `.js` module to `.jsx` or `.tsx`, which
+- [x] Rename the current custom-element `.js` module to `.jsx` or `.tsx`, which
       Klenod recognizes as a custom-element module, and update its import.
 - [ ] Add example coverage for `+route.rb`, `+error`, richer route segments, and
       any other new public behavior that Mayu documents.
@@ -287,6 +287,8 @@ milestone spans them.
 - 2026-09-06: Migrated generated applications to Klenod's `+page.haml` and
   `+layout.haml` route filenames. The template resolves its root route through
   the Klenod provider.
+- 2026-09-06: Renamed the custom-element demo source to `.jsx` and added an
+  example-session regression test for its generated tag and module asset.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

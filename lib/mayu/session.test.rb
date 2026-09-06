@@ -146,6 +146,28 @@ class Mayu::SessionTest < Minitest::Test
     assert_includes(html, "Form demo")
   end
 
+  def test_session_renders_klenod_jsx_custom_elements
+    provider =
+      Mayu::Klenod::Configuration.new(
+        root: File.expand_path("../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/custom-elements",
+        headers: {
+        },
+        http2: false
+      )
+
+    html =
+      Mayu::Session.new(environment: env, request_info: request_info).render
+
+    assert_includes(html, "<klenod-")
+    assert_includes(html, "CustomElement_jsx")
+    assert_includes(html, "Custom elements")
+  end
+
   def test_reload_failure_emits_render_error_patch
     env = FakeEnvironment.new
     request_info =
