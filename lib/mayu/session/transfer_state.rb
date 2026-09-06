@@ -14,7 +14,10 @@ module Mayu
           new(
             id: session.id,
             token: session.token,
-            state: Marshal.dump(session)
+            state:
+              Runtime::Marshalling.with_component_resolver(
+                session.component_resolver
+              ) { Marshal.dump(session) }
           )
         end
 
@@ -35,8 +38,17 @@ module Mayu
 
         def encrypt(marshaller) = marshaller.dump(self)
 
-        def resume(environment) =
-          Marshal.load(state).resume_transferred(environment)
+        def resume(environment)
+          provider = environment.module_provider if environment.respond_to?(
+            :module_provider
+          )
+          resolver = provider.component_resolver if provider&.respond_to?(
+            :component_resolver
+          )
+          Runtime::Marshalling.with_component_resolver(resolver) do
+            Marshal.load(state).resume_transferred(environment)
+          end
+        end
       end
   end
 end

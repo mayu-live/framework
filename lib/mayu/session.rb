@@ -65,7 +65,8 @@ module Mayu
         Runtime::Engine.new(
           descriptor,
           runtime_js:,
-          metrics: @environment.metrics
+          metrics: @environment.metrics,
+          module_provider:
         )
 
       @last_ping = Async::Clock.now
@@ -78,7 +79,17 @@ module Mayu
     def resume_transferred(environment)
       @environment = environment
       @engine.metrics = environment.metrics if @engine.respond_to?(:metrics=)
+      @engine.module_provider = module_provider
       self
+    end
+
+    def module_provider
+      @environment.module_provider if @environment.respond_to?(:module_provider)
+    end
+
+    def component_resolver
+      provider = module_provider
+      provider.component_resolver if provider&.respond_to?(:component_resolver)
     end
 
     def valid_token?(token)

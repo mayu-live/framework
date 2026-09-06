@@ -11,6 +11,7 @@ require_relative "vnodes/vdocument"
 require_relative "vnodes/updater"
 require_relative "vnodes/patcher"
 require_relative "patches"
+require_relative "marshalling"
 
 module Mayu
   module Runtime
@@ -63,7 +64,7 @@ module Mayu
       end
 
       def dump
-        Marshal.dump(self)
+        with_component_resolver { Marshal.dump(self) }
       end
 
       def dump!
@@ -71,14 +72,20 @@ module Mayu
         dump
       end
 
-      def self.restore(data, metrics: nil)
-        engine = Marshal.load(data)
+      def self.restore(data, metrics: nil, module_provider: nil)
+        resolver =
+          module_provider.component_resolver if module_provider&.respond_to?(
+          :component_resolver
+        )
+        engine =
+          Marshalling.with_component_resolver(resolver) { Marshal.load(data) }
         engine.metrics = metrics if metrics
+        engine.module_provider = module_provider
         engine
       end
 
-      def self.restore!(data, metrics: nil)
-        engine = restore(data, metrics: metrics)
+      def self.restore!(data, metrics: nil, module_provider: nil)
+        engine = restore(data, metrics:, module_provider:)
         engine.start
         engine
       end
@@ -204,6 +211,14 @@ module Mayu
       end
 
       private
+
+      def with_component_resolver(&)
+        resolver =
+          @module_provider.component_resolver if @module_provider&.respond_to?(
+          :component_resolver
+        )
+        Marshalling.with_component_resolver(resolver, &)
+      end
 
       def ensure_patch_buffer!
         @patch_buffer ||= []

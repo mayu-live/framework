@@ -137,7 +137,7 @@ the existing VDOM engine, including stateful callbacks and slots.
       runtime files separately.
 - [x] Inject the module provider/error formatter into the runtime engine. Do not
       add a new global equivalent of `Modules::System.current`.
-- [ ] During session Marshal dump/load, install a narrowly scoped component
+- [x] During session Marshal dump/load, install a narrowly scoped component
       resolver that stores canonical Klenod module IDs and resolves component
       classes from the active provider. Reattach transient provider references when
       a transferred session resumes.

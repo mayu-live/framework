@@ -7,6 +7,15 @@ module Mayu
   module Runtime
     module Marshalling
       ComponentRef = Data.define(:filename, :class_name, :klass)
+      COMPONENT_RESOLVER_KEY = :mayu_component_resolver
+
+      def self.with_component_resolver(resolver)
+        previous = Fiber[COMPONENT_RESOLVER_KEY]
+        Fiber[COMPONENT_RESOLVER_KEY] = resolver
+        yield
+      ensure
+        Fiber[COMPONENT_RESOLVER_KEY] = previous
+      end
 
       def self.dump_value(value)
         case value
@@ -39,6 +48,11 @@ module Mayu
       def self.dump_component_class(value)
         return value unless component_class?(value)
 
+        if resolver = Fiber[COMPONENT_RESOLVER_KEY]
+          reference = resolver.dump_component_class(value)
+          return reference if reference
+        end
+
         module_path = value.module_path if value.respond_to?(:module_path)
         class_name = value.name&.split("::")&.last
 
@@ -55,6 +69,11 @@ module Mayu
 
         return ref.klass if ref.klass.is_a?(Class)
         return fallback_class if fallback_class.is_a?(Class)
+
+        if resolver = Fiber[COMPONENT_RESOLVER_KEY]
+          component_class = resolver.resolve_component_ref(ref)
+          return component_class if component_class
+        end
 
         module_path = ref.filename
         class_name = ref.class_name

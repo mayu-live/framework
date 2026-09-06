@@ -83,6 +83,34 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
     end
   end
 
+  ComponentResolver =
+    Data.define(:source_component, :target_component) do
+      def dump_component_class(component)
+        return unless component == source_component
+
+        Mayu::Runtime::Marshalling::ComponentRef.new(
+          "app:/tests/renamed_component.haml",
+          "RenamedSourceComponent",
+          nil
+        )
+      end
+
+      def resolve_component_ref(reference)
+        return unless reference.filename == "app:/tests/renamed_component.haml"
+
+        target_component
+      end
+    end
+
+  Provider =
+    Data.define(:component_resolver) do
+      def assets_for_module(_module_path, type:)
+        raise "Expected CSS assets" unless type == :css
+
+        []
+      end
+    end
+
   def test_engine_serialization_round_trip
     descriptor = H[:body, H[SerializeProbe]]
 
@@ -213,6 +241,31 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
       assert_instance_of(RenamedTargetComponent, instance)
       assert_equal(2, instance.count)
     end
+  end
+
+  def test_restore_uses_the_module_provider_component_resolver
+    provider =
+      Provider.new(
+        ComponentResolver.new(RenamedSourceComponent, RenamedTargetComponent)
+      )
+    descriptor = H[:body, H[RenamedSourceComponent]]
+    engine =
+      Mayu::Runtime::Engine.new(
+        descriptor,
+        metrics: NullMetrics.new,
+        module_provider: provider
+      )
+
+    dumped = engine.dump!
+    restored =
+      Mayu::Runtime::Engine.restore(
+        dumped,
+        metrics: NullMetrics.new,
+        module_provider: provider
+      )
+
+    assert_match("<p>after 0</p>", render_html(restored.root))
+    assert_equal(provider, restored.module_provider)
   end
 
   private

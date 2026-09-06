@@ -32,6 +32,10 @@ module Mayu
         entry(reference).id
       end
 
+      def component_resolver
+        @component_resolver ||= ComponentResolver.new(self)
+      end
+
       def asset_references_for_module(reference, **options)
         source.asset_references_for_module(reference, **options)
       end
