@@ -8,8 +8,8 @@
     Console.logger.warn(self, "Missing alt-attribute!")
   end
 
-  inline_style = $blur && {
-    background_image: $image.blur_url,
+  inline_style = $blur && $image.placeholder && {
+    background_image: "url(#{$image.placeholder})",
   }
 
 %img(class=$class style=inline_style loading=loading decoding=decoding alt=$alt){

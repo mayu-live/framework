@@ -107,7 +107,7 @@ development provider, serialized, and loaded through the production provider.
       continues to be transformed automatically.
 - [x] Teach `Mayu::Runtime::H` to recognize Klenod custom-element descriptors,
       render their tag names, and preserve the associated module asset reference.
-- [ ] Use Klenod image and SVG metadata directly. Update Mayu's image component
+- [x] Use Klenod image and SVG metadata directly. Update Mayu's image component
       to use the Klenod placeholder field, `src`, `srcset`, `sizes`, width, and
       height.
 - [ ] Port the important existing Haml behavior tests to Klenod-backed
