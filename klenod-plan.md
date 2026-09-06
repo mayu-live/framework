@@ -228,6 +228,13 @@ init` template.
 Acceptance gate: the complete example and a newly generated application work
 in both development and production modes.
 
+## Follow-up candidates
+
+- [ ] Evaluate a small Klenod client-entry plugin for Mayu's browser runtime
+      after the core migration is complete. It could replace the framework's
+      shared `/.mayu/init.js` module, but should remain deferred while that
+      endpoint is sufficient and keeps the client/session protocol explicit.
+
 ## Milestone 8 — Remove the old implementation and release
 
 - [ ] Delete `lib/mayu/modules`, Mayu's route builder, old asset

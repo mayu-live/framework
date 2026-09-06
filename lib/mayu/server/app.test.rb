@@ -25,7 +25,7 @@ class Mayu::Server::AppTest < Minitest::Test
   end
 
   Match = Data.define(:page, :handler, :params)
-  Environment = Data.define(:module_provider)
+  Environment = Data.define(:module_provider, :init_js_body)
   Provider =
     Data.define(:exports_module) do
       def entry(name) = name
@@ -73,11 +73,29 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal(%w[GET PUT], response.headers.to_h.fetch("allow"))
   end
 
+  def test_serves_the_shared_client_initializer_without_a_session
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      Environment.new(nil, "export default null\n")
+    )
+
+    response =
+      app.send(:handle_init_js, Request.new("GET", "/.mayu/init.js", {}, ""))
+
+    assert_equal(200, response.status)
+    assert_equal(
+      ["application/javascript"],
+      response.headers.to_h.fetch(:"content-type")
+    )
+    assert_equal("export default null\n", response.body.read)
+  end
+
   private
 
   def dispatch(method, path, headers)
     app = Mayu::Server::App.allocate
-    app.instance_variable_set(:@environment, Environment.new(provider))
+    app.instance_variable_set(:@environment, Environment.new(provider, nil))
     app.send(:handle_provider_route, Request.new(method, path, headers, ""))
   end
 
