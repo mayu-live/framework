@@ -54,7 +54,7 @@ class Mayu::SessionTest < Minitest::Test
       @refreshed_descriptor = descriptor
     end
 
-    def replace_stylesheets(stylesheets)
+    def replace_route_assets(stylesheets:, scripts:)
       @stylesheets = stylesheets
     end
   end

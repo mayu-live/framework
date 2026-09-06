@@ -32,7 +32,8 @@ module Mayu
         metrics:,
         update_budget: 30,
         module_provider: nil,
-        stylesheets: []
+        stylesheets: [],
+        scripts: []
       )
         @runtime_js = runtime_js
         @metrics = metrics
@@ -48,7 +49,8 @@ module Mayu
             descriptor,
             parent: nil,
             engine: self,
-            stylesheets:
+            stylesheets:,
+            scripts:
           )
         @pending_custom_elements.each do |custom_element|
           @root.add_custom_element(custom_element)
@@ -105,8 +107,8 @@ module Mayu
         @update_budget = value
       end
 
-      def replace_stylesheets(stylesheets)
-        @root.replace_stylesheets(stylesheets)
+      def replace_route_assets(stylesheets:, scripts:)
+        @root.replace_route_assets(stylesheets:, scripts:)
       end
 
       def start

@@ -23,6 +23,7 @@ module Mayu
             [
               H[:meta, charset: "utf-8"],
               runtime_script,
+              *module_scripts,
               *stylesheet_links,
               *custom_element_scripts
             ].compact
@@ -48,6 +49,12 @@ module Mayu
                 rel: "stylesheet",
                 href: stylesheet_url(stylesheet)
               ]
+            end
+          end
+
+          def module_scripts
+            (@__props[:scripts] || []).map do |script|
+              H[:script, type: "module", src: script, key: "module-#{script}"]
             end
           end
 

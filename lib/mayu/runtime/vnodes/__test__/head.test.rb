@@ -102,13 +102,18 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
       Mayu::Runtime::Engine.new(
         H[:body, H[:main, "content"]],
         metrics: NullMetrics.new,
-        stylesheets: ["/.mayu/assets/routes/home.css"]
+        stylesheets: ["/.mayu/assets/routes/home.css"],
+        scripts: ["/.mayu/assets/routes/home.js"]
       )
 
     html = render_html(engine.root)
 
     assert_match(
       '<link rel="stylesheet" href="/.mayu/assets/routes/home.css">',
+      html
+    )
+    assert_match(
+      '<script type="module" src="/.mayu/assets/routes/home.js"></script>',
       html
     )
   end
@@ -167,37 +172,6 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     )
   ensure
     Thread.current.thread_variable_set(key, previous)
-  end
-
-  def test_provider_component_stylesheets_use_klenod_asset_urls
-    asset = Data.define(:url).new("/.mayu/assets/styles.provided.css")
-    provider =
-      Data
-        .define(:asset) do
-          def assets_for_module(module_path, type:)
-            unless module_path == "/styles/probe"
-              raise "Unexpected module #{module_path}"
-            end
-            raise "Unexpected asset type #{type}" unless type == :css
-
-            [asset]
-          end
-        end
-        .new(asset)
-    descriptor = H[:body, H[StylesProbe]]
-    engine =
-      Mayu::Runtime::Engine.new(
-        descriptor,
-        metrics: NullMetrics.new,
-        module_provider: provider
-      )
-
-    html = render_html(engine.root)
-
-    assert_match(
-      '<link rel="stylesheet" href="/.mayu/assets/styles.provided.css">',
-      html
-    )
   end
 
   def test_custom_element_inline_registration_script

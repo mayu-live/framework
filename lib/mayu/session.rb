@@ -67,7 +67,8 @@ module Mayu
           runtime_js:,
           metrics: @environment.metrics,
           module_provider:,
-          stylesheets: route_stylesheets
+          stylesheets: route_stylesheets,
+          scripts: route_scripts
         )
 
       @last_ping = Async::Clock.now
@@ -229,7 +230,10 @@ module Mayu
 
         @request_info = @request_info.with(path:)
         descriptor = resolve_route(path)
-        @engine.replace_stylesheets(route_stylesheets)
+        @engine.replace_route_assets(
+          stylesheets: route_stylesheets,
+          scripts: route_scripts
+        )
         @engine.navigate(path, descriptor, push_state:)
       end
     rescue => e
@@ -240,7 +244,10 @@ module Mayu
       if reload_result.success?
         puts "\e[30;103mCode update detected, reloading.\e[0m"
         descriptor = resolve_route(@request_info.path)
-        @engine.replace_stylesheets(route_stylesheets)
+        @engine.replace_route_assets(
+          stylesheets: route_stylesheets,
+          scripts: route_scripts
+        )
         @engine.refresh(descriptor)
         @engine.patch(Runtime::Patches::Event["reload:success", nil])
       else
@@ -308,5 +315,6 @@ module Mayu
     end
 
     def route_stylesheets = @resolved_page&.stylesheets || []
+    def route_scripts = @resolved_page&.scripts || []
   end
 end

@@ -84,11 +84,7 @@ module Mayu
           klass = @descriptor.type
 
           vdocument = closest(VDocument)
-          if provider = @engine.module_provider
-            provider_stylesheets(provider).each do |url|
-              vdocument.add_stylesheet(url)
-            end
-          elsif mod = get_mod
+          if !@engine.module_provider && (mod = get_mod)
             find_stylesheets(mod).each do |filename|
               vdocument.add_stylesheet(filename)
             end
@@ -374,13 +370,6 @@ module Mayu
               .select { |path| path.end_with?(".css") }
               .map { |path| find_stylesheets(get_mod(path)) }
           ].flatten.compact
-        end
-
-        def provider_stylesheets(provider)
-          module_path = @descriptor.type.module_path
-          return [] if module_path.nil? || module_path.start_with?("(internal)")
-
-          provider.assets_for_module(module_path, type: :css).map(&:url)
         end
 
         def component_label
