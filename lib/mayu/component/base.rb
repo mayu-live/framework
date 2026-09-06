@@ -21,11 +21,6 @@ module Mayu
 
       def self.to_s = File.join("MAYU_ROOT", module_path)
 
-      def self.import(filename) = Modules::System.import(filename, module_path)
-
-      def self.import?(filename) =
-        Modules::System.import?(filename, module_path)
-
       def self.merge_props(*sources)
         result =
           sources.reduce do |result, hash|
