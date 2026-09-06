@@ -40,9 +40,15 @@ module Mayu
           end
 
         if classes = result.delete(:class)
-          classnames = self::Styles[*Array(classes).compact]
+          classnames =
+            if const_defined?(:ClassNames, false)
+              self::ClassNames.class_name(classes)
+            else
+              self::Styles[*Array(classes).compact]
+            end
 
-          result[:class] = classnames.flatten unless classnames.empty?
+          result[:class] = classnames unless classnames.nil? ||
+            classnames.empty?
         end
 
         result.transform_keys { _1.to_s.tr("-", "_").to_sym }

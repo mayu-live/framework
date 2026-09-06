@@ -102,7 +102,7 @@ development provider, serialized, and loaded through the production provider.
       component after session rehydration.
 - [x] Initialize the state store before calling a generated component's
       `initialize` method so assignments there retain current behavior.
-- [ ] Replace generated `Styles` behavior with Klenod `ClassNames`. Update
+- [x] Replace generated `Styles` behavior with Klenod `ClassNames`. Update
       explicit `Styles[...]` application references; ordinary Haml class syntax
       continues to be transformed automatically.
 - [x] Teach `Mayu::Runtime::H` to recognize Klenod custom-element descriptors,
