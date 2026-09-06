@@ -44,7 +44,7 @@ module Mayu
         end
       end
 
-    attr_reader :id
+    attr_reader :id, :route_status
     attr_reader :token
 
     def initialize(environment:, request_info:)
@@ -277,11 +277,13 @@ module Mayu
         resolved_page = Klenod::Router.new(provider).resolve(path)
         if resolved_page
           @resolved_page = resolved_page
+          @route_status = resolved_page.status
           return resolved_page.descriptor
         end
       end
 
       @resolved_page = nil
+      @route_status = 200
 
       system = Modules::System.current
 

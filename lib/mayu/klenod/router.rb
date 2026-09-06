@@ -22,7 +22,7 @@ module Mayu
 
       def resolve(path)
         uri = URI.parse(path)
-        match = match(path)
+        match = match(path) || router.not_found(uri.path)
         return unless match&.page
 
         page =
@@ -47,7 +47,7 @@ module Mayu
         module_ids = module_ids_for(match)
         ResolvedPage.new(
           descriptor,
-          200,
+          match.respond_to?(:status) ? match.status : 200,
           module_ids,
           asset_urls(module_ids, :css),
           asset_urls(module_ids, :javascript)
@@ -78,12 +78,18 @@ module Mayu
         [
           @provider.module_id_for(@root_entry),
           *match.route.layout_module_ids,
-          match.route.page_module_id
+          route_page_module_id(match.route)
         ].compact.map(&:to_s)
       end
 
       def asset_urls(module_ids, type)
         @provider.assets_for_module(module_ids, type:).map(&:url).uniq
+      end
+
+      def route_page_module_id(route)
+        return route.page_module_id if route.respond_to?(:page_module_id)
+
+        route.view_module_id
       end
     end
   end

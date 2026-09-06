@@ -180,7 +180,7 @@ module Mayu
 
       def handle_init_js(request)
         Protocol::HTTP::Response[
-          200,
+          session.route_status,
           {
             "content-type": "application/javascript",
             "cache-control": "no-store",

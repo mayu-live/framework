@@ -18,7 +18,9 @@ class Mayu::Klenod::RouterTest < Minitest::Test
   end
 
   Route = Data.define(:page_module_id, :layout_module_ids)
+  SpecialRoute = Data.define(:view_module_id, :layout_module_ids)
   Match = Data.define(:page, :layouts, :params, :route)
+  SpecialMatch = Data.define(:page, :layouts, :params, :route, :status)
   Asset = Data.define(:url)
   Provider =
     Data.define(:router_exports, :root_exports) do
@@ -85,6 +87,25 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     assert_nil(router(match: nil).resolve("/missing"))
   end
 
+  def test_resolves_a_not_found_page_with_its_status_and_assets
+    not_found =
+      SpecialMatch.new(
+        Page,
+        [Layout],
+        {},
+        SpecialRoute.new(
+          "app:/pages/+not-found.haml",
+          ["app:/pages/+layout.haml"]
+        ),
+        404
+      )
+
+    resolved = router(match: nil, not_found:).resolve("/missing")
+
+    assert_equal(404, resolved.status)
+    assert_equal("app:/pages/+not-found.haml", resolved.module_ids.last)
+  end
+
   private
 
   def router(
@@ -93,10 +114,12 @@ class Mayu::Klenod::RouterTest < Minitest::Test
       [Layout],
       { id: "42" },
       Route.new("app:/pages/posts/+page.haml", ["app:/pages/+layout.haml"])
-    )
+    ),
+    not_found: nil
   )
     router = Module.new
     router.define_singleton_method(:match) { |_path| match }
+    router.define_singleton_method(:not_found) { |_path| not_found }
     exports = Module.new
     exports.const_set(:Default, router)
     root_exports = Module.new
