@@ -127,6 +127,12 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
           def format_exception(error, source_path:)
             "#{source_path}: #{error.class}: #{error.message}"
           end
+
+          def assets_for_module(_module_path, type:)
+            raise "Unexpected asset type #{type}" unless type == :css
+
+            []
+          end
         end
         .new
 

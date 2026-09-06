@@ -41,14 +41,22 @@ module Mayu
           end
 
           def stylesheet_links
-            @__props[:styles].map do |filename|
+            @__props[:styles].map do |stylesheet|
               H[
                 :link,
-                key: filename,
+                key: stylesheet,
                 rel: "stylesheet",
-                href: "/.mayu/assets/#{filename}"
+                href: stylesheet_url(stylesheet)
               ]
             end
+          end
+
+          def stylesheet_url(stylesheet)
+            if stylesheet.start_with?("/", "http://", "https://")
+              return stylesheet
+            end
+
+            "/.mayu/assets/#{stylesheet}"
           end
 
           def custom_element_scripts
