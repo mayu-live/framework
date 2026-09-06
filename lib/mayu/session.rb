@@ -8,6 +8,7 @@ require_relative "session/token"
 require_relative "session/error_page"
 require_relative "session/transfer_state"
 require_relative "modules"
+require_relative "klenod"
 
 module Mayu
   class Session

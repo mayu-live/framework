@@ -29,13 +29,14 @@ class Mayu::SessionTest < Minitest::Test
   end
 
   class FakeEnvironment
-    attr_reader :config, :router, :metrics, :marshaller
+    attr_reader :config, :router, :metrics, :marshaller, :module_provider
 
-    def initialize
+    def initialize(module_provider: nil)
       @config = FakeConfig.new
       @router = FakeRouter.new
       @metrics = Mayu::Test::FakeMetrics.new
       @marshaller = nil
+      @module_provider = module_provider
     end
   end
 
@@ -97,6 +98,23 @@ class Mayu::SessionTest < Minitest::Test
     end.wait
 
     refute(session.running?)
+  end
+
+  def test_session_renders_the_example_through_klenod
+    provider =
+      Mayu::Klenod::Configuration.new(
+        root: File.expand_path("../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    html = session.render
+
+    assert_equal(200, session.route_status)
+    assert_includes(html, "<!DOCTYPE html>")
+    assert_includes(html, "/.mayu/assets/")
   end
 
   def test_reload_failure_emits_render_error_patch
