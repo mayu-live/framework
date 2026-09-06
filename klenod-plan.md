@@ -92,20 +92,20 @@ development provider, serialized, and loaded through the production provider.
 
 ## Milestone 3 — Move Mayu components to Klenod Haml
 
-- [ ] Configure Klenod Haml variable rewriting as follows:
+- [x] Configure Klenod Haml variable rewriting as follows:
   - `$prop` reads component props;
   - `@@value` reads/writes component context;
   - `@value` reads/writes Mayu-managed component state;
   - underscore-prefixed framework variables remain ordinary instance variables.
-- [ ] Add a marshal-safe `Mayu::Component::State` store. Reads and writes use
+- [x] Add a marshal-safe `Mayu::Component::State` store. Reads and writes use
       `[]`/`[]=`, writes schedule a rerender, and the store is rebound to its
       component after session rehydration.
-- [ ] Initialize the state store before calling a generated component's
+- [x] Initialize the state store before calling a generated component's
       `initialize` method so assignments there retain current behavior.
 - [ ] Replace generated `Styles` behavior with Klenod `ClassNames`. Update
       explicit `Styles[...]` application references; ordinary Haml class syntax
       continues to be transformed automatically.
-- [ ] Teach `Mayu::Runtime::H` to recognize Klenod custom-element descriptors,
+- [x] Teach `Mayu::Runtime::H` to recognize Klenod custom-element descriptors,
       render their tag names, and preserve the associated module asset reference.
 - [ ] Use Klenod image and SVG metadata directly. Update Mayu's image component
       to use the Klenod placeholder field, `src`, `srcset`, `sizes`, width, and
@@ -267,3 +267,7 @@ milestone spans them.
 - 2026-09-06: Added Mayu's Klenod path-gem dependencies, provider boundary, and
   seeded configuration DSL. A focused Mayu test verifies development and runtime
   provider exports. The legacy runtime has intentionally not been switched yet.
+- 2026-09-06: Added Klenod-compatible component state and Klenod custom-element
+  descriptor support in the VDOM. Focused component and VDOM suites pass.
+- 2026-09-06: Added a Klenod-Haml integration fixture covering Mayu prop,
+  context, and state receivers through the default provider configuration.

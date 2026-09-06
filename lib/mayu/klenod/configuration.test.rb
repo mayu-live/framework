@@ -5,6 +5,8 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "../klenod"
+require_relative "../component"
+require_relative "../runtime/vnodes/vcomponent"
 
 class Mayu::Klenod::ConfigurationTest < Minitest::Test
   def test_development_and_runtime_providers_share_the_same_entry_exports
@@ -50,6 +52,40 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
         configuration.entrypoints
       )
       assert_equal("/assets/", configuration.base)
+    end
+  end
+
+  def test_default_haml_plugin_maps_props_context_and_state_to_mayu_receivers
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "card.haml"), <<~'HAML')
+          :ruby
+            def initialize
+              @count = 1
+              @@section = "profile"
+            end
+
+          %p= "#{$title}:#{@@section}:#{@count}"
+        HAML
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      component_class = provider.exports(provider.entry("card.haml"))::Default
+      component = component_class.allocate
+      component.instance_variable_set(:@__props, { title: "Ada" }.freeze)
+      component.instance_variable_set(
+        :@__context,
+        Mayu::Runtime::VNodes::VComponent::Context.new
+      )
+      component.instance_variable_set(
+        :@__state,
+        Mayu::Component::State.new(component)
+      )
+      component.send(:initialize)
+
+      descriptor = component.render
+
+      assert_equal(:p, descriptor.type)
+      assert_equal(["Ada:profile:1"], descriptor.children.descriptors)
     end
   end
 end
