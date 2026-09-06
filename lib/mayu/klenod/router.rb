@@ -88,6 +88,7 @@ module Mayu
 
       def route_page_module_id(route)
         return route.page_module_id if route.respond_to?(:page_module_id)
+        return route.module_id if route.respond_to?(:module_id)
 
         route.view_module_id
       end

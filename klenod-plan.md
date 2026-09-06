@@ -148,7 +148,7 @@ work.
 
 ## Milestone 5 — Adopt Klenod routing and HTTP handlers
 
-- [ ] Migrate route conventions:
+- [x] Migrate route conventions:
   - `page.haml` to `+page.haml`;
   - `layout.haml` to `+layout.haml`;
   - `not_found.haml` to `+not-found.haml`;
