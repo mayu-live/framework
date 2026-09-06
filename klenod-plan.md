@@ -13,7 +13,7 @@ and bundle contents do not need compatibility shims.
 ## Tracking
 
 - Overall status: In progress
-- Current milestone: 2 — Add the Mayu/Klenod boundary
+- Current milestone: 3 — Complete Klenod Haml compatibility coverage
 - Klenod version required by Mayu: 0.0.7 source checkout (unreleased changes)
 - Last updated: 2026-09-06
 
@@ -258,6 +258,10 @@ environment limitation to account for when comparing later results.
 
 Add short dated entries here. Link commits in both repositories when a
 milestone spans them.
+
+- 2026-09-06: Added the Mayu adapter for Klenod slots and opt-in event-handler
+  references. The example root page and `/demos/form` now server-render through
+  Klenod with slots, callbacks, styles, and assets present in the document.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

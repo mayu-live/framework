@@ -108,6 +108,7 @@ module Mayu
             ::Klenod::Build::Plugins::HamlPlugin.new(
               component_base_class: "Mayu::Component::Base",
               factory: "Mayu::Runtime::H",
+              event_handler: "Mayu::Runtime::H",
               variables: {
                 global: "@__props",
                 class: "@__context",

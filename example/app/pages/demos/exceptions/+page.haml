@@ -35,7 +35,7 @@
     %Button(onclick=handle_click name="error") Error
   %Details(summary="Show source")
     %Highlight(language="haml")
-      = File.read("app/pages/demos/exceptions/page.haml")
+      = File.read(File.join(__dir__, "+page.haml"))
   - raise_if_over(5)
 :css
   .buttons {

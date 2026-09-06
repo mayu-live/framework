@@ -81,6 +81,13 @@ module Mayu
         @__children
       end
 
+      # Klenod's generated slot helper supports frameworks that expose a slot
+      # collection through this hook. Mayu keeps the collection on its VDOM
+      # descriptor, so this is an adapter rather than a second children model.
+      def __slots
+        @__children&.slots || {}
+      end
+
       private
 
       def rerender!

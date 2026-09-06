@@ -115,6 +115,27 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal(200, session.route_status)
     assert_includes(html, "<!DOCTYPE html>")
     assert_includes(html, "/.mayu/assets/")
+    assert_includes(html, "Mayu.callback(event,")
+  end
+
+  def test_session_renders_klenod_slots
+    provider =
+      Mayu::Klenod::Configuration.new(
+        root: File.expand_path("../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/form",
+        headers: {
+        },
+        http2: false
+      )
+
+    html =
+      Mayu::Session.new(environment: env, request_info: request_info).render
+
+    assert_includes(html, "Form demo")
   end
 
   def test_reload_failure_emits_render_error_patch

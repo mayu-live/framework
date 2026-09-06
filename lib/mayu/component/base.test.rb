@@ -46,4 +46,18 @@ class Mayu::Component::BaseTest < Minitest::Test
       LegacyComponent.merge_props({ class: %i[title active] })
     )
   end
+
+  def test_exposes_vdom_children_as_klenod_slots
+    children =
+      Mayu::Runtime::Descriptors::Children[
+        [
+          Mayu::Runtime::H[:span, "Default"],
+          Mayu::Runtime::H[:span, "Named", slot: :menu]
+        ]
+      ]
+    component = KlenodComponent.allocate
+    component.instance_variable_set(:@__children, children)
+
+    assert_equal children.slots, component.__slots
+  end
 end
