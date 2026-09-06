@@ -26,24 +26,12 @@ class Mayu::Component::BaseTest < Minitest::Test
     end
   end
 
-  class LegacyComponent < Mayu::Component::Base
-    Styles = Object.new
-    Styles.define_singleton_method(:[]) { |*classes| classes.map(&:to_s) }
-  end
-
   def test_merge_props_uses_klenod_class_names_when_available
     assert_equal(
       { class: "scoped-title scoped-active", data_id: "example" },
       KlenodComponent.merge_props(
         { class: [:title, { active: true }], "data-id": "example" }
       )
-    )
-  end
-
-  def test_merge_props_keeps_legacy_style_sheets_for_legacy_components
-    assert_equal(
-      { class: %w[title active] },
-      LegacyComponent.merge_props({ class: %i[title active] })
     )
   end
 

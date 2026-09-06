@@ -7,7 +7,6 @@ require_relative "../style_sheet"
 require_relative "../runtime/h"
 require_relative "css_units"
 require_relative "fetch"
-require_relative "style_sheets"
 
 module Mayu
   module Component
@@ -35,12 +34,7 @@ module Mayu
           end
 
         if classes = result.delete(:class)
-          classnames =
-            if const_defined?(:ClassNames, false)
-              self::ClassNames.class_name(classes)
-            else
-              self::Styles[*Array(classes).compact]
-            end
+          classnames = self::ClassNames.class_name(classes)
 
           result[:class] = classnames unless classnames.nil? ||
             classnames.empty?
