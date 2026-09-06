@@ -83,13 +83,6 @@ module Mayu
           super
           klass = @descriptor.type
 
-          vdocument = closest(VDocument)
-          if !@engine.module_provider && (mod = get_mod)
-            find_stylesheets(mod).each do |filename|
-              vdocument.add_stylesheet(filename)
-            end
-          end
-
           parent_context = @parent.closest(self.class)&.context
           @context = Context.new(parent: parent_context)
 
@@ -349,27 +342,6 @@ module Mayu
           end
 
           nil
-        end
-
-        def get_mod(module_path = @descriptor.type.module_path)
-          if @engine.module_provider || module_path.nil? ||
-               module_path.start_with?("(internal)")
-            nil
-          else
-            Modules::System.current.get_mod(module_path)
-          end
-        end
-
-        def find_stylesheets(mod)
-          [
-            mod.assets.select do |filename|
-              filename.sub(/\?[^?]*$/, "").end_with?(".css")
-            end,
-            mod
-              .dependencies
-              .select { |path| path.end_with?(".css") }
-              .map { |path| find_stylesheets(get_mod(path)) }
-          ].flatten.compact
         end
 
         def component_label

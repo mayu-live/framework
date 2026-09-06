@@ -114,7 +114,7 @@ development provider, serialized, and loaded through the production provider.
 - [ ] Port the important existing Haml behavior tests to Klenod-backed
       integration tests: props, state assignments, context, slots, event handlers,
       inline/companion CSS, imports, whitespace, and source maps.
-- [ ] Remove component-level `import`, `import?`, stylesheet aggregation, and
+- [x] Remove component-level `import`, `import?`, stylesheet aggregation, and
       other helpers that only served Mayu's transformer.
 
 Acceptance gate: Klenod-transformed Mayu components render and update through
@@ -131,7 +131,7 @@ the existing VDOM engine, including stateful callbacks and slots.
 - [ ] Query assets from the root, rendered layouts, page, and rendered slot
       module IDs. Preserve Klenod's traversal index so root/layout CSS precedes page
       and component CSS.
-- [ ] Pass stylesheet and module-script URLs explicitly into the document head.
+- [x] Pass stylesheet and module-script URLs explicitly into the document head.
       Remove module graph and stylesheet discovery from `VComponent`/`VDocument`.
 - [x] Serve `/.mayu/assets/` through `Klenod::Rack::AssetApp`, adapting its
       response to Mayu's protocol HTTP response. Continue serving Mayu's own client
@@ -281,6 +281,9 @@ milestone spans them.
   record and emitted assets.
 - 2026-09-06: Added HMR recovery coverage: failed Klenod Haml updates publish no
   asset writes, and the next valid update restores the development graph.
+- 2026-09-06: Removed the final VDOM stylesheet discovery path from the legacy
+  module graph. Route-scoped Klenod assets are now the sole source of document
+  stylesheets and module scripts.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

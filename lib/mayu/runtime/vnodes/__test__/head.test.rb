@@ -146,34 +146,6 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     end
   end
 
-  def test_component_stylesheet_registration
-    mod = Data.define(:assets, :dependencies).new(["styles.css"], [])
-    system =
-      Data
-        .define(:mod) do
-          def get_mod(_path)
-            mod
-          end
-        end
-        .new(mod)
-
-    key = Mayu::Modules::System::CURRENT_KEY
-    previous = Thread.current.thread_variable_get(key)
-    Thread.current.thread_variable_set(key, system)
-
-    descriptor = H[:body, H[StylesProbe]]
-    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
-
-    html = render_html(engine.root)
-
-    assert_match(
-      '<link rel="stylesheet" href="/.mayu/assets/styles.css">',
-      html
-    )
-  ensure
-    Thread.current.thread_variable_set(key, previous)
-  end
-
   def test_custom_element_inline_registration_script
     custom = Mayu::CustomElement["my-element", "my-element.js"]
     descriptor = H[:body, H[custom, H[:span, "Hello"]]]

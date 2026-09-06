@@ -64,10 +64,6 @@ module Mayu
           @head_dirty = true
         end
 
-        def add_stylesheet(filename)
-          @head_dirty = true if @styles.add?(filename)
-        end
-
         def replace_route_assets(stylesheets:, scripts:)
           styles = Set.new(stylesheets)
           scripts = Set.new(scripts)
