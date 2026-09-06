@@ -5,6 +5,9 @@ require "uri"
 module Mayu
   module Klenod
     class Router
+      ResolvedPage =
+        Data.define(:descriptor, :status, :module_ids, :stylesheets, :scripts)
+
       def initialize(
         provider,
         root_entry: "root.haml",
@@ -15,7 +18,9 @@ module Mayu
         @router_entry = router_entry
       end
 
-      def descriptor_for(path)
+      def descriptor_for(path) = resolve(path)&.descriptor
+
+      def resolve(path)
         uri = URI.parse(path)
         match = match(path)
         return unless match&.page
@@ -27,16 +32,26 @@ module Mayu
             query: URI.decode_www_form(uri.query.to_s).to_h
           ]
 
-        [root_component, *match.layouts].reverse
-          .reduce(page) do |child, layout|
-            Runtime::H[
-              layout,
-              child,
-              params: match.params,
-              query: URI.decode_www_form(uri.query.to_s).to_h,
-              path:
-            ]
-          end
+        descriptor =
+          [root_component, *match.layouts].reverse
+            .reduce(page) do |child, layout|
+              Runtime::H[
+                layout,
+                child,
+                params: match.params,
+                query: URI.decode_www_form(uri.query.to_s).to_h,
+                path:
+              ]
+            end
+
+        module_ids = module_ids_for(match)
+        ResolvedPage.new(
+          descriptor,
+          200,
+          module_ids,
+          asset_urls(module_ids, :css),
+          asset_urls(module_ids, :javascript)
+        )
       end
 
       private
@@ -57,6 +72,18 @@ module Mayu
 
       def exports_for(entry)
         @provider.exports(@provider.entry(entry))
+      end
+
+      def module_ids_for(match)
+        [
+          @provider.module_id_for(@root_entry),
+          *match.route.layout_module_ids,
+          match.route.page_module_id
+        ].compact.map(&:to_s)
+      end
+
+      def asset_urls(module_ids, type)
+        @provider.assets_for_module(module_ids, type:).map(&:url).uniq
       end
     end
   end

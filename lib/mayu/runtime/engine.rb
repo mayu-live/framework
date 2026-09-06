@@ -31,7 +31,8 @@ module Mayu
         runtime_js: nil,
         metrics:,
         update_budget: 30,
-        module_provider: nil
+        module_provider: nil,
+        stylesheets: []
       )
         @runtime_js = runtime_js
         @metrics = metrics
@@ -42,7 +43,13 @@ module Mayu
         @dirty_elements = Set.new
         @pending_custom_elements = Set.new
         @pending_listeners = []
-        @root = VNodes::VDocument.new(descriptor, parent: nil, engine: self)
+        @root =
+          VNodes::VDocument.new(
+            descriptor,
+            parent: nil,
+            engine: self,
+            stylesheets:
+          )
         @pending_custom_elements.each do |custom_element|
           @root.add_custom_element(custom_element)
         end
@@ -96,6 +103,10 @@ module Mayu
 
       def update_budget=(value)
         @update_budget = value
+      end
+
+      def replace_stylesheets(stylesheets)
+        @root.replace_stylesheets(stylesheets)
       end
 
       def start

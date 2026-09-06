@@ -17,7 +17,9 @@ class Mayu::Klenod::RouterTest < Minitest::Test
   class Page < Mayu::Component::Base
   end
 
-  Match = Data.define(:page, :layouts, :params)
+  Route = Data.define(:page_module_id, :layout_module_ids)
+  Match = Data.define(:page, :layouts, :params, :route)
+  Asset = Data.define(:url)
   Provider =
     Data.define(:router_exports, :root_exports) do
       def entry(name) = name
@@ -32,10 +34,38 @@ class Mayu::Klenod::RouterTest < Minitest::Test
           raise KeyError, entry
         end
       end
+
+      def module_id_for(entry)
+        "app:/#{entry}"
+      end
+
+      def assets_for_module(module_ids, type:)
+        return [] unless type == :css
+
+        module_ids.map do |module_id|
+          Asset.new("/.mayu/assets/#{module_id.split(":/").last}.css")
+        end
+      end
     end
 
   def test_builds_a_root_and_layout_wrapped_page_descriptor
-    descriptor = router.descriptor_for("/posts/42?draft=true")
+    resolved = router.resolve("/posts/42?draft=true")
+    descriptor = resolved.descriptor
+
+    assert_equal(200, resolved.status)
+    assert_equal(
+      %w[app:/root.haml app:/pages/+layout.haml app:/pages/posts/+page.haml],
+      resolved.module_ids
+    )
+    assert_equal(
+      %w[
+        /.mayu/assets/root.haml.css
+        /.mayu/assets/pages/+layout.haml.css
+        /.mayu/assets/pages/posts/+page.haml.css
+      ],
+      resolved.stylesheets
+    )
+    assert_empty(resolved.scripts)
 
     assert_equal(Root, descriptor.type)
     assert_equal("/posts/42?draft=true", descriptor.props[:path])
@@ -52,12 +82,19 @@ class Mayu::Klenod::RouterTest < Minitest::Test
   end
 
   def test_returns_nil_when_klenod_has_no_page_route
-    assert_nil(router(match: nil).descriptor_for("/missing"))
+    assert_nil(router(match: nil).resolve("/missing"))
   end
 
   private
 
-  def router(match: Match.new(Page, [Layout], { id: "42" }))
+  def router(
+    match: Match.new(
+      Page,
+      [Layout],
+      { id: "42" },
+      Route.new("app:/pages/posts/+page.haml", ["app:/pages/+layout.haml"])
+    )
+  )
     router = Module.new
     router.define_singleton_method(:match) { |_path| match }
     exports = Module.new

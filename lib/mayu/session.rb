@@ -66,7 +66,8 @@ module Mayu
           descriptor,
           runtime_js:,
           metrics: @environment.metrics,
-          module_provider:
+          module_provider:,
+          stylesheets: route_stylesheets
         )
 
       @last_ping = Async::Clock.now
@@ -228,6 +229,7 @@ module Mayu
 
         @request_info = @request_info.with(path:)
         descriptor = resolve_route(path)
+        @engine.replace_stylesheets(route_stylesheets)
         @engine.navigate(path, descriptor, push_state:)
       end
     rescue => e
@@ -238,6 +240,7 @@ module Mayu
       if reload_result.success?
         puts "\e[30;103mCode update detected, reloading.\e[0m"
         descriptor = resolve_route(@request_info.path)
+        @engine.replace_stylesheets(route_stylesheets)
         @engine.refresh(descriptor)
         @engine.patch(Runtime::Patches::Event["reload:success", nil])
       else
@@ -264,9 +267,14 @@ module Mayu
 
     def resolve_route(path)
       if provider = module_provider
-        descriptor = Klenod::Router.new(provider).descriptor_for(path)
-        return descriptor if descriptor
+        resolved_page = Klenod::Router.new(provider).resolve(path)
+        if resolved_page
+          @resolved_page = resolved_page
+          return resolved_page.descriptor
+        end
       end
+
+      @resolved_page = nil
 
       system = Modules::System.current
 
@@ -298,5 +306,7 @@ module Mayu
           ]
         end
     end
+
+    def route_stylesheets = @resolved_page&.stylesheets || []
   end
 end

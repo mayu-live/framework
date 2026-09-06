@@ -18,10 +18,10 @@ module Mayu
         Html = InternalComponents::Html
         Head = InternalComponents::Head
 
-        def initialize(descriptor, parent:, engine:)
-          super
+        def initialize(descriptor, parent:, engine:, stylesheets: [])
+          super(descriptor, parent:, engine:)
           @listeners = {}
-          @styles = Set.new
+          @styles = Set.new(stylesheets)
           @custom_elements = Set.new
           @head = Set.new
           @head_dirty = false
@@ -59,6 +59,12 @@ module Mayu
 
         def add_stylesheet(filename)
           @head_dirty = true if @styles.add?(filename)
+        end
+
+        def replace_stylesheets(stylesheets)
+          styles = Set.new(stylesheets)
+          @head_dirty = true if @styles != styles
+          @styles = styles
         end
 
         def add_custom_element(custom_element)

@@ -125,7 +125,7 @@ the existing VDOM engine, including stateful callbacks and slots.
       the development provider plus stable root and router entry handles.
 - [ ] Resolve pages, layouts, slots, closest not-found views, and closest error
       views from `virtual:router`. Route imports remain lazy.
-- [ ] Return a resolved-page value containing the VDOM descriptor, HTTP status,
+- [x] Return a resolved-page value containing the VDOM descriptor, HTTP status,
       canonical route module IDs, CSS references, and JavaScript references.
 - [ ] Query assets from the root, rendered layouts, page, and rendered slot
       module IDs. Preserve Klenod's traversal index so root/layout CSS precedes page

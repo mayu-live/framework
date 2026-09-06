@@ -97,6 +97,22 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     assert_match("<title>Static</title>", html)
   end
 
+  def test_route_stylesheets_are_rendered_without_component_discovery
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[:main, "content"]],
+        metrics: NullMetrics.new,
+        stylesheets: ["/.mayu/assets/routes/home.css"]
+      )
+
+    html = render_html(engine.root)
+
+    assert_match(
+      '<link rel="stylesheet" href="/.mayu/assets/routes/home.css">',
+      html
+    )
+  end
+
   def test_head_updates_with_multiple_titles
     descriptor = H[:body, H[HeadToggleProbe]]
     engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)

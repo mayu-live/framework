@@ -40,7 +40,7 @@ class Mayu::SessionTest < Minitest::Test
   end
 
   class FakeEngine
-    attr_reader :patches, :refreshed_descriptor
+    attr_reader :patches, :refreshed_descriptor, :stylesheets
 
     def initialize
       @patches = []
@@ -52,6 +52,10 @@ class Mayu::SessionTest < Minitest::Test
 
     def refresh(descriptor)
       @refreshed_descriptor = descriptor
+    end
+
+    def replace_stylesheets(stylesheets)
+      @stylesheets = stylesheets
     end
   end
 
