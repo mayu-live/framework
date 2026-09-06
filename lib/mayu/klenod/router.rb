@@ -17,7 +17,7 @@ module Mayu
 
       def descriptor_for(path)
         uri = URI.parse(path)
-        match = router.match(uri.path)
+        match = match(path)
         return unless match&.page
 
         page =
@@ -37,6 +37,12 @@ module Mayu
               path:
             ]
           end
+      end
+
+      private
+
+      public def match(path)
+        router.match(URI.parse(path).path)
       end
 
       private

@@ -160,7 +160,7 @@ work.
 - [x] Give route methods a Mayu request wrapper exposing method, path, headers,
       body, route params, and parsed query values. Accept the usual
       `[status, headers, body]` response tuple.
-- [ ] Apply hybrid dispatch after Mayu's internal session/client/asset routes:
+- [x] Apply hybrid dispatch after Mayu's internal session/client/asset routes:
   - HTML-preferring `GET`, `HEAD`, and `POST` use a live page when present;
   - non-HTML requests use the handler when present;
   - `PUT`, `PATCH`, `DELETE`, and `OPTIONS` use the handler;

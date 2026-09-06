@@ -13,7 +13,7 @@ require_relative "../environment"
 require_relative "../session"
 require_relative "../session/store"
 require_relative "../modules/system"
-require_relative "../klenod/asset_app"
+require_relative "../klenod"
 
 module Mayu
   class Server
@@ -81,7 +81,9 @@ module Mayu
           handle_session_transfer(request, $~[:session_id])
         in { method: "PATCH", path: SESSION_PATH_RE }
           handle_session_event(request, $~[:session_id])
-        in method: "GET" if is_new_session_request?(request)
+        in _ if response = handle_provider_route(request)
+          response
+        in method: "GET" | "HEAD" | "POST" if is_new_session_request?(request)
           handle_session_start(request)
         else
           handle_404(request)
@@ -118,6 +120,56 @@ module Mayu
       def is_new_session_request?(request)
         !request.path.start_with?("/.mayu") &&
           request.headers["accept"]&.include?("text/html")
+      end
+
+      def handle_provider_route(request)
+        provider = @environment.module_provider
+        return unless provider
+
+        match = Klenod::Router.new(provider).match(request.path)
+        handler = match&.handler
+        return unless handler
+        return if html_page_request?(request, match)
+
+        method = request.method.to_s.upcase
+        unless handler.public_method_defined?(method)
+          return(
+            response(
+              405,
+              "Method Not Allowed",
+              **{
+                "allow" => handler_methods(handler).join(", "),
+                "vary" => "Accept"
+              }
+            )
+          )
+        end
+
+        status, headers, body =
+          handler.new.public_send(
+            method,
+            Route::Request.from_async(request, params: match.params)
+          )
+        response(status, body, **headers.merge("vary" => "Accept"))
+      end
+
+      def html_page_request?(request, match)
+        return false unless match.page
+        unless %w[GET HEAD POST].include?(request.method.to_s.upcase)
+          return false
+        end
+
+        request.headers["accept"].to_s.include?("text/html")
+      end
+
+      def handler_methods(handler)
+        handler
+          .public_instance_methods(false)
+          .map { _1.to_s.upcase }
+          .select do |name|
+            %w[GET HEAD POST PUT PATCH DELETE OPTIONS].include?(name)
+          end
+          .sort
       end
 
       # Mayu
