@@ -4,7 +4,7 @@
   ALLOWED_EXTENSIONS = %w[.rb .css .haml .txt .svg]
 
 - full_path = File.expand_path(Array($params[:paths]).join("/"), "/")
-- root = File.expand_path(".")
+- root = File.expand_path("../../../..", __dir__)
 
 - return unless full_path.start_with?("/app/")
   %p #{full_path} is not valid
@@ -48,4 +48,3 @@
     border-radius: 2px;
     padding: 1em;
   }
-

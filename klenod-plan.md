@@ -262,6 +262,10 @@ milestone spans them.
 - 2026-09-06: Added the Mayu adapter for Klenod slots and opt-in event-handler
   references. The example root page and `/demos/form` now server-render through
   Klenod with slots, callbacks, styles, and assets present in the document.
+- 2026-09-06: Updated the example bundle to use the sibling Klenod checkout and
+  repaired Klenod route-component syntax exposed by SSR. All 40 discovered
+  example routes, including dynamic and catch-all routes, render successfully
+  through Klenod with the example dependency bundle.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
