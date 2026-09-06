@@ -24,22 +24,25 @@ module Mayu
         uri = URI.parse(path)
         match = match(path) || router.not_found(uri.path)
         return unless match&.page
+        query = URI.decode_www_form(uri.query.to_s).to_h
 
-        page =
-          Runtime::H[
-            match.page,
-            params: match.params,
-            query: URI.decode_www_form(uri.query.to_s).to_h
-          ]
+        page = Runtime::H[match.page, params: match.params, query:]
+
+        layouts = [
+          [root_component, @root_entry],
+          *match.layouts.zip(match.route.layout_module_ids)
+        ]
 
         descriptor =
-          [root_component, *match.layouts].reverse
-            .reduce(page) do |child, layout|
+          layouts
+            .reverse
+            .reduce(page) do |child, (layout, module_id)|
               Runtime::H[
                 layout,
                 child,
+                *slot_descriptors_for(match, module_id, query:),
                 params: match.params,
-                query: URI.decode_www_form(uri.query.to_s).to_h,
+                query:,
                 path:
               ]
             end
@@ -78,8 +81,47 @@ module Mayu
         [
           @root_entry,
           *match.route.layout_module_ids,
-          route_page_module_id(match.route)
+          route_page_module_id(match.route),
+          *slot_module_ids_for(match)
         ].compact.map { @provider.module_id_for(it).to_s }
+      end
+
+      def slot_descriptors_for(match, layout_module_id, query:)
+        return [] unless match.respond_to?(:slots)
+
+        match
+          .slots
+          .sort_by { |name, _slot_match| name.to_s }
+          .filter_map do |name, slot_match|
+            next unless slot_match.layout_module_id == layout_module_id
+
+            Runtime::H[
+              slot_match.page,
+              slot: name,
+              params: slot_match.params,
+              query:
+            ]
+          end
+      end
+
+      def slot_module_ids_for(match)
+        return [] unless match.respond_to?(:slots)
+
+        rendered_layout_ids = match.route.layout_module_ids
+
+        match
+          .slots
+          .sort_by { |name, _slot_match| name.to_s }
+          .flat_map do |_name, slot_match|
+            unless rendered_layout_ids.include?(slot_match.layout_module_id)
+              next []
+            end
+
+            [
+              *slot_match.route.layout_module_ids,
+              route_page_module_id(slot_match.route)
+            ]
+          end
       end
 
       def asset_urls(module_ids, type)

@@ -20,9 +20,14 @@ class Mayu::Klenod::RouterTest < Minitest::Test
   class Page < Mayu::Component::Base
   end
 
+  class Modal < Mayu::Component::Base
+  end
+
   Route = Data.define(:page_module_id, :layout_module_ids)
   SpecialRoute = Data.define(:view_module_id, :layout_module_ids)
-  Match = Data.define(:page, :layouts, :params, :route)
+  SlotRoute = Data.define(:page_module_id, :layout_module_ids)
+  SlotMatch = Data.define(:page, :params, :route, :layout_module_id)
+  Match = Data.define(:page, :layouts, :params, :route, :slots)
   SpecialMatch = Data.define(:page, :layouts, :params, :route, :status)
   Asset = Data.define(:url)
   Provider =
@@ -90,6 +95,40 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     assert_nil(router(match: nil).resolve("/missing"))
   end
 
+  def test_renders_parallel_route_matches_in_the_owning_layout_slot
+    slot_route = SlotRoute.new("app:/pages/dashboard/@modal/+page.haml", [])
+    slot_match =
+      SlotMatch.new(
+        Modal,
+        { mode: "compose" },
+        slot_route,
+        "app:/pages/dashboard/+layout.haml"
+      )
+    route =
+      Route.new(
+        "app:/pages/dashboard/+page.haml",
+        ["app:/pages/dashboard/+layout.haml"]
+      )
+    match = Match.new(Page, [Layout], {}, route, { modal: slot_match })
+
+    resolved = router(match:).resolve("/dashboard?tab=overview")
+    layout = resolved.descriptor.children.descriptors.fetch(0)
+    modal = layout.children.slots.fetch(:modal).fetch(0)
+
+    assert_equal(Modal, modal.type)
+    assert_equal({ mode: "compose" }, modal.props[:params])
+    assert_equal({ "tab" => "overview" }, modal.props[:query])
+    assert_equal(
+      %w[
+        app:/root.haml
+        app:/pages/dashboard/+layout.haml
+        app:/pages/dashboard/+page.haml
+        app:/pages/dashboard/@modal/+page.haml
+      ],
+      resolved.module_ids
+    )
+  end
+
   def test_resolves_a_not_found_page_with_its_status_and_assets
     not_found =
       SpecialMatch.new(
@@ -134,7 +173,8 @@ class Mayu::Klenod::RouterTest < Minitest::Test
       Page,
       [Layout],
       { id: "42" },
-      Route.new("app:/pages/posts/+page.haml", ["app:/pages/+layout.haml"])
+      Route.new("app:/pages/posts/+page.haml", ["app:/pages/+layout.haml"]),
+      {}
     ),
     not_found: nil
   )
