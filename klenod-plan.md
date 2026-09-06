@@ -202,7 +202,7 @@ callback, and transfer a session between workers.
 
 ## Milestone 7 — Migrate the example, template, and documentation
 
-- [ ] Rename every route and route segment in `example/app/pages` and the `mayu
+- [x] Rename every route and route segment in `example/app/pages` and the `mayu
 init` template.
 - [ ] Update explicit stylesheet maps from `Styles` to `ClassNames`.
 - [ ] Update image rendering to Klenod metadata and its inline placeholder.
@@ -284,6 +284,9 @@ milestone spans them.
 - 2026-09-06: Removed the final VDOM stylesheet discovery path from the legacy
   module graph. Route-scoped Klenod assets are now the sole source of document
   stylesheets and module scripts.
+- 2026-09-06: Migrated generated applications to Klenod's `+page.haml` and
+  `+layout.haml` route filenames. The template resolves its root route through
+  the Klenod provider.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

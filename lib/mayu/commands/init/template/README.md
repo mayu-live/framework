@@ -8,7 +8,7 @@ Start the development server:
 
 Open [`https://localhost:9292`](https://localhost:9292) with your browser.
 
-Open `app/pages/page.haml` with your text editor to make changes.
+Open `app/pages/+page.haml` with your text editor to make changes.
 
 ## Learn more
 
