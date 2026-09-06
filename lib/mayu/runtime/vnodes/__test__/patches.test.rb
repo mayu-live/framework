@@ -165,6 +165,23 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     assert_equal("World", set_text.content)
   end
 
+  def test_class_patches_split_whitespace_separated_class_names
+    initial = H[:body, H[:p, "Hello", class: "first second"]]
+    updated = H[:body, H[:p, "Hello", class: "second third"]]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    patcher = Mayu::Runtime::VNodes::Patcher.new
+
+    engine.root.update(patcher, updated)
+
+    add_class =
+      patcher.patches.find { it.is_a?(Mayu::Runtime::Patches::AddClass) }
+    remove_class =
+      patcher.patches.find { it.is_a?(Mayu::Runtime::Patches::RemoveClass) }
+
+    assert_equal(["third"], add_class.classes)
+    assert_equal(["first"], remove_class.classes)
+  end
+
   def test_class_and_style_removal_patches
     initial =
       H[:body, H[:p, "Hello", class: ["greeting"], style: { color: "red" }]]
