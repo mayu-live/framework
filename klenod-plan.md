@@ -274,3 +274,6 @@ milestone spans them.
 - 2026-09-06: Added the Klenod `+route.rb` base class and normalized route
   request value. Router configuration tests verify generated handlers inherit
   from `Mayu::Route`.
+- 2026-09-06: Added a tested adapter from `Klenod::Rack::AssetApp` responses to
+  Mayu Protocol HTTP responses; it will be connected during the development
+  server cutover.
