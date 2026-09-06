@@ -94,7 +94,57 @@ class Mayu::EnvironmentTest < Minitest::Test
     end
   end
 
+  def test_klenod_watcher_recovers_after_a_failed_update
+    Dir.mktmpdir("mayu-klenod") do |root|
+      app_dir = File.join(root, "app")
+      FileUtils.mkdir_p(app_dir)
+      root_path = File.join(app_dir, "root.haml")
+      File.write(root_path, "%p Before\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      environment =
+        Mayu::Environment.new(
+          config(root),
+          module_provider: provider,
+          legacy: false,
+          metrics: Object.new
+        )
+      updates = Async::Queue.new
+      environment.subscribe_klenod_updates { |update| updates.enqueue(update) }
+
+      Async do
+        watcher_task = environment.start_watcher
+
+        File.write(root_path, "= @columns.map do |column| }\n  %p= column\n")
+        publish_update(provider, root_path, graph_version: 1)
+        failed = updates.dequeue(timeout: 2)
+
+        refute(failed.success?)
+        assert_equal([], failed.written_asset_paths)
+
+        File.write(root_path, "%p After\n")
+        publish_update(provider, root_path, graph_version: 2)
+        recovered = updates.dequeue(timeout: 2)
+
+        assert(recovered.success?)
+        assert_includes(
+          provider.context.entry("root.haml").record.transformed_source,
+          "After"
+        )
+      ensure
+        watcher_task&.stop
+      end.wait
+    end
+  end
+
   private
+
+  def publish_update(provider, path, graph_version:)
+    result = provider.context.invalidate_paths([path])
+    provider.context.emit_update(
+      ::Klenod::Build::UpdateEvent.new([path], [], graph_version, result)
+    )
+  end
 
   def config(root)
     server =

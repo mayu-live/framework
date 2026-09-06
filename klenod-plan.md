@@ -186,7 +186,7 @@ routes.
       rendered component tree is otherwise unchanged.
 - [ ] On failure, keep unaffected routes serving the previous good graph and
       send source-mapped error patches for the failed modules.
-- [ ] Verify recovery after syntax errors and route/component file add/remove.
+- [x] Verify recovery after syntax errors and route/component file add/remove.
 - [x] Make `mayu build` collect root and router entrypoints without evaluating
       application code, materialize Klenod assets, and serialize a Klenod runtime
       bundle.
@@ -279,6 +279,8 @@ milestone spans them.
   kinds, handlers, layouts, and special views.
 - 2026-09-06: Migrated `mayu transform` to display Klenod's collected transformed
   record and emitted assets.
+- 2026-09-06: Added HMR recovery coverage: failed Klenod Haml updates publish no
+  asset writes, and the next valid update restores the development graph.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
