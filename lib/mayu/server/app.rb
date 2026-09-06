@@ -319,9 +319,15 @@ module Mayu
             escape_link_header_path(@environment.runtime_js_path),
           *session.styles.map do
             "<%s>; rel=preload; as=style" %
-              escape_link_header_path("/.mayu/assets/#{_1}")
+              escape_link_header_path(asset_url(it))
           end
         ].join(", ")
+      end
+
+      def asset_url(path)
+        return path if path.start_with?("/", "http://", "https://")
+
+        "/.mayu/assets/#{path}"
       end
 
       def escape_link_header_path(path)

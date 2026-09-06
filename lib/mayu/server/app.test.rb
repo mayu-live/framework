@@ -25,7 +25,8 @@ class Mayu::Server::AppTest < Minitest::Test
   end
 
   Match = Data.define(:page, :handler, :params)
-  Environment = Data.define(:module_provider, :init_js_body)
+  Environment = Data.define(:module_provider, :init_js_body, :runtime_js_path)
+  Session = Data.define(:styles)
   Provider =
     Data.define(:exports_module) do
       def entry(name) = name
@@ -77,7 +78,7 @@ class Mayu::Server::AppTest < Minitest::Test
     app = Mayu::Server::App.allocate
     app.instance_variable_set(
       :@environment,
-      Environment.new(nil, "export default null\n")
+      Environment.new(nil, "export default null\n", nil)
     )
 
     response =
@@ -91,11 +92,29 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("export default null\n", response.body.read)
   end
 
+  def test_link_header_keeps_klenod_asset_urls_absolute
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      Environment.new(nil, nil, "/.mayu/runtime/client.js")
+    )
+
+    header =
+      app.send(:link_header, Session.new(%w[/.mayu/assets/page.css legacy.css]))
+
+    assert_includes(header, "</.mayu/assets/page.css>; rel=preload; as=style")
+    assert_includes(header, "</.mayu/assets/legacy.css>; rel=preload; as=style")
+    refute_includes(header, "/.mayu/assets//.mayu/assets/")
+  end
+
   private
 
   def dispatch(method, path, headers)
     app = Mayu::Server::App.allocate
-    app.instance_variable_set(:@environment, Environment.new(provider, nil))
+    app.instance_variable_set(
+      :@environment,
+      Environment.new(provider, nil, nil)
+    )
     app.send(:handle_provider_route, Request.new(method, path, headers, ""))
   end
 
