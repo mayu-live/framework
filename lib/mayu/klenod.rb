@@ -11,6 +11,7 @@ require_relative "route"
 require_relative "klenod/configuration"
 require_relative "klenod/provider"
 require_relative "klenod/component_resolver"
+require_relative "klenod/router"
 require_relative "klenod/asset_app"
 
 module Mayu

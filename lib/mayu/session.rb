@@ -263,6 +263,11 @@ module Mayu
     end
 
     def resolve_route(path)
+      if provider = module_provider
+        descriptor = Klenod::Router.new(provider).descriptor_for(path)
+        return descriptor if descriptor
+      end
+
       system = Modules::System.current
 
       match = @environment.router.match(path)
