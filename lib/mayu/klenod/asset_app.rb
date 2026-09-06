@@ -17,7 +17,7 @@ module Mayu
           )
       end
 
-      def response_for(request)
+      def response_for(request, headers: {})
         response =
           @asset_app.response_for(
             request.path,
@@ -27,7 +27,7 @@ module Mayu
 
         Protocol::HTTP::Response[
           response.status,
-          response.headers,
+          response.headers.merge(headers),
           response.body
         ]
       end

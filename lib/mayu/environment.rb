@@ -31,6 +31,7 @@ module Mayu
     attr_reader :init_js_body
     attr_reader :modules
     attr_reader :router
+    attr_reader :module_provider
     attr_reader :marshaller
     attr_reader :metrics
 
@@ -44,7 +45,13 @@ module Mayu
       new(config, metrics:)
     end
 
-    def initialize(config, router: nil, modules: nil, metrics: nil)
+    def initialize(
+      config,
+      router: nil,
+      modules: nil,
+      module_provider: nil,
+      metrics: nil
+    )
       @config = config
       @app_dir = File.join(config.root, "app")
       @pages_dir = File.join(app_dir, "pages")
@@ -70,6 +77,7 @@ module Mayu
 
       @router = router || Mayu::Routes::Router.build(@pages_dir)
       @modules = modules || Modules::System.new(@app_dir, **SYSTEM_CONFIG)
+      @module_provider = module_provider
     end
 
     def asset_path(filename)

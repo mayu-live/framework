@@ -13,6 +13,7 @@ require_relative "../environment"
 require_relative "../session"
 require_relative "../session/store"
 require_relative "../modules/system"
+require_relative "../klenod/asset_app"
 
 module Mayu
   class Server
@@ -167,6 +168,17 @@ module Mayu
       end
 
       def handle_asset(request)
+        if provider = @environment.module_provider
+          response =
+            klenod_asset_app(provider).response_for(
+              request,
+              headers: {
+                **origin_header(request)
+              }
+            )
+          return response if response
+        end
+
         asset =
           request
             .path
@@ -198,6 +210,13 @@ module Mayu
             **origin_header(request)
           )
         end
+      end
+
+      def klenod_asset_app(provider)
+        return @klenod_asset_app if @klenod_asset_provider.equal?(provider)
+
+        @klenod_asset_provider = provider
+        @klenod_asset_app = Klenod::AssetApp.new(provider)
       end
 
       def handle_favicon(request)

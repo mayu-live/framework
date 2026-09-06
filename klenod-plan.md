@@ -132,7 +132,7 @@ the existing VDOM engine, including stateful callbacks and slots.
       and component CSS.
 - [ ] Pass stylesheet and module-script URLs explicitly into the document head.
       Remove module graph and stylesheet discovery from `VComponent`/`VDocument`.
-- [ ] Serve `/.mayu/assets/` through `Klenod::Rack::AssetApp`, adapting its
+- [x] Serve `/.mayu/assets/` through `Klenod::Rack::AssetApp`, adapting its
       response to Mayu's protocol HTTP response. Continue serving Mayu's own client
       runtime files separately.
 - [x] Inject the module provider/error formatter into the runtime engine. Do not
