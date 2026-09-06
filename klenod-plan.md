@@ -156,8 +156,8 @@ work.
   - `::paths` directories to `[...paths]`.
 - [ ] Support `+error.haml`, route groups, optional catch-alls, parallel routes,
       and intercepted routes according to `RouterPlugin`.
-- [ ] Add `Mayu::Route` as the generated `+route.rb` base class.
-- [ ] Give route methods a Mayu request wrapper exposing method, path, headers,
+- [x] Add `Mayu::Route` as the generated `+route.rb` base class.
+- [x] Give route methods a Mayu request wrapper exposing method, path, headers,
       body, route params, and parsed query values. Accept the usual
       `[status, headers, body]` response tuple.
 - [ ] Apply hybrid dispatch after Mayu's internal session/client/asset routes:
@@ -271,3 +271,6 @@ milestone spans them.
   descriptor support in the VDOM. Focused component and VDOM suites pass.
 - 2026-09-06: Added a Klenod-Haml integration fixture covering Mayu prop,
   context, and state receivers through the default provider configuration.
+- 2026-09-06: Added the Klenod `+route.rb` base class and normalized route
+  request value. Router configuration tests verify generated handlers inherit
+  from `Mayu::Route`.

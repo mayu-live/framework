@@ -88,4 +88,26 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       assert_equal(["Ada:profile:1"], descriptor.children.descriptors)
     end
   end
+
+  def test_default_router_config_uses_mayu_route_as_the_handler_base_class
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app", "pages", "api"))
+      File.write(
+        File.join(root, "app", "pages", "api", "+route.rb"),
+        "def GET(request) = request.path\n"
+      )
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      router = provider.exports(provider.entry("virtual:router"))::Default
+      handler = router.match("/api").handler
+
+      assert_operator(handler, :<, Mayu::Route)
+      assert_equal(
+        "/api",
+        handler.new.GET(
+          Mayu::Route::Request.new("GET", "/api", {}, nil, {}, {})
+        )
+      )
+    end
+  end
 end
