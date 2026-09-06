@@ -20,17 +20,52 @@ module Mayu
       def call
         require "rouge"
         require "syntax_tree"
-        require_relative "../modules/loaders"
+        require_relative "../configuration"
+        require_relative "../klenod"
 
-        transform(
-          File.read(@path),
-          @path,
-          line_numbers: !@options[:no_line_numbers],
-          colors: !@options[:no_colors]
-        )
+        Configuration.with(:development) do |config|
+          transform_with_klenod(
+            Klenod::Configuration.load(root: config.root),
+            @path,
+            line_numbers: !@options[:no_line_numbers],
+            colors: !@options[:no_colors]
+          )
+        end
       end
 
       private
+
+      def transform_with_klenod(configuration, path, line_numbers:, colors:)
+        source_path = Pathname.new(path).expand_path
+        relative_path =
+          source_path.relative_path_from(
+            Pathname.new(configuration.source_path)
+          ).to_s
+        record = configuration.context.entry(relative_path).record
+        formatter = CodeFormatter.new(line_numbers:, colors:)
+        lexer =
+          Rouge::Lexer.find_fancy(
+            File.extname(source_path).delete_prefix("."),
+            Rouge::Lexers::PlainText
+          )
+
+        puts "\e[1;3mInput:\e[0;2m #{relative_path}\e[0m"
+        puts formatter.format(File.read(source_path).strip, lexer)
+        puts "\e[1;3mOutput:\e[0m"
+        puts formatter.format(
+               record.transformed_source.strip,
+               Rouge::Lexers::Ruby
+             )
+        return if record.assets.empty?
+
+        puts "\e[1;3mAssets:\e[0m"
+        record.assets.each do |asset|
+          puts "#{asset.output_path} #{asset.content_type}"
+        end
+      rescue ArgumentError
+        raise ArgumentError,
+              "#{path} must be inside #{configuration.source_path}"
+      end
 
       def transform(source, path, line_numbers:, colors:)
         formatter = CodeFormatter.new(line_numbers:, colors:)

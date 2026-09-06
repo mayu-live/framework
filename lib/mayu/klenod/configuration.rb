@@ -91,10 +91,20 @@ module Mayu
         )
       end
 
+      def route_manifest
+        router_plugin.discover(source_dir: source_path)
+      end
+
       private
 
       def expand(path)
         File.expand_path(path, root)
+      end
+
+      def router_plugin
+        plugins.find do |plugin|
+          plugin.is_a?(::Klenod::Build::Plugins::RouterPlugin::Plugin)
+        end || raise("Klenod configuration does not include RouterPlugin")
       end
 
       def default_plugins

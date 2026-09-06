@@ -169,7 +169,7 @@ work.
   - hybrid responses vary on `Accept`.
 - [ ] Render Klenod's closest not-found and error views with their own layout
       chains and correct 404/500 status codes.
-- [ ] Reimplement `mayu routes` from the Klenod router manifest and include the
+- [x] Reimplement `mayu routes` from the Klenod router manifest and include the
       additional segment, handler, and special-view information.
 
 Acceptance gate: routing tests cover static, dynamic, catch-all, grouped,
@@ -193,7 +193,7 @@ routes.
 - [x] Make `mayu start` load that bundle with the configured source root and
       construct the production provider. Old Mayu bundle contents are intentionally
       incompatible even if the default filename remains unchanged.
-- [ ] Reimplement `mayu transform` by collecting the requested module and
+- [x] Reimplement `mayu transform` by collecting the requested module and
       displaying its Klenod transformed record and emitted assets.
 
 Acceptance gate: development updates work for multiple live sessions, and a
@@ -275,6 +275,10 @@ milestone spans them.
   applies each invalidation once, writes changed assets, and fans the result out
   to subscribed live sessions; each session refreshes its descriptor and head
   assets from that shared result. The Mayu suite passes (154 runs, 451 assertions).
+- 2026-09-06: Migrated `mayu routes` to Klenod's route manifest, including route
+  kinds, handlers, layouts, and special views.
+- 2026-09-06: Migrated `mayu transform` to display Klenod's collected transformed
+  record and emitted assets.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
