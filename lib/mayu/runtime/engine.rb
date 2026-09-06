@@ -15,14 +15,27 @@ require_relative "patches"
 module Mayu
   module Runtime
     class Engine
-      attr_reader :runtime_js, :root, :output_queue, :metrics, :update_budget
+      attr_reader :runtime_js,
+                  :root,
+                  :output_queue,
+                  :metrics,
+                  :update_budget,
+                  :module_provider
       attr_writer :metrics
       attr_writer :update_budget
+      attr_writer :module_provider
 
-      def initialize(descriptor, runtime_js: nil, metrics:, update_budget: 30)
+      def initialize(
+        descriptor,
+        runtime_js: nil,
+        metrics:,
+        update_budget: 30,
+        module_provider: nil
+      )
         @runtime_js = runtime_js
         @metrics = metrics
         @update_budget = update_budget
+        @module_provider = module_provider
         @output_queue = Async::Queue.new
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new

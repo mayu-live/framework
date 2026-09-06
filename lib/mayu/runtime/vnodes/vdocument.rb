@@ -221,11 +221,16 @@ module Mayu
           module_path = component.class.name if module_path.nil? ||
             module_path.empty?
 
-          mod = Modules::System.current.get_mod(module_path) if module_path
-          Console.logger.error(
-            component,
-            Modules::System.current.format_exception(error)
-          )
+          provider = @engine.module_provider
+          mod = Modules::System.current.get_mod(module_path) if module_path &&
+            !provider
+          formatted_error =
+            if provider
+              provider.format_exception(error, source_path: module_path)
+            else
+              Modules::System.current.format_exception(error)
+            end
+          Console.logger.error(component, formatted_error)
 
           Patches::RenderError[
             module_path,

@@ -135,7 +135,7 @@ the existing VDOM engine, including stateful callbacks and slots.
 - [ ] Serve `/.mayu/assets/` through `Klenod::Rack::AssetApp`, adapting its
       response to Mayu's protocol HTTP response. Continue serving Mayu's own client
       runtime files separately.
-- [ ] Inject the module provider/error formatter into the runtime engine. Do not
+- [x] Inject the module provider/error formatter into the runtime engine. Do not
       add a new global equivalent of `Modules::System.current`.
 - [ ] During session Marshal dump/load, install a narrowly scoped component
       resolver that stores canonical Klenod module IDs and resolves component
@@ -277,3 +277,5 @@ milestone spans them.
 - 2026-09-06: Added a tested adapter from `Klenod::Rack::AssetApp` responses to
   Mayu Protocol HTTP responses; it will be connected during the development
   server cutover.
+- 2026-09-06: Made the VDOM's error formatting provider-backed and stopped
+  provider-backed components from consulting the legacy module graph for CSS.

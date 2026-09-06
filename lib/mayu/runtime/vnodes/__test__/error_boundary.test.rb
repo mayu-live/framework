@@ -119,6 +119,36 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
     end
   end
 
+  def test_unhandled_render_error_uses_an_injected_module_provider
+    descriptor = H[:body, H[RenderErrorProbe]]
+    provider =
+      Data
+        .define do
+          def format_exception(error, source_path:)
+            "#{source_path}: #{error.class}: #{error.message}"
+          end
+        end
+        .new
+
+    run_engine_with_provider(descriptor, provider) do |engine|
+      component = find_component(engine.root, RenderErrorProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.respond_to?(:rerender!) }
+      instance.trigger_error
+
+      patches =
+        dequeue_until(engine) do |batch|
+          batch.any? { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+        end
+      render_error =
+        patches.find { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+
+      assert_equal("/tests/render_error", render_error.file)
+      assert_nil(render_error.source)
+    end
+  end
+
   def test_render_error_tree_path_order
     descriptor = H[:body, H[RenderErrorProbe]]
 
@@ -157,6 +187,22 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
   end
 
   private
+
+  def run_engine_with_provider(descriptor, provider)
+    engine =
+      Mayu::Runtime::Engine.new(
+        descriptor,
+        metrics: NullMetrics.new,
+        module_provider: provider
+      )
+
+    Async do
+      engine.start
+      yield engine
+    ensure
+      engine.stop
+    end.wait
+  end
 
   def with_modules_system_with_source_map(component_class)
     mod = Module.new
