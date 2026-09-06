@@ -7,6 +7,7 @@ require "async"
 
 require_relative "base"
 require_relative "../marshalling"
+require_relative "../../component/state"
 require_relative "internal_components/base"
 require_relative "vchildren"
 
@@ -95,6 +96,10 @@ module Mayu
           @instance = klass.allocate
           @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
           @instance.instance_variable_set(:@__context, @context)
+          @instance.instance_variable_set(
+            :@__state,
+            Mayu::Component::State.new(@instance)
+          )
           @instance.instance_variable_set(
             :@__children,
             @descriptor.children.freeze
@@ -266,6 +271,7 @@ module Mayu
           )
           @instance.instance_variable_set(:@__vnode_id, @id)
           @instance.send(:marshal_load, Marshalling.load_value(component_state))
+          @instance.instance_variable_get(:@__state)&.bind(@instance)
         end
 
         def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
@@ -274,6 +280,7 @@ module Mayu
           parent_context = @parent&.closest(self.class)&.context
           @context.instance_variable_set(:@parent, parent_context)
           @instance.instance_variable_set(:@__context, @context)
+          @instance.instance_variable_get(:@__state)&.bind(@instance)
           @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
           @instance.instance_variable_set(
             :@__children,

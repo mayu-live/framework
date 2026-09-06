@@ -12,10 +12,10 @@ and bundle contents do not need compatibility shims.
 
 ## Tracking
 
-- Overall status: Not started
-- Current milestone: 1 — Klenod prerequisites
-- Klenod version required by Mayu: To be released
-- Last updated: 2026-09-05
+- Overall status: In progress
+- Current milestone: 2 — Add the Mayu/Klenod boundary
+- Klenod version required by Mayu: 0.0.7 source checkout (unreleased changes)
+- Last updated: 2026-09-06
 
 Update the milestone checkboxes and progress log as work lands. A milestone is
 complete only when its acceptance checks pass. Milestones 3–6 may temporarily
@@ -41,15 +41,15 @@ green; the example must be restored by milestone 7.
 
 ## Milestone 1 — Close Klenod integration gaps and release it
 
-- [ ] Add opt-in low-resolution placeholders to `ImagePlugin`.
+- [x] Add opt-in low-resolution placeholders to `ImagePlugin`.
   - Configure width, format, and quality on the plugin; Mayu defaults should
     preserve its current 16px WebP blur-up behavior.
   - Add a serializable placeholder data URI to `ImageMetadata`.
   - Keep `klenod-runtime` free of RMagick, `image_size`, and build plugins.
-- [ ] Verify custom-element HMR and make identities version-aware if necessary.
+- [x] Verify custom-element HMR and make identities version-aware if necessary.
       A changed custom-element module must not attempt to redefine an already
       registered browser tag with incompatible code.
-- [ ] Add development and serialized-bundle tests for both changes.
+- [x] Add development and serialized-bundle tests for both changes.
 - [ ] Run Klenod's runtime, build, Rack, CSS, JavaScript, gems, examples, and web
       suites.
 - [ ] Release Klenod and record the released version in this document.
@@ -59,18 +59,18 @@ needs in both development and a runtime-only bundle.
 
 ## Milestone 2 — Add the Mayu/Klenod boundary
 
-- [ ] Add the complete Klenod dependency set to `mayu-live` and use sibling path
+- [x] Add the complete Klenod dependency set to `mayu-live` and use sibling path
       gems while coordinating development. Replace the paths with the released
       version before finishing the migration.
-- [ ] Introduce internal development and production providers wrapping
+- [x] Introduce internal development and production providers wrapping
       `Klenod::Build::Context` and `Klenod::Runtime::Bundle`.
-- [ ] Give the providers one Mayu-facing interface for:
+- [x] Give the providers one Mayu-facing interface for:
   - evaluating/exporting an entry;
   - canonicalizing a module reference;
   - finding route-scoped asset references and asset bytes;
   - formatting errors and finding original source;
   - exposing the asset base/origin.
-- [ ] Define Mayu's default Klenod configuration:
+- [x] Define Mayu's default Klenod configuration:
   - source directory: `app`;
   - router directory: `pages`;
   - entrypoints: `/root.haml` and `virtual:router`;
@@ -80,11 +80,11 @@ needs in both development and a runtime-only bundle.
   - router base class: `Mayu::Route`;
   - Ruby, Intl, Haml, Router, CSS, JavaScript, SVG, Image, JSON, and static text
     plugins.
-- [ ] Load an optional `klenod.config.rb` from the application root, seeded with
+- [x] Load an optional `klenod.config.rb` from the application root, seeded with
       those defaults. It may replace the plugin list, router directory, image
       settings, source directory, asset settings, entrypoints, and output paths.
       Explicit Mayu CLI options take precedence over file configuration.
-- [ ] Add provider/configuration tests without switching the running framework
+- [x] Add provider/configuration tests without switching the running framework
       away from the old system yet.
 
 Acceptance gate: a small fixture can be collected and evaluated through the
@@ -260,3 +260,10 @@ Add short dated entries here. Link commits in both repositories when a
 milestone spans them.
 
 - 2026-09-05: Migration plan created; implementation not started.
+- 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
+  now configurable), version-aware custom-element tags, and focused development
+  and runtime-bundle tests. `base64` is now an explicit Klenod build dependency.
+  Focused Klenod JavaScript and image-plugin suites pass.
+- 2026-09-06: Added Mayu's Klenod path-gem dependencies, provider boundary, and
+  seeded configuration DSL. A focused Mayu test verifies development and runtime
+  provider exports. The legacy runtime has intentionally not been switched yet.

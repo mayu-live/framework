@@ -4,6 +4,7 @@
 # License: AGPL-3.0
 
 require_relative "component/base"
+require_relative "component/state"
 
 module Mayu
   module Component
