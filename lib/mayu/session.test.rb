@@ -227,10 +227,17 @@ class Mayu::SessionTest < Minitest::Test
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
 
+    error =
+      Struct
+        .new(:module_id, :source, :cause) do
+          def message = "unexpected token"
+          def backtrace = ["app:/broken.haml:2"]
+        end
+        .new("app:/broken.haml", "%p= )\n", SyntaxError.new)
     reload_result =
       Struct
         .new(:errors) { def success? = false }
-        .new([["app:/broken.haml", SyntaxError.new("unexpected token")]])
+        .new([["app:/broken.haml", error]])
 
     session.send(:handle_reload_result, reload_result)
 
@@ -239,5 +246,6 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal("app:/broken.haml", patch.file)
     assert_equal("SyntaxError", patch.type)
     assert_equal("unexpected token", patch.message)
+    assert_equal("%p= )\n", patch.source)
   end
 end

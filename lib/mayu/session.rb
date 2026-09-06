@@ -283,14 +283,31 @@ module Mayu
     def emit_reload_error_patches(reload_result)
       Array(reload_result.errors).each do |reload_error|
         if reload_error in [module_id, error]
+          file =
+            (
+              if error.respond_to?(:module_id)
+                error.module_id.to_s
+              else
+                module_id.to_s
+              end
+            )
+          source = error.respond_to?(:source) ? error.source.to_s : ""
+          type =
+            (
+              if error.respond_to?(:cause)
+                error.cause.class.name
+              else
+                error.class.name
+              end
+            )
           @engine.patch(
             Runtime::Patches::RenderError[
-              module_id.to_s,
-              error.class.name,
+              file,
+              type,
               error.message,
               Array(error.backtrace),
-              "",
-              [{ name: "CodeReload", path: module_id.to_s }]
+              source,
+              [{ name: "CodeReload", path: file }]
             ]
           )
           next
