@@ -12,6 +12,7 @@ require_relative "component"
 require_relative "watcher"
 require_relative "metrics"
 require_relative "utils"
+require_relative "klenod"
 
 module Mayu
   class Environment
@@ -32,6 +33,7 @@ module Mayu
     attr_reader :modules
     attr_reader :router
     attr_reader :module_provider
+    attr_reader :klenod_configuration
     attr_reader :marshaller
     attr_reader :metrics
 
@@ -50,6 +52,7 @@ module Mayu
       router: nil,
       modules: nil,
       module_provider: nil,
+      klenod_configuration: nil,
       metrics: nil
     )
       @config = config
@@ -77,7 +80,10 @@ module Mayu
 
       @router = router || Mayu::Routes::Router.build(@pages_dir)
       @modules = modules || Modules::System.new(@app_dir, **SYSTEM_CONFIG)
-      @module_provider = module_provider
+      @klenod_configuration =
+        klenod_configuration || Klenod::Configuration.load(root: config.root)
+      @module_provider =
+        module_provider || @klenod_configuration.development_provider
     end
 
     def asset_path(filename)

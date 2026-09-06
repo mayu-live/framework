@@ -2,7 +2,10 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "tmpdir"
+require "fileutils"
 
+require_relative "../klenod"
 require_relative "../component/base"
 require_relative "../runtime/descriptors"
 require_relative "router"
@@ -38,7 +41,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
       end
 
       def module_id_for(entry)
-        "app:/#{entry}"
+        entry.start_with?("app:/") ? entry : "app:/#{entry}"
       end
 
       def assets_for_module(module_ids, type:)
@@ -104,6 +107,24 @@ class Mayu::Klenod::RouterTest < Minitest::Test
 
     assert_equal(404, resolved.status)
     assert_equal("app:/pages/+not-found.haml", resolved.module_ids.last)
+  end
+
+  def test_resolves_a_klenod_page_through_the_development_provider
+    Dir.mktmpdir("mayu-klenod-router") do |root|
+      FileUtils.mkdir_p(File.join(root, "app", "pages"))
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(root, "app", "pages", "+page.haml"), "%p Hello\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      resolved = Mayu::Klenod::Router.new(provider).resolve("/")
+
+      assert_equal(200, resolved.status)
+      assert_equal(
+        %w[app:/root.haml app:/pages/+page.haml],
+        resolved.module_ids
+      )
+      assert_equal(Mayu::Component::Base, resolved.descriptor.type.superclass)
+    end
   end
 
   private

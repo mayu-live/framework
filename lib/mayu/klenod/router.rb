@@ -76,10 +76,10 @@ module Mayu
 
       def module_ids_for(match)
         [
-          @provider.module_id_for(@root_entry),
+          @root_entry,
           *match.route.layout_module_ids,
           route_page_module_id(match.route)
-        ].compact.map(&:to_s)
+        ].compact.map { @provider.module_id_for(it).to_s }
       end
 
       def asset_urls(module_ids, type)
