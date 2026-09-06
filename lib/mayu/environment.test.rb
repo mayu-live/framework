@@ -32,6 +32,23 @@ class Mayu::EnvironmentTest < Minitest::Test
     end
   end
 
+  def test_development_environment_uses_klenod_without_legacy_state
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+
+      environment =
+        Mayu::Environment.with_config(config(root), metrics: Object.new)
+
+      assert_nil(environment.modules)
+      assert_nil(environment.router)
+      assert_instance_of(
+        Mayu::Klenod::DevelopmentProvider,
+        environment.module_provider
+      )
+    end
+  end
+
   def test_klenod_update_subscriptions_receive_each_central_update_once
     environment =
       Mayu::Environment.new(

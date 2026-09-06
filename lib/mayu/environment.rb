@@ -44,7 +44,7 @@ module Mayu
     end
 
     def self.with_config(config, metrics: nil)
-      new(config, metrics:)
+      new(config, legacy: false, metrics:)
     end
 
     def initialize(

@@ -339,6 +339,10 @@ module Mayu
       @resolved_page = nil
       @route_status = 200
 
+      unless @environment.respond_to?(:modules) && @environment.modules
+        return ErrorPage.build("Could not find page for #{path}")
+      end
+
       system = Modules::System.current
 
       match = @environment.router.match(path)
