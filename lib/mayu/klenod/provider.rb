@@ -19,6 +19,8 @@ module Mayu
       end
 
       def exports(reference)
+        return reference if reference.is_a?(Module)
+
         if reference.respond_to?(:exports)
           reference.exports
         else

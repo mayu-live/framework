@@ -53,6 +53,7 @@ module Mayu
       modules: nil,
       module_provider: nil,
       klenod_configuration: nil,
+      legacy: true,
       metrics: nil
     )
       @config = config
@@ -78,12 +79,15 @@ module Mayu
           ttl: config.server.transfer_timeout_seconds
         )
 
-      @router = router || Mayu::Routes::Router.build(@pages_dir)
-      @modules = modules || Modules::System.new(@app_dir, **SYSTEM_CONFIG)
+      @router = router || (Mayu::Routes::Router.build(@pages_dir) if legacy)
+      @modules =
+        modules || (Modules::System.new(@app_dir, **SYSTEM_CONFIG) if legacy)
       @klenod_configuration =
         klenod_configuration || Klenod::Configuration.load(root: config.root)
       @module_provider =
         module_provider || @klenod_configuration.development_provider
+      @klenod_update_subscribers = {}
+      @klenod_update_subscribers_mutex = Mutex.new
     end
 
     def asset_path(filename)
@@ -113,6 +117,19 @@ module Mayu
       new(config, router:, modules:, metrics:)
     end
 
+    def self.load_klenod_with_config(config, bundle_path, metrics: nil)
+      klenod_configuration =
+        Klenod::Configuration.load(root: config.root, mode: :production)
+
+      new(
+        config,
+        module_provider: klenod_configuration.runtime_provider(bundle_path:),
+        klenod_configuration:,
+        legacy: false,
+        metrics:
+      )
+    end
+
     private_class_method def self.load_bundle(bundle)
       MsgPackWrapper.new.unpack(bundle) => { mayu_version:, data: }
 
@@ -127,10 +144,17 @@ module Mayu
     end
 
     def use(&)
+      return yield self unless @modules
+
       @modules.use { yield self }
     end
 
     def start_watcher
+      if @module_provider.is_a?(Klenod::DevelopmentProvider)
+        return start_klenod_watcher
+      end
+      return unless @modules
+
       Async do
         Mayu::Watcher.run(@modules) do |events|
           if events.any? { |event| is_route_event?(event) }
@@ -143,7 +167,55 @@ module Mayu
       end
     end
 
+    def subscribe_klenod_updates(&block)
+      token = Object.new
+      @klenod_update_subscribers_mutex.synchronize do
+        @klenod_update_subscribers[token] = block
+      end
+      token
+    end
+
+    def unsubscribe_klenod_updates(token)
+      @klenod_update_subscribers_mutex.synchronize do
+        @klenod_update_subscribers.delete(token)
+      end
+    end
+
     private
+
+    def start_klenod_watcher
+      provider = @module_provider
+      context = provider.context
+      root_entry = provider.entry("root.haml")
+      updates = Async::Queue.new
+      context.on_update { |event| updates.enqueue(event) }
+
+      watcher =
+        ::Klenod::Build::Watcher.new(
+          source_dir: @klenod_configuration.source_path,
+          context:
+        )
+
+      Async do
+        watcher.start
+
+        loop do
+          event = updates.dequeue
+          publish_klenod_update(provider.apply_update(event, entry: root_entry))
+        end
+      ensure
+        updates.close
+        watcher.stop
+      end
+    end
+
+    def publish_klenod_update(update)
+      subscribers =
+        @klenod_update_subscribers_mutex.synchronize do
+          @klenod_update_subscribers.values
+        end
+      subscribers.each { |subscriber| subscriber.call(update) }
+    end
 
     def load_runtime_js_path
       File

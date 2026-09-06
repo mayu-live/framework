@@ -23,33 +23,20 @@ module Mayu
       end
 
       def call
-        require_relative "../system_config"
-        require_relative "../environment"
-        require_relative "../routes"
-        require_relative "../component"
+        require_relative "../configuration"
+        require_relative "../klenod"
 
         Sync do
           elapsed =
             Async::Clock.measure do
-              Environment.with(:development) do |environment|
-                environment.modules.import("/root.haml")
-
-                environment.router.all_templates.each do |template|
-                  environment.modules.import(File.join("/pages", template))
-                end
-
-                environment.modules.update_overall_order
-
-                environment
-                  .modules
-                  .generate_assets(
-                    environment.assets_dir,
-                    concurrency: options[:concurrency],
-                    forever: false
-                  )
-                  .wait
-
-                File.write(options[:filename], environment.dump)
+              Configuration.with(:production) do |config|
+                Klenod::Configuration.load(
+                  root: config.root,
+                  mode: :production
+                ).build(
+                  output: File.expand_path(options[:filename]),
+                  asset_generation_concurrency: options[:concurrency]
+                )
               end
             rescue => e
               Console.logger.error(self, e)

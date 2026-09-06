@@ -38,6 +38,14 @@ class Mayu::SessionTest < Minitest::Test
       @marshaller = nil
       @module_provider = module_provider
     end
+
+    def subscribe_klenod_updates(&block)
+      @subscription = block
+    end
+
+    def unsubscribe_klenod_updates(_subscription)
+      @subscription = nil
+    end
   end
 
   class FakeEngine
@@ -204,5 +212,32 @@ class Mayu::SessionTest < Minitest::Test
     refute_nil(event_patch)
     assert_equal("reload:success", event_patch.event)
     assert_nil(event_patch.payload)
+  end
+
+  def test_klenod_reload_failure_emits_render_error_patch
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {
+        },
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    reload_result =
+      Struct
+        .new(:errors) { def success? = false }
+        .new([["app:/broken.haml", SyntaxError.new("unexpected token")]])
+
+    session.send(:handle_reload_result, reload_result)
+
+    patch = fake_engine.patches.first
+    assert_instance_of(Mayu::Runtime::Patches::RenderError, patch)
+    assert_equal("app:/broken.haml", patch.file)
+    assert_equal("SyntaxError", patch.type)
+    assert_equal("unexpected token", patch.message)
   end
 end

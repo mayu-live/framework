@@ -231,6 +231,8 @@ module Mayu
           return response if response
         end
 
+        return text_response(404, "file not found") unless @environment.modules
+
         asset =
           request
             .path

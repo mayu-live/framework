@@ -189,12 +189,34 @@ module Mayu
     private
 
     def run_code_reload_task(parent)
+      if module_provider.is_a?(Klenod::DevelopmentProvider)
+        return run_klenod_reload_task(parent)
+      end
+
       parent.async do |task|
         task.annotate("Session #{@id}: HMR")
 
         while (reload_result = Modules::System.current.wait_for_reload)
           handle_reload_result(reload_result)
         end
+      end
+    end
+
+    def run_klenod_reload_task(parent)
+      parent.async do |task|
+        task.annotate("Session #{@id}: HMR")
+        updates = Async::Queue.new
+        subscription =
+          @environment.subscribe_klenod_updates do |update|
+            updates.enqueue(update)
+          end
+
+        while (update = updates.dequeue)
+          handle_reload_result(update)
+        end
+      ensure
+        @environment.unsubscribe_klenod_updates(subscription) if subscription
+        updates&.close
       end
     end
 
@@ -260,6 +282,20 @@ module Mayu
 
     def emit_reload_error_patches(reload_result)
       Array(reload_result.errors).each do |reload_error|
+        if reload_error in [module_id, error]
+          @engine.patch(
+            Runtime::Patches::RenderError[
+              module_id.to_s,
+              error.class.name,
+              error.message,
+              Array(error.backtrace),
+              "",
+              [{ name: "CodeReload", path: module_id.to_s }]
+            ]
+          )
+          next
+        end
+
         @engine.patch(
           Runtime::Patches::RenderError[
             reload_error.file,

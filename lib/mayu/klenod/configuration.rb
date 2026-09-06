@@ -80,12 +80,8 @@ module Mayu
         DevelopmentProvider.new(context(**overrides), assets_dir: assets_path)
       end
 
-      def build(**overrides)
-        context(**overrides).build(
-          entrypoints:,
-          output: output_path,
-          assets_dir: assets_path
-        )
+      def build(output: output_path, assets_dir: assets_path, **overrides)
+        context(**overrides).build(entrypoints:, output:, assets_dir:)
       end
 
       def runtime_provider(bundle_path: output_path)

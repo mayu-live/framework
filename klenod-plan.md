@@ -13,7 +13,8 @@ and bundle contents do not need compatibility shims.
 ## Tracking
 
 - Overall status: In progress
-- Current milestone: 3 — Complete Klenod Haml compatibility coverage
+- Current milestone: 3–6 — Complete compatibility coverage and replace the
+  remaining development/production infrastructure
 - Klenod version required by Mayu: 0.0.7 source checkout (unreleased changes)
 - Last updated: 2026-09-06
 
@@ -177,19 +178,19 @@ routes.
 
 ## Milestone 6 — Replace HMR and production bundles
 
-- [ ] Run one Klenod watcher per development environment.
-- [ ] Apply each invalidation/update once centrally, including asset writes, and
+- [x] Run one Klenod watcher per development environment.
+- [x] Apply each invalidation/update once centrally, including asset writes, and
       broadcast the resulting success or failure to every live session.
-- [ ] On success, refresh each session's route descriptor and route-scoped head
+- [x] On success, refresh each session's route descriptor and route-scoped head
       assets. CSS- or JavaScript-only changes must update the head even when the
       rendered component tree is otherwise unchanged.
 - [ ] On failure, keep unaffected routes serving the previous good graph and
       send source-mapped error patches for the failed modules.
 - [ ] Verify recovery after syntax errors and route/component file add/remove.
-- [ ] Make `mayu build` collect root and router entrypoints without evaluating
+- [x] Make `mayu build` collect root and router entrypoints without evaluating
       application code, materialize Klenod assets, and serialize a Klenod runtime
       bundle.
-- [ ] Make `mayu start` load that bundle with the configured source root and
+- [x] Make `mayu start` load that bundle with the configured source root and
       construct the production provider. Old Mayu bundle contents are intentionally
       incompatible even if the default filename remains unchanged.
 - [ ] Reimplement `mayu transform` by collecting the requested module and
@@ -266,6 +267,14 @@ milestone spans them.
   repaired Klenod route-component syntax exposed by SSR. All 40 discovered
   example routes, including dynamic and catch-all routes, render successfully
   through Klenod with the example dependency bundle.
+- 2026-09-06: Switched `mayu build` to Klenod's root/router bundle and asset
+  build, and made production environments load that runtime bundle without
+  constructing the legacy router or module system. The Mayu suite passes (151
+  runs, 440 assertions), and the example production build completes successfully.
+- 2026-09-06: Replaced the development watcher path with Klenod's watcher. It
+  applies each invalidation once, writes changed assets, and fans the result out
+  to subscribed live sessions; each session refreshes its descriptor and head
+  assets from that shared result. The Mayu suite passes (154 runs, 451 assertions).
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

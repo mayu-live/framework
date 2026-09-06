@@ -29,8 +29,30 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       runtime = configuration.runtime_provider
 
       assert_equal(42, runtime.exports("entry")::VALUE)
+      assert_equal(42, runtime.exports(runtime.entry("entry"))::VALUE)
       assert_equal("app:/entry.rb", runtime.module_id_for("entry"))
       assert_equal("/.mayu/assets/", runtime.asset_base)
+    end
+  end
+
+  def test_build_accepts_an_explicit_output_path
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "entry.rb"), "VALUE = 42\n")
+
+      configuration =
+        Mayu::Klenod::Configuration.new(root:, entrypoints: ["entry"])
+      output = File.join(root, "build", "app.mayu-bundle")
+
+      configuration.build(output:)
+
+      assert_path_exists(output)
+      assert_equal(
+        42,
+        configuration.runtime_provider(bundle_path: output).exports(
+          "entry"
+        )::VALUE
+      )
     end
   end
 
