@@ -8,7 +8,7 @@ require "samovar"
 module Mayu
   module Commands
     class Transform < Samovar::Command
-      self.description = "Transform Haml/CSS -> Ruby"
+      self.description = "Inspect a Klenod-transformed module"
 
       options do
         option "--no-line-numbers", "Disable line numbers", default: false
@@ -19,7 +19,6 @@ module Mayu
 
       def call
         require "rouge"
-        require "syntax_tree"
         require_relative "../configuration"
         require_relative "../klenod"
 
@@ -67,89 +66,6 @@ module Mayu
               "#{path} must be inside #{configuration.source_path}"
       end
 
-      def transform(source, path, line_numbers:, colors:)
-        formatter = CodeFormatter.new(line_numbers:, colors:)
-
-        case extname = File.extname(path)
-        when ".haml"
-          transform_haml(formatter, source, path)
-        when ".rb"
-          transform_ruby(formatter, source, path)
-        when ".css"
-          transform_css(formatter, source, path)
-        else
-          puts "Can't transform #{extname}-files"
-        end
-      end
-
-      def transform_haml(formatter, source, path)
-        loading_file =
-          Mayu::Modules::Loaders::LoadingFile.new(
-            root: Dir.pwd,
-            path:,
-            source:,
-            digest: nil
-          ).load_source
-
-        puts "\e[1;3mInput:\e[0;2m #{path}\e[0m"
-        puts formatter.format(loading_file.source.strip, Rouge::Lexers::Haml)
-
-        loading_file =
-          Mayu::Modules::Loaders::Haml[
-            component_base_class: "Mayu::Component::Base",
-            using: ["Mayu::Component::CSSUnits::Refinements"],
-            factory: "H"
-          ].call(loading_file)
-
-        puts "\e[1;3mOutput:\e[0m"
-
-        formatter.handle_parse_error(loading_file.source.strip) do
-          puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
-        end
-      end
-
-      def transform_ruby(formatter, source, path)
-        loading_file =
-          Mayu::Modules::Loaders::LoadingFile.new(
-            root: Dir.pwd,
-            path:,
-            source:,
-            digest: nil
-          ).load_source
-
-        puts "\e[1;3mInput:\e[0;2m #{path}\e[0m"
-        puts formatter.format(loading_file.source.strip, Rouge::Lexers::Haml)
-
-        loading_file = Mayu::Modules::Loaders::Ruby[].call(loading_file)
-
-        puts "\e[1;3mOutput:\e[0m"
-
-        formatter.handle_parse_error(loading_file.source.strip) do
-          puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
-        end
-      end
-
-      def transform_css(formatter, source, path)
-        loading_file =
-          Mayu::Modules::Loaders::LoadingFile.new(
-            root: Dir.pwd,
-            path:,
-            source:,
-            digest: nil
-          ).load_source
-
-        puts "\e[1mInput:\e[0;2m #{path}\e[0m"
-        puts formatter.format(loading_file.source.strip, Rouge::Lexers::CSS)
-
-        loading_file = Mayu::Modules::Loaders::CSS.new.call(loading_file)
-
-        puts "\e[1mOutput:\e[0m"
-
-        formatter.handle_parse_error(loading_file.source.strip) do
-          puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
-        end
-      end
-
       class CodeFormatter
         def initialize(
           line_numbers:,
@@ -164,15 +80,8 @@ module Mayu
         def format(source, lexer)
           source
             .chomp
-            .then { colorize(_1, lexer) }
-            .then { prepend_line_numbers(_1) }
-        end
-
-        def handle_parse_error(source)
-          yield
-        rescue SyntaxTree::Parser::ParseError => e
-          log_parse_error(source, e)
-          raise
+            .then { colorize(it, lexer) }
+            .then { prepend_line_numbers(it) }
         end
 
         private
@@ -197,25 +106,6 @@ module Mayu
                 line
               end.prepend(Kernel.format(number_format, i))
             end
-        end
-
-        def extract_lines(str, from, to)
-          str.each_line.to_a[from..to] || []
-        end
-
-        def log_parse_error(source, e)
-          start_line = [0, 0].max
-          formatted_source =
-            prepend_line_numbers(
-              extract_lines(source.to_s, start_line, -1),
-              start_line: start_line + 1,
-              error_line: e.lineno
-            ).join
-
-          puts(<<~ERROR)
-            #{e.message} on line #{e.lineno} col #{e.column}
-            #{formatted_source}
-          ERROR
         end
       end
     end

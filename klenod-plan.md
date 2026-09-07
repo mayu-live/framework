@@ -250,6 +250,7 @@ in both development and production modes.
 - [ ] Delete `lib/mayu/modules`, Mayu's route builder, old asset
       generators/storage, obsolete stylesheet/image/SVG wrappers, and superseded
       tests.
+  - [x] Delete the unreachable legacy transformer implementation from `mayu transform`.
 - [ ] Remove `Mayu::Modules::*`, `Mayu::StyleSheet`, and old asset APIs without
       aliases or deprecation shims.
 - [ ] Remove direct gem dependencies used only by deleted code, after checking
