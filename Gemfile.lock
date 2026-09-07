@@ -1,51 +1,4 @@
 PATH
-  remote: ../../klenod/gems/klenod-build
-  specs:
-    klenod-build (0.0.7)
-      async (~> 2.42)
-      async-http (>= 0.95.1, < 0.104.0)
-      base64 (~> 0.3)
-      brotli (~> 0.8)
-      image_size (~> 3.6)
-      klenod-runtime (= 0.0.7)
-      kramdown (~> 2.5)
-      kramdown-parser-gfm (~> 1.1)
-      listen (~> 3.10)
-      protocol-url (~> 0.4)
-      rmagick (~> 7.0)
-      samovar (~> 2.5)
-      syntax_tree (~> 6.3)
-      syntax_tree-haml (~> 4.0)
-      toml-rb (~> 4.2)
-      tsort (~> 0.2.0)
-
-PATH
-  remote: ../../klenod/gems/klenod-plugin-css
-  specs:
-    klenod-plugin-css (0.0.7)
-      klenod-build (= 0.0.7)
-      rb_sys (~> 0.9.124)
-
-PATH
-  remote: ../../klenod/gems/klenod-plugin-javascript
-  specs:
-    klenod-plugin-javascript (0.0.7)
-      klenod-build (= 0.0.7)
-      rb_sys (~> 0.9.124)
-
-PATH
-  remote: ../../klenod/gems/klenod-rack
-  specs:
-    klenod-rack (0.0.7)
-      http-accept (~> 2.2)
-      klenod-runtime (= 0.0.7)
-
-PATH
-  remote: ../../klenod/gems/klenod-runtime
-  specs:
-    klenod-runtime (0.0.7)
-
-PATH
   remote: .
   specs:
     mayu-live (0.0.6)
@@ -55,11 +8,11 @@ PATH
       base64 (~> 0.3)
       brotli (~> 0.8)
       dotenv (~> 3.2)
-      klenod-build (= 0.0.7)
-      klenod-plugin-css (= 0.0.7)
-      klenod-plugin-javascript (= 0.0.7)
-      klenod-rack (= 0.0.7)
-      klenod-runtime (= 0.0.7)
+      klenod-build (= 0.0.8)
+      klenod-plugin-css (= 0.0.8)
+      klenod-plugin-javascript (= 0.0.8)
+      klenod-rack (= 0.0.8)
+      klenod-runtime (= 0.0.8)
       localhost (~> 1.7)
       mime-types (~> 3.7)
       minitest (~> 6.0)
@@ -142,6 +95,49 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     json (2.7.2)
+    klenod-build (0.0.8)
+      async (~> 2.42)
+      async-http (>= 0.95.1, < 0.104.0)
+      base64 (~> 0.3)
+      brotli (~> 0.8)
+      image_size (~> 3.6)
+      klenod-runtime (= 0.0.8)
+      kramdown (~> 2.5)
+      kramdown-parser-gfm (~> 1.1)
+      listen (~> 3.10)
+      protocol-url (~> 0.4)
+      rmagick (~> 7.0)
+      samovar (~> 2.5)
+      syntax_tree (~> 6.3)
+      syntax_tree-haml (~> 4.0)
+      toml-rb (~> 4.2)
+      tsort (~> 0.2.0)
+    klenod-plugin-css (0.0.8)
+      klenod-build (= 0.0.8)
+      rb_sys (~> 0.9.124)
+    klenod-plugin-css (0.0.8-aarch64-linux-gnu)
+      klenod-build (= 0.0.8)
+    klenod-plugin-css (0.0.8-arm64-darwin)
+      klenod-build (= 0.0.8)
+    klenod-plugin-css (0.0.8-x86_64-darwin)
+      klenod-build (= 0.0.8)
+    klenod-plugin-css (0.0.8-x86_64-linux-gnu)
+      klenod-build (= 0.0.8)
+    klenod-plugin-javascript (0.0.8)
+      klenod-build (= 0.0.8)
+      rb_sys (~> 0.9.124)
+    klenod-plugin-javascript (0.0.8-aarch64-linux-gnu)
+      klenod-build (= 0.0.8)
+    klenod-plugin-javascript (0.0.8-arm64-darwin)
+      klenod-build (= 0.0.8)
+    klenod-plugin-javascript (0.0.8-x86_64-darwin)
+      klenod-build (= 0.0.8)
+    klenod-plugin-javascript (0.0.8-x86_64-linux-gnu)
+      klenod-build (= 0.0.8)
+    klenod-rack (0.0.8)
+      http-accept (~> 2.2)
+      klenod-runtime (= 0.0.8)
+    klenod-runtime (0.0.8)
     kramdown (2.5.2)
       rexml (>= 3.4.4)
     kramdown-parser-gfm (1.1.0)
@@ -286,11 +282,6 @@ DEPENDENCIES
   benchmark
   guard
   irb
-  klenod-build!
-  klenod-plugin-css!
-  klenod-plugin-javascript!
-  klenod-rack!
-  klenod-runtime!
   localhost
   mayu-live!
   minitest

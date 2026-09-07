@@ -4,13 +4,6 @@ source "https://rubygems.org"
 
 gemspec
 
-# Use the sibling Klenod checkout while the breaking migration is coordinated.
-gem "klenod-build", path: "../../klenod/gems/klenod-build"
-gem "klenod-runtime", path: "../../klenod/gems/klenod-runtime"
-gem "klenod-rack", path: "../../klenod/gems/klenod-rack"
-gem "klenod-plugin-css", path: "../../klenod/gems/klenod-plugin-css"
-gem "klenod-plugin-javascript", path: "../../klenod/gems/klenod-plugin-javascript"
-
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
 
 group :development do

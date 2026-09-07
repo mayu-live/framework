@@ -15,7 +15,7 @@ and bundle contents do not need compatibility shims.
 - Overall status: In progress
 - Current milestone: 3–6 — Complete compatibility coverage and replace the
   remaining development/production infrastructure
-- Klenod version required by Mayu: 0.0.7 source checkout (unreleased changes)
+- Klenod version required by Mayu: 0.0.8 (released)
 - Last updated: 2026-09-06
 
 Update the milestone checkboxes and progress log as work lands. A milestone is
@@ -53,7 +53,7 @@ green; the example must be restored by milestone 7.
 - [x] Add development and serialized-bundle tests for both changes.
 - [x] Run Klenod's runtime, build, Rack, CSS, JavaScript, gems, examples, and web
       suites.
-- [ ] Release Klenod and record the released version in this document.
+- [x] Release Klenod 0.0.8 and record the released version in this document.
 
 Acceptance gate: the released Klenod version provides every import value Mayu
 needs in both development and a runtime-only bundle.
@@ -238,9 +238,8 @@ init` template.
   - [x] Document Klenod route/configuration defaults and the production bundle
         flow in the generated-app README.
   - [x] Clarify Klenod production build/start requirements in the example README.
-  - [ ] Make the example Docker build work with the temporary sibling Klenod
-        path gems (or switch it to released gems once Klenod is published). Its
-        current `example/` build context cannot contain `../../../klenod`.
+  - [x] Switch the example from temporary sibling Klenod path gems to the
+        released Klenod dependency set, making its Docker build context viable.
 - [x] Document `klenod.config.rb`, the default `app/pages` choice, and how to
       configure a different `RouterPlugin#pages_dir`.
 
@@ -279,7 +278,7 @@ in both development and production modes.
         `syntax_tree-xml` test helper owns it transitively.
 - [x] Remove stale documentation and diagrams referring to the old graph,
       loader, asset queue, or bundle format.
-- [ ] Pin the released Klenod version instead of sibling path gems.
+- [x] Pin the released Klenod version instead of sibling path gems.
 - [ ] Run every final acceptance command and prepare the breaking Mayu release
       notes and migration guide.
 
@@ -339,6 +338,9 @@ milestone spans them.
   verified Klenod CSS assets, and stopped it. Fixed the client patch dispatcher
   tuple type so `npm run build` completes without TypeScript diagnostics; the
   browser suite still passes (13 tests).
+- 2026-09-07: Replaced every sibling Klenod path dependency with released
+  Klenod 0.0.8 gems, refreshed the framework and example lockfiles, and ran
+  the full Mayu suite successfully (124 runs, 420 assertions).
 - 2026-09-06: Added executable example coverage for a grouped optional
   catch-all route, corrected the example production Docker command, and updated
   the root and example documentation for Klenod `ClassNames`, transformation,
