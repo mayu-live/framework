@@ -225,7 +225,7 @@ init` template.
   - [x] Add and test an example `GET /api/health` `+route.rb` handler.
   - [x] Add a root `+error.haml` view and verify that Klenod resolves it at 500.
   - [x] Add and test a grouped optional catch-all route under `/demos/segments`.
-- [ ] Update the root README, example documentation pages, generated-app README,
+- [x] Update the root README, example documentation pages, generated-app README,
       Docker build, deployment files, and ignore rules.
   - [x] Update the example stylesheet guide to describe Klenod `ClassNames`.
   - [x] Make the example Docker image start the Klenod production bundle with
@@ -319,6 +319,11 @@ environment limitation to account for when comparing later results.
 
 Add short dated entries here. Link commits in both repositories when a
 milestone spans them.
+
+- 2026-09-07: Refreshed the Klenod `virtual:router` export on every Mayu route
+  lookup, so route add/remove HMR uses Klenod's current router manifest rather
+  than a cached adapter value. Added development-provider coverage and completed
+  the final local Mayu regression pass (130 runs, 442 assertions).
 
 - 2026-09-07: Added an encrypted session-transfer integration test using a
   fresh Klenod provider. It verifies that component classes resolve again,
