@@ -44,3 +44,18 @@
       * `/posts`
       * `/about`
       * `/`
+
+      ## Route handlers
+
+      A `+route.rb` file handles HTTP requests for its directory. Public methods
+      are named after HTTP verbs and return `[status, headers, body]`:
+
+      ```ruby
+      # app/pages/api/health/+route.rb
+      def GET(_request)
+        [200, {"content-type" => "application/json"}, '{"status":"ok"}']
+      end
+      ```
+
+      A route can have both `+page.haml` and `+route.rb`. Browser HTML requests
+      render the page; non-HTML requests are handled by the route handler.
