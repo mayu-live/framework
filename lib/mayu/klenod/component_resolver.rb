@@ -25,7 +25,15 @@ module Mayu
       end
 
       def resolve_component_ref(reference)
-        exports = @provider.exports(reference.filename)
+        # A transferred session can resume against a fresh development
+        # provider, whose graph has not evaluated this component yet. `entry`
+        # loads it before exposing the exports module.
+        exports =
+          if @provider.respond_to?(:entry)
+            @provider.entry(reference.filename).exports
+          else
+            @provider.exports(reference.filename)
+          end
         class_name = reference.class_name.to_s.split("::").last
 
         if exports.const_defined?(class_name, false)

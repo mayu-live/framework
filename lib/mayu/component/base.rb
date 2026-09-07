@@ -44,6 +44,11 @@ module Mayu
 
       def marshal_dump
         instance_variables
+          .reject do |ivar|
+            ivar in
+              :@__props | :@__context | :@__children | :@__vnode_id |
+                :@__vnode_task | :@__vnode_queue
+          end
           .map { |ivar| [ivar, instance_variable_get(ivar)] }
           .to_h
       end

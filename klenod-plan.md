@@ -298,7 +298,9 @@ router, or the old asset storage, and all final suites pass.
 - [ ] HMR success, failure, recovery, route add/remove, and asset add/remove.
 - [ ] Multiple sessions receive the same update exactly once.
 - [ ] Source-mapped Haml render, callback, route-handler, and reload errors.
-- [ ] Component state and class references survive encrypted session transfer.
+- [x] Component state and class references survive encrypted session transfer.
+  - [x] Add a Ruby integration test that encrypts `Session::TransferState`,
+        resumes it with a fresh Klenod provider, renders, and invokes a callback.
 - [ ] Generated application installs, starts, builds, and serves its bundle.
 - [ ] Docker/Fly-style build verifies that the selected single dependency set is
       present and functional.
@@ -313,6 +315,13 @@ environment limitation to account for when comparing later results.
 
 Add short dated entries here. Link commits in both repositories when a
 milestone spans them.
+
+- 2026-09-07: Added an encrypted session-transfer integration test using a
+  fresh Klenod provider. It verifies that component classes resolve again,
+  SVG metadata is persisted as its stable URL, and a restored listener invokes
+  its component callback. Persisted descriptors and component state now omit
+  transient VDOM references that would retain Klenod's anonymous export
+  modules.
 
 - 2026-09-07: Removed the unreachable legacy `Mayu::Watcher`, its direct
   `listen` dependency, and the unused `AddStyleSheet` patch. Updated the

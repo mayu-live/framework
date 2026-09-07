@@ -9,6 +9,8 @@ require "fileutils"
 require "tmpdir"
 
 require_relative "session"
+require_relative "encrypted_marshal"
+require_relative "session/transfer_state"
 require_relative "test"
 
 class Mayu::SessionTest < Minitest::Test
@@ -156,6 +158,61 @@ class Mayu::SessionTest < Minitest::Test
       Mayu::Session.new(environment: env, request_info: request_info).render
 
     assert_includes(html, "Form demo")
+  end
+
+  def test_encrypted_transfer_restores_klenod_component_references
+    root = File.expand_path("../../example", __dir__)
+    marshaller = Mayu::EncryptedMarshal.new("transfer-test-secret")
+    source_environment =
+      FakeEnvironment.new(
+        module_provider:
+          Mayu::Klenod::Configuration.new(root:).development_provider
+      )
+    source_environment.instance_variable_set(:@marshaller, marshaller)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/form",
+        headers: {
+        },
+        http2: false
+      )
+    session = Mayu::Session.new(environment: source_environment, request_info:)
+
+    encrypted =
+      Mayu::Session::TransferState.from_session(session).encrypt(marshaller)
+    target_environment =
+      FakeEnvironment.new(
+        module_provider:
+          Mayu::Klenod::Configuration.new(root:).development_provider
+      )
+    target_environment.instance_variable_set(:@marshaller, marshaller)
+    restored =
+      Mayu::Session::TransferState.decrypt(marshaller, encrypted).resume(
+        target_environment
+      )
+
+    assert_equal(session.id, restored.id)
+    assert_includes(restored.render, "Form demo")
+    assert_equal(target_environment.module_provider, restored.module_provider)
+
+    engine = restored.instance_variable_get(:@engine)
+    Async do
+      engine.start
+      listener =
+        engine
+          .root
+          .instance_variable_get(:@listeners)
+          .values
+          .find { it.callback&.method_name == :handle_enable }
+
+      refute_nil(listener)
+      engine.callback(listener.id, { target: { value: "Elements" } })
+      patch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+
+      refute_nil(patch)
+    ensure
+      engine.stop
+    end.wait
   end
 
   def test_session_renders_klenod_jsx_custom_elements

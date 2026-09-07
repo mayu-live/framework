@@ -18,6 +18,12 @@ module Mayu
       end
 
       def self.dump_value(value)
+        # Klenod evaluates module exports inside anonymous modules. Its SVG
+        # imports are metadata objects from one of those modules, which Ruby
+        # cannot marshal even though an element only needs their URL. Keep the
+        # stable string representation in the persisted descriptor instead.
+        return value.src if klenod_svg_metadata?(value)
+
         case value
         in Hash
           value.transform_values { dump_value(_1) }
@@ -80,6 +86,10 @@ module Mayu
 
       def self.component_class?(value)
         value.is_a?(Class) && value <= Mayu::Component::Base
+      end
+
+      def self.klenod_svg_metadata?(value)
+        value.respond_to?(:src) && value.class.name&.end_with?("::SvgMetadata")
       end
     end
   end
