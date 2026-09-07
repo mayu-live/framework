@@ -235,6 +235,9 @@ module Mayu
             module_path.empty?
 
           provider = @engine.module_provider
+          if provider&.respond_to?(:rewrite_exception)
+            provider.rewrite_exception(error)
+          end
           formatted_error =
             if provider
               provider.format_exception(error, source_path: module_path)
