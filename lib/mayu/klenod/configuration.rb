@@ -155,6 +155,9 @@ module Mayu
               pages_dir:,
               route_base_class: "Mayu::Route"
             ),
+            ::Klenod::Build::Plugins::GoogleFontsPlugin.new(
+              cache_path: File.join(root, ".mayu", "google_fonts")
+            ),
             ::Klenod::Build::Plugins::CSSPlugin.new,
             ::Klenod::Build::Plugins::JavaScriptPlugin.new
           ]
