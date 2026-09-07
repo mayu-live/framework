@@ -206,6 +206,56 @@ class Mayu::EnvironmentTest < Minitest::Test
     end
   end
 
+  def test_klenod_watcher_updates_added_and_removed_routes
+    Dir.mktmpdir("mayu-klenod") do |root|
+      app_dir = File.join(root, "app")
+      pages_dir = File.join(app_dir, "pages")
+      route_dir = File.join(pages_dir, "about")
+      route_path = File.join(route_dir, "+page.haml")
+      FileUtils.mkdir_p(pages_dir)
+      File.write(File.join(app_dir, "root.haml"), "%slot\n")
+      File.write(File.join(pages_dir, "+page.haml"), "%p Home\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      environment =
+        Mayu::Environment.new(
+          config(root),
+          module_provider: provider,
+          metrics: Object.new
+        )
+      router = Mayu::Klenod::Router.new(provider)
+      assert_nil(router.resolve("/about"))
+
+      updates = Async::Queue.new
+      environment.subscribe_klenod_updates { |update| updates.enqueue(update) }
+
+      Async do
+        watcher_task = environment.start_watcher
+
+        FileUtils.mkdir_p(route_dir)
+        File.write(route_path, "%p About\n")
+        publish_update(provider, route_path, graph_version: 1)
+        added = updates.dequeue(timeout: 2)
+
+        assert(added.success?)
+        assert_equal(200, router.resolve("/about").status)
+
+        File.delete(route_path)
+        result =
+          provider.context.invalidate_paths([], removed_paths: [route_path])
+        provider.context.emit_update(
+          ::Klenod::Build::UpdateEvent.new([], [route_path], 2, result)
+        )
+        removed = updates.dequeue(timeout: 2)
+
+        assert(removed.success?)
+        assert_nil(router.resolve("/about"))
+      ensure
+        watcher_task&.stop
+      end.wait
+    end
+  end
+
   private
 
   def publish_update(provider, path, graph_version:)

@@ -295,11 +295,8 @@ router, or the old asset storage, and all final suites pass.
 - [x] Mayu browser-runtime tests and production build.
 - [x] Development smoke test of the full example.
 - [x] Production bundle/build/start smoke test in a fresh process.
-- [ ] HMR success, failure, recovery, route add/remove, and asset add/remove.
+- [x] HMR success, failure, recovery, route add/remove, and asset add/remove.
   - [x] Publish removed stylesheet assets and remove their generated files.
-  - [ ] Make Klenod router manifests invalidate when `+page` route files are
-        added or removed. A live Mayu router currently retains the prior route
-        set after an otherwise successful Klenod update.
 - [x] Multiple sessions receive the same update exactly once.
 - [ ] Source-mapped Haml render, callback, route-handler, and reload errors.
 - [x] Component state and class references survive encrypted session transfer.

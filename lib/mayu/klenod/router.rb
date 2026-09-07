@@ -95,7 +95,10 @@ module Mayu
       private
 
       def router
-        @router ||= exports_for(@router_entry)::Default
+        # Klenod replaces the virtual router export when route files are added
+        # or removed. Resolve it on demand so a long-lived Mayu adapter sees
+        # the new manifest after an HMR update.
+        exports_for(@router_entry)::Default
       end
 
       def root_component
