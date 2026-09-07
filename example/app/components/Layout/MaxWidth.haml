@@ -3,7 +3,7 @@
   return H[
     ($as || $tag || :div).to_sym,
     H.slot(self),
-    **self.class.merge_props($*, { class: :maxWidth })
+    **HamlHelper.merge_props(self.class, $*, { class: :maxWidth })
   ]
 :css
   .maxWidth {

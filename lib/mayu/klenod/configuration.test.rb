@@ -151,6 +151,26 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_default_haml_plugin_merges_scoped_classes_with_component_props
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "button.haml"), "%button{ **$* } Button\n")
+      File.write(File.join(root, "app", "button.css"), "button { color: red; }\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      component_class = provider.exports(provider.entry("button.haml"))::Default
+      component = component_class.allocate
+      component.instance_variable_set(:@__props, {class: "caller", "data-id": "example"}.freeze)
+      descriptor = component.render
+
+      assert_equal(
+        [component_class::ClassNames[:__button], "caller"].join(" "),
+        descriptor.props.fetch(:class)
+      )
+      assert_equal("example", descriptor.props.fetch(:data_id))
+    end
+  end
+
   def test_default_haml_plugin_renders_imports_and_slots
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))

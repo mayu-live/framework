@@ -8,7 +8,8 @@
   return H[
     tag,
     H.slot(self),
-    **self.class.merge_props(
+    **HamlHelper.merge_props(
+      self.class,
       $*.except(:level),
       { class: [:h, tag] },
       { class: $class },

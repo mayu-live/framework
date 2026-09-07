@@ -62,7 +62,7 @@
       H[
         :pre,
         "Unsupported node:\n\n#{JSON.pretty_generate(node)}",
-        **self.class.merge_props(class: :unsupported)
+        **HamlHelper.merge_props(self.class, class: :unsupported)
       ]
     end
   end
@@ -83,7 +83,7 @@
     H[
       default,
       *children,
-      **self.class.merge_props({ class: :"__#{default}" })
+      **HamlHelper.merge_props(self.class, { class: :"__#{default}" })
     ]
   end
 

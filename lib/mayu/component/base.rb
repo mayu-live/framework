@@ -19,29 +19,6 @@ module Mayu
 
       def self.to_s = File.join("MAYU_ROOT", module_path)
 
-      def self.merge_props(*sources)
-        result =
-          sources.reduce do |result, hash|
-            result.merge(hash) do |key, old_value, new_value|
-              case key
-              in :class
-                [old_value, new_value].flatten
-              else
-                new_value
-              end
-            end
-          end
-
-        if classes = result.delete(:class)
-          classnames = self::ClassNames.class_name(classes)
-
-          result[:class] = classnames unless classnames.nil? ||
-            classnames.empty?
-        end
-
-        result.transform_keys { _1.to_s.tr("-", "_").to_sym }
-      end
-
       def marshal_dump
         instance_variables
           .reject do |ivar|
