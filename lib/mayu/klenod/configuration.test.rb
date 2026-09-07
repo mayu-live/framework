@@ -77,6 +77,28 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_pages_dir_configures_the_router_plugin_used_by_the_provider
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "frontend", "routes"))
+      File.write(File.join(root, "klenod.config.rb"), <<~RUBY)
+          source_dir "frontend"
+          pages_dir "routes"
+        RUBY
+      File.write(File.join(root, "frontend", "root.haml"), "%slot\n")
+      File.write(
+        File.join(root, "frontend", "routes", "+page.haml"),
+        "%p Configured route\n"
+      )
+
+      provider = Mayu::Klenod::Configuration.load(root:).development_provider
+      resolved = Mayu::Klenod::Router.new(provider).resolve("/")
+
+      refute_nil(resolved)
+      assert_equal(200, resolved.status)
+      assert_equal("app:/routes/+page.haml", resolved.module_ids.last)
+    end
+  end
+
   def test_default_haml_plugin_maps_props_context_and_state_to_mayu_receivers
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))

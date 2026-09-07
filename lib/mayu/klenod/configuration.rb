@@ -52,7 +52,24 @@ module Mayu
       end
 
       def source_dir(value = nil) = value ? @source_dir = value : @source_dir
-      def pages_dir(value = nil) = value ? @pages_dir = value : @pages_dir
+      def pages_dir(value = nil)
+        return @pages_dir unless value
+
+        @pages_dir = value
+        @plugins =
+          @plugins.map do |plugin|
+            unless plugin.is_a?(::Klenod::Build::Plugins::RouterPlugin::Plugin)
+              next plugin
+            end
+
+            ::Klenod::Build::Plugins::RouterPlugin.new(
+              specifier: plugin.specifier,
+              pages_dir: value,
+              extensions: plugin.extensions,
+              route_base_class: plugin.route_base_class
+            )
+          end
+      end
       def entrypoint(value) = @entrypoints << value
       def entrypoints(*values) =
         values.empty? ? @entrypoints : @entrypoints.concat(values.flatten)

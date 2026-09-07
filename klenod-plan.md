@@ -312,6 +312,9 @@ milestone spans them.
 - 2026-09-06: Added Klenod special-view resolution for 404s and page-resolution
   failures. A page that fails during resolution now renders the nearest
   `+error` view with status 500 and the original exception as a prop.
+- 2026-09-06: Made `klenod.config.rb` `pages_dir` overrides reconfigure the
+  active Klenod router plugin; a configured source root and routes directory
+  now resolve through the development provider end to end.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
