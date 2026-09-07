@@ -323,6 +323,11 @@ milestone spans them.
   backtraces through Klenod's source maps before emitting Mayu render-error
   patches. The existing graph remains active after a failure, and focused
   session coverage verifies the patch's original source and rewritten location.
+- 2026-09-07: Updated example component and callback documentation to show
+  Klenod-generated `Mayu::Runtime::H` output and the current callback helper.
+  Replaced the deleted transformer-fixture link with Klenod's Haml-plugin
+  coverage, verified both pages with `mayu transform`, and synchronized the
+  example lockfile with Mayu's removed direct dependencies.
 - 2026-09-06: Added executable example coverage for a grouped optional
   catch-all route, corrected the example production Docker command, and updated
   the root and example documentation for Klenod `ClassNames`, transformation,

@@ -55,15 +55,12 @@ PATH
       base64 (~> 0.3)
       brotli (~> 0.8)
       dotenv (~> 3.2)
-      image_size (~> 3.6)
       klenod-build (= 0.0.7)
       klenod-plugin-css (= 0.0.7)
       klenod-plugin-javascript (= 0.0.7)
       klenod-rack (= 0.0.7)
       klenod-runtime (= 0.0.7)
-      listen (~> 3.10.0)
       localhost (~> 1.7)
-      mayu-css (~> 0.1.5)
       mime-types (~> 3.7)
       minitest (~> 6.0)
       msgpack (~> 1.8)
@@ -74,15 +71,11 @@ PATH
       rake (~> 13.3)
       rbnacl (~> 7.1)
       reline (~> 0.6)
-      rmagick (~> 7.0)
       rouge (~> 4.7)
       samovar (~> 2.5)
-      syntax_tree (~> 6.3)
-      syntax_tree-haml (~> 4.0)
       syntax_tree-xml (~> 0.1.0)
       terminal-table (~> 4.0)
       toml (~> 0.3)
-      tsort (~> 0.2.0)
 
 GEM
   remote: https://rubygems.org/
@@ -161,11 +154,6 @@ GEM
     localhost (1.8.0)
       bake
     logger (1.7.0)
-    mayu-css (0.1.5)
-    mayu-css (0.1.5-aarch64-linux)
-    mayu-css (0.1.5-arm64-darwin)
-    mayu-css (0.1.5-x86_64-darwin)
-    mayu-css (0.1.5-x86_64-linux)
     method_source (1.1.0)
     mime-types (3.7.0)
       logger
@@ -319,11 +307,6 @@ CHECKSUMS
   listen (3.10.0) sha256=c6e182db62143aeccc2e1960033bebe7445309c7272061979bb098d03760c9d2
   localhost (1.8.0) sha256=df7ea825b4f64949c588c17efac86bc47ddc4460d723778abe933b71759b2701
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
-  mayu-css (0.1.5) sha256=a9579066d20e6ef16b183cd4d5bb4747bae6ccb85a8caeef13855278ed19b959
-  mayu-css (0.1.5-aarch64-linux) sha256=2ff0f90bf50a594ebe6b3093efd7a738b96d87751a2190afe75c4f9a7299356e
-  mayu-css (0.1.5-arm64-darwin) sha256=692b2c0263fa2c4c2af179a9413ac6b06e01f595b65f4dca4ff90b0cb374c77b
-  mayu-css (0.1.5-x86_64-darwin) sha256=fe394dd9e34841932a28ff29afa696814c4dba04c27cea3e087328f9418bb0f0
-  mayu-css (0.1.5-x86_64-linux) sha256=ed3bb215e50b039de766b2b72a02493b56083a85e1aa76fa8424d7798d7e5b8e
   mayu-live (0.0.6)
   method_source (1.1.0) sha256=181301c9c45b731b4769bc81e8860e72f9161ad7d66dd99103c9ab84f560f5c5
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56

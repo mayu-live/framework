@@ -11,10 +11,10 @@
 
       Mayu components are written in a dialect of
       [Haml](https://haml.info/).
-      Mayu parses Haml code and transforms it into Ruby.
+      Mayu uses Klenod to parse Haml code and transform it into Ruby.
 
       To see how these transformations are made, see the
-      [Haml transformer test examples](https://github.com/mayu-live/framework/tree/main/lib/mayu/resources/transformers/__test__/haml).
+      [Klenod Haml-plugin test examples](https://github.com/aalin/klenod/tree/main/gems/klenod-build/lib/klenod/build/plugins/haml_plugin).
 
       ## Component structure
 
@@ -43,7 +43,7 @@
       It compiles into:
 
       ```ruby
-      Mayu::VDOM::H[:p, "Hello world"]
+      Mayu::Runtime::H[:p, "Hello world"]
       ```
 
       ## Multiple children
