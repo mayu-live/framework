@@ -12,9 +12,7 @@ type IdNode = {
   children: IdNode[];
 };
 
-type PatchType = keyof typeof Patches;
-
-type Patch = [id: string, name: PatchType, ...args: string[]];
+type Patch = [name: string, ...args: unknown[]];
 
 type PatchSet = Patch[];
 
@@ -335,7 +333,7 @@ const Patches = {
       const [name, ...args] = patch;
       console.log(name, args);
 
-      const patchFn = Patches[name as PatchType] as any;
+      const patchFn = Patches[name as keyof typeof Patches] as any;
 
       if (!patchFn) {
         throw new Error(`Not implemented: ${name}`);

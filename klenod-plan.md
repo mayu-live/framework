@@ -51,7 +51,7 @@ green; the example must be restored by milestone 7.
       A changed custom-element module must not attempt to redefine an already
       registered browser tag with incompatible code.
 - [x] Add development and serialized-bundle tests for both changes.
-- [ ] Run Klenod's runtime, build, Rack, CSS, JavaScript, gems, examples, and web
+- [x] Run Klenod's runtime, build, Rack, CSS, JavaScript, gems, examples, and web
       suites.
 - [ ] Release Klenod and record the released version in this document.
 
@@ -288,11 +288,11 @@ router, or the old asset storage, and all final suites pass.
 
 ## Final test matrix
 
-- [ ] Klenod runtime, build, Rack, CSS, JavaScript, gem, example, and web suites.
-- [ ] Mayu Ruby unit and integration suite.
-- [ ] Mayu browser-runtime tests and production build.
-- [ ] Development smoke test of the full example.
-- [ ] Production bundle/build/start smoke test in a fresh process.
+- [x] Klenod runtime, build, Rack, CSS, JavaScript, gem, example, and web suites.
+- [x] Mayu Ruby unit and integration suite.
+- [x] Mayu browser-runtime tests and production build.
+- [x] Development smoke test of the full example.
+- [x] Production bundle/build/start smoke test in a fresh process.
 - [ ] HMR success, failure, recovery, route add/remove, and asset add/remove.
 - [ ] Multiple sessions receive the same update exactly once.
 - [ ] Source-mapped Haml render, callback, route-handler, and reload errors.
@@ -328,6 +328,17 @@ milestone spans them.
   Replaced the deleted transformer-fixture link with Klenod's Haml-plugin
   coverage, verified both pages with `mayu transform`, and synchronized the
   example lockfile with Mayu's removed direct dependencies.
+- 2026-09-07: Ran Klenod's complete acceptance suite: runtime, build, test,
+  Rack, JavaScript, CSS, and meta gems; standalone, box, performance, and web
+  examples; and release tooling all pass (750 runs, 4,170 assertions).
+- 2026-09-07: Re-ran the Mayu suite (124 runs, 420 assertions) and browser
+  runtime tests (13 tests). Built the example production Klenod bundle with a
+  temporary secret, started it in a fresh process, fetched its HTTPS root page,
+  verified Klenod CSS asset URLs, and stopped the temporary server.
+- 2026-09-07: Ran the example development server, fetched its HTTPS root page,
+  verified Klenod CSS assets, and stopped it. Fixed the client patch dispatcher
+  tuple type so `npm run build` completes without TypeScript diagnostics; the
+  browser suite still passes (13 tests).
 - 2026-09-06: Added executable example coverage for a grouped optional
   catch-all route, corrected the example production Docker command, and updated
   the root and example documentation for Klenod `ClassNames`, transformation,
