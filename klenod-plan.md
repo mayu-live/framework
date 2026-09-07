@@ -136,7 +136,7 @@ the existing VDOM engine, including stateful callbacks and slots.
         live session never loses its tree or state by being remounted as a route.
 - [x] Return a resolved-page value containing the VDOM descriptor, HTTP status,
       canonical route module IDs, CSS references, and JavaScript references.
-- [ ] Query assets from the root, rendered layouts, page, and rendered slot
+- [x] Query assets from the root, rendered layouts, page, and rendered slot
       module IDs. Preserve Klenod's traversal index so root/layout CSS precedes page
       and component CSS.
 - [x] Pass stylesheet and module-script URLs explicitly into the document head.
@@ -329,6 +329,8 @@ milestone spans them.
 - 2026-09-06: Chose to preserve Mayu VDOM error boundaries and render-error
   patches for initial and live component failures. Only route-resolution
   failures before session startup render the nearest Klenod `+error` view.
+- 2026-09-06: Added a development-provider regression test for recursive route
+  CSS collection. Klenod preserves root, layout, and page stylesheet order.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

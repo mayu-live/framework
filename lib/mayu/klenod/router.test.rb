@@ -235,6 +235,30 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     end
   end
 
+  def test_collects_route_css_in_root_layout_and_page_order
+    Dir.mktmpdir("mayu-klenod-router-assets") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(File.join(pages, "posts"))
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(root, "app", "root.css"), "html { color: black; }\n")
+      File.write(File.join(pages, "+layout.haml"), "%main\n  %slot\n")
+      File.write(File.join(pages, "+layout.css"), "main { color: blue; }\n")
+      File.write(File.join(pages, "posts", "+page.haml"), "%p Posts\n")
+      File.write(File.join(pages, "posts", "+page.css"), "p { color: red; }\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      stylesheets =
+        Mayu::Klenod::Router.new(provider).resolve("/posts").stylesheets
+      indexes =
+        %w[root_css pages_layout_css pages_posts_page_css].map do |basename|
+          stylesheets.index { it.include?(basename) }
+        end
+
+      refute_includes(indexes, nil)
+      assert_equal(indexes.sort, indexes)
+    end
+  end
+
   private
 
   def router(
