@@ -474,76 +474,18 @@ Look at this example:
 
 [`./example/app/pages/Counter.haml`](https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml)
 
-That above code will be transformed into something like this:
+Klenod transforms it into a Mayu component class. Imports, scoped companion
+CSS, `ClassNames`, source maps, and emitted assets are all Klenod concerns;
+Mayu receives the resulting component descriptor and renders it through its
+existing VDOM runtime. The exact generated Ruby is intentionally an
+implementation detail. To inspect it for an application, run:
 
-```ruby
-# frozen_string_literal: true
-Self =
-  setup_component(
-    assets: ["0tyaKLqdvUGGcwZkdPOdMiMoMZoO74sMmtyRTuksjaQ=.css"],
-    styles: {
-      __Card: "example/app/pages/Counter_Card?7d89edff",
-      __article: "example/app/pages/Counter_article?7d89edff",
-      __output: "example/app/pages/Counter_output?7d89edff",
-      __button: "example/app/pages/Counter_button?7d89edff",
-    },
-  )
-begin
-  Card = import("/app/components/UI/Card")
-  def self.get_initial_state(initial_value: 0, **) = { count: initial_value }
-  def decrement_disabled = state[:count].zero?
-  def handle_decrement
-    update do |state|
-      count = [0, state[:count] - 1].max
-      { count: }
-    end
-  end
-  def handle_increment
-    update do |state|
-      count = state[:count] + 1
-      { count: }
-    end
-  end
-end
-public def render
-  Mayu::VDOM::H[
-    Card,
-    Mayu::VDOM::H[
-      :article,
-      Mayu::VDOM::H[
-        :button,
-        "－",
-        **mayu.merge_props(
-          { class: :__button },
-          { title: "Decrement" },
-          {
-            onclick: mayu.handler(:handle_decrement),
-            disabled: decrement_disabled,
-          },
-        )
-      ],
-      Mayu::VDOM::H[
-        :output,
-        state[:count],
-        **mayu.merge_props({ class: :__output })
-      ],
-      Mayu::VDOM::H[
-        :button,
-        "＋",
-        **mayu.merge_props(
-          { class: :__button },
-          { title: "Increment" },
-          { onclick: mayu.handler(:handle_increment) },
-        )
-      ],
-      **mayu.merge_props({ class: :__article })
-    ],
-    **mayu.merge_props({ class: :__Card }, { class: :card })
-  ]
-end
+```bash
+bin/mayu transform app/pages/Counter.haml
 ```
 
-[Check out more examples in the tests](https://github.com/mayu-live/framework/blob/main/lib/mayu/resources/transformers/haml.test.rb)
+[The Klenod-backed Haml integration tests](https://github.com/mayu-live/framework/blob/main/lib/mayu/klenod/configuration.test.rb)
+cover the Mayu-specific component behavior.
 
 # Implementation notes
 

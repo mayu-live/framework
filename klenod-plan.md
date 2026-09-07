@@ -230,6 +230,8 @@ init` template.
   - [x] Update the example stylesheet guide to describe Klenod `ClassNames`.
   - [x] Make the example Docker image start the Klenod production bundle with
         `bin/mayu start`.
+  - [x] Replace the obsolete legacy-transformer walkthrough in the root README
+        with the Klenod component boundary and `mayu transform` command.
 - [x] Document `klenod.config.rb`, the default `app/pages` choice, and how to
       configure a different `RouterPlugin#pages_dir`.
 
