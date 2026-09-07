@@ -380,6 +380,22 @@ pages_dir "routes"
 With this configuration, a route such as `/about` is defined by
 `frontend/routes/about/+page.haml`.
 
+### Route handlers
+
+Use `+route.rb` beside (or instead of) a page to handle HTTP requests. Its
+public methods are named after HTTP verbs and receive a `Mayu::Route::Request`.
+They return `[status, headers, body]`:
+
+```ruby
+# app/pages/api/health/+route.rb
+def GET(_request)
+  [200, { "content-type" => "application/json" }, '{"status":"ok"}']
+end
+```
+
+For a route that has both `+page.haml` and `+route.rb`, browser-style HTML
+requests render the page while non-HTML requests use the handler.
+
 ## Hot reloading
 
 There is a resource system inspired by JavaScript bundlers that loads all

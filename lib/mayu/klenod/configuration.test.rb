@@ -18,7 +18,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
         Mayu::Klenod::Configuration.new(
           root:,
           entrypoints: ["entry"],
-          output: ".mayu/app.bundle"
+          output: ".mayu/app.bundle",
         )
 
       development = configuration.development_provider
@@ -50,8 +50,8 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       assert_equal(
         42,
         configuration.runtime_provider(bundle_path: output).exports(
-          "entry"
-        )::VALUE
+          "entry",
+        )::VALUE,
       )
     end
   end
@@ -71,7 +71,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       assert_equal("routes", configuration.pages_dir)
       assert_equal(
         %w[root.haml virtual:router entry virtual:router],
-        configuration.entrypoints
+        configuration.entrypoints,
       )
       assert_equal("/assets/", configuration.base)
     end
@@ -87,7 +87,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       File.write(File.join(root, "frontend", "root.haml"), "%slot\n")
       File.write(
         File.join(root, "frontend", "routes", "+page.haml"),
-        "%p Configured route\n"
+        "%p Configured route\n",
       )
 
       provider = Mayu::Klenod::Configuration.load(root:).development_provider
@@ -118,11 +118,11 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       component.instance_variable_set(:@__props, { title: "Ada" }.freeze)
       component.instance_variable_set(
         :@__context,
-        Mayu::Runtime::VNodes::VComponent::Context.new
+        Mayu::Runtime::VNodes::VComponent::Context.new,
       )
       component.instance_variable_set(
         :@__state,
-        Mayu::Component::State.new(component)
+        Mayu::Component::State.new(component),
       )
       component.send(:initialize)
 
@@ -145,7 +145,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
 
       assert_equal(
         component_class::ClassNames[:title],
-        descriptor.props[:class]
+        descriptor.props[:class],
       )
       refute_empty(descriptor.props[:class])
     end
@@ -170,7 +170,9 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       component = component_class.allocate
       component.instance_variable_set(
         :@__children,
-        Mayu::Runtime::Descriptors::Children[[Mayu::Runtime::H[:em, "Slotted"]]]
+        Mayu::Runtime::Descriptors::Children[
+          [Mayu::Runtime::H[:em, "Slotted"]]
+        ],
       )
       descriptor = component.render
 
@@ -250,7 +252,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       FileUtils.mkdir_p(File.join(root, "app", "pages", "api"))
       File.write(
         File.join(root, "app", "pages", "api", "+route.rb"),
-        "def GET(request) = request.path\n"
+        "def GET(request) = request.path\n",
       )
 
       provider = Mayu::Klenod::Configuration.new(root:).development_provider
@@ -261,9 +263,27 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       assert_equal(
         "/api",
         handler.new.GET(
-          Mayu::Route::Request.new("GET", "/api", {}, nil, {}, {})
-        )
+          Mayu::Route::Request.new("GET", "/api", {}, nil, {}, {}),
+        ),
       )
     end
+  end
+
+  def test_example_includes_a_klenod_route_handler
+    provider =
+      Mayu::Klenod::Configuration.new(
+        root: File.expand_path("../../../example", __dir__),
+      ).development_provider
+    router = provider.exports(provider.entry("virtual:router"))::Default
+    handler = router.match("/api/health").handler
+
+    status, headers, body =
+      handler.new.GET(
+        Mayu::Route::Request.new("GET", "/api/health", {}, nil, {}, {}),
+      )
+
+    assert_equal(200, status)
+    assert_equal({ "content-type" => "application/json" }, headers)
+    assert_equal('{"status":"ok"}', body)
   end
 end

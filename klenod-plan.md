@@ -222,6 +222,7 @@ init` template.
       Klenod recognizes as a custom-element module, and update its import.
 - [ ] Add example coverage for `+route.rb`, `+error`, richer route segments, and
       any other new public behavior that Mayu documents.
+  - [x] Add and test an example `GET /api/health` `+route.rb` handler.
   - [x] Add a root `+error.haml` view and verify that Klenod resolves it at 500.
 - [ ] Update the root README, example documentation pages, generated-app README,
       Docker build, deployment files, and ignore rules.
