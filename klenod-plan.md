@@ -344,6 +344,9 @@ milestone spans them.
   Klenod generated `app.mayu-bundle` successfully. A production server smoke
   test remains pending because the active development server owns its metrics
   port.
+- 2026-09-06: Started that production bundle in a fresh process and fetched the
+  complete HTML root page with `Accept: text/html`. It served Klenod CSS, image,
+  and callback assets correctly; the temporary controller was then stopped.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
