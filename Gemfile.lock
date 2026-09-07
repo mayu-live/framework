@@ -73,7 +73,6 @@ PATH
       reline (~> 0.6)
       rouge (~> 4.7)
       samovar (~> 2.5)
-      syntax_tree (~> 6.3)
       syntax_tree-xml (~> 0.1.0)
       terminal-table (~> 4.0)
       toml (~> 0.3)

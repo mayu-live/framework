@@ -270,11 +270,13 @@ in both development and production modes.
         systems to injected component resolvers.
 - [x] Remove `Mayu::Modules::*`, `Mayu::StyleSheet`, and old asset APIs without
       aliases or deprecation shims.
-- [ ] Remove direct gem dependencies used only by deleted code, after checking
+- [x] Remove direct gem dependencies used only by deleted code, after checking
       all remaining direct requires.
   - [x] Remove Mayu's direct legacy transform/image dependencies; Klenod Build
         retains the dependencies it needs for its own plugins.
   - [x] Remove the unused legacy `listen` watcher dependency.
+  - [x] Remove the redundant direct `syntax_tree` dependency; the remaining
+        `syntax_tree-xml` test helper owns it transitively.
 - [x] Remove stale documentation and diagrams referring to the old graph,
       loader, asset queue, or bundle format.
 - [ ] Pin the released Klenod version instead of sibling path gems.
@@ -313,6 +315,10 @@ milestone spans them.
   architecture guide to describe Klenod as the application compiler, router,
   asset pipeline, and HMR provider. Client tests pass (13 tests), and the full
   Mayu suite passes (124 runs, 418 assertions).
+- 2026-09-07: Audited Mayu's remaining direct dependencies and removed the
+  redundant direct `syntax_tree` declaration. The retained `syntax_tree-xml`
+  test helper supplies it transitively; the full Mayu suite passes (124 runs,
+  418 assertions).
 - 2026-09-06: Added executable example coverage for a grouped optional
   catch-all route, corrected the example production Docker command, and updated
   the root and example documentation for Klenod `ClassNames`, transformation,

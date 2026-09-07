@@ -78,6 +78,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "mime-types", "~> 3.7"
   spec.add_dependency "rake", "~> 13.3"
-  spec.add_dependency "syntax_tree", "~> 6.3"
   spec.add_dependency "syntax_tree-xml", "~> 0.1.0"
 end
