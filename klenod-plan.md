@@ -162,7 +162,7 @@ work.
   - `not_found.haml` to `+not-found.haml`;
   - `:id` directories to `[id]`;
   - `::paths` directories to `[...paths]`.
-- [ ] Support `+error.haml`, route groups, optional catch-alls, parallel routes,
+- [x] Support `+error.haml`, route groups, optional catch-alls, parallel routes,
       and intercepted routes according to `RouterPlugin`.
 - [x] Add `Mayu::Route` as the generated `+route.rb` base class.
 - [x] Give route methods a Mayu request wrapper exposing method, path, headers,
@@ -318,6 +318,9 @@ milestone spans them.
 - 2026-09-06: Updated the route documentation to use Klenod's `+page`,
   `+layout`, dynamic-segment, and not-found conventions, and documented
   `klenod.config.rb` route-directory overrides.
+- 2026-09-06: Verified that grouped, optional catch-all, and intercepted routes
+  resolve through Mayu's Klenod adapter; parallel routes and error views were
+  already covered by their dedicated adapter tests.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

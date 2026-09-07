@@ -190,6 +190,51 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     end
   end
 
+  def test_resolves_grouped_optional_and_intercepted_routes_through_the_development_provider
+    Dir.mktmpdir("mayu-klenod-router-segments") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(File.join(pages, "(marketing)", "about"))
+      FileUtils.mkdir_p(File.join(pages, "shop", "[[...filters]]"))
+      FileUtils.mkdir_p(File.join(pages, "feed", "(.)photo"))
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(
+        File.join(pages, "(marketing)", "about", "+page.haml"),
+        "%p About\n"
+      )
+      File.write(
+        File.join(pages, "shop", "[[...filters]]", "+page.haml"),
+        "%p Shop\n"
+      )
+      File.write(
+        File.join(pages, "feed", "(.)photo", "+page.haml"),
+        "%p Photo\n"
+      )
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      router = Mayu::Klenod::Router.new(provider)
+
+      assert_equal(
+        "app:/pages/(marketing)/about/+page.haml",
+        router.resolve("/about").module_ids.last
+      )
+
+      optional = router.resolve("/shop/sale/shoes")
+      assert_equal(
+        "app:/pages/shop/[[...filters]]/+page.haml",
+        optional.module_ids.last
+      )
+      assert_equal(
+        { filters: %w[sale shoes] },
+        optional.descriptor.children.descriptors.fetch(0).props[:params]
+      )
+
+      assert_equal(
+        "app:/pages/feed/(.)photo/+page.haml",
+        router.resolve("/feed/photo").module_ids.last
+      )
+    end
+  end
+
   private
 
   def router(
