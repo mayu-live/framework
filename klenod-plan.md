@@ -220,7 +220,7 @@ init` template.
 - [x] Update image rendering to Klenod metadata and its inline placeholder.
 - [x] Rename the current custom-element `.js` module to `.jsx` or `.tsx`, which
       Klenod recognizes as a custom-element module, and update its import.
-- [ ] Add example coverage for `+route.rb`, `+error`, richer route segments, and
+- [x] Add example coverage for `+route.rb`, `+error`, richer route segments, and
       any other new public behavior that Mayu documents.
   - [x] Add and test an example `GET /api/health` `+route.rb` handler.
   - [x] Add a root `+error.haml` view and verify that Klenod resolves it at 500.
