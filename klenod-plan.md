@@ -260,6 +260,7 @@ in both development and production modes.
       generators/storage, obsolete stylesheet/image/SVG wrappers, and superseded
       tests.
   - [x] Delete the unreachable legacy transformer implementation from `mayu transform`.
+  - [x] Delete the legacy module tree, route builder, and stylesheet wrappers.
   - [x] Remove the legacy route-resolution, asset-serving, and watcher fallbacks
         from the active Mayu environment, session, and server paths.
   - [x] Make VDOM error reporting and session-transfer component restoration use

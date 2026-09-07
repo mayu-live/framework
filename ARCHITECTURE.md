@@ -244,19 +244,19 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
   - `lib/mayu/runtime/vnodes/vattributes.rb`
   - `lib/mayu/session.rb` (`Events.from_message`)
 - Change route/file conventions:
-  - `lib/mayu/routes.rb`
+  - `lib/mayu/klenod/configuration.rb`
+  - `lib/mayu/klenod/router.rb`
   - `lib/mayu/session.rb` (`resolve_route`)
 - Change app import/compile behavior:
-  - `lib/mayu/modules/system.rb`
-  - `lib/mayu/modules/loaders/*`
-  - `lib/mayu/system_config.rb`
+  - `lib/mayu/klenod/configuration.rb`
+  - the corresponding Klenod plugin
 - Change HMR reload behavior:
-  - `lib/mayu/watcher.rb`
-  - `lib/mayu/modules/system.rb`
+  - `lib/mayu/environment.rb`
+  - `lib/mayu/klenod/provider.rb`
   - `lib/mayu/session.rb` reload task
 - Change asset generation/serving:
-  - `lib/mayu/assets/*`
-  - `lib/mayu/modules/loaders/*`
+  - Klenod asset plugins
+  - `lib/mayu/klenod/asset_app.rb`
   - `lib/mayu/server/app.rb#handle_asset`
 - Change session auth/transfer/recovery:
   - `lib/mayu/server/cookies.rb`
@@ -267,7 +267,6 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
 
 ## Sharp Edges / Agent Notes
 
-- `Modules::System.current` is thread-local. Imports/loaders assume a current system context.
 - Session/engine transfer relies on `Marshal`; avoid storing non-marshalable objects in component instance state.
 - Keep patch schema compatibility across Ruby and TypeScript.
 - `VChildren` diffing uses a simple keyed/type reconciliation strategy; keyed reordering works, but it favors simplicity over advanced move-optimization (e.g. explicit move patches/LIS-style minimization).
