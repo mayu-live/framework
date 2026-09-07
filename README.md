@@ -367,6 +367,9 @@ For a real-world example, check out
 
 ### Klenod configuration
 
+For applications upgrading from Mayu's former module system, see
+[the Klenod migration guide](MIGRATION.md).
+
 Mayu loads Klenod configuration from `klenod.config.rb`. By default, Klenod
 uses `app` as its source directory and `app/pages` for routes. To keep source
 files elsewhere or use another routes directory, configure both values:

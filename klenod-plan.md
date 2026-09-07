@@ -281,6 +281,8 @@ in both development and production modes.
 - [x] Pin the released Klenod version instead of sibling path gems.
 - [ ] Run every final acceptance command and prepare the breaking Mayu release
       notes and migration guide.
+  - [x] Add a Klenod migration guide covering route conventions, build/start,
+        component assets, and removed Mayu APIs.
   - [ ] Run the generated-app acceptance check after this breaking Mayu version
         is published; `mayu init` intentionally installs `mayu-live` from
         RubyGems rather than this unreleased checkout.
