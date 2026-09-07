@@ -235,6 +235,8 @@ init` template.
   - [x] Update the root README's server configuration examples for the active
         development/production keys and Klenod build/start flow.
   - [x] Remove the stale example route/module graph diagram.
+  - [x] Document Klenod route/configuration defaults and the production bundle
+        flow in the generated-app README.
 - [x] Document `klenod.config.rb`, the default `app/pages` choice, and how to
       configure a different `RouterPlugin#pages_dir`.
 

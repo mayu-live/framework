@@ -10,9 +10,27 @@ Open [`https://localhost:9292`](https://localhost:9292) with your browser.
 
 Open `app/pages/+page.haml` with your text editor to make changes.
 
+Routes use Klenod's `+page.haml` and `+layout.haml` conventions. Mayu loads an
+optional `klenod.config.rb` from the application root when you need to change
+the default `app/pages` route directory or Klenod plugins.
+
+## Production
+
+Build the Klenod runtime bundle and assets:
+
+```bash
+bin/mayu build
+```
+
+Set `MAYU_SECRET_KEY`, then start the production server:
+
+```bash
+bin/mayu start
+```
+
 ## Learn more
 
-Find the documentation on [mayu.live/docs][https://mayu.live/docs].
+Find the documentation on [mayu.live/docs](https://mayu.live/docs).
 
 Check out the [GitHub repository](https://github.com/mayu-live/framework).
 
