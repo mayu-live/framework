@@ -264,6 +264,8 @@ in both development and production modes.
         from the active Mayu environment, session, and server paths.
   - [x] Make VDOM error reporting and session-transfer component restoration use
         the injected Klenod provider/resolver without legacy module fallbacks.
+  - [x] Convert VDOM serialization and context fixtures from thread-local module
+        systems to injected component resolvers.
 - [ ] Remove `Mayu::Modules::*`, `Mayu::StyleSheet`, and old asset APIs without
       aliases or deprecation shims.
 - [ ] Remove direct gem dependencies used only by deleted code, after checking
