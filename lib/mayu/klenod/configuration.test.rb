@@ -133,6 +133,37 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_default_haml_plugin_uses_klenod_class_names_for_companion_css
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "card.haml"), "%p.title Card\n")
+      File.write(File.join(root, "app", "card.css"), ".title { color: red; }\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      component_class = provider.exports(provider.entry("card.haml"))::Default
+      descriptor = component_class.allocate.render
+
+      assert_equal(
+        component_class::ClassNames[:title],
+        descriptor.props[:class]
+      )
+      refute_empty(descriptor.props[:class])
+    end
+  end
+
+  def test_default_image_plugin_generates_klenod_inline_placeholders
+    configuration = Mayu::Klenod::Configuration.new(root: Dir.pwd)
+    plugin =
+      configuration.plugins.find do |candidate|
+        candidate.is_a?(::Klenod::Build::Plugins::ImagePlugin::Plugin)
+      end
+    placeholder = plugin.instance_variable_get(:@placeholder)
+
+    assert_equal(16, placeholder.width)
+    assert_equal("webp", placeholder.format)
+    assert_equal(80, placeholder.quality)
+  end
+
   def test_default_router_config_uses_mayu_route_as_the_handler_base_class
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app", "pages", "api"))

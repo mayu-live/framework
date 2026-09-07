@@ -214,8 +214,8 @@ callback, and transfer a session between workers.
 
 - [x] Rename every route and route segment in `example/app/pages` and the `mayu
 init` template.
-- [ ] Update explicit stylesheet maps from `Styles` to `ClassNames`.
-- [ ] Update image rendering to Klenod metadata and its inline placeholder.
+- [x] Update explicit stylesheet maps from `Styles` to `ClassNames`.
+- [x] Update image rendering to Klenod metadata and its inline placeholder.
 - [x] Rename the current custom-element `.js` module to `.jsx` or `.tsx`, which
       Klenod recognizes as a custom-element module, and update its import.
 - [ ] Add example coverage for `+route.rb`, `+error`, richer route segments, and
@@ -321,6 +321,9 @@ milestone spans them.
 - 2026-09-06: Verified that grouped, optional catch-all, and intercepted routes
   resolve through Mayu's Klenod adapter; parallel routes and error views were
   already covered by their dedicated adapter tests.
+- 2026-09-06: Verified the Klenod CSS companion `ClassNames` object and the
+  image plugin's 16px WebP inline placeholder configuration used by example
+  components.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
