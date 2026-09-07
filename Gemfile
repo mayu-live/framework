@@ -4,8 +4,6 @@ source "https://rubygems.org"
 
 gemspec
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
-
 group :development do
   gem "guard", require: false
   gem "localhost", require: false
