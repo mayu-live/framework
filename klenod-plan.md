@@ -227,6 +227,7 @@ init` template.
   - [x] Add and test a grouped optional catch-all route under `/demos/segments`.
 - [ ] Update the root README, example documentation pages, generated-app README,
       Docker build, deployment files, and ignore rules.
+  - [x] Update the example stylesheet guide to describe Klenod `ClassNames`.
 - [x] Document `klenod.config.rb`, the default `app/pages` choice, and how to
       configure a different `RouterPlugin#pages_dir`.
 

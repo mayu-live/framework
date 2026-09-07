@@ -5,7 +5,7 @@
     :plain
       # Stylesheets
 
-      Mayu uses [Lightning CSS](https://lightningcss.dev/) to parse,
+      Mayu uses Klenod and [Lightning CSS](https://lightningcss.dev/) to parse,
       transform and minify CSS. Lightning CSS automatically compiles
       many modern CSS syntax features to more compatible output.
       [Read more in their documentation](https://lightningcss.dev/docs.html)
@@ -18,7 +18,7 @@
       and the filename will be based on the content hash.
 
       This means that stylesheets can be cached in the browser
-      very easily, so that thay only will be downloaded when
+      very easily, so that they only will be downloaded when
       the stylesheet has updated.
 
       ## Examples
@@ -35,7 +35,7 @@
 
       ```ruby
       public def render
-        Mayu::VDOM::H[:button, "Click me", class: styles[:__button]]
+        Mayu::Runtime::H[:button, "Click me", class: ClassNames[:__button]]
       end
       ```
 
@@ -99,19 +99,19 @@
         .active { opacity: 1; }
       ```
 
-      Behind the scenes, this uses the `styles`-object.
+      Behind the scenes, Klenod gives every Haml component a `ClassNames` object.
       You probably don't have to use it often,
       but it can be really useful sometimes.
 
       ```ruby
-      styles[:button]
-      #=> "/app/components/MyComponent.button"
-      styles[:button, active: false]
-      #=> "/app/components/MyComponent.button"
-      styles[:button, active: true]
-      #=> "/app/components/MyComponent.button /app/components/MyComponent.active"
-      styles[:button, "foobar"]
-      #=> "/app/components/MyComponent.button foobar"
+      ClassNames[:button]
+      #=> "button_hash"
+      ClassNames[:button, active: false]
+      #=> "button_hash"
+      ClassNames[:button, active: true]
+      #=> "button_hash active_hash"
+      ClassNames[:button, "foobar"]
+      #=> "button_hash foobar"
       ```
 
       ## Root stylesheet
