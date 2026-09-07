@@ -26,14 +26,14 @@
             * `Link.haml`
         * `pages/`
           * `about/`
-            * `page.haml`
+            * `+page.haml`
           * `posts/`
-            * `:id/`
-              * `page.haml`
-            * `page.haml`
-            * `layout.haml`
-          * `page.haml`
-          * `layout.haml`
+            * `[id]/`
+              * `+page.haml`
+            * `+page.haml`
+            * `+layout.haml`
+          * `+page.haml`
+          * `+layout.haml`
 
       `app/root.haml` contains the `<html>` tag, and all pages are wrapped in
       the layouts of their parent directories.

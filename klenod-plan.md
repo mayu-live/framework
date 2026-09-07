@@ -223,7 +223,7 @@ init` template.
   - [x] Add a root `+error.haml` view and verify that Klenod resolves it at 500.
 - [ ] Update the root README, example documentation pages, generated-app README,
       Docker build, deployment files, and ignore rules.
-- [ ] Document `klenod.config.rb`, the default `app/pages` choice, and how to
+- [x] Document `klenod.config.rb`, the default `app/pages` choice, and how to
       configure a different `RouterPlugin#pages_dir`.
 
 Acceptance gate: the complete example and a newly generated application work
@@ -315,6 +315,9 @@ milestone spans them.
 - 2026-09-06: Made `klenod.config.rb` `pages_dir` overrides reconfigure the
   active Klenod router plugin; a configured source root and routes directory
   now resolve through the development provider end to end.
+- 2026-09-06: Updated the route documentation to use Klenod's `+page`,
+  `+layout`, dynamic-segment, and not-found conventions, and documented
+  `klenod.config.rb` route-directory overrides.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is

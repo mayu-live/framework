@@ -339,31 +339,46 @@ app
 ├── root.haml
 ├── root.css
 └── pages
-    ├── page.haml
-    ├── layout.haml
+    ├── +page.haml
+    ├── +layout.haml
     ├── layout.css
     ├── about
-    │   ├── page.haml
+    │   ├── +page.haml
     │   └── page.css
     └── posts
-        ├── page.haml
-        ├── layout.haml
-        └── :id
-            └── page.haml
+        ├── +page.haml
+        ├── +layout.haml
+        └── [id]
+            └── +page.haml
 ```
 
 This would create the following routes:
 
-| **path**      | **component**                    | **layouts**                                           |
-| ------------- | -------------------------------- | ----------------------------------------------------- |
-| `/`           | `app/pages/page.haml`            | `app/pages/layout.haml`                               |
-| `/about/`     | `app/pages/about/page.haml`      | `app/pages/layout.haml`                               |
-| `/posts/`     | `app/pages/posts/page.haml`      | `app/pages/layout.haml` `app/pages/posts/layout.haml` |
-| `/posts/:id/` | `app/pages/posts/[id]/page.haml` | `app/pages/layout.haml` `app/pages/posts/layout.haml` |
-| `/*`          | `app/pages/404.haml`             | `app/pages/layout.haml`                               |
+| **path**      | **component**                     | **layouts**                                             |
+| ------------- | --------------------------------- | ------------------------------------------------------- |
+| `/`           | `app/pages/+page.haml`            | `app/pages/+layout.haml`                                |
+| `/about/`     | `app/pages/about/+page.haml`      | `app/pages/+layout.haml`                                |
+| `/posts/`     | `app/pages/posts/+page.haml`      | `app/pages/+layout.haml` `app/pages/posts/+layout.haml` |
+| `/posts/:id/` | `app/pages/posts/[id]/+page.haml` | `app/pages/+layout.haml` `app/pages/posts/+layout.haml` |
+| `/*`          | `app/pages/+not-found.haml`       | `app/pages/+layout.haml`                                |
 
 For a real-world example, check out
 [`example/app/pages/`](https://github.com/mayu-live/framework/tree/main/example/app/pages).
+
+### Klenod configuration
+
+Mayu loads Klenod configuration from `klenod.config.rb`. By default, Klenod
+uses `app` as its source directory and `app/pages` for routes. To keep source
+files elsewhere or use another routes directory, configure both values:
+
+```ruby
+# klenod.config.rb
+source_dir "frontend"
+pages_dir "routes"
+```
+
+With this configuration, a route such as `/about` is defined by
+`frontend/routes/about/+page.haml`.
 
 ## Hot reloading
 
