@@ -26,4 +26,4 @@ COPY --from=install /app /app
 ENV PORT 3000
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
 ENTRYPOINT ["/fly/entrypoint.sh"]
-CMD ["bin/mayu", "serve", "--disable-sorbet"]
+CMD ["bin/mayu", "start"]

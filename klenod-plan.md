@@ -228,6 +228,8 @@ init` template.
 - [ ] Update the root README, example documentation pages, generated-app README,
       Docker build, deployment files, and ignore rules.
   - [x] Update the example stylesheet guide to describe Klenod `ClassNames`.
+  - [x] Make the example Docker image start the Klenod production bundle with
+        `bin/mayu start`.
 - [x] Document `klenod.config.rb`, the default `app/pages` choice, and how to
       configure a different `RouterPlugin#pages_dir`.
 
