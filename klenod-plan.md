@@ -272,6 +272,8 @@ in both development and production modes.
       aliases or deprecation shims.
 - [ ] Remove direct gem dependencies used only by deleted code, after checking
       all remaining direct requires.
+  - [x] Remove Mayu's direct legacy transform/image dependencies; Klenod Build
+        retains the dependencies it needs for its own plugins.
 - [ ] Remove stale documentation and diagrams referring to the old graph,
       loader, asset queue, or bundle format.
 - [ ] Pin the released Klenod version instead of sibling path gems.

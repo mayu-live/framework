@@ -55,7 +55,6 @@ PATH
       base64 (~> 0.3)
       brotli (~> 0.8)
       dotenv (~> 3.2)
-      image_size (~> 3.6)
       klenod-build (= 0.0.7)
       klenod-plugin-css (= 0.0.7)
       klenod-plugin-javascript (= 0.0.7)
@@ -63,7 +62,6 @@ PATH
       klenod-runtime (= 0.0.7)
       listen (~> 3.10.0)
       localhost (~> 1.7)
-      mayu-css (~> 0.1.5)
       mime-types (~> 3.7)
       minitest (~> 6.0)
       msgpack (~> 1.8)
@@ -74,15 +72,12 @@ PATH
       rake (~> 13.3)
       rbnacl (~> 7.1)
       reline (~> 0.6)
-      rmagick (~> 7.0)
       rouge (~> 4.7)
       samovar (~> 2.5)
       syntax_tree (~> 6.3)
-      syntax_tree-haml (~> 4.0)
       syntax_tree-xml (~> 0.1.0)
       terminal-table (~> 4.0)
       toml (~> 0.3)
-      tsort (~> 0.2.0)
 
 GEM
   remote: https://rubygems.org/
@@ -160,11 +155,6 @@ GEM
     localhost (1.7.0)
     logger (1.6.0)
     lumberjack (1.2.10)
-    mayu-css (0.1.5)
-    mayu-css (0.1.5-aarch64-linux)
-    mayu-css (0.1.5-arm64-darwin)
-    mayu-css (0.1.5-x86_64-darwin)
-    mayu-css (0.1.5-x86_64-linux)
     method_source (1.1.0)
     mime-types (3.7.0)
       logger

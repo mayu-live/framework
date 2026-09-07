@@ -77,14 +77,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rouge", "~> 4.7"
   spec.add_dependency "dotenv", "~> 3.2"
 
-  # Modules
-  spec.add_dependency "image_size", "~> 3.6"
-  spec.add_dependency "mayu-css", "~> 0.1.5"
   spec.add_dependency "mime-types", "~> 3.7"
   spec.add_dependency "rake", "~> 13.3"
   spec.add_dependency "syntax_tree", "~> 6.3"
-  spec.add_dependency "syntax_tree-haml", "~> 4.0"
   spec.add_dependency "syntax_tree-xml", "~> 0.1.0"
-  spec.add_dependency "tsort", "~> 0.2.0"
-  spec.add_dependency "rmagick", "~> 7.0"
 end
