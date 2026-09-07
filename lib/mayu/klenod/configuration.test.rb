@@ -151,6 +151,87 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_default_haml_plugin_renders_imports_and_slots
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "label.haml"), "%strong Label\n")
+      File.write(File.join(root, "app", "card.haml"), <<~'HAML')
+          :ruby
+            Label = import("./label")
+
+          %section
+            %Label
+            %slot
+        HAML
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      component_class = provider.exports(provider.entry("card.haml"))::Default
+      label_class = provider.exports(provider.entry("label.haml"))::Default
+      component = component_class.allocate
+      component.instance_variable_set(
+        :@__children,
+        Mayu::Runtime::Descriptors::Children[[Mayu::Runtime::H[:em, "Slotted"]]]
+      )
+      descriptor = component.render
+
+      assert_equal(:section, descriptor.type)
+      assert_equal(2, descriptor.children.descriptors.length)
+      assert_equal(label_class, descriptor.children.descriptors.first.type)
+      slotted = descriptor.children.descriptors.last.fetch(0)
+      assert_equal(:em, slotted.type)
+      assert_equal(["Slotted"], slotted.children.descriptors)
+    end
+  end
+
+  def test_klenod_provider_formats_haml_render_errors_with_original_source
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "broken.haml"), <<~'HAML')
+          :ruby
+            def explode
+              raise "boom"
+            end
+
+          %p= explode
+        HAML
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      component_class = provider.exports(provider.entry("broken.haml"))::Default
+
+      error = assert_raises(RuntimeError) { component_class.allocate.render }
+      formatted =
+        provider.format_exception(error, source_path: "app:/broken.haml")
+
+      assert_includes(formatted, "broken.haml")
+      assert_includes(formatted, 'raise "boom"')
+    end
+  end
+
+  def test_default_haml_plugin_preserves_text_whitespace_and_event_callbacks
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "button.haml"), <<~'HAML')
+          :ruby
+            def handle_click
+            end
+
+          %button(onclick=handle_click)
+            Hello world
+        HAML
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      component_class = provider.exports(provider.entry("button.haml"))::Default
+      component = component_class.allocate
+      descriptor = component.render
+      callback = descriptor.props.fetch(:onclick)
+
+      assert_equal(["Hello world"], descriptor.children.descriptors)
+      assert_instance_of(Mayu::Runtime::Descriptors::Callback, callback)
+      assert_same(component, callback.component)
+      assert_equal(:handle_click, callback.method_name)
+    end
+  end
+
   def test_default_image_plugin_generates_klenod_inline_placeholders
     configuration = Mayu::Klenod::Configuration.new(root: Dir.pwd)
     plugin =

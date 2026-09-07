@@ -71,10 +71,19 @@ module Mayu
       end
 
       def format_exception(error, source_path: nil)
-        ::Klenod::Runtime::BacktraceRewriter.new(source).format_exception(
+        ::Klenod::Runtime::BacktraceRewriter.new(source_maps).format_exception(
           error,
           source_path:
         )
+      end
+
+      private
+
+      def source_maps
+        return source.graph.mods if source.respond_to?(:graph)
+        return source.modules if source.respond_to?(:modules)
+
+        {}
       end
     end
 

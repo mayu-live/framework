@@ -111,7 +111,7 @@ development provider, serialized, and loaded through the production provider.
 - [x] Use Klenod image and SVG metadata directly. Update Mayu's image component
       to use the Klenod placeholder field, `src`, `srcset`, `sizes`, width, and
       height.
-- [ ] Port the important existing Haml behavior tests to Klenod-backed
+- [x] Port the important existing Haml behavior tests to Klenod-backed
       integration tests: props, state assignments, context, slots, event handlers,
       inline/companion CSS, imports, whitespace, and source maps.
 - [x] Remove component-level `import`, `import?`, stylesheet aggregation, and
@@ -333,6 +333,10 @@ milestone spans them.
   CSS collection. Klenod preserves root, layout, and page stylesheet order.
 - 2026-09-06: Corrected the VDOM implementation notes: route-scoped Klenod
   assets are passed into the document head explicitly, not discovered by VNodes.
+- 2026-09-06: Expanded Klenod-backed Haml integration coverage for props, state,
+  context, imports, slots, class names, whitespace, event callbacks, and source
+  maps. Fixed development-provider error formatting to use the collected graph's
+  module map rather than the context object.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
