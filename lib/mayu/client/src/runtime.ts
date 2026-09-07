@@ -494,15 +494,6 @@ const Patches = {
     console.log("Transfer", state);
     setTransferState(state);
   },
-  AddStyleSheet(this: NodeSet, path: string) {
-    console.error(path);
-    console.error(path);
-    console.error(path);
-    console.error(path);
-    console.error(path);
-    console.error(path);
-    console.error(path);
-  },
   Pong(this: NodeSet, timestamp: number) {
     updatePing(performance.now() - timestamp);
   },

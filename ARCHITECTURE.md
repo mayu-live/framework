@@ -12,22 +12,19 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 - Components render descriptor trees (not direct DOM).
 - Runtime converts descriptors to server-side vnodes and emits patch operations.
 - Browser runtime applies patch operations to real DOM.
-- A module system (`lib/mayu/modules`) compiles app files (`.haml`, `.css`, `.js`, assets) into Ruby modules and tracks dependencies for HMR.
+- Klenod compiles application files (`.haml`, `.css`, `.js`, and assets), resolves routes, tracks dependencies, and provides development updates for HMR.
 
 ## Top-Level Responsibility Map (`lib/mayu`)
 
-- `environment.rb`: Bootstraps app environment (config, router, module system, metrics, runtime JS entry path, marshaller).
+- `environment.rb`: Bootstraps the Klenod-backed app environment, metrics, runtime JS entry path, and marshaller.
 - `server.rb` + `server/*`: HTTP server, routing of framework endpoints, session stream/event handling, static runtime files.
 - `session.rb` + `session/*`: Per-client session lifecycle, event queueing, runtime engine orchestration, transfer/resume.
 - `runtime.rb` + `runtime/*`: Server-side rendering/diff engine, vnode tree, patch generation, serialization.
-- `component.rb` + `component/*`: Base component API and component helpers (stylesheets, fetch helper, CSS unit refinements).
-- `modules.rb` + `modules/*`: App module loader/compiler, dependency graph, imports, HMR reload, source maps/backtrace rewriting.
-- `assets.rb` + `assets/*`: Asset generation/storage pipeline used by module loaders and server asset endpoint.
-- `routes.rb`: File-system router (`app/pages`) to route matches and layout composition.
+- `component.rb` + `component/*`: Base component API, fetch helper, and CSS unit refinements. Klenod supplies generated component class names.
+- `klenod.rb` + `klenod/*`: Mayu's Klenod configuration, component provider, and asset Rack adapter.
 - `configuration.rb`: `mayu.toml` loading and environment config resolution.
 - `commands/*`: CLI commands (`dev`, `build`, `start`, etc.).
 - `metrics.rb` + `metrics/*`: Prometheus metrics, multi-process collection/export.
-- `watcher.rb`: File watcher integration for dev/HMR.
 - `client/`: Browser runtime TypeScript workspace (patch consumer + session connection).
 
 ## End-to-End Flow (Request -> Session -> Patches)
@@ -206,16 +203,16 @@ Notable patch categories:
 ### Development
 
 - `Commands::Dev`
-- live module system from app source
-- optional file watcher/HMR
-- optional ongoing asset generation
-- router can rebuild on page/layout file changes
+- Klenod development provider loads app source and resolves routes
+- Klenod's watcher drives HMR updates
+- Klenod asset plugins generate changed assets
+- route changes are applied through Klenod's router update
 
 ### Production
 
-- `Commands::Build`: preloads routes/templates, generates assets, serializes environment bundle
+- `Commands::Build`: builds Klenod routes and assets, then serializes the environment bundle
 - `Commands::Start`: loads bundle + runs server
-- bundle stores marshaled `modules` and `router` plus version metadata
+- bundle stores the marshaled Klenod provider plus version metadata
 
 ## Metrics (`lib/mayu/metrics`)
 
@@ -270,7 +267,6 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
 - Session/engine transfer relies on `Marshal`; avoid storing non-marshalable objects in component instance state.
 - Keep patch schema compatibility across Ruby and TypeScript.
 - `VChildren` diffing uses a simple keyed/type reconciliation strategy; keyed reordering works, but it favors simplicity over advanced move-optimization (e.g. explicit move patches/LIS-style minimization).
-- Some client patch handlers contain debug logging / incomplete handlers (`AddStyleSheet` currently stubbed).
 - `VBody` injects a `<mayu-ping>` custom element automatically for connection status UI.
 
 ## Good Starting Files for New Contributors

@@ -68,7 +68,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "klenod-plugin-javascript", "= 0.0.7"
 
   # Development
-  spec.add_dependency "listen", "~> 3.10.0"
   spec.add_dependency "localhost", "~> 1.7"
   spec.add_dependency "minitest", "~> 6.0"
   # spec.add_dependency "nokolexbor", "~> 0.6"

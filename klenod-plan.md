@@ -256,7 +256,7 @@ in both development and production modes.
 
 ## Milestone 8 — Remove the old implementation and release
 
-- [ ] Delete `lib/mayu/modules`, Mayu's route builder, old asset
+- [x] Delete `lib/mayu/modules`, Mayu's route builder, old asset
       generators/storage, obsolete stylesheet/image/SVG wrappers, and superseded
       tests.
   - [x] Delete the unreachable legacy transformer implementation from `mayu transform`.
@@ -268,13 +268,14 @@ in both development and production modes.
         the injected Klenod provider/resolver without legacy module fallbacks.
   - [x] Convert VDOM serialization and context fixtures from thread-local module
         systems to injected component resolvers.
-- [ ] Remove `Mayu::Modules::*`, `Mayu::StyleSheet`, and old asset APIs without
+- [x] Remove `Mayu::Modules::*`, `Mayu::StyleSheet`, and old asset APIs without
       aliases or deprecation shims.
 - [ ] Remove direct gem dependencies used only by deleted code, after checking
       all remaining direct requires.
   - [x] Remove Mayu's direct legacy transform/image dependencies; Klenod Build
         retains the dependencies it needs for its own plugins.
-- [ ] Remove stale documentation and diagrams referring to the old graph,
+  - [x] Remove the unused legacy `listen` watcher dependency.
+- [x] Remove stale documentation and diagrams referring to the old graph,
       loader, asset queue, or bundle format.
 - [ ] Pin the released Klenod version instead of sibling path gems.
 - [ ] Run every final acceptance command and prepare the breaking Mayu release
@@ -307,6 +308,11 @@ environment limitation to account for when comparing later results.
 Add short dated entries here. Link commits in both repositories when a
 milestone spans them.
 
+- 2026-09-07: Removed the unreachable legacy `Mayu::Watcher`, its direct
+  `listen` dependency, and the unused `AddStyleSheet` patch. Updated the
+  architecture guide to describe Klenod as the application compiler, router,
+  asset pipeline, and HMR provider. Client tests pass (13 tests), and the full
+  Mayu suite passes (124 runs, 418 assertions).
 - 2026-09-06: Added executable example coverage for a grouped optional
   catch-all route, corrected the example production Docker command, and updated
   the root and example documentation for Klenod `ClassNames`, transformation,

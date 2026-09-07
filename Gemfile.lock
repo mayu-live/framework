@@ -60,7 +60,6 @@ PATH
       klenod-plugin-javascript (= 0.0.7)
       klenod-rack (= 0.0.7)
       klenod-runtime (= 0.0.7)
-      listen (~> 3.10.0)
       localhost (~> 1.7)
       mime-types (~> 3.7)
       minitest (~> 6.0)
