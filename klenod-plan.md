@@ -122,7 +122,7 @@ the existing VDOM engine, including stateful callbacks and slots.
 
 ## Milestone 4 — Cut development rendering and assets over
 
-- [ ] Replace `Environment#modules` and the separately built Mayu router with
+- [x] Replace `Environment#modules` and the separately built Mayu router with
       the development provider plus stable root and router entry handles.
 - [ ] Resolve pages, layouts, slots, closest not-found views, and closest error
       views from `virtual:router`. Route imports remain lazy.
@@ -337,6 +337,9 @@ milestone spans them.
   context, imports, slots, class names, whitespace, event callbacks, and source
   maps. Fixed development-provider error formatting to use the collected graph's
   module map rather than the context object.
+- 2026-09-06: Confirmed that normal development and production environments
+  carry only Klenod providers; legacy `modules` and router state remain solely
+  for the later removal milestone.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
