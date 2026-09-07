@@ -61,11 +61,11 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rbnacl", "~> 7.1"
 
   # Klenod platform
-  spec.add_dependency "klenod-build", "= 0.0.9"
-  spec.add_dependency "klenod-runtime", "= 0.0.9"
-  spec.add_dependency "klenod-rack", "= 0.0.9"
-  spec.add_dependency "klenod-plugin-css", "= 0.0.9"
-  spec.add_dependency "klenod-plugin-javascript", "= 0.0.9"
+  spec.add_dependency "klenod-build", "= 0.0.10"
+  spec.add_dependency "klenod-runtime", "= 0.0.10"
+  spec.add_dependency "klenod-rack", "= 0.0.10"
+  spec.add_dependency "klenod-plugin-css", "= 0.0.10"
+  spec.add_dependency "klenod-plugin-javascript", "= 0.0.10"
 
   # Development
   spec.add_dependency "localhost", "~> 1.7"
