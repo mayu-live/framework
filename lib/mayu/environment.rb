@@ -122,7 +122,10 @@ module Mayu
 
         loop do
           event = updates.dequeue
-          publish_klenod_update(provider.apply_update(event, entry: root_entry))
+          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          update = provider.apply_update(event, entry: root_entry)
+          update_logger.log(update:, duration: format_duration(start_time))
+          publish_klenod_update(update)
         end
       ensure
         updates.close
@@ -136,6 +139,14 @@ module Mayu
           @klenod_update_subscribers.values
         end
       subscribers.each { |subscriber| subscriber.call(update) }
+    end
+
+    def update_logger
+      @update_logger ||= Klenod::UpdateLogger.new(source_dir: @klenod_configuration.source_path)
+    end
+
+    def format_duration(start_time)
+      "%.4fms" % ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1_000)
     end
 
     def load_runtime_js_path

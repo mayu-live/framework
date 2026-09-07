@@ -13,6 +13,7 @@ require_relative "klenod/provider"
 require_relative "klenod/component_resolver"
 require_relative "klenod/router"
 require_relative "klenod/asset_app"
+require_relative "klenod/update_logger"
 
 module Mayu
   # Mayu's small, explicit boundary to the Klenod platform. Framework code must

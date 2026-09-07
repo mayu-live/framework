@@ -256,7 +256,6 @@ module Mayu
 
     def handle_reload_result(reload_result)
       if reload_result.success?
-        puts "\e[30;103mCode update detected, reloading.\e[0m"
         descriptor = resolve_route(@request_info.path)
         @engine.replace_route_assets(
           stylesheets: route_stylesheets,
