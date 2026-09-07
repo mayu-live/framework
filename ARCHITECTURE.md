@@ -102,105 +102,40 @@ Key responsibilities:
 
 ### Helpers
 
-- `Component::StyleSheets`: merges CSS module exports and class lookups.
 - `Component::Fetch`: server-side HTTP fetch helper.
 - `CSSUnits::Refinements`: ergonomic CSS unit values used in component code/styles.
 
-## Routing and Page Composition (`lib/mayu/routes.rb`, `lib/mayu/session.rb`)
+## Routing, Modules, and Assets (Klenod)
+
+Mayu delegates source loading, transforms, routing, assets, source maps, and
+file watching to Klenod. `Mayu::Klenod::Configuration` supplies the framework
+defaults: `app` as the source directory, `app/pages` as the route directory,
+Klenod Haml configured with Mayu's component base and VDOM factory, and
+Klenod's Ruby, CSS, JavaScript, image, SVG, JSON, and static-file plugins.
 
 ### Router model
 
-`Mayu::Routes::Router` builds routes from `app/pages`.
-
-Supported segments:
-
-- plain directory -> literal segment
-- `:id` -> param segment
-- `::rest` -> splat param (must be last)
-- `(group)` -> grouping segment (no URL path part)
-
-Per-directory view files:
-
-- `page.haml`
-- `layout.haml`
-- `template.haml` (reserved in router model)
-- `not_found.haml`
+`Klenod::Router` resolves routes from `app/pages`. Route files use
+`+page.haml`, `+layout.haml`, `+not-found.haml`, `+error.haml`, and optional
+`+route.rb` HTTP handlers. Klenod supports static, dynamic (`[id]`), catch-all
+(`[...]`), optional catch-all, grouped, parallel, and intercepted segments.
 
 ### Session route resolution
 
-`Session#resolve_route` builds the render descriptor stack:
+`Session#resolve_route` asks `Klenod::Router` for a resolved page descriptor.
+The result contains the VDOM tree, HTTP status, canonical module IDs, and the
+ordered CSS and JavaScript assets for the route. Mayu passes the descriptor and
+asset URLs to its existing VDOM/runtime engine. Route-resolution failures use
+the nearest Klenod `+error` view; initial and live VDOM failures retain Mayu's
+error-boundary/render-error-patch behavior.
 
-- imports `root.haml`
-- imports matched page and layout modules via module system
-- wraps page in layouts from inside-out (reverse reduce)
-- passes `params`, `query`, and `path` props as appropriate
+### Development and production
 
-If route lookup fails, session uses `Session::ErrorPage`.
-
-## Module System / App Compiler (`lib/mayu/modules`)
-
-This is the app-loading subsystem for components, styles, assets, and HMR.
-
-### Core classes
-
-- `Modules::System`: thread-local active module system (`System.current`), import API, reload orchestration.
-- `Modules::Resolver`: resolves import paths relative to source module.
-- `Modules::Mod`: one loaded module/file with dependencies, dependants, transformed source, source map, assets.
-- `Modules::Registry`: stores module instances as constants for stable references and lookup.
-- `Modules::ImportRewriter`: rewrites `import("...")` calls to stable hashed import IDs and records dependency mapping.
-- `Modules::BacktraceRewriter` / `SourceMap`: maps runtime errors back to original Haml/Ruby source.
-
-### Loading pipeline
-
-`System#import(path, source)`:
-
-1. resolve path
-2. load file source
-3. apply matching loader rules (`SYSTEM_CONFIG`)
-4. rewrite `import(...)` calls to hashed imports
-5. build source map
-6. evaluate transformed Ruby into `Mod::Exports`
-7. return `Exports::Default`
-
-### Loader responsibilities (`lib/mayu/modules/loaders`)
-
-- `Haml`: Haml -> Ruby AST/code -> wrapped component class inheriting `Mayu::Component::Base`.
-- `Ruby`: wraps Ruby files into module export shape.
-- `CSS`: CSS modules transform -> `Mayu::StyleSheet` export + asset generation.
-- `JavaScript`: packages JS as a `Mayu::CustomElement` and emits asset text file.
-- `Image`: exports `Mayu::Image` metadata and enqueues resized image assets.
-- `SVG`: exports `Mayu::SVG` metadata and enqueues SVG asset text.
-- `StaticFile`: exports hashed public asset path and enqueues file copy.
-- `JSON`: exports deep-frozen parsed JSON.
-
-### HMR / file watching
-
-- `Watcher` emits create/update/delete events.
-- `Environment#start_watcher` rebuilds router when page/layout files change.
-- `Modules::System#handle_watch_events` stages source updates, computes dirty modules + dependants, reloads in topological order, and signals waiting sessions.
-- Sessions listening for reload (`Session#run_code_reload_task`) call `Engine#refresh` and emit `reload:success` or `RenderError` patches.
-
-## Assets Pipeline (`lib/mayu/assets`)
-
-Assets are produced by module loaders and served by the framework.
-
-### Flow
-
-1. Loader calls `add_asset(...)` while module code evaluates.
-2. Asset generator is enqueued in `Assets::Storage`.
-3. In dev, asset generation task may run continuously.
-4. In build, assets are generated before writing bundle.
-5. `Server::App#handle_asset` serves generated assets from `/.mayu/assets/...`.
-
-### Asset representations
-
-- `Assets::Asset`: filename + headers + encoded content strategy.
-- `Assets::EncodedContent`: in-memory content (optionally Brotli compressed).
-- `Assets::FileContent`: sentinel meaning serve from file on disk.
-- Generators:
-  - `Text`
-  - `Image`
-  - `WriteFile`
+In development, one Klenod watcher invalidates the shared graph and Mayu fans
+each update out to live sessions. In production, `mayu build` materializes
+Klenod assets and serializes a Klenod runtime bundle; `mayu start` loads that
+bundle through the production provider. `Klenod::Rack::AssetApp` serves assets
+at `/.mayu/assets/`.
 
 ## Server and Session Transport (`lib/mayu/server`, `lib/mayu/session`)
 

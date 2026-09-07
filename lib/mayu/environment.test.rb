@@ -25,8 +25,6 @@ class Mayu::EnvironmentTest < Minitest::Test
           metrics: Object.new
         )
 
-      assert_nil(environment.modules)
-      assert_nil(environment.router)
       assert_equal(42, environment.module_provider.exports("entry")::VALUE)
       assert_equal(environment, environment.use { it })
     end
@@ -40,8 +38,6 @@ class Mayu::EnvironmentTest < Minitest::Test
       environment =
         Mayu::Environment.with_config(config(root), metrics: Object.new)
 
-      assert_nil(environment.modules)
-      assert_nil(environment.router)
       assert_instance_of(
         Mayu::Klenod::DevelopmentProvider,
         environment.module_provider
@@ -54,7 +50,6 @@ class Mayu::EnvironmentTest < Minitest::Test
       Mayu::Environment.new(
         config(Dir.mktmpdir("mayu-klenod")),
         module_provider: Object.new,
-        legacy: false,
         metrics: Object.new
       )
     updates = []
@@ -81,7 +76,6 @@ class Mayu::EnvironmentTest < Minitest::Test
         Mayu::Environment.new(
           config(root),
           module_provider: provider,
-          legacy: false,
           metrics: Object.new
         )
       updates = Async::Queue.new
@@ -123,7 +117,6 @@ class Mayu::EnvironmentTest < Minitest::Test
         Mayu::Environment.new(
           config(root),
           module_provider: provider,
-          legacy: false,
           metrics: Object.new
         )
       updates = Async::Queue.new

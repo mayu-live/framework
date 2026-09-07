@@ -260,6 +260,8 @@ in both development and production modes.
       generators/storage, obsolete stylesheet/image/SVG wrappers, and superseded
       tests.
   - [x] Delete the unreachable legacy transformer implementation from `mayu transform`.
+  - [x] Remove the legacy route-resolution, asset-serving, and watcher fallbacks
+        from the active Mayu environment, session, and server paths.
 - [ ] Remove `Mayu::Modules::*`, `Mayu::StyleSheet`, and old asset APIs without
       aliases or deprecation shims.
 - [ ] Remove direct gem dependencies used only by deleted code, after checking

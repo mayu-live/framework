@@ -3,7 +3,6 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
-require "protocol/http/body/file"
 require_relative "request_refinements"
 require_relative "cookies"
 require_relative "event_stream"
@@ -12,7 +11,6 @@ require_relative "static_files"
 require_relative "../environment"
 require_relative "../session"
 require_relative "../session/store"
-require_relative "../modules/system"
 require_relative "../klenod"
 
 module Mayu
@@ -220,50 +218,15 @@ module Mayu
       end
 
       def handle_asset(request)
-        if provider = @environment.module_provider
-          response =
-            klenod_asset_app(provider).response_for(
-              request,
-              headers: {
-                **origin_header(request)
-              }
-            )
-          return response if response
-        end
+        provider = @environment.module_provider
+        return text_response(404, "file not found") unless provider
 
-        return text_response(404, "file not found") unless @environment.modules
-
-        asset =
-          request
-            .path
-            .then { _1.delete_prefix("/.mayu/assets/") }
-            .then { CGI.unescape_uri_component(_1) }
-            .then { Modules::System.current.wait_for_asset(_1) }
-
-        return text_response(404, "file not found") unless asset
-
-        case asset.encoded_content
-        in Assets::FileContent
-          Protocol::HTTP::Response[
-            200,
-            {
-              **asset.headers,
-              "cache-control": ASSET_CACHE_CONTROL,
-              **origin_header(request)
-            },
-            Protocol::HTTP::Body::File.open(
-              @environment.asset_path(asset.filename)
-            )
-          ]
-        in Assets::EncodedContent
-          response(
-            200,
-            asset.encoded_content.content,
-            **asset.headers,
-            "cache-control": ASSET_CACHE_CONTROL,
+        klenod_asset_app(provider).response_for(
+          request,
+          headers: {
             **origin_header(request)
-          )
-        end
+          }
+        ) || text_response(404, "file not found")
       end
 
       def klenod_asset_app(provider)

@@ -210,46 +210,6 @@ class Mayu::SessionTest < Minitest::Test
     end
   end
 
-  def test_reload_failure_emits_render_error_patch
-    env = FakeEnvironment.new
-    request_info =
-      Mayu::Session::RequestInfo.new(
-        path: "/missing",
-        headers: {
-        },
-        http2: false
-      )
-    session = Mayu::Session.new(environment: env, request_info: request_info)
-    fake_engine = FakeEngine.new
-    session.instance_variable_set(:@engine, fake_engine)
-
-    reload_failure =
-      Mayu::Modules::System::ReloadFailure[
-        "/c.rb",
-        "SyntaxTree::Parser::ParseError",
-        "unexpected token",
-        ["/c.rb:1:1"],
-        "Dep = import(\n",
-        1,
-        1
-      ]
-    reload_result =
-      Mayu::Modules::System::ReloadResult[[], [], [reload_failure]]
-
-    session.send(:handle_reload_result, reload_result)
-
-    assert_equal(1, fake_engine.patches.length)
-    patch = fake_engine.patches.first
-
-    assert_instance_of(Mayu::Runtime::Patches::RenderError, patch)
-    assert_equal("/c.rb", patch.file)
-    assert_equal("SyntaxTree::Parser::ParseError", patch.type)
-    assert_equal("unexpected token", patch.message)
-    assert_equal(["/c.rb:1:1"], patch.backtrace)
-    assert_equal("Dep = import(\n", patch.source)
-    assert_equal([{ name: "CodeReload", path: "/c.rb" }], patch.tree_path)
-  end
-
   def test_reload_success_emits_clear_error_event_patch
     env = FakeEnvironment.new
     request_info =
@@ -263,7 +223,7 @@ class Mayu::SessionTest < Minitest::Test
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
 
-    reload_result = Mayu::Modules::System::ReloadResult[["/c.rb"], [], []]
+    reload_result = Struct.new(:errors) { def success? = true }.new([])
 
     session.send(:handle_reload_result, reload_result)
 

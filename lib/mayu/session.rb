@@ -7,7 +7,6 @@ require_relative "runtime"
 require_relative "session/token"
 require_relative "session/error_page"
 require_relative "session/transfer_state"
-require_relative "modules"
 require_relative "klenod"
 
 module Mayu
@@ -189,17 +188,9 @@ module Mayu
     private
 
     def run_code_reload_task(parent)
-      if module_provider.is_a?(Klenod::DevelopmentProvider)
-        return run_klenod_reload_task(parent)
-      end
+      return unless module_provider.is_a?(Klenod::DevelopmentProvider)
 
-      parent.async do |task|
-        task.annotate("Session #{@id}: HMR")
-
-        while (reload_result = Modules::System.current.wait_for_reload)
-          handle_reload_result(reload_result)
-        end
-      end
+      run_klenod_reload_task(parent)
     end
 
     def run_klenod_reload_task(parent)
@@ -327,51 +318,15 @@ module Mayu
     end
 
     def resolve_route(path)
-      if provider = module_provider
-        router = Klenod::Router.new(provider)
-        resolved_page = router.resolve(path)
-        return apply_resolved_page(resolved_page) if resolved_page
-      end
+      provider = module_provider
+      return ErrorPage.build("Could not find page for #{path}") unless provider
 
-      @resolved_page = nil
-      @route_status = 200
+      router = Klenod::Router.new(provider)
+      resolved_page = router.resolve(path)
+      return apply_resolved_page(resolved_page) if resolved_page
 
-      unless @environment.respond_to?(:modules) && @environment.modules
-        return ErrorPage.build("Could not find page for #{path}")
-      end
-
-      system = Modules::System.current
-
-      match = @environment.router.match(path)
-
-      return ErrorPage.build("Could not find page for #{path}") unless match
-
-      layouts = [
-        system.import("root.haml"),
-        *match.route.layouts.map { system.import(File.join("/pages", _1)) }
-      ]
-
-      page =
-        Mayu::Runtime::H[
-          system.import(File.join("/pages", match.route.views.page)),
-          params: match.params,
-          query: match.query
-        ]
-
-      layouts
-        .reverse
-        .reduce(page) do |page, layout|
-          Mayu::Runtime::H[
-            layout,
-            page,
-            params: match.params,
-            query: match.query,
-            path:
-          ]
-        end
+      ErrorPage.build("Could not find page for #{path}")
     rescue => error
-      raise unless provider
-
       Console.logger.error(self, error)
       resolved_page = router.error(path, error:)
       raise unless resolved_page

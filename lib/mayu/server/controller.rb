@@ -93,22 +93,8 @@ module Mayu
           environment = load_environment(metrics:)
 
           if @mayu_env == :development
-            if environment.module_provider.is_a?(Klenod::DevelopmentProvider)
-              watcher_task =
-                (environment.start_watcher if environment.config.server.hmr?)
-            else
-              if environment.config.server.generate_assets?
-                asset_task =
-                  environment.modules.generate_assets(
-                    environment.assets_dir,
-                    concurrency: 1,
-                    forever: true
-                  )
-              end
-
-              watcher_task =
-                (environment.start_watcher if environment.config.server.hmr?)
-            end
+            watcher_task =
+              (environment.start_watcher if environment.config.server.hmr?)
           end
 
           environment.use do
