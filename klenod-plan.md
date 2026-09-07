@@ -234,6 +234,7 @@ init` template.
         with the Klenod component boundary and `mayu transform` command.
   - [x] Update the root README's server configuration examples for the active
         development/production keys and Klenod build/start flow.
+  - [x] Remove the stale example route/module graph diagram.
 - [x] Document `klenod.config.rb`, the default `app/pages` choice, and how to
       configure a different `RouterPlugin#pages_dir`.
 
