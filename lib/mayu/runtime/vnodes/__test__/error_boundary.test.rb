@@ -53,6 +53,25 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
     end
   end
 
+  class RewritingProvider
+    attr_reader :rewritten_error
+
+    def rewrite_exception(error)
+      @rewritten_error = error
+      error.set_backtrace(["app:/broken.haml:7"])
+    end
+
+    def format_exception(error, source_path:)
+      "#{source_path}: #{error.class}: #{error.message}"
+    end
+
+    def assets_for_module(_module_path, type:)
+      raise "Unexpected asset type #{type}" unless type == :css
+
+      []
+    end
+  end
+
   def test_error_boundary_rerenders_on_error
     descriptor = H[:body, H[ErrorBoundaryProbe]]
 
@@ -150,6 +169,29 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
 
       assert_equal("/tests/render_error", render_error.file)
       assert_nil(render_error.source)
+    end
+  end
+
+  def test_unhandled_render_error_rewrites_the_client_patch_backtrace
+    descriptor = H[:body, H[RenderErrorProbe]]
+    provider = RewritingProvider.new
+
+    run_engine_with_provider(descriptor, provider) do |engine|
+      component = find_component(engine.root, RenderErrorProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.respond_to?(:rerender!) }
+      instance.trigger_error
+
+      patches =
+        dequeue_until(engine) do |batch|
+          batch.any? { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+        end
+      render_error =
+        patches.find { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+
+      refute_nil(provider.rewritten_error)
+      assert_equal(["app:/broken.haml:7"], render_error.backtrace)
     end
   end
 
