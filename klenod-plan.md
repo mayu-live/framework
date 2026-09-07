@@ -130,9 +130,10 @@ the existing VDOM engine, including stateful callbacks and slots.
         that owns each slot, and include their modules in route asset traversal.
   - [x] Resolve Klenod's closest `+not-found` and `+error` views, including
         their layout chains, when page resolution fails before a session starts.
-  - [ ] Decide how initial and live VDOM render failures should transition to a
-        `+error` view without discarding Mayu's component error-boundary and
-        render-error-patch behavior.
+  - [x] Keep Mayu's existing error-boundary and render-error-patch behavior for
+        initial and live VDOM failures. Only failures while resolving a route
+        before its session starts transition to the closest `+error` view, so a
+        live session never loses its tree or state by being remounted as a route.
 - [x] Return a resolved-page value containing the VDOM descriptor, HTTP status,
       canonical route module IDs, CSS references, and JavaScript references.
 - [ ] Query assets from the root, rendered layouts, page, and rendered slot
@@ -174,11 +175,12 @@ work.
   - `PUT`, `PATCH`, `DELETE`, and `OPTIONS` use the handler;
   - unsupported methods return 405;
   - hybrid responses vary on `Accept`.
-- [ ] Render Klenod's closest not-found and error views with their own layout
+- [x] Render Klenod's closest not-found and error views with their own layout
       chains and correct 404/500 status codes.
   - [x] Render route-resolution failures through the closest `+error` view.
-  - [ ] Cover initial and live VDOM render failures with an explicit error-view
-        transition policy.
+  - [x] Keep initial and live VDOM render failures under Mayu's existing
+        error-boundary/render-error-patch policy rather than transitioning a
+        running session to a route error view.
 - [x] Reimplement `mayu routes` from the Klenod router manifest and include the
       additional segment, handler, and special-view information.
 
@@ -324,6 +326,9 @@ milestone spans them.
 - 2026-09-06: Verified the Klenod CSS companion `ClassNames` object and the
   image plugin's 16px WebP inline placeholder configuration used by example
   components.
+- 2026-09-06: Chose to preserve Mayu VDOM error boundaries and render-error
+  patches for initial and live component failures. Only route-resolution
+  failures before session startup render the nearest Klenod `+error` view.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
