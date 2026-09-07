@@ -8,7 +8,6 @@ require "minitest/autorun"
 require "async"
 
 require_relative "../component/base"
-require_relative "../modules/system"
 require_relative "marshalling"
 
 class Mayu::Runtime::Marshalling::Test < Minitest::Test
@@ -16,10 +15,6 @@ class Mayu::Runtime::Marshalling::Test < Minitest::Test
 
   class ExportedComponent < Mayu::Component::Base
     def self.module_path = "/tests/marshalling/exported"
-  end
-
-  class RenamedComponent < Mayu::Component::Base
-    def self.module_path = "/tests/marshalling/renamed"
   end
 
   class LocalComponent < Mayu::Component::Base
@@ -62,36 +57,6 @@ class Mayu::Runtime::Marshalling::Test < Minitest::Test
     assert_nil(nested_ref.filename)
     assert_equal("LocalComponent", nested_ref.class_name)
     assert_equal(LocalComponent, nested_ref.klass)
-  end
-
-  def test_load_value_prefers_named_export_when_present
-    with_module_system(
-      "/tests/marshalling/exported" => build_mod(ExportedComponent)
-    ) do
-      ref =
-        Marshalling::ComponentRef.new(
-          "/tests/marshalling/exported",
-          "ExportedComponent",
-          nil
-        )
-
-      assert_equal(ExportedComponent, Marshalling.load_value(ref))
-    end
-  end
-
-  def test_load_value_falls_back_to_default_export_when_name_is_missing
-    with_module_system(
-      "/tests/marshalling/renamed" => build_mod(RenamedComponent, named: false)
-    ) do
-      ref =
-        Marshalling::ComponentRef.new(
-          "/tests/marshalling/renamed",
-          "OldComponentName",
-          nil
-        )
-
-      assert_equal(RenamedComponent, Marshalling.load_value(ref))
-    end
   end
 
   def test_load_value_uses_fallback_class_for_pathless_reference
@@ -150,40 +115,4 @@ class Mayu::Runtime::Marshalling::Test < Minitest::Test
   end
 
   private
-
-  def build_mod(component_class, named: true)
-    mod = Module.new
-    exports = Module.new
-    exports.const_set(:Default, component_class)
-    if named
-      exports.const_set(component_class.name.split("::").last, component_class)
-    end
-    mod.const_set(:Exports, exports)
-    mod
-  end
-
-  def with_module_system(mods)
-    system =
-      Data
-        .define(:mods) do
-          def get_mod(path)
-            mods[path]
-          end
-
-          def import(path, _source = "/")
-            mod = mods[path]
-            raise "Missing module #{path.inspect}" unless mod
-            mod::Exports::Default
-          end
-        end
-        .new(mods)
-
-    key = Mayu::Modules::System::CURRENT_KEY
-    previous = Thread.current.thread_variable_get(key)
-    Thread.current.thread_variable_set(key, system)
-
-    yield
-  ensure
-    Thread.current.thread_variable_set(key, previous)
-  end
 end

@@ -75,42 +75,7 @@ module Mayu
           return component_class if component_class
         end
 
-        module_path = ref.filename
-        class_name = ref.class_name
-
-        if module_path.nil? || module_path.empty?
-          raise "Missing component module path for #{ref.inspect}"
-        end
-
-        system = Modules::System.current
-        mod = system&.get_mod(module_path)
-
-        default_export =
-          if system&.respond_to?(:import)
-            begin
-              system.import(module_path, "/")
-            rescue StandardError
-              nil
-            end
-          elsif mod&.const_defined?(:Exports)
-            exports = mod.const_get(:Exports)
-            exports.const_get(:Default) if exports.const_defined?(:Default)
-          end
-
-        mod ||= system&.get_mod(module_path)
-        raise "Could not resolve module #{module_path.inspect}" unless mod
-
-        exports = mod.const_get(:Exports)
-        const_name = class_name.to_s.split("::").last
-        return default_export if const_name.empty?
-        if exports.const_defined?(const_name)
-          return exports.const_get(const_name)
-        end
-        return default_export if default_export
-
-        raise(
-          "Could not resolve component class #{const_name.inspect} in #{module_path.inspect}"
-        )
+        raise "Could not resolve component reference #{ref.inspect}"
       end
 
       def self.component_class?(value)

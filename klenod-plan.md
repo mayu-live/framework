@@ -262,6 +262,8 @@ in both development and production modes.
   - [x] Delete the unreachable legacy transformer implementation from `mayu transform`.
   - [x] Remove the legacy route-resolution, asset-serving, and watcher fallbacks
         from the active Mayu environment, session, and server paths.
+  - [x] Make VDOM error reporting and session-transfer component restoration use
+        the injected Klenod provider/resolver without legacy module fallbacks.
 - [ ] Remove `Mayu::Modules::*`, `Mayu::StyleSheet`, and old asset APIs without
       aliases or deprecation shims.
 - [ ] Remove direct gem dependencies used only by deleted code, after checking

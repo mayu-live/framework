@@ -235,13 +235,11 @@ module Mayu
             module_path.empty?
 
           provider = @engine.module_provider
-          mod = Modules::System.current.get_mod(module_path) if module_path &&
-            !provider
           formatted_error =
             if provider
               provider.format_exception(error, source_path: module_path)
             else
-              Modules::System.current.format_exception(error)
+              error
             end
           Console.logger.error(component, formatted_error)
 
@@ -250,7 +248,7 @@ module Mayu
             error.class.name,
             error.message,
             error.backtrace,
-            mod&.source_map&.input,
+            nil,
             tree_path
           ]
         end
