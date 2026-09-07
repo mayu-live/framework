@@ -77,6 +77,12 @@ module Mayu
         )
       end
 
+      def rewrite_exception(error)
+        ::Klenod::Runtime::BacktraceRewriter.new(source_maps).rewrite_exception(
+          error
+        )
+      end
+
       private
 
       def source_maps

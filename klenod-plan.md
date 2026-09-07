@@ -124,7 +124,7 @@ the existing VDOM engine, including stateful callbacks and slots.
 
 - [x] Replace `Environment#modules` and the separately built Mayu router with
       the development provider plus stable root and router entry handles.
-- [ ] Resolve pages, layouts, slots, closest not-found views, and closest error
+- [x] Resolve pages, layouts, slots, closest not-found views, and closest error
       views from `virtual:router`. Route imports remain lazy.
   - [x] Render Klenod parallel-route matches as named children of the layout
         that owns each slot, and include their modules in route asset traversal.
@@ -196,7 +196,7 @@ routes.
 - [x] On success, refresh each session's route descriptor and route-scoped head
       assets. CSS- or JavaScript-only changes must update the head even when the
       rendered component tree is otherwise unchanged.
-- [ ] On failure, keep unaffected routes serving the previous good graph and
+- [x] On failure, keep unaffected routes serving the previous good graph and
       send source-mapped error patches for the failed modules.
 - [x] Verify recovery after syntax errors and route/component file add/remove.
 - [x] Make `mayu build` collect root and router entrypoints without evaluating
@@ -319,6 +319,10 @@ milestone spans them.
   redundant direct `syntax_tree` declaration. The retained `syntax_tree-xml`
   test helper supplies it transitively; the full Mayu suite passes (124 runs,
   418 assertions).
+- 2026-09-07: Failed Klenod development updates now rewrite exception
+  backtraces through Klenod's source maps before emitting Mayu render-error
+  patches. The existing graph remains active after a failure, and focused
+  session coverage verifies the patch's original source and rewritten location.
 - 2026-09-06: Added executable example coverage for a grouped optional
   catch-all route, corrected the example production Docker command, and updated
   the root and example documentation for Klenod `ClassNames`, transformation,

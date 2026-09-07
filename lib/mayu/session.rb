@@ -274,6 +274,7 @@ module Mayu
     def emit_reload_error_patches(reload_result)
       Array(reload_result.errors).each do |reload_error|
         if reload_error in [module_id, error]
+          rewrite_reload_error_backtrace(error)
           file =
             (
               if error.respond_to?(:module_id)
@@ -284,13 +285,7 @@ module Mayu
             )
           source = error.respond_to?(:source) ? error.source.to_s : ""
           type =
-            (
-              if error.respond_to?(:cause)
-                error.cause.class.name
-              else
-                error.class.name
-              end
-            )
+            ((error.respond_to?(:cause) && error.cause || error).class.name)
           @engine.patch(
             Runtime::Patches::RenderError[
               file,
@@ -315,6 +310,17 @@ module Mayu
           ]
         )
       end
+    end
+
+    def rewrite_reload_error_backtrace(error)
+      return unless error.is_a?(Exception)
+
+      module_provider.rewrite_exception(error)
+    rescue => rewrite_error
+      Console.logger.warn(
+        self,
+        "Could not rewrite reload error backtrace: #{rewrite_error.message}"
+      )
     end
 
     def resolve_route(path)

@@ -31,7 +31,8 @@ class Mayu::SessionTest < Minitest::Test
   end
 
   class FakeEnvironment
-    attr_reader :config, :router, :metrics, :marshaller, :module_provider
+    attr_reader :config, :router, :metrics, :marshaller
+    attr_accessor :module_provider
 
     def initialize(module_provider: nil)
       @config = FakeConfig.new
@@ -67,6 +68,15 @@ class Mayu::SessionTest < Minitest::Test
 
     def replace_route_assets(stylesheets:, scripts:)
       @stylesheets = stylesheets
+    end
+  end
+
+  class ReloadErrorProvider
+    attr_reader :rewritten_error
+
+    def rewrite_exception(error)
+      @rewritten_error = error
+      error.set_backtrace(["app:/broken.haml:2"])
     end
   end
 
@@ -248,16 +258,15 @@ class Mayu::SessionTest < Minitest::Test
         http2: false
       )
     session = Mayu::Session.new(environment: env, request_info: request_info)
+    provider = ReloadErrorProvider.new
+    env.module_provider = provider
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
 
-    error =
-      Struct
-        .new(:module_id, :source, :cause) do
-          def message = "unexpected token"
-          def backtrace = ["app:/broken.haml:2"]
-        end
-        .new("app:/broken.haml", "%p= )\n", SyntaxError.new)
+    error = SyntaxError.new("unexpected token")
+    error.define_singleton_method(:module_id) { "app:/broken.haml" }
+    error.define_singleton_method(:source) { "%p= )\n" }
+    error.set_backtrace(["generated:/broken.rb:20"])
     reload_result =
       Struct
         .new(:errors) { def success? = false }
@@ -271,5 +280,7 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal("SyntaxError", patch.type)
     assert_equal("unexpected token", patch.message)
     assert_equal("%p= )\n", patch.source)
+    assert_equal(["app:/broken.haml:2"], patch.backtrace)
+    assert_same(error, provider.rewritten_error)
   end
 end
