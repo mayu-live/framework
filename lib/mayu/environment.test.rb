@@ -165,6 +165,47 @@ class Mayu::EnvironmentTest < Minitest::Test
     end
   end
 
+  def test_klenod_watcher_removes_deleted_assets
+    Dir.mktmpdir("mayu-klenod") do |root|
+      app_dir = File.join(root, "app")
+      FileUtils.mkdir_p(app_dir)
+      root_path = File.join(app_dir, "root.haml")
+      css_path = File.join(app_dir, "root.css")
+      File.write(root_path, "%slot\n")
+      File.write(css_path, "p { color: red; }\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      environment =
+        Mayu::Environment.new(
+          config(root),
+          module_provider: provider,
+          metrics: Object.new
+        )
+      updates = Async::Queue.new
+      environment.subscribe_klenod_updates { |update| updates.enqueue(update) }
+
+      Async do
+        watcher_task = environment.start_watcher
+
+        File.delete(css_path)
+        result =
+          provider.context.invalidate_paths([], removed_paths: [css_path])
+        provider.context.emit_update(
+          ::Klenod::Build::UpdateEvent.new([], [css_path], 1, result)
+        )
+
+        update = updates.dequeue(timeout: 2)
+
+        assert(update.success?)
+        assert_equal([css_path], update.event.removed_paths)
+        assert(update.asset_files_changed?)
+        assert(update.removed_asset_paths.any?)
+      ensure
+        watcher_task&.stop
+      end.wait
+    end
+  end
+
   private
 
   def publish_update(provider, path, graph_version:)
