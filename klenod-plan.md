@@ -340,6 +340,10 @@ milestone spans them.
 - 2026-09-06: Confirmed that normal development and production environments
   carry only Klenod providers; legacy `modules` and router state remain solely
   for the later removal milestone.
+- 2026-09-06: Built the complete example with a throwaway production secret;
+  Klenod generated `app.mayu-bundle` successfully. A production server smoke
+  test remains pending because the active development server owns its metrics
+  port.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
