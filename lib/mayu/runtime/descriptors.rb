@@ -11,7 +11,7 @@ module Mayu
       Element =
         Data.define(:type, :key, :slot, :children, :props) do
           def self.[](type, *children, key: nil, slot: nil, **props)
-            new(type, key, slot, Children[children], props)
+            new(type, key, slot&.to_sym, Children[children], props)
           end
 
           def same?(other)

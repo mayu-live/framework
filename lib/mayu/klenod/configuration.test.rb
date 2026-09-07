@@ -183,6 +183,31 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_default_haml_plugin_renders_named_string_slots
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "layout.haml"), <<~'HAML')
+          %aside
+            %slot(name="menu")
+        HAML
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      component_class = provider.exports(provider.entry("layout.haml"))::Default
+      component = component_class.allocate
+      component.instance_variable_set(
+        :@__children,
+        Mayu::Runtime::Descriptors::Children[
+          [Mayu::Runtime::H[:nav, "Menu", slot: "menu"]]
+        ]
+      )
+      descriptor = component.render
+      menu = descriptor.children.descriptors.fetch(0).fetch(0)
+
+      assert_equal(:nav, menu.type)
+      assert_equal(["Menu"], menu.children.descriptors)
+    end
+  end
+
   def test_klenod_provider_formats_haml_render_errors_with_original_source
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))

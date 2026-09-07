@@ -158,6 +158,7 @@ class Mayu::SessionTest < Minitest::Test
       Mayu::Session.new(environment: env, request_info: request_info).render
 
     assert_includes(html, "Form demo")
+    assert_includes(html, "Pokémon")
   end
 
   def test_encrypted_transfer_restores_klenod_component_references
