@@ -101,6 +101,9 @@ module Mayu
           **origin_header(request)
         )
       rescue => e
+        if @environment.module_provider&.respond_to?(:rewrite_exception)
+          @environment.module_provider.rewrite_exception(e)
+        end
         Console.logger.error(self, e)
         error_response(403, "INTERNAL_SERVER_ERROR", **origin_header(request))
       end

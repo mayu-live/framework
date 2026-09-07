@@ -24,6 +24,10 @@ class Mayu::Server::AppTest < Minitest::Test
     end
   end
 
+  class ErroringHandler < Mayu::Route
+    def GET(_request) = raise "handler boom"
+  end
+
   Match = Data.define(:page, :handler, :params)
   Environment = Data.define(:module_provider, :init_js_body, :runtime_js_path)
   Session = Data.define(:styles)
@@ -37,6 +41,27 @@ class Mayu::Server::AppTest < Minitest::Test
         exports_module
       end
     end
+
+  class RewritingProvider
+    attr_reader :rewritten_error
+
+    def initialize(exports_module)
+      @exports_module = exports_module
+    end
+
+    def entry(name) = name
+
+    def exports(entry)
+      raise KeyError unless entry == "virtual:router"
+
+      @exports_module
+    end
+
+    def rewrite_exception(error)
+      @rewritten_error = error
+      error.set_backtrace(["app:/pages/api/+route.rb:3"])
+    end
+  end
   Request = Data.define(:method, :path, :headers, :body) { def read = body }
 
   def test_html_page_requests_do_not_dispatch_the_handler
@@ -72,6 +97,33 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(405, response.status)
     assert_equal(%w[GET PUT], response.headers.to_h.fetch("allow"))
+  end
+
+  def test_route_handler_errors_are_rewritten_before_the_server_logs_them
+    router = Module.new
+    router.define_singleton_method(:match) do |_path|
+      Match.new(nil, ErroringHandler, {})
+    end
+    exports = Module.new
+    exports.const_set(:Default, router)
+    provider = RewritingProvider.new(exports)
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      Environment.new(provider, nil, nil)
+    )
+
+    response =
+      app.call(
+        Request.new("GET", "/api", { "accept" => "application/json" }, "")
+      )
+
+    assert_equal(403, response.status)
+    refute_nil(provider.rewritten_error)
+    assert_equal(
+      ["app:/pages/api/+route.rb:3"],
+      provider.rewritten_error.backtrace
+    )
   end
 
   def test_serves_the_shared_client_initializer_without_a_session

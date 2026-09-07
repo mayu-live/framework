@@ -298,7 +298,8 @@ router, or the old asset storage, and all final suites pass.
 - [x] HMR success, failure, recovery, route add/remove, and asset add/remove.
   - [x] Publish removed stylesheet assets and remove their generated files.
 - [x] Multiple sessions receive the same update exactly once.
-- [ ] Source-mapped Haml render, callback, route-handler, and reload errors.
+- [x] Source-mapped Haml render, callback, route-handler, and reload errors.
+  - [x] Rewrite server route-handler exceptions before logging them.
 - [x] Component state and class references survive encrypted session transfer.
   - [x] Add a Ruby integration test that encrypts `Session::TransferState`,
         resumes it with a fresh Klenod provider, renders, and invokes a callback.
