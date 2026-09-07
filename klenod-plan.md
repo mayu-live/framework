@@ -281,6 +281,9 @@ in both development and production modes.
 - [x] Pin the released Klenod version instead of sibling path gems.
 - [ ] Run every final acceptance command and prepare the breaking Mayu release
       notes and migration guide.
+  - [ ] Run the generated-app acceptance check after this breaking Mayu version
+        is published; `mayu init` intentionally installs `mayu-live` from
+        RubyGems rather than this unreleased checkout.
 
 Acceptance gate: no production Mayu code references `Mayu::Modules`, the old
 router, or the old asset storage, and all final suites pass.
@@ -299,6 +302,8 @@ router, or the old asset storage, and all final suites pass.
 - [ ] Generated application installs, starts, builds, and serves its bundle.
 - [ ] Docker/Fly-style build verifies that the selected single dependency set is
       present and functional.
+      Run this with Podman after the remaining acceptance checks; Docker is not
+      installed in the current environment.
 
 The planning baseline ran 119 Mayu tests with no assertion failures. Two metrics
 tests errored because the sandbox prohibited binding local TCP ports; this is an

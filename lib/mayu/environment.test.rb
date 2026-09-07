@@ -63,6 +63,24 @@ class Mayu::EnvironmentTest < Minitest::Test
     assert_equal([:updated], updates)
   end
 
+  def test_klenod_update_subscriptions_fan_out_once_to_each_subscriber
+    environment =
+      Mayu::Environment.new(
+        config(Dir.mktmpdir("mayu-klenod")),
+        module_provider: Object.new,
+        metrics: Object.new
+      )
+    first = []
+    second = []
+    environment.subscribe_klenod_updates { |update| first << update }
+    environment.subscribe_klenod_updates { |update| second << update }
+
+    environment.send(:publish_klenod_update, :updated)
+
+    assert_equal([:updated], first)
+    assert_equal([:updated], second)
+  end
+
   def test_klenod_watcher_applies_an_update_once_and_publishes_it
     Dir.mktmpdir("mayu-klenod") do |root|
       app_dir = File.join(root, "app")
