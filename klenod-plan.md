@@ -296,7 +296,7 @@ router, or the old asset storage, and all final suites pass.
 - [x] Development smoke test of the full example.
 - [x] Production bundle/build/start smoke test in a fresh process.
 - [ ] HMR success, failure, recovery, route add/remove, and asset add/remove.
-- [ ] Multiple sessions receive the same update exactly once.
+- [x] Multiple sessions receive the same update exactly once.
 - [ ] Source-mapped Haml render, callback, route-handler, and reload errors.
 - [x] Component state and class references survive encrypted session transfer.
   - [x] Add a Ruby integration test that encrypts `Session::TransferState`,
