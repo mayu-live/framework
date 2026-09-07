@@ -331,6 +331,8 @@ milestone spans them.
   failures before session startup render the nearest Klenod `+error` view.
 - 2026-09-06: Added a development-provider regression test for recursive route
   CSS collection. Klenod preserves root, layout, and page stylesheet order.
+- 2026-09-06: Corrected the VDOM implementation notes: route-scoped Klenod
+  assets are passed into the document head explicitly, not discovered by VNodes.
 
 - 2026-09-05: Migration plan created; implementation not started.
 - 2026-09-06: Added Klenod ImagePlugin inline placeholder support (16px WebP is
