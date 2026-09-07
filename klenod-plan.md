@@ -290,6 +290,12 @@ environment limitation to account for when comparing later results.
 Add short dated entries here. Link commits in both repositories when a
 milestone spans them.
 
+- 2026-09-06: Added executable example coverage for a grouped optional
+  catch-all route, corrected the example production Docker command, and updated
+  the root and example documentation for Klenod `ClassNames`, transformation,
+  and production build/start behavior. Removed the unreachable legacy
+  transformer implementation from `mayu transform`; the full Mayu suite passes
+  (171 runs, 524 assertions).
 - 2026-09-06: Added the Mayu adapter for Klenod slots and opt-in event-handler
   references. The example root page and `/demos/form` now server-render through
   Klenod with slots, callbacks, styles, and assets present in the document.
