@@ -170,6 +170,26 @@ class Mayu::SessionTest < Minitest::Test
     assert_includes(html, "Custom elements")
   end
 
+  def test_session_renders_example_optional_catch_all_route_segments
+    provider =
+      Mayu::Klenod::Configuration.new(
+        root: File.expand_path("../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/segments/alpha/beta",
+        headers: {
+        },
+        http2: false
+      )
+
+    html = Mayu::Session.new(environment: env, request_info:).render
+
+    assert_includes(html, "Route segments")
+    assert_includes(html, "Segments: alpha / beta")
+  end
+
   def test_session_renders_the_klenod_error_view_after_page_resolution_failure
     Dir.mktmpdir("mayu-klenod-error") do |root|
       pages = File.join(root, "app", "pages")

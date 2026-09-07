@@ -224,6 +224,7 @@ init` template.
       any other new public behavior that Mayu documents.
   - [x] Add and test an example `GET /api/health` `+route.rb` handler.
   - [x] Add a root `+error.haml` view and verify that Klenod resolves it at 500.
+  - [x] Add and test a grouped optional catch-all route under `/demos/segments`.
 - [ ] Update the root README, example documentation pages, generated-app README,
       Docker build, deployment files, and ignore rules.
 - [x] Document `klenod.config.rb`, the default `app/pages` choice, and how to
