@@ -535,21 +535,23 @@ in the project root.
 For development you probably want these settings:
 
 ```toml
-[dev.server]
-count = 1
-hot_swap = true
+[development.server]
+hmr = true
 self_signed_cert = true
+generate_assets = true
 ```
 
 ### Production
 
-The production server depends on the output from a build step that
-parses all inputs and generates static files.
+The production server loads the Klenod bundle and assets produced by
+`bin/mayu build`. Start it with `bin/mayu start` after setting
+`MAYU_SECRET_KEY`.
 
 ```toml
-[dev.server]
-hot_swap = false
-self_signed_cert = false
+[production.server]
+hmr = false
+self_signed_cert = true
+generate_assets = false
 ```
 
 # Contributing
