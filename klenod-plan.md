@@ -341,6 +341,9 @@ milestone spans them.
 - 2026-09-07: Replaced every sibling Klenod path dependency with released
   Klenod 0.0.8 gems, refreshed the framework and example lockfiles, and ran
   the full Mayu suite successfully (124 runs, 420 assertions).
+- 2026-09-07: Updated CI and the example Docker image from Ruby 3.3 to Ruby
+  4.0.6, matching Mayu's required Ruby version. Docker is unavailable in this
+  environment, so the image build remains an external acceptance check.
 - 2026-09-06: Added executable example coverage for a grouped optional
   catch-all route, corrected the example production Docker command, and updated
   the root and example documentation for Klenod `ClassNames`, transformation,
