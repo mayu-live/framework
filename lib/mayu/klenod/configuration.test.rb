@@ -260,7 +260,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
             def handle_click
             end
 
-          %button(onclick=handle_click)
+          %button(onclick=handle_click){ style: { color: "red" } }
             Hello world
         HAML
 
@@ -274,6 +274,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       assert_instance_of(Mayu::Runtime::Descriptors::Callback, callback)
       assert_same(component, callback.component)
       assert_equal(:handle_click, callback.method_name)
+      assert_equal({color: "red"}, descriptor.props.fetch(:style))
     end
   end
 
