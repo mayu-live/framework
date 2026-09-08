@@ -40,7 +40,7 @@ export default interface Patches {
     type: string,
     message: string,
     backtrace: string[],
-    source: string,
+    source: string | null,
     treePath: any
   ): void;
 }

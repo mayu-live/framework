@@ -501,7 +501,7 @@ const Patches = {
     type: string,
     message: string,
     backtrace: string[],
-    source: string,
+    source: string | null,
     treePath: { name: string; path?: string }[]
   ) {
     renderError(file, type, message, backtrace, source, treePath);
