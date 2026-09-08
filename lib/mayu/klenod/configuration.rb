@@ -89,6 +89,7 @@ module Mayu
           mode:,
           base:,
           plugins:,
+          namespace: Mayu::ModuleNamespace,
           **overrides
         )
       end

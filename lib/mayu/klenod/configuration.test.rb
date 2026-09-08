@@ -35,6 +35,12 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_development_context_uses_mayus_module_namespace
+    configuration = Mayu::Klenod::Configuration.new(root: Dir.pwd)
+
+    assert_same(Mayu::ModuleNamespace, configuration.context.graph.namespace)
+  end
+
   def test_build_accepts_an_explicit_output_path
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
