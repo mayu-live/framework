@@ -29,7 +29,7 @@ module Mayu
         Sync do
           elapsed =
             Async::Clock.measure do
-              Configuration.with(:production) do |config|
+              Configuration.with(:development) do |config|
                 Klenod::Configuration.load(
                   root: config.root,
                   mode: :production
