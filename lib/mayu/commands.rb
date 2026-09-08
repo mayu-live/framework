@@ -8,6 +8,7 @@ require_relative "commands/dev"
 require_relative "commands/transform"
 require_relative "commands/routes"
 require_relative "commands/build"
+require_relative "commands/graph"
 require_relative "commands/start"
 require_relative "commands/init"
 require_relative "version"
@@ -22,11 +23,12 @@ module Mayu
                "transform" => Transform,
                "routes" => Routes,
                "build" => Build,
+               "graph" => Graph,
                "start" => Start
              }
 
       def call
-        print_header
+        print_header unless @command.is_a?(Graph)
 
         @command ? @command.call : print_usage
       end
