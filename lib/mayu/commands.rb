@@ -20,11 +20,11 @@ module Mayu
              {
                "init" => Init,
                "dev" => Dev,
-               "transform" => Transform,
-               "routes" => Routes,
                "build" => Build,
+               "start" => Start,
+               "routes" => Routes,
                "graph" => Graph,
-               "start" => Start
+               "transform" => Transform
              }
 
       def call
