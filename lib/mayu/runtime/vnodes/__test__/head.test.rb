@@ -97,6 +97,27 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     assert_match("<title>Static</title>", html)
   end
 
+  def test_route_stylesheets_are_rendered_without_component_discovery
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[:main, "content"]],
+        metrics: NullMetrics.new,
+        stylesheets: ["/.mayu/assets/routes/home.css"],
+        scripts: ["/.mayu/assets/routes/home.js"]
+      )
+
+    html = render_html(engine.root)
+
+    assert_match(
+      '<link rel="stylesheet" href="/.mayu/assets/routes/home.css">',
+      html
+    )
+    assert_match(
+      '<script type="module" src="/.mayu/assets/routes/home.js"></script>',
+      html
+    )
+  end
+
   def test_head_updates_with_multiple_titles
     descriptor = H[:body, H[HeadToggleProbe]]
     engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
@@ -123,34 +144,6 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
       assert_equal(1, html.scan("<title>").length)
       assert_match("<title>C</title>", html)
     end
-  end
-
-  def test_component_stylesheet_registration
-    mod = Data.define(:assets, :dependencies).new(["styles.css"], [])
-    system =
-      Data
-        .define(:mod) do
-          def get_mod(_path)
-            mod
-          end
-        end
-        .new(mod)
-
-    key = Mayu::Modules::System::CURRENT_KEY
-    previous = Thread.current.thread_variable_get(key)
-    Thread.current.thread_variable_set(key, system)
-
-    descriptor = H[:body, H[StylesProbe]]
-    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
-
-    html = render_html(engine.root)
-
-    assert_match(
-      '<link rel="stylesheet" href="/.mayu/assets/styles.css">',
-      html
-    )
-  ensure
-    Thread.current.thread_variable_set(key, previous)
   end
 
   def test_custom_element_inline_registration_script

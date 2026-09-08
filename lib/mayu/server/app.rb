@@ -3,7 +3,6 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
-require "protocol/http/body/file"
 require_relative "request_refinements"
 require_relative "cookies"
 require_relative "event_stream"
@@ -12,7 +11,7 @@ require_relative "static_files"
 require_relative "../environment"
 require_relative "../session"
 require_relative "../session/store"
-require_relative "../modules/system"
+require_relative "../klenod"
 
 module Mayu
   class Server
@@ -80,7 +79,9 @@ module Mayu
           handle_session_transfer(request, $~[:session_id])
         in { method: "PATCH", path: SESSION_PATH_RE }
           handle_session_event(request, $~[:session_id])
-        in method: "GET" if is_new_session_request?(request)
+        in _ if response = handle_provider_route(request)
+          response
+        in method: "GET" | "HEAD" | "POST" if is_new_session_request?(request)
           handle_session_start(request)
         else
           handle_404(request)
@@ -100,6 +101,9 @@ module Mayu
           **origin_header(request)
         )
       rescue => e
+        if @environment.module_provider&.respond_to?(:rewrite_exception)
+          @environment.module_provider.rewrite_exception(e)
+        end
         Console.logger.error(self, e)
         error_response(403, "INTERNAL_SERVER_ERROR", **origin_header(request))
       end
@@ -117,6 +121,56 @@ module Mayu
       def is_new_session_request?(request)
         !request.path.start_with?("/.mayu") &&
           request.headers["accept"]&.include?("text/html")
+      end
+
+      def handle_provider_route(request)
+        provider = @environment.module_provider
+        return unless provider
+
+        match = Klenod::Router.new(provider).match(request.path)
+        handler = match&.handler
+        return unless handler
+        return if html_page_request?(request, match)
+
+        method = request.method.to_s.upcase
+        unless handler.public_method_defined?(method)
+          return(
+            response(
+              405,
+              "Method Not Allowed",
+              **{
+                "allow" => handler_methods(handler).join(", "),
+                "vary" => "Accept"
+              }
+            )
+          )
+        end
+
+        status, headers, body =
+          handler.new.public_send(
+            method,
+            Route::Request.from_async(request, params: match.params)
+          )
+        response(status, body, **headers.merge("vary" => "Accept"))
+      end
+
+      def html_page_request?(request, match)
+        return false unless match.page
+        unless %w[GET HEAD POST].include?(request.method.to_s.upcase)
+          return false
+        end
+
+        request.headers["accept"].to_s.include?("text/html")
+      end
+
+      def handler_methods(handler)
+        handler
+          .public_instance_methods(false)
+          .map { _1.to_s.upcase }
+          .select do |name|
+            %w[GET HEAD POST PUT PATCH DELETE OPTIONS].include?(name)
+          end
+          .sort
       end
 
       # Mayu
@@ -167,37 +221,22 @@ module Mayu
       end
 
       def handle_asset(request)
-        asset =
-          request
-            .path
-            .then { _1.delete_prefix("/.mayu/assets/") }
-            .then { CGI.unescape_uri_component(_1) }
-            .then { Modules::System.current.wait_for_asset(_1) }
+        provider = @environment.module_provider
+        return text_response(404, "file not found") unless provider
 
-        return text_response(404, "file not found") unless asset
-
-        case asset.encoded_content
-        in Assets::FileContent
-          Protocol::HTTP::Response[
-            200,
-            {
-              **asset.headers,
-              "cache-control": ASSET_CACHE_CONTROL,
-              **origin_header(request)
-            },
-            Protocol::HTTP::Body::File.open(
-              @environment.asset_path(asset.filename)
-            )
-          ]
-        in Assets::EncodedContent
-          response(
-            200,
-            asset.encoded_content.content,
-            **asset.headers,
-            "cache-control": ASSET_CACHE_CONTROL,
+        klenod_asset_app(provider).response_for(
+          request,
+          headers: {
             **origin_header(request)
-          )
-        end
+          }
+        ) || text_response(404, "file not found")
+      end
+
+      def klenod_asset_app(provider)
+        return @klenod_asset_app if @klenod_asset_provider.equal?(provider)
+
+        @klenod_asset_provider = provider
+        @klenod_asset_app = Klenod::AssetApp.new(provider)
       end
 
       def handle_favicon(request)
@@ -246,9 +285,15 @@ module Mayu
             escape_link_header_path(@environment.runtime_js_path),
           *session.styles.map do
             "<%s>; rel=preload; as=style" %
-              escape_link_header_path("/.mayu/assets/#{_1}")
+              escape_link_header_path(asset_url(it))
           end
         ].join(", ")
+      end
+
+      def asset_url(path)
+        return path if path.start_with?("/", "http://", "https://")
+
+        "/.mayu/assets/#{path}"
       end
 
       def escape_link_header_path(path)

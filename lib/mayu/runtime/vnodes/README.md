@@ -41,7 +41,8 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 ### Head + assets
 
 - VHead registers with VDocument; insert/remove manage head set.
-- Stylesheets collected from component modules.
+- Route-scoped Klenod stylesheets and module scripts are passed explicitly into
+  the document head; VNodes do not discover component assets.
 - Custom elements:
   - `RegisterCustomElement` patches emitted for updates.
   - Inline registration scripts injected via head rendering.

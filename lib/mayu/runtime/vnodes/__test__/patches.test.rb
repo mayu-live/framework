@@ -102,6 +102,28 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     assert_equal("/.mayu/assets/my-element.js", register.path)
   end
 
+  def test_registers_a_klenod_custom_element_descriptor
+    custom = {
+      __klenod_custom_element: true,
+      tag: "klenod-clock-a1b2c3d4",
+      asset_path: "/.mayu/assets/clock.a1b2c3d4.js"
+    }
+    initial = H[:body]
+    updated = H[:body, H[custom]]
+
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    patcher = Mayu::Runtime::VNodes::Patcher.new
+    engine.root.update(patcher, updated)
+
+    register =
+      patcher.patches.find do
+        it.is_a?(Mayu::Runtime::Patches::RegisterCustomElement)
+      end
+
+    assert_equal("klenod-clock-a1b2c3d4", register.name)
+    assert_equal("/.mayu/assets/clock.a1b2c3d4.js", register.path)
+  end
+
   def test_update_patches_for_attribute_and_text
     initial = H[:body, H[:p, "Hello", class: ["greeting"]]]
     updated =
@@ -141,6 +163,23 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
 
     refute_nil(set_text)
     assert_equal("World", set_text.content)
+  end
+
+  def test_class_patches_split_whitespace_separated_class_names
+    initial = H[:body, H[:p, "Hello", class: "first second"]]
+    updated = H[:body, H[:p, "Hello", class: "second third"]]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    patcher = Mayu::Runtime::VNodes::Patcher.new
+
+    engine.root.update(patcher, updated)
+
+    add_class =
+      patcher.patches.find { it.is_a?(Mayu::Runtime::Patches::AddClass) }
+    remove_class =
+      patcher.patches.find { it.is_a?(Mayu::Runtime::Patches::RemoveClass) }
+
+    assert_equal(["third"], add_class.classes)
+    assert_equal(["first"], remove_class.classes)
   end
 
   def test_class_and_style_removal_patches

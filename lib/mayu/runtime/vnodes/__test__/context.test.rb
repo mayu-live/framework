@@ -15,11 +15,9 @@ class Mayu::Runtime::VNodes::ContextTest < Minitest::Test
     descriptor =
       H[:body, H.context(theme: { color: "red" }) { H[ContextProbe] }]
 
-    with_modules_system(ContextProbe) do
-      engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
-      html = render_html(engine.root)
-      assert_match("<p>red</p>", html)
-    end
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    html = render_html(engine.root)
+    assert_match("<p>red</p>", html)
   end
 
   def test_context_helper_allows_nested_override
@@ -31,10 +29,8 @@ class Mayu::Runtime::VNodes::ContextTest < Minitest::Test
         end
       ]
 
-    with_modules_system(ContextProbe) do
-      engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
-      html = render_html(engine.root)
-      assert_match("<p>blue</p>", html)
-    end
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    html = render_html(engine.root)
+    assert_match("<p>blue</p>", html)
   end
 end

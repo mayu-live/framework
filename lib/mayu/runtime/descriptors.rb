@@ -11,7 +11,7 @@ module Mayu
       Element =
         Data.define(:type, :key, :slot, :children, :props) do
           def self.[](type, *children, key: nil, slot: nil, **props)
-            new(type, key, slot, Children[children], props)
+            new(type, key, slot&.to_sym, Children[children], props)
           end
 
           def same?(other)
@@ -100,6 +100,18 @@ module Mayu
           def same?(other) =
             self.class === other && component == other.component &&
               method_name == other.method_name
+
+          # Event listeners are rehydrated from their vnode IDs by VAttributes.
+          # Persisting the component object here would retain Klenod's anonymous
+          # export class, which cannot cross a Marshal boundary.
+          def marshal_dump
+            [component.instance_variable_get(:@__vnode_id), method_name]
+          end
+
+          def marshal_load(a)
+            _component_id, method_name = a
+            initialize(component: nil, method_name:)
+          end
         end
 
       Slot = Data.define(:component, :name, :fallback)

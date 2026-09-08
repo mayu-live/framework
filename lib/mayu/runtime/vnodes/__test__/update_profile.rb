@@ -5,7 +5,6 @@ require "async"
 require "vernier"
 
 require_relative "../../../test"
-require_relative "../../../modules/system"
 require_relative "../../engine"
 require_relative "../patcher"
 require_relative "../vdocument"

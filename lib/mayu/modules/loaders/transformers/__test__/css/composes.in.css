@@ -1,6 +1,0 @@
-.foo {
-  border: 1px solid #f0f;
-}
-.bar {
-  composes: foo;
-}

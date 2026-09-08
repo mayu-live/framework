@@ -44,8 +44,6 @@ module Mayu
       InsertData = PatchData.define(:id, :offset, :data)
       DeleteData = PatchData.define(:id, :offset, :count)
 
-      AddStyleSheet = PatchData.define(:filename)
-
       Transfer = PatchData.define(:payload)
       TransferFailed = PatchData.define()
 

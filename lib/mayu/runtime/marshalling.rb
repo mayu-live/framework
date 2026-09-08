@@ -7,8 +7,23 @@ module Mayu
   module Runtime
     module Marshalling
       ComponentRef = Data.define(:filename, :class_name, :klass)
+      COMPONENT_RESOLVER_KEY = :mayu_component_resolver
+
+      def self.with_component_resolver(resolver)
+        previous = Fiber[COMPONENT_RESOLVER_KEY]
+        Fiber[COMPONENT_RESOLVER_KEY] = resolver
+        yield
+      ensure
+        Fiber[COMPONENT_RESOLVER_KEY] = previous
+      end
 
       def self.dump_value(value)
+        # Klenod evaluates module exports inside anonymous modules. Its SVG
+        # imports are metadata objects from one of those modules, which Ruby
+        # cannot marshal even though an element only needs their URL. Keep the
+        # stable string representation in the persisted descriptor instead.
+        return value.src if klenod_svg_metadata?(value)
+
         case value
         in Hash
           value.transform_values { dump_value(_1) }
@@ -39,6 +54,11 @@ module Mayu
       def self.dump_component_class(value)
         return value unless component_class?(value)
 
+        if resolver = Fiber[COMPONENT_RESOLVER_KEY]
+          reference = resolver.dump_component_class(value)
+          return reference if reference
+        end
+
         module_path = value.module_path if value.respond_to?(:module_path)
         class_name = value.name&.split("::")&.last
 
@@ -56,46 +76,20 @@ module Mayu
         return ref.klass if ref.klass.is_a?(Class)
         return fallback_class if fallback_class.is_a?(Class)
 
-        module_path = ref.filename
-        class_name = ref.class_name
-
-        if module_path.nil? || module_path.empty?
-          raise "Missing component module path for #{ref.inspect}"
+        if resolver = Fiber[COMPONENT_RESOLVER_KEY]
+          component_class = resolver.resolve_component_ref(ref)
+          return component_class if component_class
         end
 
-        system = Modules::System.current
-        mod = system&.get_mod(module_path)
-
-        default_export =
-          if system&.respond_to?(:import)
-            begin
-              system.import(module_path, "/")
-            rescue StandardError
-              nil
-            end
-          elsif mod&.const_defined?(:Exports)
-            exports = mod.const_get(:Exports)
-            exports.const_get(:Default) if exports.const_defined?(:Default)
-          end
-
-        mod ||= system&.get_mod(module_path)
-        raise "Could not resolve module #{module_path.inspect}" unless mod
-
-        exports = mod.const_get(:Exports)
-        const_name = class_name.to_s.split("::").last
-        return default_export if const_name.empty?
-        if exports.const_defined?(const_name)
-          return exports.const_get(const_name)
-        end
-        return default_export if default_export
-
-        raise(
-          "Could not resolve component class #{const_name.inspect} in #{module_path.inspect}"
-        )
+        raise "Could not resolve component reference #{ref.inspect}"
       end
 
       def self.component_class?(value)
         value.is_a?(Class) && value <= Mayu::Component::Base
+      end
+
+      def self.klenod_svg_metadata?(value)
+        value.respond_to?(:src) && value.class.name&.end_with?("::SvgMetadata")
       end
     end
   end

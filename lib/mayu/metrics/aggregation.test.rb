@@ -76,7 +76,7 @@ class Mayu::Metrics::AggregationTest < Minitest::Test
         metrics = fetch_metrics(listen)
 
         metrics.match?(/#{TEST_METRIC_NAME}\s+2(?:\.0+)?\b/)
-      rescue Errno::ECONNREFUSED, EOFError
+      rescue Errno::ECONNREFUSED, Errno::EINVAL, EOFError
         false
       end
     ensure
@@ -109,7 +109,7 @@ class Mayu::Metrics::AggregationTest < Minitest::Test
       ) do
         response = Net::HTTP.get_response(fallback_uri)
         response.is_a?(Net::HTTPSuccess)
-      rescue Errno::ECONNREFUSED, EOFError
+      rescue Errno::ECONNREFUSED, Errno::EINVAL, EOFError
         false
       end
     ensure

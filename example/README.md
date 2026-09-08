@@ -18,7 +18,7 @@ bin/mayu dev
 
 ## Build
 
-Builds a production bundle
+Builds the Klenod runtime bundle and production assets.
 
 ```bash
 bin/mayu build
@@ -26,7 +26,8 @@ bin/mayu build
 
 ## Start
 
-Loads a production bundle and starts the server in production mode.
+Set `MAYU_SECRET_KEY`, then load the production bundle and start the server in
+production mode.
 
 ```bash
 bin/mayu start

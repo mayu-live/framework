@@ -7,7 +7,7 @@ require_relative "runtime"
 require_relative "session/token"
 require_relative "session/error_page"
 require_relative "session/transfer_state"
-require_relative "modules"
+require_relative "klenod"
 
 module Mayu
   class Session
@@ -44,7 +44,7 @@ module Mayu
         end
       end
 
-    attr_reader :id
+    attr_reader :id, :route_status
     attr_reader :token
 
     def initialize(environment:, request_info:)
@@ -65,7 +65,10 @@ module Mayu
         Runtime::Engine.new(
           descriptor,
           runtime_js:,
-          metrics: @environment.metrics
+          metrics: @environment.metrics,
+          module_provider:,
+          stylesheets: route_stylesheets,
+          scripts: route_scripts
         )
 
       @last_ping = Async::Clock.now
@@ -78,7 +81,17 @@ module Mayu
     def resume_transferred(environment)
       @environment = environment
       @engine.metrics = environment.metrics if @engine.respond_to?(:metrics=)
+      @engine.module_provider = module_provider
       self
+    end
+
+    def module_provider
+      @environment.module_provider if @environment.respond_to?(:module_provider)
+    end
+
+    def component_resolver
+      provider = module_provider
+      provider.component_resolver if provider&.respond_to?(:component_resolver)
     end
 
     def valid_token?(token)
@@ -175,12 +188,26 @@ module Mayu
     private
 
     def run_code_reload_task(parent)
+      return unless module_provider.is_a?(Klenod::DevelopmentProvider)
+
+      run_klenod_reload_task(parent)
+    end
+
+    def run_klenod_reload_task(parent)
       parent.async do |task|
         task.annotate("Session #{@id}: HMR")
+        updates = Async::Queue.new
+        subscription =
+          @environment.subscribe_klenod_updates do |update|
+            updates.enqueue(update)
+          end
 
-        while (reload_result = Modules::System.current.wait_for_reload)
-          handle_reload_result(reload_result)
+        while (update = updates.dequeue)
+          handle_reload_result(update)
         end
+      ensure
+        @environment.unsubscribe_klenod_updates(subscription) if subscription
+        updates&.close
       end
     end
 
@@ -217,6 +244,10 @@ module Mayu
 
         @request_info = @request_info.with(path:)
         descriptor = resolve_route(path)
+        @engine.replace_route_assets(
+          stylesheets: route_stylesheets,
+          scripts: route_scripts
+        )
         @engine.navigate(path, descriptor, push_state:)
       end
     rescue => e
@@ -225,8 +256,11 @@ module Mayu
 
     def handle_reload_result(reload_result)
       if reload_result.success?
-        puts "\e[30;103mCode update detected, reloading.\e[0m"
         descriptor = resolve_route(@request_info.path)
+        @engine.replace_route_assets(
+          stylesheets: route_stylesheets,
+          scripts: route_scripts
+        )
         @engine.refresh(descriptor)
         @engine.patch(Runtime::Patches::Event["reload:success", nil])
       else
@@ -238,6 +272,32 @@ module Mayu
 
     def emit_reload_error_patches(reload_result)
       Array(reload_result.errors).each do |reload_error|
+        if reload_error in [module_id, error]
+          rewrite_reload_error_backtrace(error)
+          file =
+            (
+              if error.respond_to?(:module_id)
+                error.module_id.to_s
+              else
+                module_id.to_s
+              end
+            )
+          source = error.respond_to?(:source) ? error.source.to_s : ""
+          type =
+            ((error.respond_to?(:cause) && error.cause || error).class.name)
+          @engine.patch(
+            Runtime::Patches::RenderError[
+              file,
+              type,
+              error.message,
+              Array(error.backtrace),
+              source,
+              [{ name: "CodeReload", path: file }]
+            ]
+          )
+          next
+        end
+
         @engine.patch(
           Runtime::Patches::RenderError[
             reload_error.file,
@@ -251,36 +311,41 @@ module Mayu
       end
     end
 
-    def resolve_route(path)
-      system = Modules::System.current
+    def rewrite_reload_error_backtrace(error)
+      return unless error.is_a?(Exception)
 
-      match = @environment.router.match(path)
-
-      return ErrorPage.build("Could not find page for #{path}") unless match
-
-      layouts = [
-        system.import("root.haml"),
-        *match.route.layouts.map { system.import(File.join("/pages", _1)) }
-      ]
-
-      page =
-        Mayu::Runtime::H[
-          system.import(File.join("/pages", match.route.views.page)),
-          params: match.params,
-          query: match.query
-        ]
-
-      layouts
-        .reverse
-        .reduce(page) do |page, layout|
-          Mayu::Runtime::H[
-            layout,
-            page,
-            params: match.params,
-            query: match.query,
-            path:
-          ]
-        end
+      module_provider.rewrite_exception(error)
+    rescue => rewrite_error
+      Console.logger.warn(
+        self,
+        "Could not rewrite reload error backtrace: #{rewrite_error.message}"
+      )
     end
+
+    def resolve_route(path)
+      provider = module_provider
+      return ErrorPage.build("Could not find page for #{path}") unless provider
+
+      router = Klenod::Router.new(provider)
+      resolved_page = router.resolve(path)
+      return apply_resolved_page(resolved_page) if resolved_page
+
+      ErrorPage.build("Could not find page for #{path}")
+    rescue => error
+      Console.logger.error(self, error)
+      resolved_page = router.error(path, error:)
+      raise unless resolved_page
+
+      apply_resolved_page(resolved_page)
+    end
+
+    def apply_resolved_page(resolved_page)
+      @resolved_page = resolved_page
+      @route_status = resolved_page.status
+      resolved_page.descriptor
+    end
+
+    def route_stylesheets = @resolved_page&.stylesheets || []
+    def route_scripts = @resolved_page&.scripts || []
   end
 end

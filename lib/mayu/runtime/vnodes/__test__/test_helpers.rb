@@ -6,7 +6,6 @@ require "minitest/focus"
 require "stringio"
 
 require_relative "../../../test"
-require_relative "../../../modules/system"
 
 require_relative "../../engine"
 require_relative "../patcher"
@@ -90,35 +89,6 @@ module Mayu
           nil
         rescue Async::TimeoutError
           nil
-        end
-
-        def with_modules_system(component_class)
-          mod = Module.new
-          exports = Module.new
-          exports.const_set(
-            component_class.name.split("::").last,
-            component_class
-          )
-          mod.const_set(:Exports, exports)
-          mod.define_singleton_method(:assets) { [] }
-          mod.define_singleton_method(:dependencies) { [] }
-
-          system =
-            Data
-              .define(:mod) do
-                def get_mod(_path)
-                  mod
-                end
-              end
-              .new(mod)
-
-          key = Mayu::Modules::System::CURRENT_KEY
-          previous = Thread.current.thread_variable_get(key)
-          Thread.current.thread_variable_set(key, system)
-
-          yield
-        ensure
-          Thread.current.thread_variable_set(key, previous)
         end
 
         def find_component(node, klass)

@@ -9,7 +9,7 @@ export default function renderError(
   type: string,
   message: string,
   backtrace: string[],
-  source: string,
+  source: string | null,
   treePath: { name: string; path?: string }[]
 ) {
   const formats: string[] = [];
@@ -70,7 +70,7 @@ export default function renderError(
   const treeItems = treePath.map((path, i) => {
     const indent = "  ".repeat(i);
     const line =
-      indent + "% " + path.name + (path.path ? ` (${path.path})` : "");
+      indent + "%" + path.name + (path.path ? ` (${path.path})` : "");
 
     return h("li", [line], { slot: "tree-path", class: "tree-item" });
   });
@@ -87,7 +87,7 @@ export default function renderError(
     });
   });
 
-  const sourceItems = source.split("\n").map((line, i) => {
+  const sourceItems = (source ? source.split("\n") : []).map((line, i) => {
     const isInteresting = interestingLines.has(i + 1);
     const className = isInteresting
       ? "source-line is-interesting"

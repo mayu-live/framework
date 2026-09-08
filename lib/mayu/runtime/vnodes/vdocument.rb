@@ -18,10 +18,17 @@ module Mayu
         Html = InternalComponents::Html
         Head = InternalComponents::Head
 
-        def initialize(descriptor, parent:, engine:)
-          super
+        def initialize(
+          descriptor,
+          parent:,
+          engine:,
+          stylesheets: [],
+          scripts: []
+        )
+          super(descriptor, parent:, engine:)
           @listeners = {}
-          @styles = Set.new
+          @styles = Set.new(stylesheets)
+          @scripts = Set.new(scripts)
           @custom_elements = Set.new
           @head = Set.new
           @head_dirty = false
@@ -34,7 +41,7 @@ module Mayu
 
         def tree_path = [{ name: "#document" }]
 
-        attr_reader :head, :styles, :custom_elements
+        attr_reader :head, :styles, :scripts, :custom_elements
 
         def update(patcher, descriptor = nil)
           @descriptor = descriptor if descriptor
@@ -57,8 +64,12 @@ module Mayu
           @head_dirty = true
         end
 
-        def add_stylesheet(filename)
-          @head_dirty = true if @styles.add?(filename)
+        def replace_route_assets(stylesheets:, scripts:)
+          styles = Set.new(stylesheets)
+          scripts = Set.new(scripts)
+          @head_dirty = true if @styles != styles || @scripts != scripts
+          @styles = styles
+          @scripts = scripts
         end
 
         def add_custom_element(custom_element)
@@ -137,14 +148,15 @@ module Mayu
         end
 
         def marshal_dump
-          [super, @html, @styles, @custom_elements, @listeners]
+          [super, @html, @styles, @scripts, @custom_elements, @listeners]
         end
 
         def marshal_load(a)
-          a => [base, html, styles, custom_elements, listeners]
+          a => [base, html, styles, scripts, custom_elements, listeners]
           super(base)
           @html = html
           @styles = styles
+          @scripts = scripts
           @custom_elements = custom_elements
           @listeners = listeners || {}
           @head = Set.new
@@ -186,6 +198,7 @@ module Mayu
             Head,
             runtime_js: @engine.runtime_js,
             styles: @styles,
+            scripts: @scripts,
             custom_elements: @custom_elements,
             descriptors: @head.map(&:children).flatten.compact
           ]
@@ -221,18 +234,24 @@ module Mayu
           module_path = component.class.name if module_path.nil? ||
             module_path.empty?
 
-          mod = Modules::System.current.get_mod(module_path) if module_path
-          Console.logger.error(
-            component,
-            Modules::System.current.format_exception(error)
-          )
+          provider = @engine.module_provider
+          if provider&.respond_to?(:rewrite_exception)
+            provider.rewrite_exception(error)
+          end
+          formatted_error =
+            if provider
+              provider.format_exception(error, source_path: module_path)
+            else
+              error
+            end
+          Console.logger.error(component, formatted_error)
 
           Patches::RenderError[
             module_path,
             error.class.name,
             error.message,
             error.backtrace,
-            mod&.source_map&.input,
+            nil,
             tree_path
           ]
         end

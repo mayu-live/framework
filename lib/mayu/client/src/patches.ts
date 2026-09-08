@@ -27,8 +27,6 @@ export default interface Patches {
   InsertData(id: string, offset: number, data: string): void;
   DeleteData(id: string, offset: number, count: number): void;
 
-  AddStyleSheet(filename: string): void;
-
   Transfer(payload: Blob): void;
 
   Ping(timestamp: number): void;
@@ -37,5 +35,12 @@ export default interface Patches {
   Event(event: string, payload: any): void;
   HistoryPushState(path: string): void;
 
-  RenderError(file: string, type: string, message: string, backtrace: string[], source: string, treePath: any): void;
-};
+  RenderError(
+    file: string,
+    type: string,
+    message: string,
+    backtrace: string[],
+    source: string | null,
+    treePath: any
+  ): void;
+}

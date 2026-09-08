@@ -93,15 +93,6 @@ module Mayu
           environment = load_environment(metrics:)
 
           if @mayu_env == :development
-            if environment.config.server.generate_assets?
-              asset_task =
-                environment.modules.generate_assets(
-                  environment.assets_dir,
-                  concurrency: 1,
-                  forever: true
-                )
-            end
-
             watcher_task =
               (environment.start_watcher if environment.config.server.hmr?)
           end
@@ -145,8 +136,11 @@ module Mayu
           Environment.with_config(@config, metrics:)
         in :production
           bundle_filename = @bundle_filename || raise("Missing bundle filename")
-          bundle = File.read(bundle_filename, encoding: "binary")
-          Environment.load_with_config(@config, bundle, metrics:)
+          Environment.load_klenod_with_config(
+            @config,
+            bundle_filename,
+            metrics:
+          )
         end
       end
 

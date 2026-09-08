@@ -8,7 +8,7 @@ require "samovar"
 module Mayu
   module Commands
     class Transform < Samovar::Command
-      self.description = "Transform Haml/CSS -> Ruby"
+      self.description = "Inspect a Klenod-transformed module"
 
       options do
         option "--no-line-numbers", "Disable line numbers", default: false
@@ -19,100 +19,51 @@ module Mayu
 
       def call
         require "rouge"
-        require "syntax_tree"
-        require_relative "../modules/loaders"
+        require_relative "../configuration"
+        require_relative "../klenod"
 
-        transform(
-          File.read(@path),
-          @path,
-          line_numbers: !@options[:no_line_numbers],
-          colors: !@options[:no_colors]
-        )
+        Configuration.with(:development) do |config|
+          transform_with_klenod(
+            Klenod::Configuration.load(root: config.root),
+            @path,
+            line_numbers: !@options[:no_line_numbers],
+            colors: !@options[:no_colors]
+          )
+        end
       end
 
       private
 
-      def transform(source, path, line_numbers:, colors:)
+      def transform_with_klenod(configuration, path, line_numbers:, colors:)
+        source_path = Pathname.new(path).expand_path
+        relative_path =
+          source_path.relative_path_from(
+            Pathname.new(configuration.source_path)
+          ).to_s
+        record = configuration.context.entry(relative_path).record
         formatter = CodeFormatter.new(line_numbers:, colors:)
+        lexer =
+          Rouge::Lexer.find_fancy(
+            File.extname(source_path).delete_prefix("."),
+            Rouge::Lexers::PlainText
+          )
 
-        case extname = File.extname(path)
-        when ".haml"
-          transform_haml(formatter, source, path)
-        when ".rb"
-          transform_ruby(formatter, source, path)
-        when ".css"
-          transform_css(formatter, source, path)
-        else
-          puts "Can't transform #{extname}-files"
-        end
-      end
-
-      def transform_haml(formatter, source, path)
-        loading_file =
-          Mayu::Modules::Loaders::LoadingFile.new(
-            root: Dir.pwd,
-            path:,
-            source:,
-            digest: nil
-          ).load_source
-
-        puts "\e[1;3mInput:\e[0;2m #{path}\e[0m"
-        puts formatter.format(loading_file.source.strip, Rouge::Lexers::Haml)
-
-        loading_file =
-          Mayu::Modules::Loaders::Haml[
-            component_base_class: "Mayu::Component::Base",
-            using: ["Mayu::Component::CSSUnits::Refinements"],
-            factory: "H"
-          ].call(loading_file)
-
+        puts "\e[1;3mInput:\e[0;2m #{relative_path}\e[0m"
+        puts formatter.format(File.read(source_path).strip, lexer)
         puts "\e[1;3mOutput:\e[0m"
+        puts formatter.format(
+               record.transformed_source.strip,
+               Rouge::Lexers::Ruby
+             )
+        return if record.assets.empty?
 
-        formatter.handle_parse_error(loading_file.source.strip) do
-          puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
+        puts "\e[1;3mAssets:\e[0m"
+        record.assets.each do |asset|
+          puts "#{asset.output_path} #{asset.content_type}"
         end
-      end
-
-      def transform_ruby(formatter, source, path)
-        loading_file =
-          Mayu::Modules::Loaders::LoadingFile.new(
-            root: Dir.pwd,
-            path:,
-            source:,
-            digest: nil
-          ).load_source
-
-        puts "\e[1;3mInput:\e[0;2m #{path}\e[0m"
-        puts formatter.format(loading_file.source.strip, Rouge::Lexers::Haml)
-
-        loading_file = Mayu::Modules::Loaders::Ruby[].call(loading_file)
-
-        puts "\e[1;3mOutput:\e[0m"
-
-        formatter.handle_parse_error(loading_file.source.strip) do
-          puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
-        end
-      end
-
-      def transform_css(formatter, source, path)
-        loading_file =
-          Mayu::Modules::Loaders::LoadingFile.new(
-            root: Dir.pwd,
-            path:,
-            source:,
-            digest: nil
-          ).load_source
-
-        puts "\e[1mInput:\e[0;2m #{path}\e[0m"
-        puts formatter.format(loading_file.source.strip, Rouge::Lexers::CSS)
-
-        loading_file = Mayu::Modules::Loaders::CSS.new.call(loading_file)
-
-        puts "\e[1mOutput:\e[0m"
-
-        formatter.handle_parse_error(loading_file.source.strip) do
-          puts formatter.format(loading_file.source.strip, Rouge::Lexers::Ruby)
-        end
+      rescue ArgumentError
+        raise ArgumentError,
+              "#{path} must be inside #{configuration.source_path}"
       end
 
       class CodeFormatter
@@ -129,15 +80,8 @@ module Mayu
         def format(source, lexer)
           source
             .chomp
-            .then { colorize(_1, lexer) }
-            .then { prepend_line_numbers(_1) }
-        end
-
-        def handle_parse_error(source)
-          yield
-        rescue SyntaxTree::Parser::ParseError => e
-          log_parse_error(source, e)
-          raise
+            .then { colorize(it, lexer) }
+            .then { prepend_line_numbers(it) }
         end
 
         private
@@ -162,25 +106,6 @@ module Mayu
                 line
               end.prepend(Kernel.format(number_format, i))
             end
-        end
-
-        def extract_lines(str, from, to)
-          str.each_line.to_a[from..to] || []
-        end
-
-        def log_parse_error(source, e)
-          start_line = [0, 0].max
-          formatted_source =
-            prepend_line_numbers(
-              extract_lines(source.to_s, start_line, -1),
-              start_line: start_line + 1,
-              error_line: e.lineno
-            ).join
-
-          puts(<<~ERROR)
-            #{e.message} on line #{e.lineno} col #{e.column}
-            #{formatted_source}
-          ERROR
         end
       end
     end

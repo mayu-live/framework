@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Condensed&family=Roboto+Mono&family=Roboto:wght@400;700&display=swap");
+
 :root {
   --material-color-red: var(--material-color-red-500);
   --material-color-red-50: #ffebee;
@@ -323,9 +325,9 @@
   min-height: 100svh;
   --page-max-width: 60rem;
 
-  --font-heading: "Roboto Condensed";
-  --font-regular: "Roboto";
-  --font-mono: "Roboto Mono";
+  --font-heading: "Roboto Condensed", "Roboto Condensed Fallback";
+  --font-regular: "Roboto", "Roboto Fallback";
+  --font-mono: "Roboto Mono", "Roboto Mono Fallback";
 }
 
 /*

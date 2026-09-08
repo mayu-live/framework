@@ -11,24 +11,47 @@ require_relative "vnodes/vdocument"
 require_relative "vnodes/updater"
 require_relative "vnodes/patcher"
 require_relative "patches"
+require_relative "marshalling"
 
 module Mayu
   module Runtime
     class Engine
-      attr_reader :runtime_js, :root, :output_queue, :metrics, :update_budget
+      attr_reader :runtime_js,
+                  :root,
+                  :output_queue,
+                  :metrics,
+                  :update_budget,
+                  :module_provider
       attr_writer :metrics
       attr_writer :update_budget
+      attr_writer :module_provider
 
-      def initialize(descriptor, runtime_js: nil, metrics:, update_budget: 30)
+      def initialize(
+        descriptor,
+        runtime_js: nil,
+        metrics:,
+        update_budget: 30,
+        module_provider: nil,
+        stylesheets: [],
+        scripts: []
+      )
         @runtime_js = runtime_js
         @metrics = metrics
         @update_budget = update_budget
+        @module_provider = module_provider
         @output_queue = Async::Queue.new
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @pending_custom_elements = Set.new
         @pending_listeners = []
-        @root = VNodes::VDocument.new(descriptor, parent: nil, engine: self)
+        @root =
+          VNodes::VDocument.new(
+            descriptor,
+            parent: nil,
+            engine: self,
+            stylesheets:,
+            scripts:
+          )
         @pending_custom_elements.each do |custom_element|
           @root.add_custom_element(custom_element)
         end
@@ -50,7 +73,7 @@ module Mayu
       end
 
       def dump
-        Marshal.dump(self)
+        with_component_resolver { Marshal.dump(self) }
       end
 
       def dump!
@@ -58,14 +81,20 @@ module Mayu
         dump
       end
 
-      def self.restore(data, metrics: nil)
-        engine = Marshal.load(data)
+      def self.restore(data, metrics: nil, module_provider: nil)
+        resolver =
+          module_provider.component_resolver if module_provider&.respond_to?(
+          :component_resolver
+        )
+        engine =
+          Marshalling.with_component_resolver(resolver) { Marshal.load(data) }
         engine.metrics = metrics if metrics
+        engine.module_provider = module_provider
         engine
       end
 
-      def self.restore!(data, metrics: nil)
-        engine = restore(data, metrics: metrics)
+      def self.restore!(data, metrics: nil, module_provider: nil)
+        engine = restore(data, metrics:, module_provider:)
         engine.start
         engine
       end
@@ -76,6 +105,10 @@ module Mayu
 
       def update_budget=(value)
         @update_budget = value
+      end
+
+      def replace_route_assets(stylesheets:, scripts:)
+        @root.replace_route_assets(stylesheets:, scripts:)
       end
 
       def start
@@ -191,6 +224,14 @@ module Mayu
       end
 
       private
+
+      def with_component_resolver(&)
+        resolver =
+          @module_provider.component_resolver if @module_provider&.respond_to?(
+          :component_resolver
+        )
+        Marshalling.with_component_resolver(resolver, &)
+      end
 
       def ensure_patch_buffer!
         @patch_buffer ||= []

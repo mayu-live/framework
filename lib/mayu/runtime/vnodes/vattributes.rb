@@ -218,7 +218,7 @@ module Mayu
             elsif key == :style
               obj[key] = value
             elsif key == :class
-              obj[key] = Array(value).flatten.compact
+              obj[key] = normalize_class_names(value)
             else
               obj[key] = normalize_attribute_value(key, value)
             end
@@ -276,8 +276,8 @@ module Mayu
         end
 
         def update_class(patcher, key, old_value, new_value)
-          old_classes = Array(old_value).flatten.compact
-          new_classes = Array(new_value).flatten.compact
+          old_classes = normalize_class_names(old_value)
+          new_classes = normalize_class_names(new_value)
 
           if new_classes.empty?
             unless old_classes.empty?
@@ -297,6 +297,10 @@ module Mayu
           end
 
           new_classes
+        end
+
+        def normalize_class_names(value)
+          Array(value).flatten.compact.flat_map { it.to_s.split }
         end
 
         def update_style(patcher, key, old_value, new_value)

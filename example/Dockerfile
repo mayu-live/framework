@@ -1,6 +1,6 @@
-FROM ruby:3.3.0-alpine3.18 as base
+FROM ruby:4.0.6-alpine3.24 as base
 
-ARG BUNDLER_VERSION=2.5.3
+ARG BUNDLER_VERSION=4.0.16
 ARG BUNDLE_WITHOUT=development:test
 ARG BUNDLE_PATH=vendor/bundle
 ENV BUNDLE_PATH ${BUNDLE_PATH}
@@ -26,4 +26,4 @@ COPY --from=install /app /app
 ENV PORT 3000
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
 ENTRYPOINT ["/fly/entrypoint.sh"]
-CMD ["bin/mayu", "serve", "--disable-sorbet"]
+CMD ["bin/mayu", "start"]

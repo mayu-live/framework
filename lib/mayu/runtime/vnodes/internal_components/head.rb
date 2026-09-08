@@ -23,6 +23,7 @@ module Mayu
             [
               H[:meta, charset: "utf-8"],
               runtime_script,
+              *module_scripts,
               *stylesheet_links,
               *custom_element_scripts
             ].compact
@@ -41,14 +42,28 @@ module Mayu
           end
 
           def stylesheet_links
-            @__props[:styles].map do |filename|
+            @__props[:styles].map do |stylesheet|
               H[
                 :link,
-                key: filename,
+                key: stylesheet,
                 rel: "stylesheet",
-                href: "/.mayu/assets/#{filename}"
+                href: stylesheet_url(stylesheet)
               ]
             end
+          end
+
+          def module_scripts
+            (@__props[:scripts] || []).map do |script|
+              H[:script, type: "module", src: script, key: "module-#{script}"]
+            end
+          end
+
+          def stylesheet_url(stylesheet)
+            if stylesheet.start_with?("/", "http://", "https://")
+              return stylesheet
+            end
+
+            "/.mayu/assets/#{stylesheet}"
           end
 
           def custom_element_scripts

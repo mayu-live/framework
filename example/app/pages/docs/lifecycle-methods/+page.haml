@@ -1,0 +1,81 @@
+:ruby
+  Card = import("/components/UI/Card")
+  Highlight = import("/components/UI/Highlight")
+  Markdown = import("../Markdown")
+  Example = import("./Example")
+
+%head
+  %title Lifecycle methods
+
+%article
+  %Markdown
+    :plain
+      # Lifecycle methods
+
+      There are a few lifecycle methods that can be useful.
+
+  %Highlight(language="haml")
+    = File.read(File.join(__dir__, "Example.haml"))
+  %Card
+    %Example
+  %Markdown
+    :plain
+      ## List of lifecycle methods
+
+      **`def self.get_initial_state(**props)`**
+
+      Called when initializing the component.
+
+      It has to return a Hash with the initial state.
+
+      **`def mount`**
+
+      Called when the component gets mounted.
+
+      This is a good place to start async task or periodic updates.
+      All tasks will be stopped when the component unmounts.
+
+      ```haml
+      :ruby
+        def mount
+          loop do
+            @time = Time.now.to_s
+            sleep 1
+          end
+        end
+      %p= @time
+      ```
+
+      This component will update the current time every second.
+
+      **`def unmount`**
+
+      Called after the component has been unmounted.
+
+      **`def should_update?(next_props, next_state)`**
+
+      By default, components will re-render on every change,
+      but in some cases you might want to skip rendering to
+      improve performance.
+
+      Usually you don't need to override the default behavior.
+
+      Should return `true` or `false`.
+
+      **`def did_update(prev_props, prev_state)`**
+
+      The `did_update` method is called right
+      after a component has been updated.
+
+      **`def self.get_derived_state_from_props(props, state)`**
+
+      Should return `nil` or new state.
+
+      [React documentation: getDerivedStateFromProps](https://reactjs.org/docs/react-component.html#static-getderivedstatefromprops)
+
+:css
+  Card {
+    margin: 1em;
+    margin-top: 2em;
+    padding: 1em;
+  }

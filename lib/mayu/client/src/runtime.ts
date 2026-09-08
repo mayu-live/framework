@@ -12,9 +12,7 @@ type IdNode = {
   children: IdNode[];
 };
 
-type PatchType = keyof typeof Patches;
-
-type Patch = [id: string, name: PatchType, ...args: string[]];
+type Patch = [name: string, ...args: unknown[]];
 
 type PatchSet = Patch[];
 
@@ -335,7 +333,7 @@ const Patches = {
       const [name, ...args] = patch;
       console.log(name, args);
 
-      const patchFn = Patches[name as PatchType] as any;
+      const patchFn = Patches[name as keyof typeof Patches] as any;
 
       if (!patchFn) {
         throw new Error(`Not implemented: ${name}`);
@@ -494,15 +492,6 @@ const Patches = {
     console.log("Transfer", state);
     setTransferState(state);
   },
-  AddStyleSheet(this: NodeSet, path: string) {
-    console.error(path);
-    console.error(path);
-    console.error(path);
-    console.error(path);
-    console.error(path);
-    console.error(path);
-    console.error(path);
-  },
   Pong(this: NodeSet, timestamp: number) {
     updatePing(performance.now() - timestamp);
   },
@@ -512,7 +501,7 @@ const Patches = {
     type: string,
     message: string,
     backtrace: string[],
-    source: string,
+    source: string | null,
     treePath: { name: string; path?: string }[]
   ) {
     renderError(file, type, message, backtrace, source, treePath);

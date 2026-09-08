@@ -3,34 +3,22 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
-require "msgpack"
-require_relative "routes"
 require_relative "encrypted_marshal"
 require_relative "configuration"
-require_relative "system_config"
 require_relative "component"
-require_relative "watcher"
 require_relative "metrics"
 require_relative "utils"
+require_relative "klenod"
 
 module Mayu
   class Environment
-    class MsgPackWrapper < MessagePack::Factory
-      def initialize
-        super()
-        self.register_type(0x00, Symbol)
-      end
-    end
-
     attr_reader :config
     attr_reader :app_dir
-    attr_reader :pages_dir
-    attr_reader :assets_dir
     attr_reader :client_path
     attr_reader :runtime_js_path
     attr_reader :init_js_body
-    attr_reader :modules
-    attr_reader :router
+    attr_reader :module_provider
+    attr_reader :klenod_configuration
     attr_reader :marshaller
     attr_reader :metrics
 
@@ -44,13 +32,15 @@ module Mayu
       new(config, metrics:)
     end
 
-    def initialize(config, router: nil, modules: nil, metrics: nil)
+    def initialize(
+      config,
+      module_provider: nil,
+      klenod_configuration: nil,
+      metrics: nil
+    )
       @config = config
       @app_dir = File.join(config.root, "app")
-      @pages_dir = File.join(app_dir, "pages")
-
       @client_path = File.join(__dir__, "client", "dist")
-      @assets_dir = File.join(config.root, ".assets")
 
       @runtime_js_path = load_runtime_js_path
       @init_js_body = <<~JS.freeze
@@ -68,68 +58,96 @@ module Mayu
           ttl: config.server.transfer_timeout_seconds
         )
 
-      @router = router || Mayu::Routes::Router.build(@pages_dir)
-      @modules = modules || Modules::System.new(@app_dir, **SYSTEM_CONFIG)
+      @klenod_configuration =
+        klenod_configuration || Klenod::Configuration.load(root: config.root)
+      @module_provider =
+        module_provider || @klenod_configuration.development_provider
+      @klenod_update_subscribers = {}
+      @klenod_update_subscribers_mutex = Mutex.new
     end
 
-    def asset_path(filename)
-      File.join(assets_dir, File.expand_path(filename, "/"))
-    end
+    def self.load_klenod_with_config(config, bundle_path, metrics: nil)
+      klenod_configuration =
+        Klenod::Configuration.load(root: config.root, mode: :production)
 
-    def dump
-      MsgPackWrapper.new.pack(
-        {
-          mayu_version: Mayu::VERSION,
-          data: Marshal.dump({ modules: @modules, router: @router })
-        }
+      new(
+        config,
+        module_provider: klenod_configuration.runtime_provider(bundle_path:),
+        klenod_configuration:,
+        metrics:
       )
     end
 
-    def self.load(mayu_env, bundle)
-      Mayu::Configuration.with(mayu_env) do |config|
-        load_with_config(config, bundle).use { |environment| yield environment }
-      end
-    end
-
-    def self.load_with_config(config, bundle, metrics: nil)
-      data = load_bundle(bundle)
-
-      Marshal.load(data) => { modules:, router: }
-
-      new(config, router:, modules:, metrics:)
-    end
-
-    private_class_method def self.load_bundle(bundle)
-      MsgPackWrapper.new.unpack(bundle) => { mayu_version:, data: }
-
-      unless mayu_version == Mayu::VERSION
-        Console.logger.warn(
-          self,
-          "App was built with Mayu #{mayu_version}. Running Mayu #{Mayu::VERSION}."
-        )
-      end
-
-      data
-    end
-
     def use(&)
-      @modules.use { yield self }
+      yield self
     end
 
     def start_watcher
-      Async do
-        Mayu::Watcher.run(@modules) do |events|
-          if events.any? { |event| is_route_event?(event) }
-            Console.logger.info(self, "Rebuilding routes")
-            @router = Mayu::Routes::Router.build(@pages_dir)
-          end
+      return unless @module_provider.is_a?(Klenod::DevelopmentProvider)
 
-          @modules.handle_watch_events(events)
-        end
+      start_klenod_watcher
+    end
+
+    def subscribe_klenod_updates(&block)
+      token = Object.new
+      @klenod_update_subscribers_mutex.synchronize do
+        @klenod_update_subscribers[token] = block
+      end
+      token
+    end
+
+    def unsubscribe_klenod_updates(token)
+      @klenod_update_subscribers_mutex.synchronize do
+        @klenod_update_subscribers.delete(token)
       end
     end
 
     private
+
+    def start_klenod_watcher
+      provider = @module_provider
+      context = provider.context
+      root_entry = provider.entry("root.haml")
+      updates = Async::Queue.new
+      context.on_update { |event| updates.enqueue(event) }
+
+      watcher =
+        ::Klenod::Build::Watcher.new(
+          source_dir: @klenod_configuration.source_path,
+          context:
+        )
+
+      Async do
+        watcher.start
+
+        loop do
+          event = updates.dequeue
+          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          update = provider.apply_update(event, entry: root_entry)
+          update_logger.log(update:, duration: format_duration(start_time))
+          publish_klenod_update(update)
+        end
+      ensure
+        updates.close
+        watcher.stop
+      end
+    end
+
+    def publish_klenod_update(update)
+      subscribers =
+        @klenod_update_subscribers_mutex.synchronize do
+          @klenod_update_subscribers.values
+        end
+      subscribers.each { |subscriber| subscriber.call(update) }
+    end
+
+    def update_logger
+      @update_logger ||= Klenod::UpdateLogger.new(source_dir: @klenod_configuration.source_path)
+    end
+
+    def format_duration(start_time)
+      "%.4fms" % ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1_000)
+    end
 
     def load_runtime_js_path
       File
@@ -137,19 +155,6 @@ module Mayu
         .then { JSON.parse(_1) }
         .fetch("main")
         .then { File.join("/.mayu/runtime", _1) }
-    end
-
-    def is_route_event?(event)
-      if event in Watcher::Events::Created | Watcher::Events::Deleted
-        if event.path.start_with?("/pages/")
-          File.basename(event.path) in
-            "page.haml" | "layout.haml" | "not_found.haml" | "template.haml"
-        else
-          false
-        end
-      else
-        false
-      end
     end
   end
 end

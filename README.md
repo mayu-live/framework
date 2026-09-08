@@ -339,31 +339,65 @@ app
 ├── root.haml
 ├── root.css
 └── pages
-    ├── page.haml
-    ├── layout.haml
+    ├── +page.haml
+    ├── +layout.haml
     ├── layout.css
     ├── about
-    │   ├── page.haml
+    │   ├── +page.haml
     │   └── page.css
     └── posts
-        ├── page.haml
-        ├── layout.haml
-        └── :id
-            └── page.haml
+        ├── +page.haml
+        ├── +layout.haml
+        └── [id]
+            └── +page.haml
 ```
 
 This would create the following routes:
 
-| **path**      | **component**                    | **layouts**                                           |
-| ------------- | -------------------------------- | ----------------------------------------------------- |
-| `/`           | `app/pages/page.haml`            | `app/pages/layout.haml`                               |
-| `/about/`     | `app/pages/about/page.haml`      | `app/pages/layout.haml`                               |
-| `/posts/`     | `app/pages/posts/page.haml`      | `app/pages/layout.haml` `app/pages/posts/layout.haml` |
-| `/posts/:id/` | `app/pages/posts/[id]/page.haml` | `app/pages/layout.haml` `app/pages/posts/layout.haml` |
-| `/*`          | `app/pages/404.haml`             | `app/pages/layout.haml`                               |
+| **path**      | **component**                     | **layouts**                                             |
+| ------------- | --------------------------------- | ------------------------------------------------------- |
+| `/`           | `app/pages/+page.haml`            | `app/pages/+layout.haml`                                |
+| `/about/`     | `app/pages/about/+page.haml`      | `app/pages/+layout.haml`                                |
+| `/posts/`     | `app/pages/posts/+page.haml`      | `app/pages/+layout.haml` `app/pages/posts/+layout.haml` |
+| `/posts/:id/` | `app/pages/posts/[id]/+page.haml` | `app/pages/+layout.haml` `app/pages/posts/+layout.haml` |
+| `/*`          | `app/pages/+not-found.haml`       | `app/pages/+layout.haml`                                |
 
 For a real-world example, check out
 [`example/app/pages/`](https://github.com/mayu-live/framework/tree/main/example/app/pages).
+
+### Klenod configuration
+
+For applications upgrading from Mayu's former module system, see
+[the Klenod migration guide](MIGRATION.md).
+
+Mayu loads Klenod configuration from `klenod.config.rb`. By default, Klenod
+uses `app` as its source directory and `app/pages` for routes. To keep source
+files elsewhere or use another routes directory, configure both values:
+
+```ruby
+# klenod.config.rb
+source_dir "frontend"
+pages_dir "routes"
+```
+
+With this configuration, a route such as `/about` is defined by
+`frontend/routes/about/+page.haml`.
+
+### Route handlers
+
+Use `+route.rb` beside (or instead of) a page to handle HTTP requests. Its
+public methods are named after HTTP verbs and receive a `Mayu::Route::Request`.
+They return `[status, headers, body]`:
+
+```ruby
+# app/pages/api/health/+route.rb
+def GET(_request)
+  [200, { "content-type" => "application/json" }, '{"status":"ok"}']
+end
+```
+
+For a route that has both `+page.haml` and `+route.rb`, browser-style HTML
+requests render the page while non-HTML requests use the handler.
 
 ## Hot reloading
 
@@ -443,76 +477,18 @@ Look at this example:
 
 [`./example/app/pages/Counter.haml`](https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml)
 
-That above code will be transformed into something like this:
+Klenod transforms it into a Mayu component class. Imports, scoped companion
+CSS, `ClassNames`, source maps, and emitted assets are all Klenod concerns;
+Mayu receives the resulting component descriptor and renders it through its
+existing VDOM runtime. The exact generated Ruby is intentionally an
+implementation detail. To inspect it for an application, run:
 
-```ruby
-# frozen_string_literal: true
-Self =
-  setup_component(
-    assets: ["0tyaKLqdvUGGcwZkdPOdMiMoMZoO74sMmtyRTuksjaQ=.css"],
-    styles: {
-      __Card: "example/app/pages/Counter_Card?7d89edff",
-      __article: "example/app/pages/Counter_article?7d89edff",
-      __output: "example/app/pages/Counter_output?7d89edff",
-      __button: "example/app/pages/Counter_button?7d89edff",
-    },
-  )
-begin
-  Card = import("/app/components/UI/Card")
-  def self.get_initial_state(initial_value: 0, **) = { count: initial_value }
-  def decrement_disabled = state[:count].zero?
-  def handle_decrement
-    update do |state|
-      count = [0, state[:count] - 1].max
-      { count: }
-    end
-  end
-  def handle_increment
-    update do |state|
-      count = state[:count] + 1
-      { count: }
-    end
-  end
-end
-public def render
-  Mayu::VDOM::H[
-    Card,
-    Mayu::VDOM::H[
-      :article,
-      Mayu::VDOM::H[
-        :button,
-        "－",
-        **mayu.merge_props(
-          { class: :__button },
-          { title: "Decrement" },
-          {
-            onclick: mayu.handler(:handle_decrement),
-            disabled: decrement_disabled,
-          },
-        )
-      ],
-      Mayu::VDOM::H[
-        :output,
-        state[:count],
-        **mayu.merge_props({ class: :__output })
-      ],
-      Mayu::VDOM::H[
-        :button,
-        "＋",
-        **mayu.merge_props(
-          { class: :__button },
-          { title: "Increment" },
-          { onclick: mayu.handler(:handle_increment) },
-        )
-      ],
-      **mayu.merge_props({ class: :__article })
-    ],
-    **mayu.merge_props({ class: :__Card }, { class: :card })
-  ]
-end
+```bash
+bin/mayu transform app/pages/Counter.haml
 ```
 
-[Check out more examples in the tests](https://github.com/mayu-live/framework/blob/main/lib/mayu/resources/transformers/haml.test.rb)
+[The Klenod-backed Haml integration tests](https://github.com/mayu-live/framework/blob/main/lib/mayu/klenod/configuration.test.rb)
+cover the Mayu-specific component behavior.
 
 # Implementation notes
 
@@ -562,21 +538,23 @@ in the project root.
 For development you probably want these settings:
 
 ```toml
-[dev.server]
-count = 1
-hot_swap = true
+[development.server]
+hmr = true
 self_signed_cert = true
+generate_assets = true
 ```
 
 ### Production
 
-The production server depends on the output from a build step that
-parses all inputs and generates static files.
+The production server loads the Klenod bundle and assets produced by
+`bin/mayu build`. Start it with `bin/mayu start` after setting
+`MAYU_SECRET_KEY`.
 
 ```toml
-[dev.server]
-hot_swap = false
-self_signed_cert = false
+[production.server]
+hmr = false
+self_signed_cert = true
+generate_assets = false
 ```
 
 # Contributing

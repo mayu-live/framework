@@ -44,24 +44,30 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Core
-  spec.add_dependency "async", "~> 2.36.0"
+  spec.add_dependency "async", "~> 2.42"
   spec.add_dependency "async-container", "~> 0.30.0"
-  spec.add_dependency "async-http", "~> 0.94.0"
+  spec.add_dependency "async-http", ">= 0.95.1", "< 0.104.0"
   spec.add_dependency "base64", "~> 0.3"
   spec.add_dependency "toml", "~> 0.3"
-  spec.add_dependency "samovar", "~> 2.4"
+  spec.add_dependency "samovar", "~> 2.5"
   spec.add_dependency "terminal-table", "~> 4.0"
   spec.add_dependency "prometheus-client", "~> 4.2.4"
   spec.add_dependency "reline", "~> 0.6"
 
   # Server
-  spec.add_dependency "brotli", "~> 0.6.0"
+  spec.add_dependency "brotli", "~> 0.8"
   spec.add_dependency "msgpack", "~> 1.8"
   spec.add_dependency "rack", ">= 3.2.4"
   spec.add_dependency "rbnacl", "~> 7.1"
 
+  # Klenod platform
+  spec.add_dependency "klenod-build", "= 0.0.12"
+  spec.add_dependency "klenod-runtime", "= 0.0.12"
+  spec.add_dependency "klenod-rack", "= 0.0.12"
+  spec.add_dependency "klenod-plugin-css", "= 0.0.12"
+  spec.add_dependency "klenod-plugin-javascript", "= 0.0.12"
+
   # Development
-  spec.add_dependency "listen", "~> 3.10.0"
   spec.add_dependency "localhost", "~> 1.7"
   spec.add_dependency "minitest", "~> 6.0"
   # spec.add_dependency "nokolexbor", "~> 0.6"
@@ -70,14 +76,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rouge", "~> 4.7"
   spec.add_dependency "dotenv", "~> 3.2"
 
-  # Modules
-  spec.add_dependency "image_size", "~> 3.4"
-  spec.add_dependency "mayu-css", "~> 0.1.5"
   spec.add_dependency "mime-types", "~> 3.7"
   spec.add_dependency "rake", "~> 13.3"
-  spec.add_dependency "syntax_tree", "~> 6.3"
-  spec.add_dependency "syntax_tree-haml", "~> 4.0"
   spec.add_dependency "syntax_tree-xml", "~> 0.1.0"
-  spec.add_dependency "tsort", "~> 0.2.0"
-  spec.add_dependency "rmagick", "~> 6.1"
 end

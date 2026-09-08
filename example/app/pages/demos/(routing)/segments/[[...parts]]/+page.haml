@@ -1,0 +1,15 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+
+:ruby
+  parts = Array($params[:parts])
+
+%article
+  %Heading(level=2) Route segments
+  %p
+    This page is inside a route group and uses an optional catch-all segment.
+  %p
+    = if parts.empty?
+      No segments were supplied.
+    = else
+      Segments: #{parts.join(" / ")}

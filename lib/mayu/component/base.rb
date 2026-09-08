@@ -3,11 +3,9 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
-require_relative "../style_sheet"
 require_relative "../runtime/h"
 require_relative "css_units"
 require_relative "fetch"
-require_relative "style_sheets"
 
 module Mayu
   module Component
@@ -21,35 +19,13 @@ module Mayu
 
       def self.to_s = File.join("MAYU_ROOT", module_path)
 
-      def self.import(filename) = Modules::System.import(filename, module_path)
-
-      def self.import?(filename) =
-        Modules::System.import?(filename, module_path)
-
-      def self.merge_props(*sources)
-        result =
-          sources.reduce do |result, hash|
-            result.merge(hash) do |key, old_value, new_value|
-              case key
-              in :class
-                [old_value, new_value].flatten
-              else
-                new_value
-              end
-            end
-          end
-
-        if classes = result.delete(:class)
-          classnames = self::Styles[*Array(classes).compact]
-
-          result[:class] = classnames.flatten unless classnames.empty?
-        end
-
-        result.transform_keys { _1.to_s.tr("-", "_").to_sym }
-      end
-
       def marshal_dump
         instance_variables
+          .reject do |ivar|
+            ivar in
+              :@__props | :@__context | :@__children | :@__vnode_id |
+                :@__vnode_task | :@__vnode_queue
+          end
           .map { |ivar| [ivar, instance_variable_get(ivar)] }
           .to_h
       end
@@ -73,6 +49,13 @@ module Mayu
 
       def __children
         @__children
+      end
+
+      # Klenod's generated slot helper supports frameworks that expose a slot
+      # collection through this hook. Mayu keeps the collection on its VDOM
+      # descriptor, so this is an adapter rather than a second children model.
+      def __slots
+        @__children&.slots || {}
       end
 
       private

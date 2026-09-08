@@ -53,6 +53,25 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
     end
   end
 
+  class RewritingProvider
+    attr_reader :rewritten_error
+
+    def rewrite_exception(error)
+      @rewritten_error = error
+      error.set_backtrace(["app:/broken.haml:7"])
+    end
+
+    def format_exception(error, source_path:)
+      "#{source_path}: #{error.class}: #{error.message}"
+    end
+
+    def assets_for_module(_module_path, type:)
+      raise "Unexpected asset type #{type}" unless type == :css
+
+      []
+    end
+  end
+
   def test_error_boundary_rerenders_on_error
     descriptor = H[:body, H[ErrorBoundaryProbe]]
 
@@ -89,104 +108,143 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
   def test_unhandled_render_error_emits_patch
     descriptor = H[:body, H[RenderErrorProbe]]
 
-    with_modules_system_with_source_map(RenderErrorProbe) do
-      run_engine(descriptor) do |engine|
-        component = find_component(engine.root, RenderErrorProbe)
-        instance = component.instance_variable_get(:@instance)
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, RenderErrorProbe)
+      instance = component.instance_variable_get(:@instance)
 
-        wait_until { instance.respond_to?(:rerender!) }
-        instance.trigger_error
+      wait_until { instance.respond_to?(:rerender!) }
+      instance.trigger_error
 
-        patches =
-          dequeue_until(engine) do |batch|
-            batch.any? do |patch|
-              patch.is_a?(Mayu::Runtime::Patches::RenderError)
-            end
-          end
-
-        refute_nil(patches)
-
-        render_error =
-          patches.find do |patch|
+      patches =
+        dequeue_until(engine) do |batch|
+          batch.any? do |patch|
             patch.is_a?(Mayu::Runtime::Patches::RenderError)
           end
+        end
 
-        assert_equal("/tests/render_error", render_error.file)
-        assert_equal("RuntimeError", render_error.type)
-        assert_equal("boom", render_error.message)
-        refute_nil(render_error.source)
-      end
+      refute_nil(patches)
+
+      render_error =
+        patches.find do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::RenderError)
+        end
+
+      assert_equal("/tests/render_error", render_error.file)
+      assert_equal("RuntimeError", render_error.type)
+      assert_equal("boom", render_error.message)
+      assert_nil(render_error.source)
+    end
+  end
+
+  def test_unhandled_render_error_uses_an_injected_module_provider
+    descriptor = H[:body, H[RenderErrorProbe]]
+    provider =
+      Data
+        .define do
+          def format_exception(error, source_path:)
+            "#{source_path}: #{error.class}: #{error.message}"
+          end
+
+          def assets_for_module(_module_path, type:)
+            raise "Unexpected asset type #{type}" unless type == :css
+
+            []
+          end
+        end
+        .new
+
+    run_engine_with_provider(descriptor, provider) do |engine|
+      component = find_component(engine.root, RenderErrorProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.respond_to?(:rerender!) }
+      instance.trigger_error
+
+      patches =
+        dequeue_until(engine) do |batch|
+          batch.any? { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+        end
+      render_error =
+        patches.find { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+
+      assert_equal("/tests/render_error", render_error.file)
+      assert_nil(render_error.source)
+    end
+  end
+
+  def test_unhandled_render_error_rewrites_the_client_patch_backtrace
+    descriptor = H[:body, H[RenderErrorProbe]]
+    provider = RewritingProvider.new
+
+    run_engine_with_provider(descriptor, provider) do |engine|
+      component = find_component(engine.root, RenderErrorProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.respond_to?(:rerender!) }
+      instance.trigger_error
+
+      patches =
+        dequeue_until(engine) do |batch|
+          batch.any? { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+        end
+      render_error =
+        patches.find { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+
+      refute_nil(provider.rewritten_error)
+      assert_equal(["app:/broken.haml:7"], render_error.backtrace)
     end
   end
 
   def test_render_error_tree_path_order
     descriptor = H[:body, H[RenderErrorProbe]]
 
-    with_modules_system_with_source_map(RenderErrorProbe) do
-      run_engine(descriptor) do |engine|
-        component = find_component(engine.root, RenderErrorProbe)
-        instance = component.instance_variable_get(:@instance)
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, RenderErrorProbe)
+      instance = component.instance_variable_get(:@instance)
 
-        wait_until { instance.respond_to?(:rerender!) }
-        instance.trigger_error
+      wait_until { instance.respond_to?(:rerender!) }
+      instance.trigger_error
 
-        patches =
-          dequeue_until(engine) do |batch|
-            batch.any? do |patch|
-              patch.is_a?(Mayu::Runtime::Patches::RenderError)
-            end
-          end
-
-        refute_nil(patches)
-
-        render_error =
-          patches.find do |patch|
+      patches =
+        dequeue_until(engine) do |batch|
+          batch.any? do |patch|
             patch.is_a?(Mayu::Runtime::Patches::RenderError)
           end
+        end
 
-        tree_path = render_error.tree_path
-        assert_equal({ name: "#document" }, tree_path.first)
-        assert_equal(
-          { name: "RenderErrorProbe", path: "/tests/render_error" },
-          tree_path.last
-        )
-        assert(tree_path.any? { |node| node[:name] == "body" })
-        assert(tree_path.any? { |node| node[:name] == "html" })
-      end
+      refute_nil(patches)
+
+      render_error =
+        patches.find do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::RenderError)
+        end
+
+      tree_path = render_error.tree_path
+      assert_equal({ name: "#document" }, tree_path.first)
+      assert_equal(
+        { name: "RenderErrorProbe", path: "/tests/render_error" },
+        tree_path.last
+      )
+      assert(tree_path.any? { |node| node[:name] == "body" })
+      assert(tree_path.any? { |node| node[:name] == "html" })
     end
   end
 
   private
 
-  def with_modules_system_with_source_map(component_class)
-    mod = Module.new
-    exports = Module.new
-    exports.const_set(component_class.name.split("::").last, component_class)
-    mod.const_set(:Exports, exports)
-    mod.define_singleton_method(:assets) { [] }
-    mod.define_singleton_method(:dependencies) { [] }
-    mod.define_singleton_method(:source_map) do
-      Data.define(:input).new("source")
-    end
+  def run_engine_with_provider(descriptor, provider)
+    engine =
+      Mayu::Runtime::Engine.new(
+        descriptor,
+        metrics: NullMetrics.new,
+        module_provider: provider
+      )
 
-    system =
-      Data
-        .define(:mod) do
-          def get_mod(_path)
-            mod
-          end
-
-          def format_exception(error)
-            "#{error.class}: #{error.message}"
-          end
-        end
-        .new(mod)
-
-    key = Mayu::Modules::System::CURRENT_KEY
-    previous = Thread.current.thread_variable_get(key)
-    Thread.current.thread_variable_set(key, system)
-    yield
-  ensure
-    Thread.current.thread_variable_set(key, previous)
+    Async do
+      engine.start
+      yield engine
+    ensure
+      engine.stop
+    end.wait
   end
 end
