@@ -6,4 +6,5 @@ $LOAD_PATH.unshift(File.join(MAYU_ROOT, "..", "..", "lib"))
 require "mayu/version"
 require "mayu/commands"
 
-Mayu::Commands.call(ARGV)
+result = Mayu::Commands.call(ARGV)
+exit result if result.is_a?(Integer)

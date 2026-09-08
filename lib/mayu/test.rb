@@ -5,33 +5,20 @@
 # License: AGPL-3.0
 
 require "async"
-require "async/notification"
 require "oga"
-require "syntax_tree/xml"
-require "pry"
-
 require "rouge"
 
 require_relative "runtime"
 require_relative "runtime/h"
 require_relative "runtime/dom"
 require_relative "component"
-require_relative "metrics"
+require_relative "test/query"
 
 module Mayu
   module Test
     class FakeMetrics
-      NullCounter =
-        Data.define do
-          def increment(**)
-          end
-        end
-
-      NullSummary =
-        Data.define do
-          def observe(_value = nil, **)
-          end
-        end
+      NullCounter = Data.define { def increment(**) = nil }
+      NullSummary = Data.define { def observe(_value = nil, **) = nil }
 
       def component_mount_count = NullCounter.new
       def component_children_update_times = NullSummary.new
@@ -46,29 +33,15 @@ module Mayu
     end
 
     module Helpers
-      def render(descriptor)
-        Sync do
-          metrics =
-            Mayu::Metrics::AppMetrics.setup(Prometheus::Client::Registry.new)
+      def render(renderable, *children, **props, &block)
+        descriptor = descriptor_for(renderable, children, props)
 
-          page =
-            Mayu::Test::Page.new(
-              Mayu::Runtime.init(descriptor, metrics:, runtime_js: "test.js")
-            )
-
-          Fiber[:current_test_page] = page
-
-          page.start
-
-          sleep 0.01
-
-          yield page
-        rescue => e
-          puts e.message
-          puts e.backtrace
-          raise
-        ensure
-          page&.stop
+        if Async::Task.current?
+          render_in_current_task(descriptor, &block)
+        elsif block
+          Sync { render_in_current_task(descriptor, &block) }
+        else
+          raise "render without a block requires Mayu::Test::Case"
         end
       end
 
@@ -91,22 +64,60 @@ module Mayu
         Fiber[:current_test_page] or raise "There is no current page"
       end
 
+      alias screen current_page
+
       def enable_step!
         Fiber[:test_enable_step] = true
       end
 
-      def capture_patches(&block)
-        patches = []
+      def capture_patches
+        offset = current_page.patches.length
+        yield
+        current_page.patches.drop(offset)
+      end
 
-        task = Async { current_page.on_patch { patches.push(patch) } }
+      private
+
+      def descriptor_for(renderable, children, props)
+        case renderable
+        when Mayu::Runtime::Descriptors::Element,
+             Mayu::Runtime::Descriptors::Context,
+             Mayu::Runtime::Descriptors::Comment,
+             Mayu::Runtime::Descriptors::RawText
+          raise ArgumentError, "a descriptor cannot receive children or props" if
+            children.any? || props.any?
+
+          renderable
+        else
+          Mayu::Runtime::H[renderable, *children, **props]
+        end
+      end
+
+      def render_in_current_task(descriptor)
+        page =
+          Mayu::Test::Page.new(
+            Mayu::Runtime.init(
+              descriptor,
+              metrics: Mayu::Test::FakeMetrics.new,
+              runtime_js: "test.js"
+            )
+          )
+        previous_page = Fiber[:current_test_page]
+        Fiber[:current_test_page] = page
+        __register_test_page(page) if respond_to?(:__register_test_page, true)
+        page.start
+        page.settle
+
+        return page unless block_given?
 
         begin
-          yield
+          yield page
         ensure
-          task.stop
+          page.stop
+          __unregister_test_page(page) if
+            respond_to?(:__unregister_test_page, true)
+          Fiber[:current_test_page] = previous_page
         end
-
-        patches
       end
     end
 
@@ -114,33 +125,24 @@ module Mayu
       Tag =
         Data.define(:name, :text, :attributes) do
           def self.[](tag, text: nil, **attributes)
-            tag = tag.to_s if tag in Symbol
             new(tag.to_s, text, attributes)
           end
 
           def match?(node)
             case name
-            in "#text"
-              if node in Oga::XML::Text
-                return true unless text
-                text === node.text
+            when "#text"
+              return false unless node.is_a?(Oga::XML::Text)
+            when "#comment"
+              return false unless node.is_a?(Oga::XML::Comment)
+            else
+              return false unless node.is_a?(Oga::XML::Element)
+              return false unless name === node.name
+              return false unless attributes.all? do |attr, value|
+                value === node.get(attr.to_s)
               end
-            in "#comment"
-              if node in Oga::XML::Comment
-                return true unless text
-                text === node.text
-              end
-            in String => tag_name
-              return false unless node in Oga::XML::Element
-              return false unless tag_name === node.name
-
-              attributes.each do |attr, value|
-                return false unless node.get("name")
-              end
-
-              return true unless text
-              text === node.text
             end
+
+            !text || text === node.text
           end
 
           def to_proc
@@ -150,43 +152,53 @@ module Mayu
     end
 
     class Page
+      include QueryMethods
+
+      DEFAULT_SETTLE_TIMEOUT = 1.0
+
       class NodeNotFoundError < StandardError
       end
+
       class NoListenerError < StandardError
+      end
+
+      class SettleTimeoutError < StandardError
       end
 
       Node =
         Data.define(:page, :node) do
-          def name
-            node.name
-          end
+          include QueryMethods
 
-          def [](attr)
-            node.get(attr.to_s)
-          end
+          def name = node.name
+          def [](attr) = node.get(attr.to_s)
 
           def attributes
+            return {} unless node.respond_to?(:attributes)
+
             node.attributes.map { [it.name, it.value] }.to_h
           end
 
           def text = node.text
-          def content = node.text
+          alias content text
 
           def traverse(&)
-            yield node
-
-            node.children.each do |child|
-              self.class.new(page, child).traverse(&)
+            yield self
+            node.each_node do |child|
+              yield self.class.new(page, child)
             end
           end
 
           def at_xpath(query)
-            self.class.new(page, node.at_xpath(query))
+            result = node.at_xpath(query)
+            self.class.new(page, result) if result
           end
 
           def find(&)
-            traverse { |node| return self.class.new(page, node) if yield node }
+            return self if yield node
 
+            node.each_node do |child|
+              return self.class.new(page, child) if yield child
+            end
             nil
           end
 
@@ -195,55 +207,66 @@ module Mayu
           end
 
           def click
-            attrs = attributes
-
-            target = { name: attrs["name"], value: attrs["value"] }
-
+            target = {
+              name: attributes["name"],
+              value: attributes["value"]
+            }
             page.callback(
               callback_id(:onclick),
               { target:, currentTarget: target }
             )
+            self
           end
 
           def input(value)
-            page.callback(callback_id(:oninput), { currentTarget: { value: } })
+            node.set("value", value.to_s) if
+              node.is_a?(Oga::XML::Element)
+            page.callback(
+              callback_id(:oninput),
+              { currentTarget: { value: value.to_s } }
+            )
+            self
           end
 
-          def type_input(value)
-            page.callback(callback_id(:oninput), { currentTarget: { value: } })
-
-            value
-              .each_char
-              .reduce("") do |str, char|
-                (str + char).tap do
-                  yield if block_given?
-                  self.input(_1)
-                  sleep 0.05
-                end
-              end
+          def type(value)
+            value.to_s.each_char.reduce(self["value"].to_s) do |current, char|
+              input(current + char)
+              yield self if block_given?
+              current + char
+            end
+            self
           end
+
+          alias type_input type
 
           private
 
+          def query_page = page
+          def query_container = node
+
           def callback_id(attribute)
-            if value = self[attribute.to_s]
-              # binding.pry
-              value[/\AMayu\.callback\(event,'(?<id>[^\)]+)'\)\z/, :id]
-            end
+            value = self[attribute]
+            id = value&.match(/\AMayu\.callback\(event,'(?<id>[^']+)'\)\z/)&.[](:id)
+            return id if id
+
+            raise NoListenerError,
+                  "#{name} does not have a Mayu #{attribute} listener"
           end
         end
 
-      attr_reader :on_patch
+      attr_reader :patches
 
-      def initialize(engine)
+      def initialize(engine, settle_timeout: DEFAULT_SETTLE_TIMEOUT)
         @engine = engine
-        rendered = @engine.render
+        @settle_timeout = settle_timeout
         @nodes = {}
-        @doc = Oga.parse_html(rendered)
+        @doc = Oga.parse_html(@engine.render)
         @patches = []
-        @on_patch = Async::Notification.new
         setup_tree(@doc, @engine.dom_id_tree)
       end
+
+      def fragment = @doc
+      def html = @doc.to_xml
 
       def start
         @task ||=
@@ -252,48 +275,12 @@ module Mayu
 
             loop do
               patch = @engine.dequeue_patch
-              each_patch(patch) do |item|
-                puts format(
-                       "\e[33m%s\e[0m %s",
-                       item.class.name.split("::").last,
-                       item
-                         .to_h
-                         .map do |k, v|
-                           format("\e[34m%s\e[0m: \e[94m%s\e[0m", k, v.inspect)
-                         end
-                         .join(", ")
-                     )
-
-                @patches.push(item)
-
-                case item
-                in Mayu::Runtime::Patches::SetTextContent[id:, content:]
-                  fetch_node!(id).text = content
-                in Mayu::Runtime::Patches::CreateTree[html:, tree:]
-                  node = Oga.parse_html(html).children.first
-                  setup_tree(node, tree)
-                in Mayu::Runtime::Patches::SetAttribute[id:, name:, value:]
-                  fetch_node!(id).set(name.to_s, value)
-                in Mayu::Runtime::Patches::ReplaceChildren[id:, child_ids:]
-                  node = fetch_node!(id)
-                  children = child_ids.map { fetch_node!(_1) }
-                  node.children = Oga::XML::NodeSet.new(children)
-                in Mayu::Runtime::Patches::RemoveNode[id:]
-                  @nodes.delete(id)
-                in Mayu::Runtime::Patches::AddClass[id:, classes:]
-                  node = fetch_node!(id)
-                  node.set(
-                    "class",
-                    (node.attr("class").to_s.split | classes).join(" ")
-                  )
-                in Mayu::Runtime::Patches::RemoveClass[id:, classes:]
-                  node = fetch_node!(id)
-                  node.set(
-                    "class",
-                    (node.attr("class").to_s.split - classes).join(" ")
-                  )
-                else
-                  puts "\e[33mUnhandled #{item.inspect}\e[0m"
+              if patch.is_a?(Mayu::Runtime::VNodes::Updater::Synchronization)
+                patch.completion.enqueue(true)
+              else
+                each_patch(patch) do |item|
+                  @patches << item
+                  apply_patch(item)
                 end
               end
             end
@@ -305,26 +292,35 @@ module Mayu
 
       def stop
         @task&.stop
+        @task = nil
+        @engine.stop
+        self
+      end
+
+      def settle
+        Async::Task.current.with_timeout(@settle_timeout) do
+          @engine.synchronize
+        end
+        self
+      rescue Async::TimeoutError
+        raise SettleTimeoutError,
+              "Mayu page did not settle within #{@settle_timeout}s\n\n#{html}"
       end
 
       def step
         interactive = Fiber[:test_enable_step] && $stdout.tty?
-        clear = interactive ? "\e[H\e[2J" : "#".*(40).+("\n")
+        return settle unless interactive
 
-        if interactive
-          puts format(
-                 "%s%s\n\e[3m %s \e[0m\n",
-                 clear,
-                 self.class.format_html(@doc.outer_html(indent: 2)),
-                 "Press return to step"
-               )
-          gets
-        else
-          sleep 0.05
-        end
+        puts format(
+               "\e[H\e[2J%s\n\e[3m %s \e[0m\n",
+               self.class.format_html(html),
+               "Press return to step"
+             )
+        gets
+        settle
       end
 
-      def traverse(&) = @doc.traverse(&)
+      def traverse(&) = Node.new(self, @doc).traverse(&)
 
       def find(...)
         Node.new(self, @doc).find(...)
@@ -335,19 +331,33 @@ module Mayu
       end
 
       def at_xpath(query)
-        Node.new(self, @doc.at_xpath(query))
+        result = @doc.at_xpath(query)
+        Node.new(self, result) if result
       end
 
       def callback(id, payload = {})
-        puts "Callback #{id} #{payload.inspect}"
-        @engine.callback(id, payload)
+        raise NoListenerError, "Missing callback listener ID" unless id
+
+        completion = @engine.callback(id, payload)
+        Async::Task.current.with_timeout(@settle_timeout) do
+          completion&.dequeue
+          @engine.synchronize
+        end
+        self
+      rescue Async::TimeoutError
+        raise SettleTimeoutError,
+              "Mayu callback #{id.inspect} did not settle within #{@settle_timeout}s\n\n#{html}"
       end
 
       def emit(event)
         event.call(@engine)
+        settle
       end
 
       private
+
+      def query_page = self
+      def query_container = @doc
 
       def each_patch(patch, &block)
         case patch
@@ -362,25 +372,106 @@ module Mayu
         end
       end
 
-      def setup_tree(dom_node, id_node)
-        return unless dom_node
-        return unless id_node
+      def apply_patch(item)
+        case item
+        in Mayu::Runtime::Patches::Initialize[id_tree:]
+          @nodes.clear
+          setup_tree(@doc, id_tree)
+        in Mayu::Runtime::Patches::CreateTree[html:, tree:]
+          node = Oga.parse_html(html).children.first
+          setup_tree(node, tree)
+        in Mayu::Runtime::Patches::CreateElement[id:, type:]
+          @nodes[id] = Oga::XML::Element.new(name: type.to_s)
+        in Mayu::Runtime::Patches::CreateTextNode[id:, content:]
+          @nodes[id] = Oga::XML::Text.new(text: content.to_s)
+        in Mayu::Runtime::Patches::CreateComment[id:, content:]
+          @nodes[id] = Oga::XML::Comment.new(text: content.to_s)
+        in Mayu::Runtime::Patches::SetTextContent[id:, content:]
+          fetch_node!(id).text = content.to_s
+        in Mayu::Runtime::Patches::ReplaceData[id:, offset:, count:, data:]
+          node = fetch_node!(id)
+          node.text = node.text.dup.tap { it[offset, count] = data }
+        in Mayu::Runtime::Patches::InsertData[id:, offset:, data:]
+          node = fetch_node!(id)
+          node.text = node.text.dup.insert(offset, data)
+        in Mayu::Runtime::Patches::DeleteData[id:, offset:, count:]
+          node = fetch_node!(id)
+          node.text = node.text.dup.tap { it.slice!(offset, count) }
+        in Mayu::Runtime::Patches::SetAttribute[id:, name:, value:]
+          fetch_node!(id).set(normalize_attribute_name(name), value.to_s)
+        in Mayu::Runtime::Patches::RemoveAttribute[id:, name:]
+          fetch_node!(id).unset(normalize_attribute_name(name))
+        in Mayu::Runtime::Patches::SetClassName[id:, class_name:]
+          fetch_node!(id).set("class", class_name.to_s)
+        in Mayu::Runtime::Patches::AddClass[id:, classes:]
+          node = fetch_node!(id)
+          node.set("class", (node.get("class").to_s.split | classes).join(" "))
+        in Mayu::Runtime::Patches::RemoveClass[id:, classes:]
+          node = fetch_node!(id)
+          node.set("class", (node.get("class").to_s.split - classes).join(" "))
+        in Mayu::Runtime::Patches::SetCSSProperty[id:, name:, value:]
+          set_css_property(fetch_node!(id), name, value)
+        in Mayu::Runtime::Patches::RemoveCSSProperty[id:, name:]
+          set_css_property(fetch_node!(id), name, nil)
+        in Mayu::Runtime::Patches::ReplaceChildren[id:, child_ids:]
+          node = fetch_node!(id)
+          node.children = Oga::XML::NodeSet.new(child_ids.map { fetch_node!(_1) })
+        in Mayu::Runtime::Patches::RemoveNode[id:]
+          remove_node(id)
+        else
+          nil
+        end
+      end
 
-        if dom_node in Oga::XML::Element
-          unless dom_node.name == id_node.name.downcase
-            binding.pry
-            raise "\e[31m#{id_node.id} should be #{id_node.name.inspect}, but found #{dom_node.name.inspect}\e[0m"
-          end
+      def normalize_attribute_name(name)
+        return "value" if name.to_s == "initial_value"
+
+        name.to_s.delete("_")
+      end
+
+      def set_css_property(node, name, value)
+        styles =
+          node
+            .get("style")
+            .to_s
+            .split(";")
+            .filter_map do |declaration|
+              key, current = declaration.split(":", 2).map(&:strip)
+              [key, current] unless key.to_s.empty?
+            end
+            .to_h
+        value.nil? ? styles.delete(name.to_s) : styles[name.to_s] = value.to_s
+        node.set(
+          "style",
+          styles.map { |key, current| "#{key}:#{current}" }.join(";")
+        )
+      end
+
+      def setup_tree(dom_node, id_node)
+        return unless dom_node && id_node
+
+        if dom_node.is_a?(Oga::XML::Element) &&
+             dom_node.name != id_node.name.downcase
+          raise "#{id_node.id} should be #{id_node.name.inspect}, but found #{dom_node.name.inspect}"
         end
 
-        @nodes.store(id_node.id, dom_node)
-
+        @nodes[id_node.id] = dom_node
         dom_node
           .children
           .reject { it.is_a?(Oga::XML::Document) }
           .reject { it.is_a?(Oga::XML::Text) && it.text == "\n" }
-          .zip(id_node.children)
+          .zip(id_node.children || [])
           .each { |dom_child, id_child| setup_tree(dom_child, id_child) }
+      end
+
+      def remove_node(id)
+        node = @nodes.delete(id)
+        return unless node
+
+        node.each_node do |child|
+          pair = @nodes.find { |_node_id, candidate| candidate.equal?(child) }
+          @nodes.delete(pair.first) if pair
+        end
       end
 
       def fetch_node!(id)
@@ -391,8 +482,10 @@ module Mayu
         theme = Rouge::Themes::Gruvbox.dark!
         formatter = Rouge::Formatters::Terminal256.new(theme)
         lexer = Rouge::Lexers::HTML.new
-        source.then { lexer.lex(_1) }.then { formatter.format(_1) }
+        formatter.format(lexer.lex(source))
       end
     end
   end
 end
+
+require_relative "test/case"

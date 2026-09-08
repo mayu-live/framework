@@ -14,6 +14,17 @@ Routes use Klenod's `+page.haml` and `+layout.haml` conventions. Mayu loads an
 optional `klenod.config.rb` from the application root when you need to change
 the default `app/pages` route directory or Klenod plugins.
 
+## Testing
+
+Colocate component tests with application source files as `*.test.rb`, then run
+them once with:
+
+```bash
+bin/mayu test --run
+```
+
+Run `bin/mayu test` without `--run` to watch for changes.
+
 ## Production
 
 Build the Klenod runtime bundle and assets:

@@ -4,6 +4,7 @@
 # License: AGPL-3.0
 
 require "set"
+require "async/queue"
 require_relative "base"
 require_relative "patcher"
 require_relative "vcomponent"
@@ -103,15 +104,23 @@ module Mayu
           task = component&.instance_variable_get(:@__vnode_task)
           queue = component&.instance_variable_get(:@__vnode_queue)
 
-          call = -> { listener.call(payload) }
+          completion = Async::Queue.new
+          call =
+            lambda do
+              call_listener_safely(-> { listener.call(payload) }, listener)
+            ensure
+              completion.enqueue(true)
+            end
 
           if task && queue
-            queue.enqueue(-> { call_listener_safely(call, listener) })
+            queue.enqueue(call)
           elsif task
-            task.async { call_listener_safely(call, listener) }
+            task.async(&call)
           else
-            call_listener_safely(call, listener)
+            call.call
           end
+
+          completion
         end
 
         def flush_head(patcher)

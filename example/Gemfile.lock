@@ -13,6 +13,7 @@ PATH
       klenod-plugin-javascript (= 0.0.12)
       klenod-rack (= 0.0.12)
       klenod-runtime (= 0.0.12)
+      klenod-test (= 0.0.12)
       localhost (~> 1.7)
       mime-types (~> 3.7)
       minitest (~> 6.0)
@@ -52,6 +53,8 @@ GEM
       protocol-url (~> 0.2)
     async-pool (0.12.0)
       async (>= 2.0)
+    async-process (1.4.0)
+      async (~> 2.0)
     bake (0.25.0)
       bigdecimal
       samovar (~> 2.1)
@@ -64,6 +67,10 @@ GEM
       fiber-annotation
       fiber-local (~> 1.1)
       json
+    covered (0.30.0)
+      console (~> 1.0)
+      msgpack (~> 1.0)
+      ruby-coverage (~> 0.1)
     dotenv (3.2.0)
     drb (2.2.3)
     ffi (1.17.4)
@@ -139,6 +146,10 @@ GEM
       http-accept (~> 2.2)
       klenod-runtime (= 0.0.12)
     klenod-runtime (0.0.12)
+    klenod-test (0.0.12)
+      async-process (~> 1.4)
+      covered (~> 0.30)
+      klenod-build (= 0.0.12)
     kramdown (2.5.2)
       rexml (>= 3.4.4)
     kramdown-parser-gfm (1.1.0)
@@ -200,6 +211,7 @@ GEM
       observer (~> 0.1)
       pkg-config (~> 1.4)
     rouge (4.7.0)
+    ruby-coverage (0.1.3)
     ruby-ll (2.2.0)
       ansi
       ast
@@ -256,6 +268,7 @@ CHECKSUMS
   async-container (0.30.0) sha256=36bf679b38f8704f949d18812cd650b95be84b8c87bb65e83c6e89decf478cf6
   async-http (0.103.0) sha256=137e3d5d419f7d72d5fa33cf04f30232e79c57b690025a650b8f9e48ece8bc41
   async-pool (0.12.0) sha256=5580493dc024bd704dab2ed0bf1307100722e49cbb825c7965f8501194f58506
+  async-process (1.4.0) sha256=859c2901b9047b6b8843e9a21ec7f3c626eb04efdcff66185a05ede99257f590
   bake (0.25.0) sha256=a47bdc6a26addc048827debc36fe27bb4d5d71ac2958ad910b5386e9baf49869
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   bigdecimal (4.1.2) sha256=53d217666027eab4280346fba98e7d5b66baaae1b9c3c1c0ffe89d48188a3fbd
@@ -263,6 +276,7 @@ CHECKSUMS
   citrus (3.0.2) sha256=4ec2412fc389ad186735f4baee1460f7900a8e130ffe3f216b30d4f9c684f650
   coderay (1.1.3) sha256=dc530018a4684512f8f38143cd2a096c9f02a1fc2459edcfe534787a7fc77d4b
   console (1.37.0) sha256=8093b286c2595a063849c098594fee5155ecc7967d36f3aa8cbe7569c8f3efd7
+  covered (0.30.0) sha256=93b1bf881812dd4f52e1c3330bf7fe0dcb6bc9bb72a200cbe5d282e902e947c5
   dotenv (3.2.0) sha256=e375b83121ea7ca4ce20f214740076129ab8514cd81378161f11c03853fe619d
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
   ffi (1.17.4) sha256=bcd1642e06f0d16fc9e09ac6d49c3a7298b9789bcb58127302f934e437d60acf
@@ -301,6 +315,7 @@ CHECKSUMS
   klenod-plugin-javascript (0.0.12-x86_64-linux-gnu) sha256=b480859cb6fc1f8318c7341188d83b21b01a8d3bb7cf29fb642b236fd53c0dbf
   klenod-rack (0.0.12) sha256=e42c025e5ec65317cf084df5cfca5bbc891953bf4c5937df460bcba91f10aa04
   klenod-runtime (0.0.12) sha256=8d613d824f7ad3e5e33eef250023bb600143ac1041e079a044c66753cb9950b8
+  klenod-test (0.0.12) sha256=06413bc463af1f4816eb6f8f8e46760198e56748daea5b619eb92080e5ff4e7f
   kramdown (2.5.2) sha256=1ba542204c66b6f9111ff00dcc26075b95b220b07f2905d8261740c82f7f02fa
   kramdown-parser-gfm (1.1.0) sha256=fb39745516427d2988543bf01fc4cf0ab1149476382393e0e9c48592f6581729
   listen (3.10.0) sha256=c6e182db62143aeccc2e1960033bebe7445309c7272061979bb098d03760c9d2
@@ -338,6 +353,7 @@ CHECKSUMS
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
   rmagick (7.1.4) sha256=581e109ed816dd423b9e9ca0706046b55ea44e4fbe0122f39ee2db9249345c08
   rouge (4.7.0) sha256=dba5896715c0325c362e895460a6d350803dbf6427454f49a47500f3193ea739
+  ruby-coverage (0.1.3) sha256=5ac56578c600544e672ebd2b631e4bd43309f9c42a1d0db3ab912ed34f81cf20
   ruby-ll (2.2.0) sha256=f8811ae1dfc77d6d95033a615aacb6ab8e93fb9f421fefe75107b077dc9ab588
   samovar (2.5.1) sha256=8a9fc41eb8868084f0321eb41678c485cfbc7d282fb306c0be67c3284b1d2394
   syntax_tree (6.3.0) sha256=56e25a9692c798ec94c5442fe94c5e94af76bef91edc8bb02052cbdecf35f13d

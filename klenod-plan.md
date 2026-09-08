@@ -246,6 +246,18 @@ init` template.
 Acceptance gate: the complete example and a newly generated application work
 in both development and production modes.
 
+## Application testing
+
+- [x] Add a `mayu test` command backed by Klenod's dependency-aware test runner.
+- [x] Provide a Mayu Minitest base with live component rendering, strict
+      role/text/CSS queries, scoped queries, and interactive nodes.
+- [x] Make callback-driven component updates settle before test interactions
+      return, without requiring a browser.
+- [x] Add an example component test that exercises the full discovery,
+      transform, render, callback, patch, and assertion flow.
+- [ ] Add full-page tests that resolve routes and run through a Mayu session.
+      This is intentionally outside the initial component-testing scope.
+
 ## Follow-up candidates
 
 - [ ] Evaluate a small Klenod client-entry plugin for Mayu's browser runtime
@@ -319,6 +331,12 @@ environment limitation to account for when comparing later results.
 
 Add short dated entries here. Link commits in both repositories when a
 milestone spans them.
+
+- 2026-09-08: Added zero-configuration `mayu test` discovery and watch/run
+  orchestration through Klenod, plus a Mayu Minitest base with live component
+  rendering, accessibility-oriented queries, interactions, and deterministic
+  patch settling. The example component test and full Mayu suite pass (147
+  runs, 499 assertions); routed full-page tests remain a follow-up.
 
 - 2026-09-07: Refreshed the Klenod `virtual:router` export on every Mayu route
   lookup, so route add/remove HMR uses Klenod's current router manifest rather

@@ -6,6 +6,7 @@ require "klenod/plugin/css"
 require "klenod/plugin/javascript"
 require "klenod/rack"
 require "klenod/runtime"
+require "klenod/test"
 
 require_relative "route"
 require_relative "klenod/configuration"

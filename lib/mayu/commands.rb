@@ -5,6 +5,7 @@
 
 require "samovar"
 require_relative "commands/dev"
+require_relative "commands/test"
 require_relative "commands/transform"
 require_relative "commands/routes"
 require_relative "commands/build"
@@ -20,6 +21,7 @@ module Mayu
              {
                "init" => Init,
                "dev" => Dev,
+               "test" => Test,
                "build" => Build,
                "start" => Start,
                "routes" => Routes,

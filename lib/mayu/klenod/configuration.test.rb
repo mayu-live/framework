@@ -41,6 +41,16 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     assert_same(Mayu::ModuleNamespace, configuration.context.graph.namespace)
   end
 
+  def test_default_context_includes_the_klenod_test_plugin
+    configuration = Mayu::Klenod::Configuration.new(root: Dir.pwd)
+
+    assert(
+      configuration.context.graph.plugins.any? do |plugin|
+        plugin.is_a?(Klenod::Test::Plugin)
+      end
+    )
+  end
+
   def test_build_accepts_an_explicit_output_path
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))

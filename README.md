@@ -141,7 +141,16 @@ Depending on your system/browser you might need to do one of the following:
 
 ## Run the tests
 
+Run the framework test suite from the repository root:
+
     rake test
+
+Run application tests from the application directory:
+
+    bin/mayu test --run
+
+Without `--run`, `mayu test` watches the application and reruns affected tests.
+Application tests are colocated with their components as `*.test.rb` files.
 
 # Features
 
@@ -508,6 +517,27 @@ tests for specific edge cases and trickier situations.
 
 The example app could also be considered to be a test.
 It should always work and be updated to use the latest features.
+
+Mayu applications can also colocate `*.test.rb` files with components. The
+test module is evaluated by Klenod and receives Mayu's test helpers:
+
+```ruby
+Button = import("./Button.haml")
+
+def test_clicking_the_button_updates_it
+  screen = render(Button)
+
+  screen.get_by_role(:button, name: "Click me!").click
+
+  assert_equal("Clicked!", screen.get_by_role(:button).text)
+end
+```
+
+`render` creates a live, server-side component tree. Queries such as
+`get_by_role`, `get_by_text`, and `get_by_css` return nodes that can be clicked
+or given input without starting a browser. Updates settle before an interaction
+returns. Full-page tests that resolve routes and create sessions are not yet
+part of this API.
 
 ## Virtual DOM
 

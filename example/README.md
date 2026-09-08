@@ -16,6 +16,16 @@ Start the development server
 bin/mayu dev
 ```
 
+## Test
+
+Run the component tests once:
+
+```bash
+bin/mayu test --run
+```
+
+Use `bin/mayu test` to keep watching and rerun affected tests.
+
 ## Build
 
 Builds the Klenod runtime bundle and production assets.

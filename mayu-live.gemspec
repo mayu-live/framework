@@ -64,6 +64,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "klenod-build", "= 0.0.12"
   spec.add_dependency "klenod-runtime", "= 0.0.12"
   spec.add_dependency "klenod-rack", "= 0.0.12"
+  spec.add_dependency "klenod-test", "= 0.0.12"
   spec.add_dependency "klenod-plugin-css", "= 0.0.12"
   spec.add_dependency "klenod-plugin-javascript", "= 0.0.12"
 

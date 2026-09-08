@@ -13,6 +13,7 @@ module Mayu
     module VNodes
       class Updater
         Navigation = Data.define(:path, :descriptor, :push_state)
+        Synchronization = Data.define(:completion)
 
         attr_reader :queue, :task, :output_queue
 
@@ -33,10 +34,13 @@ module Mayu
 
                 patcher = Patcher.new
                 navigations = []
+                synchronizations = []
                 updates = {}
 
                 batch.each do |item|
-                  if item.is_a?(Navigation)
+                  if item.is_a?(Synchronization)
+                    synchronizations << item
+                  elsif item.is_a?(Navigation)
                     navigations << item
                   else
                     updates[item] ||= nil
@@ -87,20 +91,25 @@ module Mayu
 
                 patches = patcher.patches
                 patches = history_patches + head_patches + patches
-                next if patches.empty?
-
-                if updates.keys.any? { |node|
-                     node.instance_variable_get(:@__view_transition_pending)
-                   }
-                  updates.keys.each do |node|
-                    node.instance_variable_set(:@__view_transition_pending, nil)
+                unless patches.empty?
+                  if updates.keys.any? { |node|
+                       node.instance_variable_get(:@__view_transition_pending)
+                     }
+                    updates.keys.each do |node|
+                      node.instance_variable_set(
+                        :@__view_transition_pending,
+                        nil
+                      )
+                    end
+                    @output_queue.enqueue(
+                      Patches::ViewTransition[Patches::Batch[patches]]
+                    )
+                  else
+                    @output_queue.enqueue(Patches::Batch[patches])
                   end
-                  @output_queue.enqueue(
-                    Patches::ViewTransition[Patches::Batch[patches]]
-                  )
-                else
-                  @output_queue.enqueue(Patches::Batch[patches])
                 end
+
+                synchronizations.each { @output_queue.enqueue(it) }
 
                 Fiber.scheduler.yield
               end
@@ -114,6 +123,12 @@ module Mayu
 
         def enqueue(vnode)
           @queue.enqueue(vnode)
+        end
+
+        def synchronize
+          synchronization = Synchronization[Async::Queue.new]
+          @queue.enqueue(synchronization)
+          synchronization.completion.dequeue
         end
       end
     end

@@ -126,6 +126,10 @@ module Mayu
         @updater.enqueue(vnode)
       end
 
+      def synchronize
+        @updater.synchronize
+      end
+
       def callback(id, payload)
         @root.call_listener(id, payload)
       end

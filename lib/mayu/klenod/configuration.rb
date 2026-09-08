@@ -152,6 +152,7 @@ module Mayu
           end
         end +
           [
+            ::Klenod::Test::Plugin.new,
             ::Klenod::Build::Plugins::RouterPlugin.new(
               pages_dir:,
               route_base_class: "Mayu::Route"
