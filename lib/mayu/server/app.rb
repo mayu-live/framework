@@ -45,7 +45,8 @@ module Mayu
         @environment = environment
         @stopping = false
         @sessions = Session::Store.new(metrics: @environment.metrics)
-        @body_barrier = Async::Barrier.new
+        @body_barrier = Async::Barrier.new(parent: Async::Task.current)
+        @streams = {}
         @cookies =
           Cookies.new(
             timeout_seconds: environment.config.server.cookie_timeout_seconds
@@ -109,12 +110,27 @@ module Mayu
         error_response(403, "INTERNAL_SERVER_ERROR", **origin_header(request))
       end
 
-      def stop
+      def begin_shutdown
         @stopping = true
         @sessions.stop
+      end
+
+      def stop
+        begin_shutdown
         @sessions.transfer_all
-      ensure
         @body_barrier.wait
+      end
+
+      def stream_count
+        @streams.size
+      end
+
+      def abort
+        begin_shutdown
+        @streams.values.each(&:close)
+        @body_barrier.stop
+      ensure
+        @sessions.abort
       end
 
       private
@@ -261,6 +277,11 @@ module Mayu
             environment: @environment
           )
 
+        if @stopping
+          session.stop
+          return text_response(503, "Server is stopping")
+        end
+
         if request.version == "HTTP/2"
           @sessions.store(session)
           @environment.metrics.session_init_count.increment
@@ -302,14 +323,22 @@ module Mayu
       end
 
       def handle_session_transfer(request, session_id)
+        state = request.read.to_s
+        return text_response(503, "Server is stopping") if @stopping
+
         session =
           Session::TransferState
-            .decrypt(@environment.marshaller, request.read.to_s)
+            .decrypt(@environment.marshaller, state)
             .authenticate!(
               session_id:,
               session_token: @cookies.get_token_cookie_value(request)
             )
             .resume(@environment)
+
+        if @stopping
+          session.stop
+          return text_response(503, "Server is stopping")
+        end
 
         @sessions.store(session)
 
@@ -362,33 +391,44 @@ module Mayu
         end
 
         body = EventStream::Writer.new
+        @streams[session.id] = body
 
         body.write(Runtime::Patches::Initialize[session.dom_id_tree.serialize])
 
         @body_barrier.async do |task|
           session.start
 
-          task.async do
+          close_task = task.async do
             body.wait
             task.stop
           end
 
-          loop do
-            patch = session.dequeue_patch
+          begin
+            loop do
+              patch = session.dequeue_patch
 
-            break if body.closed?
+              break if body.closed?
 
-            next unless patch
+              next unless patch
 
-            body.write(patch)
+              body.write(patch)
 
-            break if patch in Runtime::Patches::Transfer
+              break if patch in Runtime::Patches::Transfer | Runtime::Patches::TransferFailed
+            end
+          ensure
+            close_task.stop
+            session.stop
+            body.close_write
           end
+
+          flushed = body.wait_finished
+          Console.logger.info(self, "Session stream finished", session_id: session.id, flushed:)
         rescue => e
           Console.logger.error(self, e)
+          body.close(e)
         ensure
           session.stop
-          body.close
+          @streams.delete(session.id)
         end
 
         Protocol::HTTP::Response[200, headers, body]
@@ -408,6 +448,7 @@ module Mayu
         end
 
         EventStream.each_incoming_message(request) do |message|
+          break if @stopping
           Session::Events
             .from_message(message)
             .each { |event| session.enqueue_event(event) }

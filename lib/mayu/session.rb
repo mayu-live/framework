@@ -113,7 +113,7 @@ module Mayu
     end
 
     def enqueue_event(event)
-      @incoming_events.enqueue(event)
+      @incoming_events&.enqueue(event) unless @transferring
     end
 
     def dequeue_patch
@@ -171,6 +171,10 @@ module Mayu
     end
 
     def transfer!
+      @transferring = true
+      running_task = @task
+      stop
+      running_task&.wait
       @engine.stop
       @engine.patch(
         Runtime::Patches::Transfer[
@@ -179,11 +183,11 @@ module Mayu
           ]
         ]
       )
-    rescue EncryptedMarshal::DumpError => e
-      Console.logger.error(self, "Error transferring session: #{@id}", e)
+      true
+    end
+
+    def transfer_failed!
       @engine.patch(Runtime::Patches::TransferFailed[])
-    rescue => e
-      Console.logger.error(self, e)
     end
 
     private

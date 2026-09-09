@@ -275,6 +275,7 @@ class Mayu::EnvironmentTest < Minitest::Test
         generate_assets?: false,
         session_timeout_seconds: 10,
         transfer_timeout_seconds: 10,
+        shutdown_timeout_seconds: 10,
         cookie_timeout_seconds: 10
       )
     metrics =

@@ -50,9 +50,15 @@ module Mayu
         :generate_assets?,
         :session_timeout_seconds,
         :transfer_timeout_seconds,
+        :shutdown_timeout_seconds,
         :cookie_timeout_seconds
       ) do
         def self.parse(config)
+          shutdown_timeout = Float(config.fetch("shutdown_timeout_seconds", 10))
+          unless shutdown_timeout.finite? && shutdown_timeout.positive?
+            raise ArgumentError, "shutdown_timeout_seconds must be a positive finite number"
+          end
+
           new(
             listen:
               Configuration.convert_env(
@@ -66,6 +72,7 @@ module Mayu
               config.fetch("session_timeout_seconds", 10).to_i,
             transfer_timeout_seconds:
               config.fetch("transfer_timeout_seconds", 10).to_i,
+            shutdown_timeout_seconds: shutdown_timeout,
             cookie_timeout_seconds:
               config.fetch("cookie_timeout_seconds", 10).to_i
           )

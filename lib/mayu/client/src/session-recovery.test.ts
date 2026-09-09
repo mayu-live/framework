@@ -29,6 +29,7 @@ describe("session-recovery", () => {
   });
 
   it("matches reset-worthy stream errors", () => {
+    expect(shouldResetSession({ code: "TRANSFER_FAILED" })).toBe(true);
     expect(shouldResetSession(new Error("expired"))).toBe(true);
     expect(shouldResetSession(new Error("cipher error"))).toBe(true);
     expect(shouldResetSession(new Error("Session not found"))).toBe(true);
@@ -39,15 +40,15 @@ describe("session-recovery", () => {
     expect(shouldResetSession(new Error("SESSION_EXPIRED"))).toBe(true);
     expect(
       shouldResetSession(
-        Object.assign(new Error("expired"), { code: "SESSION_EXPIRED" })
-      )
+        Object.assign(new Error("expired"), { code: "SESSION_EXPIRED" }),
+      ),
     ).toBe(true);
     expect(
       shouldResetSession(
         Object.assign(new Error("whatever"), {
           code: "TOKEN_COOKIE_NOT_SET",
-        })
-      )
+        }),
+      ),
     ).toBe(true);
   });
 
@@ -63,11 +64,11 @@ describe("session-recovery", () => {
         headers: {
           "content-type": "text/html",
         },
-      })
+      }),
     );
 
     await expect(resetSessionEntirely()).rejects.toThrow(
-      "Missing x-mayu-session-id header during session reset"
+      "Missing x-mayu-session-id header during session reset",
     );
   });
 });

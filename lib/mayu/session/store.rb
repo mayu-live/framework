@@ -31,50 +31,36 @@ module Mayu
       end
 
       def transfer_all
-        return if @sessions.empty?
+        sessions = @sessions.values.map { |session| [session, session.running?] }
+        barrier = Async::Barrier.new
+        semaphore = Async::Semaphore.new(TRANSFER_CONCURRENCY, parent: barrier)
 
-        Console.logger.info(
-          self,
-          format("\e[1;33mTRANSFERRING %d SESSIONS\e[0m", @sessions.size)
-        )
-
-        elapsed =
-          Async::Clock.measure do
-            barrier = Async::Barrier.new
-            semaphore =
-              Async::Semaphore.new(TRANSFER_CONCURRENCY, parent: barrier)
-
-            @sessions
-              .each do |session_id, session|
-                semaphore.async do |task|
-                  task.with_timeout(TRANSFER_TIMEOUT_SECONDS) do
-                    Console.logger.info(
-                      self,
-                      "Transferring session #{session_id}"
-                    )
-                    session.transfer!
-                  rescue Async::TimeoutError
-                    Console.logger.error(
-                      self,
-                      "Transfer of session #{session_id} timed out"
-                    )
-                  else
-                    Console.logger.info(
-                      self,
-                      "Transferred session #{session_id}"
-                    )
-                  end
-                end
+        sessions.each do |session, connected|
+          semaphore.async do |task|
+            if connected
+              begin
+                task.with_timeout(TRANSFER_TIMEOUT_SECONDS) { session.transfer! }
+                Console.logger.info(self, "Session transfer queued", session_id: session.id)
+              rescue => error
+                Console.logger.warn(self, "Session transfer failed", session_id: session.id, exception: error)
+                session.transfer_failed!
               end
-              .clear
-
-            barrier.wait
+            else
+              session.stop
+            end
+            @sessions.delete(session.id)
           end
+        end
+        barrier.wait
+      ensure
+        barrier&.stop
+      end
 
-        Console.logger.info(
-          self,
-          format("\e[32mTRANSFERRED SESSIONS IN %.2f SECONDS\e[0m", elapsed)
-        )
+      def abort
+        stop
+        @sessions.values.each(&:stop)
+      ensure
+        @sessions.clear
       end
 
       def delete(session_id)

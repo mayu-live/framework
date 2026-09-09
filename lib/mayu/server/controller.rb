@@ -8,7 +8,7 @@ require "async"
 require "async/container"
 require "async/container/controller"
 require "async/container/forked"
-require "async/http/server"
+require_relative "worker"
 
 require_relative "app"
 require_relative "../metrics"
@@ -31,7 +31,7 @@ module Mayu
         @endpoint = endpoint
         @bundle_filename = bundle_filename
         @bound_endpoint = nil
-        @graceful_stop = 10
+        @graceful_stop = @config.server.shutdown_timeout_seconds + Worker::CLEANUP_TIMEOUT_SECONDS
       end
 
       def create_container
@@ -39,14 +39,43 @@ module Mayu
       end
 
       def start
+        return if @container
         @bound_endpoint = Sync { @endpoint.bound }
-        super
+        # Publish the container before startup so a first interrupt can drain
+        # children which have already started, even if others are not ready.
+        @container = create_container
+        setup(@container)
+        @container.wait_until_ready
+        raise Async::Container::SetupError, @container if @container.failed?
+        @notify&.ready!(size: @container.size)
+      end
+
+      def run
+        with_signal_handlers do
+          start
+          while @container&.running?
+            begin
+              @container.wait
+            rescue Async::Container::Restart
+              restart
+            end
+          end
+        rescue Interrupt
+          Console.logger.info(self, "Graceful shutdown requested", pid: Process.pid)
+          stop
+        ensure
+          stop(false)
+        end
       end
 
       def stop(graceful = @graceful_stop)
-        super
-      ensure
         @bound_endpoint&.close
+        super
+      rescue Interrupt
+        # Group#stop also kills its remaining children when interrupted. Keep
+        # the controller reference until they have all been reaped.
+        Console.logger.warn(self, "Second interrupt: forcing shutdown", pid: Process.pid)
+        super(false)
       end
 
       def setup(container)
@@ -66,69 +95,40 @@ module Mayu
 
       private
 
+      def with_signal_handlers
+        interrupts = 0
+        handlers = {}
+        [:INT, :TERM].each do |name|
+          handlers[name] = Signal.trap(name) do
+            interrupts += 1
+            Thread.current.raise(Interrupt) if interrupts <= 2
+          end
+        end
+        handlers[:HUP] = Signal.trap(:HUP) do
+          Thread.current.raise(Async::Container::Restart) if interrupts.zero?
+        end
+        Thread.handle_interrupt(SignalException => :never) { yield }
+      ensure
+        handlers.each { |name, handler| Signal.trap(name, handler) }
+      end
+
       def setup_metrics_server(container, collector_endpoint)
         Metrics.start_collect_and_export(
           container,
           collector_endpoint:,
-          listen: @config.metrics.listen
+          listen: @config.metrics.listen,
+          shutdown_timeout: @config.server.shutdown_timeout_seconds,
+          inherited_endpoint: @bound_endpoint
         ) { |registry| Metrics::AppMetrics.setup(registry) }
       end
 
       def setup_worker(instance, collector_endpoint:)
-        Async do |task|
-          reporter = nil
-          metrics = nil
-          environment = nil
-          asset_task = nil
-          watcher_task = nil
-
-          if collector_endpoint
-            reporter =
-              Metrics::Reporter.run(collector_endpoint, task:) do |registry|
-                Metrics::AppMetrics.setup(registry)
-              end
-
-            metrics = reporter.metrics
-          end
-
-          environment = load_environment(metrics:)
-
-          if @mayu_env == :development
-            watcher_task =
-              (environment.start_watcher if environment.config.server.hmr?)
-          end
-
-          environment.use do
-            app = nil
-            server_task = nil
-
-            begin
-              app = App.new(environment)
-
-              server =
-                Async::HTTP::Server.for(
-                  @bound_endpoint,
-                  protocol: @endpoint.protocol,
-                  scheme: @endpoint.scheme
-                ) { |request| app.call(request) }
-
-              server_task = server.run
-              instance.ready!
-
-              task.wait_all
-            ensure
-              reporter&.stop
-              app&.stop
-              server_task&.stop
-            end
-          end
-          # rescue Interrupt
-          #   Console.logger.info(self, "Got interrupt")
-        ensure
-          watcher_task&.stop
-          asset_task&.stop
-          reporter&.stop
-        end
+        Worker.new(
+          config: @config,
+          endpoint: @endpoint,
+          bound_endpoint: @bound_endpoint,
+          collector_endpoint:
+        ) { |metrics| load_environment(metrics:) }.run(instance)
       end
 
       def load_environment(metrics:)
@@ -148,10 +148,7 @@ module Mayu
       def worker_count
         return 1 if @mayu_env == :development
 
-        [
-          1,
-          ENV.fetch("WEB_CONCURRENCY") { Async::Container.processor_count }.to_i
-        ].max
+        Async::Container.processor_count
       end
     end
   end

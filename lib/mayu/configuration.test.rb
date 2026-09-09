@@ -9,6 +9,16 @@ require "minitest/autorun"
 require_relative "configuration"
 
 class Mayu::Configuration::Test < Minitest::Test
+  def test_shutdown_timeout
+    assert_equal(10, Mayu::Configuration::ServerConfig.parse({}).shutdown_timeout_seconds)
+    assert_equal(0.25, Mayu::Configuration::ServerConfig.parse({"shutdown_timeout_seconds" => 0.25}).shutdown_timeout_seconds)
+    [0, -1, "bad", Float::INFINITY, Float::NAN].each do |value|
+      assert_raises(ArgumentError) do
+        Mayu::Configuration::ServerConfig.parse({"shutdown_timeout_seconds" => value})
+      end
+    end
+  end
+
   def test_configuration
     filename = File.join(__dir__, "__test__", "configuration", "test.toml")
     config = Mayu::Configuration.load(filename, "development")

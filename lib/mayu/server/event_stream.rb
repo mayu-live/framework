@@ -5,7 +5,8 @@
 
 require "msgpack"
 require "zlib"
-require "async/notification"
+require "async/http/body/writable"
+require "async/promise"
 
 module Mayu
   class Server
@@ -35,15 +36,30 @@ module Mayu
               Zlib::HUFFMAN_ONLY
             )
           @wrapper = MsgPackWrapper.new
-          @on_close = Async::Notification.new
+          @on_close = Async::Promise.new
+          @write_closed = false
+          @consumer_closed = false
         end
 
         def wait
           @on_close.wait
         end
 
+        def read
+          @consumer_task ||= Async::Task.current?
+          super
+        end
+
+        def wait_finished
+          flushed = wait
+          # Body#close is called just before HTTP sends END_STREAM. Joining the
+          # consumer also waits for those final protocol writes.
+          @consumer_task.wait if @consumer_task && !@consumer_task.current?
+          flushed
+        end
+
         def write(patch)
-          if @closed
+          if @write_closed || @consumer_closed
             raise ClosedStreamError,
               "Attempted to write to a closed #{self.class.name}"
           end
@@ -51,28 +67,40 @@ module Mayu
           patch
             .then { Array(it) }
             .then { @wrapper.pack(it) }
-            .then { @deflate.deflate(it, Zlib::SYNC_FLUSH) }
+            .then { deflate_chunk(it) }
             .then { super(it) }
         end
 
-        def close(reason = nil)
-          return if closed?
-
-          @on_close.signal(reason)
-
-          begin
-            @queue.enqueue(@deflate.flush(Zlib::FINISH))
-          rescue
-            nil
-          end
-
-          begin
-            @deflate.close
-          rescue
-            nil
-          end
-
+        def close_write(reason = nil)
+          return if @write_closed || @consumer_closed
+          @write_closed = true
+          @queue.push(@deflate.finish) unless reason
+          @deflate.close
           super
+        end
+
+        def close(reason = nil)
+          return if @consumer_closed
+          flushed = @write_closed && @queue.empty? && reason.nil?
+          @consumer_closed = true
+          @deflate.close unless @deflate.closed?
+          super
+          @on_close.resolve(flushed)
+        end
+
+        private
+
+        def deflate_chunk(input)
+          expected_total = @deflate.total_in + input.bytesize
+          @deflate.deflate(input, Zlib::SYNC_FLUSH)
+        rescue Zlib::BufError
+          # A signal can interrupt Ruby's native zlib call after SYNC_FLUSH
+          # completed and cause a retry with no input left. Recover only a
+          # complete flush whose input was fully consumed; never replay input.
+          raise unless @deflate.total_in == expected_total && @deflate.avail_in.zero?
+          output = @deflate.flush_next_out
+          raise unless output.end_with?("\x00\x00\xff\xff".b)
+          output
         end
       end
 

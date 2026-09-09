@@ -104,6 +104,14 @@ module Mayu
     end
 
     class RuntimeProvider < Provider
+      def module_id_for(reference)
+        # Runtime component classes use their evaluation path, while bundle
+        # lookups use source-relative paths or canonical module IDs.
+        if reference.is_a?(String) && source.source_root
+          reference = reference.delete_prefix("#{source.source_root}/")
+        end
+        super
+      end
     end
   end
 end

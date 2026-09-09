@@ -585,7 +585,28 @@ The production server loads the Klenod bundle and assets produced by
 hmr = false
 self_signed_cert = true
 generate_assets = false
+shutdown_timeout_seconds = 10
 ```
+
+Production runs one forked HTTP worker per processor by default, using
+`Async::Container.processor_count`. Set `ASYNC_CONTAINER_PROCESSOR_COUNT` to
+override the worker count; development always runs one worker. Worker counts
+are not configured in `mayu.toml`, and `WEB_CONCURRENCY` is not used.
+
+The first SIGINT or SIGTERM to the server controller stops admission and drains
+connected sessions by transferring their state to clients. All transfers and
+HTTP output flushing share `shutdown_timeout_seconds` (default 10 seconds).
+Workers that exceed this deadline abort unfinished transfers and receive five
+additional seconds for cleanup before the controller kills them. A second
+SIGINT or SIGTERM to the controller immediately kills remaining children.
+One Ctrl+C delivered to the entire process group still requests graceful shutdown.
+
+Configure the deployment's termination timeout above the drain timeout plus
+five seconds; the generated Fly configuration allows 20 seconds for the default
+10-second drain. `transfer_timeout_seconds` separately controls how long an
+encrypted transfer payload remains valid. Transfers are best effort: the server
+waits for HTTP output, not browser acknowledgments. A replacement server needs
+the same secret and a compatible application bundle to resume the state.
 
 # Contributing
 

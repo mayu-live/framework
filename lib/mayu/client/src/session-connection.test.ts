@@ -1,4 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { encode } from "@msgpack/msgpack";
 
 const {
   initInputStreamMock,
@@ -12,7 +13,7 @@ const {
     initInputStreamMock: vi.fn(),
     initCallbackStreamMock: vi.fn(),
     getErrorMessageMock: vi.fn((error: unknown) =>
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     ),
     shouldResetSessionMock: vi.fn(),
     resetSessionEntirelyMock: vi.fn(),
@@ -24,7 +25,14 @@ vi.mock("./stream.js", () => ({
   initInputStream: initInputStreamMock,
   initCallbackStream: initCallbackStreamMock,
   JSONEncoderStream: class JSONEncoderStream extends TransformStream {},
-  StreamError: class StreamError extends Error {},
+  StreamError: class StreamError extends Error {
+    constructor(
+      message: string,
+      public code: string | null = null,
+    ) {
+      super(message);
+    }
+  },
 }));
 
 vi.mock("./session-recovery.js", () => ({
@@ -38,10 +46,12 @@ vi.mock("./ping", () => ({
 }));
 
 import SessionConnection from "./session-connection";
+import { getTransferState, setTransferState } from "./transfer";
 
 describe("session-connection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setTransferState(null);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     vi.spyOn(console, "info").mockImplementation(() => undefined);
@@ -83,5 +93,56 @@ describe("session-connection", () => {
     expect(resetSessionEntirelyMock).toHaveBeenCalledTimes(1);
     expect(sleepMock).toHaveBeenCalledWith(1000);
     expect(mayu.clearWriter).toHaveBeenCalled();
+  });
+
+  it("routes TransferFailed into session recovery", async () => {
+    initInputStreamMock.mockResolvedValueOnce(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(encode([["TransferFailed"]]));
+          controller.close();
+        },
+      }),
+    );
+    initCallbackStreamMock.mockReturnValue(new WritableStream());
+    shouldResetSessionMock.mockReturnValue(true);
+    resetSessionEntirelyMock.mockRejectedValue(
+      new Error("server still draining"),
+    );
+    const stop = new Error("stop test loop");
+    const runtime = { apply: vi.fn() };
+    const connection = new SessionConnection({
+      runtime: runtime as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: async () => {
+        throw stop;
+      },
+    });
+    await expect(connection.run()).rejects.toBe(stop);
+    expect(runtime.apply).not.toHaveBeenCalled();
+    expect(shouldResetSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "TRANSFER_FAILED" }),
+    );
+    expect(resetSessionEntirelyMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("retains transferred state when a draining server rejects reconnection", async () => {
+    const state = new Blob(["encrypted state"]);
+    setTransferState(state);
+    initInputStreamMock.mockRejectedValue(new Error("Server is stopping"));
+    shouldResetSessionMock.mockReturnValue(false);
+    const stop = new Error("stop test loop");
+    const connection = new SessionConnection({
+      runtime: { apply: vi.fn() } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: async () => {
+        throw stop;
+      },
+    });
+    await expect(connection.run()).rejects.toBe(stop);
+    expect(getTransferState()).toBe(state);
+    expect(resetSessionEntirelyMock).not.toHaveBeenCalled();
   });
 });

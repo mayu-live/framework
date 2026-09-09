@@ -159,6 +159,18 @@ class Mayu::Server::AppTest < Minitest::Test
     refute_includes(header, "/.mayu/assets//.mayu/assets/")
   end
 
+  def test_transfer_admission_is_rechecked_after_reading_the_request_body
+    app = Mayu::Server::App.allocate
+    request = Object.new
+    request.define_singleton_method(:read) do
+      app.instance_variable_set(:@stopping, true)
+      "not decrypted because shutdown started"
+    end
+    response = app.send(:handle_session_transfer, request, "session")
+    assert_equal(503, response.status)
+    assert_equal("Server is stopping", response.read)
+  end
+
   private
 
   def dispatch(method, path, headers)

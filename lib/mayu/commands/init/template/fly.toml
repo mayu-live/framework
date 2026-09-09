@@ -3,7 +3,7 @@
 app = "mayu"
 primary_region = "bog"
 kill_signal = "SIGINT"
-kill_timeout = "5s"
+kill_timeout = "20s"
 
 [build]
 

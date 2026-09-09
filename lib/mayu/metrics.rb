@@ -13,6 +13,7 @@ require_relative "metrics/app_metrics"
 require_relative "metrics/collector"
 require_relative "metrics/reporter"
 require_relative "metrics/server"
+require_relative "server/shutdown_signal"
 
 module Mayu
   module Metrics
@@ -34,6 +35,8 @@ module Mayu
       container,
       collector_endpoint:,
       listen:,
+      shutdown_timeout: 10,
+      inherited_endpoint: nil,
       &setup_registry
     )
       container.run(name: "Mayu metrics", count: 1, restart: true) do |instance|
@@ -42,30 +45,37 @@ module Mayu
         metrics_task = nil
         internal_store = {}
 
-        Async do |task|
-          collector = Collector::Server.new(collector_endpoint)
-          collector.start
+        Mayu::Server::ShutdownSignal.open do |signal|
+          inherited_endpoint&.close
+          Async do |task|
+            collector = Collector::Server.new(collector_endpoint)
+            collector.start
 
-          Prometheus::Client.config.data_store =
-            Collector::DataStore.new(internal_store)
+            Prometheus::Client.config.data_store =
+              Collector::DataStore.new(internal_store)
 
-          registry = Prometheus::Client::Registry.new
-          setup_registry&.call(registry)
+            registry = Prometheus::Client::Registry.new
+            setup_registry&.call(registry)
 
-          collector_task = task.async { collector.run(internal_store) }
-          metrics_task =
-            task.async do
+            collector_task = task.async { collector.run(internal_store) }
+            metrics_task = task.async do
               run_metrics_server_with_port_retry(registry:, listen:)
             end
 
-          instance.ready!
-          task.wait_all
-        rescue Interrupt
-          wait_for_reporters_to_disconnect(internal_store)
-        ensure
-          collector_task&.stop
-          metrics_task&.stop
-          collector&.stop
+            instance.ready!
+            signal.wait
+            wait_for_reporters_to_disconnect(internal_store, timeout: shutdown_timeout)
+          ensure
+            begin
+              collector_task&.stop
+            ensure
+              begin
+                metrics_task&.stop
+              ensure
+                collector&.stop
+              end
+            end
+          end.wait
         end
       end
     end

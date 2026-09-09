@@ -83,7 +83,7 @@ export default class SessionConnection {
         const input = await initInputStream(
           this.#endpoint,
           state,
-          abortController.signal
+          abortController.signal,
         );
         setTransferState(null);
 
@@ -92,7 +92,7 @@ export default class SessionConnection {
         this.#mayu.setWriter(callbackWriter);
         const output = initCallbackStream(
           this.#endpoint,
-          abortController.signal
+          abortController.signal,
         );
 
         failures = 0;
@@ -113,6 +113,15 @@ export default class SessionConnection {
           extensionCodec,
         })) {
           updateConnectionStatus("connected");
+
+          if (
+            Array.isArray(patch) &&
+            patch.some(
+              (entry) => Array.isArray(entry) && entry[0] === "TransferFailed",
+            )
+          ) {
+            throw new StreamError("Session transfer failed", "TRANSFER_FAILED");
+          }
 
           try {
             await this.#runtime.apply(patch as any);

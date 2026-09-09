@@ -32,7 +32,7 @@ module Mayu
         # loads it before exposing the exports module.
         exports =
           if @provider.respond_to?(:entry)
-            @provider.entry(reference.filename).exports
+            @provider.exports(@provider.entry(reference.filename))
           else
             @provider.exports(reference.filename)
           end

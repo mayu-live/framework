@@ -3,6 +3,7 @@ import { setTransferState } from "./transfer";
 import withViewTransition from "./view-transition";
 
 const RESET_SESSION_ERROR_CODES = new Set([
+  "TRANSFER_FAILED",
   "EXPIRED",
   "SESSION_EXPIRED",
   "CIPHER_ERROR",
@@ -62,7 +63,7 @@ export async function resetSessionEntirely() {
 
   console.warn(
     `%cmorphing dom`,
-    "font-size: 4em; font-weight: bold; font-family: monospace;"
+    "font-size: 4em; font-weight: bold; font-family: monospace;",
   );
 
   await withViewTransition(async () => {
