@@ -11,13 +11,13 @@ module Mayu
           def self.[](name) = new(name.to_s.tr("_", "-"))
 
           def to_s = "var(#{name})"
-          alias inspect to_s
+          alias_method :inspect, :to_s
         end
 
       Calc =
         Data.define(:left, :operator, :right) do
           def to_s = "calc(#{left} #{operator} #{right})".gsub("(calc(", "((")
-          alias inspect to_s
+          alias_method :inspect, :to_s
 
           def +(other) = Calc[self, __method__, other]
           def -(other) = Calc[self, __method__, other]
@@ -28,7 +28,7 @@ module Mayu
       NumberWithUnit =
         Data.define(:number, :unit) do
           def to_s = "#{number}#{unit}"
-          alias inspect to_s
+          alias_method :inspect, :to_s
 
           def +(other) = handle_operator(__method__, other)
           def -(other) = handle_operator(__method__, other)

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -66,7 +67,7 @@ module Mayu
         def values_for_metric(metric_name)
           @internal_store
             .values
-            .map { _1[metric_name] }
+            .map { it[metric_name] }
             .compact
             .each_with_object(
               Hash.new { |hash, key| hash[key] = [] }

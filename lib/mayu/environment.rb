@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -152,9 +153,9 @@ module Mayu
     def load_runtime_js_path
       File
         .read(File.join(@client_path, "entries.json"))
-        .then { JSON.parse(_1) }
+        .then { JSON.parse(it) }
         .fetch("main")
-        .then { File.join("/.mayu/runtime", _1) }
+        .then { File.join("/.mayu/runtime", it) }
     end
   end
 end

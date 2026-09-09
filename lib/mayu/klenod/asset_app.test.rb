@@ -34,7 +34,7 @@ class Mayu::Klenod::AssetAppTest < Minitest::Test
         nil,
         "body {}",
         "text/css",
-        { type: :css }
+        {type: :css}
       )
     provider = Provider.new(Source.new(asset), nil, "/.mayu/assets/")
 

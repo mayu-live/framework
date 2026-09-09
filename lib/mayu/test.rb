@@ -64,7 +64,7 @@ module Mayu
         Fiber[:current_test_page] or raise "There is no current page"
       end
 
-      alias screen current_page
+      alias_method :screen, :current_page
 
       def enable_step!
         Fiber[:test_enable_step] = true
@@ -179,7 +179,7 @@ module Mayu
           end
 
           def text = node.text
-          alias content text
+          alias_method :content, :text
 
           def traverse(&)
             yield self
@@ -237,7 +237,7 @@ module Mayu
             self
           end
 
-          alias type_input type
+          alias_method :type_input, :type
 
           private
 
@@ -295,7 +295,7 @@ module Mayu
         self
       rescue Async::TimeoutError
         raise SettleTimeoutError,
-              "Mayu page did not settle within #{@settle_timeout}s\n\n#{html}"
+          "Mayu page did not settle within #{@settle_timeout}s\n\n#{html}"
       end
 
       def step
@@ -303,10 +303,10 @@ module Mayu
         return settle unless interactive
 
         puts format(
-               "\e[H\e[2J%s\n\e[3m %s \e[0m\n",
-               self.class.format_html(html),
-               "Press return to step"
-             )
+          "\e[H\e[2J%s\n\e[3m %s \e[0m\n",
+          self.class.format_html(html),
+          "Press return to step"
+        )
         gets
         settle
       end
@@ -329,7 +329,7 @@ module Mayu
       def fire_event(event, node, payload = nil, **fields)
         unless node.is_a?(Node) && node.page.equal?(self)
           raise ArgumentError,
-                "fire_event expects a node from this rendered page"
+            "fire_event expects a node from this rendered page"
         end
 
         event = event.to_s
@@ -350,7 +350,7 @@ module Mayu
           end.first
         unless id
           raise NoListenerError,
-                "#{node.name} does not have a Mayu #{attributes.first} listener"
+            "#{node.name} does not have a Mayu #{attributes.first} listener"
         end
 
         payload = payload ? payload.merge(fields) : fields
@@ -368,12 +368,19 @@ module Mayu
         self
       rescue Async::TimeoutError
         raise SettleTimeoutError,
-              "Mayu callback #{id.inspect} did not settle within #{@settle_timeout}s\n\n#{html}"
+          "Mayu callback #{id.inspect} did not settle within #{@settle_timeout}s\n\n#{html}"
       end
 
       def emit(event)
         event.call(@engine)
         settle
+      end
+
+      def self.format_html(source)
+        theme = Rouge::Themes::Gruvbox.dark!
+        formatter = Rouge::Formatters::Terminal256.new(theme)
+        lexer = Rouge::Lexers::HTML.new
+        formatter.format(lexer.lex(source))
       end
 
       private
@@ -437,7 +444,7 @@ module Mayu
           set_css_property(fetch_node!(id), name, nil)
         in Mayu::Runtime::Patches::ReplaceChildren[id:, child_ids:]
           node = fetch_node!(id)
-          node.children = Oga::XML::NodeSet.new(child_ids.map { fetch_node!(_1) })
+          node.children = Oga::XML::NodeSet.new(child_ids.map { fetch_node!(it) })
         in Mayu::Runtime::Patches::RemoveNode[id:]
           remove_node(id)
         else
@@ -473,7 +480,7 @@ module Mayu
         return unless dom_node && id_node
 
         if dom_node.is_a?(Oga::XML::Element) &&
-             dom_node.name != id_node.name.downcase
+            dom_node.name != id_node.name.downcase
           raise "#{id_node.id} should be #{id_node.name.inspect}, but found #{dom_node.name.inspect}"
         end
 
@@ -498,13 +505,6 @@ module Mayu
 
       def fetch_node!(id)
         @nodes.fetch(id) { raise "Could not find node with id #{id.inspect}" }
-      end
-
-      def self.format_html(source)
-        theme = Rouge::Themes::Gruvbox.dark!
-        formatter = Rouge::Formatters::Terminal256.new(theme)
-        lexer = Rouge::Lexers::HTML.new
-        formatter.format(lexer.lex(source))
       end
     end
   end

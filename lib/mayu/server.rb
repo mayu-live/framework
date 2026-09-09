@@ -33,14 +33,6 @@ module Mayu
       Console.logger.info(self, "Stopped server")
     end
 
-    private
-
-    def ssl_context_for(config)
-      return nil unless config.server.self_signed_cert?
-
-      self.class.self_signed_cert_ssl_context(@uri.hostname)
-    end
-
     def self.self_signed_cert_ssl_context(hostname)
       require "localhost"
 
@@ -56,6 +48,14 @@ module Mayu
       ssl_context.session_id_context = "mayu"
 
       ssl_context
+    end
+
+    private
+
+    def ssl_context_for(config)
+      return nil unless config.server.self_signed_cert?
+
+      self.class.self_signed_cert_ssl_context(@uri.hostname)
     end
   end
 end

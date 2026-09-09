@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -51,20 +52,18 @@ module Mayu
         )
           task.async do
             loop do
-              begin
-                connect(collector_endpoint) do |client|
-                  loop do
-                    client.sync(data_store)
-                    sleep(interval)
-                  end
+              connect(collector_endpoint) do |client|
+                loop do
+                  client.sync(data_store)
+                  sleep(interval)
                 end
-              rescue Errno::ECONNREFUSED, Errno::EPIPE, Errno::ENOENT => error
-                break if task.stopped?
-                Console.logger.warn(self, "Metrics sync error: #{error.class}")
-                sleep(reconnect_delay)
-              rescue Interrupt, Async::Stop
-                break
               end
+            rescue Errno::ECONNREFUSED, Errno::EPIPE, Errno::ENOENT => error
+              break if task.stopped?
+              Console.logger.warn(self, "Metrics sync error: #{error.class}")
+              sleep(reconnect_delay)
+            rescue Interrupt, Async::Stop
+              break
             end
           end
         end

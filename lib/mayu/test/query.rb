@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
-
 module Mayu
   module Test
     class QueryError < StandardError
@@ -77,7 +75,7 @@ module Mayu
             if child.is_a?(Oga::XML::Text)
               child.text
             elsif child.is_a?(Oga::XML::Element) && !hidden?(child) &&
-                  !%w[script style template].include?(child.name)
+                !%w[script style template].include?(child.name)
               visible_text(child)
             end
           end
@@ -137,7 +135,7 @@ module Mayu
         when "tr"
           "row"
         when "th"
-          node.get("scope") == "row" ? "rowheader" : "columnheader"
+          (node.get("scope") == "row") ? "rowheader" : "columnheader"
         when "td"
           "cell"
         end
@@ -151,11 +149,11 @@ module Mayu
         return "slider" if type == "range"
         return "spinbutton" if type == "number"
         return "searchbox" if type == "search"
-        return "textbox" if TEXTBOX_INPUT_TYPES.include?(type)
+        "textbox" if TEXTBOX_INPUT_TYPES.include?(type)
       end
 
       def input_type(node)
-        node.name == "input" ? (node.get("type") || "text").downcase : nil
+        (node.name == "input") ? (node.get("type") || "text").downcase : nil
       end
 
       def labels_for(node)
@@ -174,7 +172,7 @@ module Mayu
         current = node.parent
         while current
           if current.is_a?(Oga::XML::Element) && current.name == "label" &&
-               !hidden?(current)
+              !hidden?(current)
             labels << current
             break
           end
@@ -235,7 +233,7 @@ module Mayu
 
       def within(node)
         unless node.is_a?(Page::Node) && node.page.equal?(page) &&
-                 contains?(node.node)
+            contains?(node.node)
           raise ArgumentError, "within expects a node from this rendered page"
         end
 
@@ -265,7 +263,7 @@ module Mayu
           end
         resolve(
           method_name,
-          [role.to_sym, { name: }],
+          [role.to_sym, {name:}],
           matches,
           candidates: name ? candidates : matches
         ) do |node|
@@ -369,7 +367,7 @@ module Mayu
         query = format_query(method_name, arguments)
         candidate_nodes = matches.empty? ? candidates : matches
         raise QueryError,
-              diagnostic(query, reason, expectation, candidate_nodes, &)
+          diagnostic(query, reason, expectation, candidate_nodes, &)
       end
 
       def wrap(value)

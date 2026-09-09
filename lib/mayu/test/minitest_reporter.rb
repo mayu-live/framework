@@ -54,9 +54,9 @@ module Mayu
         failed_results.each_with_index do |result, index|
           io.puts
           io.puts color(
-                    :failure,
-                    "#{index + 1}. #{result.klass} > #{test_name(result.name)}"
-                  )
+            :failure,
+            "#{index + 1}. #{result.klass} > #{test_name(result.name)}"
+          )
           io.puts indent(result.to_s, "   ")
         end
       end
@@ -72,18 +72,18 @@ module Mayu
 
         io.puts
         io.puts summary_line(
-                  "Test Files",
-                  passed_files,
-                  failed_files,
-                  grouped_results.length
-                )
+          "Test Files",
+          passed_files,
+          failed_files,
+          grouped_results.length
+        )
         io.puts summary_line(
-                  "Tests",
-                  passed_tests,
-                  failed_tests,
-                  count,
-                  skipped: skips
-                )
+          "Tests",
+          passed_tests,
+          failed_tests,
+          count,
+          skipped: skips
+        )
         io.puts "#{color(:dim, "Assertions".ljust(11))} #{assertions}"
         io.puts "#{color(:dim, "Duration".ljust(11))} #{format_duration(total_time)}"
       end

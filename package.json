@@ -8,7 +8,8 @@
     "build": "npm -w lib/mayu/client run build:production",
     "test": "npm -w lib/mayu/client run test",
     "test:watch": "npm -w lib/mayu/client run test:watch",
-    "prettier": "prettier --write '**/*'",
+    "format": "bundle exec standardrb --fix && npm run prettier",
+    "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,md,html,css,json,yaml,yml}'",
     "prepare": "husky install"
   },
   "repository": {
@@ -25,12 +26,13 @@
     "lib/mayu/client"
   ],
   "devDependencies": {
-    "@prettier/plugin-ruby": "^3.2.2",
     "husky": "^8.0.2",
     "lint-staged": "^13.1.0",
-    "prettier": "^2.8.1"
+    "prettier": "^3.9.6"
   },
   "lint-staged": {
-    "*.{rb,js,jsx,ts,tsx,md,html,css}": "prettier --write"
+    "*.{rb,gemspec}": "bundle exec standardrb --fix --cache false",
+    "{Gemfile,Rakefile}": "bundle exec standardrb --fix --cache false",
+    "*.{js,jsx,ts,tsx,md,html,css,json,yaml,yml}": "prettier --write"
   }
 }

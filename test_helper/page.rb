@@ -93,7 +93,7 @@ module Mayu
       def debug!
         Console.logger.info(
           "#{self.class.name}##{__method__}",
-          "Caller: #{caller.find { !_1.include?("sorbet-runtime") }}",
+          "Caller: #{caller.find { !it.include?("sorbet-runtime") }}",
           debug_html
         )
       end
@@ -121,7 +121,7 @@ module Mayu
         event =
           UserEvent.new(
             type.to_s,
-            { "target" => serialize_element(target), **payload }
+            {"target" => serialize_element(target), **payload}
           )
 
         callback_id = callback_id_from_attr(target, "on#{type}")
@@ -147,22 +147,22 @@ module Mayu
       end
       def serialize_element(element)
         # todo: fill these up with whatever we need
-        { "name" => element.name.to_s, "value" => element["value"] }
+        {"name" => element.name.to_s, "value" => element["value"]}
       end
 
       sig do
         params(element: Nokogiri::XML::Element, attr: String).returns(String)
       end
       def callback_id_from_attr(element, attr)
-        if match = CALLBACK_ID_RE.match(element[attr])
+        if (match = CALLBACK_ID_RE.match(element[attr]))
           return match[:callback_id].to_s
         end
 
-        $stderr.puts <<~EOF
-        \e[7;31mCould not find an #{attr}-handler:\e[0m
-        #{Mayu::TestHelper.format_source(element.to_html, :html)}
+        warn <<~EOF
+          \e[7;31mCould not find an #{attr}-handler:\e[0m
+          #{Mayu::TestHelper.format_source(element.to_html, :html)}
         EOF
-        raise "Element does not have an #{attr}-handler: #{element.to_s}"
+        raise "Element does not have an #{attr}-handler: #{element}"
       end
     end
   end

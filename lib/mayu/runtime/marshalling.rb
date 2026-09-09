@@ -26,9 +26,9 @@ module Mayu
 
         case value
         in Hash
-          value.transform_values { dump_value(_1) }
+          value.transform_values { dump_value(it) }
         in Array
-          value.map { dump_value(_1) }
+          value.map { dump_value(it) }
         in Proc | Async::Task
           nil
         in Class
@@ -41,9 +41,9 @@ module Mayu
       def self.load_value(value, fallback_class: nil)
         case value
         in Hash
-          value.transform_values { load_value(_1) }
+          value.transform_values { load_value(it) }
         in Array
-          value.map { load_value(_1) }
+          value.map { load_value(it) }
         in ComponentRef
           resolve_component_ref(value, fallback_class:)
         else
@@ -54,7 +54,7 @@ module Mayu
       def self.dump_component_class(value)
         return value unless component_class?(value)
 
-        if resolver = Fiber[COMPONENT_RESOLVER_KEY]
+        if (resolver = Fiber[COMPONENT_RESOLVER_KEY])
           reference = resolver.dump_component_class(value)
           return reference if reference
         end
@@ -63,7 +63,7 @@ module Mayu
         class_name = value.name&.split("::")&.last
 
         if module_path.nil? || module_path.empty? ||
-             module_path.start_with?("(internal)::")
+            module_path.start_with?("(internal)::")
           ComponentRef.new(nil, class_name, value)
         else
           ComponentRef.new(module_path, class_name, nil)
@@ -76,7 +76,7 @@ module Mayu
         return ref.klass if ref.klass.is_a?(Class)
         return fallback_class if fallback_class.is_a?(Class)
 
-        if resolver = Fiber[COMPONENT_RESOLVER_KEY]
+        if (resolver = Fiber[COMPONENT_RESOLVER_KEY])
           component_class = resolver.resolve_component_ref(ref)
           return component_class if component_class
         end

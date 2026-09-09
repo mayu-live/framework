@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -52,9 +53,9 @@ module Mayu
         puts formatter.format(File.read(source_path).strip, lexer)
         puts "\e[1;3mOutput:\e[0m"
         puts formatter.format(
-               record.transformed_source.strip,
-               Rouge::Lexers::Ruby
-             )
+          record.transformed_source.strip,
+          Rouge::Lexers::Ruby
+        )
         return if record.assets.empty?
 
         puts "\e[1;3mAssets:\e[0m"
@@ -63,7 +64,7 @@ module Mayu
         end
       rescue ArgumentError
         raise ArgumentError,
-              "#{path} must be inside #{configuration.source_path}"
+          "#{path} must be inside #{configuration.source_path}"
       end
 
       class CodeFormatter

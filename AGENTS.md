@@ -26,8 +26,9 @@
 ## Coding Style & Naming Conventions
 
 - Ruby code uses `.rb` with adjacent tests named `*.test.rb`.
-- Prettier is configured (with `@prettier/plugin-ruby`) and is used via `npx prettier --write '**/*'`.
-- `lint-staged` runs Prettier on common file types before commits; keep changes formatted.
+- Ruby is formatted with StandardRB via `bundle exec standardrb --fix`.
+- Prettier formats JavaScript, TypeScript, Markdown, HTML, CSS, JSON, and YAML via `npm run prettier`.
+- `lint-staged` runs the appropriate formatter on supported files before commits; keep changes formatted.
 
 ## Testing Guidelines
 

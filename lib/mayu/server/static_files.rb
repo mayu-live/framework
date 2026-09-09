@@ -70,7 +70,7 @@ module Mayu
 
           def headers
             if encoding
-              { "content-encoding": encoding.to_s }
+              {"content-encoding": encoding.to_s}
             else
               {}
             end

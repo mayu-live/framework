@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -22,9 +23,9 @@ module Mayu
         end
 
         def authenticate!(session_id:, session_token:)
-          raise Errors::SessionIdMismatchError unless self.id == session_id
+          raise Errors::SessionIdMismatchError unless id == session_id
 
-          unless Token.equal?(self.token, session_token)
+          unless Token.equal?(token, session_token)
             raise Errors::InvalidTokenError
           end
 

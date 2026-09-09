@@ -18,9 +18,9 @@ module Mayu
 
       class MsgPackWrapper < MessagePack::Factory
         def initialize
-          super()
+          super
 
-          self.register_type(0x01, Blob)
+          register_type(0x01, Blob)
         end
       end
 
@@ -45,14 +45,14 @@ module Mayu
         def write(patch)
           if @closed
             raise ClosedStreamError,
-                  "Attempted to write to a closed #{self.class.name}"
+              "Attempted to write to a closed #{self.class.name}"
           end
 
           patch
-            .then { Array(_1) }
-            .then { @wrapper.pack(_1) }
-            .then { @deflate.deflate(_1, Zlib::SYNC_FLUSH) }
-            .then { super(_1) }
+            .then { Array(it) }
+            .then { @wrapper.pack(it) }
+            .then { @deflate.deflate(it, Zlib::SYNC_FLUSH) }
+            .then { super(it) }
         end
 
         def close(reason = nil)
@@ -62,13 +62,13 @@ module Mayu
 
           begin
             @queue.enqueue(@deflate.flush(Zlib::FINISH))
-          rescue StandardError
+          rescue
             nil
           end
 
           begin
             @deflate.close
-          rescue StandardError
+          rescue
             nil
           end
 
@@ -83,14 +83,14 @@ module Mayu
         end
 
       def self.each_incoming_message(request)
-        buf = String.new
+        buf = +""
 
         request.body.each do |chunk|
           buf += chunk
 
-          if idx = buf.index("\n")
+          if (idx = buf.index("\n"))
             yield JSON.parse(buf[0..idx], symbolize_names: true)
-            buf = buf[idx.succ..-1].to_s
+            buf = buf[idx.succ..].to_s
           end
         end
       end

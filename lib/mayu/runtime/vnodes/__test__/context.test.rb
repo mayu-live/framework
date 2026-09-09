@@ -13,7 +13,7 @@ class Mayu::Runtime::VNodes::ContextTest < Minitest::Test
 
   def test_context_helper_scopes_values
     descriptor =
-      H[:body, H.context(theme: { color: "red" }) { H[ContextProbe] }]
+      H[:body, H.context(theme: {color: "red"}) { H[ContextProbe] }]
 
     engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
     html = render_html(engine.root)
@@ -24,8 +24,8 @@ class Mayu::Runtime::VNodes::ContextTest < Minitest::Test
     descriptor =
       H[
         :body,
-        H.context(theme: { color: "red" }) do
-          H.context(theme: { color: "blue" }) { H[ContextProbe] }
+        H.context(theme: {color: "red"}) do
+          H.context(theme: {color: "blue"}) { H[ContextProbe] }
         end
       ]
 

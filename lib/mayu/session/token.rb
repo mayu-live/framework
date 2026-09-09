@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -18,7 +19,7 @@ module Mayu
       end
 
       def self.valid_format?(token)
-        token.match?(/\A[[:alnum:]]{#{TOKEN_LENGTH}}\z/)
+        token.match?(/\A[[:alnum:]]{#{TOKEN_LENGTH}}\z/o)
       end
 
       def self.generate

@@ -26,8 +26,6 @@ module Mayu
           def content_type = headers.fetch("content-type").to_s
 
           def inspect
-            "<##{self.class.name} #{inspect_attributes}>"
-
             private
 
             def inspect_attributes
@@ -68,7 +66,7 @@ module Mayu
           ok?: res.success?,
           redirected?: res.redirection?
         )
-      rescue => e
+      rescue
         puts "\e[32mFAILED ON #{url}\e[0m"
         raise
       end

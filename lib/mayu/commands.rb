@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -18,16 +19,16 @@ module Mayu
   module Commands
     class Application < Samovar::Command
       nested :command,
-             {
-               "init" => Init,
-               "dev" => Dev,
-               "test" => Test,
-               "build" => Build,
-               "start" => Start,
-               "routes" => Routes,
-               "graph" => Graph,
-               "transform" => Transform
-             }
+        {
+          "init" => Init,
+          "dev" => Dev,
+          "test" => Test,
+          "build" => Build,
+          "start" => Start,
+          "routes" => Routes,
+          "graph" => Graph,
+          "transform" => Transform
+        }
 
       def call
         print_header unless @command.is_a?(Graph)

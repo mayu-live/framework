@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -81,8 +82,8 @@ module Mayu
           end
         end
 
-      Comment = Data.define(:content) { alias to_s content }
-      RawText = Data.define(:content) { alias to_s content }
+      Comment = Data.define(:content) { alias_method :to_s, :content }
+      RawText = Data.define(:content) { alias_method :to_s, :content }
       Context =
         Data.define(:values, :children) do
           def marshal_dump
@@ -120,7 +121,7 @@ module Mayu
         case [a, b]
         in [Element, Element]
           a.same?(b)
-        in [^(a), ^(a.class)]
+        in [^a, ^(a.class)]
           true
         else
           false
@@ -132,7 +133,7 @@ module Mayu
         in Element | RawText | Context
           descriptor
         else
-          (descriptor && descriptor.to_s) || nil
+          descriptor&.to_s
         end
       end
     end

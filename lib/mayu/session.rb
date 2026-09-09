@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -18,13 +19,13 @@ module Mayu
 
       def self.from_message(message)
         case message
-        in { type: "callback", payload: { id:, event: }, ping: }
+        in {type: "callback", payload: {id:, event:}, ping:}
           [PingEvent[ping], CallbackEvent[id, event]]
         in {
-             type: "navigate", payload: { href:, pushState: push_state }, ping:
+             type: "navigate", payload: {href:, pushState: push_state}, ping:
            }
           [PingEvent[ping], NavigateEvent[href, push_state]]
-        in { type: "ping", ping: }
+        in {type: "ping", ping:}
           [PingEvent[ping]]
         else
           Console.logger.error(self, "Unknown message: #{message.inspect}")
@@ -240,7 +241,7 @@ module Mayu
       in Events::NavigateEvent[path:, push_state:]
         Console.logger.info(self, "Navigating to \e[1;34m#{path}\e[0m")
 
-        @environment.metrics.session_navigate_count.increment(labels: { path: })
+        @environment.metrics.session_navigate_count.increment(labels: {path:})
 
         @request_info = @request_info.with(path:)
         descriptor = resolve_route(path)
@@ -284,7 +285,7 @@ module Mayu
             )
           source = error.respond_to?(:source) ? error.source.to_s : ""
           type =
-            ((error.respond_to?(:cause) && error.cause || error).class.name)
+            (error.respond_to?(:cause) && error.cause || error).class.name
           @engine.patch(
             Runtime::Patches::RenderError[
               file,
@@ -292,7 +293,7 @@ module Mayu
               error.message,
               Array(error.backtrace),
               source,
-              [{ name: "CodeReload", path: file }]
+              [{name: "CodeReload", path: file}]
             ]
           )
           next
@@ -305,7 +306,7 @@ module Mayu
             reload_error.message,
             Array(reload_error.backtrace),
             reload_error.source.to_s,
-            [{ name: "CodeReload", path: reload_error.file }]
+            [{name: "CodeReload", path: reload_error.file}]
           ]
         )
       end

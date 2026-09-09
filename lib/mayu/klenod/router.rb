@@ -47,7 +47,7 @@ module Mayu
           router.error(uri.path),
           path,
           uri,
-          props: { path:, status: 500, error: }.compact
+          props: {path:, status: 500, error:}.compact
         )
       end
 

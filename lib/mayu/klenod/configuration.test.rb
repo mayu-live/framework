@@ -75,11 +75,11 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
   def test_klenod_config_file_is_evaluated_against_mayu_defaults
     Dir.mktmpdir("mayu-klenod") do |root|
       File.write(File.join(root, "klenod.config.rb"), <<~RUBY)
-          source_dir "frontend"
-          pages_dir "routes"
-          entrypoints "entry", "virtual:router"
-          base "/assets/"
-        RUBY
+        source_dir "frontend"
+        pages_dir "routes"
+        entrypoints "entry", "virtual:router"
+        base "/assets/"
+      RUBY
 
       configuration = Mayu::Klenod::Configuration.load(root:)
 
@@ -97,9 +97,9 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "frontend", "routes"))
       File.write(File.join(root, "klenod.config.rb"), <<~RUBY)
-          source_dir "frontend"
-          pages_dir "routes"
-        RUBY
+        source_dir "frontend"
+        pages_dir "routes"
+      RUBY
       File.write(File.join(root, "frontend", "root.haml"), "%slot\n")
       File.write(
         File.join(root, "frontend", "routes", "+page.haml"),
@@ -119,19 +119,19 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
       File.write(File.join(root, "app", "card.haml"), <<~'HAML')
-          :ruby
-            def initialize
-              @count = 1
-              @@section = "profile"
-            end
+        :ruby
+          def initialize
+            @count = 1
+            @@section = "profile"
+          end
 
-          %p= "#{$title}:#{@@section}:#{@count}"
-        HAML
+        %p= "#{$title}:#{@@section}:#{@count}"
+      HAML
 
       provider = Mayu::Klenod::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("card.haml"))::Default
       component = component_class.allocate
-      component.instance_variable_set(:@__props, { title: "Ada" }.freeze)
+      component.instance_variable_set(:@__props, {title: "Ada"}.freeze)
       component.instance_variable_set(
         :@__context,
         Mayu::Runtime::VNodes::VComponent::Context.new
@@ -191,14 +191,14 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
       File.write(File.join(root, "app", "label.haml"), "%strong Label\n")
-      File.write(File.join(root, "app", "card.haml"), <<~'HAML')
-          :ruby
-            Label = import("./label")
+      File.write(File.join(root, "app", "card.haml"), <<~HAML)
+        :ruby
+          Label = import("./label")
 
-          %section
-            %Label
-            %slot
-        HAML
+        %section
+          %Label
+          %slot
+      HAML
 
       provider = Mayu::Klenod::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("card.haml"))::Default
@@ -222,10 +222,10 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
   def test_default_haml_plugin_renders_named_string_slots
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
-      File.write(File.join(root, "app", "layout.haml"), <<~'HAML')
-          %aside
-            %slot(name="menu")
-        HAML
+      File.write(File.join(root, "app", "layout.haml"), <<~HAML)
+        %aside
+          %slot(name="menu")
+      HAML
 
       provider = Mayu::Klenod::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("layout.haml"))::Default
@@ -247,14 +247,14 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
   def test_klenod_provider_formats_haml_render_errors_with_original_source
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
-      File.write(File.join(root, "app", "broken.haml"), <<~'HAML')
-          :ruby
-            def explode
-              raise "boom"
-            end
+      File.write(File.join(root, "app", "broken.haml"), <<~HAML)
+        :ruby
+          def explode
+            raise "boom"
+          end
 
-          %p= explode
-        HAML
+        %p= explode
+      HAML
 
       provider = Mayu::Klenod::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("broken.haml"))::Default
@@ -271,14 +271,14 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
   def test_default_haml_plugin_preserves_text_whitespace_and_event_callbacks
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
-      File.write(File.join(root, "app", "button.haml"), <<~'HAML')
-          :ruby
-            def handle_click
-            end
+      File.write(File.join(root, "app", "button.haml"), <<~HAML)
+        :ruby
+          def handle_click
+          end
 
-          %button(onclick=handle_click){ style: { color: "red" } }
-            Hello world
-        HAML
+        %button(onclick=handle_click){ style: { color: "red" } }
+          Hello world
+      HAML
 
       provider = Mayu::Klenod::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("button.haml"))::Default
@@ -358,7 +358,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       )
 
     assert_equal(200, status)
-    assert_equal({ "content-type" => "application/json" }, headers)
+    assert_equal({"content-type" => "application/json"}, headers)
     assert_equal('{"status":"ok"}', body)
   end
 end

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -19,9 +20,9 @@ module Mayu
 
     class Wrapper < MessagePack::Factory
       def initialize
-        super()
+        super
 
-        self.register_type(0x01, Symbol)
+        register_type(0x01, Symbol)
       end
     end
 

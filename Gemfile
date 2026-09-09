@@ -11,7 +11,7 @@ group :development do
   gem "minitest-mock", require: false
   gem "minitest-reporters", require: false
   gem "minitest-focus", require: false
-  gem "prettier", require: false
+  gem "standard", ">= 1.35.1", require: false
   gem "rexml", require: false
   gem "ruby-prof", require: false
   gem "benchmark", require: false

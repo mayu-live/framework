@@ -75,7 +75,7 @@ class Mayu::Metrics::AggregationTest < Minitest::Test
       ) do
         metrics = fetch_metrics(listen)
 
-        metrics.match?(/#{TEST_METRIC_NAME}\s+2(?:\.0+)?\b/)
+        metrics.match?(/#{TEST_METRIC_NAME}\s+2(?:\.0+)?\b/o)
       rescue Errno::ECONNREFUSED, Errno::EINVAL, EOFError
         false
       end

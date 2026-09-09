@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # These tests has been ported from ReactJS.
 # https://github.com/facebook/react/blob/ec9400dc41715bb6ff0392d6320c33627fa7e2ba/packages/react-dom/src/__tests__/validate-test.js

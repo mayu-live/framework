@@ -82,13 +82,13 @@ class Mayu::Klenod::RouterTest < Minitest::Test
 
     layout = descriptor.children.descriptors.fetch(0)
     assert_equal(Layout, layout.type)
-    assert_equal({ id: "42" }, layout.props[:params])
-    assert_equal({ "draft" => "true" }, layout.props[:query])
+    assert_equal({id: "42"}, layout.props[:params])
+    assert_equal({"draft" => "true"}, layout.props[:query])
 
     page = layout.children.descriptors.fetch(0)
     assert_equal(Page, page.type)
-    assert_equal({ id: "42" }, page.props[:params])
-    assert_equal({ "draft" => "true" }, page.props[:query])
+    assert_equal({id: "42"}, page.props[:params])
+    assert_equal({"draft" => "true"}, page.props[:query])
   end
 
   def test_returns_nil_when_klenod_has_no_page_route
@@ -100,7 +100,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     slot_match =
       SlotMatch.new(
         Modal,
-        { mode: "compose" },
+        {mode: "compose"},
         slot_route,
         "app:/pages/dashboard/+layout.haml"
       )
@@ -109,15 +109,15 @@ class Mayu::Klenod::RouterTest < Minitest::Test
         "app:/pages/dashboard/+page.haml",
         ["app:/pages/dashboard/+layout.haml"]
       )
-    match = Match.new(Page, [Layout], {}, route, { modal: slot_match })
+    match = Match.new(Page, [Layout], {}, route, {modal: slot_match})
 
     resolved = router(match:).resolve("/dashboard?tab=overview")
     layout = resolved.descriptor.children.descriptors.fetch(0)
     modal = layout.children.slots.fetch(:modal).fetch(0)
 
     assert_equal(Modal, modal.type)
-    assert_equal({ mode: "compose" }, modal.props[:params])
-    assert_equal({ "tab" => "overview" }, modal.props[:query])
+    assert_equal({mode: "compose"}, modal.props[:params])
+    assert_equal({"tab" => "overview"}, modal.props[:query])
     assert_equal(
       %w[
         app:/root.haml
@@ -168,7 +168,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     assert_equal("/posts/42?draft=true", page.props[:path])
     assert_equal(500, page.props[:status])
     assert_same(exception, page.props[:error])
-    assert_equal({ "draft" => "true" }, page.props[:query])
+    assert_equal({"draft" => "true"}, page.props[:query])
     assert_equal("app:/pages/+error.haml", resolved.module_ids.last)
   end
 
@@ -224,7 +224,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
         optional.module_ids.last
       )
       assert_equal(
-        { filters: %w[sale shoes] },
+        {filters: %w[sale shoes]},
         optional.descriptor.children.descriptors.fetch(0).props[:params]
       )
 
@@ -265,7 +265,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     match: Match.new(
       Page,
       [Layout],
-      { id: "42" },
+      {id: "42"},
       Route.new("app:/pages/posts/+page.haml", ["app:/pages/+layout.haml"]),
       {}
     ),

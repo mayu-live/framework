@@ -33,8 +33,8 @@ module Mayu
               chartLabel: "{marker.data.label}",
               tableLabel: "{marker.data.label}",
               data: [
-                { key: "label", format: "string", searchable: true },
-                { key: "iteration", format: "integer" }
+                {key: "label", format: "string", searchable: true},
+                {key: "iteration", format: "integer"}
               ]
             }
           ].freeze
@@ -167,12 +167,12 @@ module Mayu
             clear_print "Done\n"
 
             puts format(
-                   "Profile complete: %f seconds, %d threads, %d samples, %d unique",
-                   result.elapsed_seconds,
-                   result.threads.count,
-                   result.total_samples,
-                   result.total_unique_samples
-                 )
+              "Profile complete: %f seconds, %d threads, %d samples, %d unique",
+              result.elapsed_seconds,
+              result.threads.count,
+              result.total_samples,
+              result.total_unique_samples
+            )
 
             puts
             puts "Profile written to \e[33m#{filename}\e[0m"
@@ -233,8 +233,6 @@ module Mayu
                 return found if found
               end
 
-            nil
-          else
             nil
           end
         end

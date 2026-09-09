@@ -22,7 +22,7 @@ module Mayu
 
           table =
             Terminal::Table.new do |table|
-              table.style = { all_separators: true, border: :unicode }
+              table.style = {all_separators: true, border: :unicode}
               table.headings =
                 [
                   "Path",
@@ -58,8 +58,6 @@ module Mayu
               (
                 if route.respond_to?(:handler_module_id)
                   route.handler_module_id
-                else
-                  nil
                 end
               )
             ),

@@ -12,17 +12,17 @@ class Mayu::RouteTest < Minitest::Test
       FakeRequest.new(
         "POST",
         "/api/books/42?format=json&locale=en",
-        { "content-type" => "application/json" },
+        {"content-type" => "application/json"},
         '{"title":"Klenod"}'
       )
 
-    wrapped = Mayu::Route::Request.from_async(request, params: { "id" => "42" })
+    wrapped = Mayu::Route::Request.from_async(request, params: {"id" => "42"})
 
     assert_equal("POST", wrapped.method)
     assert_equal("/api/books/42", wrapped.path)
-    assert_equal({ "content-type" => "application/json" }, wrapped.headers)
+    assert_equal({"content-type" => "application/json"}, wrapped.headers)
     assert_equal('{"title":"Klenod"}', wrapped.body)
-    assert_equal({ id: "42" }, wrapped.params)
-    assert_equal({ "format" => "json", "locale" => "en" }, wrapped.query)
+    assert_equal({id: "42"}, wrapped.params)
+    assert_equal({"format" => "json", "locale" => "en"}, wrapped.query)
   end
 end

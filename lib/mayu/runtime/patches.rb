@@ -45,7 +45,7 @@ module Mayu
       DeleteData = PatchData.define(:id, :offset, :count)
 
       Transfer = PatchData.define(:payload)
-      TransferFailed = PatchData.define()
+      TransferFailed = PatchData.define
 
       Ping = PatchData.define(:timestamp)
       Pong = PatchData.define(:timestamp)

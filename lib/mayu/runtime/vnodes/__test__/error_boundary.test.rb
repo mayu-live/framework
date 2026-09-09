@@ -220,9 +220,9 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
         end
 
       tree_path = render_error.tree_path
-      assert_equal({ name: "#document" }, tree_path.first)
+      assert_equal({name: "#document"}, tree_path.first)
       assert_equal(
-        { name: "RenderErrorProbe", path: "/tests/render_error" },
+        {name: "RenderErrorProbe", path: "/tests/render_error"},
         tree_path.last
       )
       assert(tree_path.any? { |node| node[:name] == "body" })

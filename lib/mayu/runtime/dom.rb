@@ -49,10 +49,10 @@ module Mayu
           end
 
           def serialize
-            if c = children
-              { id:, name:, children: c.flatten.compact.map(&:serialize) }
+            if (c = children)
+              {id:, name:, children: c.flatten.compact.map(&:serialize)}
             else
-              { id:, name: }
+              {id:, name:}
             end
           end
 
@@ -68,6 +68,7 @@ module Mayu
           end
 
           def type = "#document"
+
           def text_content
             children.map(&:text_content)
           end
@@ -102,6 +103,7 @@ module Mayu
           end
 
           def type = name.to_s
+
           def text_content
             children.map(&:text_content).join
           end
@@ -110,7 +112,7 @@ module Mayu
             attrs =
               attributes
                 .except(:slot)
-                .then { { **internal_attributes, **_1 } }
+                .then { {**internal_attributes, **it} }
                 .map do |attr, value|
                   if attr == :style && value in Hash
                     value = InlineStyle.stringify(value)
@@ -161,7 +163,7 @@ module Mayu
           private
 
           def internal_attributes
-            INJECT_MAYU_ID ? { mayu_id: id } : {}
+            INJECT_MAYU_ID ? {mayu_id: id} : {}
           end
         end
 
@@ -212,7 +214,7 @@ module Mayu
 
           private
 
-          def escape_comment(str) = str.to_s.gsub(/--/, "&#45;&#45;")
+          def escape_comment(str) = str.to_s.gsub("--", "&#45;&#45;")
 
           def find(&block)
             traverse { |node| return node if yield node }

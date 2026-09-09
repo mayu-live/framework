@@ -22,7 +22,7 @@ class Mayu::EncryptedMarshal::Test < Minitest::Test
   def test_dump_and_load_object
     message_cipher = Mayu::EncryptedMarshal.new(generate_key)
 
-    object = { foo: "hello", bar: { baz: [123.456, :asd] } }
+    object = {foo: "hello", bar: {baz: [123.456, :asd]}}
 
     dumped = message_cipher.dump(object)
     loaded = message_cipher.load(dumped)

@@ -42,7 +42,7 @@ class Mayu::Runtime::Marshalling::Test < Minitest::Test
   def test_dump_value_wraps_component_classes_recursively
     dumped =
       Marshalling.dump_value(
-        { exported: ExportedComponent, nested: [LocalComponent] }
+        {exported: ExportedComponent, nested: [LocalComponent]}
       )
 
     exported_ref = dumped[:exported]
@@ -98,21 +98,19 @@ class Mayu::Runtime::Marshalling::Test < Minitest::Test
   def test_dump_value_serializes_proc_as_nil
     dumped =
       Marshalling.dump_value(
-        { callback: -> {}, nested: [-> {}, { fn: -> {} }] }
+        {callback: -> {}, nested: [-> {}, {fn: -> {}}]}
       )
 
     assert_nil(dumped[:callback])
-    assert_equal([nil, { fn: nil }], dumped[:nested])
+    assert_equal([nil, {fn: nil}], dumped[:nested])
   end
 
   def test_dump_value_serializes_async_task_as_nil
     Async do |task|
-      dumped = Marshalling.dump_value({ task: task, nested: [task] })
+      dumped = Marshalling.dump_value({task: task, nested: [task]})
 
       assert_nil(dumped[:task])
       assert_equal([nil], dumped[:nested])
     end.wait
   end
-
-  private
 end

@@ -128,7 +128,7 @@ module Mayu
           return unless @task
           @children.stop
           stop_instance_work(@instance)
-          if queue = @instance.instance_variable_get(:@__vnode_queue)
+          if (queue = @instance.instance_variable_get(:@__vnode_queue))
             queue.enqueue(:__stop__)
           end
           @task.stop
@@ -193,7 +193,7 @@ module Mayu
         end
 
         def tree_path
-          node = { name: component_label }
+          node = {name: component_label}
           path = @instance.class.module_path
           if path && !path.empty?
             node[:path] = path
@@ -445,7 +445,7 @@ module Mayu
         def component_label
           label =
             @instance.class.respond_to?(:module_path) &&
-              @instance.class.module_path
+            @instance.class.module_path
           return label unless label.nil? || label.empty?
           @instance.class.name
         end

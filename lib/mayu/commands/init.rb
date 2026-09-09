@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -41,7 +42,7 @@ module Mayu
         end
 
         puts "",
-             "\e[34mInitializing \e[1m#{config.name}\e[22m at \e[1m#{config.path}\e[0m"
+          "\e[34mInitializing \e[1m#{config.name}\e[22m at \e[1m#{config.path}\e[0m"
 
         FileUtils.cp_r(File.join(__dir__, "init", "template"), config.path)
 
@@ -60,7 +61,7 @@ module Mayu
         end
 
         puts "",
-             "\e[32mInitialized \e[1m#{config.name}\e[22m at \e[1m#{config.path}\e[0m"
+          "\e[32mInitialized \e[1m#{config.name}\e[22m at \e[1m#{config.path}\e[0m"
       end
 
       private
@@ -100,7 +101,7 @@ module Mayu
       def load_fly_regions
         JSON.parse(`flyctl platform regions --json`)
       rescue Errno::ENOENT
-        $stderr.puts "\e[31mCould not find flyctl executable\e[0m"
+        warn "\e[31mCould not find flyctl executable\e[0m"
         nil
       end
 

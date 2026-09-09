@@ -14,7 +14,7 @@ class Mayu::Server::AppTest < Minitest::Test
     def GET(request)
       [
         200,
-        { "content-type" => "application/json" },
+        {"content-type" => "application/json"},
         request.query.fetch("format")
       ]
     end
@@ -65,14 +65,14 @@ class Mayu::Server::AppTest < Minitest::Test
   Request = Data.define(:method, :path, :headers, :body) { def read = body }
 
   def test_html_page_requests_do_not_dispatch_the_handler
-    response = dispatch("GET", "/api/42", { "accept" => "text/html" })
+    response = dispatch("GET", "/api/42", {"accept" => "text/html"})
 
     assert_nil(response)
   end
 
   def test_non_html_requests_dispatch_the_handler_with_route_data
     response =
-      dispatch("GET", "/api/42?format=json", { "accept" => "application/json" })
+      dispatch("GET", "/api/42?format=json", {"accept" => "application/json"})
 
     assert_equal(200, response.status)
     assert_equal("json", response.body.read)
@@ -80,20 +80,20 @@ class Mayu::Server::AppTest < Minitest::Test
   end
 
   def test_mutating_requests_dispatch_the_handler_even_when_html_is_accepted
-    response = dispatch("PUT", "/api/42", { "accept" => "text/html" })
+    response = dispatch("PUT", "/api/42", {"accept" => "text/html"})
 
     assert_equal(202, response.status)
     assert_equal("42", response.body.read)
   end
 
   def test_html_post_requests_keep_the_live_page_path
-    response = dispatch("POST", "/api/42", { "accept" => "text/html" })
+    response = dispatch("POST", "/api/42", {"accept" => "text/html"})
 
     assert_nil(response)
   end
 
   def test_unsupported_handler_methods_return_405
-    response = dispatch("DELETE", "/api/42", { "accept" => "application/json" })
+    response = dispatch("DELETE", "/api/42", {"accept" => "application/json"})
 
     assert_equal(405, response.status)
     assert_equal(%w[GET PUT], response.headers.to_h.fetch("allow"))
@@ -115,7 +115,7 @@ class Mayu::Server::AppTest < Minitest::Test
 
     response =
       app.call(
-        Request.new("GET", "/api", { "accept" => "application/json" }, "")
+        Request.new("GET", "/api", {"accept" => "application/json"}, "")
       )
 
     assert_equal(403, response.status)
@@ -173,7 +173,7 @@ class Mayu::Server::AppTest < Minitest::Test
   def provider
     router = Module.new
     router.define_singleton_method(:match) do |_path|
-      Match.new(Page, Handler, { "id" => "42" })
+      Match.new(Page, Handler, {"id" => "42"})
     end
     exports = Module.new
     exports.const_set(:Default, router)

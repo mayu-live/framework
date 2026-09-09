@@ -143,9 +143,9 @@ module Mayu
         def write_html(out)
           attributes = render_for_html
           internal =
-            Mayu::Runtime::DOM::INJECT_MAYU_ID ? { mayu_id: @parent.id } : {}
+            Mayu::Runtime::DOM::INJECT_MAYU_ID ? {mayu_id: @parent.id} : {}
 
-          (internal.merge(attributes))
+          internal.merge(attributes)
             .except(:slot)
             .each do |attr, value|
               next if value.nil?
@@ -223,14 +223,14 @@ module Mayu
 
         def normalize_attributes(attrs)
           attrs.each_with_object({}) do |(key, value), obj|
-            if key.to_s.start_with?("on")
-              obj[key] = (value == false ? nil : value)
+            obj[key] = if key.to_s.start_with?("on")
+              ((value == false) ? nil : value)
             elsif key == :style
-              obj[key] = value
+              value
             elsif key == :class
-              obj[key] = normalize_class_names(value)
+              normalize_class_names(value)
             else
-              obj[key] = normalize_attribute_value(key, value)
+              normalize_attribute_value(key, value)
             end
           end
         end
@@ -332,7 +332,7 @@ module Mayu
 
         def flatten_props(hash, path = [])
           hash.reduce({}) do |obj, (k, v)|
-            next { **obj, k => v } if k == :style && path.empty?
+            next {**obj, k => v} if k == :style && path.empty?
 
             current_path = [*path, k]
 
@@ -341,7 +341,7 @@ module Mayu
               when Hash
                 flatten_props(v, current_path)
               else
-                { current_path.join("-").to_sym => v }
+                {current_path.join("-").to_sym => v}
               end
             )
           end

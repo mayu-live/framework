@@ -3,13 +3,14 @@
 
 require "bundler/setup"
 require "bundler/gem_tasks"
+require "standard/rake"
 
-if ENV['DISABLE_SORBET']
+if ENV["DISABLE_SORBET"]
   require_relative "lib/mayu/disable_sorbet"
   Mayu::DisableSorbet.disable_sorbet!
 end
 
-unless ENV['BUNDLE_WITHOUT'].to_s.split(":").include?("test")
+unless ENV["BUNDLE_WITHOUT"].to_s.split(":").include?("test")
   require "minitest/test_task"
   require "minitest/reporters"
 

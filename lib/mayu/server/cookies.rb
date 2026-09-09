@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -15,8 +16,8 @@ module Mayu
 
       def get_token_cookie_value(request)
         Array(request.headers["cookie"]).each do |str|
-          if match = str.match(/^mayu-token=(\w+)/)
-            return match[1].to_s.tap { Session::Token.validate!(_1) }
+          if (match = str.match(/^mayu-token=(\w+)/))
+            return match[1].to_s.tap { Session::Token.validate!(it) }
           end
         end
 
@@ -24,7 +25,7 @@ module Mayu
       end
 
       def set_token_cookie_header(session)
-        { "set-cookie": set_token_cookie_value(session) }
+        {"set-cookie": set_token_cookie_value(session)}
       end
 
       def set_token_cookie_value(session)

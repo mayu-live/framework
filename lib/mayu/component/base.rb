@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -47,9 +48,7 @@ module Mayu
       def render
       end
 
-      def __children
-        @__children
-      end
+      attr_reader :__children
 
       # Klenod's generated slot helper supports frameworks that expose a slot
       # collection through this hook. Mayu keeps the collection on its VDOM

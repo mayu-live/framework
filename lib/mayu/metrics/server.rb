@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -11,7 +12,7 @@ module Mayu
       def self.run(listen:)
       end
 
-      def initialize(registry: Prometheus::Client.registry, listen:)
+      def initialize(listen:, registry: Prometheus::Client.registry)
         @registry = registry
 
         @server =
@@ -41,13 +42,13 @@ module Mayu
       def render_metrics
         body = Prometheus::Client::Formats::Text.marshal(@registry)
 
-        Protocol::HTTP::Response[200, { "content-type": "text/plain" }, [body]]
+        Protocol::HTTP::Response[200, {"content-type": "text/plain"}, [body]]
       end
 
       def render_404
         Protocol::HTTP::Response[
           404,
-          { "content-type": "text/plain" },
+          {"content-type": "text/plain"},
           ["Not found"]
         ]
       end

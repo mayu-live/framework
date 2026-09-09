@@ -10,17 +10,17 @@ class GithubModelsChat
     def initialize(...)
       super
 
-      @buffer = String.new.b
+      @buffer = "".b
       @offset = 0
 
-      @response = String.new
+      @response = ""
     end
 
     def read
       return if @buffer.nil?
 
-      while true
-        if index = @buffer.index("\n\n", @offset)
+      loop do
+        if (index = @buffer.index("\n\n", @offset))
           line = @buffer.byteslice(@offset, index - @offset)
           @buffer = @buffer.byteslice(index + 2, @buffer.bytesize - index - 1)
           @offset = 0
@@ -28,7 +28,7 @@ class GithubModelsChat
           return parse_line(line)
         end
 
-        if chunk = super
+        if (chunk = super)
           @buffer << chunk
         else
           return nil if @buffer.empty?
@@ -45,9 +45,9 @@ class GithubModelsChat
     def each
       super do |line|
         case line
-        in error: { code: "unauthorized", message: }
+        in error: {code: "unauthorized", message:}
           raise UnauthorizedError, message
-        in choices: [{ delta: { content: } }, *]
+        in choices: [{delta: {content:}}, *]
           @response << content
           yield content if block_given?
         end
@@ -57,7 +57,7 @@ class GithubModelsChat
     end
 
     def join
-      self.each {}
+      each {}
       @response
     end
 

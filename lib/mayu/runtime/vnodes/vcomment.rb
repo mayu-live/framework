@@ -42,13 +42,13 @@ module Mayu
         end
 
         def marshal_load(a)
-          super(a)
+          super
         end
 
         private
 
         def escape_comment(str)
-          str.to_s.gsub(/--/, "&#45;&#45;")
+          str.to_s.gsub("--", "&#45;&#45;")
         end
       end
     end

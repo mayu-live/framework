@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -65,19 +66,19 @@ module Mayu
         case request
         in path: "/favicon.ico"
           handle_favicon(request)
-        in { path: "/.mayu", method: "OPTIONS" }
+        in {path: "/.mayu", method: "OPTIONS"}
           handle_options(request)
-        in { method: "GET", path: "/.mayu/init.js" }
+        in {method: "GET", path: "/.mayu/init.js"}
           handle_init_js(request)
         in path: %r{\A/.mayu/runtime/.+\.js(\.map)?}
           handle_script(request)
-        in { path: %r{\A/\.mayu/assets/(.+)\z}, method: "GET" }
+        in {path: %r{\A/\.mayu/assets/(.+)\z}, method: "GET"}
           handle_asset(request)
-        in { method: "GET", path: SESSION_PATH_RE }
+        in {method: "GET", path: SESSION_PATH_RE}
           handle_session_resume(request, $~[:session_id])
-        in { method: "POST", path: SESSION_PATH_RE }
+        in {method: "POST", path: SESSION_PATH_RE}
           handle_session_transfer(request, $~[:session_id])
-        in { method: "PATCH", path: SESSION_PATH_RE }
+        in {method: "PATCH", path: SESSION_PATH_RE}
           handle_session_event(request, $~[:session_id])
         in _ if response = handle_provider_route(request)
           response
@@ -92,9 +93,9 @@ module Mayu
         error_response(403, "SESSION_ID_MISMATCH", **origin_header(request))
       rescue Session::Errors::InvalidTokenError
         error_response(403, "INVALID_TOKEN", **origin_header(request))
-      rescue Cookies::TokenCookieNotSetError => e
+      rescue Cookies::TokenCookieNotSetError
         error_response(403, "TOKEN_COOKIE_NOT_SET", **origin_header(request))
-      rescue Errno::ENOENT => e
+      rescue Errno::ENOENT
         text_response(
           404,
           "Resource not found: #{request.path}",
@@ -134,7 +135,7 @@ module Mayu
 
         method = request.method.to_s.upcase
         unless handler.public_method_defined?(method)
-          return(
+          return (
             response(
               405,
               "Method Not Allowed",
@@ -166,7 +167,7 @@ module Mayu
       def handler_methods(handler)
         handler
           .public_instance_methods(false)
-          .map { _1.to_s.upcase }
+          .map { it.to_s.upcase }
           .select do |name|
             %w[GET HEAD POST PUT PATCH DELETE OPTIONS].include?(name)
           end
@@ -196,12 +197,12 @@ module Mayu
           Pathname
             .new(request.path)
             .relative_path_from("/.mayu/runtime")
-            .then { File.absolute_path(_1, "/") }
+            .then { File.absolute_path(it, "/") }
 
         file = @client_files.get(path)
 
         unless file
-          return(
+          return (
             response(
               404,
               "Resource not found: #{request.path}",
@@ -243,7 +244,7 @@ module Mayu
         send_file(
           File.read(File.join(@environment.app_dir, "favicon.png")),
           "image/png",
-          { **origin_header(request), **ASSET_CACHE_CONTROL_HEADER }
+          {**origin_header(request), **ASSET_CACHE_CONTROL_HEADER}
         )
       end
 
@@ -351,7 +352,7 @@ module Mayu
         if session.running?
           Console.logger.error(self, "already running")
 
-          return(
+          return (
             error_response(
               409,
               "SESSION_ALREADY_RUNNING",
@@ -432,7 +433,7 @@ module Mayu
       end
 
       def error_response(status, error, **headers)
-        json_response(status, { error: }, **headers)
+        json_response(status, {error:}, **headers)
       end
 
       def json_response(status, json, **headers)
@@ -450,7 +451,7 @@ module Mayu
 
       def origin_header(request)
         if request.headers["origin"] in [origin]
-          { "access-control-allow-origin": origin }
+          {"access-control-allow-origin": origin}
         else
           {}
         end
@@ -459,7 +460,7 @@ module Mayu
       def send_file(content, content_type, headers = {})
         Protocol::HTTP::Response[
           200,
-          { "content-type": content_type, **headers },
+          {"content-type": content_type, **headers},
           [content]
         ]
       end

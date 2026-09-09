@@ -30,7 +30,7 @@ module Mayu
           end
 
           def runtime_script
-            return unless runtime_js = @__props[:runtime_js]
+            return unless (runtime_js = @__props[:runtime_js])
 
             H[
               :script,
@@ -102,12 +102,12 @@ module Mayu
 
           def head_key_for(descriptor, index)
             case descriptor
-            in Descriptors::Element[type: :meta, props: { charset: }]
+            in Descriptors::Element[type: :meta, props: {charset:}]
               puts "\e[31m%meta(charset=#{charset.inspect}) ignored\e[0m"
               nil
-            in Descriptors::Element[type: :meta, props: { name: }]
+            in Descriptors::Element[type: :meta, props: {name:}]
               "meta-name-#{name}"
-            in Descriptors::Element[type: :meta, props: { property: }]
+            in Descriptors::Element[type: :meta, props: {property:}]
               "meta-property-#{property}"
             in Descriptors::Element[type: :title]
               "title"

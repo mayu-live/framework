@@ -7,7 +7,7 @@ require "toml"
 
 module Mayu
   module Configuration
-    DOTENV_FILES = { development: %w[.env .env.local], production: %w[.env] }
+    DOTENV_FILES = {development: %w[.env .env.local], production: %w[.env]}
 
     class ConfigNotFound < StandardError
     end
@@ -19,10 +19,10 @@ module Mayu
     end
 
     def self.convert_env(value)
-      if var = value[/\A\$(.*)/, 1]
+      if (var = value[/\A\$(.*)/, 1])
         ENV.fetch(var) do
           raise EnvironmentVariableNotDefined,
-                "Environment variable not defined: $#{var}"
+            "Environment variable not defined: $#{var}"
         end
       else
         value
@@ -84,13 +84,13 @@ module Mayu
 
     def self.load(filename, env)
       filename
-        .then { File.read(_1) }
-        .then { TOML.load(_1) }
+        .then { File.read(it) }
+        .then { TOML.load(it) }
         .fetch(env.to_s) do
           raise EnvironmentNotDefined,
-                "Could not find environment #{env} in #{filename}"
+            "Could not find environment #{env} in #{filename}"
         end
-        .then { Config.parse(Dir.pwd, _1) }
+        .then { Config.parse(Dir.pwd, it) }
     end
 
     def self.with(env, &)
@@ -101,7 +101,7 @@ module Mayu
       root, filename = File.split(path)
 
       Dir.chdir(root) do
-        if dotenv_files = DOTENV_FILES[env]
+        if (dotenv_files = DOTENV_FILES[env])
           require "dotenv"
           Dotenv.load(*dotenv_files)
         end

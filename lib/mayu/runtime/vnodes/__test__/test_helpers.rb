@@ -118,8 +118,6 @@ module Mayu
                 return found if found
               end
             nil
-          else
-            nil
           end
         end
 
@@ -149,8 +147,6 @@ module Mayu
                 found = find_element(child, type)
                 return found if found
               end
-            nil
-          else
             nil
           end
         end

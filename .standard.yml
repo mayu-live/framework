@@ -1,0 +1,8 @@
+ruby_version: 4.0
+
+ignore:
+  - ".ruby-lsp/**/*"
+  - "node_modules/**/*"
+  - "vendor/**/*"
+  - "example/vendor/**/*"
+  - "lib/mayu/client/node_modules/**/*"

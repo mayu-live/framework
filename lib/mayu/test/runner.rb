@@ -47,7 +47,7 @@ module Mayu
           loaded = false
         end
 
-        loaded && adapter.run ? 0 : 1
+        (loaded && adapter.run) ? 0 : 1
       end
 
       def format_error(error, context)

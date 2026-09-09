@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -19,7 +20,7 @@ module Mayu
           "--concurrency <number>",
           "Number of concurrent tasks for generating assets",
           default: 4
-        ) { _1.to_i }
+        ) { it.to_i }
       end
 
       def call
@@ -44,10 +45,10 @@ module Mayu
             end
 
           puts format(
-                 "\e[32mBuilt \e[1m%s\e[22m in \e[1m%.2fs\e[0m",
-                 options[:filename],
-                 elapsed
-               )
+            "\e[32mBuilt \e[1m%s\e[22m in \e[1m%.2fs\e[0m",
+            options[:filename],
+            elapsed
+          )
         end
       end
     end

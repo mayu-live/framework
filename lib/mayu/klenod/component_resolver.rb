@@ -8,12 +8,14 @@ module Mayu
       end
 
       def dump_component_class(component_class)
-        module_path =
-          component_class.module_path if component_class.respond_to?(
+        if component_class.respond_to?(
           :module_path
         )
+          module_path =
+            component_class.module_path
+        end
         if module_path.nil? || module_path.empty? ||
-             module_path.start_with?("(internal)::")
+            module_path.start_with?("(internal)::")
           return
         end
 
@@ -40,7 +42,7 @@ module Mayu
           return exports.const_get(class_name)
         end
         if exports.const_defined?(:Default, false)
-          return exports.const_get(:Default)
+          exports.const_get(:Default)
         end
       end
     end

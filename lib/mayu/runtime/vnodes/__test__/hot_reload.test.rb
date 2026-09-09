@@ -90,7 +90,7 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
   class IncompatibleBeforeProbe < Mayu::Component::Base
     def initialize
       @count = 1
-      @unserializable = STDOUT
+      @unserializable = $stdout
     end
 
     def render

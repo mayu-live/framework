@@ -1,10 +1,10 @@
 # frozen_string_literal: true
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
 require "async/queue"
-require "set"
 require "stringio"
 
 require_relative "vnodes/vdocument"
@@ -17,19 +17,18 @@ module Mayu
   module Runtime
     class Engine
       attr_reader :runtime_js,
-                  :root,
-                  :output_queue,
-                  :metrics,
-                  :update_budget,
-                  :module_provider
+        :root,
+        :output_queue,
+        :metrics,
+        :update_budget,
+        :module_provider
       attr_writer :metrics
       attr_writer :update_budget
       attr_writer :module_provider
 
       def initialize(
         descriptor,
-        runtime_js: nil,
-        metrics:,
+        metrics:, runtime_js: nil,
         update_budget: 30,
         module_provider: nil,
         stylesheets: [],
@@ -82,10 +81,12 @@ module Mayu
       end
 
       def self.restore(data, metrics: nil, module_provider: nil)
-        resolver =
-          module_provider.component_resolver if module_provider&.respond_to?(
+        if module_provider&.respond_to?(
           :component_resolver
         )
+          resolver =
+            module_provider.component_resolver
+        end
         engine =
           Marshalling.with_component_resolver(resolver) { Marshal.load(data) }
         engine.metrics = metrics if metrics
@@ -101,10 +102,6 @@ module Mayu
 
       def task
         @updater.task
-      end
-
-      def update_budget=(value)
-        @update_budget = value
       end
 
       def replace_route_assets(stylesheets:, scripts:)
@@ -253,10 +250,12 @@ module Mayu
       def component_identity(type)
         return unless Marshalling.component_class?(type)
 
-        resolver =
-          @module_provider.component_resolver if @module_provider&.respond_to?(
+        if @module_provider&.respond_to?(
             :component_resolver
           )
+          resolver =
+            @module_provider.component_resolver
+        end
         reference = resolver&.dump_component_class(type)
         return unless reference&.filename
 
@@ -264,10 +263,12 @@ module Mayu
       end
 
       def with_component_resolver(&)
-        resolver =
-          @module_provider.component_resolver if @module_provider&.respond_to?(
+        if @module_provider&.respond_to?(
           :component_resolver
         )
+          resolver =
+            @module_provider.component_resolver
+        end
         Marshalling.with_component_resolver(resolver, &)
       end
 

@@ -7,14 +7,7 @@ module Mayu
       DEFAULT_ASSET_BASE = "/.mayu/assets/"
 
       attr_reader :root,
-                  :mode,
-                  :source_dir,
-                  :pages_dir,
-                  :entrypoints,
-                  :base,
-                  :assets_dir,
-                  :output,
-                  :plugins
+        :mode
 
       def initialize(
         root:,
@@ -52,6 +45,7 @@ module Mayu
       end
 
       def source_dir(value = nil) = value ? @source_dir = value : @source_dir
+
       def pages_dir(value = nil)
         return @pages_dir unless value
 
@@ -70,14 +64,22 @@ module Mayu
             )
           end
       end
+
       def entrypoint(value) = @entrypoints << value
+
       def entrypoints(*values) =
         values.empty? ? @entrypoints : @entrypoints.concat(values.flatten)
+
       def base(value = nil) = value ? @base = value : @base
       def assets_dir(value = nil) = value ? @assets_dir = value : @assets_dir
       def output(value = nil) = value ? @output = value : @output
+
       def plugins(value = nil, &block) =
-        value || block ? @plugins = (block ? block.call : value) : @plugins
+        if value || block
+          @plugins = (block ? block.call : value)
+        else
+          @plugins
+        end
 
       def source_path = expand(source_dir)
       def assets_path = expand(assets_dir)

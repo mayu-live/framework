@@ -127,7 +127,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
   def test_update_patches_for_attribute_and_text
     initial = H[:body, H[:p, "Hello", class: ["greeting"]]]
     updated =
-      H[:body, H[:p, "World", class: ["farewell"], style: { color: "red" }]]
+      H[:body, H[:p, "World", class: ["farewell"], style: {color: "red"}]]
 
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
@@ -184,7 +184,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
 
   def test_class_and_style_removal_patches
     initial =
-      H[:body, H[:p, "Hello", class: ["greeting"], style: { color: "red" }]]
+      H[:body, H[:p, "Hello", class: ["greeting"], style: {color: "red"}]]
     updated = H[:body, H[:p, "Hello", class: [], style: {}]]
 
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)

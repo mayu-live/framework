@@ -49,7 +49,7 @@ module Mayu
         end
 
         def marshal_load(a)
-          super(a)
+          super
         end
       end
     end

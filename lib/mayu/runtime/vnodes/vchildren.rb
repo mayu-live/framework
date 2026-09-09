@@ -159,7 +159,7 @@ module Mayu
             state
               .diff_children
               .drop(state.cursor)
-              .map { |update| update[:type] == :updated ? update[:node] : nil }
+              .map { |update| (update[:type] == :updated) ? update[:node] : nil }
               .compact
 
           if state.cursor < state.diff_children.length
@@ -204,12 +204,12 @@ module Mayu
 
           new_children =
             descriptors.map do |descriptor|
-              if index =
-                   source.index do
-                     @engine.same_descriptor?(descriptor, _1.descriptor)
-                   end
+              index = source.index do
+                @engine.same_descriptor?(descriptor, it.descriptor)
+              end
+              if index
                 found = source.delete_at(index)
-                { type: :updated, node: found, descriptor: descriptor }
+                {type: :updated, node: found, descriptor: descriptor}
               else
                 {
                   type: :created,
@@ -218,7 +218,7 @@ module Mayu
               end
             end
 
-          { children: new_children, removed: source }
+          {children: new_children, removed: source}
         end
 
         def insert_node(patcher, node)
@@ -253,9 +253,9 @@ module Mayu
         def normalize_descriptors(descriptors)
           Array(descriptors)
             .flatten
-            .map { Descriptors.descriptor_or_string(_1) }
+            .map { Descriptors.descriptor_or_string(it) }
             .compact
-            .then { insert_comments_between_strings(_1) }
+            .then { insert_comments_between_strings(it) }
         end
 
         def mark_parent_children_dirty

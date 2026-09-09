@@ -5,7 +5,7 @@
 # License: AGPL-3.0
 
 require "minitest/autorun"
-require_relative "./test"
+require_relative "test"
 
 class Mayu::Runtime::Test < Minitest::Test
   H = Mayu::Runtime::H
@@ -107,7 +107,7 @@ class Mayu::Runtime::Test < Minitest::Test
             ]
           end
         ),
-        (H[:p, "Enabled: #{@enabled.inspect}"]),
+        H[:p, "Enabled: #{@enabled.inspect}"],
         H[:button, "Toggle", onclick: H.callback(self, :handle_toggle)]
       ]
     end
@@ -131,39 +131,37 @@ class Mayu::Runtime::Test < Minitest::Test
       assert_equal("initial title", at_xpath("/html/head/title").content)
 
       assert_equal("initial title", find!("title").content)
-=begin
-      assert_equal(
-        "initial description",
-        find!("meta", name: "description")[:value]
-      )
-      assert_nil(find("meta", name: "keywords"))
-
-      button = find!("button")
-
-      button.click
-      page.step
-
-      assert_equal("TitleThing", find!("title").content)
-      assert_equal(
-        "title thing description",
-        find!("meta", name: "description")[:value]
-      )
-      assert_equal(
-        "title, thing, titlething",
-        find!("meta", name: "keywords")[:value]
-      )
-
-      button.click
-      page.step
-
-      assert_equal("initial title", find!("title").content)
-      assert_equal(
-        "initial description",
-        find!("meta", name: "description")[:value]
-      )
-      assert_nil(find("meta", name: "keywords"))
-      page.step
-=end
+      #       assert_equal(
+      #         "initial description",
+      #         find!("meta", name: "description")[:value]
+      #       )
+      #       assert_nil(find("meta", name: "keywords"))
+      #
+      #       button = find!("button")
+      #
+      #       button.click
+      #       page.step
+      #
+      #       assert_equal("TitleThing", find!("title").content)
+      #       assert_equal(
+      #         "title thing description",
+      #         find!("meta", name: "description")[:value]
+      #       )
+      #       assert_equal(
+      #         "title, thing, titlething",
+      #         find!("meta", name: "keywords")[:value]
+      #       )
+      #
+      #       button.click
+      #       page.step
+      #
+      #       assert_equal("initial title", find!("title").content)
+      #       assert_equal(
+      #         "initial description",
+      #         find!("meta", name: "description")[:value]
+      #       )
+      #       assert_nil(find("meta", name: "keywords"))
+      #       page.step
     end
   end
 end

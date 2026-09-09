@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 #
 # This module has been ported from ReactJS.
 # https://github.com/facebook/react/blob/ec9400dc41715bb6ff0392d6320c33627fa7e2ba/packages/react-dom-bindings/src/client/validateDOMNesting.js
@@ -247,40 +248,36 @@ module Mayu
       def self.valid_parent_child?(parent, child)
         case parent
         in :select
-          return(child in :hr | :option | :optgroup)
+          child in :hr | :option | :optgroup
         in :optgroup
-          return(child in :option)
+          child in :option
         in :tr
-          return(child in :th | :td | :style | :script | :template)
+          child in :th | :td | :style | :script | :template
         in :tbody | :thead | :tfoot
-          return(child in :tr | :style | :script | :template)
+          child in :tr | :style | :script | :template
         in :colgroup
-          return(child in :col | :template)
+          child in :col | :template
         in :table
-          return(
-            child in
-              :caption | :colgroup | :tbody | :tfoot | :thead | :style |
-                :script | :template
-          )
+          child in
+             :caption | :colgroup | :tbody | :tfoot | :thead | :style |
+               :script | :template
         in :head
-          return(
-            child in
-              :base | :basefont | :bgsound | :link | :meta | :title |
-                :noscript | :noframes | :style | :script | :template
-          )
+          child in
+             :base | :basefont | :bgsound | :link | :meta | :title |
+               :noscript | :noframes | :style | :script | :template
         in :html
-          return(child in :__head | :body | :frameset)
+          child in :__head | :body | :frameset
         in :frameset
-          return(child in :frame)
+          child in :frame
         else
           case child
           in :h1 | :h2 | :h3 | :h4 | :h5 | :h6
-            return !(parent in :h1 | :h2 | :h3 | :h4 | :h5 | :h6)
+            !(parent in :h1 | :h2 | :h3 | :h4 | :h5 | :h6)
           in :rp | :rt
-            return !IMPLIED_END_TAGS.include?(parent)
+            !IMPLIED_END_TAGS.include?(parent)
           in :body | :caption | :col | :colgroup | :frameset | :frame | :html |
                :tbody | :td | :tfoot | :th | :thead | :tr
-            return false
+            false
           else
             true
           end

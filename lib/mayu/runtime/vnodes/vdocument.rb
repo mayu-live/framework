@@ -3,7 +3,6 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
-require "set"
 require "async/queue"
 require_relative "base"
 require_relative "patcher"
@@ -40,7 +39,7 @@ module Mayu
           DOM::IdNode[@id, "#document", @html.dom_id_tree]
         end
 
-        def tree_path = [{ name: "#document" }]
+        def tree_path = [{name: "#document"}]
 
         attr_reader :head, :styles, :scripts, :custom_elements
 
@@ -91,7 +90,7 @@ module Mayu
               Console.logger.error(self, "Listener #{id} not found")
               return
             end
-          if callback = listener.callback
+          if (callback = listener.callback)
             metrics.session_callback_count.increment(
               labels: {
                 component: component_label_for(callback.component),
@@ -142,7 +141,7 @@ module Mayu
         def component_label_for(component)
           label =
             component.class.respond_to?(:module_path) &&
-              component.class.module_path
+            component.class.module_path
           return label unless label.nil? || label.empty?
           component.class.name
         end
@@ -238,14 +237,10 @@ module Mayu
           end
         end
 
-        def traverse(&block)
-          @html.traverse(&block)
-        end
-
         def render_error_patch(error, component, tree_path = [])
           module_path =
             component.class.respond_to?(:module_path) &&
-              component.class.module_path
+            component.class.module_path
           module_path = component.class.name if module_path.nil? ||
             module_path.empty?
 

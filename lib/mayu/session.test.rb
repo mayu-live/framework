@@ -87,8 +87,7 @@ class Mayu::SessionTest < Minitest::Test
     request_info =
       Mayu::Session::RequestInfo.new(
         path: "/missing",
-        headers: {
-        },
+        headers: {},
         http2: false
       )
 
@@ -106,8 +105,7 @@ class Mayu::SessionTest < Minitest::Test
     request_info =
       Mayu::Session::RequestInfo.new(
         path: "/missing",
-        headers: {
-        },
+        headers: {},
         http2: false
       )
 
@@ -149,8 +147,7 @@ class Mayu::SessionTest < Minitest::Test
     request_info =
       Mayu::Session::RequestInfo.new(
         path: "/demos/form",
-        headers: {
-        },
+        headers: {},
         http2: false
       )
 
@@ -173,8 +170,7 @@ class Mayu::SessionTest < Minitest::Test
     request_info =
       Mayu::Session::RequestInfo.new(
         path: "/demos/form",
-        headers: {
-        },
+        headers: {},
         http2: false
       )
     session = Mayu::Session.new(environment: source_environment, request_info:)
@@ -207,7 +203,7 @@ class Mayu::SessionTest < Minitest::Test
           .find { it.callback&.method_name == :handle_enable }
 
       refute_nil(listener)
-      engine.callback(listener.id, { target: { value: "Elements" } })
+      engine.callback(listener.id, {target: {value: "Elements"}})
       patch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
 
       refute_nil(patch)
@@ -225,8 +221,7 @@ class Mayu::SessionTest < Minitest::Test
     request_info =
       Mayu::Session::RequestInfo.new(
         path: "/demos/custom-elements",
-        headers: {
-        },
+        headers: {},
         http2: false
       )
 
@@ -247,8 +242,7 @@ class Mayu::SessionTest < Minitest::Test
     request_info =
       Mayu::Session::RequestInfo.new(
         path: "/demos/segments/alpha/beta",
-        headers: {
-        },
+        headers: {},
         http2: false
       )
 
@@ -283,8 +277,7 @@ class Mayu::SessionTest < Minitest::Test
     request_info =
       Mayu::Session::RequestInfo.new(
         path: "/missing",
-        headers: {
-        },
+        headers: {},
         http2: false
       )
     session = Mayu::Session.new(environment: env, request_info: request_info)
@@ -311,8 +304,7 @@ class Mayu::SessionTest < Minitest::Test
     request_info =
       Mayu::Session::RequestInfo.new(
         path: "/missing",
-        headers: {
-        },
+        headers: {},
         http2: false
       )
     session = Mayu::Session.new(environment: env, request_info: request_info)
