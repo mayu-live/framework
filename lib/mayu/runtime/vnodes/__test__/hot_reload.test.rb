@@ -203,7 +203,7 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
     end
   end
 
-  def test_refreshes_classes_reloaded_by_klenod
+  def test_refreshes_klenod_classes_and_keeps_new_state_defaults
     Dir.mktmpdir("mayu-component-hmr") do |root|
       app_dir = File.join(root, "app")
       FileUtils.mkdir_p(app_dir)
@@ -228,7 +228,10 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
         before.increment
         wait_for_text_patch(engine, "before 1")
 
-        File.write(component_path, component_source("after", increment: 10))
+        File.write(
+          component_path,
+          component_source("after", increment: 10, enabled: true)
+        )
         result = provider.context.invalidate_paths([component_path])
         event =
           ::Klenod::Build::UpdateEvent.new(
@@ -243,14 +246,14 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
         after_class = provider.exports(entry)::Default
         refute_same(before_class, after_class)
         engine.refresh(H[:body, H[after_class]])
-        wait_for_text_patch(engine, "after 1")
+        wait_for_text_patch(engine, "after 1 true")
 
         after_vnode = find_component(engine.root, after_class)
         after = after_vnode.instance_variable_get(:@instance)
         assert_same(before_vnode, after_vnode)
 
         after.increment
-        wait_for_text_patch(engine, "after 11")
+        wait_for_text_patch(engine, "after 11 true")
       end
     end
   end
@@ -349,11 +352,15 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
     refute_nil(patches, "Expected a SetTextContent patch for #{content.inspect}")
   end
 
-  def component_source(label, increment:)
+  def component_source(label, increment:, enabled: false)
+    enabled_initializer = "@enabled = true" if enabled
+    enabled_output = " \#{@enabled}" if enabled
+
     <<~HAML
       :ruby
         def initialize
           @count = 0
+          #{enabled_initializer}
         end
 
         def increment
@@ -361,7 +368,7 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
           rerender!
         end
 
-      %p #{label} \#{@count}
+      %p #{label} \#{@count}#{enabled_output}
     HAML
   end
 end

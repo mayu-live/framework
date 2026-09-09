@@ -304,8 +304,11 @@ module Mayu
           replacement = build_instance(klass, @descriptor)
 
           begin
-            state = @engine.migrate_component_state(old_instance.marshal_dump)
-            replacement.send(:marshal_load, state)
+            component_dump =
+              @engine.migrate_component_state(old_instance.marshal_dump)
+            component_dump =
+              merge_initialized_state(replacement, component_dump)
+            replacement.send(:marshal_load, component_dump)
           rescue => error
             Console.logger.warn(
               self,
@@ -347,6 +350,23 @@ module Mayu
           ensure
             @replacing_instance = false
           end
+        end
+
+        def merge_initialized_state(instance, component_dump)
+          return component_dump unless component_dump.is_a?(Hash)
+
+          initialized_state = instance.instance_variable_get(:@__state)
+          restored_state = component_dump[:@__state]
+          unless initialized_state.is_a?(Mayu::Component::State) &&
+              restored_state.is_a?(Mayu::Component::State)
+            return component_dump
+          end
+
+          initialized_state.send(
+            :marshal_load,
+            initialized_state.marshal_dump.merge(restored_state.marshal_dump)
+          )
+          component_dump.merge(:@__state => initialized_state)
         end
 
         def bind_runtime(instance, task, queue)
