@@ -197,6 +197,27 @@ module Mayu
         @root.update(VNodes::NullPatcher.new, descriptor)
       end
 
+      def same_descriptor?(left, right)
+        return true if Descriptors.same?(left, right)
+        return false unless left.is_a?(Descriptors::Element)
+        return false unless right.is_a?(Descriptors::Element)
+        return false unless left.key == right.key
+
+        left_identity = component_identity(left.type)
+        left_identity && left_identity == component_identity(right.type)
+      end
+
+      def migrate_component_state(state)
+        with_component_resolver do
+          dumped = Marshalling.dump_value(state)
+          Marshalling.load_value(Marshal.load(Marshal.dump(dumped)))
+        end
+      end
+
+      def rebind_component_instance(vnode_id, instance)
+        @root.rebind_component_instance(vnode_id, instance)
+      end
+
       def refresh(descriptor)
         if @updater&.task
           @root.assign_descriptor(descriptor)
@@ -228,6 +249,19 @@ module Mayu
       end
 
       private
+
+      def component_identity(type)
+        return unless Marshalling.component_class?(type)
+
+        resolver =
+          @module_provider.component_resolver if @module_provider&.respond_to?(
+            :component_resolver
+          )
+        reference = resolver&.dump_component_class(type)
+        return unless reference&.filename
+
+        [reference.filename, reference.class_name]
+      end
 
       def with_component_resolver(&)
         resolver =

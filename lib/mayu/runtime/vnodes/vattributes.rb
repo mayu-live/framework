@@ -58,6 +58,16 @@ module Mayu
             return unless component
             @callback = Descriptors::Callback[component, @method_name]
           end
+
+          def rebind_component(vnode_id, component)
+            return unless callback
+            current_id =
+              callback.component.instance_variable_get(:@__vnode_id)
+            return unless current_id == vnode_id
+
+            @callback =
+              Descriptors::Callback[component, callback.method_name]
+          end
         end
 
         def initialize(descriptor, parent:, engine:)

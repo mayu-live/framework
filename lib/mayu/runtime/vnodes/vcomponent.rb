@@ -4,6 +4,7 @@
 # License: AGPL-3.0
 
 require "async"
+require "async/barrier"
 
 require_relative "base"
 require_relative "../marshalling"
@@ -81,24 +82,15 @@ module Mayu
 
         def initialize(descriptor, parent:, engine:)
           super
-          klass = @descriptor.type
 
           parent_context = @parent.closest(self.class)&.context
           @context = Context.new(parent: parent_context)
 
-          @instance = klass.allocate
-          @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
-          @instance.instance_variable_set(:@__context, @context)
-          @instance.instance_variable_set(
-            :@__state,
-            Mayu::Component::State.new(@instance)
-          )
-          @instance.instance_variable_set(
-            :@__children,
-            @descriptor.children.freeze
-          )
-          @instance.instance_variable_set(:@__vnode_id, @id)
-          @instance.send(:initialize)
+          @instance = build_instance(@descriptor.type, @descriptor)
+          @mount_task = nil
+          @mount_started = false
+          @work_barrier = nil
+          @replacing_instance = false
 
           @children =
             VChildren.new(render_children, parent: self, engine: @engine)
@@ -117,30 +109,17 @@ module Mayu
             @instance.instance_variable_set(:@__vnode_task, task)
             queue = Async::Queue.new
             @instance.instance_variable_set(:@__vnode_queue, queue)
-
-            vnode = self
-            @instance.define_singleton_method(:rerender!) do
-              if @__view_transition
-                vnode.instance_variable_set(:@__view_transition_pending, true)
-              end
-              vnode.engine.enqueue_update(vnode)
-            end
+            bind_runtime(@instance, task, queue)
+            @work_barrier = Async::Barrier.new(parent: task)
 
             @children.start
-            task.async do
-              metrics.component_mount_count.increment(
-                labels: {
-                  component: component_label
-                }
-              )
-              @instance.mount
-              @mounted = true
-            end
+            start_mount(@instance)
 
             loop do
               work = queue.dequeue
               break if work == :__stop__
-              task.async { work.call }
+              Async::Task.current.yield while @replacing_instance
+              @work_barrier&.async { work.call }
             end
           end
         end
@@ -148,8 +127,7 @@ module Mayu
         def stop
           return unless @task
           @children.stop
-          @instance.unmount if @mounted
-          @mounted = false
+          stop_instance_work(@instance)
           if queue = @instance.instance_variable_get(:@__vnode_queue)
             queue.enqueue(:__stop__)
           end
@@ -172,7 +150,12 @@ module Mayu
 
           begin
             if descriptor
+              previous_type = @descriptor.type
               @descriptor = descriptor
+
+              if previous_type != @descriptor.type
+                replace_instance(@descriptor.type)
+              end
 
               @instance.instance_variable_set(
                 :@__children,
@@ -265,6 +248,10 @@ module Mayu
           @instance.instance_variable_set(:@__vnode_id, @id)
           @instance.send(:marshal_load, Marshalling.load_value(component_state))
           @instance.instance_variable_get(:@__state)&.bind(@instance)
+          @mount_task = nil
+          @mount_started = false
+          @work_barrier = nil
+          @replacing_instance = false
         end
 
         def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
@@ -290,6 +277,117 @@ module Mayu
         end
 
         private
+
+        def build_instance(klass, descriptor)
+          instance = klass.allocate
+          install_descriptor_state(instance, descriptor)
+          instance.instance_variable_set(
+            :@__state,
+            Mayu::Component::State.new(instance)
+          )
+          instance.send(:initialize)
+          instance
+        end
+
+        def install_descriptor_state(instance, descriptor)
+          instance.instance_variable_set(:@__props, descriptor.props.freeze)
+          instance.instance_variable_set(:@__context, @context)
+          instance.instance_variable_set(
+            :@__children,
+            descriptor.children.freeze
+          )
+          instance.instance_variable_set(:@__vnode_id, @id)
+        end
+
+        def replace_instance(klass)
+          old_instance = @instance
+          replacement = build_instance(klass, @descriptor)
+
+          begin
+            state = @engine.migrate_component_state(old_instance.marshal_dump)
+            replacement.send(:marshal_load, state)
+          rescue => error
+            Console.logger.warn(
+              self,
+              "Could not preserve component state during HMR: #{error.message}"
+            )
+            replacement = build_instance(klass, @descriptor)
+          end
+
+          install_descriptor_state(replacement, @descriptor)
+          state = replacement.instance_variable_get(:@__state)
+          unless state.is_a?(Mayu::Component::State)
+            state = Mayu::Component::State.new(replacement)
+            replacement.instance_variable_set(:@__state, state)
+          end
+          state.bind(replacement)
+
+          task = old_instance.instance_variable_get(:@__vnode_task)
+          queue = old_instance.instance_variable_get(:@__vnode_queue)
+          @replacing_instance = true
+          begin
+            if task
+              begin
+                stop_instance_work(old_instance)
+              rescue => error
+                Console.logger.warn(
+                  self,
+                  "Could not clean up component during HMR: #{error.message}"
+                )
+              end
+            end
+
+            @instance = replacement
+            if task && queue
+              bind_runtime(replacement, task, queue)
+              @work_barrier = Async::Barrier.new(parent: task)
+              @engine.rebind_component_instance(@id, replacement)
+              start_mount(replacement)
+            end
+          ensure
+            @replacing_instance = false
+          end
+        end
+
+        def bind_runtime(instance, task, queue)
+          instance.instance_variable_set(:@__vnode_task, task)
+          instance.instance_variable_set(:@__vnode_queue, queue)
+
+          vnode = self
+          instance.define_singleton_method(:rerender!) do
+            if @__view_transition
+              vnode.instance_variable_set(:@__view_transition_pending, true)
+            end
+            vnode.engine.enqueue_update(vnode)
+          end
+        end
+
+        def start_mount(instance)
+          return unless @task
+
+          @mount_started = true
+          @mount_task = @task.async do
+            metrics.component_mount_count.increment(
+              labels: {
+                component: component_label
+              }
+            )
+            instance.mount
+          end
+        end
+
+        def stop_instance_work(instance)
+          @work_barrier&.stop
+          @work_barrier = nil
+          @mount_task&.stop
+          @mount_task = nil
+          if @mount_started
+            instance.unmount
+            @mount_started = false
+          end
+          instance.instance_variable_set(:@__vnode_task, nil)
+          instance.instance_variable_set(:@__vnode_queue, nil)
+        end
 
         def render_children
           retried = false

@@ -123,6 +123,12 @@ module Mayu
           completion
         end
 
+        def rebind_component_instance(vnode_id, instance)
+          @listeners.each_value do |listener|
+            listener.rebind_component(vnode_id, instance)
+          end
+        end
+
         def flush_head(patcher)
           return unless @head_dirty
           @html.update(patcher, init_html)

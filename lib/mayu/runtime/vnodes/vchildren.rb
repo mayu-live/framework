@@ -205,7 +205,9 @@ module Mayu
           new_children =
             descriptors.map do |descriptor|
               if index =
-                   source.index { Descriptors.same?(descriptor, _1.descriptor) }
+                   source.index do
+                     @engine.same_descriptor?(descriptor, _1.descriptor)
+                   end
                 found = source.delete_at(index)
                 { type: :updated, node: found, descriptor: descriptor }
               else

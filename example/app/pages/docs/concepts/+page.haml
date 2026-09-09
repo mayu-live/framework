@@ -143,6 +143,10 @@
       [Webpack](https://webpack.js.org/) and [Vite](https://vitejs.dev/),
       and it makes web development fun because of the fast feedback loop.
 
+      When a component keeps the same module identity and key, Mayu preserves
+      its serializable local state while replacing the component class. The
+      replacement receives current props, and its mount lifecycle is restarted.
+
   %Card
     %figure
       %Image(lazy image=HotReload alt="")
