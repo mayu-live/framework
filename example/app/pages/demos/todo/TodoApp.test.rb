@@ -8,8 +8,17 @@ def test_manages_todos
   assert_equal("0 items left", screen.get_by_text("0 items left").text)
   assert_empty(screen.query_all_by_role(:listitem))
 
-  submit_todo(screen, "Write a test")
-  submit_todo(screen, "Ship the feature")
+  ["Write a test", "Ship the feature"].each do |description|
+    screen.fire_event(
+      :submit,
+      screen.get_by_css("form"),
+      target: {
+        formData: {
+          new_todo: description
+        }
+      }
+    )
+  end
 
   assert_equal(
     ["Ship the feature", "Write a test"],
@@ -19,7 +28,14 @@ def test_manages_todos
 
   write_test = screen.get_by_text("Write a test")
   checkbox = write_test.at_xpath("../input[@type='checkbox']")
-  change_checkbox(screen, checkbox, checked: true)
+  screen.fire_event(
+    :onchange,
+    checkbox,
+    currentTarget: {
+      name: checkbox["name"],
+      checked: true
+    }
+  )
 
   assert_includes(screen.get_by_text("Write a test")["class"], "completed")
   assert_equal("1 item left", screen.get_by_text("1 item left").text)
@@ -35,28 +51,4 @@ def test_manages_todos
 
   assert_empty(screen.query_all_by_role(:listitem))
   assert_equal("1 item left", screen.get_by_text("1 item left").text)
-end
-
-private
-
-def submit_todo(screen, description)
-  form = screen.get_by_css("form")
-  screen.callback(
-    callback_id(form, :onsubmit),
-    { target: { formData: { new_todo: description } } }
-  )
-end
-
-def change_checkbox(screen, checkbox, checked:)
-  target = { name: checkbox["name"], checked: }
-  screen.callback(
-    callback_id(checkbox, :onchange),
-    { target:, currentTarget: target }
-  )
-end
-
-def callback_id(node, event)
-  node[event]
-    .match(/\AMayu\.callback\(event,'(?<id>[^']+)'\)\z/)
-    .then { it[:id] }
 end

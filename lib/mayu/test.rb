@@ -211,19 +211,19 @@ module Mayu
               name: attributes["name"],
               value: attributes["value"]
             }
-            page.callback(
-              callback_id(:onclick),
-              { target:, currentTarget: target }
-            )
+            page.fire_event(:click, self, target:, currentTarget: target)
             self
           end
 
           def input(value)
             node.set("value", value.to_s) if
               node.is_a?(Oga::XML::Element)
-            page.callback(
-              callback_id(:oninput),
-              { currentTarget: { value: value.to_s } }
+            page.fire_event(
+              :input,
+              self,
+              currentTarget: {
+                value: value.to_s
+              }
             )
             self
           end
@@ -243,15 +243,6 @@ module Mayu
 
           def query_page = page
           def query_container = node
-
-          def callback_id(attribute)
-            value = self[attribute]
-            id = value&.match(/\AMayu\.callback\(event,'(?<id>[^']+)'\)\z/)&.[](:id)
-            return id if id
-
-            raise NoListenerError,
-                  "#{name} does not have a Mayu #{attribute} listener"
-          end
         end
 
       attr_reader :patches
@@ -333,6 +324,37 @@ module Mayu
       def at_xpath(query)
         result = @doc.at_xpath(query)
         Node.new(self, result) if result
+      end
+
+      def fire_event(event, node, payload = nil, **fields)
+        unless node.is_a?(Node) && node.page.equal?(self)
+          raise ArgumentError,
+                "fire_event expects a node from this rendered page"
+        end
+
+        event = event.to_s
+        attributes =
+          if event.start_with?("on")
+            [event, "on#{event}"]
+          else
+            ["on#{event}"]
+          end
+        _, id =
+          attributes.filter_map do |candidate|
+            value = node[candidate]
+            match =
+              value&.match(
+                /\AMayu\.callback\(event,'(?<id>[^']+)'\)\z/
+              )
+            [candidate, match[:id]] if match
+          end.first
+        unless id
+          raise NoListenerError,
+                "#{node.name} does not have a Mayu #{attributes.first} listener"
+        end
+
+        payload = payload ? payload.merge(fields) : fields
+        callback(id, payload)
       end
 
       def callback(id, payload = {})

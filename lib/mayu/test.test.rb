@@ -45,6 +45,30 @@ class Mayu::Test::Test < Mayu::Test::Case
     end
   end
 
+  class ChangeProbe < Mayu::Component::Base
+    def initialize
+      @checked = false
+    end
+
+    def change(event)
+      update!(@checked = event.dig(:currentTarget, :checked))
+    end
+
+    def render
+      H[
+        :label,
+        "Enabled",
+        H[
+          :input,
+          type: "checkbox",
+          checked: @checked,
+          onchange: H.callback(self, :change)
+        ],
+        H[:output, @checked.to_s]
+      ]
+    end
+  end
+
   def test_queries_roles_text_css_and_scoped_content
     screen =
       render(
@@ -130,6 +154,31 @@ class Mayu::Test::Test < Mayu::Test::Case
 
     input.type("!")
     assert_equal("Hello!", screen.get_by_role(:status).text)
+  end
+
+  def test_fire_event_dispatches_and_settles_dom_events
+    screen = render(ChangeProbe)
+    checkbox = screen.get_by_css("input[type='checkbox']")
+
+    screen.fire_event(
+      :change,
+      checkbox,
+      currentTarget: {
+        checked: true
+      }
+    )
+
+    assert_equal("true", screen.get_by_role(:status).text)
+  end
+
+  def test_fire_event_reports_missing_listeners
+    screen = render(H[:button, "Save"])
+
+    error = assert_raises(Mayu::Test::Page::NoListenerError) do
+      screen.fire_event(:onclick, screen.get_by_role(:button))
+    end
+
+    assert_equal("button does not have a Mayu onclick listener", error.message)
   end
 
   def test_render_block_remains_supported
