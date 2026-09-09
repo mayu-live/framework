@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "async/signals"
+
 module Mayu
   class Server
     # Signal handlers only write to the pipe. Cleanup runs in the reactor, without
@@ -16,18 +18,20 @@ module Mayu
       def initialize
         @reader, @writer = IO.pipe
         @requested = false
-        @handlers = {}
+        @registration = nil
       end
 
       def install
+        handlers = Async::Signals::Handlers.new
         [:INT, :TERM].each do |name|
-          @handlers[name] = Signal.trap(name) do
+          handlers.trap(name) do
             unless @requested
               @requested = true
               @writer.write_nonblock(".", exception: false)
             end
           end
         end
+        @registration = Async::Signals.install(handlers)
       end
 
       def requested?
@@ -39,7 +43,7 @@ module Mayu
       end
 
       def close
-        @handlers.each { |name, handler| Signal.trap(name, handler) }
+        @registration&.close
         @reader.close
         @writer.close
       end

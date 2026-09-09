@@ -5,6 +5,7 @@
 # License: AGPL-3.0
 
 require "async"
+require "async/signals"
 require "async/container"
 require "async/container/controller"
 require "async/container/forked"
@@ -97,19 +98,19 @@ module Mayu
 
       def with_signal_handlers
         interrupts = 0
-        handlers = {}
+        handlers = Async::Signals::Handlers.new
         [:INT, :TERM].each do |name|
-          handlers[name] = Signal.trap(name) do
+          handlers.trap(name) do |signal, context|
             interrupts += 1
-            Thread.current.raise(Interrupt) if interrupts <= 2
+            context.raise(Interrupt) if interrupts <= 2
           end
         end
-        handlers[:HUP] = Signal.trap(:HUP) do
-          Thread.current.raise(Async::Container::Restart) if interrupts.zero?
+        handlers.trap(:HUP) do |signal, context|
+          context.raise(Async::Container::Restart) if interrupts.zero?
         end
-        Thread.handle_interrupt(SignalException => :never) { yield }
-      ensure
-        handlers.each { |name, handler| Signal.trap(name, handler) }
+        Thread.handle_interrupt(SignalException => :never) do
+          Async::Signals.install(handlers) { yield }
+        end
       end
 
       def setup_metrics_server(container, collector_endpoint)

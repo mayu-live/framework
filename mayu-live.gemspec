@@ -46,6 +46,7 @@ Gem::Specification.new do |spec|
   # Core
   spec.add_dependency "async", "~> 2.42"
   spec.add_dependency "async-container", "~> 0.30.0"
+  spec.add_dependency "async-signals", "~> 0.6.0"
   spec.add_dependency "async-http", ">= 0.95.1", "< 0.104.0"
   spec.add_dependency "base64", "~> 0.3"
   spec.add_dependency "toml", "~> 0.3"
