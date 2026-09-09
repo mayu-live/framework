@@ -78,12 +78,39 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
     end
 
     def render
+      EVENTS << :after_render
       H[
         :button,
         "after #{@count} #{@added} #{@__props[:label]}",
         H[ChildProbe],
         onclick: H.callback(self, :increment)
       ]
+    end
+  end
+
+  class InitializerErrorProbe < Mayu::Component::Base
+    def initialize
+      EVENTS << :initializer_error_initialize
+      raise "initializer boom"
+    end
+
+    def mount
+      EVENTS << :initializer_error_mount
+    end
+  end
+
+  class RenderErrorAfterProbe < Mayu::Component::Base
+    def initialize
+      @count = 100
+    end
+
+    def mount
+      EVENTS << :render_error_mount
+    end
+
+    def render
+      EVENTS << :render_error_render
+      raise "render boom"
     end
   end
 
@@ -158,6 +185,10 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
 
         []
       end
+
+      def format_exception(error, source_path:)
+        "#{source_path}: #{error.class}: #{error.message}"
+      end
     end
 
   def setup
@@ -196,11 +227,30 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
       end
       assert_equal(1, EVENTS.count(:child_mount))
       assert_equal(0, EVENTS.count(:child_unmount))
+      assert_equal(1, EVENTS.count(:after_render))
 
       engine.callback(listener_id, {})
       wait_for_text_patch(engine, "after 11 default new")
       assert_equal(11, after.count)
+      assert_equal(2, EVENTS.count(:after_render))
     end
+  end
+
+  def test_initializer_error_keeps_old_instance_until_a_valid_update
+    assert_failed_replacement_recovers(
+      InitializerErrorProbe,
+      error_message: "initializer boom",
+      rejected_events: [:initializer_error_mount]
+    )
+  end
+
+  def test_render_error_keeps_old_instance_until_a_valid_update
+    assert_failed_replacement_recovers(
+      RenderErrorAfterProbe,
+      error_message: "render boom",
+      rejected_events: [:render_error_mount]
+    )
+    assert_equal(1, EVENTS.count(:render_error_render))
   end
 
   def test_refreshes_klenod_classes_and_keeps_new_state_defaults
@@ -316,6 +366,52 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
 
   private
 
+  def assert_failed_replacement_recovers(
+    failing_component,
+    error_message:,
+    rejected_events:
+  )
+    families = {
+      BeforeProbe => "transactional",
+      failing_component => "transactional",
+      AfterProbe => "transactional"
+    }
+    engine = build_engine(BeforeProbe, label: "old", families:)
+
+    run_engine_instance(engine) do
+      before_vnode = find_component(engine.root, BeforeProbe)
+      before = before_vnode.instance_variable_get(:@instance)
+      listener_id = listener_for(engine).id
+      wait_until { EVENTS.include?(:before_mount) }
+
+      before.increment
+      wait_for_text_patch(engine, "before 1 old")
+
+      engine.refresh(descriptor(failing_component, label: "broken"))
+      wait_for_render_error(engine, error_message)
+
+      assert_same(before, before_vnode.instance_variable_get(:@instance))
+      assert_equal(BeforeProbe, before_vnode.descriptor.type)
+      assert_equal(listener_id, listener_for(engine).id)
+      assert_includes(render_html(before_vnode), "before 1 old")
+      refute_includes(EVENTS, :before_unmount)
+      rejected_events.each { |event| refute_includes(EVENTS, event) }
+
+      engine.callback(listener_id, {})
+      wait_for_text_patch(engine, "before 2 old")
+
+      engine.refresh(descriptor(AfterProbe, label: "recovered"))
+      wait_for_text_patch(engine, "after 2 default recovered")
+      wait_until do
+        EVENTS.include?(:before_unmount) && EVENTS.include?(:after_mount)
+      end
+
+      after_vnode = find_component(engine.root, AfterProbe)
+      assert_same(before_vnode, after_vnode)
+      refute_same(before, after_vnode.instance_variable_get(:@instance))
+    end
+  end
+
   def build_engine(
     component,
     label:,
@@ -350,6 +446,17 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
         end
       end
     refute_nil(patches, "Expected a SetTextContent patch for #{content.inspect}")
+  end
+
+  def wait_for_render_error(engine, message)
+    patches =
+      dequeue_until(engine) do |batch|
+        batch.any? do |patch|
+          patch.is_a?(Mayu::Runtime::Patches::RenderError) &&
+            patch.message == message
+        end
+      end
+    refute_nil(patches, "Expected a RenderError patch for #{message.inspect}")
   end
 
   def component_source(label, increment:, enabled: false)

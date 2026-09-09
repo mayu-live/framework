@@ -147,14 +147,26 @@ module Mayu
 
         def update(patcher, descriptor = nil)
           retried = false
+          replacement_rendered = false
+          replacement_children = nil
 
           begin
             if descriptor
               previous_type = @descriptor.type
-              @descriptor = descriptor
 
-              if previous_type != @descriptor.type
-                replace_instance(@descriptor.type)
+              if previous_type != descriptor.type
+                begin
+                  replacement, replacement_children =
+                    prepare_replacement(descriptor.type, descriptor)
+                rescue => error
+                  raise UnhandledRenderError.new(error, self)
+                end
+
+                replacement_rendered = true
+                @descriptor = descriptor
+                commit_replacement(replacement)
+              else
+                @descriptor = descriptor
               end
 
               @instance.instance_variable_set(
@@ -172,10 +184,16 @@ module Mayu
               labels: {
                 component: component_label
               }
-            ) { @children.update(patcher, render_children) }
+            ) do
+              children =
+                replacement_rendered ? replacement_children : render_children
+              @children.update(patcher, children)
+            end
           rescue ErrorHandled => e
             raise if retried || e.boundary != self
             retried = true
+            replacement_rendered = false
+            replacement_children = nil
             retry
           end
         end
@@ -299,9 +317,9 @@ module Mayu
           instance.instance_variable_set(:@__vnode_id, @id)
         end
 
-        def replace_instance(klass)
+        def prepare_replacement(klass, descriptor)
           old_instance = @instance
-          replacement = build_instance(klass, @descriptor)
+          replacement = build_instance(klass, descriptor)
 
           begin
             component_dump =
@@ -314,10 +332,10 @@ module Mayu
               self,
               "Could not preserve component state during HMR: #{error.message}"
             )
-            replacement = build_instance(klass, @descriptor)
+            replacement = build_instance(klass, descriptor)
           end
 
-          install_descriptor_state(replacement, @descriptor)
+          install_descriptor_state(replacement, descriptor)
           state = replacement.instance_variable_get(:@__state)
           unless state.is_a?(Mayu::Component::State)
             state = Mayu::Component::State.new(replacement)
@@ -325,6 +343,11 @@ module Mayu
           end
           state.bind(replacement)
 
+          [replacement, render_instance(replacement)]
+        end
+
+        def commit_replacement(replacement)
+          old_instance = @instance
           task = old_instance.instance_variable_get(:@__vnode_task)
           queue = old_instance.instance_variable_get(:@__vnode_queue)
           @replacing_instance = true
@@ -413,12 +436,7 @@ module Mayu
           retried = false
 
           begin
-            metrics.update_summary(
-              metrics.component_patch_times,
-              labels: {
-                component: component_label
-              }
-            ) { @instance.render }
+            render_instance(@instance)
           rescue ErrorHandled => e
             raise if retried
             retried = true
@@ -446,6 +464,15 @@ module Mayu
           end
         end
 
+        def render_instance(instance)
+          metrics.update_summary(
+            metrics.component_patch_times,
+            labels: {
+              component: component_label(instance)
+            }
+          ) { instance.render }
+        end
+
         def handle_error_up_tree(error)
           node = self
 
@@ -462,12 +489,12 @@ module Mayu
           nil
         end
 
-        def component_label
+        def component_label(instance = @instance)
           label =
-            @instance.class.respond_to?(:module_path) &&
-            @instance.class.module_path
+            instance.class.respond_to?(:module_path) &&
+            instance.class.module_path
           return label unless label.nil? || label.empty?
-          @instance.class.name
+          instance.class.name
         end
       end
     end
