@@ -294,6 +294,47 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
     end
   end
 
+  class CreatedListenerBeforeFailure < Mayu::Component::Base
+    def handle_click
+    end
+
+    def render
+      H[:button, "new listener", onclick: H.callback(self, :handle_click)]
+    end
+  end
+
+  class ListenerCreationBoundary < Mayu::Component::Base
+    class << self
+      attr_accessor :instance
+    end
+
+    def initialize
+      self.class.instance = self
+      @fail = false
+      @handled = false
+    end
+
+    def trigger_error
+      @fail = true
+      rerender!
+    end
+
+    def handle_error(_error)
+      @handled = true
+      true
+    end
+
+    def render
+      return H[:div, "listener fallback"] if @handled
+
+      H[
+        :div,
+        (@fail ? H[CreatedListenerBeforeFailure] : nil),
+        H[ErrorChild, should_fail: @fail]
+      ]
+    end
+  end
+
   class StatefulBoundary < Mayu::Component::Base
     class << self
       attr_accessor :instance
@@ -550,6 +591,25 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
       listeners = engine.root.instance_variable_get(:@listeners)
       assert_empty(abandoned_listener_ids & listeners.keys)
       assert_includes(render_html(engine.root), "<div>fallback</div>")
+    end
+  end
+
+  def test_handled_errors_do_not_index_listeners_from_abandoned_subtrees
+    descriptor = H[:body, H[ListenerCreationBoundary]]
+
+    run_engine(descriptor) do |engine|
+      wait_until do
+        ListenerCreationBoundary.instance.instance_variable_get(:@__vnode_task)
+      end
+
+      assert_empty(engine.root.instance_variable_get(:@listeners))
+      ListenerCreationBoundary.instance.trigger_error
+
+      Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+
+      listeners = engine.root.instance_variable_get(:@listeners)
+      assert_empty(listeners)
+      assert_includes(render_html(engine.root), "<div>listener fallback</div>")
     end
   end
 

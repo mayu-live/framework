@@ -49,6 +49,8 @@ module Mayu
           @html.update(collector, init_html)
         rescue VComponent::UnhandledRenderError => failure
           resolve_render_error(collector, failure, checkpoint)
+        ensure
+          rebuild_listener_index!
         end
 
         def assign_descriptor(descriptor)
@@ -77,12 +79,18 @@ module Mayu
           @head_dirty = true if @custom_elements.add?(custom_element)
         end
 
-        def add_listener(listener)
-          @listeners.store(listener.id, listener)
-        end
+        # The listener map is a dispatch index, not mutable render state. Keeping
+        # it derived from the committed VDOM means an abandoned render cannot
+        # retain callbacks which never reached the browser.
+        def rebuild_listener_index!
+          @listeners.clear
+          traverse do |node|
+            next unless node.is_a?(VElement)
 
-        def remove_listener(listener)
-          @listeners.delete(listener.id)
+            node.instance_variable_get(:@attributes).each_listener do |_name, listener|
+              @listeners[listener.id] = listener if listener.callback
+            end
+          end
         end
 
         def call_listener(id, payload)
@@ -199,8 +207,7 @@ module Mayu
           )
 
           rebuild_head_and_listeners(component_map)
-          @listeners.each_value { |listener| listener.rehydrate(component_map) }
-          @listeners.delete_if { |_id, listener| listener.callback.nil? }
+          rebuild_listener_index!
         end
 
         def resolve_render_error(collector, failure, checkpoint)

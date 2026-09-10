@@ -95,7 +95,7 @@ module Mayu
         def start
           return if @task
 
-          parent_task&.async do |task|
+          @task = parent_task&.async do |task|
             @task = task
             @instance.instance_variable_set(:@__vnode_task, task)
             queue = Async::Queue.new

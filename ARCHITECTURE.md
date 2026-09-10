@@ -72,8 +72,9 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
   - `RemoveNode`
   - `ReplaceChildren` when child ID lists change
   - chunked updates using `Engine#update_budget`
-- `VAttributes` handles attribute/class/style diffs and callback listener
-  registration. Callback wiring is not rendered into SSR HTML; it is sent as
+- `VAttributes` handles attribute/class/style diffs and retains callback
+  listener descriptors. `VDocument` derives the dispatch index from committed
+  VDOM state; callback wiring is not rendered into SSR HTML and is sent as
   `SetListener`/`RemoveListener` commands.
 
 ### Important invariants

@@ -109,7 +109,7 @@ module Mayu
         def initialize(descriptor, parent:, engine:)
           super
           @attributes = normalize_attributes(flatten_props(@descriptor.props))
-          register_listeners!(@attributes)
+          normalize_listeners!(@attributes)
         end
 
         def update(collector, descriptor = nil)
@@ -218,28 +218,27 @@ module Mayu
         end
 
         def remove_listeners
-          @attributes.each_value do |listener|
-            @engine.remove_listener(listener) if listener.is_a?(Listener)
-          end
+          # Listener dispatch is indexed by VDocument from the committed VDOM.
+          # There is deliberately nothing to remove here: removing a vnode while
+          # rendering a fallback must not mutate the live dispatch index before
+          # that fallback has been committed.
         end
 
         def rehydrate_listeners(component_map)
           @attributes.each_value do |value|
             next unless value.is_a?(Listener)
             value.rehydrate(component_map)
-            @engine.add_listener(value) if value.callback
           end
         end
 
         private
 
-        def register_listeners!(attrs)
+        def normalize_listeners!(attrs)
           attrs.each do |key, value|
             next unless key.to_s.start_with?("on")
             next if value.nil?
 
             if value.is_a?(Listener)
-              @engine.add_listener(value)
               next
             end
 
@@ -249,7 +248,6 @@ module Mayu
             end
 
             listener = Listener[value].validate!
-            @engine.add_listener(listener)
             attrs[key] = listener
           end
         end
@@ -298,7 +296,6 @@ module Mayu
         def update_callback(collector, key, old_value, new_value)
           if old_value.is_a?(Listener)
             return old_value if old_value.callback&.same?(new_value)
-            @engine.remove_listener(old_value)
             collector << Commands::RemoveListener[
               @parent.dom_id,
               key.to_s.delete_prefix("on").downcase,
@@ -315,7 +312,7 @@ module Mayu
               "Raw string event handler #{key.inspect} is not supported; use H.callback"
           end
 
-          listener = @engine.add_listener(Listener[new_value].validate!)
+          listener = Listener[new_value].validate!
           collector << Commands::SetListener[
             @parent.dom_id,
             key.to_s.delete_prefix("on").downcase,

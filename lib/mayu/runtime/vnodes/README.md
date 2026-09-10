@@ -50,8 +50,10 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 
 ### Events + callbacks
 
-- callback-backed `on*` attributes register listeners without emitting inline
-  JavaScript into SSR HTML.
+- callback-backed `on*` attributes retain listener descriptors without emitting
+  inline JavaScript into SSR HTML. `VDocument` rebuilds its dispatch index from
+  the committed VDOM after each update, so abandoned renders cannot retain
+  callbacks.
 - Initial connection and resume send the complete listener registry after
   `Initialize`. Updates emit `SetListener` after `CreateTree` for every listener
   in a new subtree, while existing elements use `SetListener`/`RemoveListener`
@@ -59,7 +61,8 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 - `Engine#callback` dispatches into component tasks.
 - Callbacks are serialized within each component.
 - Listener ids are serialized and rehydrated with component_map.
-- Listener registration now happens during VAttributes init (not just render).
+- Listener dispatch is indexed from the committed VDOM, rather than registered
+  while VAttributes are being built.
 
 ### Serialization
 
@@ -99,8 +102,8 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 ## What changed recently
 
 - Listener ids now serialize correctly and rehydrate to callbacks.
-- Listeners register during attribute initialization.
-- Engine queues listeners created before root exists.
+- Listener indexes are rebuilt after initial construction, committed updates,
+  and rehydration.
 - Serialization tests expect listeners to survive restore.
 - Debug logging for listener restore removed.
 

@@ -65,6 +65,10 @@ module Mayu
                   end
                 end
 
+                # Listener registration is committed only after every update in
+                # this batch (including any error-boundary recovery) has settled.
+                @engine&.root&.rebuild_listener_index!
+
                 navigations.each do |nav|
                   if nav.push_state
                     command_collector << Commands::HistoryPushState[nav.path]

@@ -31,12 +31,19 @@ module Mayu
         end
 
         def update(collector, descriptors = nil)
+          previous_children = @children
+          previous_descriptor = @descriptor
+          previous_pending_update = @pending_update
+          previous_pending_descriptor = @pending_descriptor
+          previous_pending_enqueued = @pending_enqueued
+          created_nodes = []
+
           return unless descriptors || @pending_update
 
           if @pending_update
             @pending_descriptor = descriptors if descriptors
             @pending_enqueued = false
-            update_children(collector, @children, @descriptor)
+            update_children(collector, @children, @descriptor, created_nodes)
             return
           end
 
@@ -45,7 +52,19 @@ module Mayu
             @pending_enqueued = false
           end
 
-          update_children(collector, @children, @descriptor)
+          update_children(collector, @children, @descriptor, created_nodes)
+        rescue
+          # A created vnode may already have been started before a later sibling
+          # fails. Its commands are rolled back by the error boundary, so remove
+          # it from the server tree as well before restoring the last committed
+          # child collection.
+          created_nodes.uniq.each { |node| discard_node(node) }
+          @children = previous_children
+          @descriptor = previous_descriptor
+          @pending_update = previous_pending_update
+          @pending_descriptor = previous_pending_descriptor
+          @pending_enqueued = previous_pending_enqueued
+          raise
         end
 
         def replace(collector, descriptors)
@@ -137,13 +156,17 @@ module Mayu
           raise
         end
 
-        def update_children(collector, old_children, descriptors)
+        def update_children(collector, old_children, descriptors, created_nodes)
           if @pending_update
             state = @pending_update
           else
             previous_ids = dom_id_list_for(old_children)
             diff =
-              diff_children(old_children, normalize_descriptors(descriptors))
+              diff_children(
+                old_children,
+                normalize_descriptors(descriptors),
+                created_nodes
+              )
             state =
               UpdateState.new(
                 diff[:children],
@@ -205,7 +228,7 @@ module Mayu
             descriptor = @pending_descriptor
             @pending_descriptor = nil
             @descriptor = descriptor
-            update_children(collector, @children, @descriptor)
+            update_children(collector, @children, @descriptor, created_nodes)
           end
         end
 
@@ -222,7 +245,7 @@ module Mayu
           @engine.enqueue_update(self)
         end
 
-        def diff_children(old_children, descriptors)
+        def diff_children(old_children, descriptors, created_nodes)
           source = old_children.dup
 
           new_children =
@@ -234,10 +257,9 @@ module Mayu
                 found = source.delete_at(index)
                 {type: :updated, node: found, descriptor: descriptor}
               else
-                {
-                  type: :created,
-                  node: VAny.new(descriptor, parent: self, engine: @engine)
-                }
+                node = VAny.new(descriptor, parent: self, engine: @engine)
+                created_nodes << node
+                {type: :created, node:}
               end
             end
 
