@@ -1,20 +1,22 @@
 :ruby
   def initialize
-    @active = __children.slots.keys.first
-    @enabled = [@active]
+    @active = __slots.keys.first
+    @loaded = [@active]
     @id = SecureRandom.alphanumeric
   end
 
   def handle_change(e)
-    e => { target: { value: }}
+    e => { target: { value: } }
 
-    @active = value
-    @enabled = [*@enabled, value].uniq
+    slot = value.to_sym
+    @active = slot
+    @loaded = [*@loaded, slot].uniq
   end
 
-  def handle_enable(e)
-    e => { target: { value: }}
-    @enabled = [*@enabled, value].uniq
+  def handle_load(e)
+    e => { target: { value: } }
+    slot = value.to_sym
+    @loaded = [*@loaded, slot].uniq
   end
 
   private
@@ -24,16 +26,15 @@
   end
 
 :ruby
-  names = __children.slots.keys
-
+  names = __slots.keys
 .tabs
   .tablist(role="tablist")
     = names.map.with_index do |name, i|
-      - handle_enable = @enabled.include?(name) ? nil : H.callback(self, :handle_enable)
+      - handle_load = @loaded.include?(name) ? nil : H.callback(self, :handle_load)
       %button[name](value=name onclick=handle_change role="tab" tabindex="0"){
         id: id(:tab, i),
-        onmouseenter: handle_enable,
-        ontouchstart: handle_enable,
+        onmouseenter: handle_load || nil,
+        ontouchstart: handle_load || nil,
         aria: {
           selected: (name == @active).to_s,
           controls: id(:panel, i)
@@ -49,7 +50,7 @@
         expanded: (name == @active).to_s,
       }
     }
-      = if @enabled.include?(name)
+      = if @loaded.include?(name)
         %slot(name=name)
 :css
   .tabs {
