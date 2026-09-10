@@ -127,11 +127,7 @@ module Mayu
           commands = []
           traverse do |node|
             next unless node.is_a?(VElement)
-
-            attributes = node.instance_variable_get(:@attributes)
-            attributes.each_listener do |name, listener|
-              commands << Commands::SetListener[node.dom_id, name, listener.id]
-            end
+            node.emit_listeners(commands)
           end
           commands
         end

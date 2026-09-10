@@ -153,7 +153,7 @@
             %input(type="text" name="description" autofocus required){
               value: item.description
             }
-          %button.delete-button{name: item.id}
+          %button.delete-button.placeholder{name: item.id}
         = else
           %input(type="checkbox" onchange=handle_check){
             name: item.id,
@@ -245,7 +245,7 @@
       opacity: 1;
     }
 
-    &:not([onclick]) {
+    &.placeholder {
       visibility: hidden;
     }
   }

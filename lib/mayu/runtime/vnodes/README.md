@@ -53,7 +53,9 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 - callback-backed `on*` attributes register listeners without emitting inline
   JavaScript into SSR HTML.
 - Initial connection and resume send the complete listener registry after
-  `Initialize`; updates use `SetListener`/`RemoveListener` commands.
+  `Initialize`. Updates emit `SetListener` after `CreateTree` for every listener
+  in a new subtree, while existing elements use `SetListener`/`RemoveListener`
+  as callbacks change.
 - `Engine#callback` dispatches into component tasks.
 - Callbacks are serialized within each component.
 - Listener ids are serialized and rehydrated with component_map.

@@ -45,6 +45,12 @@ module Mayu
           @children.remove
         end
 
+        def emit_listeners(collector)
+          @attributes.each_listener do |name, listener|
+            collector << Commands::SetListener[dom_id, name, listener.id]
+          end
+        end
+
         def write_html(out)
           tag_name = self.tag_name
 

@@ -260,6 +260,9 @@ module Mayu
             end
           end
           collector << Commands::CreateTree[html, id_tree] if id_tree
+          node.traverse do |child|
+            child.emit_listeners(collector) if child.is_a?(VElement)
+          end
 
           node.mark_inserted
         end

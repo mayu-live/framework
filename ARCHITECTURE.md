@@ -85,6 +85,7 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
   - navigation/history commands
   - head commands
   - body commands
+  - listener commands for new subtrees follow their `CreateTree` command
 - Each updater flush produces one batch. Standalone commands use singleton
   batches, and the server never merges adjacent batches.
 - Each queued VDOM update starts with a command checkpoint. If a parent error

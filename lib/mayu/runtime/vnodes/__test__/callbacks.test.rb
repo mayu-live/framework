@@ -105,6 +105,55 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     assert_match(/\A[A-Za-z0-9]+\z/, set_listener.listener_id)
   end
 
+  def test_created_subtree_emits_listeners_after_create_tree
+    initial = H[:body]
+    updated = H[:body, H[CallbackProbe]]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+
+    create_index =
+      collector.commands.index do |command|
+        command.is_a?(Mayu::Runtime::Commands::CreateTree)
+      end
+    listener_index =
+      collector.commands.index do |command|
+        command.is_a?(Mayu::Runtime::Commands::SetListener)
+      end
+    listener = collector.commands.fetch(listener_index)
+
+    refute_nil(create_index)
+    assert_operator(listener_index, :>, create_index)
+    assert_equal("click", listener.name)
+    assert_equal(1, engine.root.instance_variable_get(:@listeners).size)
+  end
+
+  def test_created_subtree_emits_all_nested_listeners
+    component = CallbackProbe.new
+    initial = H[:body]
+    updated =
+      H[
+        :body,
+        H[
+          :section,
+          H[:button, "First", onclick: H.callback(component, :handle_click)],
+          H[:form, onsubmit: H.callback(component, :handle_click)]
+        ]
+      ]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+
+    listeners =
+      collector.commands.select do |command|
+        command.is_a?(Mayu::Runtime::Commands::SetListener)
+      end
+
+    assert_equal(%w[click submit], listeners.map(&:name))
+  end
+
   def test_event_listener_unregistered_on_change
     component = CallbackProbe.new
     initial =
