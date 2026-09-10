@@ -100,8 +100,26 @@ module Mayu
         DevelopmentProvider.new(context(**overrides), assets_dir: assets_path)
       end
 
-      def build(output: output_path, assets_dir: assets_path, **overrides)
-        context(**overrides).build(entrypoints:, output:, assets_dir:)
+      def build(output: output_path, assets_dir: assets_path, **overrides, &reporter)
+        context = context(**overrides)
+        reporter&.call(:collecting_bundle, entrypoints:)
+        bundle = context.graph.bundle(entrypoints:)
+        reporter&.call(:bundle_collected, bundle:, assets: context.assets.values)
+
+        if assets_dir
+          reporter&.call(:materializing_assets, assets_dir:)
+          context.write_assets(assets_dir) do |status, asset, path|
+            reporter&.call(:asset_materialized, status:, asset:, path:)
+          end
+        else
+          context.wait_for_assets
+        end
+
+        reporter&.call(:writing_bundle, output:)
+        FileUtils.mkdir_p(File.dirname(output))
+        File.binwrite(output, ::Klenod::Runtime::BundleFormat.dump(bundle))
+        reporter&.call(:bundle_written, output:)
+        bundle
       end
 
       def runtime_provider(bundle_path: output_path)
