@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./ping", () => ({ updatePing: vi.fn() }));
 
 import Runtime from "./runtime";
+import { updatePing } from "./ping";
 
 function tree() {
   return {
@@ -37,21 +38,21 @@ describe("runtime listeners", () => {
     const runtime = new Runtime(onEvent);
     const button = document.querySelector("button")!;
 
-    await runtime.apply([
+    await runtime.applyBatch([
       ["Initialize", tree()],
       ["SetListener", "button", "click", "first"],
     ]);
     button.dispatchEvent(new MouseEvent("click"));
     expect(onEvent).toHaveBeenLastCalledWith(expect.any(MouseEvent), "first");
 
-    await runtime.apply([
+    await runtime.applyBatch([
       ["SetListener", "button", "click", "second"],
       ["RemoveListener", "button", "click", "first"],
     ]);
     button.dispatchEvent(new MouseEvent("click"));
     expect(onEvent).toHaveBeenLastCalledWith(expect.any(MouseEvent), "second");
 
-    await runtime.apply([["RemoveListener", "button", "click", "second"]]);
+    await runtime.applyBatch([["RemoveListener", "button", "click", "second"]]);
     button.dispatchEvent(new MouseEvent("click"));
     expect(onEvent).toHaveBeenCalledTimes(2);
   });
@@ -62,7 +63,7 @@ describe("runtime listeners", () => {
     const runtime = new Runtime(onEvent);
     const button = document.querySelector("button")!;
 
-    await runtime.apply([
+    await runtime.applyBatch([
       ["Initialize", tree()],
       ["SetListener", "button", "click", "listener"],
       ["Initialize", tree()],
@@ -71,5 +72,40 @@ describe("runtime listeners", () => {
     button.dispatchEvent(new MouseEvent("click"));
 
     expect(onEvent).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("runtime command errors", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("logs and continues by default", async () => {
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const runtime = new Runtime(vi.fn());
+
+    await runtime.applyBatch([["UnknownCommand"], ["Pong", 10]]);
+
+    expect(error).toHaveBeenCalledWith(
+      "Command 0 (UnknownCommand) failed",
+      expect.any(Error),
+    );
+    expect(updatePing).toHaveBeenCalledOnce();
+  });
+
+  it("throws and stops a strict batch", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const runtime = new Runtime(vi.fn(), { commandErrorPolicy: "throw" });
+
+    await expect(
+      runtime.applyBatch([["UnknownCommand"], ["Pong", 10]]),
+    ).rejects.toThrow("Unknown command: UnknownCommand");
+    expect(updatePing).not.toHaveBeenCalled();
   });
 });

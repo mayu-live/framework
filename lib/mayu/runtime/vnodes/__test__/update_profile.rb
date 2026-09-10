@@ -6,7 +6,7 @@ require "vernier"
 
 require_relative "../../../test"
 require_relative "../../engine"
-require_relative "../patcher"
+require_relative "../collector"
 require_relative "../vdocument"
 
 module Mayu
@@ -194,13 +194,13 @@ module Mayu
         def self.tick(engine, instance, index = nil)
           UpdateTraceHook.trace_update(index) do
             instance.advance!
-            Async::Task.current.with_timeout(1.0) { engine.dequeue_patches }
+            Async::Task.current.with_timeout(1.0) { engine.dequeue_batch }
           end
         end
 
         def self.drain_queue(engine)
           loop do
-            Async::Task.current.with_timeout(0.01) { engine.dequeue_patches }
+            Async::Task.current.with_timeout(0.01) { engine.dequeue_batch }
           end
         rescue Async::TimeoutError
           nil

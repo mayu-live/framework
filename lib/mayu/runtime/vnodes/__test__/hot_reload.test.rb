@@ -441,7 +441,7 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
     patches =
       dequeue_until(engine) do |batch|
         batch.any? do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::SetTextContent) &&
+          patch.is_a?(Mayu::Runtime::Commands::SetTextContent) &&
             patch.content == content
         end
       end
@@ -452,7 +452,7 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
     patches =
       dequeue_until(engine) do |batch|
         batch.any? do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::RenderError) &&
+          patch.is_a?(Mayu::Runtime::Commands::RenderError) &&
             patch.message == message
         end
       end

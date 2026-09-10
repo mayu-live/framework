@@ -143,7 +143,7 @@ module Mayu
           @children.remove
         end
 
-        def update(patcher, descriptor = nil)
+        def update(collector, descriptor = nil)
           retried = false
           replacement_rendered = false
           replacement_children = nil
@@ -185,7 +185,7 @@ module Mayu
             ) do
               children =
                 replacement_rendered ? replacement_children : render_children
-              @children.update(patcher, children)
+              @children.update(collector, children)
             end
           rescue ErrorHandled => e
             raise if retried || e.boundary != self

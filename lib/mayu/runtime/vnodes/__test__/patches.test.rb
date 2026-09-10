@@ -61,17 +61,17 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
 
-    document.update(patcher, updated)
+    document.update(collector, updated)
 
     create_patch =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::CreateTree)
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::CreateTree)
       end
     remove_patch =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::RemoveNode)
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::RemoveNode)
       end
 
     refute_nil(create_patch)
@@ -89,12 +89,12 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
-    document.update(patcher, updated)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    document.update(collector, updated)
 
     register =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::RegisterCustomElement)
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::RegisterCustomElement)
       end
 
     refute_nil(register)
@@ -112,12 +112,12 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     updated = H[:body, H[custom]]
 
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
-    patcher = Mayu::Runtime::VNodes::Patcher.new
-    engine.root.update(patcher, updated)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    engine.root.update(collector, updated)
 
     register =
-      patcher.patches.find do
-        it.is_a?(Mayu::Runtime::Patches::RegisterCustomElement)
+      collector.commands.find do
+        it.is_a?(Mayu::Runtime::Commands::RegisterCustomElement)
       end
 
     assert_equal("klenod-clock-a1b2c3d4", register.name)
@@ -132,25 +132,25 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
 
-    document.update(patcher, updated)
+    document.update(collector, updated)
 
     add_class =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::AddClass)
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::AddClass)
       end
     remove_class =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::RemoveClass)
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::RemoveClass)
       end
     set_css =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::SetCSSProperty)
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::SetCSSProperty)
       end
     set_text =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
       end
 
     refute_nil(add_class)
@@ -169,14 +169,14 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     initial = H[:body, H[:p, "Hello", class: "first second"]]
     updated = H[:body, H[:p, "Hello", class: "second third"]]
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
-    patcher = Mayu::Runtime::VNodes::Patcher.new
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
 
-    engine.root.update(patcher, updated)
+    engine.root.update(collector, updated)
 
     add_class =
-      patcher.patches.find { it.is_a?(Mayu::Runtime::Patches::AddClass) }
+      collector.commands.find { it.is_a?(Mayu::Runtime::Commands::AddClass) }
     remove_class =
-      patcher.patches.find { it.is_a?(Mayu::Runtime::Patches::RemoveClass) }
+      collector.commands.find { it.is_a?(Mayu::Runtime::Commands::RemoveClass) }
 
     assert_equal(["third"], add_class.classes)
     assert_equal(["first"], remove_class.classes)
@@ -190,17 +190,17 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
-    document.update(patcher, updated)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    document.update(collector, updated)
 
     remove_class_attr =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::RemoveAttribute) &&
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::RemoveAttribute) &&
           patch.name == :class
       end
     remove_style_attr =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::RemoveAttribute) &&
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::RemoveAttribute) &&
           patch.name == :style
       end
 
@@ -212,12 +212,12 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     descriptor = H[:body, H[MountUpdateProbe]]
 
     run_engine(descriptor) do |engine|
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
 
       set_text =
         patches.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+          patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
         end
 
       refute_nil(set_text)
@@ -236,12 +236,12 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
 
       instance.set_mode(:b)
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
 
       replace_children =
         patches.select do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+          patch.is_a?(Mayu::Runtime::Commands::ReplaceChildren)
         end
 
       assert_equal(1, replace_children.count)
@@ -255,16 +255,16 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     run_engine(initial) do |engine|
       engine.navigate("/next", updated)
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
 
       history =
         patches.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::HistoryPushState)
+          patch.is_a?(Mayu::Runtime::Commands::HistoryPushState)
         end
       dom_patches =
         patches.reject do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::HistoryPushState)
+          patch.is_a?(Mayu::Runtime::Commands::HistoryPushState)
         end
 
       refute_nil(history)
@@ -296,14 +296,14 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     run_engine(initial) do |engine|
       engine.navigate("/complex", updated)
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
 
       create_tree =
-        patches.find { |patch| patch.is_a?(Mayu::Runtime::Patches::CreateTree) }
+        patches.find { |patch| patch.is_a?(Mayu::Runtime::Commands::CreateTree) }
       replace_children =
         patches.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+          patch.is_a?(Mayu::Runtime::Commands::ReplaceChildren)
         end
 
       refute_nil(create_tree)
@@ -324,12 +324,12 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     run_engine(initial) do |engine|
       engine.navigate("/tree", updated)
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
 
       create_trees =
         patches.select do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::CreateTree)
+          patch.is_a?(Mayu::Runtime::Commands::CreateTree)
         end
 
       assert_equal(1, create_trees.length)
@@ -350,9 +350,9 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
 
-    assert_raises(RuntimeError) { document.update(patcher, updated) }
+    assert_raises(RuntimeError) { document.update(collector, updated) }
   end
 
   class HeadNavProbe < Mayu::Component::Base
@@ -383,19 +383,19 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
 
       engine.navigate("/nav", updated)
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
 
-      assert(patches.first.is_a?(Mayu::Runtime::Patches::HistoryPushState))
+      assert(patches.first.is_a?(Mayu::Runtime::Commands::HistoryPushState))
       assert(
         patches.any? do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::HistoryPushState)
+          patch.is_a?(Mayu::Runtime::Commands::HistoryPushState)
         end
       )
 
       assert(
         patches.any? do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+          patch.is_a?(Mayu::Runtime::Commands::ReplaceChildren)
         end
       )
     end
@@ -429,13 +429,13 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       patches =
         dequeue_until(engine) do |batch_patches|
           batch_patches.any? do |patch|
-            patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+            patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
           end
         end
 
       set_text =
         patches&.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+          patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
         end
 
       refute_nil(set_text)
@@ -495,14 +495,14 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       first_batch =
         dequeue_until(engine, max_batches: 3) do |batch_patches|
           batch_patches.any? do |patch|
-            patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+            patch.is_a?(Mayu::Runtime::Commands::ReplaceChildren)
           end
         end
 
       refute_nil(first_batch)
       replace =
         first_batch.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::ReplaceChildren)
+          patch.is_a?(Mayu::Runtime::Commands::ReplaceChildren)
         end
       refute_nil(replace)
       assert_equal([], replace.child_ids)
@@ -512,7 +512,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       second_batch =
         dequeue_until(engine, max_batches: 1) do |batch_patches|
           batch_patches.any? do |patch|
-            patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+            patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
           end
         end
 

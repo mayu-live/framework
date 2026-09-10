@@ -74,7 +74,7 @@ describe("session-connection", () => {
       throw stopError;
     });
 
-    const runtime = { apply: vi.fn() };
+    const runtime = { applyBatch: vi.fn() };
     const mayu = {
       setWriter: vi.fn(),
       clearWriter: vi.fn(),
@@ -113,7 +113,7 @@ describe("session-connection", () => {
       new Error("server still draining"),
     );
     const stop = new Error("stop test loop");
-    const runtime = { apply: vi.fn() };
+    const runtime = { applyBatch: vi.fn() };
     const connection = new SessionConnection({
       runtime: runtime as any,
       mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
@@ -123,14 +123,14 @@ describe("session-connection", () => {
       },
     });
     await expect(connection.run()).rejects.toBe(stop);
-    expect(runtime.apply).not.toHaveBeenCalled();
+    expect(runtime.applyBatch).not.toHaveBeenCalled();
     expect(shouldResetSessionMock).toHaveBeenCalledWith(
       expect.objectContaining({ code: "TRANSFER_FAILED" }),
     );
     expect(resetSessionEntirelyMock).toHaveBeenCalledTimes(1);
   });
 
-  it("marks the connection disconnected after the patch stream closes", async () => {
+  it("marks the connection disconnected after the command stream closes", async () => {
     const stop = new Error("stop test loop");
     initInputStreamMock.mockResolvedValueOnce(
       new ReadableStream({
@@ -147,7 +147,7 @@ describe("session-connection", () => {
     shouldResetSessionMock.mockReturnValue(false);
 
     const connection = new SessionConnection({
-      runtime: { apply: vi.fn() } as any,
+      runtime: { applyBatch: vi.fn() } as any,
       mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
       endpoint: "/.mayu/session/test",
       sleep: async () => {
@@ -169,7 +169,7 @@ describe("session-connection", () => {
     shouldResetSessionMock.mockReturnValue(false);
     const stop = new Error("stop test loop");
     const connection = new SessionConnection({
-      runtime: { apply: vi.fn() } as any,
+      runtime: { applyBatch: vi.fn() } as any,
       mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
       endpoint: "/.mayu/session/test",
       sleep: async () => {
@@ -195,7 +195,7 @@ describe("session-connection", () => {
     });
 
     const connection = new SessionConnection({
-      runtime: { apply: vi.fn() } as any,
+      runtime: { applyBatch: vi.fn() } as any,
       mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
       endpoint: "/.mayu/session/test",
       sleep: sleepMock,
@@ -224,7 +224,7 @@ describe("session-connection", () => {
     });
 
     const connection = new SessionConnection({
-      runtime: { apply: vi.fn() } as any,
+      runtime: { applyBatch: vi.fn() } as any,
       mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
       endpoint: "/.mayu/session/test",
       sleep: sleepMock,

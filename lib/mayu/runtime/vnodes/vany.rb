@@ -27,14 +27,14 @@ module Mayu
           @child = @type.new(@descriptor, parent: self, engine: @engine)
         end
 
-        def update(patcher, descriptor = nil)
+        def update(collector, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
-          @child.update(patcher, descriptor)
+          @child.update(collector, descriptor)
         end
 
-        def register_custom_element(patcher)
-          @child.register_custom_element(patcher)
+        def register_custom_element(collector)
+          @child.register_custom_element(collector)
         end
 
         def start

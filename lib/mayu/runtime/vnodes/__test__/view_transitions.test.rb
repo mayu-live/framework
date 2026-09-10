@@ -40,14 +40,19 @@ class Mayu::Runtime::VNodes::ViewTransitionsTest < Minitest::Test
 
       instance.increment
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
 
-      assert_kind_of(Mayu::Runtime::Patches::ViewTransition, batch)
+      assert_kind_of(Mayu::Runtime::Batch, batch)
+      assert_equal(1, batch.commands.length)
+      assert_kind_of(
+        Mayu::Runtime::Commands::ViewTransition,
+        batch.commands.first
+      )
 
-      inner = unwrap_patches(batch)
+      inner = unwrap_commands(batch)
       set_text =
         inner.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+          patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
         end
 
       refute_nil(set_text)
@@ -67,12 +72,15 @@ class Mayu::Runtime::VNodes::ViewTransitionsTest < Minitest::Test
       instance.instance_variable_set(:@value, 1)
       instance.rerender!
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
 
-      patches = unwrap_patches(batch)
+      patches = unwrap_commands(batch)
 
       refute_empty(patches)
-      refute_kind_of(Mayu::Runtime::Patches::ViewTransition, batch)
+      assert_kind_of(Mayu::Runtime::Batch, batch)
+      refute(batch.commands.any? do |command|
+        command.is_a?(Mayu::Runtime::Commands::ViewTransition)
+      end)
     end
   end
 end

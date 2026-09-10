@@ -4,14 +4,14 @@
 
 Mayu is a server-rendered UI framework with server-side component state and a browser runtime that applies streamed DOM patches.
 
-The server renders HTML for the initial request, then keeps a per-browser session alive. Client events are sent back to the server, the server re-renders/diffs server-side vnode trees, and the browser applies patch batches.
+The server renders HTML for the initial request, then keeps a per-browser session alive. Client events are sent back to the server, the server re-renders/diffs server-side vnode trees, and the browser applies command batches.
 
 ## Mental Model
 
 - Server owns application state and component instances.
 - Components render descriptor trees (not direct DOM).
-- Runtime converts descriptors to server-side vnodes and emits patch operations.
-- Browser runtime applies patch operations to real DOM.
+- Runtime converts descriptors to server-side vnodes and diffs them into commands.
+- Browser runtime executes those commands against the real DOM.
 - Klenod compiles application files (`.haml`, `.css`, `.js`, and assets), resolves routes, tracks dependencies, and provides development updates for HMR.
 
 ## Top-Level Responsibility Map (`lib/mayu`)
@@ -19,15 +19,15 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 - `environment.rb`: Bootstraps the Klenod-backed app environment, metrics, runtime JS entry path, and marshaller.
 - `server.rb` + `server/*`: HTTP server, routing of framework endpoints, session stream/event handling, static runtime files.
 - `session.rb` + `session/*`: Per-client session lifecycle, event queueing, runtime engine orchestration, transfer/resume.
-- `runtime.rb` + `runtime/*`: Server-side rendering/diff engine, vnode tree, patch generation, serialization.
+- `runtime.rb` + `runtime/*`: Server-side rendering/diff engine, vnode tree, command generation, serialization.
 - `component.rb` + `component/*`: Base component API, fetch helper, and CSS unit refinements. Klenod supplies generated component class names.
 - `klenod.rb` + `klenod/*`: Mayu's Klenod configuration, component provider, and asset Rack adapter.
 - `configuration.rb`: `mayu.toml` loading and environment config resolution.
 - `commands/*`: CLI commands (`dev`, `build`, `start`, etc.).
 - `metrics.rb` + `metrics/*`: Prometheus metrics, multi-process collection/export.
-- `client/`: Browser runtime TypeScript workspace (patch consumer + session connection).
+- `client/`: Browser runtime TypeScript workspace (batch consumer + session connection).
 
-## End-to-End Flow (Request -> Session -> Patches)
+## End-to-End Flow (Request -> Session -> Commands)
 
 1. `Mayu::Commands::Dev` / `Start` creates `Mayu::Server`.
 2. `Mayu::Server::Controller` starts worker process(es) and loads `Mayu::Environment`.
@@ -38,10 +38,10 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 7. `App#handle_session_start` returns SSR HTML plus `x-mayu-session-id` and session token cookie.
 8. Browser loads `/.mayu/runtime/...` JS, connects to `/.mayu/session/:id`.
 9. Server streams one bootstrap batch containing `Initialize` and the current
-   `SetListener` registrations, followed by patch batches
+   `SetListener` registrations, followed by command batches
    (`application/vnd.mayu.event-stream`).
 10. Browser sends callback/navigate/ping events to `PATCH /.mayu/session/:id`.
-11. Session queues events -> engine updates -> patch batches streamed back.
+11. Session queues events -> engine updates -> command batches streamed back.
 
 ## Core Runtime Architecture (`lib/mayu/runtime`)
 
@@ -50,12 +50,12 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 - `Runtime::H`: helper to build descriptor objects.
 - `Runtime::Descriptors`: immutable render descriptors (`Element`, `Children`, `Context`, `Callback`, etc.).
 - `Runtime::VNodes::*`: stateful vnode tree used for diffing, lifecycle, listeners, serialization.
-- `Runtime::Engine`: orchestrates vnode root, updater queue, dirty element flushing, patch output queue.
-- `Runtime::Patches`: patch protocol types (Ruby side). Generated file; keep Ruby/TS patch names aligned.
+- `Runtime::Engine`: orchestrates vnode root, updater queue, dirty element flushing, and the batch output queue.
+- `Runtime::Commands`: compact server-to-client command types; `Runtime::Batch` is one ordered transport message.
 
 ### Rendering and updates
 
-- `Engine` owns a `VDocument` root and an async patch output queue.
+- `Engine` owns a `VDocument` root and an async batch output queue.
 - `VDocument` wraps app output with internal `Html`/`Head` components and tracks:
   - listeners
   - aggregated head nodes
@@ -67,25 +67,26 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
   - runs `mount`/`unmount`
   - exposes `rerender!` into engine updater queue
   - supports error boundaries (`handle_error`)
-- `VChildren` performs child diffing and emits structural patches:
+- `VChildren` performs child diffing and emits structural commands:
   - `CreateTree` for inserts
   - `RemoveNode`
   - `ReplaceChildren` when child ID lists change
   - chunked updates using `Engine#update_budget`
 - `VAttributes` handles attribute/class/style diffs and callback listener
   registration. Callback wiring is not rendered into SSR HTML; it is sent as
-  `SetListener`/`RemoveListener` patches.
+  `SetListener`/`RemoveListener` commands.
 
 ### Important invariants
 
 - Server-side vnodes, engine, and sessions are marshalable for transfer/resume.
 - Async tasks are excluded from marshal state and rebuilt on rehydrate.
 - `VComponent` is the vnode that owns long-lived async work (component task/queue).
-- Patch ordering matters:
-  - navigation/history patches
-  - head patches
-  - body patches
-- `lib/mayu/runtime/patches.rb` is generated (`DO NOT EDIT` comment).
+- Command ordering matters within each batch:
+  - navigation/history commands
+  - head commands
+  - body commands
+- Each updater flush produces one batch. Standalone commands use singleton
+  batches, and the server never merges adjacent batches.
 
 ## Components (`lib/mayu/component`)
 
@@ -128,7 +129,7 @@ The result contains the VDOM tree, HTTP status, canonical module IDs, and the
 ordered CSS and JavaScript assets for the route. Mayu passes the descriptor and
 asset URLs to its existing VDOM/runtime engine. Route-resolution failures use
 the nearest Klenod `+error` view; initial and live VDOM failures retain Mayu's
-error-boundary/render-error-patch behavior.
+error-boundary/render-error-command behavior.
 
 ### Development and production
 
@@ -160,12 +161,12 @@ at `/.mayu/assets/`.
 
 ### Transfer/resume behavior
 
-On shutdown or explicit transfer patch:
+On shutdown or an explicit transfer command:
 
 - session serializes (`Marshal.dump`)
 - wrapped in `Session::TransferState`
 - encrypted (`EncryptedMarshal`)
-- sent as `Runtime::Patches::Transfer` blob
+- sent as a `Runtime::Commands::Transfer` blob in a singleton batch
 - browser stores transfer blob
 - next stream connect uses `POST` with transfer blob to resume session
 
@@ -174,18 +175,24 @@ On shutdown or explicit transfer patch:
 ### Main pieces
 
 - `main.ts`: entrypoint called by server-generated init shim.
-- `session-connection.ts`: reconnect loop, stream setup, patch decoding, callback stream setup.
-- `stream.ts`: HTTP stream connect helpers for patch stream + outgoing event stream/fallback.
-- `runtime.ts`: patch executor against real DOM + node ID registry.
+- `session-connection.ts`: reconnect loop, stream setup, batch decoding, callback stream setup.
+- `stream.ts`: HTTP stream connect helpers for command stream + outgoing event stream/fallback.
+- `runtime.ts`: command dispatcher against real DOM + node ID registry.
 - `mayu.ts`: `window.Mayu` bridge for callbacks/navigation/pings.
 - `serializeEvent.ts`: serializes DOM events to JSON payloads.
 - `session-recovery.ts`: full-session reset fallback (re-fetch page + morph DOM) for unrecoverable session errors.
 
-### Patch protocol boundary
+### Command protocol boundary
 
-Ruby patch types in `lib/mayu/runtime/patches.rb` must stay in sync with patch handlers in `lib/mayu/client/src/runtime.ts`.
+Ruby command types in `lib/mayu/runtime/commands.rb` must stay in sync with
+command handlers in `lib/mayu/client/src/runtime.ts`.
 
-Notable patch categories:
+Every decoded MessagePack value is a batch (`Command[]`), and every command is
+a compact `[name, ...arguments]` tuple. There is no `Batch` command or extra
+transport wrapper. `ViewTransition` is the only command that intentionally
+contains a nested batch.
+
+Notable command categories:
 
 - tree creation/removal (`CreateTree`, `RemoveNode`)
 - child replacement (`ReplaceChildren`)
@@ -193,17 +200,20 @@ Notable patch categories:
 - navigation (`HistoryPushState`)
 - head/error/custom elements
 - transfer blob
-- batched patches (`Batch`) and view transitions (`ViewTransition`)
+- view-transition batches (`ViewTransition`)
 
 ### Client/server event loop
 
 - browser sends JSON lines to `PATCH /.mayu/session/:id`; messages are
   at-most-once and are dropped rather than replayed across disconnects
 - server parses messages in `Server::EventStream.each_incoming_message`
-- session turns messages into typed events (`CallbackEvent`, `NavigateEvent`, `PingEvent`)
+- `Session#receive_message` turns each JSON message into exactly one typed event
+  (`CallbackEvent`, `NavigateEvent`, or `PingEvent`)
 - callbacks are serialized per component while different components can run
   concurrently
-- runtime processes and streams MsgPack patch arrays back (deflate-raw compressed)
+- server-to-client: `VDOM -> CommandCollector -> Batch -> Engine queue -> stream -> applyBatch -> DOM`
+- client-to-server: `browser event -> JSON message -> receive_message -> session event -> callback/navigation -> VDOM`
+- command batches are streamed as deflate-raw compressed MessagePack arrays
 
 ## Environment and Build Modes (`environment.rb`, `commands/*`)
 
@@ -239,14 +249,14 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
 - Change component API/lifecycle/state behavior:
   - `lib/mayu/component/base.rb`
   - `lib/mayu/runtime/vnodes/vcomponent.rb`
-- Change diffing/patch emission:
+- Change diffing/command emission:
   - `lib/mayu/runtime/vnodes/*`
-  - `lib/mayu/runtime/patches.rb` (generated; also update TS handlers)
+  - `lib/mayu/runtime/commands.rb` (wire commands; also update TS handlers)
   - `lib/mayu/client/src/runtime.ts`
 - Change event serialization or callback semantics:
   - `lib/mayu/client/src/serializeEvent.ts`
   - `lib/mayu/runtime/vnodes/vattributes.rb`
-  - `lib/mayu/session.rb` (`Events.from_message`)
+  - `lib/mayu/session.rb` (`Events.parse`)
 - Change route/file conventions:
   - `lib/mayu/klenod/configuration.rb`
   - `lib/mayu/klenod/router.rb`
@@ -272,8 +282,8 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
 ## Sharp Edges / Agent Notes
 
 - Session/engine transfer relies on `Marshal`; avoid storing non-marshalable objects in component instance state.
-- Keep patch schema compatibility across Ruby and TypeScript.
-- `VChildren` diffing uses a simple keyed/type reconciliation strategy; keyed reordering works, but it favors simplicity over advanced move-optimization (e.g. explicit move patches/LIS-style minimization).
+- Keep the command schema aligned across Ruby and TypeScript.
+- `VChildren` diffing uses a simple keyed/type reconciliation strategy; keyed reordering works, but it favors simplicity over advanced move-optimization (e.g. explicit move commands/LIS-style minimization).
 - `VBody` injects a `<mayu-ping>` custom element automatically for connection status UI.
 
 ## Good Starting Files for New Contributors

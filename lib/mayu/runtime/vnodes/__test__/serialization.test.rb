@@ -150,11 +150,11 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
       wait_until { instance.respond_to?(:rerender!) }
 
       instance.bump
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      unwrap_commands(batch)
       instance.bump
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      unwrap_commands(batch)
 
       assert_equal(2, instance.count)
       assert_equal(1, instance.mount_count)
@@ -201,8 +201,8 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
 
     run_engine_instance(engine) do
       document = engine.root
-      patcher = Mayu::Runtime::VNodes::Patcher.new
-      document.update(patcher, descriptor)
+      collector = Mayu::Runtime::VNodes::CommandCollector.new
+      document.update(collector, descriptor)
 
       wait_until { document.instance_variable_get(:@listeners).any? }
     end
@@ -220,8 +220,8 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
 
     run_engine_instance(restored) do
       document = restored.root
-      patcher = Mayu::Runtime::VNodes::Patcher.new
-      document.update(patcher, descriptor)
+      collector = Mayu::Runtime::VNodes::CommandCollector.new
+      document.update(collector, descriptor)
 
       component = find_component(document, CallbackProbe)
       instance = component.instance_variable_get(:@instance)
@@ -235,12 +235,12 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
       refute_nil(listener)
 
       restored.callback(listener.id, {})
-      batch = Async::Task.current.with_timeout(0.5) { restored.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { restored.dequeue_batch }
+      patches = unwrap_commands(batch)
 
       set_text =
         patches.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+          patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
         end
 
       refute_nil(set_text)

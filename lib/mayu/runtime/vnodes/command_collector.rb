@@ -6,20 +6,20 @@
 module Mayu
   module Runtime
     module VNodes
-      class Patcher
-        attr_reader :patches
+      class CommandCollector
+        attr_reader :commands
 
         def initialize
-          @patches = []
+          @commands = []
         end
 
-        def <<(patch)
-          @patches << patch
+        def <<(command)
+          @commands << command
         end
       end
 
-      class NullPatcher
-        def <<(_patch)
+      class NullCommandCollector
+        def <<(_command)
         end
       end
     end

@@ -8,6 +8,8 @@ require "zlib"
 require "async/http/body/writable"
 require "async/promise"
 
+require_relative "../runtime/commands"
+
 module Mayu
   class Server
     module EventStream
@@ -65,17 +67,21 @@ module Mayu
           flushed
         end
 
-        def write(patch)
+        def write_batch(batch)
+          unless batch.is_a?(Runtime::Batch)
+            raise ArgumentError, "Expected #{Runtime::Batch}, got #{batch.class}"
+          end
+          batch.validate!
+
           if @write_closed || @consumer_closed
             raise ClosedStreamError,
               "Attempted to write to a closed #{self.class.name}"
           end
 
-          patch
-            .then { Array(it) }
+          batch
             .then { @wrapper.pack(it) }
             .then { deflate_chunk(it) }
-            .then { super(it) }
+            .then { write(it) }
         end
 
         def close_write(reason = nil)

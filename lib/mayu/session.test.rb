@@ -54,14 +54,22 @@ class Mayu::SessionTest < Minitest::Test
   end
 
   class FakeEngine
-    attr_reader :patches, :refreshed_descriptor, :stylesheets
+    attr_reader :batches, :refreshed_descriptor, :stylesheets
 
     def initialize
-      @patches = []
+      @batches = []
     end
 
-    def patch(patch)
-      @patches.concat(Array(patch))
+    def commands
+      @batches.flat_map(&:commands)
+    end
+
+    def enqueue_command(command)
+      enqueue_batch(Mayu::Runtime::Batch[[command]])
+    end
+
+    def enqueue_batch(batch)
+      @batches << batch
     end
 
     def refresh(descriptor)
@@ -133,8 +141,8 @@ class Mayu::SessionTest < Minitest::Test
 
     Async do
       session.start
-      patch = Async::Task.current.with_timeout(0.5) { session.dequeue_patch }
-      assert_equal(Mayu::Runtime::Patches::Pong[123], patch)
+      batch = Async::Task.current.with_timeout(0.5) { session.dequeue_batch }
+      assert_equal([Mayu::Runtime::Commands::Pong[123]], batch.commands)
     ensure
       session.stop
     end.wait
@@ -142,12 +150,57 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_invalid_event_messages_are_rejected
     assert_raises(Mayu::Session::Events::InvalidEventError) do
-      Mayu::Session::Events.from_message({
+      Mayu::Session::Events.parse({
         type: "callback",
         payload: {id: "", event: {}},
         ping: 1
       })
     end
+  end
+
+  def test_callback_message_parses_to_one_typed_event
+    event =
+      Mayu::Session::Events.parse({
+        type: "callback",
+        payload: {id: "listener", event: {type: "click"}},
+        ping: 123
+      })
+
+    assert_equal(
+      Mayu::Session::Events::CallbackEvent[
+        "listener",
+        {type: "click"},
+        123
+      ],
+      event
+    )
+  end
+
+  def test_receive_message_queues_exactly_one_event
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    queue = session.instance_variable_get(:@incoming_events)
+
+    session.receive_message({
+      type: "navigate",
+      payload: {href: "/next", pushState: true},
+      ping: 123
+    })
+
+    Async do
+      event = Async::Task.current.with_timeout(0.5) { queue.dequeue }
+      assert_equal(
+        Mayu::Session::Events::NavigateEvent["/next", true, 123],
+        event
+      )
+      assert(queue.empty?)
+    end.wait
   end
 
   def test_session_renders_the_example_through_klenod
@@ -167,7 +220,7 @@ class Mayu::SessionTest < Minitest::Test
     assert_includes(html, "/.mayu/assets/")
     refute_includes(html, "Mayu.callback(event,")
     refute_includes(html, "data-mayu-on")
-    refute_empty(session.listener_patches)
+    refute_empty(session.listener_commands)
   end
 
   def test_session_renders_klenod_slots
@@ -236,9 +289,9 @@ class Mayu::SessionTest < Minitest::Test
 
       refute_nil(listener)
       engine.callback(listener.id, {target: {value: "Elements"}})
-      patch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
 
-      refute_nil(patch)
+      refute_nil(batch)
     ensure
       engine.stop
     end.wait
@@ -304,7 +357,7 @@ class Mayu::SessionTest < Minitest::Test
     end
   end
 
-  def test_reload_success_emits_clear_error_event_patch
+  def test_reload_success_emits_reload_succeeded_command
     env = FakeEnvironment.new
     request_info =
       Mayu::Session::RequestInfo.new(
@@ -321,17 +374,15 @@ class Mayu::SessionTest < Minitest::Test
     session.send(:handle_reload_result, reload_result)
 
     assert(fake_engine.refreshed_descriptor)
-    event_patch =
-      fake_engine.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::Event)
+    command =
+      fake_engine.commands.find do |candidate|
+        candidate.is_a?(Mayu::Runtime::Commands::ReloadSucceeded)
       end
 
-    refute_nil(event_patch)
-    assert_equal("reload:success", event_patch.event)
-    assert_nil(event_patch.payload)
+    refute_nil(command)
   end
 
-  def test_klenod_reload_failure_emits_render_error_patch
+  def test_klenod_reload_failure_emits_render_error_batch
     env = FakeEnvironment.new
     request_info =
       Mayu::Session::RequestInfo.new(
@@ -356,13 +407,14 @@ class Mayu::SessionTest < Minitest::Test
 
     session.send(:handle_reload_result, reload_result)
 
-    patch = fake_engine.patches.first
-    assert_instance_of(Mayu::Runtime::Patches::RenderError, patch)
-    assert_equal("app:/broken.haml", patch.file)
-    assert_equal("SyntaxError", patch.type)
-    assert_equal("unexpected token", patch.message)
-    assert_equal("%p= )\n", patch.source)
-    assert_equal(["app:/broken.haml:2"], patch.backtrace)
+    assert_equal(1, fake_engine.batches.length)
+    command = fake_engine.commands.first
+    assert_instance_of(Mayu::Runtime::Commands::RenderError, command)
+    assert_equal("app:/broken.haml", command.file)
+    assert_equal("SyntaxError", command.type)
+    assert_equal("unexpected token", command.message)
+    assert_equal("%p= )\n", command.source)
+    assert_equal(["app:/broken.haml:2"], command.backtrace)
     assert_same(error, provider.rewritten_error)
   end
 end

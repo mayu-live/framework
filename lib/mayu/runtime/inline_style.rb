@@ -77,13 +77,13 @@ module Mayu
 
             unless new_value
               yield(
-                Patches::RemoveCSSProperty[dom_id, format_property(property)]
+                Commands::RemoveCSSProperty[dom_id, format_property(property)]
               )
               next
             end
 
             yield(
-              Patches::SetCSSProperty[
+              Commands::SetCSSProperty[
                 dom_id,
                 format_property(property),
                 format_value(property, new_value)

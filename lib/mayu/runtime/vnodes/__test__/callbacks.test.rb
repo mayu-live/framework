@@ -41,8 +41,8 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     refute_includes(html, "Mayu.callback")
     refute_includes(html, "data-mayu-on")
 
-    listener = engine.listener_patches.first
-    assert_instance_of(Mayu::Runtime::Patches::SetListener, listener)
+    listener = engine.listener_commands.first
+    assert_instance_of(Mayu::Runtime::Commands::SetListener, listener)
     assert_equal("click", listener.name)
   end
 
@@ -82,12 +82,12 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
-    document.update(patcher, updated)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    document.update(collector, updated)
 
     set_listener =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::SetListener) &&
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::SetListener) &&
           patch.name == "click"
       end
 
@@ -107,18 +107,18 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
-    document.update(patcher, initial)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    document.update(collector, initial)
 
     listeners = document.instance_variable_get(:@listeners)
     assert_equal(1, listeners.size)
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
-    document.update(patcher, updated)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    document.update(collector, updated)
 
     remove_listener =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::RemoveListener) &&
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::RemoveListener) &&
           patch.name == "click"
       end
 
@@ -132,8 +132,8 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     run_engine(initial) do |engine|
       document = engine.root
 
-      patcher = Mayu::Runtime::VNodes::Patcher.new
-      document.update(patcher, initial)
+      collector = Mayu::Runtime::VNodes::CommandCollector.new
+      document.update(collector, initial)
 
       component = find_component(document, CallbackProbe)
       instance = component.instance_variable_get(:@instance)
@@ -148,12 +148,12 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
 
       engine.callback(listener.id, {})
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
 
       set_text =
         patches.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+          patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
         end
 
       refute_nil(set_text)

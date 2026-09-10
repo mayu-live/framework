@@ -5,7 +5,7 @@ require "minitest/autorun"
 require "async/http/protocol"
 
 require_relative "app"
-require_relative "../runtime/patches"
+require_relative "../runtime/commands"
 
 class Mayu::Server::AppTest < Minitest::Test
   class Page < Mayu::Component::Base
@@ -80,8 +80,8 @@ class Mayu::Server::AppTest < Minitest::Test
     def running? = false
     def transferring? = false
 
-    def listener_patches
-      [Mayu::Runtime::Patches::SetListener["button", "click", "listener"]]
+    def listener_commands
+      [Mayu::Runtime::Commands::SetListener["button", "click", "listener"]]
     end
 
     def start
@@ -100,7 +100,7 @@ class Mayu::Server::AppTest < Minitest::Test
       @stopped.resolve(true) unless @stopped.resolved?
     end
 
-    def dequeue_patch
+    def dequeue_batch
       Async::Promise.new.wait
     end
   end
@@ -238,11 +238,8 @@ class Mayu::Server::AppTest < Minitest::Test
 
       inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
       bootstrap = MessagePack.unpack(inflater.inflate(chunks.join))
-      assert_equal("Batch", bootstrap.dig(0, 0))
-      assert_equal(
-        %w[Initialize SetListener],
-        bootstrap.dig(0, 1).map(&:first)
-      )
+      assert_equal(%w[Initialize SetListener], bootstrap.map(&:first))
+      refute_includes(bootstrap.map(&:first), "Batch")
     ensure
       inflater&.close
       response&.body&.close

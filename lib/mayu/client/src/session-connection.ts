@@ -9,6 +9,7 @@ import {
 } from "./stream.js";
 import { SESSION_MIME_TYPE } from "./constants";
 import { updateConnectionStatus } from "./ping";
+import type { Batch } from "./protocol";
 import { getTransferState, setTransferState } from "./transfer";
 import {
   getErrorMessage,
@@ -106,29 +107,20 @@ export default class SessionConnection {
         updateConnectionStatus("connected");
 
         const consumeInput = async () => {
-          for await (const patch of decodeMultiStream(input, {
+          for await (const decoded of decodeMultiStream(input, {
             extensionCodec,
           })) {
             updateConnectionStatus("connected");
+            const batch = decoded as Batch;
 
-            if (
-              Array.isArray(patch) &&
-              patch.some(
-                (entry) =>
-                  Array.isArray(entry) && entry[0] === "TransferFailed",
-              )
-            ) {
+            if (batch.some((command) => command[0] === "TransferFailed")) {
               throw new StreamError(
                 "Session transfer failed",
                 "TRANSFER_FAILED",
               );
             }
 
-            try {
-              await this.#runtime.apply(patch as any);
-            } catch (error) {
-              console.error(error);
-            }
+            await this.#runtime.applyBatch(batch);
           }
 
           return "eof" as const;

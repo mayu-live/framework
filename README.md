@@ -175,8 +175,12 @@ on how to patch the DOM to the browser using the
 
 Callbacks and navigation events are sent as newline-delimited JSON over an
 authenticated `PATCH` stream. The server dispatches callbacks to the owning
-component and streams the resulting DOM patches back to the browser. Events
+component and streams the resulting command batches back to the browser. Events
 are at-most-once and are not replayed after a disconnect.
+
+Server responses are MessagePack batches. A batch is an ordered array of
+compact command tuples such as `["SetTextContent", id, text]`; one updater
+flush produces one batch, even when it contains only one command.
 
 ## 100% async
 
@@ -553,7 +557,7 @@ The child diffing algorithm is quite inefficient. I have tried to implement
 the algorithm in snabbdom/preact/million several times, but they rely
 on DOM-operations for ordering (`node.insertBefore`) and the algorithm has
 to take care of that and make sure that the order is exactly the same in the
-VDOM as in the DOM after all patch operations have been applied.
+VDOM as in the DOM after all command operations have been applied.
 
 The child diffing algorithm makes a few unnecessary moves, and there's lots of
 room for improvement, but at least the order is correct.

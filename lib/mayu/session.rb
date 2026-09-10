@@ -19,22 +19,22 @@ module Mayu
       class EventRejectedError < StandardError
       end
 
-      CallbackEvent = Data.define(:id, :payload)
-      NavigateEvent = Data.define(:path, :push_state)
+      CallbackEvent = Data.define(:id, :payload, :ping)
+      NavigateEvent = Data.define(:path, :push_state, :ping)
       PingEvent = Data.define(:ping)
 
-      def self.from_message(message)
+      def self.parse(message)
         case message
         in {type: "callback", payload: {id: String => id, event: Hash => event}, ping: Numeric => ping} unless id.empty?
-          [PingEvent[ping], CallbackEvent[id, event]]
+          CallbackEvent[id, event, ping]
         in {
              type: "navigate",
              payload: {href: String => href, pushState: true | false => push_state},
              ping: Numeric => ping
            }
-          [PingEvent[ping], NavigateEvent[href, push_state]]
+          NavigateEvent[href, push_state, ping]
         in {type: "ping", ping: Numeric => ping}
-          [PingEvent[ping]]
+          PingEvent[ping]
         else
           raise InvalidEventError, "Invalid event message: #{message.inspect}"
         end
@@ -129,8 +129,12 @@ module Mayu
       @incoming_events.enqueue(event)
     end
 
-    def dequeue_patch
-      @engine.dequeue_patch
+    def receive_message(message)
+      enqueue_event(Events.parse(message))
+    end
+
+    def dequeue_batch
+      @engine.dequeue_batch
     end
 
     def start
@@ -183,8 +187,8 @@ module Mayu
       @engine.dom_id_tree
     end
 
-    def listener_patches
-      @engine.listener_patches
+    def listener_commands
+      @engine.listener_commands
     end
 
     def styles
@@ -197,8 +201,8 @@ module Mayu
       stop
       running_task&.wait
       @engine.stop
-      @engine.patch(
-        Runtime::Patches::Transfer[
+      @engine.enqueue_command(
+        Runtime::Commands::Transfer[
           Mayu::Server::EventStream::Blob[
             TransferState.from_session(self).encrypt(@environment.marshaller)
           ]
@@ -208,7 +212,7 @@ module Mayu
     end
 
     def transfer_failed!
-      @engine.patch(Runtime::Patches::TransferFailed[])
+      @engine.enqueue_command(Runtime::Commands::TransferFailed[])
     end
 
     private
@@ -252,11 +256,11 @@ module Mayu
     end
 
     def handle_event(event)
+      record_ping(event.ping)
+
       case event
-      in Events::PingEvent[ping:]
-        @environment.metrics.session_ping_count.increment
-        @last_ping = Async::Clock.now
-        @engine.ping(ping)
+      in Events::PingEvent
+        nil
       in Events::CallbackEvent[id:, payload:]
         @engine.callback(id, payload)
       in Events::NavigateEvent[path:, push_state:]
@@ -284,31 +288,31 @@ module Mayu
           scripts: route_scripts
         )
         @engine.refresh(descriptor)
-        @engine.patch(Runtime::Patches::Event["reload:success", nil])
+        @engine.enqueue_command(Runtime::Commands::ReloadSucceeded[])
       else
-        emit_reload_error_patches(reload_result)
+        emit_reload_error_commands(reload_result)
       end
     rescue => e
       Console.logger.error(self, e)
     end
 
-    def emit_reload_error_patches(reload_result)
-      Array(reload_result.errors).each do |reload_error|
-        if reload_error in [module_id, error]
-          rewrite_reload_error_backtrace(error)
-          file =
-            (
-              if error.respond_to?(:module_id)
-                error.module_id.to_s
-              else
-                module_id.to_s
-              end
-            )
-          source = error.respond_to?(:source) ? error.source.to_s : ""
-          type =
-            (error.respond_to?(:cause) && error.cause || error).class.name
-          @engine.patch(
-            Runtime::Patches::RenderError[
+    def emit_reload_error_commands(reload_result)
+      commands =
+        Array(reload_result.errors).map do |reload_error|
+          if reload_error in [module_id, error]
+            rewrite_reload_error_backtrace(error)
+            file =
+              (
+                if error.respond_to?(:module_id)
+                  error.module_id.to_s
+                else
+                  module_id.to_s
+                end
+              )
+            source = error.respond_to?(:source) ? error.source.to_s : ""
+            type =
+              (error.respond_to?(:cause) && error.cause || error).class.name
+            next Runtime::Commands::RenderError[
               file,
               type,
               error.message,
@@ -316,12 +320,9 @@ module Mayu
               source,
               [{name: "CodeReload", path: file}]
             ]
-          )
-          next
-        end
+          end
 
-        @engine.patch(
-          Runtime::Patches::RenderError[
+          Runtime::Commands::RenderError[
             reload_error.file,
             reload_error.type,
             reload_error.message,
@@ -329,8 +330,15 @@ module Mayu
             reload_error.source.to_s,
             [{name: "CodeReload", path: reload_error.file}]
           ]
-        )
-      end
+        end
+
+      @engine.enqueue_batch(Runtime::Batch[commands]) unless commands.empty?
+    end
+
+    def record_ping(timestamp)
+      @environment.metrics.session_ping_count.increment
+      @last_ping = Async::Clock.now
+      @engine.ping(timestamp)
     end
 
     def rewrite_reload_error_backtrace(error)

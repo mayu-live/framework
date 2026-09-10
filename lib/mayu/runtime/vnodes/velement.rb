@@ -5,7 +5,7 @@
 
 require_relative "base"
 require_relative "../dom"
-require_relative "../patches"
+require_relative "../commands"
 require_relative "vattributes"
 require_relative "vchildren"
 
@@ -21,11 +21,11 @@ module Mayu
             VAttributes.new(@descriptor, parent: self, engine: @engine)
         end
 
-        def update(patcher, descriptor = nil)
+        def update(collector, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
-          @attributes.update(patcher, @descriptor)
-          @children.update(patcher, @descriptor.children)
+          @attributes.update(collector, @descriptor)
+          @children.update(collector, @descriptor.children)
         end
 
         def start
@@ -103,11 +103,11 @@ module Mayu
           @engine.register_dirty_element(self)
         end
 
-        def emit_replace_children(patcher)
+        def emit_replace_children(collector)
           return unless @children_dirty
           child_ids = @children.dom_id_list
           metrics.update_child_id_count.increment(labels: {tag_name:})
-          patcher << Patches::ReplaceChildren[dom_id, child_ids]
+          collector << Commands::ReplaceChildren[dom_id, child_ids]
           @children_dirty = false
         end
 

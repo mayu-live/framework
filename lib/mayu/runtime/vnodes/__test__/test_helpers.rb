@@ -8,7 +8,7 @@ require "stringio"
 require_relative "../../../test"
 
 require_relative "../../engine"
-require_relative "../patcher"
+require_relative "../command_collector"
 require_relative "../vdocument"
 
 module Mayu
@@ -57,23 +57,21 @@ module Mayu
           out.tap(&:rewind).read
         end
 
-        def unwrap_patches(patch)
-          case patch
-          when Mayu::Runtime::Patches::ViewTransition
-            unwrap_patches(patch.patches)
-          when Mayu::Runtime::Patches::Batch
-            patch.patches
-          when Array
-            patch
+        def unwrap_commands(value)
+          case value
+          when Mayu::Runtime::Commands::ViewTransition
+            unwrap_commands(value.batch)
+          when Mayu::Runtime::Batch
+            value.commands.flat_map { |command| unwrap_commands(command) }
           else
-            [patch]
+            [value]
           end
         end
 
         def assert_no_patches(engine, timeout: 0.2)
           wait_until { engine.instance_variable_get(:@updater).queue.empty? }
           assert_raises(Async::TimeoutError) do
-            Async::Task.current.with_timeout(timeout) { engine.dequeue_patches }
+            Async::Task.current.with_timeout(timeout) { engine.dequeue_batch }
           end
         end
 
@@ -82,9 +80,9 @@ module Mayu
             batch =
               Async::Task
                 .current
-                .with_timeout(timeout) { engine.dequeue_patches }
-            patches = unwrap_patches(batch)
-            return patches if yield(patches)
+                .with_timeout(timeout) { engine.dequeue_batch }
+            commands = unwrap_commands(batch)
+            return commands if yield(commands)
           end
           nil
         rescue Async::TimeoutError

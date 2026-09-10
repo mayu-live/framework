@@ -16,10 +16,10 @@ module Mayu
           @children = VChildren.new(get_children, parent: self, engine: @engine)
         end
 
-        def update(patcher, descriptor = nil)
+        def update(collector, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
-          @children.update(patcher, get_children)
+          @children.update(collector, get_children)
         end
 
         def start

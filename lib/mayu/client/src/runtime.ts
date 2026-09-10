@@ -5,6 +5,7 @@ import { updatePing } from "./ping";
 import { setTransferState } from "./transfer";
 import renderError, { clearRenderError } from "./renderError";
 import withViewTransition from "./view-transition";
+import type { Batch, CommandErrorPolicy } from "./protocol";
 
 type IdNode = {
   id: string;
@@ -12,19 +13,26 @@ type IdNode = {
   children: IdNode[];
 };
 
-type Patch = [name: string, ...args: unknown[]];
+export const COMMAND_ERROR_POLICY: CommandErrorPolicy = "continue";
 
-type PatchSet = Patch[];
+type RuntimeOptions = {
+  commandErrorPolicy?: CommandErrorPolicy;
+};
 
 export default class Runtime {
   #nodeSet: NodeSet;
+  #commandErrorPolicy: CommandErrorPolicy;
 
-  constructor(onEvent: (event: Event, listenerId: string) => void) {
-    this.#nodeSet = new NodeSet(onEvent);
+  constructor(
+    onEvent: (event: Event, listenerId: string) => void,
+    { commandErrorPolicy = COMMAND_ERROR_POLICY }: RuntimeOptions = {},
+  ) {
+    this.#nodeSet = new NodeSet(onEvent, commandErrorPolicy);
+    this.#commandErrorPolicy = commandErrorPolicy;
   }
 
-  async apply(patches: PatchSet) {
-    await Patches.Batch.call(this.#nodeSet, patches);
+  async applyBatch(batch: Batch) {
+    await applyCommands(this.#nodeSet, batch, this.#commandErrorPolicy);
   }
 }
 
@@ -48,9 +56,14 @@ class NodeSet {
     Map<string, { id: string; callback: EventListener }>
   >();
   #onEvent: (event: Event, listenerId: string) => void;
+  readonly commandErrorPolicy: CommandErrorPolicy;
 
-  constructor(onEvent: (event: Event, listenerId: string) => void) {
+  constructor(
+    onEvent: (event: Event, listenerId: string) => void,
+    commandErrorPolicy: CommandErrorPolicy = COMMAND_ERROR_POLICY,
+  ) {
     this.#onEvent = onEvent;
+    this.commandErrorPolicy = commandErrorPolicy;
   }
 
   clear() {
@@ -386,31 +399,35 @@ function updateHead(
   nodeInfo.childIds = newChildIds;
 }
 
-const Patches = {
-  async Batch(this: NodeSet, patches: Patch[]) {
-    for (const patch of patches) {
-      const [name, ...args] = patch;
-      console.log(name, args);
+async function applyCommands(
+  nodeSet: NodeSet,
+  batch: Batch,
+  errorPolicy: CommandErrorPolicy,
+) {
+  for (const [index, command] of batch.entries()) {
+    const [name, ...args] = command;
 
-      const patchFn = Patches[name as keyof typeof Patches] as any;
+    const handler = CommandHandlers[
+      name as keyof typeof CommandHandlers
+    ] as any;
 
-      if (!patchFn) {
-        throw new Error(`Not implemented: ${name}`);
-      }
+    try {
+      if (!handler) throw new Error(`Unknown command: ${name}`);
 
-      try {
-        const result = patchFn.apply(this, args as any);
-
-        if (result instanceof Promise) {
-          await result;
-        }
-      } catch (e) {
-        console.error(e);
-      }
+      const result = handler.apply(nodeSet, args as any);
+      if (result instanceof Promise) await result;
+    } catch (error) {
+      console.error(`Command ${index} (${name}) failed`, error);
+      if (errorPolicy === "throw") throw error;
     }
-  },
-  async ViewTransition(this: NodeSet, ...patches: Patch[]) {
-    return withViewTransition(() => Patches.Batch.call(this, patches));
+  }
+}
+
+const CommandHandlers = {
+  async ViewTransition(this: NodeSet, batch: Batch) {
+    return withViewTransition(() =>
+      applyCommands(this, batch, this.commandErrorPolicy),
+    );
   },
 
   Initialize(this: NodeSet, tree: IdNode) {
@@ -571,10 +588,8 @@ const Patches = {
   ) {
     renderError(file, type, message, backtrace, source, treePath);
   },
-  Event(this: NodeSet, event: string, _payload: unknown) {
-    if (event === "reload:success") {
-      clearRenderError();
-    }
+  ReloadSucceeded(this: NodeSet) {
+    clearRenderError();
   },
   RegisterCustomElement(name: string, path: string) {
     if (customElements.get(name)) return;

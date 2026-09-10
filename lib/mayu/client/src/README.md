@@ -2,8 +2,8 @@
 
 This directory contains the browser-side runtime that:
 
-- opens a server patch stream,
-- applies incoming DOM patches,
+- opens a server command stream,
+- applies incoming command batches,
 - sends user callbacks/navigation/ping events back to the server,
 - reconnects and restores state when possible.
 
@@ -19,23 +19,24 @@ This directory contains the browser-side runtime that:
    - opens input stream (`GET` or `POST` with transfer state),
    - opens callback output stream (`PATCH`),
    - applies the `Initialize` + `SetListener` bootstrap batch,
-   - decodes MessagePack patch batches,
-   - applies patches through `runtime.apply(...)`,
+   - decodes MessagePack command batches,
+   - applies batches through `runtime.applyBatch(...)`,
    - on failure: reset session or reconnect with backoff.
 3. `Runtime` in `runtime.ts`:
    - keeps an `id -> Node` map (`NodeSet`),
-   - executes patches sequentially (`Batch`),
+   - executes commands sequentially within each `Batch`,
    - supports DOM creation/update/remove, history, transfer, errors, etc.
 
 ## Module Map
 
 - `main.ts`: minimal bootstrap and wiring.
 - `mayu.ts`: browser API used by runtime and app (`callback`, `navigate`, `ping`, writer accessors).
-- `session-connection.ts`: stream loop, patch decode/apply, reconnect/backoff.
+- `session-connection.ts`: stream loop, batch decode/apply, reconnect/backoff.
 - `session-recovery.ts`: reset policy (`shouldResetSession`) and full session reset (`resetSessionEntirely`).
 - `view-transition.ts`: shared transition wrapper with fallback when View Transitions API is unavailable.
 - `stream.ts`: HTTP stream connect logic + callback stream transport.
-- `runtime.ts`: patch dispatcher and DOM mutation engine.
+- `runtime.ts`: command dispatcher and DOM mutation engine.
+- `protocol.ts`: shared `Command`, `Batch`, and command-error policy types.
 - `serializeEvent.ts`: serializes event/currentTarget/target payloads.
 - `throttle.ts`: per-target callback throttling (~30 FPS).
 - `transfer.ts`: in-memory session transfer blob between reconnects.
@@ -44,15 +45,18 @@ This directory contains the browser-side runtime that:
 
 ## Data Paths
 
-### Server -> Client (patch stream)
+### Server -> Client (command stream)
 
 - `SessionConnection.run` calls `initInputStream(endpoint, transferState)`.
 - `connect(...)` validates:
   - HTTP success,
   - `content-type === application/vnd.mayu.event-stream`.
 - Input stream is optionally decompressed based on `content-encoding`.
-- `decodeMultiStream` yields patch batches.
-- Each batch is applied with `runtime.apply(...)`.
+- `decodeMultiStream` yields batches directly. A batch is `Command[]`; a command
+  is a compact `[name, ...arguments]` tuple.
+- Each batch is applied with `runtime.applyBatch(...)`.
+- There is no `Batch` command or extra transport wrapper. `ViewTransition`
+  intentionally carries a nested batch as its argument.
 
 ### Client -> Server (callback stream)
 
@@ -70,11 +74,13 @@ This directory contains the browser-side runtime that:
 - failures from either transport terminate the entire connection attempt so
   both stream directions reconnect together.
 
-## Runtime/Patch Behavior Notes
+## Runtime/Command Behavior Notes
 
-- `Batch` runs patches in order, awaiting async patches.
-- `ViewTransition` patch wraps a nested patch list in `document.startViewTransition(...)` when available, and falls back to immediate apply when not available.
-- `Transfer` patch stores transfer blob for reconnect handoff.
+- `Batch` runs commands in order, awaiting async commands.
+- Command failures are logged with their name and index within the batch. The default
+  `COMMAND_ERROR_POLICY` continues the batch; strict mode throws.
+- `ViewTransition` wraps a nested batch in `document.startViewTransition(...)` when available, and falls back to immediate apply when not available.
+- `Transfer` stores transfer blob for reconnect handoff.
 - `Pong` updates measured ping in `<mayu-ping>`.
 - `RenderError` renders server-side exception UI.
 
@@ -133,7 +139,7 @@ Run:
    - Extract `SessionRecovery` (`shouldResetSession`, `resetSessionEntirely`).
    - Keep `Mayu` as a small client API surface (`callback`, `navigate`, `ping`).
 2. Unify view-transition handling in a shared helper. (Done)
-   - Use the same helper from both `session-recovery.ts` (full session reset morph) and `runtime.ts` (`ViewTransition` patch).
+   - Use the same helper from both `session-recovery.ts` (full session reset morph) and `runtime.ts` (`ViewTransition` command).
 3. Move from message matching to structured stream error codes. (Done)
    - Server returns `{ code, message }` and also keeps legacy `error`.
    - Client reset/retry policy checks `code` first, then falls back to messages.
@@ -142,8 +148,8 @@ Run:
    - Teardown aborts stream requests and clears callback writer resources.
 5. Isolate retry/backoff policy.
    - Extract backoff calculation so reconnect timing is easy to test and tune.
-6. Tighten patch typing.
-   - Replace broad tuples/`any` with stronger patch payload types so runtime patch dispatch is type-safe.
+6. Tighten command typing.
+   - Replace broad tuples/`any` with stronger command payload types so runtime dispatch is type-safe.
 7. Gate debug logging.
    - Route noisy `console.*` calls through a debug logger flag to keep production output clean.
 8. Add targeted tests for critical recovery behavior. (Done)

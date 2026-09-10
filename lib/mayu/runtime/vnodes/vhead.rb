@@ -16,7 +16,7 @@ module Mayu
 
         def children = @descriptor.children
 
-        def update(_patcher, descriptor)
+        def update(_command_collector, descriptor)
           @descriptor = descriptor
           add_to_document
         end

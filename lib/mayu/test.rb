@@ -72,9 +72,9 @@ module Mayu
       end
 
       def capture_patches
-        offset = current_page.patches.length
+        offset = current_page.commands.length
         yield
-        current_page.patches.drop(offset)
+        current_page.commands.drop(offset)
       end
 
       private
@@ -246,7 +246,7 @@ module Mayu
           def query_container = node
         end
 
-      attr_reader :patches
+      attr_reader :commands
 
       def initialize(engine, settle_timeout: DEFAULT_SETTLE_TIMEOUT)
         @engine = engine
@@ -254,9 +254,9 @@ module Mayu
         @nodes = {}
         @listener_bindings = {}
         @doc = Oga.parse_html(@engine.render)
-        @patches = []
+        @commands = []
         setup_tree(@doc, @engine.dom_id_tree)
-        @engine.listener_patches.each { |patch| apply_patch(patch) }
+        @engine.listener_commands.each { |command| apply_command(command) }
       end
 
       def fragment = @doc
@@ -268,15 +268,12 @@ module Mayu
             @engine.start
 
             loop do
-              patch = @engine.dequeue_patch
-              if patch.is_a?(Mayu::Runtime::VNodes::Updater::Synchronization)
-                patch.completion.enqueue(true)
-              else
-                each_patch(patch) do |item|
-                  @patches << item
-                  apply_patch(item)
-                end
+              batch = @engine.dequeue_batch
+              each_command(batch) do |command|
+                @commands << command
+                apply_command(command)
               end
+              batch.complete
             end
           ensure
             @engine.stop
@@ -378,70 +375,68 @@ module Mayu
       def query_page = self
       def query_container = @doc
 
-      def each_patch(patch, &block)
-        case patch
-        when Mayu::Runtime::Patches::ViewTransition
-          each_patch(patch.patches, &block)
-        when Mayu::Runtime::Patches::Batch
-          patch.patches.each { |item| each_patch(item, &block) }
-        when Array
-          patch.each { |item| each_patch(item, &block) }
+      def each_command(value, &block)
+        case value
+        when Mayu::Runtime::Commands::ViewTransition
+          each_command(value.batch, &block)
+        when Mayu::Runtime::Batch
+          value.commands.each { |command| each_command(command, &block) }
         else
-          yield patch
+          yield value
         end
       end
 
-      def apply_patch(item)
-        case item
-        in Mayu::Runtime::Patches::Initialize[id_tree:]
+      def apply_command(command)
+        case command
+        in Mayu::Runtime::Commands::Initialize[id_tree:]
           @nodes.clear
           @listener_bindings.clear
           setup_tree(@doc, id_tree)
-        in Mayu::Runtime::Patches::CreateTree[html:, tree:]
+        in Mayu::Runtime::Commands::CreateTree[html:, tree:]
           node = Oga.parse_html(html).children.first
           setup_tree(node, tree)
-        in Mayu::Runtime::Patches::CreateElement[id:, type:]
+        in Mayu::Runtime::Commands::CreateElement[id:, type:]
           @nodes[id] = Oga::XML::Element.new(name: type.to_s)
-        in Mayu::Runtime::Patches::CreateTextNode[id:, content:]
+        in Mayu::Runtime::Commands::CreateTextNode[id:, content:]
           @nodes[id] = Oga::XML::Text.new(text: content.to_s)
-        in Mayu::Runtime::Patches::CreateComment[id:, content:]
+        in Mayu::Runtime::Commands::CreateComment[id:, content:]
           @nodes[id] = Oga::XML::Comment.new(text: content.to_s)
-        in Mayu::Runtime::Patches::SetTextContent[id:, content:]
+        in Mayu::Runtime::Commands::SetTextContent[id:, content:]
           fetch_node!(id).text = content.to_s
-        in Mayu::Runtime::Patches::ReplaceData[id:, offset:, count:, data:]
+        in Mayu::Runtime::Commands::ReplaceData[id:, offset:, count:, data:]
           node = fetch_node!(id)
           node.text = node.text.dup.tap { it[offset, count] = data }
-        in Mayu::Runtime::Patches::InsertData[id:, offset:, data:]
+        in Mayu::Runtime::Commands::InsertData[id:, offset:, data:]
           node = fetch_node!(id)
           node.text = node.text.dup.insert(offset, data)
-        in Mayu::Runtime::Patches::DeleteData[id:, offset:, count:]
+        in Mayu::Runtime::Commands::DeleteData[id:, offset:, count:]
           node = fetch_node!(id)
           node.text = node.text.dup.tap { it.slice!(offset, count) }
-        in Mayu::Runtime::Patches::SetAttribute[id:, name:, value:]
+        in Mayu::Runtime::Commands::SetAttribute[id:, name:, value:]
           fetch_node!(id).set(normalize_attribute_name(name), value.to_s)
-        in Mayu::Runtime::Patches::RemoveAttribute[id:, name:]
+        in Mayu::Runtime::Commands::RemoveAttribute[id:, name:]
           fetch_node!(id).unset(normalize_attribute_name(name))
-        in Mayu::Runtime::Patches::SetListener[id:, name:, listener_id:]
+        in Mayu::Runtime::Commands::SetListener[id:, name:, listener_id:]
           @listener_bindings[[id, name.to_s]] = listener_id
-        in Mayu::Runtime::Patches::RemoveListener[id:, name:, listener_id:]
+        in Mayu::Runtime::Commands::RemoveListener[id:, name:, listener_id:]
           key = [id, name.to_s]
           @listener_bindings.delete(key) if @listener_bindings[key] == listener_id
-        in Mayu::Runtime::Patches::SetClassName[id:, class_name:]
+        in Mayu::Runtime::Commands::SetClassName[id:, class_name:]
           fetch_node!(id).set("class", class_name.to_s)
-        in Mayu::Runtime::Patches::AddClass[id:, classes:]
+        in Mayu::Runtime::Commands::AddClass[id:, classes:]
           node = fetch_node!(id)
           node.set("class", (node.get("class").to_s.split | classes).join(" "))
-        in Mayu::Runtime::Patches::RemoveClass[id:, classes:]
+        in Mayu::Runtime::Commands::RemoveClass[id:, classes:]
           node = fetch_node!(id)
           node.set("class", (node.get("class").to_s.split - classes).join(" "))
-        in Mayu::Runtime::Patches::SetCSSProperty[id:, name:, value:]
+        in Mayu::Runtime::Commands::SetCSSProperty[id:, name:, value:]
           set_css_property(fetch_node!(id), name, value)
-        in Mayu::Runtime::Patches::RemoveCSSProperty[id:, name:]
+        in Mayu::Runtime::Commands::RemoveCSSProperty[id:, name:]
           set_css_property(fetch_node!(id), name, nil)
-        in Mayu::Runtime::Patches::ReplaceChildren[id:, child_ids:]
+        in Mayu::Runtime::Commands::ReplaceChildren[id:, child_ids:]
           node = fetch_node!(id)
           node.children = Oga::XML::NodeSet.new(child_ids.map { fetch_node!(it) })
-        in Mayu::Runtime::Patches::RemoveNode[id:]
+        in Mayu::Runtime::Commands::RemoveNode[id:]
           remove_node(id)
         else
           nil

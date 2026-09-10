@@ -4,7 +4,7 @@
 # License: AGPL-3.0
 
 require "cgi"
-require_relative "patches"
+require_relative "commands"
 require_relative "inline_style"
 
 module Mayu
@@ -82,7 +82,7 @@ module Mayu
           end
 
           def patch_insert
-            Patches::Initialize[id_node]
+            Commands::Initialize[id_node]
           end
 
           def traverse(&block)
@@ -145,10 +145,10 @@ module Mayu
           end
 
           def patch_insert
-            Patches::CreateTree[to_html, id_node]
+            Commands::CreateTree[to_html, id_node]
           end
 
-          def patch_remove = Patches::RemoveNode[id]
+          def patch_remove = Commands::RemoveNode[id]
 
           def traverse(&block)
             yield self
@@ -184,8 +184,8 @@ module Mayu
 
           def id_node = IdNode[id, type]
 
-          def patch_insert = Patches::CreateTextNode[id, content]
-          def patch_remove = Patches::RemoveNode[id]
+          def patch_insert = Commands::CreateTextNode[id, content]
+          def patch_remove = Commands::RemoveNode[id]
 
           def traverse
             yield self
@@ -204,8 +204,8 @@ module Mayu
           def to_html = "<!--#{escape_comment(content)}-->"
           def id_node = IdNode[id, type]
 
-          def patch_insert = Patches::CreateComment[id, content]
-          def patch_remove = Patches::RemoveNode[id]
+          def patch_insert = Commands::CreateComment[id, content]
+          def patch_remove = Commands::RemoveNode[id]
 
           def traverse
             yield self

@@ -6,7 +6,7 @@
 require_relative "base"
 require_relative "velement"
 require_relative "../../custom_element"
-require_relative "../patches"
+require_relative "../commands"
 
 module Mayu
   module Runtime
@@ -20,18 +20,18 @@ module Mayu
           @engine.add_custom_element(custom_element)
         end
 
-        def update(patcher, descriptor = nil)
+        def update(collector, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
           @element.update(
-            patcher,
+            collector,
             @descriptor.with(type: @descriptor.type.name)
           )
         end
 
-        def register_custom_element(patcher)
+        def register_custom_element(collector)
           custom_element = @descriptor.type
-          patcher << Patches::RegisterCustomElement[
+          collector << Commands::RegisterCustomElement[
             custom_element.name,
             custom_element.path
           ]

@@ -11,7 +11,7 @@ module Mayu
   module Runtime
     module VNodes
       class VComment < Base
-        def update(_patcher, descriptor = nil)
+        def update(_command_collector, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
         end

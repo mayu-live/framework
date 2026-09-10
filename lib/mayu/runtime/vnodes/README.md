@@ -14,9 +14,9 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 - VNodes hold an Engine reference for updates/metrics/listeners.
 - Base vnode lifecycle flags: new/inserted/removed.
 
-### Patching and diffing
+### Commands and diffing
 
-- `Patcher`/`NullPatcher` for collecting patches.
+- `CommandCollector`/`NullCommandCollector` collect commands produced by a VDOM diff.
 - Insert/remove: `CreateTree` + `RemoveNode`.
 - Text updates: `SetTextContent`.
 - Attribute updates: `SetAttribute`, `RemoveAttribute`, `AddClass`, `RemoveClass`,
@@ -25,8 +25,8 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
   - VChildren marks nearest VElement dirty when direct child ids change.
   - Engine flushes dirty elements once per batch.
 - Batch ordering:
-  - `HistoryPushState` patches are first.
-  - Head patches come before body patches.
+  - `HistoryPushState` commands are first.
+  - Head commands come before body commands.
 - `CreateTree` enforces a single `DOM::IdNode` root.
 - Chunked updates with a configurable `update_budget` and metrics.
 
@@ -44,7 +44,7 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 - Route-scoped Klenod stylesheets and module scripts are passed explicitly into
   the document head; VNodes do not discover component assets.
 - Custom elements:
-  - `RegisterCustomElement` patches emitted for updates.
+  - `RegisterCustomElement` commands emitted for updates.
   - Inline registration scripts injected via head rendering.
   - Raw text vnode for script bodies.
 
@@ -53,7 +53,7 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 - callback-backed `on*` attributes register listeners without emitting inline
   JavaScript into SSR HTML.
 - Initial connection and resume send the complete listener registry after
-  `Initialize`; updates use `SetListener`/`RemoveListener` patches.
+  `Initialize`; updates use `SetListener`/`RemoveListener` commands.
 - `Engine#callback` dispatches into component tasks.
 - Callbacks are serialized within each component.
 - Listener ids are serialized and rehydrated with component_map.
@@ -69,8 +69,8 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 ### Error handling + UX
 
 - Error boundaries (component `handle_error`).
-- Unhandled render errors emit `RenderError` patch with tree path.
-- ViewTransition wrapper patch for queued component updates.
+- Unhandled render errors emit a `RenderError` command with tree path.
+- `ViewTransition` carries a nested command batch for queued component updates.
 
 ### Testing
 
@@ -78,13 +78,13 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 - Coverage includes:
   - HTML rendering + dom_id_tree
   - CreateTree/RemoveNode + ReplaceChildren
-  - Attribute/class/style patches
+  - Attribute/class/style commands
   - Lifecycle (start/stop/mount/unmount)
   - Head aggregation and updates
-  - Navigation patch ordering
+  - Navigation command ordering
   - Callback wiring + listener removal
   - Serialization round-trip + listener restore
-  - Error boundaries + RenderError patch tree_path
+  - Error boundaries + RenderError command tree_path
   - Update budget chunking and removed-node skipping
 
 ## What changed recently

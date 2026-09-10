@@ -54,8 +54,14 @@ class Mayu::Server::EventStreamTest < Minitest::Test
 
   def test_finishing_preserves_unread_transfer_and_compression_trailer
     writer = Writer.new
-    writer.write(["Initialize", {}])
-    writer.write(["Transfer", "encrypted state"])
+    writer.write_batch(
+      Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Initialize[{}]]]
+    )
+    writer.write_batch(
+      Mayu::Runtime::Batch[
+        [Mayu::Runtime::Commands::Transfer["encrypted state"]]
+      ]
+    )
     writer.close_write
     writer.close_write
 
@@ -67,7 +73,13 @@ class Mayu::Server::EventStreamTest < Minitest::Test
     unpacker = MessagePack::Unpacker.new
     unpacker.feed(inflater.inflate(bytes))
     assert(inflater.finished?)
-    assert_equal([["Initialize", {}], ["Transfer", "encrypted state"]], unpacker.each.to_a)
+    assert_equal(
+      [
+        [["Initialize", {}]],
+        [["Transfer", "encrypted state"]]
+      ],
+      unpacker.each.to_a
+    )
     writer.close
     assert(writer.wait)
   ensure
@@ -77,12 +89,16 @@ class Mayu::Server::EventStreamTest < Minitest::Test
 
   def test_wait_after_consumer_disconnect_is_not_lost
     writer = Writer.new
-    writer.write(["Transfer", "state"])
+    batch =
+      Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Transfer["state"]]]
+    writer.write_batch(batch)
     writer.close
     writer.close
     refute(writer.wait)
     assert_nil(writer.read)
-    assert_raises(Mayu::Server::EventStream::ClosedStreamError) { writer.write(["late"]) }
+    assert_raises(Mayu::Server::EventStream::ClosedStreamError) do
+      writer.write_batch(batch)
+    end
   end
 
   def test_completion_includes_the_consumers_final_protocol_writes
@@ -95,7 +111,9 @@ class Mayu::Server::EventStreamTest < Minitest::Test
         sleep 0.02
         finished = true
       end
-      writer.write(["Transfer", "state"])
+      writer.write_batch(
+        Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Transfer["state"]]]
+      )
       writer.close_write
       assert(writer.wait_finished)
       assert(finished)
@@ -118,11 +136,16 @@ class Mayu::Server::EventStreamTest < Minitest::Test
     writer = Writer.new
     compressor = writer.instance_variable_get(:@deflate)
     writer.instance_variable_set(:@deflate, InterruptedDeflater.new(compressor))
-    writer.write(["Transfer", "state"])
+    writer.write_batch(
+      Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Transfer["state"]]]
+    )
     writer.close_write
     inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
     bytes = writer.read + writer.read
-    assert_equal(["Transfer", "state"], MessagePack.unpack(inflater.inflate(bytes)))
+    assert_equal(
+      [["Transfer", "state"]],
+      MessagePack.unpack(inflater.inflate(bytes))
+    )
     assert(inflater.finished?)
   ensure
     writer&.close

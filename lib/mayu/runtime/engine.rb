@@ -9,8 +9,8 @@ require "stringio"
 
 require_relative "vnodes/vdocument"
 require_relative "vnodes/updater"
-require_relative "vnodes/patcher"
-require_relative "patches"
+require_relative "vnodes/command_collector"
+require_relative "commands"
 require_relative "marshalling"
 
 module Mayu
@@ -147,8 +147,8 @@ module Mayu
         end
       end
 
-      def flush_head(patcher)
-        @root.flush_head(patcher)
+      def flush_head(commands)
+        @root.flush_head(commands)
       end
 
       def head_dirty?
@@ -159,21 +159,16 @@ module Mayu
         @dirty_elements.add(element)
       end
 
-      def flush_dirty_elements(patcher)
+      def flush_dirty_elements(commands)
         return if @dirty_elements.empty?
         @dirty_elements.each do |element|
-          element.emit_replace_children(patcher)
+          element.emit_replace_children(commands)
         end
         @dirty_elements.clear
       end
 
-      def dequeue_patches
+      def dequeue_batch
         @output_queue.dequeue
-      end
-
-      def dequeue_patch
-        ensure_patch_buffer!
-        @patch_buffer.shift
       end
 
       def render
@@ -186,8 +181,8 @@ module Mayu
         @root.dom_id_tree
       end
 
-      def listener_patches
-        @root.listener_patches
+      def listener_commands
+        @root.listener_commands
       end
 
       def styles
@@ -195,7 +190,7 @@ module Mayu
       end
 
       def update(descriptor)
-        @root.update(VNodes::NullPatcher.new, descriptor)
+        @root.update(VNodes::NullCommandCollector.new, descriptor)
       end
 
       def same_descriptor?(left, right)
@@ -237,16 +232,24 @@ module Mayu
           )
         else
           update(descriptor)
-          patch(Patches::HistoryPushState[path]) if push_state
+          enqueue_command(Commands::HistoryPushState[path]) if push_state
         end
       end
 
-      def patch(patches)
-        Array(patches).flatten.each { |patch| @output_queue.enqueue(patch) }
+      def enqueue_command(command)
+        enqueue_batch(Batch[[command]])
+      end
+
+      def enqueue_batch(batch)
+        unless batch.is_a?(Batch)
+          raise ArgumentError, "Expected #{Batch}, got #{batch.class}"
+        end
+
+        @output_queue.enqueue(batch.validate!)
       end
 
       def ping(timestamp)
-        patch(Patches::Pong[timestamp])
+        enqueue_command(Commands::Pong[timestamp])
       end
 
       private
@@ -274,14 +277,6 @@ module Mayu
             @module_provider.component_resolver
         end
         Marshalling.with_component_resolver(resolver, &)
-      end
-
-      def ensure_patch_buffer!
-        @patch_buffer ||= []
-        if @patch_buffer.empty?
-          patch = @output_queue.dequeue
-          @patch_buffer = [patch]
-        end
       end
     end
   end

@@ -5,8 +5,8 @@
 
 require "async/queue"
 
-require_relative "patcher"
-require_relative "../patches"
+require_relative "command_collector"
+require_relative "../commands"
 
 module Mayu
   module Runtime
@@ -29,15 +29,15 @@ module Mayu
           @task =
             parent_task.async do
               loop do
-                batch = [@queue.dequeue]
-                batch << @queue.dequeue until @queue.empty?
+                work_items = [@queue.dequeue]
+                work_items << @queue.dequeue until @queue.empty?
 
-                patcher = Patcher.new
+                command_collector = CommandCollector.new
                 navigations = []
                 synchronizations = []
                 updates = {}
 
-                batch.each do |item|
+                work_items.each do |item|
                   if item.is_a?(Synchronization)
                     synchronizations << item
                   elsif item.is_a?(Navigation)
@@ -51,13 +51,13 @@ module Mayu
                   next if node.removed?
                   begin
                     if descriptor
-                      node.update(patcher, descriptor)
+                      node.update(command_collector, descriptor)
                     else
-                      node.update(patcher)
+                      node.update(command_collector)
                     end
                   rescue VComponent::UnhandledRenderError => e
                     @engine&.root&.emit_render_error(
-                      patcher,
+                      command_collector,
                       e.error,
                       e.component
                     )
@@ -66,32 +66,32 @@ module Mayu
 
                 navigations.each do |nav|
                   if nav.push_state
-                    patcher << Patches::HistoryPushState[nav.path]
+                    command_collector << Commands::HistoryPushState[nav.path]
                   end
                 end
 
-                history_patches = []
+                history_commands = []
                 if navigations.any?
-                  history_patches =
-                    patcher.patches.select do |patch|
-                      patch.is_a?(Patches::HistoryPushState)
+                  history_commands =
+                    command_collector.commands.select do |command|
+                      command.is_a?(Commands::HistoryPushState)
                     end
-                  patcher.patches.reject! do |patch|
-                    patch.is_a?(Patches::HistoryPushState)
+                  command_collector.commands.reject! do |command|
+                    command.is_a?(Commands::HistoryPushState)
                   end
                 end
 
-                head_patches = []
+                head_commands = []
                 if @engine&.head_dirty?
-                  head_patcher = Patcher.new
-                  @engine.flush_head(head_patcher)
-                  head_patches = head_patcher.patches
+                  head_collector = CommandCollector.new
+                  @engine.flush_head(head_collector)
+                  head_commands = head_collector.commands
                 end
-                @engine&.flush_dirty_elements(patcher)
+                @engine&.flush_dirty_elements(command_collector)
 
-                patches = patcher.patches
-                patches = history_patches + head_patches + patches
-                unless patches.empty?
+                commands = command_collector.commands
+                commands = history_commands + head_commands + commands
+                unless commands.empty?
                   if updates.keys.any? { |node|
                        node.instance_variable_get(:@__view_transition_pending)
                      }
@@ -101,15 +101,21 @@ module Mayu
                         nil
                       )
                     end
-                    @output_queue.enqueue(
-                      Patches::ViewTransition[Patches::Batch[patches]]
+                    @engine.enqueue_batch(
+                      Batch[
+                        [Commands::ViewTransition[Batch[commands]]]
+                      ]
                     )
                   else
-                    @output_queue.enqueue(Patches::Batch[patches])
+                    @engine.enqueue_batch(Batch[commands])
                   end
                 end
 
-                synchronizations.each { @output_queue.enqueue(it) }
+                synchronizations.each do |synchronization|
+                  @engine.enqueue_batch(
+                    Batch[[], completion: synchronization.completion]
+                  )
+                end
 
                 Fiber.scheduler.yield
               end

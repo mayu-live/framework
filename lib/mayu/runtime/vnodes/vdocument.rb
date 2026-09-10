@@ -5,7 +5,7 @@
 
 require "async/queue"
 require_relative "base"
-require_relative "patcher"
+require_relative "command_collector"
 require_relative "vcomponent"
 require_relative "internal_components/html"
 require_relative "internal_components/head"
@@ -43,11 +43,11 @@ module Mayu
 
         attr_reader :head, :styles, :scripts, :custom_elements
 
-        def update(patcher, descriptor = nil)
+        def update(collector, descriptor = nil)
           @descriptor = descriptor if descriptor
-          @html.update(patcher, init_html)
+          @html.update(collector, init_html)
         rescue VComponent::UnhandledRenderError => e
-          emit_render_error(patcher, e.error, e.component)
+          emit_render_error(collector, e.error, e.component)
         end
 
         def assign_descriptor(descriptor)
@@ -122,17 +122,17 @@ module Mayu
           completion
         end
 
-        def listener_patches
-          patches = []
+        def listener_commands
+          commands = []
           traverse do |node|
             next unless node.is_a?(VElement)
 
             attributes = node.instance_variable_get(:@attributes)
             attributes.each_listener do |name, listener|
-              patches << Patches::SetListener[node.dom_id, name, listener.id]
+              commands << Commands::SetListener[node.dom_id, name, listener.id]
             end
           end
-          patches
+          commands
         end
 
         def rebind_component_instance(vnode_id, instance)
@@ -141,9 +141,9 @@ module Mayu
           end
         end
 
-        def flush_head(patcher)
+        def flush_head(collector)
           return unless @head_dirty
-          @html.update(patcher, init_html)
+          @html.update(collector, init_html)
           @head_dirty = false
         end
 
@@ -168,7 +168,7 @@ module Mayu
         end
 
         def write_html(out)
-          @html.update(NullPatcher.new, init_html)
+          @html.update(NullCommandCollector.new, init_html)
           out << "<!DOCTYPE html>\n"
           @html.write_html(out)
           out << "\n"
@@ -206,12 +206,12 @@ module Mayu
           @listeners.delete_if { |_id, listener| listener.callback.nil? }
         end
 
-        def emit_render_error(patcher, error, component_vnode)
+        def emit_render_error(collector, error, component_vnode)
           component = component_vnode.instance_variable_get(:@instance)
           tree_path = component_vnode.tree_path
-          patch = render_error_patch(error, component, tree_path)
-          raise error unless patch
-          patcher << patch
+          command = render_error_command(error, component, tree_path)
+          raise error unless command
+          collector << command
         end
 
         private
@@ -250,7 +250,7 @@ module Mayu
           end
         end
 
-        def render_error_patch(error, component, tree_path = [])
+        def render_error_command(error, component, tree_path = [])
           module_path =
             component.class.respond_to?(:module_path) &&
             component.class.module_path
@@ -269,7 +269,7 @@ module Mayu
             end
           Console.logger.error(component, formatted_error)
 
-          Patches::RenderError[
+          Commands::RenderError[
             module_path,
             error.class.name,
             error.message,
@@ -285,8 +285,8 @@ module Mayu
           component = listener.callback&.component
           component_vnode = find_component_vnode(component)
           tree_path = component_vnode ? component_vnode.tree_path : []
-          patch = render_error_patch(e, component, tree_path) if component
-          @engine.patch(patch) if patch
+          command = render_error_command(e, component, tree_path) if component
+          @engine.enqueue_command(command) if command
         end
 
         def find_component_vnode(component)

@@ -241,8 +241,8 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
       refute_equal(task, instance.mount_task)
 
       document = engine.root
-      patcher = Mayu::Runtime::VNodes::Patcher.new
-      document.update(patcher, descriptor)
+      collector = Mayu::Runtime::VNodes::CommandCollector.new
+      document.update(collector, descriptor)
 
       wait_until { document.instance_variable_get(:@listeners).any? }
       listener = document.instance_variable_get(:@listeners).values.first
@@ -349,8 +349,8 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
       assert_equal(1, instance.renders)
 
       document = engine.root
-      patcher = Mayu::Runtime::VNodes::Patcher.new
-      document.update(patcher, descriptor)
+      collector = Mayu::Runtime::VNodes::CommandCollector.new
+      document.update(collector, descriptor)
 
       wait_until { document.instance_variable_get(:@listeners).any? }
       listener = document.instance_variable_get(:@listeners).values.first

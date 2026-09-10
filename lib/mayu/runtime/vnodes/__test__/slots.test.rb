@@ -19,12 +19,12 @@ class Mayu::Runtime::VNodes::SlotsTest < Minitest::Test
     engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
     document = engine.root
 
-    patcher = Mayu::Runtime::VNodes::Patcher.new
-    document.update(patcher, updated)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    document.update(collector, updated)
 
     set_text =
-      patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::SetTextContent)
+      collector.commands.find do |patch|
+        patch.is_a?(Mayu::Runtime::Commands::SetTextContent)
       end
 
     refute_nil(set_text)

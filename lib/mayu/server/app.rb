@@ -405,11 +405,11 @@ module Mayu
         body = EventStream::Writer.new
         @streams[session.id] = body
 
-        body.write(
-          Runtime::Patches::Batch[
+        body.write_batch(
+          Runtime::Batch[
             [
-              Runtime::Patches::Initialize[session.dom_id_tree.serialize],
-              *session.listener_patches
+              Runtime::Commands::Initialize[session.dom_id_tree.serialize],
+              *session.listener_commands
             ]
           ]
         )
@@ -417,31 +417,32 @@ module Mayu
         @body_barrier.async do |task|
           session.start
 
-          patch_task = task.async do
+          batch_task = task.async do
             loop do
-              patch = session.dequeue_patch
+              batch = session.dequeue_batch
 
               break if body.closed?
 
-              next unless patch
+              next unless batch
 
-              body.write(patch)
+              body.write_batch(batch) unless batch.empty?
+              batch.complete
 
-              break if patch in Runtime::Patches::Transfer | Runtime::Patches::TransferFailed
+              break if batch.terminal?
             end
           end
 
           close_task = task.async do
             body.wait
-            patch_task.stop
+            batch_task.stop
           end
           session_task = task.async do
             session.wait
-            patch_task.stop unless session.transferring?
+            batch_task.stop unless session.transferring?
           end
 
           begin
-            patch_task.wait
+            batch_task.wait
           ensure
             close_task.stop
             session_task.stop
@@ -477,9 +478,7 @@ module Mayu
 
         EventStream.each_incoming_message(request) do |message|
           break if @stopping
-          Session::Events
-            .from_message(message)
-            .each { |event| session.enqueue_event(event) }
+          session.receive_message(message)
         end
 
         if @stopping

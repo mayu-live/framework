@@ -46,7 +46,7 @@ module Mayu
         def remove
         end
 
-        def update(_patcher, _descriptor = nil)
+        def update(_command_collector, _descriptor = nil)
         end
 
         def write_html(_out)
@@ -73,7 +73,7 @@ module Mayu
           @parent&.tree_path || []
         end
 
-        def register_custom_element(_patcher)
+        def register_custom_element(_command_collector)
         end
 
         def inserted?

@@ -21,13 +21,13 @@ module Mayu
             end
         end
 
-        def update(patcher, descriptor = nil)
+        def update(collector, descriptor = nil)
           if descriptor
             @descriptor = descriptor
             @values = @descriptor.values
           end
 
-          with_context { @children.update(patcher, @descriptor.children) }
+          with_context { @children.update(collector, @descriptor.children) }
         end
 
         def start

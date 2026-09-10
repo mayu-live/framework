@@ -5,7 +5,7 @@
 
 require_relative "base"
 require_relative "vany"
-require_relative "../patches"
+require_relative "../commands"
 
 module Mayu
   module Runtime
@@ -30,13 +30,13 @@ module Mayu
           @children = build_children(@descriptor)
         end
 
-        def update(patcher, descriptors = nil)
+        def update(collector, descriptors = nil)
           return unless descriptors || @pending_update
 
           if @pending_update
             @pending_descriptor = descriptors if descriptors
             @pending_enqueued = false
-            update_children(patcher, @children, @descriptor)
+            update_children(collector, @children, @descriptor)
             return
           end
 
@@ -45,7 +45,7 @@ module Mayu
             @pending_enqueued = false
           end
 
-          update_children(patcher, @children, @descriptor)
+          update_children(collector, @children, @descriptor)
         end
 
         def start
@@ -114,7 +114,7 @@ module Mayu
           end
         end
 
-        def update_children(patcher, old_children, descriptors)
+        def update_children(collector, old_children, descriptors)
           if @pending_update
             state = @pending_update
           else
@@ -142,11 +142,11 @@ module Mayu
             node =
               case update[:type]
               when :updated
-                update[:node].update(patcher, update[:descriptor])
+                update[:node].update(collector, update[:descriptor])
                 update[:node]
               when :created
                 node = update[:node]
-                insert_node(patcher, node)
+                insert_node(collector, node)
                 node
               end
 
@@ -171,7 +171,7 @@ module Mayu
 
           @children = state.new_children
 
-          state.removed.each { |removed| remove_node(patcher, removed) }
+          state.removed.each { |removed| remove_node(collector, removed) }
 
           mark_parent_children_dirty if state.previous_ids != dom_id_list
 
@@ -182,7 +182,7 @@ module Mayu
             descriptor = @pending_descriptor
             @pending_descriptor = nil
             @descriptor = descriptor
-            update_children(patcher, @children, @descriptor)
+            update_children(collector, @children, @descriptor)
           end
         end
 
@@ -221,8 +221,8 @@ module Mayu
           {children: new_children, removed: source}
         end
 
-        def insert_node(patcher, node)
-          node.traverse { |child| child.register_custom_element(patcher) }
+        def insert_node(collector, node)
+          node.traverse { |child| child.register_custom_element(collector) }
           node.start if @engine&.task
           node.insert
 
@@ -236,16 +236,16 @@ module Mayu
               raise "CreateTree expects a single IdNode, got #{id_tree.length}"
             end
           end
-          patcher << Patches::CreateTree[html, id_tree] if id_tree
+          collector << Commands::CreateTree[html, id_tree] if id_tree
 
           node.mark_inserted
         end
 
-        def remove_node(patcher, node)
+        def remove_node(collector, node)
           node.stop if @engine&.task
           node.remove
 
-          patcher << Patches::RemoveNode[node.dom_id] if node.dom_id
+          collector << Commands::RemoveNode[node.dom_id] if node.dom_id
 
           node.traverse { |child| child.mark_removed }
         end

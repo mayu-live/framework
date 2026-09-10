@@ -8,7 +8,7 @@ require "cgi"
 
 require_relative "base"
 require_relative "../inline_style"
-require_relative "../patches"
+require_relative "../commands"
 
 module Mayu
   module Runtime
@@ -102,7 +102,7 @@ module Mayu
           register_listeners!(@attributes)
         end
 
-        def update(patcher, descriptor = nil)
+        def update(collector, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
 
@@ -116,7 +116,7 @@ module Mayu
 
             if key.to_s.start_with?("on")
               updated_attributes[key] = update_callback(
-                patcher,
+                collector,
                 key,
                 old_value,
                 new_value
@@ -126,7 +126,7 @@ module Mayu
 
             if key == :class
               updated_attributes[key] = update_class(
-                patcher,
+                collector,
                 key,
                 old_value,
                 new_value
@@ -136,7 +136,7 @@ module Mayu
 
             if key == :style
               updated_attributes[key] = update_style(
-                patcher,
+                collector,
                 key,
                 old_value,
                 new_value
@@ -146,7 +146,7 @@ module Mayu
 
             if new_value.nil?
               if old_value
-                patcher << Patches::RemoveAttribute[@parent.dom_id, key]
+                collector << Commands::RemoveAttribute[@parent.dom_id, key]
               end
               updated_attributes[key] = nil
               next
@@ -154,7 +154,7 @@ module Mayu
 
             next if old_value == new_value
 
-            patcher << Patches::SetAttribute[
+            collector << Commands::SetAttribute[
               @parent.dom_id,
               key,
               new_value.to_s
@@ -285,11 +285,11 @@ module Mayu
           @attributes = attributes
         end
 
-        def update_callback(patcher, key, old_value, new_value)
+        def update_callback(collector, key, old_value, new_value)
           if old_value.is_a?(Listener)
             return old_value if old_value.callback&.same?(new_value)
             @engine.remove_listener(old_value)
-            patcher << Patches::RemoveListener[
+            collector << Commands::RemoveListener[
               @parent.dom_id,
               key.to_s.delete_prefix("on").downcase,
               old_value.id
@@ -306,7 +306,7 @@ module Mayu
           end
 
           listener = @engine.add_listener(Listener[new_value].validate!)
-          patcher << Patches::SetListener[
+          collector << Commands::SetListener[
             @parent.dom_id,
             key.to_s.delete_prefix("on").downcase,
             listener.id
@@ -314,13 +314,13 @@ module Mayu
           listener
         end
 
-        def update_class(patcher, key, old_value, new_value)
+        def update_class(collector, key, old_value, new_value)
           old_classes = normalize_class_names(old_value)
           new_classes = normalize_class_names(new_value)
 
           if new_classes.empty?
             unless old_classes.empty?
-              patcher << Patches::RemoveAttribute[@parent.dom_id, key]
+              collector << Commands::RemoveAttribute[@parent.dom_id, key]
             end
             return nil
           end
@@ -329,10 +329,10 @@ module Mayu
           removed = old_classes - new_classes
 
           unless added.empty?
-            patcher << Patches::AddClass[@parent.dom_id, added]
+            collector << Commands::AddClass[@parent.dom_id, added]
           end
           unless removed.empty?
-            patcher << Patches::RemoveClass[@parent.dom_id, removed]
+            collector << Commands::RemoveClass[@parent.dom_id, removed]
           end
 
           new_classes
@@ -342,18 +342,18 @@ module Mayu
           Array(value).flatten.compact.flat_map { it.to_s.split }
         end
 
-        def update_style(patcher, key, old_value, new_value)
+        def update_style(collector, key, old_value, new_value)
           old_styles = old_value.is_a?(Hash) ? old_value : {}
           new_styles = new_value.is_a?(Hash) ? new_value : {}
 
           if new_styles.empty?
             unless old_styles.empty?
-              patcher << Patches::RemoveAttribute[@parent.dom_id, key]
+              collector << Commands::RemoveAttribute[@parent.dom_id, key]
             end
             return nil
           end
-          InlineStyle.diff(@parent.dom_id, old_styles, new_styles) do |patch|
-            patcher << patch
+          InlineStyle.diff(@parent.dom_id, old_styles, new_styles) do |command|
+            collector << command
           end
 
           new_styles

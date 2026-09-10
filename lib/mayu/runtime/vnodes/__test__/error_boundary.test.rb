@@ -84,8 +84,8 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
 
       instance.trigger_error
 
-      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_patches }
-      patches = unwrap_patches(batch)
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
 
       refute_nil(patches)
 
@@ -119,7 +119,7 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
       patches =
         dequeue_until(engine) do |batch|
           batch.any? do |patch|
-            patch.is_a?(Mayu::Runtime::Patches::RenderError)
+            patch.is_a?(Mayu::Runtime::Commands::RenderError)
           end
         end
 
@@ -127,7 +127,7 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
 
       render_error =
         patches.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::RenderError)
+          patch.is_a?(Mayu::Runtime::Commands::RenderError)
         end
 
       assert_equal("/tests/render_error", render_error.file)
@@ -163,10 +163,10 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
 
       patches =
         dequeue_until(engine) do |batch|
-          batch.any? { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+          batch.any? { it.is_a?(Mayu::Runtime::Commands::RenderError) }
         end
       render_error =
-        patches.find { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+        patches.find { it.is_a?(Mayu::Runtime::Commands::RenderError) }
 
       assert_equal("/tests/render_error", render_error.file)
       assert_nil(render_error.source)
@@ -186,10 +186,10 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
 
       patches =
         dequeue_until(engine) do |batch|
-          batch.any? { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+          batch.any? { it.is_a?(Mayu::Runtime::Commands::RenderError) }
         end
       render_error =
-        patches.find { it.is_a?(Mayu::Runtime::Patches::RenderError) }
+        patches.find { it.is_a?(Mayu::Runtime::Commands::RenderError) }
 
       refute_nil(provider.rewritten_error)
       assert_equal(["app:/broken.haml:7"], render_error.backtrace)
@@ -209,7 +209,7 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
       patches =
         dequeue_until(engine) do |batch|
           batch.any? do |patch|
-            patch.is_a?(Mayu::Runtime::Patches::RenderError)
+            patch.is_a?(Mayu::Runtime::Commands::RenderError)
           end
         end
 
@@ -217,7 +217,7 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
 
       render_error =
         patches.find do |patch|
-          patch.is_a?(Mayu::Runtime::Patches::RenderError)
+          patch.is_a?(Mayu::Runtime::Commands::RenderError)
         end
 
       tree_path = render_error.tree_path
@@ -233,7 +233,7 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
 
   def test_render_error_serializes_binary_encoded_text_as_utf8
     patch =
-      Mayu::Runtime::Patches::RenderError[
+      Mayu::Runtime::Commands::RenderError[
         "app:/broken.haml".b,
         "SyntaxError".b,
         "unexpected token".b,
