@@ -1,6 +1,6 @@
 :ruby
   Heading = import("/components/Layout/Heading")
-  Highlight = import("/components/UI/Highlight")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
   ImportedJSON = import("./data.json")
 
 %article
@@ -9,9 +9,9 @@
   %p This page imports a JSON file into Ruby.
 
   %p As Ruby:
-  %Highlight(language="ruby")
+  %HighlightedCodeBlock(language="ruby")
     = ImportedJSON.pretty_inspect
 
   %p As JSON:
-  %Highlight(language="json")
+  %HighlightedCodeBlock(language="json")
     = JSON.pretty_generate(ImportedJSON)

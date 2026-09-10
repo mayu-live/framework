@@ -2,15 +2,15 @@
 
 MarkdownHeading = import("/components/Markdown/Heading")
 MarkdownCodeBlock = import("/components/Markdown/CodeBlock")
-MarkdownInlineCode = import("/components/Markdown/InlineCode")
 MarkdownListItem = import("/components/Markdown/ListItem")
+Highlight = import("/components/UI/Highlight")
 Link = import("/components/UI/Link")
 
 # Klenod's Markdown compiler looks for this file and replaces matching HTML
 # tags with these components. Unmapped tags continue to render as native HTML.
 Default = {
   a: Link,
-  code: MarkdownInlineCode,
+  code: Highlight,
   h1: MarkdownHeading::H1,
   h2: MarkdownHeading::H2,
   h3: MarkdownHeading::H3,

@@ -1,6 +1,6 @@
 :ruby
   Card = import("/components/UI/Card")
-  Highlight = import("/components/UI/Highlight")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
   Example = import("./Example")
 
 %article
@@ -13,7 +13,7 @@
 
     Set up state in `def initialize`.
 
-  %Highlight(language="haml")
+  %HighlightedCodeBlock(language="haml")
     = File.read(File.join(__dir__, "Example.haml"))
 
   %p This will result in the following component:

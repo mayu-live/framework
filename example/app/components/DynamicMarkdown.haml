@@ -1,6 +1,6 @@
 :ruby
   require "kramdown"
-  Highlight = import("./UI/Highlight")
+  HighlightedCodeBlock = import("./UI/HighlightedCodeBlock")
 
   SYMBOLS = {
     lsquo: "‘",
@@ -33,7 +33,7 @@
       H[:br]
     in type: :codespan, value:, options: { codespan_delimiter: "```" }
       header, code = value.sub(/\A`+/, "").split(/\s/, 2).map(&:strip)
-      H[Highlight, code, language: header]
+      H[HighlightedCodeBlock, code, language: header]
     in type: :codespan, value:, options: { codespan_delimiter: "`" }
       build(:code, :code, value.strip)
     in type: :p, children:

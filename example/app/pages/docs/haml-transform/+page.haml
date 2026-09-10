@@ -1,6 +1,6 @@
 :ruby
   Details = import("/components/UI/Details")
-  Highlight = import("/components/UI/Highlight")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
 
   EXAMPLES_ROOT =
     File.join(
@@ -30,6 +30,6 @@
       = if skip = files[".skip"]
         %p Skipped: #{skip}
       %h3 Input
-      %Highlight(language="haml")= files[".haml"].to_s
+      %HighlightedCodeBlock(language="haml")= files[".haml"].to_s
       %h3 Output
-      %Highlight(language="ruby")= files[".rb"].to_s
+      %HighlightedCodeBlock(language="ruby")= files[".rb"].to_s

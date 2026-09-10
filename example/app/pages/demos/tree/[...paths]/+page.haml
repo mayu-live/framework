@@ -1,5 +1,5 @@
 :ruby
-  Highlight = import("/components/UI/Highlight")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
 
   ALLOWED_EXTENSIONS = %w[.rb .css .haml .txt .svg]
 
@@ -28,7 +28,7 @@
 
 %article.article
   %h3.path= full_path
-  %Highlight(language=language)= source
+  %HighlightedCodeBlock(language=language)= source
 
 :css
   .article {

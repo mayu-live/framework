@@ -1,6 +1,6 @@
 :ruby
   Card = import("/components/UI/Card")
-  Highlight = import("/components/UI/Highlight")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
   Example = import("./Example")
 
 %head
@@ -12,7 +12,7 @@
 
     There are a few lifecycle methods that can be useful.
 
-  %Highlight(language="haml")
+  %HighlightedCodeBlock(language="haml")
     = File.read(File.join(__dir__, "Example.haml"))
   %Card
     %Example

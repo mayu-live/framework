@@ -1,7 +1,7 @@
 :ruby
   Button = import("/components/Form/Button")
   Heading = import("/components/Layout/Heading")
-  Highlight = import("/components/UI/Highlight")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
   Card = import("/components/UI/Card")
   Details = import("/components/UI/Details")
   Link = import("/components/UI/Link")
@@ -34,7 +34,7 @@
     %Button(onclick=handle_click name="increment") Increment
     %Button(onclick=handle_click name="error") Error
   %Details(summary="Show source")
-    %Highlight(language="haml")
+    %HighlightedCodeBlock(language="haml")
       = File.read(File.join(__dir__, "+page.haml"))
   - raise_if_over(5)
 :css
