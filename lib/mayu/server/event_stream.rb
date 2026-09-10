@@ -15,6 +15,9 @@ module Mayu
     module EventStream
       CONTENT_TYPE = "application/vnd.mayu.event-stream"
       CONTENT_ENCODING = "deflate-raw"
+      CLIENT_EVENT_FRAME_HEADER_BYTES = 5
+      CLIENT_EVENT_ENCODING_RAW = 0
+      CLIENT_EVENT_ENCODING_DEFLATE_RAW = 1
       MAX_INCOMING_MESSAGE_BYTES = 1024 * 1024
 
       class ClosedStreamError < StandardError
@@ -125,33 +128,83 @@ module Mayu
 
       def self.each_incoming_message(
         request,
-        max_message_bytes: MAX_INCOMING_MESSAGE_BYTES
+        max_message_bytes: MAX_INCOMING_MESSAGE_BYTES,
+        max_decompressed_message_bytes: max_message_bytes
       )
-        buf = +""
+        buffer = +"".b
 
         request.body.each do |chunk|
-          buf += chunk
+          buffer << chunk
 
-          while (idx = buf.index("\n"))
-            line = buf.byteslice(0, idx)
-            buf = buf.byteslice(idx + 1..).to_s
-            raise MessageTooLargeError if line.bytesize > max_message_bytes
-            raise InvalidMessageError, "Empty event message" if line.empty?
-
-            begin
-              yield JSON.parse(line, symbolize_names: true)
-            rescue JSON::ParserError => error
-              raise InvalidMessageError, error.message
+          while buffer.bytesize >= CLIENT_EVENT_FRAME_HEADER_BYTES
+            encoding = buffer.getbyte(0)
+            payload_bytes = buffer.unpack1("@1N")
+            unless [
+              CLIENT_EVENT_ENCODING_RAW,
+              CLIENT_EVENT_ENCODING_DEFLATE_RAW
+            ].include?(encoding)
+              raise InvalidMessageError,
+                "Unknown client event encoding: #{encoding}"
             end
+            if payload_bytes > max_message_bytes
+              raise MessageTooLargeError,
+                "Incoming event exceeds #{max_message_bytes} bytes"
+            end
+
+            frame_bytes = CLIENT_EVENT_FRAME_HEADER_BYTES + payload_bytes
+            break if buffer.bytesize < frame_bytes
+
+            payload = buffer.byteslice(CLIENT_EVENT_FRAME_HEADER_BYTES, payload_bytes)
+            buffer = buffer.byteslice(frame_bytes..).to_s
+            packed =
+              if encoding == CLIENT_EVENT_ENCODING_DEFLATE_RAW
+                inflate_event(
+                  payload,
+                  max_bytes: max_decompressed_message_bytes
+                )
+              else
+                payload
+              end
+
+            yield MessagePack.unpack(packed, symbolize_keys: true)
           end
 
-          raise MessageTooLargeError if buf.bytesize > max_message_bytes
+          if buffer.bytesize >
+              CLIENT_EVENT_FRAME_HEADER_BYTES + max_message_bytes
+            raise MessageTooLargeError,
+              "Incoming event exceeds #{max_message_bytes} bytes"
+          end
         end
 
-        unless buf.empty?
-          raise InvalidMessageError, "Event message must end with a newline"
+        unless buffer.empty?
+          raise InvalidMessageError, "Incomplete client event frame"
         end
+      rescue MessagePack::UnpackError, Zlib::Error => error
+        raise InvalidMessageError, error.message
       end
+
+      def self.inflate_event(data, max_bytes:)
+        output = +"".b
+        inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
+
+        inflater.inflate(data) do |chunk|
+          if output.bytesize + chunk.bytesize > max_bytes
+            raise MessageTooLargeError,
+              "Decompressed event exceeds #{max_bytes} bytes"
+          end
+
+          output << chunk
+        end
+
+        unless inflater.finished? && inflater.total_in == data.bytesize
+          raise InvalidMessageError, "Incomplete compressed event"
+        end
+
+        output
+      ensure
+        inflater&.close
+      end
+      private_class_method :inflate_event
     end
   end
 end

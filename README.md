@@ -173,10 +173,12 @@ on how to patch the DOM to the browser using the
 [Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
 [Client stream implementation](https://github.com/mayu-live/framework/blob/main/lib/mayu/client/src/stream.ts).
 
-Callbacks and navigation events are sent as newline-delimited JSON over an
-authenticated `PATCH` stream. The server dispatches callbacks to the owning
-component and streams the resulting command batches back to the browser. Events
-are at-most-once and are not replayed after a disconnect.
+Callbacks and navigation events are sent as framed MessagePack tuples over an
+authenticated `PATCH` stream. Larger events are independently compressed with
+`deflate-raw`; browsers without request-stream support send the same frames in
+individual requests. The server dispatches callbacks to the owning component
+and streams the resulting command batches back to the browser. Events are
+at-most-once and are not replayed after a disconnect.
 
 Server responses are MessagePack batches. A batch is an ordered array of
 compact command tuples such as `["SetTextContent", id, text]`; one updater

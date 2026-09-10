@@ -25,15 +25,11 @@ module Mayu
 
       def self.parse(message)
         case message
-        in {type: "callback", payload: {id: String => id, event: Hash => event}, ping: Numeric => ping} unless id.empty?
+        in ["Callback", String => id, Hash => event, Numeric => ping] unless id.empty?
           CallbackEvent[id, event, ping]
-        in {
-             type: "navigate",
-             payload: {href: String => href, pushState: true | false => push_state},
-             ping: Numeric => ping
-           }
+        in ["Navigate", String => href, true | false => push_state, Numeric => ping]
           NavigateEvent[href, push_state, ping]
-        in {type: "ping", ping: Numeric => ping}
+        in ["Ping", Numeric => ping]
           PingEvent[ping]
         else
           raise InvalidEventError, "Invalid event message: #{message.inspect}"

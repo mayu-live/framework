@@ -1,12 +1,7 @@
 import serializeEvent from "./serializeEvent.js";
 import { PING_INTERVAL } from "./constants";
 import throttle from "./throttle";
-
-export type OutboundMessage = {
-  type: "callback" | "navigate" | "ping";
-  payload?: unknown;
-  ping: number;
-};
+import type { ClientEvent } from "./protocol";
 
 const CONTINUOUS_EVENTS = new Set([
   "input",
@@ -21,7 +16,7 @@ type MayuOptions = {
 };
 
 export default class Mayu {
-  #writer: WritableStreamDefaultWriter<OutboundMessage> | null;
+  #writer: WritableStreamDefaultWriter<ClientEvent> | null;
   #pingTimer: number | null;
   #popstateListener: () => void;
 
@@ -43,7 +38,7 @@ export default class Mayu {
     this.#pingTimer = null;
   }
 
-  setWriter(writer: WritableStreamDefaultWriter<OutboundMessage>) {
+  setWriter(writer: WritableStreamDefaultWriter<ClientEvent>) {
     this.#writer = writer;
   }
 
@@ -51,10 +46,11 @@ export default class Mayu {
     this.#writer = null;
   }
 
-  async #write(message: OutboundMessage) {
+  async #write(message: ClientEvent) {
+    const eventName = message[0].toLowerCase();
     const writer = this.#writer;
     if (!writer) {
-      console.warn(`Dropping ${message.type}: callback transport unavailable`);
+      console.warn(`Dropping ${eventName}: callback transport unavailable`);
       return false;
     }
 
@@ -63,7 +59,7 @@ export default class Mayu {
       return true;
     } catch (error) {
       if (this.#writer === writer) this.#writer = null;
-      console.error(`Dropping ${message.type}: callback write failed`, error);
+      console.error(`Dropping ${eventName}: callback write failed`, error);
       return false;
     }
   }
@@ -74,11 +70,7 @@ export default class Mayu {
     const serializedEvent = serializeEvent(event);
 
     const write = () => {
-      void this.#write({
-        type: "callback",
-        payload: { id, event: serializedEvent },
-        ping: performance.now(),
-      });
+      void this.#write(["Callback", id, serializedEvent, performance.now()]);
     };
 
     if (CONTINUOUS_EVENTS.has(event.type)) {
@@ -91,20 +83,13 @@ export default class Mayu {
   navigate(href: string, pushState: boolean = true) {
     console.warn("navigate", href);
 
-    void this.#write({
-      type: "navigate",
-      payload: { href, pushState },
-      ping: performance.now(),
-    });
+    void this.#write(["Navigate", href, pushState, performance.now()]);
   }
 
   ping() {
     this.#scheduleNextPing(PING_INTERVAL);
 
-    void this.#write({
-      type: "ping",
-      ping: performance.now(),
-    });
+    void this.#write(["Ping", performance.now()]);
   }
 
   #scheduleNextPing(delay: number) {

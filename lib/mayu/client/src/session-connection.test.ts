@@ -24,7 +24,6 @@ const {
 vi.mock("./stream.js", () => ({
   initInputStream: initInputStreamMock,
   initCallbackStream: initCallbackStreamMock,
-  JSONEncoderStream: class JSONEncoderStream extends TransformStream {},
   StreamError: class StreamError extends Error {
     constructor(
       message: string,
@@ -33,6 +32,10 @@ vi.mock("./stream.js", () => ({
       super(message);
     }
   },
+}));
+
+vi.mock("./client-event-codec.js", () => ({
+  ClientEventEncoderStream: class ClientEventEncoderStream extends TransformStream {},
 }));
 
 vi.mock("./session-recovery.js", () => ({

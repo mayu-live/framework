@@ -37,6 +37,8 @@ This directory contains the browser-side runtime that:
 - `stream.ts`: HTTP stream connect logic + callback stream transport.
 - `runtime.ts`: command dispatcher and DOM mutation engine.
 - `protocol.ts`: shared `Command`, `Batch`, and command-error policy types.
+- `client-event-codec.ts`: MessagePack encoding, framing, and optional
+  per-event compression.
 - `serializeEvent.ts`: serializes event/currentTarget/target payloads.
 - `throttle.ts`: per-target callback throttling (~30 FPS).
 - `transfer.ts`: in-memory session transfer blob between reconnects.
@@ -61,16 +63,24 @@ This directory contains the browser-side runtime that:
 ### Client -> Server (callback stream)
 
 - `window.Mayu.callback(event, id)` serializes and writes:
-  - `{type: "callback", payload: {id, event}, ping}`.
-- `window.Mayu.navigate(href, pushState)` writes navigation message.
-- `window.Mayu.ping()` writes heartbeat every `PING_INTERVAL`.
+  - `["Callback", id, event, ping]`.
+- `window.Mayu.navigate(href, pushState)` writes
+  `["Navigate", href, pushState, ping]`.
+- `window.Mayu.ping()` writes `["Ping", ping]` every `PING_INTERVAL`.
 - writes made without a live callback transport are dropped and are never
   replayed after reconnect.
 - Writes go through:
-  - `TransformStream` -> `JSONEncoderStream` -> `TextEncoderStream` -> output writable.
+  - `TransformStream` -> `ClientEventEncoderStream` -> output writable.
+- The encoder creates one frame per event:
+  - one byte identifying raw MessagePack or `deflate-raw`,
+  - four bytes containing the payload length,
+  - one complete MessagePack event payload.
+- Events of at least 512 bytes are independently compressed when doing so
+  makes the frame smaller. Closing a compressor per event avoids buffering
+  interactive events in the long-lived request.
 - Output writable is:
   - streaming `PATCH` request when request streams are supported,
-  - per-message fetch fallback otherwise.
+  - per-message fetch fallback otherwise; both send identical frame bytes.
 - failures from either transport terminate the entire connection attempt so
   both stream directions reconnect together.
 

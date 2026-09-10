@@ -179,7 +179,9 @@ On shutdown or an explicit transfer command:
 - `stream.ts`: HTTP stream connect helpers for command stream + outgoing event stream/fallback.
 - `runtime.ts`: command dispatcher against real DOM + node ID registry.
 - `mayu.ts`: `window.Mayu` bridge for callbacks/navigation/pings.
-- `serializeEvent.ts`: serializes DOM events to JSON payloads.
+- `serializeEvent.ts`: serializes DOM event payloads.
+- `client-event-codec.ts`: encodes, frames, and optionally compresses
+  client-to-server event tuples.
 - `session-recovery.ts`: full-session reset fallback (re-fetch page + morph DOM) for unrecoverable session errors.
 
 ### Command protocol boundary
@@ -204,15 +206,19 @@ Notable command categories:
 
 ### Client/server event loop
 
-- browser sends JSON lines to `PATCH /.mayu/session/:id`; messages are
-  at-most-once and are dropped rather than replayed across disconnects
-- server parses messages in `Server::EventStream.each_incoming_message`
-- `Session#receive_message` turns each JSON message into exactly one typed event
+- browser sends framed MessagePack tuples to `PATCH /.mayu/session/:id`;
+  messages are at-most-once and are dropped rather than replayed across
+  disconnects
+- each frame has an encoding byte and a 32-bit payload length; larger event
+  payloads use independent `deflate-raw` compression
+- request streaming and the per-request fallback use the same frame format
+- server parses frames in `Server::EventStream.each_incoming_message`
+- `Session#receive_message` turns each tuple into exactly one typed event
   (`CallbackEvent`, `NavigateEvent`, or `PingEvent`)
 - callbacks are serialized per component while different components can run
   concurrently
 - server-to-client: `VDOM -> CommandCollector -> Batch -> Engine queue -> stream -> applyBatch -> DOM`
-- client-to-server: `browser event -> JSON message -> receive_message -> session event -> callback/navigation -> VDOM`
+- client-to-server: `browser event -> tuple -> MessagePack frame -> receive_message -> session event -> callback/navigation -> VDOM`
 - command batches are streamed as deflate-raw compressed MessagePack arrays
 
 ## Environment and Build Modes (`environment.rb`, `commands/*`)

@@ -1,15 +1,11 @@
 import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
 
 import Runtime from "./runtime.js";
-import {
-  initInputStream,
-  initCallbackStream,
-  JSONEncoderStream,
-  StreamError,
-} from "./stream.js";
+import { initInputStream, initCallbackStream, StreamError } from "./stream.js";
+import { ClientEventEncoderStream } from "./client-event-codec.js";
 import { SESSION_MIME_TYPE } from "./constants";
 import { updateConnectionStatus } from "./ping";
-import type { Batch } from "./protocol";
+import type { Batch, ClientEvent } from "./protocol";
 import { getTransferState, setTransferState } from "./transfer";
 import {
   getErrorMessage,
@@ -74,7 +70,8 @@ export default class SessionConnection {
 
     while (true) {
       const abortController = new AbortController();
-      let callbackWriter: WritableStreamDefaultWriter<any> | null = null;
+      let callbackWriter: WritableStreamDefaultWriter<ClientEvent> | null =
+        null;
       let callbackPipeline: Promise<void> | null = null;
       let retryDelay: number | null = null;
 
@@ -90,7 +87,7 @@ export default class SessionConnection {
         );
         setTransferState(null);
 
-        const callbackStream = new TransformStream();
+        const callbackStream = new TransformStream<ClientEvent, ClientEvent>();
         callbackWriter = callbackStream.writable.getWriter();
         this.#mayu.setWriter(callbackWriter);
         const output = initCallbackStream(
@@ -99,8 +96,7 @@ export default class SessionConnection {
         );
 
         callbackPipeline = callbackStream.readable
-          .pipeThrough(new JSONEncoderStream())
-          .pipeThrough(new TextEncoderStream())
+          .pipeThrough(new ClientEventEncoderStream())
           .pipeTo(output.writable);
         void callbackPipeline.catch(() => undefined);
 

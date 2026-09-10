@@ -166,22 +166,12 @@ export class RAFQueue<T> {
   }
 }
 
-export class JSONEncoderStream extends TransformStream {
-  constructor() {
-    super({
-      transform(chunk, controller) {
-        controller.enqueue(JSON.stringify(chunk) + "\n");
-      },
-    });
-  }
-}
-
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
 
 export type CallbackStreamConnection = {
-  writable: WritableStream<any>;
+  writable: WritableStream<Uint8Array>;
   failure: Promise<never> | null;
 };
 
@@ -194,15 +184,13 @@ export function initCallbackStream(
     return initCallbackStreamFetchFallback(endpoint, signal);
   }
 
-  const contentEncoding = "identity"; // STREAM_CONTENT_ENCODING;
-  const { readable, writable } = new TransformStream(); // new CompressionStream(contentEncoding);
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
 
   const failure = fetch(endpoint, {
     method: CALLBACK_STREAM_METHOD,
     credentials: "include",
     headers: new Headers({
       "content-type": STREAM_MIME_TYPE,
-      "content-encoding": contentEncoding,
     }),
     duplex: "half",
     mode: "cors",
@@ -228,14 +216,14 @@ function initCallbackStreamFetchFallback(
   signal?: AbortSignal,
 ) {
   return {
-    writable: new WritableStream({
+    writable: new WritableStream<Uint8Array>({
       async write(body) {
         try {
           const res = await fetch(endpoint, {
             method: CALLBACK_STREAM_METHOD,
             credentials: "include",
             headers: new Headers({
-              "content-type": "application/json",
+              "content-type": STREAM_MIME_TYPE,
             }),
             mode: "cors",
             signal,

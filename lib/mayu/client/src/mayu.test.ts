@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import Mayu, { type OutboundMessage } from "./mayu";
+import Mayu from "./mayu";
+import type { ClientEvent } from "./protocol";
 
 describe("Mayu callbacks", () => {
   afterEach(() => {
@@ -28,7 +29,7 @@ describe("Mayu callbacks", () => {
 
   it("does not throttle discrete events", async () => {
     const mayu = new Mayu({ autoPing: false });
-    const write = vi.fn(async (_message: OutboundMessage) => undefined);
+    const write = vi.fn(async (_message: ClientEvent) => undefined);
     mayu.setWriter({ write } as any);
     const button = document.createElement("button");
     button.addEventListener("click", (event) =>
@@ -47,7 +48,7 @@ describe("Mayu callbacks", () => {
   it("coalesces continuous events by event type and listener", async () => {
     vi.useFakeTimers();
     const mayu = new Mayu({ autoPing: false });
-    const write = vi.fn(async (_message: OutboundMessage) => undefined);
+    const write = vi.fn(async (_message: ClientEvent) => undefined);
     mayu.setWriter({ write } as any);
     const input = document.createElement("input");
     input.addEventListener("input", (event) =>
@@ -65,7 +66,7 @@ describe("Mayu callbacks", () => {
 
     expect(write).toHaveBeenCalledTimes(2);
     const message = write.mock.calls[1]?.[0];
-    expect((message?.payload as any).event.target.value).toBe("abc");
+    expect((message?.[2] as any).target.value).toBe("abc");
     mayu.dispose();
   });
 });

@@ -150,21 +150,21 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_invalid_event_messages_are_rejected
     assert_raises(Mayu::Session::Events::InvalidEventError) do
-      Mayu::Session::Events.parse({
-        type: "callback",
-        payload: {id: "", event: {}},
-        ping: 1
-      })
+      Mayu::Session::Events.parse(["Callback", "", {}, 1])
+    end
+  end
+
+  def test_legacy_json_event_objects_are_rejected
+    assert_raises(Mayu::Session::Events::InvalidEventError) do
+      Mayu::Session::Events.parse({type: "ping", ping: 1})
     end
   end
 
   def test_callback_message_parses_to_one_typed_event
     event =
-      Mayu::Session::Events.parse({
-        type: "callback",
-        payload: {id: "listener", event: {type: "click"}},
-        ping: 123
-      })
+      Mayu::Session::Events.parse(
+        ["Callback", "listener", {type: "click"}, 123]
+      )
 
     assert_equal(
       Mayu::Session::Events::CallbackEvent[
@@ -187,11 +187,7 @@ class Mayu::SessionTest < Minitest::Test
     session = Mayu::Session.new(environment: env, request_info: request_info)
     queue = session.instance_variable_get(:@incoming_events)
 
-    session.receive_message({
-      type: "navigate",
-      payload: {href: "/next", pushState: true},
-      ping: 123
-    })
+    session.receive_message(["Navigate", "/next", true, 123])
 
     Async do
       event = Async::Task.current.with_timeout(0.5) { queue.dequeue }
