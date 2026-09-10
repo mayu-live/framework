@@ -44,10 +44,11 @@ module Mayu
         attr_reader :head, :styles, :scripts, :custom_elements
 
         def update(collector, descriptor = nil)
+          checkpoint = collector.checkpoint
           @descriptor = descriptor if descriptor
           @html.update(collector, init_html)
-        rescue VComponent::UnhandledRenderError => e
-          emit_render_error(collector, e.error, e.component)
+        rescue VComponent::UnhandledRenderError => failure
+          resolve_render_error(collector, failure, checkpoint)
         end
 
         def assign_descriptor(descriptor)
@@ -168,7 +169,7 @@ module Mayu
         end
 
         def write_html(out)
-          @html.update(NullCommandCollector.new, init_html)
+          update(NullCommandCollector.new)
           out << "<!DOCTYPE html>\n"
           @html.write_html(out)
           out << "\n"
@@ -206,12 +207,44 @@ module Mayu
           @listeners.delete_if { |_id, listener| listener.callback.nil? }
         end
 
+        def resolve_render_error(collector, failure, checkpoint)
+          boundary = failure.component.parent&.closest(VComponent)
+
+          while boundary
+            begin
+              if boundary.handle_render_error(failure.error)
+                collector.rollback(checkpoint)
+                begin
+                  boundary.recover_render_error(collector)
+                  return true
+                rescue VComponent::UnhandledRenderError => recovery_failure
+                  collector.rollback(checkpoint)
+                  failure =
+                    VComponent::UnhandledRenderError.new(
+                      recovery_failure.error,
+                      boundary
+                    )
+                rescue => error
+                  collector.rollback(checkpoint)
+                  failure = VComponent::UnhandledRenderError.new(error, boundary)
+                end
+              end
+            rescue => error
+              failure = VComponent::UnhandledRenderError.new(error, boundary)
+            end
+
+            boundary = boundary.parent&.closest(VComponent)
+          end
+
+          emit_render_error(collector, failure.error, failure.component)
+          false
+        end
+
         def emit_render_error(collector, error, component_vnode)
           component = component_vnode.instance_variable_get(:@instance)
           tree_path = component_vnode.tree_path
           command = render_error_command(error, component, tree_path)
-          raise error unless command
-          collector << command
+          collector << command if @engine.render_exceptions?
         end
 
         private
@@ -286,7 +319,9 @@ module Mayu
           component_vnode = find_component_vnode(component)
           tree_path = component_vnode ? component_vnode.tree_path : []
           command = render_error_command(e, component, tree_path) if component
-          @engine.enqueue_command(command) if command
+          if command && @engine.render_exceptions?
+            @engine.enqueue_command(command)
+          end
         end
 
         def find_component_vnode(component)

@@ -71,6 +71,7 @@ module Mayu
           runtime_js:,
           metrics: @environment.metrics,
           module_provider:,
+          render_exceptions: @environment.config.server.render_exceptions?,
           stylesheets: route_stylesheets,
           scripts: route_scripts
         )
@@ -87,6 +88,7 @@ module Mayu
       @environment = environment
       @engine.metrics = environment.metrics if @engine.respond_to?(:metrics=)
       @engine.module_provider = module_provider
+      @engine.render_exceptions = environment.config.server.render_exceptions?
       self
     end
 
@@ -308,7 +310,7 @@ module Mayu
             source = error.respond_to?(:source) ? error.source.to_s : ""
             type =
               (error.respond_to?(:cause) && error.cause || error).class.name
-            next Runtime::Commands::RenderError[
+            command = Runtime::Commands::RenderError[
               file,
               type,
               error.message,
@@ -316,8 +318,11 @@ module Mayu
               source,
               [{name: "CodeReload", path: file}]
             ]
+            Console.logger.error(self, error)
+            next command
           end
 
+          Console.logger.error(self, reload_error)
           Runtime::Commands::RenderError[
             reload_error.file,
             reload_error.type,
@@ -328,7 +333,9 @@ module Mayu
           ]
         end
 
-      @engine.enqueue_batch(Runtime::Batch[commands]) unless commands.empty?
+      if @engine.render_exceptions? && !commands.empty?
+        @engine.enqueue_batch(Runtime::Batch[commands])
+      end
     end
 
     def record_ping(timestamp)

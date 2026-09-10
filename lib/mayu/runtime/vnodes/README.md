@@ -68,8 +68,15 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 
 ### Error handling + UX
 
-- Error boundaries (component `handle_error`).
-- Unhandled render errors emit a `RenderError` command with tree path.
+- Components define `handle_error(error)` and return truthy to handle a
+  descendant render failure.
+- Handled updates roll back commands from the failed attempt and replace the
+  boundary subtree with a freshly rendered fallback.
+- A boundary does not catch its own render errors. Falsey handlers and failures
+  in handlers or fallbacks continue to the next parent boundary.
+- Unhandled render errors are logged and, when `render_exceptions` is enabled,
+  emit a `RenderError` command with the component tree path.
+- Callback exceptions are reported but are not handled by render boundaries.
 - `ViewTransition` carries a nested command batch for queued component updates.
 
 ### Testing

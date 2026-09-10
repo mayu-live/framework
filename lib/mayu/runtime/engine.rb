@@ -21,16 +21,20 @@ module Mayu
         :output_queue,
         :metrics,
         :update_budget,
-        :module_provider
+        :module_provider,
+        :render_exceptions
       attr_writer :metrics
       attr_writer :update_budget
       attr_writer :module_provider
+      attr_writer :render_exceptions
+      alias_method :render_exceptions?, :render_exceptions
 
       def initialize(
         descriptor,
         metrics:, runtime_js: nil,
         update_budget: 30,
         module_provider: nil,
+        render_exceptions: true,
         stylesheets: [],
         scripts: []
       )
@@ -38,6 +42,7 @@ module Mayu
         @metrics = metrics
         @update_budget = update_budget
         @module_provider = module_provider
+        @render_exceptions = render_exceptions
         @output_queue = Async::Queue.new
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
@@ -60,11 +65,12 @@ module Mayu
       end
 
       def marshal_dump
-        [@runtime_js, @root, @update_budget]
+        [@runtime_js, @root, @update_budget, @render_exceptions]
       end
 
       def marshal_load(a)
-        @runtime_js, @root, @update_budget = a
+        @runtime_js, @root, @update_budget, @render_exceptions = a
+        @render_exceptions = true if @render_exceptions.nil?
         @output_queue = Async::Queue.new
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
@@ -162,6 +168,7 @@ module Mayu
       def flush_dirty_elements(commands)
         return if @dirty_elements.empty?
         @dirty_elements.each do |element|
+          next if element.removed?
           element.emit_replace_children(commands)
         end
         @dirty_elements.clear

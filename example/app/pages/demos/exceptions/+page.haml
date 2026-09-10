@@ -1,45 +1,21 @@
 :ruby
-  Button = import("/components/Form/Button")
   Heading = import("/components/Layout/Heading")
-  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
-  Card = import("/components/UI/Card")
-  Details = import("/components/UI/Details")
-  Link = import("/components/UI/Link")
-
-  def initialize =
-    @count = 0
-
-  def handle_click(e) =
-    case e
-    in { target: { name: "increment" } }
-      @count += 1
-    end
-
-  def raise_if_over(x)
-    if @count >= x
-      raise "#{@count} => #{x}"
-    end
-  end
+  CallbackException = import("./CallbackException")
+  ErrorBoundaryExample = import("./ErrorBoundaryExample")
 
 %article
   %Heading(level=2) Exceptions
-  %p This demo shows how exceptions are handled.
   %p
-    %Link(href="https://github.com/mayu-live/framework/issues/6")
-      Issue for implementing error boundaries
-  %p
-    Count:
-    %output<= @count
-  .buttons
-    %Button(onclick=handle_click name="increment") Increment
-    %Button(onclick=handle_click name="error") Error
-  %Details(summary="Show source")
-    %HighlightedCodeBlock(language="haml")
-      = File.read(File.join(__dir__, "+page.haml"))
-  - raise_if_over(5)
+    Callback errors and render errors follow different paths. Callback errors
+    are reported by the runtime, while render errors can be recovered by the
+    nearest parent error boundary.
+
+  .examples
+    %CallbackException
+    %ErrorBoundaryExample
+
 :css
-  .buttons {
-    display: flex;
-    gap: 1em;
-    margin: 1em 0;
+  .examples {
+    display: grid;
+    gap: 1.5rem;
   }

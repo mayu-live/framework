@@ -188,6 +188,23 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
     assert_equal(2, instance.unmount_count)
   end
 
+  def test_engine_serialization_preserves_render_exception_policy
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body],
+        metrics: NullMetrics.new,
+        render_exceptions: false
+      )
+
+    restored =
+      Mayu::Runtime::Engine.restore(
+        engine.dump,
+        metrics: NullMetrics.new
+      )
+
+    refute(restored.render_exceptions?)
+  end
+
   def test_serialization_restores_callback_listeners
     descriptor = H[:body, H[CallbackProbe]]
 

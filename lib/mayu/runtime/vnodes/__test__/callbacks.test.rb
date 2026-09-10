@@ -30,6 +30,16 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  class CallbackErrorProbe < Mayu::Component::Base
+    def handle_click
+      raise "callback failed"
+    end
+
+    def render
+      H[:button, "Fail", onclick: H.callback(self, :handle_click)]
+    end
+  end
+
   def test_initial_html_contains_no_callback_wiring
     engine =
       Mayu::Runtime::Engine.new(
@@ -158,6 +168,23 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
 
       refute_nil(set_text)
       assert_equal("Click 1", set_text.content)
+    end
+  end
+
+  def test_callback_error_overlay_can_be_disabled
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[CallbackErrorProbe]],
+        metrics: NullMetrics.new,
+        render_exceptions: false
+      )
+
+    run_engine_instance(engine) do
+      listener = engine.root.instance_variable_get(:@listeners).values.first
+      completion = engine.callback(listener.id, {})
+      Async::Task.current.with_timeout(0.5) { completion.dequeue }
+
+      assert_no_patches(engine)
     end
   end
 end

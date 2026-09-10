@@ -48,6 +48,24 @@ module Mayu
           update_children(collector, @children, @descriptor)
         end
 
+        def replace(collector, descriptors)
+          new_children = build_children(descriptors)
+          old_children = @children
+
+          old_children.each { |node| discard_node(node) }
+          @descriptor = descriptors
+          @children = new_children
+          @pending_update = nil
+          @pending_descriptor = nil
+          @pending_enqueued = false
+
+          new_children.each { |node| insert_node(collector, node) }
+          mark_parent_children_dirty
+        rescue
+          new_children&.each { |node| discard_node(node) }
+          raise
+        end
+
         def start
           @children.each(&:start)
         end
@@ -109,9 +127,14 @@ module Mayu
         private
 
         def build_children(descriptors)
-          normalize_descriptors(descriptors).map do |descriptor|
-            VAny.new(descriptor, parent: self, engine: @engine)
+          children = []
+          normalize_descriptors(descriptors).each do |descriptor|
+            children << VAny.new(descriptor, parent: self, engine: @engine)
           end
+          children
+        rescue
+          children.each { |node| discard_node(node) }
+          raise
         end
 
         def update_children(collector, old_children, descriptors)
@@ -247,6 +270,12 @@ module Mayu
 
           collector << Commands::RemoveNode[node.dom_id] if node.dom_id
 
+          node.traverse { |child| child.mark_removed }
+        end
+
+        def discard_node(node)
+          node.stop if @engine&.task
+          node.remove
           node.traverse { |child| child.mark_removed }
         end
 

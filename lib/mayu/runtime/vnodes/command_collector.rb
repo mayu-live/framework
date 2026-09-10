@@ -16,10 +16,23 @@ module Mayu
         def <<(command)
           @commands << command
         end
+
+        def checkpoint
+          @commands.length
+        end
+
+        def rollback(checkpoint)
+          @commands.slice!(checkpoint..)
+        end
       end
 
       class NullCommandCollector
         def <<(_command)
+        end
+
+        def checkpoint = 0
+
+        def rollback(_checkpoint)
         end
       end
     end

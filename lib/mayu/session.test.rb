@@ -15,14 +15,19 @@ require_relative "test"
 
 class Mayu::SessionTest < Minitest::Test
   class FakeServerConfig
+    def initialize(render_exceptions: true)
+      @render_exceptions = render_exceptions
+    end
+
     def hmr? = false
+    def render_exceptions? = @render_exceptions
   end
 
   class FakeConfig
     attr_reader :server
 
-    def initialize
-      @server = FakeServerConfig.new
+    def initialize(render_exceptions: true)
+      @server = FakeServerConfig.new(render_exceptions:)
     end
   end
 
@@ -36,8 +41,8 @@ class Mayu::SessionTest < Minitest::Test
     attr_reader :config, :router, :metrics, :marshaller
     attr_accessor :module_provider
 
-    def initialize(module_provider: nil)
-      @config = FakeConfig.new
+    def initialize(module_provider: nil, render_exceptions: true)
+      @config = FakeConfig.new(render_exceptions:)
       @router = FakeRouter.new
       @metrics = Mayu::Test::FakeMetrics.new
       @marshaller = nil
@@ -56,8 +61,9 @@ class Mayu::SessionTest < Minitest::Test
   class FakeEngine
     attr_reader :batches, :refreshed_descriptor, :stylesheets
 
-    def initialize
+    def initialize(render_exceptions: true)
       @batches = []
+      @render_exceptions = render_exceptions
     end
 
     def commands
@@ -71,6 +77,8 @@ class Mayu::SessionTest < Minitest::Test
     def enqueue_batch(batch)
       @batches << batch
     end
+
+    def render_exceptions? = @render_exceptions
 
     def refresh(descriptor)
       @refreshed_descriptor = descriptor
@@ -239,6 +247,28 @@ class Mayu::SessionTest < Minitest::Test
     assert_includes(html, "Pokémon")
   end
 
+  def test_session_renders_the_exception_examples
+    provider =
+      Mayu::Klenod::Configuration.new(
+        root: File.expand_path("../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/exceptions",
+        headers: {},
+        http2: false
+      )
+
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    html = session.render
+
+    assert_includes(html, "Callback exception")
+    assert_includes(html, "Render exception")
+    assert_includes(html, "The child is rendering normally")
+    refute_empty(session.listener_commands)
+  end
+
   def test_encrypted_transfer_restores_klenod_component_references
     root = File.expand_path("../../example", __dir__)
     marshaller = Mayu::EncryptedMarshal.new("transfer-test-secret")
@@ -261,7 +291,8 @@ class Mayu::SessionTest < Minitest::Test
     target_environment =
       FakeEnvironment.new(
         module_provider:
-          Mayu::Klenod::Configuration.new(root:).development_provider
+          Mayu::Klenod::Configuration.new(root:).development_provider,
+        render_exceptions: false
       )
     target_environment.instance_variable_set(:@marshaller, marshaller)
     restored =
@@ -274,6 +305,7 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal(target_environment.module_provider, restored.module_provider)
 
     engine = restored.instance_variable_get(:@engine)
+    refute(engine.render_exceptions?)
     Async do
       engine.start
       listener =
@@ -412,5 +444,28 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal("%p= )\n", command.source)
     assert_equal(["app:/broken.haml:2"], command.backtrace)
     assert_same(error, provider.rewritten_error)
+  end
+
+  def test_klenod_reload_error_overlay_can_be_disabled
+    env = FakeEnvironment.new(render_exceptions: false)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new(render_exceptions: false)
+    session.instance_variable_set(:@engine, fake_engine)
+
+    error = SyntaxError.new("unexpected token")
+    reload_result =
+      Struct
+        .new(:errors) { def success? = false }
+        .new([["app:/broken.haml", error]])
+
+    session.send(:handle_reload_result, reload_result)
+
+    assert_empty(fake_engine.batches)
   end
 end

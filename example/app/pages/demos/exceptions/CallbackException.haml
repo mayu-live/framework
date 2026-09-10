@@ -1,0 +1,43 @@
+:ruby
+  Button = import("/components/Form/Button")
+  Card = import("/components/UI/Card")
+  Details = import("/components/UI/Details")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+
+  def initialize =
+    @count = 0
+
+  def handle_increment =
+    @count += 1
+
+  def handle_error =
+    raise "The callback failed"
+
+%Card
+  .content
+    %h3 Callback exception
+    %p
+      Callback exceptions are logged and shown by the development error
+      overlay. Error boundaries intentionally do not catch event-handler
+      failures.
+    %p
+      Count:
+      %output<= @count
+    .buttons
+      %Button(onclick=handle_increment) Increment
+      %Button(onclick=handle_error) Raise callback error
+    %Details(summary="Show source")
+      %HighlightedCodeBlock(language="haml")
+        = File.read(File.join(__dir__, "CallbackException.haml"))
+
+:css
+  .content {
+    padding: 1rem;
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    margin: 1em 0;
+  }

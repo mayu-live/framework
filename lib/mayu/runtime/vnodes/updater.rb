@@ -49,6 +49,7 @@ module Mayu
 
                 updates.each do |node, descriptor|
                   next if node.removed?
+                  checkpoint = command_collector.checkpoint
                   begin
                     if descriptor
                       node.update(command_collector, descriptor)
@@ -56,10 +57,10 @@ module Mayu
                       node.update(command_collector)
                     end
                   rescue VComponent::UnhandledRenderError => e
-                    @engine&.root&.emit_render_error(
+                    @engine&.root&.resolve_render_error(
                       command_collector,
-                      e.error,
-                      e.component
+                      e,
+                      checkpoint
                     )
                   end
                 end

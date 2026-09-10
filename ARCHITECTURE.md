@@ -87,6 +87,22 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
   - body commands
 - Each updater flush produces one batch. Standalone commands use singleton
   batches, and the server never merges adjacent batches.
+- Each queued VDOM update starts with a command checkpoint. If a parent error
+  boundary handles a render failure, commands from that failed attempt are
+  discarded and the boundary subtree is rebuilt from its fallback render.
+
+### Error boundaries
+
+- A component becomes an error boundary by defining `handle_error(error)` and
+  returning a truthy value when it has updated itself to render a fallback.
+- Boundaries catch render failures from descendants, not their own render or
+  callback failures.
+- A falsey handler continues the search at the next parent. If a handler or
+  fallback raises, the new error also continues at the next parent.
+- Handled failures synchronously replace the boundary subtree. Unrelated VDOM
+  updates already collected for the same batch are preserved.
+- Unhandled errors are always logged. `server.render_exceptions` controls
+  whether the server also sends a `RenderError` command for the browser overlay.
 
 ## Components (`lib/mayu/component`)
 

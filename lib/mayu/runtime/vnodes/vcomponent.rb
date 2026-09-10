@@ -16,15 +16,6 @@ module Mayu
   module Runtime
     module VNodes
       class VComponent < Base
-        class ErrorHandled < StandardError
-          attr_reader :boundary
-
-          def initialize(boundary)
-            @boundary = boundary
-            super()
-          end
-        end
-
         class UnhandledRenderError < StandardError
           attr_reader :error, :component
 
@@ -90,9 +81,10 @@ module Mayu
           @mount_task = nil
           @mount_started = false
           @replacing_instance = false
+          @handling_render_error = false
+          @rerender_requested_during_error = false
 
-          @children =
-            VChildren.new(render_children, parent: self, engine: @engine)
+          @children = build_initial_children
         end
 
         private def instance_variables_to_inspect =
@@ -144,56 +136,69 @@ module Mayu
         end
 
         def update(collector, descriptor = nil)
-          retried = false
           replacement_rendered = false
           replacement_children = nil
 
-          begin
-            if descriptor
-              previous_type = @descriptor.type
+          if descriptor
+            previous_type = @descriptor.type
 
-              if previous_type != descriptor.type
-                begin
-                  replacement, replacement_children =
-                    prepare_replacement(descriptor.type, descriptor)
-                rescue => error
-                  raise UnhandledRenderError.new(error, self)
-                end
-
-                replacement_rendered = true
-                @descriptor = descriptor
-                commit_replacement(replacement)
-              else
-                @descriptor = descriptor
+            if previous_type != descriptor.type
+              begin
+                replacement, replacement_children =
+                  prepare_replacement(descriptor.type, descriptor)
+              rescue UnhandledRenderError
+                raise
+              rescue => error
+                raise UnhandledRenderError.new(error, self)
               end
 
-              @instance.instance_variable_set(
-                :@__children,
-                @descriptor.children.freeze
-              )
-              @instance.instance_variable_set(
-                :@__props,
-                @descriptor.props.freeze
-              )
+              replacement_rendered = true
+              @descriptor = descriptor
+              commit_replacement(replacement)
+            else
+              @descriptor = descriptor
             end
 
-            metrics.update_summary(
-              metrics.component_children_update_times,
-              labels: {
-                component: component_label
-              }
-            ) do
-              children =
-                replacement_rendered ? replacement_children : render_children
-              @children.update(collector, children)
-            end
-          rescue ErrorHandled => e
-            raise if retried || e.boundary != self
-            retried = true
-            replacement_rendered = false
-            replacement_children = nil
-            retry
+            @instance.instance_variable_set(
+              :@__children,
+              @descriptor.children.freeze
+            )
+            @instance.instance_variable_set(
+              :@__props,
+              @descriptor.props.freeze
+            )
           end
+
+          metrics.update_summary(
+            metrics.component_children_update_times,
+            labels: {
+              component: component_label
+            }
+          ) do
+            children =
+              replacement_rendered ? replacement_children : render_children
+            @children.update(collector, children)
+          end
+        end
+
+        def handle_render_error(error)
+          handled = false
+          return false unless @instance.respond_to?(:handle_error)
+
+          @handling_render_error = true
+          @rerender_requested_during_error = false
+          handled = !!@instance.handle_error(error)
+          handled
+        ensure
+          @handling_render_error = false
+          if !handled && @rerender_requested_during_error
+            @engine.enqueue_update(self)
+          end
+          @rerender_requested_during_error = false
+        end
+
+        def recover_render_error(collector)
+          @children.replace(collector, render_children)
         end
 
         def write_html(out)
@@ -267,6 +272,8 @@ module Mayu
           @mount_task = nil
           @mount_started = false
           @replacing_instance = false
+          @handling_render_error = false
+          @rerender_requested_during_error = false
         end
 
         def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
@@ -292,6 +299,27 @@ module Mayu
         end
 
         private
+
+        def build_initial_children
+          recovering = false
+
+          begin
+            VChildren.new(render_children, parent: self, engine: @engine)
+          rescue UnhandledRenderError => failure
+            if recovering || failure.component == self
+              raise UnhandledRenderError.new(failure.error, self)
+            end
+            begin
+              handled = handle_render_error(failure.error)
+            rescue => error
+              raise UnhandledRenderError.new(error, self)
+            end
+            raise unless handled
+
+            recovering = true
+            retry
+          end
+        end
 
         def build_instance(klass, descriptor)
           instance = klass.allocate
@@ -397,7 +425,14 @@ module Mayu
             if @__view_transition
               vnode.instance_variable_set(:@__view_transition_pending, true)
             end
-            vnode.engine.enqueue_update(vnode)
+            if vnode.instance_variable_get(:@handling_render_error)
+              vnode.instance_variable_set(
+                :@rerender_requested_during_error,
+                true
+              )
+            else
+              vnode.engine.enqueue_update(vnode)
+            end
           end
         end
 
@@ -427,35 +462,11 @@ module Mayu
         end
 
         def render_children
-          retried = false
-
-          begin
-            render_instance(@instance)
-          rescue ErrorHandled => e
-            raise if retried
-            retried = true
-
-            if e.boundary == self
-              retry
-            else
-              raise
-            end
-          rescue => e
-            raise if retried
-            retried = true
-
-            boundary = handle_error_up_tree(e)
-
-            if boundary
-              if boundary == self
-                retry
-              else
-                raise ErrorHandled, boundary
-              end
-            else
-              raise UnhandledRenderError.new(e, self)
-            end
-          end
+          render_instance(@instance)
+        rescue UnhandledRenderError
+          raise
+        rescue => error
+          raise UnhandledRenderError.new(error, self)
         end
 
         def render_instance(instance)
@@ -465,22 +476,6 @@ module Mayu
               component: component_label(instance)
             }
           ) { instance.render }
-        end
-
-        def handle_error_up_tree(error)
-          node = self
-
-          while node
-            instance = node.instance_variable_get(:@instance)
-            if instance.respond_to?(:handle_error)
-              handled = instance.handle_error(error)
-              return node if handled
-            end
-
-            node = node.parent&.closest(VComponent)
-          end
-
-          nil
         end
 
         def component_label(instance = @instance)

@@ -1,0 +1,61 @@
+:ruby
+  Button = import("/components/Form/Button")
+  Card = import("/components/UI/Card")
+  Details = import("/components/UI/Details")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+  RenderException = import("./RenderException")
+
+  def initialize
+    @failed = false
+    @error = nil
+  end
+
+  def handle_raise =
+    @failed = true
+
+  def handle_reset
+    @failed = false
+    @error = nil
+  end
+
+  def handle_error(error)
+    @error = "#{error.class}: #{error.message}"
+    true
+  end
+
+%Card
+  .content
+    %h3 Render exception
+    = if @error
+      .fallback(role="alert")
+        %strong The error boundary recovered this subtree.
+        %code= @error
+        %Button(onclick=handle_reset) Reset example
+    = else
+      %p
+        The child below raises from its render method. This component catches
+        the exception with
+        %code handle_error
+        and renders a fallback.
+      %Button(onclick=handle_raise) Raise child render error
+      %RenderException(fail=@failed)
+    %Details(summary="Show boundary source")
+      %HighlightedCodeBlock(language="haml")
+        = File.read(File.join(__dir__, "ErrorBoundaryExample.haml"))
+
+:css
+  .content,
+  .fallback {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  .fallback {
+    padding: 1rem;
+    background: color-mix(in srgb, var(--accent-color), transparent 90%);
+    border-left: 0.25rem solid var(--accent-color);
+  }
