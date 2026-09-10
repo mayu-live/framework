@@ -18,7 +18,12 @@ module Mayu
 
       def self.module_path = nil
 
-      def self.to_s = File.join("MAYU_ROOT", module_path)
+      def self.to_s
+        path = module_path
+        return super if path.nil? || path.empty?
+
+        File.join("MAYU_ROOT", path)
+      end
 
       def marshal_dump
         instance_variables

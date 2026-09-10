@@ -6,6 +6,13 @@ require "minitest/autorun"
 require_relative "base"
 
 class Mayu::Component::BaseTest < Minitest::Test
+  class AnonymousPathComponent < Mayu::Component::Base
+  end
+
+  def test_class_name_falls_back_when_module_path_is_missing
+    assert_equal(AnonymousPathComponent.name, AnonymousPathComponent.to_s)
+  end
+
   def test_exposes_vdom_children_as_klenod_slots
     children =
       Mayu::Runtime::Descriptors::Children[
