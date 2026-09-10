@@ -127,6 +127,35 @@ describe("session-connection", () => {
     expect(resetSessionEntirelyMock).toHaveBeenCalledTimes(1);
   });
 
+  it("marks the connection disconnected after the patch stream closes", async () => {
+    const stop = new Error("stop test loop");
+    initInputStreamMock.mockResolvedValueOnce(
+      new ReadableStream({
+        start(controller) {
+          controller.close();
+        },
+      }),
+    );
+    initInputStreamMock.mockRejectedValueOnce(new Error("reconnect failed"));
+    initCallbackStreamMock.mockReturnValue(new WritableStream());
+    shouldResetSessionMock.mockReturnValue(false);
+
+    const connection = new SessionConnection({
+      runtime: { apply: vi.fn() } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: async () => {
+        throw stop;
+      },
+    });
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(
+      updateConnectionStatusMock.mock.calls.map(([status]) => status),
+    ).toEqual(["disconnected", "connected", "disconnected"]);
+  });
+
   it("retains transferred state when a draining server rejects reconnection", async () => {
     const state = new Blob(["encrypted state"]);
     setTransferState(state);

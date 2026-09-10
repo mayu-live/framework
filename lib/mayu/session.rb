@@ -150,6 +150,10 @@ module Mayu
       !!@task
     end
 
+    def transferring?
+      !!@transferring
+    end
+
     def wait
       @task&.wait
     end

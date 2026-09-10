@@ -5,6 +5,7 @@ require "minitest/autorun"
 require "async/http/protocol"
 
 require_relative "app"
+require_relative "../runtime/patches"
 
 class Mayu::Server::AppTest < Minitest::Test
   class Page < Mayu::Component::Base
@@ -63,6 +64,42 @@ class Mayu::Server::AppTest < Minitest::Test
     end
   end
   Request = Data.define(:method, :path, :headers, :body) { def read = body }
+
+  class StreamSession
+    DomIdTree = Data.define(:value) { def serialize = value }
+
+    attr_reader :id, :dom_id_tree
+
+    def initialize
+      @id = "test-session"
+      @dom_id_tree = DomIdTree.new([])
+      @started = Async::Promise.new
+      @stopped = Async::Promise.new
+    end
+
+    def running? = false
+    def transferring? = false
+
+    def start
+      @started.resolve(true)
+    end
+
+    def wait
+      @stopped.wait
+    end
+
+    def wait_until_started
+      @started.wait
+    end
+
+    def stop
+      @stopped.resolve(true) unless @stopped.resolved?
+    end
+
+    def dequeue_patch
+      Async::Promise.new.wait
+    end
+  end
 
   def test_html_page_requests_do_not_dispatch_the_handler
     response = dispatch("GET", "/api/42", {"accept" => "text/html"})
@@ -169,6 +206,35 @@ class Mayu::Server::AppTest < Minitest::Test
     response = app.send(:handle_session_transfer, request, "session")
     assert_equal(503, response.status)
     assert_equal("Server is stopping", response.read)
+  end
+
+  def test_stopping_a_session_closes_its_patch_stream
+    Async do |task|
+      app = Mayu::Server::App.allocate
+      app.instance_variable_set(:@body_barrier, Async::Barrier.new(parent: task))
+      app.instance_variable_set(:@streams, {})
+      cookies = Object.new
+      cookies.define_singleton_method(:set_token_cookie_header) { |_session| {} }
+      app.instance_variable_set(:@cookies, cookies)
+
+      session = StreamSession.new
+      request = Struct.new(:headers).new({})
+      response = app.send(:run_session_stream, request, session)
+
+      session.wait_until_started
+      session.stop
+
+      chunks = []
+      task.with_timeout(0.5) do
+        while (chunk = response.body.read)
+          chunks << chunk
+        end
+      end
+      refute_empty(chunks)
+    ensure
+      response&.body&.close
+      app&.instance_variable_get(:@body_barrier)&.stop
+    end.wait
   end
 
   private

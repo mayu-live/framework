@@ -398,12 +398,7 @@ module Mayu
         @body_barrier.async do |task|
           session.start
 
-          close_task = task.async do
-            body.wait
-            task.stop
-          end
-
-          begin
+          patch_task = task.async do
             loop do
               patch = session.dequeue_patch
 
@@ -415,8 +410,22 @@ module Mayu
 
               break if patch in Runtime::Patches::Transfer | Runtime::Patches::TransferFailed
             end
+          end
+
+          close_task = task.async do
+            body.wait
+            patch_task.stop
+          end
+          session_task = task.async do
+            session.wait
+            patch_task.stop unless session.transferring?
+          end
+
+          begin
+            patch_task.wait
           ensure
             close_task.stop
+            session_task.stop
             session.stop
             body.close_write
           end
