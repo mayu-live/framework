@@ -1,4 +1,7 @@
 :ruby
+  def handle_context_menu
+  end
+
   def should_update?(next_props, _next_state)
     case
     when $alive != next_props[:alive]
@@ -19,7 +22,7 @@
   **rest,
   value:,
   class: { alive: },
-  oncontextmenu: "event.preventDefault()",
+  oncontextmenu: handle_context_menu,
   onmousedown: ondraw,
   onmouseenter: ondraw,
 }

@@ -13,8 +13,15 @@ module Mayu
     module EventStream
       CONTENT_TYPE = "application/vnd.mayu.event-stream"
       CONTENT_ENCODING = "deflate-raw"
+      MAX_INCOMING_MESSAGE_BYTES = 1024 * 1024
 
       class ClosedStreamError < StandardError
+      end
+
+      class InvalidMessageError < StandardError
+      end
+
+      class MessageTooLargeError < StandardError
       end
 
       class MsgPackWrapper < MessagePack::Factory
@@ -110,16 +117,33 @@ module Mayu
           def to_msgpack_ext = data
         end
 
-      def self.each_incoming_message(request)
+      def self.each_incoming_message(
+        request,
+        max_message_bytes: MAX_INCOMING_MESSAGE_BYTES
+      )
         buf = +""
 
         request.body.each do |chunk|
           buf += chunk
 
-          if (idx = buf.index("\n"))
-            yield JSON.parse(buf[0..idx], symbolize_names: true)
-            buf = buf[idx.succ..].to_s
+          while (idx = buf.index("\n"))
+            line = buf.byteslice(0, idx)
+            buf = buf.byteslice(idx + 1..).to_s
+            raise MessageTooLargeError if line.bytesize > max_message_bytes
+            raise InvalidMessageError, "Empty event message" if line.empty?
+
+            begin
+              yield JSON.parse(line, symbolize_names: true)
+            rescue JSON::ParserError => error
+              raise InvalidMessageError, error.message
+            end
           end
+
+          raise MessageTooLargeError if buf.bytesize > max_message_bytes
+        end
+
+        unless buf.empty?
+          raise InvalidMessageError, "Event message must end with a newline"
         end
       end
     end

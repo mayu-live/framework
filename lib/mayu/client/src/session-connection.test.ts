@@ -104,7 +104,10 @@ describe("session-connection", () => {
         },
       }),
     );
-    initCallbackStreamMock.mockReturnValue(new WritableStream());
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
     shouldResetSessionMock.mockReturnValue(true);
     resetSessionEntirelyMock.mockRejectedValue(
       new Error("server still draining"),
@@ -137,7 +140,10 @@ describe("session-connection", () => {
       }),
     );
     initInputStreamMock.mockRejectedValueOnce(new Error("reconnect failed"));
-    initCallbackStreamMock.mockReturnValue(new WritableStream());
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
     shouldResetSessionMock.mockReturnValue(false);
 
     const connection = new SessionConnection({
@@ -153,7 +159,7 @@ describe("session-connection", () => {
 
     expect(
       updateConnectionStatusMock.mock.calls.map(([status]) => status),
-    ).toEqual(["disconnected", "connected", "disconnected"]);
+    ).toEqual(["disconnected", "connected", "disconnected", "disconnected"]);
   });
 
   it("retains transferred state when a draining server rejects reconnection", async () => {
@@ -173,5 +179,59 @@ describe("session-connection", () => {
     await expect(connection.run()).rejects.toBe(stop);
     expect(getTransferState()).toBe(state);
     expect(resetSessionEntirelyMock).not.toHaveBeenCalled();
+  });
+
+  it("reconnects when the callback transport fails", async () => {
+    const callbackError = new Error("callback stream failed");
+    const stop = new Error("stop test loop");
+    initInputStreamMock.mockResolvedValue(new ReadableStream({ start() {} }));
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: Promise.reject(callbackError),
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+    const sleepMock = vi.fn(async () => {
+      throw stop;
+    });
+
+    const connection = new SessionConnection({
+      runtime: { apply: vi.fn() } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: sleepMock,
+    });
+
+    await expect(connection.run()).rejects.toBe(stop);
+    expect(shouldResetSessionMock).toHaveBeenCalledWith(callbackError);
+    expect(sleepMock).toHaveBeenCalledWith(1000);
+  });
+
+  it("backs off after repeated clean stream endings", async () => {
+    const stop = new Error("stop test loop");
+    initInputStreamMock.mockResolvedValue(
+      new ReadableStream({
+        start(controller) {
+          controller.close();
+        },
+      }),
+    );
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    const sleepMock = vi.fn(async () => {
+      throw stop;
+    });
+
+    const connection = new SessionConnection({
+      runtime: { apply: vi.fn() } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: sleepMock,
+    });
+
+    await expect(connection.run()).rejects.toBe(stop);
+    expect(sleepMock).toHaveBeenCalledWith(1000);
+    expect(initInputStreamMock).toHaveBeenCalledTimes(2);
   });
 });

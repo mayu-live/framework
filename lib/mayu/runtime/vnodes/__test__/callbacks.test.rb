@@ -21,6 +21,55 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  class InvalidCallbackProbe < Mayu::Component::Base
+    def handle_click(_first, _second)
+    end
+
+    def render
+      H[:button, onclick: H.callback(self, :handle_click)]
+    end
+  end
+
+  def test_initial_html_contains_no_callback_wiring
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[CallbackProbe]],
+        metrics: NullMetrics.new
+      )
+
+    html = engine.render
+    refute_includes(html, "Mayu.callback")
+    refute_includes(html, "data-mayu-on")
+
+    listener = engine.listener_patches.first
+    assert_instance_of(Mayu::Runtime::Patches::SetListener, listener)
+    assert_equal("click", listener.name)
+  end
+
+  def test_raw_string_event_handlers_are_rejected
+    error =
+      assert_raises(ArgumentError) do
+        Mayu::Runtime::Engine.new(
+          H[:body, H[:button, onclick: "alert('no')"]],
+          metrics: NullMetrics.new
+        )
+      end
+
+    assert_includes(error.message, "Raw string event handler")
+  end
+
+  def test_invalid_callback_signatures_are_rejected
+    error =
+      assert_raises(ArgumentError) do
+        Mayu::Runtime::Engine.new(
+          H[:body, H[InvalidCallbackProbe]],
+          metrics: NullMetrics.new
+        )
+      end
+
+    assert_includes(error.message, "must accept no arguments")
+  end
+
   def test_event_callback_attribute
     component = CallbackProbe.new
     initial = H[:body, H[:button, "Click"]]
@@ -36,17 +85,14 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     patcher = Mayu::Runtime::VNodes::Patcher.new
     document.update(patcher, updated)
 
-    set_attribute =
+    set_listener =
       patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::SetAttribute) &&
-          patch.name == :onclick
+        patch.is_a?(Mayu::Runtime::Patches::SetListener) &&
+          patch.name == "click"
       end
 
-    refute_nil(set_attribute)
-    assert_match(
-      /\AMayu\.callback\(event,'[A-Za-z0-9]+'\)\z/,
-      set_attribute.value
-    )
+    refute_nil(set_listener)
+    assert_match(/\A[A-Za-z0-9]+\z/, set_listener.listener_id)
   end
 
   def test_event_listener_unregistered_on_change
@@ -70,13 +116,13 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     patcher = Mayu::Runtime::VNodes::Patcher.new
     document.update(patcher, updated)
 
-    remove_attribute =
+    remove_listener =
       patcher.patches.find do |patch|
-        patch.is_a?(Mayu::Runtime::Patches::RemoveAttribute) &&
-          patch.name == :onclick
+        patch.is_a?(Mayu::Runtime::Patches::RemoveListener) &&
+          patch.name == "click"
       end
 
-    refute_nil(remove_attribute)
+    refute_nil(remove_listener)
     assert_equal(0, listeners.size)
   end
 

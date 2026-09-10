@@ -150,7 +150,7 @@
             checked: item.completed?,
           }
           %form.edit-todo-form(onsubmit=handle_update autocomplete="off"){id: item.id}
-            %input(type="text" name="description" autofocus onfocus="event.target.select()" required){
+            %input(type="text" name="description" autofocus required){
               value: item.description
             }
           %button.delete-button{name: item.id}

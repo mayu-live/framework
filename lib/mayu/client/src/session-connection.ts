@@ -69,11 +69,13 @@ export default class SessionConnection {
   async run() {
     const extensionCodec = createExtensionCodec();
     let failures = 0;
+    let consecutiveEofs = 0;
 
     while (true) {
       const abortController = new AbortController();
       let callbackWriter: WritableStreamDefaultWriter<any> | null = null;
       let callbackPipeline: Promise<void> | null = null;
+      let retryDelay: number | null = null;
 
       try {
         const state = getTransferState();
@@ -95,41 +97,59 @@ export default class SessionConnection {
           abortController.signal,
         );
 
-        failures = 0;
-
         callbackPipeline = callbackStream.readable
           .pipeThrough(new JSONEncoderStream())
           .pipeThrough(new TextEncoderStream())
-          .pipeTo(output)
-          .catch((error) => {
-            if (!isAbortError(error)) {
-              console.error("Callback pipeline error", error);
-            }
-          });
+          .pipeTo(output.writable);
+        void callbackPipeline.catch(() => undefined);
 
         updateConnectionStatus("connected");
 
-        for await (const patch of decodeMultiStream(input, {
-          extensionCodec,
-        })) {
-          updateConnectionStatus("connected");
+        const consumeInput = async () => {
+          for await (const patch of decodeMultiStream(input, {
+            extensionCodec,
+          })) {
+            updateConnectionStatus("connected");
 
-          if (
-            Array.isArray(patch) &&
-            patch.some(
-              (entry) => Array.isArray(entry) && entry[0] === "TransferFailed",
-            )
-          ) {
-            throw new StreamError("Session transfer failed", "TRANSFER_FAILED");
+            if (
+              Array.isArray(patch) &&
+              patch.some(
+                (entry) =>
+                  Array.isArray(entry) && entry[0] === "TransferFailed",
+              )
+            ) {
+              throw new StreamError(
+                "Session transfer failed",
+                "TRANSFER_FAILED",
+              );
+            }
+
+            try {
+              await this.#runtime.apply(patch as any);
+            } catch (error) {
+              console.error(error);
+            }
           }
 
-          try {
-            await this.#runtime.apply(patch as any);
-          } catch (error) {
-            console.error(error);
-          }
+          return "eof" as const;
+        };
+
+        const result = await Promise.race([
+          consumeInput(),
+          output.failure ?? new Promise<never>(() => undefined),
+          callbackPipeline.then(() => "callback-eof" as const),
+        ]);
+
+        if (result === "callback-eof") {
+          throw new StreamError("Callback pipeline ended");
         }
+
+        failures = 0;
+        consecutiveEofs += 1;
+        retryDelay = Math.min(10_000, 1000 * Math.max(0, consecutiveEofs - 1));
+        updateConnectionStatus("disconnected");
       } catch (error: unknown) {
+        consecutiveEofs = 0;
         failures += 1;
         const message = getErrorMessage(error);
 
@@ -153,7 +173,7 @@ export default class SessionConnection {
 
         const sleepTime = Math.min(10_000, 1000 * failures);
         console.info(`Attempting to reconnect in`, sleepTime, "ms");
-        await this.#sleep(sleepTime);
+        retryDelay = sleepTime;
       } finally {
         abortController.abort();
         this.#mayu.clearWriter();
@@ -168,9 +188,11 @@ export default class SessionConnection {
         }
 
         if (callbackPipeline) {
-          await callbackPipeline;
+          await callbackPipeline.catch(() => undefined);
         }
       }
+
+      if (retryDelay && retryDelay > 0) await this.#sleep(retryDelay);
     }
   }
 }

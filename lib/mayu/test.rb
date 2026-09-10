@@ -26,6 +26,7 @@ module Mayu
       def update_child_id_count = NullCounter.new
       def update_chunk_count = NullCounter.new
       def session_callback_count = NullCounter.new
+      def session_ping_count = NullCounter.new
 
       def update_summary(_summary, labels: {})
         yield
@@ -251,9 +252,11 @@ module Mayu
         @engine = engine
         @settle_timeout = settle_timeout
         @nodes = {}
+        @listener_bindings = {}
         @doc = Oga.parse_html(@engine.render)
         @patches = []
         setup_tree(@doc, @engine.dom_id_tree)
+        @engine.listener_patches.each { |patch| apply_patch(patch) }
       end
 
       def fragment = @doc
@@ -332,25 +335,12 @@ module Mayu
             "fire_event expects a node from this rendered page"
         end
 
-        event = event.to_s
-        attributes =
-          if event.start_with?("on")
-            [event, "on#{event}"]
-          else
-            ["on#{event}"]
-          end
-        _, id =
-          attributes.filter_map do |candidate|
-            value = node[candidate]
-            match =
-              value&.match(
-                /\AMayu\.callback\(event,'(?<id>[^']+)'\)\z/
-              )
-            [candidate, match[:id]] if match
-          end.first
+        event = event.to_s.delete_prefix("on")
+        dom_id = @nodes.key(node.node)
+        id = @listener_bindings[[dom_id, event]]
         unless id
           raise NoListenerError,
-            "#{node.name} does not have a Mayu #{attributes.first} listener"
+            "#{node.name} does not have a Mayu on#{event} listener"
         end
 
         payload = payload ? payload.merge(fields) : fields
@@ -405,6 +395,7 @@ module Mayu
         case item
         in Mayu::Runtime::Patches::Initialize[id_tree:]
           @nodes.clear
+          @listener_bindings.clear
           setup_tree(@doc, id_tree)
         in Mayu::Runtime::Patches::CreateTree[html:, tree:]
           node = Oga.parse_html(html).children.first
@@ -430,6 +421,11 @@ module Mayu
           fetch_node!(id).set(normalize_attribute_name(name), value.to_s)
         in Mayu::Runtime::Patches::RemoveAttribute[id:, name:]
           fetch_node!(id).unset(normalize_attribute_name(name))
+        in Mayu::Runtime::Patches::SetListener[id:, name:, listener_id:]
+          @listener_bindings[[id, name.to_s]] = listener_id
+        in Mayu::Runtime::Patches::RemoveListener[id:, name:, listener_id:]
+          key = [id, name.to_s]
+          @listener_bindings.delete(key) if @listener_bindings[key] == listener_id
         in Mayu::Runtime::Patches::SetClassName[id:, class_name:]
           fetch_node!(id).set("class", class_name.to_s)
         in Mayu::Runtime::Patches::AddClass[id:, classes:]
@@ -497,9 +493,18 @@ module Mayu
         node = @nodes.delete(id)
         return unless node
 
+        removed_ids = [id]
+
         node.each_node do |child|
           pair = @nodes.find { |_node_id, candidate| candidate.equal?(child) }
-          @nodes.delete(pair.first) if pair
+          if pair
+            removed_ids << pair.first
+            @nodes.delete(pair.first)
+          end
+        end
+
+        @listener_bindings.delete_if do |(node_id, _event), _listener_id|
+          removed_ids.include?(node_id)
         end
       end
 

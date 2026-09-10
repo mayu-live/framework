@@ -14,6 +14,9 @@
     * Define callback handlers
 
     Attributes starting with `on` will automatically be bound to handlers.
+    Handlers may accept no arguments, one event argument, or keyword-rest
+    arguments. Mayu installs these handlers after the browser connects; it does
+    not emit inline JavaScript into the server-rendered HTML.
 
     ```haml
     :ruby

@@ -13,23 +13,30 @@ require_relative "klenod"
 module Mayu
   class Session
     module Events
+      class InvalidEventError < StandardError
+      end
+
+      class EventRejectedError < StandardError
+      end
+
       CallbackEvent = Data.define(:id, :payload)
       NavigateEvent = Data.define(:path, :push_state)
       PingEvent = Data.define(:ping)
 
       def self.from_message(message)
         case message
-        in {type: "callback", payload: {id:, event:}, ping:}
+        in {type: "callback", payload: {id: String => id, event: Hash => event}, ping: Numeric => ping} unless id.empty?
           [PingEvent[ping], CallbackEvent[id, event]]
         in {
-             type: "navigate", payload: {href:, pushState: push_state}, ping:
+             type: "navigate",
+             payload: {href: String => href, pushState: true | false => push_state},
+             ping: Numeric => ping
            }
           [PingEvent[ping], NavigateEvent[href, push_state]]
-        in {type: "ping", ping:}
+        in {type: "ping", ping: Numeric => ping}
           [PingEvent[ping]]
         else
-          Console.logger.error(self, "Unknown message: #{message.inspect}")
-          []
+          raise InvalidEventError, "Invalid event message: #{message.inspect}"
         end
       end
     end
@@ -73,6 +80,7 @@ module Mayu
         )
 
       @last_ping = Async::Clock.now
+      @incoming_events = Async::Queue.new
     end
 
     def init_js_path
@@ -105,6 +113,7 @@ module Mayu
 
     def marshal_load(a)
       @id, @token, @engine, @last_ping, @request_info = a
+      @incoming_events = Async::Queue.new
     end
 
     def timed_out?(timeout_seconds = 5)
@@ -113,7 +122,11 @@ module Mayu
     end
 
     def enqueue_event(event)
-      @incoming_events&.enqueue(event) unless @transferring
+      if @transferring
+        raise Events::EventRejectedError, "Session is transferring"
+      end
+
+      @incoming_events.enqueue(event)
     end
 
     def dequeue_patch
@@ -170,6 +183,10 @@ module Mayu
       @engine.dom_id_tree
     end
 
+    def listener_patches
+      @engine.listener_patches
+    end
+
     def styles
       @engine.styles
     end
@@ -224,8 +241,6 @@ module Mayu
       parent.async do |task|
         task.annotate("Session #{@id}: Handle incoming events")
 
-        @incoming_events = Async::Queue.new
-
         loop do
           event = @incoming_events.dequeue
 
@@ -233,8 +248,6 @@ module Mayu
             "Session #{@id}: Handling #{event.class.name.split("::").last}"
           ) { handle_event(event) }
         end
-      ensure
-        @incoming_events = nil
       end
     end
 

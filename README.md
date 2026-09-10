@@ -173,10 +173,10 @@ on how to patch the DOM to the browser using the
 [Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
 [Client stream implementation](https://github.com/mayu-live/framework/blob/main/lib/mayu/client/src/stream.ts).
 
-Callbacks are regular `POST`-requests to
-`/__mayu/session/#{session_id}/#{callback_id}`,
-where the body contains the
-[serialized event data](https://github.com/mayu-live/framework/blob/main/lib/mayu/client/src/serializeEvent.ts).
+Callbacks and navigation events are sent as newline-delimited JSON over an
+authenticated `PATCH` stream. The server dispatches callbacks to the owning
+component and streams the resulting DOM patches back to the browser. Events
+are at-most-once and are not replayed after a disconnect.
 
 ## 100% async
 

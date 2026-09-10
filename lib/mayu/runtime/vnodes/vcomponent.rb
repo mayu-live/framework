@@ -89,7 +89,6 @@ module Mayu
           @instance = build_instance(@descriptor.type, @descriptor)
           @mount_task = nil
           @mount_started = false
-          @work_barrier = nil
           @replacing_instance = false
 
           @children =
@@ -110,7 +109,6 @@ module Mayu
             queue = Async::Queue.new
             @instance.instance_variable_set(:@__vnode_queue, queue)
             bind_runtime(@instance, task, queue)
-            @work_barrier = Async::Barrier.new(parent: task)
 
             @children.start
             start_mount(@instance)
@@ -119,7 +117,7 @@ module Mayu
               work = queue.dequeue
               break if work == :__stop__
               Async::Task.current.yield while @replacing_instance
-              @work_barrier&.async { work.call }
+              work.call
             end
           end
         end
@@ -268,7 +266,6 @@ module Mayu
           @instance.instance_variable_get(:@__state)&.bind(@instance)
           @mount_task = nil
           @mount_started = false
-          @work_barrier = nil
           @replacing_instance = false
         end
 
@@ -366,7 +363,6 @@ module Mayu
             @instance = replacement
             if task && queue
               bind_runtime(replacement, task, queue)
-              @work_barrier = Async::Barrier.new(parent: task)
               @engine.rebind_component_instance(@id, replacement)
               start_mount(replacement)
             end
@@ -420,8 +416,6 @@ module Mayu
         end
 
         def stop_instance_work(instance)
-          @work_barrier&.stop
-          @work_barrier = nil
           @mount_task&.stop
           @mount_task = nil
           if @mount_started

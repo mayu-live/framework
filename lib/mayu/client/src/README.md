@@ -18,6 +18,7 @@ This directory contains the browser-side runtime that:
 2. `SessionConnection.run()` loop:
    - opens input stream (`GET` or `POST` with transfer state),
    - opens callback output stream (`PATCH`),
+   - applies the `Initialize` + `SetListener` bootstrap batch,
    - decodes MessagePack patch batches,
    - applies patches through `runtime.apply(...)`,
    - on failure: reset session or reconnect with backoff.
@@ -59,11 +60,15 @@ This directory contains the browser-side runtime that:
   - `{type: "callback", payload: {id, event}, ping}`.
 - `window.Mayu.navigate(href, pushState)` writes navigation message.
 - `window.Mayu.ping()` writes heartbeat every `PING_INTERVAL`.
+- writes made without a live callback transport are dropped and are never
+  replayed after reconnect.
 - Writes go through:
   - `TransformStream` -> `JSONEncoderStream` -> `TextEncoderStream` -> output writable.
 - Output writable is:
   - streaming `PATCH` request when request streams are supported,
   - per-message fetch fallback otherwise.
+- failures from either transport terminate the entire connection attempt so
+  both stream directions reconnect together.
 
 ## Runtime/Patch Behavior Notes
 

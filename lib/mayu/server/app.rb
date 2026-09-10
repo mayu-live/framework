@@ -22,7 +22,7 @@ module Mayu
       ALLOW_HEADERS =
         Ractor.make_shareable(
           {
-            "access-control-allow-methods": "GET, POST, OPTIONS",
+            "access-control-allow-methods": "GET, POST, PATCH, OPTIONS",
             "access-control-allow-headers": %w[
               content-type
               accept
@@ -96,6 +96,18 @@ module Mayu
         error_response(403, "INVALID_TOKEN", **origin_header(request))
       rescue Cookies::TokenCookieNotSetError
         error_response(403, "TOKEN_COOKIE_NOT_SET", **origin_header(request))
+      rescue EventStream::MessageTooLargeError
+        error_response(413, "EVENT_MESSAGE_TOO_LARGE", **origin_header(request))
+      rescue EventStream::InvalidMessageError, Session::Events::InvalidEventError => e
+        Console.logger.warn(self, e)
+        error_response(400, "INVALID_EVENT_MESSAGE", **origin_header(request))
+      rescue Session::Events::EventRejectedError => e
+        Console.logger.debug(self, e)
+        error_response(
+          409,
+          "SESSION_NOT_ACCEPTING_EVENTS",
+          **origin_header(request)
+        )
       rescue Errno::ENOENT
         text_response(
           404,
@@ -393,7 +405,14 @@ module Mayu
         body = EventStream::Writer.new
         @streams[session.id] = body
 
-        body.write(Runtime::Patches::Initialize[session.dom_id_tree.serialize])
+        body.write(
+          Runtime::Patches::Batch[
+            [
+              Runtime::Patches::Initialize[session.dom_id_tree.serialize],
+              *session.listener_patches
+            ]
+          ]
+        )
 
         @body_barrier.async do |task|
           session.start
@@ -463,6 +482,14 @@ module Mayu
             .each { |event| session.enqueue_event(event) }
         end
 
+        if @stopping
+          return error_response(
+            503,
+            "SERVER_STOPPING",
+            **origin_header(request)
+          )
+        end
+
         json_response(
           204,
           "ok",
@@ -482,8 +509,8 @@ module Mayu
         )
       end
 
-      def error_response(status, error, **headers)
-        json_response(status, {error:}, **headers)
+      def error_response(status, code, message: code, **headers)
+        json_response(status, {code:, message:, error: code}, **headers)
       end
 
       def json_response(status, json, **headers)

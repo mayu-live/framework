@@ -87,7 +87,7 @@ module Mayu
         def call_listener(id, payload)
           listener =
             @listeners.fetch(id) do
-              Console.logger.error(self, "Listener #{id} not found")
+              Console.logger.debug(self, "Ignoring stale listener #{id}")
               return
             end
           if (callback = listener.callback)
@@ -120,6 +120,19 @@ module Mayu
           end
 
           completion
+        end
+
+        def listener_patches
+          patches = []
+          traverse do |node|
+            next unless node.is_a?(VElement)
+
+            attributes = node.instance_variable_get(:@attributes)
+            attributes.each_listener do |name, listener|
+              patches << Patches::SetListener[node.dom_id, name, listener.id]
+            end
+          end
+          patches
         end
 
         def rebind_component_instance(vnode_id, instance)

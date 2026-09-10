@@ -25,21 +25,47 @@ module Mayu
           attr_reader :id
           attr_reader :callback
 
-          def to_js = "Mayu.callback(event,'#{id}')"
-
           def call(payload)
             method = callback.component.method(callback.method_name)
+            parameters = method.parameters
 
-            case method.parameters
-            in []
+            if parameters.empty?
               method.call
-            in [[:req, Symbol]]
+            elsif parameters.length == 1 &&
+                %i[req opt rest].include?(parameters.first.first)
               method.call(payload)
-            in [[:rest, :args]]
-              method.call(payload)
-            in [[:keyrest, Symbol]]
+            elsif parameters.any? { |type, _| type == :keyrest } &&
+                parameters.all? do |type, _|
+                  %i[key keyreq keyrest].include?(type)
+                end
               method.call(**payload)
+            else
+              raise ArgumentError,
+                "Callback #{callback.method_name} must accept no arguments, one positional event argument, or keyword rest arguments"
             end
+          end
+
+          def validate!
+            parameters = callback.component.method(callback.method_name).parameters
+            positional =
+              parameters.length == 1 &&
+              %i[req opt rest].include?(parameters.first.first)
+            keyword_rest =
+              parameters.any? { |type, _| type == :keyrest } &&
+              parameters.all? do |type, _|
+                %i[key keyreq keyrest].include?(type)
+              end
+
+            unless parameters.empty? || positional || keyword_rest
+              raise ArgumentError,
+                "Callback #{callback.method_name} must accept no arguments, one positional event argument, or keyword rest arguments"
+            end
+
+            self
+          rescue NameError => error
+            raise ArgumentError,
+              "Callback method #{callback.method_name.inspect} is not defined on #{callback.component.class}",
+              cause: error
           end
 
           def marshal_dump
@@ -169,30 +195,22 @@ module Mayu
         end
 
         def render_for_html
-          attrs = normalize_attributes(flatten_props(@descriptor.props || {}))
+          @attributes.transform_values do |value|
+            value.is_a?(Listener) ? nil : value
+          end
+        end
 
-          attrs
-            .transform_values do |value|
-              case value
-              when Listener
-                @engine.add_listener(value)
-                value.to_js
-              else
-                value
-              end
-            end
-            .tap do |hash|
-              hash.each do |key, value|
-                next unless key.to_s.start_with?("on")
-                next if value.is_a?(String)
-                next unless value
+        def each_listener
+          @attributes.each do |name, listener|
+            yield name.to_s.delete_prefix("on").downcase, listener if
+              listener.is_a?(Listener)
+          end
+        end
 
-                listener = Listener[value]
-                @engine.add_listener(listener)
-                hash[key] = listener.to_js
-                @attributes[key] = listener
-              end
-            end
+        def remove_listeners
+          @attributes.each_value do |listener|
+            @engine.remove_listener(listener) if listener.is_a?(Listener)
+          end
         end
 
         def rehydrate_listeners(component_map)
@@ -208,14 +226,19 @@ module Mayu
         def register_listeners!(attrs)
           attrs.each do |key, value|
             next unless key.to_s.start_with?("on")
-            next if value.nil? || value.is_a?(String)
+            next if value.nil?
 
             if value.is_a?(Listener)
               @engine.add_listener(value)
               next
             end
 
-            listener = Listener[value]
+            if value.is_a?(String)
+              raise ArgumentError,
+                "Raw string event handler #{key.inspect} is not supported; use H.callback"
+            end
+
+            listener = Listener[value].validate!
             @engine.add_listener(listener)
             attrs[key] = listener
           end
@@ -266,22 +289,28 @@ module Mayu
           if old_value.is_a?(Listener)
             return old_value if old_value.callback&.same?(new_value)
             @engine.remove_listener(old_value)
-          elsif old_value.is_a?(String)
-            return old_value if old_value == new_value
+            patcher << Patches::RemoveListener[
+              @parent.dom_id,
+              key.to_s.delete_prefix("on").downcase,
+              old_value.id
+            ]
           end
 
           if new_value.nil?
-            patcher << Patches::RemoveAttribute[@parent.dom_id, key]
             return nil
           end
 
           if new_value.is_a?(String)
-            patcher << Patches::SetAttribute[@parent.dom_id, key, new_value]
-            return new_value
+            raise ArgumentError,
+              "Raw string event handler #{key.inspect} is not supported; use H.callback"
           end
 
-          listener = @engine.add_listener(Listener[new_value])
-          patcher << Patches::SetAttribute[@parent.dom_id, key, listener.to_js]
+          listener = @engine.add_listener(Listener[new_value].validate!)
+          patcher << Patches::SetListener[
+            @parent.dom_id,
+            key.to_s.delete_prefix("on").downcase,
+            listener.id
+          ]
           listener
         end
 

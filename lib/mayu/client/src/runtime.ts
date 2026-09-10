@@ -17,7 +17,11 @@ type Patch = [name: string, ...args: unknown[]];
 type PatchSet = Patch[];
 
 export default class Runtime {
-  #nodeSet = new NodeSet();
+  #nodeSet: NodeSet;
+
+  constructor(onEvent: (event: Event, listenerId: string) => void) {
+    this.#nodeSet = new NodeSet(onEvent);
+  }
 
   async apply(patches: PatchSet) {
     await Patches.Batch.call(this.#nodeSet, patches);
@@ -39,9 +43,62 @@ function initNodeInfo(id: string, childIds: string[] = []): NodeInfo {
 class NodeSet {
   #nodes: Record<string, Node> = {};
   #nodeInfo = new WeakMap<Node, NodeInfo>();
+  #listeners = new Map<
+    Element,
+    Map<string, { id: string; callback: EventListener }>
+  >();
+  #onEvent: (event: Event, listenerId: string) => void;
+
+  constructor(onEvent: (event: Event, listenerId: string) => void) {
+    this.#onEvent = onEvent;
+  }
 
   clear() {
+    for (const [element, listeners] of this.#listeners) {
+      for (const [name, listener] of listeners) {
+        element.removeEventListener(name, listener.callback);
+      }
+    }
+    this.#listeners.clear();
     this.#nodes = {};
+  }
+
+  setListener(id: string, name: string, listenerId: string) {
+    const element = this.getElement(id);
+    let listeners = this.#listeners.get(element);
+    if (!listeners) {
+      listeners = new Map();
+      this.#listeners.set(element, listeners);
+    }
+
+    const current = listeners.get(name);
+    if (current?.id === listenerId) return;
+    if (current) element.removeEventListener(name, current.callback);
+
+    const callback: EventListener = (event) => this.#onEvent(event, listenerId);
+    element.addEventListener(name, callback);
+    listeners.set(name, { id: listenerId, callback });
+  }
+
+  removeListener(id: string, name: string, listenerId: string) {
+    const element = this.getElement(id);
+    const listeners = this.#listeners.get(element);
+    const current = listeners?.get(name);
+    if (!current || current.id !== listenerId) return;
+
+    element.removeEventListener(name, current.callback);
+    listeners!.delete(name);
+    if (listeners!.size === 0) this.#listeners.delete(element);
+  }
+
+  removeListeners(node: Node) {
+    if (!(node instanceof Element)) return;
+    const listeners = this.#listeners.get(node);
+    if (!listeners) return;
+    for (const [name, listener] of listeners) {
+      node.removeEventListener(name, listener.callback);
+    }
+    this.#listeners.delete(node);
   }
 
   deleteNode(id: string) {
@@ -50,6 +107,7 @@ class NodeSet {
     // console.debug(`%cDeleting ${id}`, "color: #c00; font-weight: bold; font-size: 1.5em;", node)
     delete this.#nodes[id];
     const nodeInfo = this.getNodeInfo(node);
+    this.removeListeners(node);
     this.#nodeInfo.delete(node);
     if (nodeInfo) {
       nodeInfo.childIds.forEach((childId) => this.deleteNode(childId));
@@ -153,8 +211,9 @@ function createTreeRootNode(html: string, tree: IdNode): Node {
 
   const template = document
     .createRange()
-    .createContextualFragment(`<template>${wrappedHtml}</template>`)
-    .firstElementChild!;
+    .createContextualFragment(
+      `<template>${wrappedHtml}</template>`,
+    ).firstElementChild!;
   const content = (template as HTMLTemplateElement).content;
 
   if (!isSvgRoot) {
@@ -220,7 +279,7 @@ function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
 
   if (domNode.nodeName.toUpperCase() !== idNode.name.toUpperCase()) {
     console.error(
-      `Node ${idNode.id} should be ${idNode.name}, but found ${domNode.nodeName}`
+      `Node ${idNode.id} should be ${idNode.name}, but found ${domNode.nodeName}`,
     );
   }
 
@@ -233,7 +292,7 @@ function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
   if (!idNode.children) return;
 
   const childNodes = Array.from(domNode.childNodes).filter(
-    (child) => child.nodeType !== Node.DOCUMENT_TYPE_NODE
+    (child) => child.nodeType !== Node.DOCUMENT_TYPE_NODE,
   );
 
   nodeInfo.childIds = idNode.children.map((child) => child.id);
@@ -247,14 +306,14 @@ declare global {
   interface ObjectConstructor {
     groupBy<Item, Key extends PropertyKey>(
       items: Iterable<Item>,
-      keySelector: (item: Item, index: number) => Key
+      keySelector: (item: Item, index: number) => Key,
     ): Record<Key, Item[]>;
   }
 
   interface MapConstructor {
     groupBy<Item, Key>(
       items: Iterable<Item>,
-      keySelector: (item: Item, index: number) => Key
+      keySelector: (item: Item, index: number) => Key,
     ): Map<Key, Item[]>;
   }
 }
@@ -263,7 +322,7 @@ function updateHead(
   nodeSet: NodeSet,
   element: Element,
   nodeInfo: NodeInfo,
-  newChildIds: string[]
+  newChildIds: string[],
 ) {
   console.log("UPDATE HEAD");
   const oldChildIds = nodeInfo.childIds;
@@ -456,6 +515,12 @@ const Patches = {
 
     element.removeAttribute(name);
   },
+  SetListener(this: NodeSet, id: string, name: string, listenerId: string) {
+    this.setListener(id, name, listenerId);
+  },
+  RemoveListener(this: NodeSet, id: string, name: string, listenerId: string) {
+    this.removeListener(id, name, listenerId);
+  },
   SetCSSProperty(this: NodeSet, id: string, name: string, value: string) {
     this.getElement(id).style.setProperty(name, value);
   },
@@ -502,7 +567,7 @@ const Patches = {
     message: string,
     backtrace: string[],
     source: string | null,
-    treePath: { name: string; path?: string }[]
+    treePath: { name: string; path?: string }[],
   ) {
     renderError(file, type, message, backtrace, source, treePath);
   },

@@ -120,6 +120,36 @@ class Mayu::SessionTest < Minitest::Test
     refute(session.running?)
   end
 
+  def test_events_can_be_queued_before_the_session_starts
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    session.enqueue_event(Mayu::Session::Events::PingEvent[123])
+
+    Async do
+      session.start
+      patch = Async::Task.current.with_timeout(0.5) { session.dequeue_patch }
+      assert_equal(Mayu::Runtime::Patches::Pong[123], patch)
+    ensure
+      session.stop
+    end.wait
+  end
+
+  def test_invalid_event_messages_are_rejected
+    assert_raises(Mayu::Session::Events::InvalidEventError) do
+      Mayu::Session::Events.from_message({
+        type: "callback",
+        payload: {id: "", event: {}},
+        ping: 1
+      })
+    end
+  end
+
   def test_session_renders_the_example_through_klenod
     provider =
       Mayu::Klenod::Configuration.new(
@@ -135,7 +165,9 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal(200, session.route_status)
     assert_includes(html, "<!DOCTYPE html>")
     assert_includes(html, "/.mayu/assets/")
-    assert_includes(html, "Mayu.callback(event,")
+    refute_includes(html, "Mayu.callback(event,")
+    refute_includes(html, "data-mayu-on")
+    refute_empty(session.listener_patches)
   end
 
   def test_session_renders_klenod_slots

@@ -186,6 +186,10 @@ module Mayu
         @root.dom_id_tree
       end
 
+      def listener_patches
+        @root.listener_patches
+      end
+
       def styles
         @root.styles
       end

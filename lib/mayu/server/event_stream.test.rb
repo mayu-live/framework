@@ -9,6 +9,49 @@ require_relative "event_stream"
 class Mayu::Server::EventStreamTest < Minitest::Test
   Writer = Mayu::Server::EventStream::Writer
 
+  Request = Data.define(:body)
+
+  def test_reads_every_message_from_a_single_chunk
+    messages = []
+    request = Request.new(["{\"type\":\"ping\",\"ping\":1}\n{\"type\":\"ping\",\"ping\":2}\n"])
+
+    Mayu::Server::EventStream.each_incoming_message(request) do |message|
+      messages << message
+    end
+
+    assert_equal([1, 2], messages.map { it.fetch(:ping) })
+  end
+
+  def test_reads_a_message_split_across_chunks
+    messages = []
+    request = Request.new(['{"type":"pi', "ng\",\"ping\":1}\n"])
+
+    Mayu::Server::EventStream.each_incoming_message(request) do |message|
+      messages << message
+    end
+
+    assert_equal([{type: "ping", ping: 1}], messages)
+  end
+
+  def test_rejects_unterminated_messages
+    request = Request.new(['{"type":"ping","ping":1}'])
+
+    assert_raises(Mayu::Server::EventStream::InvalidMessageError) do
+      Mayu::Server::EventStream.each_incoming_message(request) { flunk }
+    end
+  end
+
+  def test_rejects_oversized_messages
+    request = Request.new(["12345\n"])
+
+    assert_raises(Mayu::Server::EventStream::MessageTooLargeError) do
+      Mayu::Server::EventStream.each_incoming_message(
+        request,
+        max_message_bytes: 4
+      ) { flunk }
+    end
+  end
+
   def test_finishing_preserves_unread_transfer_and_compression_trailer
     writer = Writer.new
     writer.write(["Initialize", {}])

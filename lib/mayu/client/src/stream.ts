@@ -14,7 +14,7 @@ const CALLBACK_STREAM_METHOD = "PATCH";
 export async function initInputStream(
   endpoint: string,
   state: Blob | null = null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ReadableStream<any>> {
   const res = await connect(endpoint, state, signal);
 
@@ -63,10 +63,25 @@ function parseErrorResponse(payload: unknown): {
   return { message: "Unknown stream error", code: null };
 }
 
+async function streamErrorFromResponse(
+  res: Response,
+  fallback: string,
+): Promise<StreamError> {
+  let payload: unknown = null;
+  try {
+    payload = await res.json();
+  } catch (_error) {}
+  const { message, code } = parseErrorResponse(payload);
+  return new StreamError(
+    message === "Unknown stream error" ? fallback : message,
+    code,
+  );
+}
+
 export async function connect(
   endpoint: string,
   state: Blob | null = null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<Response> {
   console.info("🟡 Connecting to", endpoint);
 
@@ -165,7 +180,15 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
 
-export function initCallbackStream(endpoint: string, signal?: AbortSignal) {
+export type CallbackStreamConnection = {
+  writable: WritableStream<any>;
+  failure: Promise<never> | null;
+};
+
+export function initCallbackStream(
+  endpoint: string,
+  signal?: AbortSignal,
+): CallbackStreamConnection {
   if (!supportsRequestStreams) {
     console.warn("Request streams not supported, using fallback.");
     return initCallbackStreamFetchFallback(endpoint, signal);
@@ -174,8 +197,9 @@ export function initCallbackStream(endpoint: string, signal?: AbortSignal) {
   const contentEncoding = "identity"; // STREAM_CONTENT_ENCODING;
   const { readable, writable } = new TransformStream(); // new CompressionStream(contentEncoding);
 
-  void fetch(endpoint, {
+  const failure = fetch(endpoint, {
     method: CALLBACK_STREAM_METHOD,
+    credentials: "include",
     headers: new Headers({
       "content-type": STREAM_MIME_TYPE,
       "content-encoding": contentEncoding,
@@ -184,34 +208,51 @@ export function initCallbackStream(endpoint: string, signal?: AbortSignal) {
     mode: "cors",
     signal,
     body: readable,
-  } as any).catch((error) => {
-    if (isAbortError(error)) return;
-    console.error("Callback stream error", error);
-  });
+  } as any).then(async (res) => {
+    if (!res.ok) {
+      throw await streamErrorFromResponse(
+        res,
+        `Callback stream failed: ${res.status}`,
+      );
+    }
 
-  return writable;
+    throw new StreamError("Callback stream ended");
+  });
+  void failure.catch(() => undefined);
+
+  return { writable, failure };
 }
 
 function initCallbackStreamFetchFallback(
   endpoint: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ) {
-  return new WritableStream({
-    async write(body) {
-      try {
-        await fetch(endpoint, {
-          method: CALLBACK_STREAM_METHOD,
-          headers: new Headers({
-            "content-type": "application/json",
-          }),
-          mode: "cors",
-          signal,
-          body: body,
-        });
-      } catch (error) {
-        if (isAbortError(error)) return;
-        throw error;
-      }
-    },
-  });
+  return {
+    writable: new WritableStream({
+      async write(body) {
+        try {
+          const res = await fetch(endpoint, {
+            method: CALLBACK_STREAM_METHOD,
+            credentials: "include",
+            headers: new Headers({
+              "content-type": "application/json",
+            }),
+            mode: "cors",
+            signal,
+            body: body,
+          });
+          if (!res.ok) {
+            throw await streamErrorFromResponse(
+              res,
+              `Callback request failed: ${res.status}`,
+            );
+          }
+        } catch (error) {
+          if (isAbortError(error)) return;
+          throw error;
+        }
+      },
+    }),
+    failure: null,
+  };
 }

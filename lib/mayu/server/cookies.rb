@@ -11,7 +11,7 @@ module Mayu
       end
 
       def initialize(timeout_seconds: 60)
-        @timeout_seconds = 60
+        @timeout_seconds = timeout_seconds
       end
 
       def get_token_cookie_value(request)

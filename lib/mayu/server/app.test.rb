@@ -80,6 +80,10 @@ class Mayu::Server::AppTest < Minitest::Test
     def running? = false
     def transferring? = false
 
+    def listener_patches
+      [Mayu::Runtime::Patches::SetListener["button", "click", "listener"]]
+    end
+
     def start
       @started.resolve(true)
     end
@@ -231,7 +235,16 @@ class Mayu::Server::AppTest < Minitest::Test
         end
       end
       refute_empty(chunks)
+
+      inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
+      bootstrap = MessagePack.unpack(inflater.inflate(chunks.join))
+      assert_equal("Batch", bootstrap.dig(0, 0))
+      assert_equal(
+        %w[Initialize SetListener],
+        bootstrap.dig(0, 1).map(&:first)
+      )
     ensure
+      inflater&.close
       response&.body&.close
       app&.instance_variable_get(:@body_barrier)&.stop
     end.wait

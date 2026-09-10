@@ -50,8 +50,12 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 
 ### Events + callbacks
 
-- `on*` attributes register listeners and emit JS callback wiring.
+- callback-backed `on*` attributes register listeners without emitting inline
+  JavaScript into SSR HTML.
+- Initial connection and resume send the complete listener registry after
+  `Initialize`; updates use `SetListener`/`RemoveListener` patches.
 - `Engine#callback` dispatches into component tasks.
+- Callbacks are serialized within each component.
 - Listener ids are serialized and rehydrated with component_map.
 - Listener registration now happens during VAttributes init (not just render).
 
@@ -93,7 +97,6 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
 
 ## TODO / Follow-ups
 
-- Event patch parity: `SetListener`/`RemoveListener` vs `SetAttribute`.
 - Keyed reordering improvements beyond insert/remove.
 - Head aggregation rules refinement (dedupe/ordering for title/meta/link).
 - Context invalidation + rerender scheduling on context updates.

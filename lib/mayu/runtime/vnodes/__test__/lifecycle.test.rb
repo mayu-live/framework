@@ -175,6 +175,30 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
     end
   end
 
+  class SerializedCallbackProbe < Mayu::Component::Base
+    attr_reader :calls
+
+    def initialize
+      @calls = []
+      @release = Async::Queue.new
+    end
+
+    def trigger(event)
+      index = event.fetch(:index)
+      @calls << [:start, index]
+      @release.dequeue if index == 1
+      @calls << [:finish, index]
+    end
+
+    def release
+      @release.enqueue(true)
+    end
+
+    def render
+      H[:button, "Trigger", onclick: H.callback(self, :trigger)]
+    end
+  end
+
   def test_component_start_stop_and_rerender
     descriptor = H[:body, H[MountProbe]]
 
@@ -229,7 +253,7 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
 
       wait_until { instance.listener_task }
       refute_nil(instance.listener_task)
-      refute_equal(task, instance.listener_task)
+      assert_equal(task, instance.listener_task)
     end
   end
 
@@ -339,6 +363,31 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
 
       Async::Task.current.sleep(0.05)
       assert_equal(2, instance.renders)
+    end
+  end
+
+  def test_callbacks_for_the_same_component_run_in_arrival_order
+    descriptor = H[:body, H[SerializedCallbackProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, SerializedCallbackProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.respond_to?(:rerender!) }
+      listener = engine.root.instance_variable_get(:@listeners).values.first
+
+      first = engine.callback(listener.id, {index: 1})
+      wait_until { instance.calls == [[:start, 1]] }
+      second = engine.callback(listener.id, {index: 2})
+      Async::Task.current.sleep(0.01)
+      assert_equal([[:start, 1]], instance.calls)
+
+      instance.release
+      first.dequeue
+      second.dequeue
+      assert_equal(
+        [[:start, 1], [:finish, 1], [:start, 2], [:finish, 2]],
+        instance.calls
+      )
     end
   end
 end

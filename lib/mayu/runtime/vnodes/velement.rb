@@ -41,6 +41,7 @@ module Mayu
         end
 
         def remove
+          @attributes.remove_listeners
           @children.remove
         end
 

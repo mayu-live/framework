@@ -15,7 +15,7 @@ export default function init(sessionId: string) {
   if (window.Mayu) {
     console.error(
       "%cwindow.Mayu is already defined",
-      "font-size: 1.5em; color: #c00;"
+      "font-size: 1.5em; color: #c00;",
     );
     throw "window.Mayu is already defined";
   }
@@ -29,8 +29,10 @@ export default function init(sessionId: string) {
   `);
   document.adoptedStyleSheets.push(sheet);
 
-  const runtime = new Runtime();
   const mayu = new Mayu();
+  const runtime = new Runtime((event, listenerId) => {
+    mayu.callback(event, listenerId);
+  });
   window.Mayu = mayu;
 
   const endpoint = `${SESSION_PATH}/${sessionId}`;

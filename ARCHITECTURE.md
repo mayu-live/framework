@@ -37,7 +37,9 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 6. `Session` creates `Mayu::Runtime::Engine`, which builds a `VDocument` vnode tree.
 7. `App#handle_session_start` returns SSR HTML plus `x-mayu-session-id` and session token cookie.
 8. Browser loads `/.mayu/runtime/...` JS, connects to `/.mayu/session/:id`.
-9. Server streams `Initialize` + patch batches (`application/vnd.mayu.event-stream`).
+9. Server streams one bootstrap batch containing `Initialize` and the current
+   `SetListener` registrations, followed by patch batches
+   (`application/vnd.mayu.event-stream`).
 10. Browser sends callback/navigate/ping events to `PATCH /.mayu/session/:id`.
 11. Session queues events -> engine updates -> patch batches streamed back.
 
@@ -70,7 +72,9 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
   - `RemoveNode`
   - `ReplaceChildren` when child ID lists change
   - chunked updates using `Engine#update_budget`
-- `VAttributes` handles attribute/class/style diffs and callback listener wiring.
+- `VAttributes` handles attribute/class/style diffs and callback listener
+  registration. Callback wiring is not rendered into SSR HTML; it is sent as
+  `SetListener`/`RemoveListener` patches.
 
 ### Important invariants
 
@@ -193,9 +197,12 @@ Notable patch categories:
 
 ### Client/server event loop
 
-- browser sends JSON lines to `PATCH /.mayu/session/:id`
+- browser sends JSON lines to `PATCH /.mayu/session/:id`; messages are
+  at-most-once and are dropped rather than replayed across disconnects
 - server parses messages in `Server::EventStream.each_incoming_message`
 - session turns messages into typed events (`CallbackEvent`, `NavigateEvent`, `PingEvent`)
+- callbacks are serialized per component while different components can run
+  concurrently
 - runtime processes and streams MsgPack patch arrays back (deflate-raw compressed)
 
 ## Environment and Build Modes (`environment.rb`, `commands/*`)
