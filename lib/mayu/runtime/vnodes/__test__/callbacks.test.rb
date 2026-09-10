@@ -40,6 +40,35 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  class CallbackValidationProbe < Mayu::Component::Base
+    class << self
+      attr_accessor :instance
+    end
+
+    def initialize
+      self.class.instance = self
+      @invalid = false
+    end
+
+    def make_callback_invalid
+      @invalid = true
+      rerender!
+    end
+
+    def handle_click
+    end
+
+    def render
+      callback =
+        if @invalid
+          H.callback(self, :missing_callback)
+        else
+          H.callback(self, :handle_click)
+        end
+      H[:button, "Callback", onclick: callback]
+    end
+  end
+
   def test_initial_html_contains_no_callback_wiring
     engine =
       Mayu::Runtime::Engine.new(
@@ -78,6 +107,27 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
       end
 
     assert_includes(error.message, "must accept no arguments")
+  end
+
+  def test_invalid_callback_created_during_an_update_emits_a_render_error
+    descriptor = H[:body, H[CallbackValidationProbe]]
+
+    run_engine(descriptor) do |engine|
+      wait_until do
+        CallbackValidationProbe.instance.instance_variable_get(:@__vnode_task)
+      end
+
+      CallbackValidationProbe.instance.make_callback_invalid
+
+      commands =
+        dequeue_until(engine) do |batch|
+          batch.any? { it.is_a?(Mayu::Runtime::Commands::RenderError) }
+        end
+      error = commands.find { it.is_a?(Mayu::Runtime::Commands::RenderError) }
+
+      assert_includes(error.message, "Callback method :missing_callback")
+      assert_equal(CallbackValidationProbe.name, error.file)
+    end
   end
 
   def test_event_callback_attribute

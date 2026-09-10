@@ -169,15 +169,21 @@ module Mayu
             )
           end
 
-          metrics.update_summary(
-            metrics.component_children_update_times,
-            labels: {
-              component: component_label
-            }
-          ) do
-            children =
-              replacement_rendered ? replacement_children : render_children
-            @children.update(collector, children)
+          begin
+            metrics.update_summary(
+              metrics.component_children_update_times,
+              labels: {
+                component: component_label
+              }
+            ) do
+              children =
+                replacement_rendered ? replacement_children : render_children
+              @children.update(collector, children)
+            end
+          rescue UnhandledRenderError
+            raise
+          rescue => error
+            raise UnhandledRenderError.new(error, self)
           end
         end
 

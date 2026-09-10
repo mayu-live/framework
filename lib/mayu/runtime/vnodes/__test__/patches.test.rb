@@ -343,7 +343,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     end
   end
 
-  def test_createtree_requires_single_root
+  def test_createtree_error_emits_a_render_error
     initial = H[:body]
     updated = H[:body, H[MultiRootProbe]]
 
@@ -352,7 +352,15 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
 
     collector = Mayu::Runtime::VNodes::CommandCollector.new
 
-    assert_raises(RuntimeError) { document.update(collector, updated) }
+    document.update(collector, updated)
+
+    error =
+      collector.commands.find do |command|
+        command.is_a?(Mayu::Runtime::Commands::RenderError)
+      end
+
+    refute_nil(error)
+    assert_includes(error.message, "CreateTree expects a single IdNode")
   end
 
   class HeadNavProbe < Mayu::Component::Base

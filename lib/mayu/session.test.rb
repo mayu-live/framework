@@ -269,6 +269,27 @@ class Mayu::SessionTest < Minitest::Test
     refute_empty(session.listener_commands)
   end
 
+  def test_session_renders_the_life_demo
+    provider =
+      Mayu::Klenod::Configuration.new(
+        root: File.expand_path("../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/life",
+        headers: {},
+        http2: false
+      )
+
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    html = session.render
+
+    assert_includes(html, "Game of life")
+    refute_includes(html, "Mayu.callback")
+    refute_empty(session.listener_commands)
+  end
+
   def test_encrypted_transfer_restores_klenod_component_references
     root = File.expand_path("../../example", __dir__)
     marshaller = Mayu::EncryptedMarshal.new("transfer-test-secret")

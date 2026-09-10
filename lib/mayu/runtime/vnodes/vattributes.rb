@@ -63,8 +63,18 @@ module Mayu
 
             self
           rescue NameError => error
+            component = callback.component
+            component_path =
+              component.class.respond_to?(:module_path) &&
+              component.class.module_path
+            component_name =
+              if component_path.nil? || component_path.empty?
+                component.class.name
+              else
+                component_path
+              end
             raise ArgumentError,
-              "Callback method #{callback.method_name.inspect} is not defined on #{callback.component.class}",
+              "Callback method #{callback.method_name.inspect} is not defined on #{component_name}",
               cause: error
           end
 
