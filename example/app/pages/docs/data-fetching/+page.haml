@@ -1,32 +1,29 @@
 :ruby
   Details = import("/components/UI/Details")
   Highlight = import("/components/UI/Highlight")
-  Markdown = import("../Markdown")
   Pokemon = import("./Pokemon")
 
 %head
   %title Data fetching
 
 %article
-  %Markdown
-    :plain
-      # Data fetching
+  :markdown
+    # Data fetching
 
-      This example shows how data can be fetched with
-      loading state and error handling.
+    This example shows how data can be fetched with
+    loading state and error handling.
 
   %Highlight(language="haml")
     = File.read(File.join(__dir__, "Pokemon.haml"))
 
-  %Markdown
-    :plain
-      This component can be used like this:
+  :markdown
+    This component can be used like this:
 
-      ```haml
-      :ruby
-        Pokemon = import("./Pokemon")
-      %Pokemon(id=123)
-      ```
+    ```haml
+    :ruby
+      Pokemon = import("./Pokemon")
+    %Pokemon(id=123)
+    ```
 
   %Details(lazy summary="Demo")
     .grid

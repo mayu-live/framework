@@ -6,3 +6,8 @@ ignore:
   - "vendor/**/*"
   - "example/vendor/**/*"
   - "lib/mayu/client/node_modules/**/*"
+  # Klenod requires a `Default` export from Markdown component maps.
+  - "example/app/markdown-components.rb":
+      - Naming/ConstantName
+  - "lib/mayu/commands/init/template/app/markdown-components.rb":
+      - Naming/ConstantName

@@ -1,9 +1,9 @@
 :ruby
-  Markdown = import("/components/Markdown")
+  DynamicMarkdown = import("/components/DynamicMarkdown")
 
 %li{class: $role}
   %strong= $role
-  %Markdown= $text
+  %DynamicMarkdown= $text
 
 :css
   li {
@@ -27,7 +27,7 @@
     background: #0603;
   }
 
-  Markdown {
+  DynamicMarkdown {
     & > :first-child {
       margin-top: 0;
     }

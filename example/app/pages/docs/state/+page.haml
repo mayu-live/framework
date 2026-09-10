@@ -1,19 +1,17 @@
 :ruby
   Card = import("/components/UI/Card")
   Highlight = import("/components/UI/Highlight")
-  Markdown = import("../Markdown")
   Example = import("./Example")
 
 %article
-  %Markdown
-    :plain
-      # State
+  :markdown
+    # State
 
-      Mayu uses instance variables for state.
-      Any time you update an instance variable inside a component,
-      the component will re-render.
+    Mayu uses instance variables for state.
+    Any time you update an instance variable inside a component,
+    the component will re-render.
 
-      Set up state in `def initialize`.
+    Set up state in `def initialize`.
 
   %Highlight(language="haml")
     = File.read(File.join(__dir__, "Example.haml"))

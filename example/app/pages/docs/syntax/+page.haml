@@ -1,39 +1,37 @@
 :ruby
   Highlight = import("/components/UI/Highlight")
-  Markdown = import("../Markdown")
 %article
-  %Markdown
-    :plain
-      # Syntax guide
+  :markdown
+    # Syntax guide
 
-      ## Props
+    ## Props
 
-      To read props passed to a component, you can use `$foobar`.
+    To read props passed to a component, you can use `$foobar`.
 
-      ## Self / recursion
+    ## Self / recursion
 
-      The constant `Self` is defined to point at the current class,
-      which is useful if you want to make a tree.
+    The constant `Self` is defined to point at the current class,
+    which is useful if you want to make a tree.
 
-      ```haml
-      %ul
-        = Dir.entries($path).map do |path|
-          %li[path]
-            %Self(path=path)
-      ```
+    ```haml
+    %ul
+      = Dir.entries($path).map do |path|
+        %li[path]
+          %Self(path=path)
+    ```
 
-      ## Whitespace
+    ## Whitespace
 
-      Here comes the biggest difference between Mayu Haml and regular Haml.
-      Whitespace is significant in HTML in some cases, and it's very important
-      for the patching algorithm that the DOM and the VDOM are in sync,
-      and every time there has been issues with it, it has been because
-      of unwanted whitespace.
+    Here comes the biggest difference between Mayu Haml and regular Haml.
+    Whitespace is significant in HTML in some cases, and it's very important
+    for the patching algorithm that the DOM and the VDOM are in sync,
+    and every time there has been issues with it, it has been because
+    of unwanted whitespace.
 
-      Therefore, Mayu strips whitespaces in places where regular Haml doesn't,
-      and the operators for inserting whitespace work somewhat differently.
+    Therefore, Mayu strips whitespaces in places where regular Haml doesn't,
+    and the operators for inserting whitespace work somewhat differently.
 
-      All these paragraphs will turn into `<p>Hello world</p>`.
+    All these paragraphs will turn into `<p>Hello world</p>`.
 
   %Highlight(language="haml")
     :plain
@@ -46,93 +44,92 @@
       %p
 
         Hello world
-  %Markdown
-    :plain
-      If you want to include whitespace between text and elements,
-      you need to use the `<` and `>` operators.
+  :markdown
+    If you want to include whitespace between text and elements,
+    you need to use the `<` and `>` operators.
 
-      ```haml
-      %p
-        Read more on
-        %a(href="https://github.com/mayu-live/framework")< GitHub
-        \\.
-      ```
+    ```haml
+    %p
+      Read more on
+      %a(href="https://github.com/mayu-live/framework")< GitHub
+      \\.
+    ```
 
-      Notice the `<` after the link.
-      That operator will add a space before the element.
-      There will be no space between the link and the dot,
-      because the `>` operator was not used.
+    Notice the `<` after the link.
+    That operator will add a space before the element.
+    There will be no space between the link and the dot,
+    because the `>` operator was not used.
 
-      - `<` adds a space before an element.
-      - `>` adds a space after an element.
+    - `<` adds a space before an element.
+    - `>` adds a space after an element.
 
-      ## Lists and keys
+    ## Lists and keys
 
-      Mayu uses keys to identify which items have been added, changed or
-      removed from lists, [just like React does](https://reactjs.org/docs/lists-and-keys.html#keys).
+    Mayu uses keys to identify which items have been added, changed or
+    removed from lists, [just like React does](https://reactjs.org/docs/lists-and-keys.html#keys).
 
-      You can use the [Object Reference](https://haml.info/docs/yardoc/file.REFERENCE.html#object-reference-)
-      syntax in Haml to specify keys. Example:
+    You can use the [Object Reference](https://haml.info/docs/yardoc/file.REFERENCE.html#object-reference-)
+    syntax in Haml to specify keys. Example:
 
-      ```haml
-      %ul
-        = todos.map do |todo|
-          %li[todo.id]= todo.text
-      ```
+    ```haml
+    %ul
+      = todos.map do |todo|
+        %li[todo.id]= todo.text
+    ```
 
-      ## Pattern matching
+    ## Pattern matching
 
-      You can use pattern matching in a lot of places, and it's encouraged,
-      because it verifies that structures are have the expected format.
-      If patterns don't match, you get `NoMatchingPatternError`,
-      so you will know exactly why something went wrong.
+    You can use pattern matching in a lot of places, and it's encouraged,
+    because it verifies that structures are have the expected format.
+    If patterns don't match, you get `NoMatchingPatternError`,
+    so you will know exactly why something went wrong.
 
-      Here are some useful links:
+    Here are some useful links:
 
-      * [Ruby 3.1 Pattern matching RDoc](https://docs.ruby-lang.org/en/3.1/syntax/pattern_matching_rdoc.html)
-      * [Ruby 3.1 - Pattern Matching](https://leejarvis.me/posts/2022/ruby-3-pattern-matching)
-      * [Second look at pattern matching in Ruby](https://womanonrails.com/ruby-pattern-matching-second-look)
-      * [An Introduction to Pattern Matching in Ruby](https://blog.appsignal.com/2021/07/28/introduction-to-pattern-matching-in-ruby.html)
+    * [Ruby 3.1 Pattern matching RDoc](https://docs.ruby-lang.org/en/3.1/syntax/pattern_matching_rdoc.html)
+    * [Ruby 3.1 - Pattern Matching](https://leejarvis.me/posts/2022/ruby-3-pattern-matching)
+    * [Second look at pattern matching in Ruby](https://womanonrails.com/ruby-pattern-matching-second-look)
+    * [An Introduction to Pattern Matching in Ruby](https://blog.appsignal.com/2021/07/28/introduction-to-pattern-matching-in-ruby.html)
 
-      ```haml
-      :ruby
-        def initialize =
-          @count = $initial_count || 0
-        def handle_click(event) =
-          case event
-          in { target: { name: "increment" } }
-            @count += 1
-          in { target: { name: "decrement" } }
-            @count -= 1
-          end
-      %output= @count
-      %button(onclick=handle_click name="increment")
-      %button(onclick=handle_click name="decrement")
-      ```
-
-      ## Early returns
-
-      The following snippet will show a button, and
-      once it has been clicked, the component will
-      instead show a paragraph.
-
-      ```haml
-      :ruby
-        def initialize
-          @clicked = false
+    ```haml
+    :ruby
+      def initialize =
+        @count = $initial_count || 0
+      def handle_click(event) =
+        case event
+        in { target: { name: "increment" } }
+          @count += 1
+        in { target: { name: "decrement" } }
+          @count -= 1
         end
-        def handle_click(event)
-          @clicked = true
-        end
-      = return if @clicked
-        %p You clicked the button.
-      %button(onclick=handle_click) Click me
-      ```
+    %output= @count
+    %button(onclick=handle_click name="increment")
+    %button(onclick=handle_click name="decrement")
+    ```
 
-      You can also use `return unless`.
+    ## Early returns
 
-      ```haml
-      = return unless $data
-        %p Loading…
-      %pre= $data
-      ```
+    The following snippet will show a button, and
+    once it has been clicked, the component will
+    instead show a paragraph.
+
+    ```haml
+    :ruby
+      def initialize
+        @clicked = false
+      end
+      def handle_click(event)
+        @clicked = true
+      end
+    = return if @clicked
+      %p You clicked the button.
+    %button(onclick=handle_click) Click me
+    ```
+
+    You can also use `return unless`.
+
+    ```haml
+    = return unless $data
+      %p Loading…
+    %pre= $data
+    ```

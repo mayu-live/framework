@@ -1,71 +1,67 @@
-:ruby
-  Markdown = import("../Markdown")
-
 %head
   %title Components
 
 %article
-  %Markdown
-    :plain
-      # Components
+  :markdown
+    # Components
 
-      Mayu components are written in a dialect of
-      [Haml](https://haml.info/).
-      Mayu uses Klenod to parse Haml code and transform it into Ruby.
+    Mayu components are written in a dialect of
+    [Haml](https://haml.info/).
+    Mayu uses Klenod to parse Haml code and transform it into Ruby.
 
-      To see how these transformations are made, see the
-      [Klenod Haml-plugin test examples](https://github.com/aalin/klenod/tree/main/gems/klenod-build/lib/klenod/build/plugins/haml_plugin).
+    To see how these transformations are made, see the
+    [Klenod Haml-plugin test examples](https://github.com/aalin/klenod/tree/main/gems/klenod-build/lib/klenod/build/plugins/haml_plugin).
 
-      ## Component structure
+    ## Component structure
 
-      This is the basic structure of a component:
+    This is the basic structure of a component:
 
-      ```haml
-      :ruby
-        # optional ruby block
-      %p
-        Haml goes here
-      :css
-        /* optional css block */
-      ```
+    ```haml
+    :ruby
+      # optional ruby block
+    %p
+      Haml goes here
+    :css
+      /* optional css block */
+    ```
 
-      In the `:ruby` block, which has to come first,
-      you can import other components and define methods.
+    In the `:ruby` block, which has to come first,
+    you can import other components and define methods.
 
-      ## A basic component
+    ## A basic component
 
-      Here is the most basic component
+    Here is the most basic component
 
-      ```haml
+    ```haml
+    %p Hello world
+    ```
+
+    It compiles into:
+
+    ```ruby
+    Mayu::Runtime::H[:p, "Hello world"]
+    ```
+
+    ## Multiple children
+
+    Only the last child is returned, so if you want to return
+    more than one element you need to group them.
+
+    ```haml
+    %div
       %p Hello world
-      ```
+      %button Click me
+    ```
 
-      It compiles into:
+    ## Interpolation
 
-      ```ruby
-      Mayu::Runtime::H[:p, "Hello world"]
-      ```
+    You can perform string interpolation in a lot of places:
 
-      ## Multiple children
-
-      Only the last child is returned, so if you want to return
-      more than one element you need to group them.
-
-      ```haml
-      %div
-        %p Hello world
-        %button Click me
-      ```
-
-      ## Interpolation
-
-      You can perform string interpolation in a lot of places:
-
-      ```haml
-      :ruby
-        text = "hello world"
-      %div
-        %p Contents of text: \#{text.inspect}
-        %button(title=text) Button with a title
-        %button{title: "text: \#{text}"} Button with a title
-      ```
+    ```haml
+    :ruby
+      text = "hello world"
+    %div
+      %p Contents of text: \#{text.inspect}
+      %button(title=text) Button with a title
+      %button{title: "text: \#{text}"} Button with a title
+    ```

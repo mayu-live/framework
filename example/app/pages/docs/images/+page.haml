@@ -1,44 +1,41 @@
-:ruby
-  Markdown = import("../Markdown")
 %article
-  %Markdown
-    :plain
-      # Images
+  :markdown
+    # Images
 
-      To load an image, you just use `import()`.
+    To load an image, you just use `import()`.
 
-      ```haml
-      :ruby
-        Image = import("./río_amazonas.jpeg")
-      %img{src: Image.src}
-      ```
+    ```haml
+    :ruby
+      Image = import("./río_amazonas.jpeg")
+    %img{src: Image.src}
+    ```
 
-      A more complete example:
+    A more complete example:
 
-      ```haml
-      :ruby
-        Image = import("./río_amazonas.jpeg")
-      %img{
-        src: Image.src,
-        sizes: Image.sizes,
-        srcset: Image.srcset,
-        width: Image.original.width,
-        height: Image.original.height,
-      }(alt="Amazon river")
-      :css
-        img {
-          width: 100%;
-          height: auto;
-        }
-      ```
+    ```haml
+    :ruby
+      Image = import("./río_amazonas.jpeg")
+    %img{
+      src: Image.src,
+      sizes: Image.sizes,
+      srcset: Image.srcset,
+      width: Image.original.width,
+      height: Image.original.height,
+    }(alt="Amazon river")
+    :css
+      img {
+        width: 100%;
+        height: auto;
+      }
+    ```
 
-      Images also come with a `placeholder` attribute containing a small data
-      URL that you can use for blurred loading effects.
+    Images also come with a `placeholder` attribute containing a small data
+    URL that you can use for blurred loading effects.
 
-      [Source code for the Image component on this site](https://github.com/mayu-live/framework/blob/main/example/app/components/UI/Image.haml)
+    [Source code for the Image component on this site](https://github.com/mayu-live/framework/blob/main/example/app/components/UI/Image.haml)
 
-      ## SVGs
+    ## SVGs
 
-      Scalable Vector Graphics are fantastic, and they are really easy to use.
+    Scalable Vector Graphics are fantastic, and they are really easy to use.
 
-      [Source code for the Icon component on this site](https://github.com/mayu-live/framework/blob/main/example/app/components/UI/Icon/Icon.haml)
+    [Source code for the Icon component on this site](https://github.com/mayu-live/framework/blob/main/example/app/components/UI/Icon/Icon.haml)

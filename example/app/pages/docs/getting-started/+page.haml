@@ -1,47 +1,43 @@
-:ruby
-  Markdown = import("../Markdown")
-
 %article
-  %Markdown
-    :plain
-      # Getting started
+  :markdown
+    # Getting started
 
-      Here are some instructions to get started.
+    Here are some instructions to get started.
 
-      Easiest way would probably be to use the
-      [starter kit](https://github.com/mayu-live/starter#readme)
-      which may or may not work. Use at your own risk.
+    Easiest way would probably be to use the
+    [starter kit](https://github.com/mayu-live/starter#readme)
+    which may or may not work. Use at your own risk.
 
-      ```shell
-      git clone https://github.com/mayu-live/starter.git mayu-hello
-      cd mayu-hello
-      bundle install
-      ```
+    ```shell
+    git clone https://github.com/mayu-live/starter.git mayu-hello
+    cd mayu-hello
+    bundle install
+    ```
 
-      ```shell
-      # Start the example app
-      bin/mayu dev
-      ```
+    ```shell
+    # Start the example app
+    bin/mayu dev
+    ```
 
-      If it worked, you should be able to open
-      [`https://localhost:9292/`](https://localhost:9292/).
-      Have fun!
+    If it worked, you should be able to open
+    [`https://localhost:9292/`](https://localhost:9292/).
+    Have fun!
 
-      If you have any issues, feel free to open an
-      [issue on GitHub](https://github.com/mayu-live/framework/issues),
-      or submit a Pull Request if you fix or improve something.
+    If you have any issues, feel free to open an
+    [issue on GitHub](https://github.com/mayu-live/framework/issues),
+    or submit a Pull Request if you fix or improve something.
 
-      ## Deployment
+    ## Deployment
 
-      If you want to deploy the starter app to [fly.io](https://fly.io/),
-      there is a Rake task that will configure the app for you.
+    If you want to deploy the starter app to [fly.io](https://fly.io/),
+    there is a Rake task that will configure the app for you.
 
-      ```shell
-      rake launch_on_fly
-      ```
+    ```shell
+    rake launch_on_fly
+    ```
 
-      Then, whenever you want to deploy, you just have to type:
+    Then, whenever you want to deploy, you just have to type:
 
-      ```shell
-      fly deploy
-      ```
+    ```shell
+    fly deploy
+    ```

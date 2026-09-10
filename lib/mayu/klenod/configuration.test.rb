@@ -149,6 +149,41 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_default_markdown_plugin_uses_mayu_components_and_the_component_map
+    Dir.mktmpdir("mayu-klenod") do |root|
+      app = File.join(root, "app")
+      FileUtils.mkdir_p(app)
+      File.write(
+        File.join(app, "markdown-components.rb"),
+        <<~RUBY
+          class Heading < Mayu::Component::Base
+          end
+
+          Default = {h1: Heading}.freeze
+        RUBY
+      )
+      File.write(File.join(app, "page.md"), "# Imported heading\n")
+      File.write(File.join(app, "page.haml"), ":markdown\n  # Inline heading\n")
+
+      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      map = provider.exports(provider.entry("markdown-components.rb"))::Default
+      markdown = provider.exports(provider.entry("page.md"))::Default
+      inline = provider.exports(provider.entry("page.haml"))::Default
+
+      assert_equal(Mayu::Component::Base, markdown.superclass)
+      assert_equal(map.fetch(:h1), markdown.allocate.render.type)
+      assert_equal({id: "imported-heading"}, markdown.allocate.render.props)
+      assert_equal(map.fetch(:h1), inline.allocate.render.type)
+      assert_equal({id: "inline-heading"}, inline.allocate.render.props)
+      assert_equal(
+        ["/markdown-components"],
+        provider.entry("page.haml").record.dependencies.filter_map do |dependency|
+          dependency.specifier if dependency.kind == :markdown_components
+        end
+      )
+    end
+  end
+
   def test_default_haml_plugin_uses_klenod_class_names_for_companion_css
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))

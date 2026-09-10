@@ -141,6 +141,11 @@ module Mayu
                 instance: "@__state"
               }
             )
+          when ::Klenod::Build::Plugins::MarkdownPlugin::Plugin
+            ::Klenod::Build::Plugins::MarkdownPlugin.new(
+              component_base_class: "Mayu::Component::Base",
+              factory: "Mayu::Runtime::H"
+            )
           when ::Klenod::Build::Plugins::ImagePlugin::Plugin
             ::Klenod::Build::Plugins::ImagePlugin.new(
               placeholder: {

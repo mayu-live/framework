@@ -11,9 +11,6 @@
   }
 
   def visit_node(node)
-    # print "\e[35m" if node.has_key?(:children)
-    # p node.except(:children)
-    # print "\e[0m" if node.has_key?(:children)
     case node
     in type: :root, children:
       visit_nodes(children)
@@ -25,10 +22,7 @@
       SYMBOLS.fetch(value) { "&#{value};" }
     in type: :a, attr:, children:
       attrs = attr.transform_keys(&:to_sym)
-
-      if attrs[:href].to_s.match(/\A(?:[a-z]+:)\/\//)
-        attrs[:target] = "_blank"
-      end
+      attrs[:target] = "_blank" if attrs[:href].to_s.match(/\A(?:[a-z]+:)\/\//)
 
       build(:a, :a, *visit_nodes(children), **attrs) do
         H[:a, *visit_nodes(children), **attrs]
@@ -38,32 +32,19 @@
     in type: :br
       H[:br]
     in type: :codespan, value:, options: { codespan_delimiter: "```" }
-      header, code = value.sub(/\A`+/, '').split(/\s/, 2).map(&:strip)
+      header, code = value.sub(/\A`+/, "").split(/\s/, 2).map(&:strip)
       H[Highlight, code, language: header]
     in type: :codespan, value:, options: { codespan_delimiter: "`" }
       build(:code, :code, value.strip)
-    in type: :p, children:, **rest
-      children.chunk do |child|
-        child in {
-          type: :codespan,
-          options: { codespan_delimiter: "```" }
-        }
-      end.map do |outside_p, chunk|
-        if outside_p
-          visit_nodes(chunk)
-        else
-          build(:p, :p, *visit_nodes(chunk))
-        end
-      end.flatten
-    in type:, children:, **rest
+    in type: :p, children:
+      children.chunk { _1 in {type: :codespan, options: {codespan_delimiter: "```"}} }.flat_map do |outside_p, chunk|
+        outside_p ? visit_nodes(chunk) : build(:p, :p, *visit_nodes(chunk))
+      end
+    in type:, children:
       build(type, type, *visit_nodes(children))
     in type:
       Console.logger.error(self, "Unsupported node", JSON.pretty_generate(node))
-      H[
-        :pre,
-        "Unsupported node:\n\n#{JSON.pretty_generate(node)}",
-        **HamlHelper.merge_props(self.class, class: :unsupported)
-      ]
+      H[:pre, "Unsupported node:\n\n#{JSON.pretty_generate(node)}", **HamlHelper.merge_props(self.class, class: :unsupported)]
     end
   end
 
@@ -73,27 +54,18 @@
 
   def build(type, default, *children, **props, &block)
     if elems = $elems
-      if elem = elems[type]
-        return H[elem, *children, **props]
-      end
+      return H[elems[type], *children, **props] if elems[type]
     end
 
     return yield if block_given?
 
-    H[
-      default,
-      *children,
-      **HamlHelper.merge_props(self.class, { class: :"__#{default}" })
-    ]
+    H[default, *children, **HamlHelper.merge_props(self.class, {class: :"__#{default}"})]
   end
 
-.markdown{ class: $class }
+.markdown{class: $class}
   = visit_node(Kramdown::Document.new(Array(__children).join).to_hash_ast)
 
 :css
-  .markdown {
-  }
-
   .unsupported {
     font-family: var(--font-mono), monospace;
     color: red;

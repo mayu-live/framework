@@ -1,61 +1,58 @@
-:ruby
-  Markdown = import("../Markdown")
 %article
-  %Markdown
-    :plain
-      # Routing
+  :markdown
+    # Routing
 
-      Routing is path based and inspired by
-      [Next.js](https://beta.nextjs.org/docs/routing/fundamentals).
+    Routing is path based and inspired by
+    [Next.js](https://beta.nextjs.org/docs/routing/fundamentals).
 
-      Here's the basic structure of a potential blog application:
+    Here's the basic structure of a potential blog application:
 
-      * `app/`
-        * `root.css`
-        * `root.haml`
-        * `components/`
-          * `Layout/`
-            * `Footer.haml`
-            * `Header.haml`
-            * `Layout.haml`
-            * `Page.haml`
-          * `UI/`
-            * `Button.haml`
-            * `Heading.haml`
-            * `Hr.haml`
-            * `Link.haml`
-        * `pages/`
-          * `about/`
+    * `app/`
+      * `root.css`
+      * `root.haml`
+      * `components/`
+        * `Layout/`
+          * `Footer.haml`
+          * `Header.haml`
+          * `Layout.haml`
+          * `Page.haml`
+        * `UI/`
+          * `Button.haml`
+          * `Heading.haml`
+          * `Hr.haml`
+          * `Link.haml`
+      * `pages/`
+        * `about/`
+          * `+page.haml`
+        * `posts/`
+          * `[id]/`
             * `+page.haml`
-          * `posts/`
-            * `[id]/`
-              * `+page.haml`
-            * `+page.haml`
-            * `+layout.haml`
           * `+page.haml`
           * `+layout.haml`
+        * `+page.haml`
+        * `+layout.haml`
 
-      `app/root.haml` contains the `<html>` tag, and all pages are wrapped in
-      the layouts of their parent directories.
+    `app/root.haml` contains the `<html>` tag, and all pages are wrapped in
+    the layouts of their parent directories.
 
-      This tree would generate the following routes:
+    This tree would generate the following routes:
 
-      * `/posts/:id`
-      * `/posts`
-      * `/about`
-      * `/`
+    * `/posts/:id`
+    * `/posts`
+    * `/about`
+    * `/`
 
-      ## Route handlers
+    ## Route handlers
 
-      A `+route.rb` file handles HTTP requests for its directory. Public methods
-      are named after HTTP verbs and return `[status, headers, body]`:
+    A `+route.rb` file handles HTTP requests for its directory. Public methods
+    are named after HTTP verbs and return `[status, headers, body]`:
 
-      ```ruby
-      # app/pages/api/health/+route.rb
-      def GET(_request)
-        [200, {"content-type" => "application/json"}, '{"status":"ok"}']
-      end
-      ```
+    ```ruby
+    # app/pages/api/health/+route.rb
+    def GET(_request)
+      [200, {"content-type" => "application/json"}, '{"status":"ok"}']
+    end
+    ```
 
-      A route can have both `+page.haml` and `+route.rb`. Browser HTML requests
-      render the page; non-HTML requests are handled by the route handler.
+    A route can have both `+page.haml` and `+route.rb`. Browser HTML requests
+    render the page; non-HTML requests are handled by the route handler.
