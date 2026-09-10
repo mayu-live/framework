@@ -1,5 +1,6 @@
 :ruby
   require "kramdown"
+  require "kramdown-parser-gfm"
   HighlightedCodeBlock = import("./UI/HighlightedCodeBlock")
 
   SYMBOLS = {
@@ -27,19 +28,16 @@
       build(:a, :a, *visit_nodes(children), **attrs) do
         H[:a, *visit_nodes(children), **attrs]
       end
+    in type: :codeblock, value:, options: { lang: }
+      H[HighlightedCodeBlock, value, language: lang]
     in type: :codeblock, value:
-      H[:code, value]
+      H[HighlightedCodeBlock, value]
     in type: :br
       H[:br]
-    in type: :codespan, value:, options: { codespan_delimiter: "```" }
-      header, code = value.sub(/\A`+/, "").split(/\s/, 2).map(&:strip)
-      H[HighlightedCodeBlock, code, language: header]
-    in type: :codespan, value:, options: { codespan_delimiter: "`" }
+    in type: :codespan, value:
       build(:code, :code, value.strip)
     in type: :p, children:
-      children.chunk { _1 in {type: :codespan, options: {codespan_delimiter: "```"}} }.flat_map do |outside_p, chunk|
-        outside_p ? visit_nodes(chunk) : build(:p, :p, *visit_nodes(chunk))
-      end
+      build(:p, :p, *visit_nodes(children))
     in type:, children:
       build(type, type, *visit_nodes(children))
     in type:
@@ -63,7 +61,7 @@
   end
 
 .markdown{class: $class}
-  = visit_node(Kramdown::Document.new(Array(__children).join).to_hash_ast)
+  = visit_node(Kramdown::Document.new(Array(__children).join, input: "GFM", hard_wrap: false).to_hash_ast)
 
 :css
   .unsupported {
