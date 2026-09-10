@@ -4,6 +4,7 @@
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
+require_relative "warning_filter"
 require "samovar"
 require_relative "commands/dev"
 require_relative "commands/test"

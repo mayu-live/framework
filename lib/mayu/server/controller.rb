@@ -14,7 +14,7 @@ require_relative "worker"
 require_relative "app"
 require_relative "../metrics"
 require_relative "../environment"
-require_relative "../silence_io_buffer_warning"
+require_relative "../warning_filter"
 
 module Mayu
   class Server
