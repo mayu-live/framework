@@ -1,6 +1,7 @@
 #!/usr/bin/env -S ruby -rbundler/setup
 # frozen_string_literal: true
 
+require "msgpack"
 require_relative "test_helpers"
 
 class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
@@ -227,6 +228,34 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
       )
       assert(tree_path.any? { |node| node[:name] == "body" })
       assert(tree_path.any? { |node| node[:name] == "html" })
+    end
+  end
+
+  def test_render_error_serializes_binary_encoded_text_as_utf8
+    patch =
+      Mayu::Runtime::Patches::RenderError[
+        "app:/broken.haml".b,
+        "SyntaxError".b,
+        "unexpected token".b,
+        ["app:/broken.haml:2".b],
+        "%p= )\n".b,
+        [{name: "CodeReload".b, path: "app:/broken.haml".b}]
+      ]
+
+    serialized = MessagePack.unpack(MessagePack.pack(patch))
+
+    assert_equal("RenderError", serialized[0])
+    assert_equal("app:/broken.haml", serialized[1])
+    assert_equal("SyntaxError", serialized[2])
+    assert_equal("unexpected token", serialized[3])
+    assert_equal(["app:/broken.haml:2"], serialized[4])
+    assert_equal("%p= )\n", serialized[5])
+    assert_equal({"name" => "CodeReload", "path" => "app:/broken.haml"}, serialized[6][0])
+    serialized.flatten.each do |value|
+      assert_equal(Encoding::UTF_8, value.encoding) if value.is_a?(String)
+    end
+    serialized[6][0].each_value do |value|
+      assert_equal(Encoding::UTF_8, value.encoding)
     end
   end
 

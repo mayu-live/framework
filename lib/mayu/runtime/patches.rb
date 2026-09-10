@@ -63,7 +63,35 @@ module Mayu
           :backtrace,
           :source,
           :tree_path
-        )
+        ) do
+          # Ruby MessagePack serializes ASCII-8BIT strings as binary values.
+          # The browser decoder represents those values as Uint8Array, which
+          # makes an error such as a Haml parse error render as comma-separated
+          # byte values. Error patches are entirely textual, so explicitly
+          # serialize their strings as UTF-8 without changing binary payloads
+          # used by other patch types.
+          def to_msgpack(packer)
+            packer.pack(
+              [
+                self.class.name[/[^:]+\z/],
+                Patches.utf8(file),
+                Patches.utf8(type),
+                Patches.utf8(message),
+                backtrace.map { Patches.utf8(it) },
+                source && Patches.utf8(source),
+                tree_path.map do |path|
+                  path.transform_values do |value|
+                    value.is_a?(String) ? Patches.utf8(value) : value
+                  end
+                end
+              ]
+            )
+          end
+        end
+
+      def self.utf8(value)
+        value.to_s.dup.force_encoding(Encoding::UTF_8).scrub
+      end
 
       ViewTransition = PatchData.define(:patches)
 
