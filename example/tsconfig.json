@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "allowArbitraryExtensions": true,
+    "allowImportingTsExtensions": true,
+    "checkJs": true,
+    "jsx": "react",
+    "jsxFactory": "__klenod_jsx.h",
+    "jsxFragmentFactory": "__klenod_jsx.Fragment",
+    "lib": ["DOM", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "paths": {
+      "/*": ["./app/*"],
+      "npm://*": ["./node_modules/*"]
+    },
+    "strict": true,
+    "target": "ESNext"
+  },
+  "include": [
+    "app/**/*.js",
+    "app/**/*.jsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "types/**/*.d.ts"
+  ]
+}
