@@ -297,45 +297,38 @@ module Mayu
     def emit_reload_error_commands(reload_result)
       commands =
         Array(reload_result.errors).map do |reload_error|
-          if reload_error in [module_id, error]
-            rewrite_reload_error_backtrace(error)
-            file =
-              (
-                if error.respond_to?(:module_id)
-                  error.module_id.to_s
-                else
-                  module_id.to_s
-                end
-              )
-            source = error.respond_to?(:source) ? error.source.to_s : ""
-            type =
-              (error.respond_to?(:cause) && error.cause || error).class.name
-            command = Runtime::Commands::RenderError[
-              file,
-              type,
-              error.message,
-              Array(error.backtrace),
-              source,
-              [{name: "CodeReload", path: file}]
-            ]
-            Console.logger.error(self, error)
-            next command
-          end
+          module_id, error =
+            (reload_error in [_, _]) ? reload_error : [nil, reload_error]
 
-          Console.logger.error(self, reload_error)
-          Runtime::Commands::RenderError[
-            reload_error.file,
-            reload_error.type,
-            reload_error.message,
-            Array(reload_error.backtrace),
-            reload_error.source.to_s,
-            [{name: "CodeReload", path: reload_error.file}]
-          ]
+          Console.logger.error(self, error)
+          reload_error_command(error, module_id)
         end
 
       if @engine.render_exceptions? && !commands.empty?
         @engine.enqueue_batch(Runtime::Batch[commands])
       end
+    end
+
+    def reload_error_command(error, module_id)
+      rewrite_reload_error_backtrace(error)
+
+      file =
+        if error.respond_to?(:module_id) && error.module_id
+          error.module_id.to_s
+        else
+          module_id.to_s
+        end
+      source = error.respond_to?(:source) ? error.source.to_s : ""
+      type = (error.respond_to?(:cause) && error.cause || error).class.name
+
+      Runtime::Commands::RenderError[
+        file,
+        type,
+        error.respond_to?(:message) ? error.message : error.inspect,
+        error.respond_to?(:backtrace) ? Array(error.backtrace) : [],
+        source,
+        [{name: "CodeReload", path: file}]
+      ]
     end
 
     def record_ping(timestamp)

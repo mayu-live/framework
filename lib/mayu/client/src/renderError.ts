@@ -10,7 +10,7 @@ export default function renderError(
   message: string,
   backtrace: string[],
   source: string | null,
-  treePath: { name: string; path?: string }[]
+  treePath: { name: string; path?: string }[],
 ) {
   const formats: string[] = [];
   const buf: string[] = [];
@@ -35,7 +35,7 @@ export default function renderError(
     formats.push(
       line.startsWith(`${file}:`)
         ? "font-size: 1em; font-weight: 600; text-shadow: 0 0 3px #000;"
-        : "font-size: 1em;"
+        : "font-size: 1em;",
     );
   });
 
@@ -47,8 +47,14 @@ export default function renderError(
   const interestingLines = new Set<number>();
 
   backtrace.forEach((line) => {
-    if (line.startsWith(`${file}:`)) {
-      interestingLines.add(Number(line.split(":")[1]));
+    if (!line.startsWith(`${file}:`)) return;
+
+    // Module ids contain colons ("app:/page.haml"), so the line number is the
+    // first segment after the filename, not after the first colon.
+    const lineNumber = Number.parseInt(line.slice(file.length + 1), 10);
+
+    if (Number.isInteger(lineNumber)) {
+      interestingLines.add(lineNumber);
     }
   });
 
@@ -107,7 +113,7 @@ export default function renderError(
     errorMessage,
     ...treeItems,
     ...backtraceItems,
-    ...sourceItems
+    ...sourceItems,
   );
 
   document.body.appendChild(element);

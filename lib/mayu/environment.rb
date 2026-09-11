@@ -123,15 +123,25 @@ module Mayu
 
         loop do
           event = updates.dequeue
-          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-          update = provider.apply_update(event, entry: root_entry)
-          update_logger.log(update:, duration: format_duration(start_time))
-          publish_klenod_update(update)
+          publish_klenod_update(apply_klenod_update(provider, event, root_entry))
         end
       ensure
         updates.close
         watcher.stop
       end
+    end
+
+    # Anything escaping here would break out of the watcher loop and stop hot
+    # reloading for the rest of the process, so report the failure as an update
+    # instead and let sessions render it.
+    def apply_klenod_update(provider, event, root_entry)
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      update = provider.apply_update(event, entry: root_entry)
+      update_logger.log(update:, duration: format_duration(start_time))
+      update
+    rescue StandardError, ScriptError => e
+      Console.logger.error(self, e)
+      ::Klenod::Build::AppliedUpdate.new(event, nil, nil, nil, [[nil, e]].freeze)
     end
 
     def publish_klenod_update(update)

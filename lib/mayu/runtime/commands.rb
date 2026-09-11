@@ -127,8 +127,15 @@ module Mayu
           end
         end
 
+      ANSI_ESCAPE = /\e\[[0-9;]*m/
+
+      # Build errors format their source excerpts for a terminal, and the
+      # browser would show the escape sequences verbatim.
       def self.utf8(value)
-        value.to_s.dup.force_encoding(Encoding::UTF_8).scrub
+        value.to_s.dup.force_encoding(Encoding::UTF_8).scrub.gsub(
+          ANSI_ESCAPE,
+          ""
+        )
       end
 
       ViewTransition = CommandData.define(:batch)
