@@ -118,18 +118,32 @@
 
   .message-body {
     margin: 0;
-    color: var(--muted);
+    color: var(--text);
+    font-family: inherit;
+    font-size: inherit;
     line-height: 1.25;
+    /* Build errors report multi-line messages. */
+    white-space: pre-wrap;
     overflow-wrap: anywhere;
     min-height: 0;
     overflow: auto;
   }
 
+  .hints-panel {
+    grid-column: span 2;
+  }
+
   @media (max-width: 60em) {
     .source-panel,
+    .hints-panel,
     .message-panel {
       grid-column: auto;
     }
+  }
+
+  /* display: grid below would otherwise beat the user agent's [hidden] rule. */
+  section[hidden] {
+    display: none;
   }
 
   section {
@@ -170,9 +184,25 @@
 
   ::slotted(.tree-item),
   ::slotted(.trace-item),
-  ::slotted(.source-line) {
+  ::slotted(.hint-item),
+  ::slotted(.source-line),
+  ::slotted(.source-caret) {
     font-size: inherit;
     line-height: inherit;
+  }
+
+  ::slotted(.hint-item) {
+    padding: 0.12rem 0.28rem;
+    color: #7fd1ff;
+  }
+
+  /* Points at the offending column of the line above it. */
+  ::slotted(.source-caret) {
+    padding: 0 0.25rem 0.1rem;
+    background: #261018;
+    color: var(--accent);
+    white-space: pre;
+    font-variant-numeric: tabular-nums;
   }
 
   ::slotted(.tree-item),
@@ -235,21 +265,27 @@
   <main>
     <section class="message-panel">
       <h2>Message</h2>
-      <p class="message-body"><slot name="message"></slot></p>
+      <pre class="message-body"><slot name="message"></slot></pre>
     </section>
-    <section>
+    <section class="hints-panel" data-section>
+      <h2>Hints</h2>
+      <ul>
+        <slot name="hints"></slot>
+      </ul>
+    </section>
+    <section data-section>
       <h2>Backtrace</h2>
       <ul>
         <slot name="backtrace"></slot>
       </ul>
     </section>
-    <section>
+    <section data-section>
       <h2>Tree Path</h2>
       <ul>
         <slot name="tree-path"></slot>
       </ul>
     </section>
-    <section class="source-panel">
+    <section class="source-panel" data-section>
       <h2>Source</h2>
       <ol>
         <slot name="source"></slot>

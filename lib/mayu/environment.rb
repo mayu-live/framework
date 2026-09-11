@@ -153,7 +153,11 @@ module Mayu
     end
 
     def update_logger
-      @update_logger ||= Klenod::UpdateLogger.new(source_dir: @klenod_configuration.source_path)
+      @update_logger ||=
+        Klenod::UpdateLogger.new(
+          source_dir: @klenod_configuration.source_path,
+          provider: @module_provider
+        )
     end
 
     def format_duration(start_time)

@@ -311,7 +311,10 @@ module Mayu
             error.message,
             error.backtrace,
             nil,
-            tree_path
+            tree_path,
+            nil,
+            nil,
+            []
           ]
         end
 

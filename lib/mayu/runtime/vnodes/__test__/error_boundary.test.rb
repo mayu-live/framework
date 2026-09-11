@@ -814,7 +814,10 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
         "unexpected token".b,
         ["app:/broken.haml:2".b],
         "%p= )\n".b,
-        [{name: "CodeReload".b, path: "app:/broken.haml".b}]
+        [{name: "CodeReload".b, path: "app:/broken.haml".b}],
+        2,
+        4,
+        ["Did you mean ./colors.json?".b]
       ]
 
     serialized = MessagePack.unpack(MessagePack.pack(patch))
@@ -826,6 +829,9 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
     assert_equal(["app:/broken.haml:2"], serialized[4])
     assert_equal("%p= )\n", serialized[5])
     assert_equal({"name" => "CodeReload", "path" => "app:/broken.haml"}, serialized[6][0])
+    assert_equal(2, serialized[7])
+    assert_equal(4, serialized[8])
+    assert_equal(["Did you mean ./colors.json?"], serialized[9])
     serialized.flatten.each do |value|
       assert_equal(Encoding::UTF_8, value.encoding) if value.is_a?(String)
     end

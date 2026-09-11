@@ -92,11 +92,38 @@ class Mayu::SessionTest < Minitest::Test
   class ReloadErrorProvider
     attr_reader :rewritten_error
 
+    def initialize(sources: {})
+      @sources = sources
+    end
+
     def rewrite_exception(error)
       @rewritten_error = error
       error.set_backtrace(["app:/broken.haml:2"])
     end
+
+    def absolute_path(module_id)
+      @sources[module_id.to_s]
+    end
   end
+
+  # Stands in for a plugin's parse error. Klenod reports every source file it
+  # cannot compile as a SourceError subclass that fills in the location.
+  class FakeParseError < ::Klenod::Build::SourceError
+    def kind = "Haml parse error"
+
+    private
+
+    def location(error)
+      Location.new(
+        line: 2,
+        column: 4,
+        detail: error.message,
+        hints: ["Close the parenthesis"]
+      )
+    end
+  end
+
+  FakeDependency = Struct.new(:loc, :importer_id, :specifier)
 
   def test_session_uses_runtime_engine
     env = FakeEnvironment.new
@@ -445,10 +472,12 @@ class Mayu::SessionTest < Minitest::Test
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
 
-    error = SyntaxError.new("unexpected token")
-    error.define_singleton_method(:module_id) { "app:/broken.haml" }
-    error.define_singleton_method(:source) { "%p= )\n" }
-    error.set_backtrace(["generated:/broken.rb:20"])
+    error =
+      FakeParseError.new(
+        SyntaxError.new("unexpected token"),
+        source: "%p\n%p= )\n",
+        module_id: "app:/broken.haml"
+      )
     reload_result =
       Struct
         .new(:errors) { def success? = false }
@@ -460,11 +489,104 @@ class Mayu::SessionTest < Minitest::Test
     command = fake_engine.commands.first
     assert_instance_of(Mayu::Runtime::Commands::RenderError, command)
     assert_equal("app:/broken.haml", command.file)
-    assert_equal("SyntaxError", command.type)
+    assert_equal("Haml parse error", command.type)
     assert_equal("unexpected token", command.message)
-    assert_equal("%p= )\n", command.source)
-    assert_equal(["app:/broken.haml:2"], command.backtrace)
+    assert_equal("%p\n%p= )\n", command.source)
+    assert_equal(2, command.line)
+    assert_equal(4, command.column)
+    assert_equal(["Close the parenthesis"], command.hints)
+    # A build error has no component tree, and its backtrace runs through the
+    # build graph rather than the app.
+    assert_empty(command.backtrace)
+    assert_empty(command.tree_path)
     assert_same(error, provider.rewritten_error)
+  end
+
+  def test_klenod_resolve_failure_reports_the_import_site
+    Dir.mktmpdir do |dir|
+      source = "import a from \"./a\";\nimport colors from \"./colors.toml\";\n"
+      path = Pathname(dir).join("CustomElement.tsx")
+      path.write(source)
+
+      env = FakeEnvironment.new
+      request_info =
+        Mayu::Session::RequestInfo.new(
+          path: "/missing",
+          headers: {},
+          http2: false
+        )
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      env.module_provider =
+        ReloadErrorProvider.new(sources: {"app:/CustomElement.tsx" => path})
+      fake_engine = FakeEngine.new
+      session.instance_variable_set(:@engine, fake_engine)
+
+      error =
+        ::Klenod::Build::ResolveError.new(
+          nil,
+          dependency:
+            FakeDependency.new(
+              loc:
+                ::Klenod::Build::SourceLocation.new(
+                  "app:/CustomElement.tsx",
+                  2,
+                  21
+                ),
+              importer_id: "app:/CustomElement.tsx",
+              specifier: "./colors.toml"
+            ),
+          importer_id: "app:/CustomElement.tsx",
+          reason: :not_found,
+          requested_specifier: "./colors.toml",
+          suggestions: ["./colors.json"]
+        )
+      reload_result =
+        Struct
+          .new(:errors) { def success? = false }
+          .new([["app:/CustomElement.tsx", error]])
+
+      session.send(:handle_reload_result, reload_result)
+
+      command = fake_engine.commands.first
+      assert_equal("app:/CustomElement.tsx", command.file)
+      assert_equal("Module not found", command.type)
+      assert_equal("Could not resolve \"./colors.toml\"", command.message)
+      assert_equal(2, command.line)
+      assert_equal(21, command.column)
+      assert_equal(["Did you mean ./colors.json?"], command.hints)
+      # ResolveError names the importing module but does not carry its source.
+      assert_equal(source, command.source)
+      assert_empty(command.backtrace)
+    end
+  end
+
+  def test_klenod_reload_failure_keeps_the_backtrace_for_unknown_errors
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    env.module_provider = ReloadErrorProvider.new
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    error = RuntimeError.new("something unexpected")
+    error.set_backtrace(["generated:/broken.rb:20"])
+    reload_result =
+      Struct
+        .new(:errors) { def success? = false }
+        .new([["app:/broken.haml", error]])
+
+    session.send(:handle_reload_result, reload_result)
+
+    command = fake_engine.commands.first
+    assert_equal("RuntimeError", command.type)
+    assert_equal("something unexpected", command.message)
+    assert_equal(["app:/broken.haml:2"], command.backtrace)
+    assert_nil(command.line)
   end
 
   def test_klenod_reload_error_overlay_can_be_disabled

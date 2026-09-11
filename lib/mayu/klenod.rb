@@ -14,6 +14,7 @@ require_relative "klenod/provider"
 require_relative "klenod/component_resolver"
 require_relative "klenod/router"
 require_relative "klenod/asset_app"
+require_relative "klenod/error_report"
 require_relative "klenod/update_logger"
 
 module Mayu

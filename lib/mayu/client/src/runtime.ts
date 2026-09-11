@@ -585,8 +585,21 @@ const CommandHandlers = {
     backtrace: string[],
     source: string | null,
     treePath: { name: string; path?: string }[],
+    line: number | null,
+    column: number | null,
+    hints: string[],
   ) {
-    renderError(file, type, message, backtrace, source, treePath);
+    renderError(
+      file,
+      type,
+      message,
+      backtrace,
+      source,
+      treePath,
+      line,
+      column,
+      hints,
+    );
   },
   ReloadSucceeded(this: NodeSet) {
     clearRenderError();

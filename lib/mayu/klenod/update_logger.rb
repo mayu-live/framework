@@ -13,11 +13,12 @@ module Mayu
         removed: "\e[31m"
       }.freeze
 
-      def initialize(source_dir:, output: $stdout, error_output: $stderr, env: ENV)
+      def initialize(source_dir:, output: $stdout, error_output: $stderr, env: ENV, provider: nil)
         @source_dir = Pathname.new(source_dir).expand_path
         @output = output
         @error_output = error_output
         @env = env
+        @provider = provider
       end
 
       def log(update:, duration:)
@@ -36,15 +37,27 @@ module Mayu
           log_assets(result.asset_changes)
           log_no_graph_changes(result)
         else
-          update.each_error do |module_id, error|
-            stream.puts "  #{module_id}: #{error.class}: #{error.message}"
-          end
+          log_errors(stream, update)
         end
       end
 
       private
 
-      attr_reader :source_dir, :output, :error_output, :env
+      attr_reader :source_dir, :output, :error_output, :env, :provider
+
+      # This is the only place a reload failure is reported. Sessions used to
+      # log the exception as well, which repeated the whole backtrace once per
+      # open browser tab.
+      def log_errors(stream, update)
+        update.each_error do |module_id, error|
+          report = ErrorReport.from(error, module_id:, provider:)
+          stream.puts(indent(report.render(ansi: !env["NO_COLOR"])))
+        end
+      end
+
+      def indent(text)
+        text.lines.map { |line| line.strip.empty? ? line : "  #{line}" }.join
+      end
 
       def log_modules(result)
         log_list(output, "reloaded", result.reloaded_module_ids, marker: "~", color_name: :changed)

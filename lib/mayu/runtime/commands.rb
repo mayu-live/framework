@@ -100,7 +100,10 @@ module Mayu
           :message,
           :backtrace,
           :source,
-          :tree_path
+          :tree_path,
+          :line,
+          :column,
+          :hints
         ) do
           # Ruby MessagePack serializes ASCII-8BIT strings as binary values.
           # The browser decoder represents those values as Uint8Array, which
@@ -121,7 +124,10 @@ module Mayu
                   path.transform_values do |value|
                     value.is_a?(String) ? Commands.utf8(value) : value
                   end
-                end
+                end,
+                line,
+                column,
+                Array(hints).map { Commands.utf8(it) }
               ]
             )
           end

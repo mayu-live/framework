@@ -300,7 +300,6 @@ module Mayu
           module_id, error =
             (reload_error in [_, _]) ? reload_error : [nil, reload_error]
 
-          Console.logger.error(self, error)
           reload_error_command(error, module_id)
         end
 
@@ -312,22 +311,21 @@ module Mayu
     def reload_error_command(error, module_id)
       rewrite_reload_error_backtrace(error)
 
-      file =
-        if error.respond_to?(:module_id) && error.module_id
-          error.module_id.to_s
-        else
-          module_id.to_s
-        end
-      source = error.respond_to?(:source) ? error.source.to_s : ""
-      type = (error.respond_to?(:cause) && error.cause || error).class.name
+      report =
+        Klenod::ErrorReport.from(error, module_id:, provider: module_provider)
 
+      # A build error has no component tree to walk, so there is no tree path
+      # to show. The overlay hides the section when it is empty.
       Runtime::Commands::RenderError[
-        file,
-        type,
-        error.respond_to?(:message) ? error.message : error.inspect,
-        error.respond_to?(:backtrace) ? Array(error.backtrace) : [],
-        source,
-        [{name: "CodeReload", path: file}]
+        report.file,
+        report.type,
+        report.detail,
+        report.backtrace,
+        report.source,
+        [],
+        report.line,
+        report.column,
+        report.hints
       ]
     end
 

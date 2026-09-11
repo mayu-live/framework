@@ -70,6 +70,12 @@ module Mayu
         source.asset_origin
       end
 
+      # Absolute path of a module's source file, used to show an excerpt for a
+      # build error that names a module but does not carry its source.
+      def absolute_path(module_id)
+        source.graph.absolute_path(module_id) if source.respond_to?(:graph)
+      end
+
       def format_exception(error, source_path: nil)
         ::Klenod::Runtime::BacktraceRewriter.new(source_maps).format_exception(
           error,
