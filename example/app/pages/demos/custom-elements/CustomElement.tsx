@@ -1,49 +1,51 @@
-const template = document.createElement("template");
-
-template.innerHTML = `
-  <style>
-    #root {
-      overflow: hidden;
-      color: white;
-      font-weight: bold;
-      border-radius: 2px;
-      padding-inline: 1rem;
-      margin-block: 1rem;
-    }
-  </style>
-  <div id="root">
-    <p>Hello world from a custom element with a custom background color.</p>
-    <p>Current color: <span id="color"></span></p>
-  </div>
-`;
+import styles from "./CustomElement.css";
 
 export default class CustomElement extends HTMLElement {
   static observedAttributes = ["color"];
 
+  #outputEl: HTMLSpanElement;
+
   constructor() {
     super();
 
-    if (!this.shadowRoot) {
-      this.attachShadow({ mode: "open" });
-    }
+    const shadowRoot = this.attachShadow({ mode: "open" });
 
-    this.shadowRoot.appendChild(template.content.cloneNode(true));
-    this.shadowRoot.querySelector("#color").textContent =
-      this.getAttribute("color");
+    shadowRoot.adoptedStyleSheets = [styles];
+
+    shadowRoot.replaceChildren(
+      <>
+        <h2>Custom element</h2>
+        <p>
+          Hello world, from a custom element with a custom background color.
+        </p>
+        <p>
+          Current color: <output />
+        </p>
+      </>,
+    );
+
+    this.#outputEl = shadowRoot.querySelector("output") as HTMLOutputElement;
   }
 
   connectedCallback() {
-    console.log(this.attributes);
+    // The host is server-rendered, so the browser may have computed its style
+    // before this class was defined. @starting-style only applies on the first
+    // render, so flip through display: none to make the next render count.
+    this.style.display = "none";
+    void this.offsetHeight;
+    this.style.display = "";
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    console.log(`Attribute ${name} has changed.`, oldValue, newValue);
+  attributeChangedCallback(
+    name: string,
+    oldValue: string | null,
+    newValue: string | null,
+  ) {
+    if (oldValue === newValue || !newValue) return;
 
     if (name === "color") {
-      this.shadowRoot.querySelector("#color").textContent = newValue;
-      this.shadowRoot
-        .querySelector("#root")
-        .style.setProperty("background-color", newValue);
+      this.#outputEl.textContent = newValue;
+      this.style.setProperty("--background-color", newValue);
     }
   }
 }

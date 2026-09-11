@@ -1,0 +1,38 @@
+:host {
+  display: block;
+  overflow: hidden;
+  interpolate-size: allow-keywords;
+
+  background-color: var(--background-color);
+  color: contrast-color(var(--background-color));
+  opacity: 1;
+  height: auto;
+
+  transition:
+    opacity 2s cubic-bezier(0.22, 1, 0.36, 1),
+    height 2s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 500ms,
+    color 500ms;
+
+  border-radius: 8px;
+  padding-inline: 1rem;
+  margin-block: 1rem;
+
+  @starting-style {
+    opacity: 0;
+    height: 0;
+  }
+}
+
+h2 {
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+p {
+  font-weight: 500;
+}
+
+output {
+  font-weight: 900;
+}

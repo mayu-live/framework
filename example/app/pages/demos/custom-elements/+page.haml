@@ -16,28 +16,60 @@
   %Heading(level=2)
     Custom elements
 
-  %p
-    This is a basic example demonstrating how to use
-    %a(href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements")< custom elements
-    \. Some details need to be figured out before this can be considered usable.
-    See
-    %a(href="https://github.com/mayu-live/framework/issues/5")<> this GitHub issue
-    for more details.
-
+  %p This is a custom element:
   %CustomElement(color=@color)
 
-  .buttons
+  %p And these buttons are server side:
+
+  %fieldset
+    %legend Server-side controls:
     = COLORS.map do |color|
-      %button[color](type="button" onclick=set_color value=color){
-        class: { active: @color == color }
-      }= color
+      %label
+        %input(type="radio" value=color onchange=set_color){ checked: @color == color }
+        %span= color
+    %label
+      %input(type="color" value=@color oninput=set_color colorspace="display-p3")
+      %span Choose color
 
 :css
-  .buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, 5em);
+  fieldset {
+    border: 2px solid #999;
+    display: grid; justify-content: start;
+    gap: 1em;
   }
 
-  .active {
-    font-weight: bold;
+  label {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .5em;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  input {
+    &[type="radio"] {
+      margin: 0;
+    }
+
+    &[type="color"] {
+      all: unset;
+
+      display: block;
+      width: 1.4em;
+      aspect-ratio: 1;
+      border: 1px solid #0006;
+      border-radius: 2px;
+
+      &::-webkit-color-swatch-wrapper {
+        padding: 0;
+      }
+
+      &::-moz-color-swatch {
+        border: none;
+      }
+
+      &::-webkit-color-swatch {
+        border: none;
+      }
+    }
   }
