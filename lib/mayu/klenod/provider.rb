@@ -76,6 +76,19 @@ module Mayu
         source.graph.absolute_path(module_id) if source.respond_to?(:graph)
       end
 
+      # Whether a module's generated line numbers can still be translated back
+      # to its original source. A module that fails to load is replaced in the
+      # graph by a placeholder carrying only the error, so its source map is
+      # gone and its backtrace still points at generated Ruby.
+      def source_mapped?(module_id)
+        return false unless source.respond_to?(:graph)
+
+        mod = source.graph.mods[::Klenod::Build::ModuleId.parse(module_id.to_s)]
+        mod.respond_to?(:source_map) && !mod.source_map.nil?
+      rescue ::Klenod::Build::Error, ArgumentError
+        false
+      end
+
       def format_exception(error, source_path: nil)
         ::Klenod::Runtime::BacktraceRewriter.new(source_maps).format_exception(
           error,

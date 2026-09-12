@@ -35,7 +35,7 @@ module Mayu
           when ::Klenod::Build::ResolveError
             from_resolve_error(error, module_id:, provider:)
           else
-            from_unknown(error, module_id:)
+            from_unknown(error, module_id:, provider:)
           end
         end
 
@@ -69,18 +69,53 @@ module Mayu
           )
         end
 
-        def self.from_unknown(error, module_id:)
+        # Anything Klenod did not recognize: a module that raised while being
+        # evaluated, most often. The backtrace is the only thing pointing at
+        # the app, so it is kept, but the frames through the build graph are
+        # summarized rather than listed.
+        def self.from_unknown(error, module_id:, provider:)
+          frames = error.respond_to?(:backtrace) ? Array(error.backtrace) : []
+          app_frames = frames.reject { framework_frame?(it) }
+          hidden = frames.length - app_frames.length
+          app_frames <<= "#{hidden} more frames through the build" if hidden > 0
+
+          line = app_line(frames, module_id, provider)
+
           new(
             type: error.class.name,
             detail: error.respond_to?(:message) ? error.message.to_s : error.inspect,
             file: module_id.to_s,
-            line: nil,
+            line:,
             column: nil,
-            source: nil,
+            source: line && read_source(module_id.to_s, provider),
             hints: [],
-            backtrace:
-              error.respond_to?(:backtrace) ? Array(error.backtrace) : []
+            backtrace: app_frames
           )
+        end
+
+        def self.framework_frame?(frame)
+          %r{/gems/|/vendor/bundle/|<internal:}.match?(frame.to_s)
+        end
+
+        # Only trust a line number when the module's source map is still around
+        # to have translated it. Without one the frame points at generated Ruby,
+        # and an excerpt would highlight the wrong line.
+        def self.app_line(frames, module_id, provider)
+          return nil unless module_id
+          return nil unless provider.respond_to?(:source_mapped?)
+          return nil unless provider.source_mapped?(module_id)
+
+          path = module_id.to_s.sub(%r{\A\w+:/+}, "")
+
+          frames.each do |frame|
+            match = /\A(?<file>.*):(?<line>\d+)(?::|\z)/.match(frame.to_s)
+            next unless match
+            next unless match[:file].end_with?(path)
+
+            return match[:line].to_i
+          end
+
+          nil
         end
 
         # ResolveError bakes its suggestions into #message. We rebuild the
@@ -123,7 +158,9 @@ module Mayu
           :from_unknown,
           :resolve_detail,
           :resolve_hints,
-          :read_source
+          :read_source,
+          :framework_frame?,
+          :app_line
 
         # "app:/pages/demos/CustomElement.tsx:3:20"
         def location

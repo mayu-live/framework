@@ -76,7 +76,13 @@ class Mayu::Klenod::UpdateLoggerTest < Minitest::Test
         )
       event = Klenod::Build::UpdateEvent.new([], [], 8, result)
       error = RuntimeError.new("something unexpected")
-      error.set_backtrace(["app:/x.rb:3:in 'foo'"])
+      error.set_backtrace(
+        [
+          "app:/x.rb:3:in 'foo'",
+          "/app/vendor/bundle/ruby/4.0.0/gems/klenod-build-0.0.13/lib/graph.rb:1:in 'load'",
+          "/app/vendor/bundle/ruby/4.0.0/gems/async-2.45.1/lib/task.rb:9:in 'run'"
+        ]
+      )
 
       logger.log(
         update: Update.new(event, [["app:/x.rb", error]]),
@@ -86,6 +92,42 @@ class Mayu::Klenod::UpdateLoggerTest < Minitest::Test
       assert_includes(output.string, "something unexpected")
       assert_includes(output.string, "Backtrace:")
       assert_includes(output.string, "app:/x.rb:3:in 'foo'")
+      # Frames through the build graph are summarized, not listed.
+      refute_includes(output.string, "klenod-build")
+      assert_includes(output.string, "2 more frames through the build")
+    end
+  end
+
+  def test_omits_the_excerpt_when_the_line_cannot_be_trusted
+    Dir.mktmpdir do |root|
+      output = StringIO.new
+      # A module that failed to load loses its source map, so its backtrace
+      # still points at generated Ruby rather than the original source.
+      provider =
+        Class.new do
+          def source_mapped?(_module_id) = false
+
+          def absolute_path(_module_id) = raise("should not be read")
+        end.new
+      logger =
+        Mayu::Klenod::UpdateLogger.new(
+          source_dir: root,
+          output:,
+          error_output: output,
+          env: {"NO_COLOR" => "1"},
+          provider:
+        )
+      event = Klenod::Build::UpdateEvent.new([], [], 9, result)
+      error = NameError.new("uninitialized constant Foobar")
+      error.set_backtrace(["/app/pages/+layout.haml:25:in '<class:Layout>'"])
+
+      logger.log(
+        update: Update.new(event, [["app:/pages/+layout.haml", error]]),
+        duration: "1.0000ms"
+      )
+
+      assert_includes(output.string, "uninitialized constant Foobar")
+      refute_includes(output.string, "Source:")
     end
   end
 
