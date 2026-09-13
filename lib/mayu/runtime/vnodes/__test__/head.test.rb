@@ -155,7 +155,7 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     html = render_html(engine.root)
 
     assert_match('<script type="module"', html)
-    assert_match('customElements.define("my-element"', html)
-    assert_match("/.mayu/assets/my-element.js", html)
+    assert_match('import("/.mayu/assets/my-element.js")', html)
+    refute_match("customElements.define", html)
   end
 end

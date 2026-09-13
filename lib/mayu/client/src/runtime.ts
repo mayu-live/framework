@@ -607,10 +607,9 @@ const CommandHandlers = {
   RegisterCustomElement(name: string, path: string) {
     if (customElements.get(name)) return;
 
-    (async () => {
-      const mod = await import(path);
-      customElements.define(name, mod.default);
-    })();
+    // Klenod appends customElements.define to every custom element module,
+    // so importing the module is what registers the element.
+    void import(path);
   },
 } as const;
 

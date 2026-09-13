@@ -77,12 +77,10 @@ module Mayu
             end
           end
 
+          # Klenod appends customElements.define to every custom element
+          # module, so importing the module is what registers the element.
           def custom_element_script(custom_element)
-            format(
-              "customElements.define(%p, (await import(%p)).default)",
-              custom_element.name.to_s,
-              custom_element.path.to_s
-            )
+            format("import(%p)", custom_element.path.to_s)
           end
 
           def user_tags
