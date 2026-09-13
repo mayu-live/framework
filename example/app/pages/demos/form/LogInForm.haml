@@ -1,8 +1,7 @@
 :ruby
   Fieldset = import("/components/Form/Fieldset")
-  Details = import("/components/UI/Details")
-  YouTubeVideo = import("/components/UI/YouTubeVideo")
-  Link = import("/components/UI/Link")
+  Input = import("/components/Form/Input")
+  Button = import("/components/Form/Button")
 
   User = Data.define(:email, :password)
 
@@ -25,7 +24,7 @@
     %p
       Logged in as #{@user.email}.
     %div
-      %button(onclick=handle_log_out)
+      %Button(onclick=handle_log_out)
         Log out
 
 %div
@@ -43,21 +42,12 @@
       Any combination of email and password will work.
 
     %form.form(onsubmit=handle_submit)
-      .formGroup
-        %label.label
-          %span Email
-        %input.input(name="email" type="email" required placeholder="Please enter your email address" autocomplete="off")
-      .formGroup
-        %label.label
-          %span Password
-        %input.input(name="password" type="password" required pattern=".{8,}" placeholder="Enter password (8+ characters)" autocomplete="off")
-
+      %Input(name="email" type="email" label="Email" required autocomplete="off")
+      %Input(name="password" type="password" label="Password (8+ characters)" required pattern=".{8,}" autocomplete="off")
       %div
-        %button.button(type="submit") Submit
+        %Button(type="submit") Log in
 
-  %p
-    This is based on the following YouTube video by
-    %Link(href="https://www.youtube.com/kepowob" target="_blank")< Kevin Powell
-    , who has a great channel about HTML and CSS. Check it out!
-  %Details(summary="Video: How is this possible with CSS only?!")
-    %YouTubeVideo(video_id="g-Y31Iswr2M")
+:css
+  .form {
+    max-width: 24rem;
+  }

@@ -1,34 +1,38 @@
-%button{style: { __button_color: $color || "var(--accent-color)"  }, **$*.except(:color)}
+%button{style: { __button_color: $color || "var(--button-background)" }, **$*.except(:color)}
   %slot
 
 :css
   button {
-    background-color: var(--button-color, var(--accent-color));
+    background-color: var(--button-color, var(--button-background));
     border: 0;
-    border-radius: 2px;
-    padding: 0.5em 1em;
+    border-radius: var(--radius-sm);
+    padding: 0.6em 1.2em;
     cursor: pointer;
     user-select: none;
-    font-family: inherit;
-    color: #fff;
-  }
-
-  button:not(:disabled):active {
-    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 15%), inset 0 0 6px rgb(0 0 0 / 20%);
+    font: inherit;
+    font-family: var(--font-heading);
+    font-weight: 500;
+    color: var(--button-text);
+    box-shadow: var(--shadow);
+    transition: filter 120ms, box-shadow 120ms;
   }
 
   button:not(:disabled):hover {
-    background-image: linear-gradient(
-      transparent,
-      rgba(0, 0, 0, 0.05) 40%,
-      rgba(0, 0, 0, 0.1)
-    );
-    text-decoration: underline;
+    filter: brightness(108%);
+  }
+
+  button:not(:disabled):active {
+    filter: brightness(92%);
+    box-shadow: none;
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   button:disabled {
-    background-color: #ccc;
-    color: #666;
+    background-color: var(--gray);
+    color: var(--surface);
     cursor: not-allowed;
   }
-

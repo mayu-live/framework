@@ -72,7 +72,10 @@
     oklch(64% 0.1 var(--hue-pink))
   );
   --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent);
-  --accent-contrast: light-dark(#fff, oklch(16% 0.03 var(--hue-navy)));
+  --accent-contrast: #fff;
+  /* Solid buttons keep the light-theme pink in both modes. */
+  --button-background: oklch(56% 0.17 var(--hue-pink));
+  --button-text: #fff;
   --border: light-dark(
     oklch(28% 0.06 var(--hue-navy) / 12%),
     oklch(100% 0 0 / 10%)

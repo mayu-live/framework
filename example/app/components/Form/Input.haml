@@ -1,5 +1,5 @@
 .group
-  %input(type="text" class=$class label=$label){**$*}
+  %input(type="text" class=$class placeholder=$label){**$*.except(:label)}
   %label= $label
 
 :css
@@ -10,26 +10,24 @@
 
   input {
     width: 100%;
-    font-size: inherit;
-    padding: 0.5em;
-
-    border: 1px solid var(--blue);
-    transition: outline 100ms;
-    border-radius: 2px;
+    font: inherit;
+    padding: 0.6em 0.75em;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    transition: border-color 120ms, box-shadow 120ms;
   }
 
   input:hover {
-    border-color: var(--dark);
+    border-color: var(--text-muted);
   }
 
-  input:focus {
-    border: 1px solid var(--blue);
-    outline: 1px solid var(--blue);
-  }
-
-  input:active {
-    border: 1px solid var(--blue);
-    outline: 1px solid var(--blue);
+  input:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
 
   input::placeholder {
@@ -39,39 +37,39 @@
   label {
     position: absolute;
     top: 50%;
-    left: 0.5em;
-    transform: translate(0, -50%);
+    left: 0.75em;
+    transform: translateY(-50%);
     pointer-events: none;
-    transition: all 200ms ease-in-out;
-    opacity: 0.8;
-    padding: 0 0.2em;
+    color: var(--text-muted);
+    padding: 0 0.3em;
+    border-radius: 3px;
+    transition: top 150ms ease-out, font-size 150ms ease-out;
   }
 
   input:focus + label,
   input:not(:placeholder-shown) + label {
     top: 0;
-    background: #fff;
-    font-size: 0.9em;
-    opacity: 1;
+    font-size: 0.8em;
+    background: var(--surface-raised);
   }
 
-  input:invalid {
-    border-color: var(--red);
-    outline-color: var(--red);
+  input:focus-visible + label {
+    color: var(--accent);
   }
 
   input:required + label::after {
     content: " *";
     color: var(--red);
-    font-weight: bold;
   }
 
-  input:invalid:required {
-    background: var(--red-bright);
+  input:not(:placeholder-shown):invalid {
+    border-color: var(--red);
+  }
+
+  input:not(:placeholder-shown):invalid + label {
+    color: var(--red);
   }
 
   input:not(:placeholder-shown):valid {
     border-color: var(--green);
-    outline-color: var(--green);
   }
-
