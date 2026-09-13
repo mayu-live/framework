@@ -5,10 +5,29 @@
 # License: AGPL-3.0
 
 require "minitest/autorun"
+require "tmpdir"
+require "fileutils"
 
 require_relative "configuration"
 
 class Mayu::Configuration::Test < Minitest::Test
+  def test_find_walks_up_to_the_config_file
+    Dir.mktmpdir("mayu-config") do |root|
+      path = File.join(root, "mayu.toml")
+      File.write(path, "")
+      nested = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(nested)
+
+      assert_equal(path, Mayu::Configuration.find("mayu.toml", nested))
+    end
+  end
+
+  def test_find_returns_nil_when_no_config_file_exists
+    Dir.mktmpdir("mayu-config") do |root|
+      assert_nil(Mayu::Configuration.find("mayu.toml.missing", root))
+    end
+  end
+
   def test_shutdown_timeout
     assert_equal(10, Mayu::Configuration::ServerConfig.parse({}).shutdown_timeout_seconds)
     assert_equal(0.25, Mayu::Configuration::ServerConfig.parse({"shutdown_timeout_seconds" => 0.25}).shutdown_timeout_seconds)

@@ -123,8 +123,8 @@ module Mayu
       if File.exist?(path)
         path
       else
-        parent = File.join(dir, "..")
-        return if dir == parent
+        parent = File.dirname(dir)
+        return if parent == dir
         find(filename, parent)
       end
     end

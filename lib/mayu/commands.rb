@@ -14,6 +14,7 @@ require_relative "commands/build"
 require_relative "commands/graph"
 require_relative "commands/start"
 require_relative "commands/init"
+require_relative "commands/lsp"
 require_relative "version"
 
 module Mayu
@@ -28,16 +29,24 @@ module Mayu
           "start" => Start,
           "routes" => Routes,
           "graph" => Graph,
-          "transform" => Transform
+          "transform" => Transform,
+          "lsp" => Lsp
         }
 
+      # Commands whose stdout is consumed by another program.
+      QUIET_COMMANDS = [Graph, Lsp].freeze
+
       def call
-        print_header unless @command.is_a?(Graph)
+        print_header unless quiet_command?
 
         @command ? @command.call : print_usage
       end
 
       private
+
+      def quiet_command?
+        QUIET_COMMANDS.any? { |klass| @command.is_a?(klass) }
+      end
 
       def print_header
         puts "\e[1;95mMayu v#{Mayu::VERSION}\e[0m"

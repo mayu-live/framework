@@ -22,6 +22,7 @@
 - `rake test` runs the Minitest suite (glob: `lib/**/*.test.rb`).
 - `rake build` runs the client production build and builds the gem.
 - `cd example && bundle install && bin/mayu dev` starts the example app at `https://localhost:9292/`.
+- `bin/mayu lsp` starts the language server (stdio) for editors; it finds the app via `mayu.toml`.
 
 ## Coding Style & Naming Conventions
 

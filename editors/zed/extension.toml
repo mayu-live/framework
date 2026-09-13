@@ -1,0 +1,13 @@
+id = "mayu"
+name = "Mayu"
+version = "0.0.1"
+schema_version = 1
+authors = ["Andrés Alin <andreas.alin@gmail.com>"]
+description = "Language server for Mayu projects"
+repository = "https://github.com/mayu-live/framework"
+
+# The Haml language is provided by the Haml extension (davidcornu/zed-haml),
+# so install that extension too.
+[language_servers.mayu]
+name = "Mayu"
+languages = ["Haml"]

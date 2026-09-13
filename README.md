@@ -424,6 +424,52 @@ types of files.
 Components and styles update immediately in the browser as you edit files.
 No browser refresh needed.
 
+### Editor support
+
+`bin/mayu lsp` starts a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
+server over stdin/stdout. It locates the app by searching upwards for
+`mayu.toml` from the current directory, or from a directory given as an
+argument (`bin/mayu lsp path/to/app`) for editors that start it elsewhere. It
+honours `klenod.config.rb` and analyzes `.haml` files under the app directory with
+the same Klenod plugins as the dev server, so editor diagnostics match build
+errors. It reports Haml and Ruby syntax errors and unresolved imports, and
+provides go to definition, hover, and completion for `import("...")` and
+`%Component` tags. It never evaluates application code.
+
+Point your editor's LSP client at the command for the `haml` file type.
+
+Neovim:
+
+```lua
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "haml",
+  callback = function()
+    vim.lsp.start({
+      name = "mayu",
+      cmd = { "bin/mayu", "lsp" },
+      root_dir = vim.fs.root(0, { "mayu.toml" }),
+    })
+  end,
+})
+```
+
+Helix (`languages.toml`):
+
+```toml
+[language-server.mayu]
+command = "bin/mayu"
+args = ["lsp"]
+
+[[language]]
+name = "haml"
+language-servers = ["mayu"]
+```
+
+Zed only starts language servers registered by extensions, so use the small
+extension in [`editors/zed`](editors/zed/README.md).
+
+The server logs to stderr, which editors show in their language server log.
+
 ## Production mode
 
 Before a server shuts down (when receiving the `SIGINT` signal),
