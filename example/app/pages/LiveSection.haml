@@ -78,6 +78,15 @@
       linear-gradient(135deg in oklch, oklch(70% 0.15 var(--hue-pink) / 60%), oklch(75% 0.12 60 / 60%), var(--border)) border-box;
   }
 
+  /* Let the counter card take the full row while its source is open. */
+  .demo:has(details[open]) {
+    grid-column: 1 / -1;
+  }
+
+  .demo pre {
+    font-size: .8rem;
+  }
+
   h3 {
     margin: 0;
     font-size: 1.35rem;

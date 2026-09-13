@@ -36,7 +36,9 @@
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 1rem;
-    padding: .5rem 1.5rem;
+    /* Fixed height so sticky elements below can line up exactly under it. */
+    height: var(--header-height);
+    padding: 0 1.5rem;
     background: var(--header-background);
     border-bottom: 1px solid var(--chrome-border);
     box-shadow: var(--shadow-bar);

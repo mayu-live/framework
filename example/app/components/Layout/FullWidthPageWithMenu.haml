@@ -1,10 +1,21 @@
 :ruby
   MaxWidth = import("./MaxWidth")
+  Icon = import("/components/UI/Icon/Icon")
+  SiteMenu = import("./SiteMenu.tsx")
 
 .layout
-  %nav
-    .sticky
-      %slot(name="menu")
+  %SiteMenu.menu(breakpoint="(min-width: 79rem)")
+    .menubar
+      %button.toggle(type="button" popovertarget="site-menu")
+        %Icon(name="bars")
+        Menu
+    %nav#site-menu(popover="auto")
+      .panelHeader
+        %span.panelTitle Menu
+        %button.close(type="button" popovertarget="site-menu" popovertargetaction="hide" title="Close menu")
+          %Icon(name="xmark")
+      .sticky
+        %slot(name="menu")
   .main
     .breadcrumbs
       %slot(name="breadcrumbs")
@@ -16,17 +27,130 @@
     height: 100%;
     position: relative;
     display: grid;
-    grid-template:
-      "menu" auto
-      "content" 1fr;
+    grid-template: "content" 1fr;
   }
 
-  nav {
+  .menu {
+    /* Narrow screens: the menu takes no vertical space. It shares the
+       content area, sticks under the header with zero height, and the
+       button overflows out of it over the page. */
+    grid-area: content;
+    align-self: start;
+    height: 0;
+    display: grid;
+    justify-content: end;
+    position: sticky;
+    top: var(--header-height);
+    z-index: 1;
     font-family: var(--font-heading);
-    grid-area: menu;
-    background: var(--menu-background);
     color: var(--menu-color);
+  }
+
+  .menubar {
+    display: flex;
+    padding: .5rem 1.5rem;
+    pointer-events: none;
+  }
+
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: .5em;
+    padding: .4em .9em;
+    border: var(--thin-border);
+    border-radius: 999px;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: var(--shadow-bar);
+    anchor-name: --site-menu;
+  }
+
+  .toggle:hover {
+    border-color: var(--border-strong);
+  }
+
+  .toggle Icon {
+    color: var(--text-muted);
+  }
+
+  /* Narrow screens: the navigation is a sheet dropping from the top edge. */
+  nav {
+    --popover-transition-duration: 200ms;
+
+    position: fixed;
+    inset: 0 0 auto 0;
+    width: 100%;
+    max-height: 100dvh;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0 0 1rem;
+    border: 0;
     border-bottom: var(--thin-border);
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: var(--surface-raised);
+    color: var(--text);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(-1rem);
+    transition:
+      display var(--popover-transition-duration) ease allow-discrete,
+      overlay var(--popover-transition-duration) ease allow-discrete,
+      opacity var(--popover-transition-duration) ease,
+      transform var(--popover-transition-duration) ease;
+  }
+
+  .panelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--header-height);
+    padding: 0 1rem 0 1.5rem;
+    border-bottom: var(--thin-border);
+    margin-bottom: .5rem;
+  }
+
+  .panelTitle {
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .close {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .close:hover,
+  .close:focus-visible {
+    background: var(--border);
+  }
+
+  nav:popover-open {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @starting-style {
+    nav:popover-open {
+      opacity: 0;
+      transform: translateY(-1rem);
+    }
+  }
+
+  nav::backdrop {
+    background: oklch(0% 0 0 / 45%);
+    backdrop-filter: blur(4px);
   }
 
   .main {
@@ -39,7 +163,8 @@
     padding: 1rem 0 4rem;
   }
 
-  /* 60rem + 15rem + 4rem = 79rem */
+  /* Wide screens: the same navigation renders inline as a sticky sidebar. */
+  /* 60rem + 15rem + 4rem = 79rem. Keep in sync with the breakpoint attribute above. */
   @media (min-width: 79rem) {
     .layout {
       grid-template:
@@ -47,19 +172,57 @@
         / 15rem 1fr;
     }
 
-    nav {
-      border-bottom: 0;
+    .menu {
+      grid-area: menu;
+      align-self: stretch;
+      height: auto;
+    }
+
+    .menubar,
+    .panelHeader {
+      display: none;
+    }
+
+    nav,
+    nav:popover-open {
+      display: block;
+      position: static;
+      inset: auto;
+      width: auto;
+      height: 100%;
+      max-height: none;
+      overflow: visible;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: var(--menu-background);
+      box-shadow: none;
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+
+    .menu {
+      position: static;
+      justify-content: stretch;
       border-right: var(--thin-border);
       container-type: inline-size;
     }
 
     .sticky {
       position: sticky;
-      top: 3.5rem;
-      max-height: calc(100dvh - 3.5rem);
+      top: var(--header-height);
+      max-height: calc(100dvh - var(--header-height));
       overflow-y: auto;
       scrollbar-width: thin;
       padding: .5rem 0 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    nav {
+      transition: none;
     }
   }
 

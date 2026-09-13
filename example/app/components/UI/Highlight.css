@@ -7,10 +7,9 @@
 .highlight {
   padding: 0;
   margin: 1em;
-  font-size: 0.9em;
   display: block;
   font-family: var(--font-mono), monospace;
-  font-size: 1.1em;
+  font-size: 1em;
   white-space: pre;
   font-weight: 400;
   color: rgb(var(--color));

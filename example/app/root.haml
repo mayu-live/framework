@@ -25,10 +25,12 @@
 
 :css
   body {
-    height: 100%;
+    /* No fixed height: the body must grow with its content, or sticky
+       children stop following once the viewport height is scrolled past. */
     min-height: 100svh;
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    /* The header row is fixed so the start page hero can span it. */
+    grid-template-rows: var(--header-height) 1fr auto;
     grid-template-columns: 1fr;
     z-index: 0;
   }

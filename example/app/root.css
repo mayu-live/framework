@@ -13,7 +13,10 @@
   --deep-purple: oklch(28% 0.08 var(--hue-navy));
   --blue-background: var(--navy);
   --pink: oklch(66% 0.16 var(--hue-pink));
-  --pink-soft: oklch(80% 0.08 var(--hue-pink));
+  --pink-soft: light-dark(
+    oklch(80% 0.08 var(--hue-pink)),
+    oklch(68% 0.08 var(--hue-pink))
+  );
   --lime: oklch(88% 0.17 125);
   --sun: oklch(84% 0.15 80);
   --sand: oklch(87% 0.09 95);
@@ -66,7 +69,7 @@
   );
   --accent: light-dark(
     oklch(56% 0.17 var(--hue-pink)),
-    oklch(72% 0.11 var(--hue-pink))
+    oklch(64% 0.1 var(--hue-pink))
   );
   --accent-soft: color-mix(in oklab, var(--accent) 12%, transparent);
   --accent-contrast: light-dark(#fff, oklch(16% 0.03 var(--hue-navy)));
@@ -137,6 +140,7 @@
   height: 100%;
   min-height: 100svh;
   --page-max-width: 60rem;
+  --header-height: 3.5rem;
 
   --font-heading: "Fredoka", "Fredoka Fallback", "Nunito Sans", sans-serif;
   --font-regular: "Nunito Sans", "Nunito Sans Fallback", system-ui, sans-serif;
