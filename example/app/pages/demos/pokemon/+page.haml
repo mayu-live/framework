@@ -57,7 +57,7 @@
 %article
   %Filter{results:}
 
-  %Pagination(on-change-per-page=handle_set_per_page){
+  %Pagination(on_change_per_page=handle_set_per_page){
     page:,
     per_page: @per_page,
     total_pages:,
@@ -73,7 +73,7 @@
         %Link(href="/demos/pokemon/#{id}")
           = result[:name].capitalize
 
-  %Pagination(on-change-per-page=handle_set_per_page){
+  %Pagination(on_change_per_page=handle_set_per_page){
     page:,
     per_page: @per_page,
     total_pages:,
