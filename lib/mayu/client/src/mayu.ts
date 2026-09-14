@@ -65,7 +65,9 @@ export default class Mayu {
   }
 
   callback(event: Event, id: string) {
-    event.preventDefault();
+    // The default action of a popover invoker button is to show or hide its
+    // popover. That is pure browser UI, so let it run alongside the callback.
+    if (!isPopoverInvokerClick(event)) event.preventDefault();
 
     const serializedEvent = serializeEvent(event);
 
@@ -96,4 +98,12 @@ export default class Mayu {
     if (this.#pingTimer !== null) clearTimeout(this.#pingTimer);
     this.#pingTimer = setTimeout(() => this.ping(), delay);
   }
+}
+
+function isPopoverInvokerClick(event: Event) {
+  return (
+    event.type === "click" &&
+    event.currentTarget instanceof HTMLButtonElement &&
+    event.currentTarget.hasAttribute("popovertarget")
+  );
 }

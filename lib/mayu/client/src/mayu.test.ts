@@ -27,6 +27,39 @@ describe("Mayu callbacks", () => {
     mayu.dispose();
   });
 
+  it("prevents the default action of handled events", () => {
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+    const button = document.createElement("button");
+    button.addEventListener("click", (event) =>
+      mayu.callback(event, "listener"),
+    );
+    document.body.append(button);
+
+    const event = new MouseEvent("click", { cancelable: true });
+    button.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+    mayu.dispose();
+  });
+
+  it("lets popover invoker buttons keep their default action", () => {
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+    const button = document.createElement("button");
+    button.setAttribute("popovertarget", "menu");
+    button.addEventListener("click", (event) =>
+      mayu.callback(event, "listener"),
+    );
+    document.body.append(button);
+
+    const event = new MouseEvent("click", { cancelable: true });
+    button.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    mayu.dispose();
+  });
+
   it("does not throttle discrete events", async () => {
     const mayu = new Mayu({ autoPing: false });
     const write = vi.fn(async (_message: ClientEvent) => undefined);
