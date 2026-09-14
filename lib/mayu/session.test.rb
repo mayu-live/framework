@@ -361,7 +361,7 @@ class Mayu::SessionTest < Minitest::Test
           .root
           .instance_variable_get(:@listeners)
           .values
-          .find { it.callback&.method_name == :handle_enable }
+          .find { it.callback&.method_name == :handle_load }
 
       refute_nil(listener)
       engine.callback(listener.id, {target: {value: "Elements"}})
@@ -389,8 +389,10 @@ class Mayu::SessionTest < Minitest::Test
     html =
       Mayu::Session.new(environment: env, request_info: request_info).render
 
-    assert_includes(html, "<klenod-")
-    assert_includes(html, "CustomElement_jsx")
+    assert_match(
+      %r{<klenod-pages-demos-custom-elements-customelement-tsx-[a-z0-9]+},
+      html
+    )
     assert_includes(html, "Custom elements")
   end
 

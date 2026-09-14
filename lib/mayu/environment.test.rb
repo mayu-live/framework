@@ -2,12 +2,26 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "minitest/mock"
 require "tmpdir"
 require "fileutils"
 
 require_relative "environment"
 
 class Mayu::EnvironmentTest < Minitest::Test
+  def test_missing_client_runtime_explains_how_to_build_it
+    missing_path = File.join(Dir.mktmpdir("mayu-runtime"), "entries.json")
+
+    error = assert_raises(RuntimeError) do
+      Mayu::Environment.stub(:client_runtime_entries_path, missing_path) do
+        Mayu::Environment.ensure_client_runtime!
+      end
+    end
+
+    assert_includes(error.message, missing_path)
+    assert_includes(error.message, "npm run build")
+  end
+
   def test_load_klenod_with_config_uses_runtime_provider_without_legacy_state
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))

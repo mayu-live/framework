@@ -20,6 +20,12 @@ unless ENV["BUNDLE_WITHOUT"].to_s.split(":").include?("test")
     t.test_globs = ["lib/**/*.test.rb"]
   end
 
+  task :client_build do
+    sh "npm", "run", "build"
+  end
+
+  task test: :client_build
+
   task default: :test
 end
 

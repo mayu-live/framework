@@ -234,7 +234,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
       RbConfig.ruby, "-W0", "-rbundler/setup", FIXTURE, @root,
       pgroup: true, out: File.join(@root, "server.log"), err: [:child, :out]
     )
-    wait_until { worker_pids.size == count } if ready
+    wait_until_server_ready(count) if ready
   end
 
   def worker_pids
@@ -285,6 +285,16 @@ class Mayu::Server::ControllerTest < Minitest::Test
     until yield
       flunk("Timed out waiting for subprocess:\n#{logs}") if monotonic >= deadline
       sleep 0.01
+    end
+  end
+
+  def wait_until_server_ready(count)
+    wait_until do
+      next true if worker_pids.size == count
+
+      status = Process.waitpid2(@pid, Process::WNOHANG)&.last
+      flunk("Server exited before workers became ready (#{status}):\n#{logs}") if status
+      false
     end
   end
 end

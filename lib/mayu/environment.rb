@@ -23,6 +23,16 @@ module Mayu
     attr_reader :marshaller
     attr_reader :metrics
 
+    def self.client_runtime_entries_path
+      File.join(__dir__, "client", "dist", "entries.json")
+    end
+
+    def self.ensure_client_runtime!
+      return if File.file?(client_runtime_entries_path)
+
+      raise "Mayu browser runtime is missing at #{client_runtime_entries_path}. Run `npm run build` before starting the server."
+    end
+
     def self.with(mayu_env)
       Configuration.with(mayu_env) do |config|
         with_config(config).use { |environment| yield environment }
@@ -165,8 +175,9 @@ module Mayu
     end
 
     def load_runtime_js_path
+      self.class.ensure_client_runtime!
       File
-        .read(File.join(@client_path, "entries.json"))
+        .read(self.class.client_runtime_entries_path)
         .then { JSON.parse(it) }
         .fetch("main")
         .then { File.join("/.mayu/runtime", it) }

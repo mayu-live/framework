@@ -41,6 +41,7 @@ module Mayu
 
       def start
         return if @container
+        Environment.ensure_client_runtime!
         @bound_endpoint = Sync { @endpoint.bound }
         # Publish the container before startup so a first interrupt can drain
         # children which have already started, even if others are not ready.
