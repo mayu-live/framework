@@ -42,7 +42,7 @@
 
 :css
   nav {
-    margin: 1em;
+    margin: 1rem .75rem;
   }
 
 %PageLayout
@@ -53,4 +53,4 @@
   %nav(slot="menu")
     %Menu
       = LINKS.map do |path, text|
-        %MenuItem[path](href=path)= text
+        %MenuItem[path]{href: path, active: path == $path}= text

@@ -1,0 +1,102 @@
+:ruby
+  # A button that toggles an anchored popover. Pure HTML popover API, no JS.
+  #
+  #   %PopoverButton(id="theme-menu" title="Choose theme")
+  #     %span(slot="button") Theme
+  #     %button Light
+  #     %button Dark
+
+:ruby
+  anchor_name = "--#{$anchor || $id}"
+
+.switcher(class=$class)
+  %button.button{
+    type: "button",
+    popovertarget: $id,
+    popovertargetaction: "toggle",
+    title: $title,
+    style: { anchor_name: },
+    class: $button_class
+  }
+    %slot(name="button")
+  .popover{
+    id: $id,
+    popover: "auto",
+    style: { position_anchor: anchor_name },
+    class: $popover_class
+  }
+    %slot
+
+:css
+  .switcher {
+    display: inline-flex;
+  }
+
+  .button {
+    display: inline-flex;
+    gap: 0.5em;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4em 0.65em;
+    color: var(--header-link-color, var(--text-muted));
+    background: transparent;
+    border: 1px solid var(--chrome-border);
+    border-radius: var(--radius);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: color 100ms, border-color 100ms;
+  }
+
+  .button:hover,
+  .button:focus-visible {
+    color: var(--header-link-hover-color, var(--text));
+    border-color: oklch(100% 0 0 / 35%);
+  }
+
+  .popover {
+    --popover-transition-duration: 180ms;
+
+    display: none;
+    gap: 0.125rem;
+    position: absolute;
+    top: anchor(bottom);
+    left: auto;
+    right: anchor(right);
+    min-width: 11rem;
+    margin: 0.5rem 0 0;
+    padding: 0.375rem;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: var(--thin-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(-0.25rem);
+    transition:
+      display var(--popover-transition-duration) ease allow-discrete,
+      overlay var(--popover-transition-duration) ease allow-discrete,
+      opacity var(--popover-transition-duration) ease,
+      transform var(--popover-transition-duration) ease;
+  }
+
+  .popover:popover-open {
+    display: grid;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @starting-style {
+    .popover:popover-open {
+      opacity: 0;
+      transform: translateY(-0.25rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popover {
+      transition: none;
+    }
+  }

@@ -1,19 +1,16 @@
 :ruby
   MaxWidth = import("/components/Layout/MaxWidth")
-  Text = import("./mayu.svg")
+  Logo = import("/components/Layout/logo.svg")
 
   WORDS = %w[Mayu is a live updating server-side rendering web framework written in Ruby]
 
   def initialize
-    @angle = rand
     @word = nil
   end
 
   def mount
     loop do
       sleep 3
-
-      @angle = (rand - 0.5) * 0.5
 
       WORDS.length.times do |i|
         @word = i
@@ -24,12 +21,18 @@
     end
   end
 
-%section{style: { __angle: "#{@angle}turn" }, data: { intro: true }}
+%section{data: { intro: true }}
   .background
   %MaxWidth
-    %img(src=Text)
-    %h1
-      Reactive web pages in Ruby
-    %h2
-      = WORDS.map.with_index do |word, i|
-        %span.word[i]{class: { active: i == @word }}= word
+    .hero
+      %img.mascot(src=Logo alt="The Mayu dolphin")
+      .text
+        .wordmark mayu
+        %h1
+          Reactive web pages in Ruby
+        %h2
+          = WORDS.map.with_index do |word, i|
+            %span.word[i]{class: { active: i == @word }}= word
+        .actions
+          %a.primary(href="/docs/getting-started") Get started
+          %a.secondary(href="/demos") See the demos

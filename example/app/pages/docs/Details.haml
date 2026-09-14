@@ -5,20 +5,25 @@
 
 :css
   details {
-    margin: 1em 2em;
+    margin: 1rem 1rem .5rem;
   }
 
   summary {
     user-select: none;
     cursor: pointer;
-    font-weight: bold;
     list-style: none;
-    font-size: 1em;
-    padding: .25em 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--text-muted);
+    padding: .25rem .75rem;
   }
 
   summary:hover {
-    text-decoration: underline;
+    color: var(--text);
   }
 
   summary::marker {
@@ -27,16 +32,19 @@
 
   details > summary::after {
     display: inline-block;
-    content: "▲";
-    transition: transform 250ms;
-    transform: translateX(.5em) rotateZ(.25turn);
-    scale: 1.0;
+    content: "";
+    width: .4em;
+    height: .4em;
+    border-right: 1.5px solid currentcolor;
+    border-bottom: 1.5px solid currentcolor;
+    transform: rotate(-45deg);
+    transition: transform 200ms;
   }
 
   details[open] > summary::after {
-    transform: translateX(.5em) rotateZ(.5turn);
+    transform: rotate(45deg);
   }
 
   .content {
-    margin: .5em 0;
+    margin: .25rem 0 0;
   }

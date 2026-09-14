@@ -1,13 +1,13 @@
 :ruby
   Icon = import("/components/UI/Icon/Icon")
   Logo = import("./logo.svg")
-  Title = import("./title.svg")
+  ThemeSwitcher = import("./ThemeSwitcher")
 
 %header
   %h1
     %a.title(href="/" title="Start page")
-      %img.logo(src=Logo)
-      %img.titleText(src=Title)
+      %img.logo(src=Logo alt="")
+      %span.wordmark mayu
   %nav
     %menu
       %li
@@ -20,51 +20,51 @@
         %a(href="https://github.com/mayu-live/framework" target="_blank")
           GitHub
           %Icon(name="up-right-from-square")
+      %li.switcher
+        %ThemeSwitcher
 
 :css
   header {
     grid-row: 1;
     grid-column: 1;
     align-self: start;
-    z-index: 1;
-
-    /*
+    z-index: 2;
     position: sticky;
     top: 0;
-    */
 
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 1rem;
-    padding: .5em 2em;
+    padding: .5rem 1.5rem;
     background: var(--header-background);
-    border-bottom: var(--thin-border);
-    backdrop-filter: brightness(50%) blur(.5rem);
-    box-shadow: 0 0 5em #1b2b5f;
+    border-bottom: 1px solid var(--chrome-border);
+    box-shadow: var(--shadow-bar);
+    backdrop-filter: blur(1rem) saturate(140%);
+    color: var(--chrome-color);
   }
 
   menu {
     font-family: var(--font-heading);
+    font-weight: 500;
     list-style-type: none;
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 1.5em;
+    gap: .25rem;
     margin: 0;
     padding: 0;
   }
 
+  .switcher {
+    margin-left: .75rem;
+  }
+
   h1 {
-    font-weight: bold;
     font-size: 1em;
     padding: 0;
     margin: 0;
-    color: #b8346c;
     display: flex;
-    filter:
-      drop-shadow(0 0 2px #fff)
-      drop-shadow(0 0 1px #fff);
   }
 
   menu a:any-link {
@@ -72,26 +72,42 @@
     align-items: center;
     white-space: nowrap;
     gap: 0.5em;
+    padding: .4em .8em;
+    border-radius: 999px;
     text-decoration: none;
     color: var(--header-link-color);
+    transition: color 120ms, background 120ms;
   }
 
-  menu a:is(:active, :hover) {
-    text-decoration: underline;
+  menu a:is(:active, :hover, :focus-visible) {
     color: var(--header-link-hover-color);
+    background: oklch(100% 0 0 / 8%);
   }
 
   .title {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: .75em;
-    align-items: end;
+    display: inline-flex;
+    gap: .5em;
+    align-items: center;
+    text-decoration: none;
+    border-radius: 999px;
   }
 
   .logo {
-    max-height: 2.5em;
+    height: 2.25rem;
+    width: auto;
+    filter: drop-shadow(0 1px 2px oklch(0% 0 0 / 40%));
   }
 
-  .titleText {
-    max-height: 2em;
+  .wordmark {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--pink-soft);
+    transition: color 120ms;
+  }
+
+  .title:hover .wordmark {
+    color: #fff;
   }

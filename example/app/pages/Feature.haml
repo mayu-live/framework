@@ -1,13 +1,16 @@
 :ruby
+  Icon = import("/components/UI/Icon/Icon")
+
   ITEMS = [
-    "100% Server Side",
-    "100% Async",
-    "Haml-based components",
-    "CSS-modules",
-    "Automatic asset handling",
-    "Hot-reloading in development",
-    "… and much more!",
-  ]
+    { icon: "server", title: "100% server side", text: "State, rendering and event handlers all live in Ruby." },
+    { icon: "arrows-rotate", title: "100% async", text: "Fibers instead of callbacks. Write straight-line code." },
+    { icon: "file-code", title: "Haml components", text: "Markup, Ruby and CSS together in one file." },
+    { icon: "code", title: "CSS modules", text: "Styles are scoped to the component that owns them." },
+    { icon: "file-image", title: "Assets handled", text: "Import images, fonts and SVGs. Hashing and resizing are automatic." },
+    { icon: "fire", title: "Hot reloading", text: "Save a file and the page updates, state included." },
+    { icon: "network-wired", title: "File based routing", text: "Pages, layouts and API routes follow the directory tree." },
+    { icon: "gauge-high", title: "Built for the edge", text: "HTTP/2 streams with compression and MessagePack." },
+  ].freeze
 
   def initialize
     @index = 0
@@ -22,13 +25,59 @@
 
 %ul
   = ITEMS.map.with_index do |item, index|
-    %li{class: { active: index == @index }}= item
+    %li[index]{class: { active: index == @index }}
+      %Icon.icon{ name: item[:icon] }
+      .text
+        %h3= item[:title]
+        %p= item[:text]
 
 :css
-  ul {}
-  li {}
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .9rem;
+    align-items: start;
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    transition: background 400ms, border-color 400ms;
+  }
+
   .active {
-    color: var(--red);
-    font-weight: bold;
-    font-style: italic;
+    background:
+      linear-gradient(var(--surface-raised), var(--surface-raised)) padding-box,
+      linear-gradient(135deg in oklch, oklch(70% 0.15 var(--hue-pink)), oklch(75% 0.12 60)) border-box;
+    border-color: transparent;
+    box-shadow: 0 12px 32px -12px oklch(66% 0.16 var(--hue-pink) / 45%);
+  }
+
+  .icon {
+    font-size: 1.4rem;
+    margin-top: .15rem;
+    color: var(--text-muted);
+    transition: color 400ms;
+  }
+
+  .active .icon {
+    color: var(--accent);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  p {
+    margin: .2rem 0 0;
+    font-size: .9rem;
+    color: var(--text-muted);
   }

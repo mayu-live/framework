@@ -1,0 +1,107 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Link = import("/components/UI/Link")
+  Details = import("/components/UI/Details")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+  Card = import("/components/UI/Card")
+  Clock = import("/components/Clock")
+  Counter = import("./Counter")
+  Section = import("./Section")
+
+%Section
+  %header
+    %Heading#live(level=2) Live from the server
+    %p.lead
+      = "Everything on this page was rendered on the server at #{Time.now.utc.strftime("%H:%M:%S UTC")}. The only JavaScript in the browser is a small runtime that patches the DOM whenever state changes on the server."
+
+  .grid
+    %Card.demo
+      %h3 A counter
+      %p
+        The buttons call Ruby methods. The new count is streamed back as a DOM patch.
+      %Counter(initial_count=7)
+      %Details(summary="Show source" lazy)
+        %HighlightedCodeBlock(language="haml")= File.read(File.join(__dir__, "Counter.haml"))
+
+    %Card.demo
+      %h3 A clock
+      %p
+        Ticks twice a second on the server, and only the hands are updated in the browser.
+      %Clock.clock(gradient)
+      %p.source
+        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml" target="_blank")
+          Show source
+
+:css
+  Section {
+    background: linear-gradient(
+      160deg in oklab,
+      light-dark(color-mix(in oklab, var(--lime) 18%, var(--surface)), color-mix(in oklab, var(--lime) 7%, var(--surface))),
+      light-dark(color-mix(in oklab, var(--sun) 14%, var(--surface)), color-mix(in oklab, var(--sun) 5%, var(--surface)))
+    );
+  }
+
+  header {
+    max-width: 44rem;
+    margin-bottom: 2.5rem;
+  }
+
+  Heading {
+    margin: 0 0 .5rem;
+  }
+
+  .lead {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+  }
+
+  .grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  @media (min-width: 48rem) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .demo {
+    padding: 1.5rem;
+    gap: .75rem;
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--surface-raised), var(--surface-raised)) padding-box,
+      linear-gradient(135deg in oklch, oklch(70% 0.15 var(--hue-pink) / 60%), oklch(75% 0.12 60 / 60%), var(--border)) border-box;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.35rem;
+  }
+
+  .demo > p {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  Counter {
+    margin: 1rem auto;
+  }
+
+  .clock {
+    font-size: 0;
+    --stroke: oklch(28% 0.08 var(--hue-navy));
+    --face-start: oklch(92% 0.08 85);
+    --face-end: oklch(72% 0.17 40);
+    width: min(100%, 18rem);
+    margin: 1.5rem auto;
+    filter: drop-shadow(0 16px 32px oklch(66% 0.16 40 / 35%));
+  }
+
+  .source {
+    text-align: center;
+  }

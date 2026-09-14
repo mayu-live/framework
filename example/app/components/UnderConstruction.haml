@@ -3,22 +3,22 @@
   Link = import("/components/UI/Link")
   Card = import("/components/UI/Card")
 
-%Card(border="var(--yellow)" background="var(--yellow-bright)")
+%Card
   .flex
     %p
-      %Icon(name="person-digging" color="var(--dark)")
+      %Icon(name="person-digging" color="#1f254c")
       %span This page is under construction!
     = if $path
       %p
-        %Icon(name="github" color="var(--dark)")
+        %Icon(name="github" color="#1f254c")
         %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/pages#{$path}/+page.haml" target="_blank")
           Edit on GitHub
 :css
   Card {
     margin: 1.5em 0;
-    color: var(--dark);
-    --card-background: #ffd562;
-    font-family: var(--font-mono);
+    color: #1f254c;
+    --card-background: var(--sun);
+    --card-border: transparent;
   }
 
   .flex {

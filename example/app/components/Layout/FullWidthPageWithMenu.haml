@@ -2,12 +2,14 @@
   MaxWidth = import("./MaxWidth")
 
 .layout
-  .breadcrumbs
-    %slot(name="breadcrumbs")
   %nav
-    %slot(name="menu")
-  %MaxWidth#page
-    %slot
+    .sticky
+      %slot(name="menu")
+  .main
+    .breadcrumbs
+      %slot(name="breadcrumbs")
+    %MaxWidth#page
+      %slot
 
 :css
   .layout {
@@ -15,7 +17,6 @@
     position: relative;
     display: grid;
     grid-template:
-      "breadcrumbs" auto
       "menu" auto
       "content" 1fr;
   }
@@ -23,25 +24,27 @@
   nav {
     font-family: var(--font-heading);
     grid-area: menu;
-    background: linear-gradient(var(--menu-background), var(--pink) 600%);
+    background: var(--menu-background);
     color: var(--menu-color);
     border-bottom: var(--thin-border);
   }
 
-  MaxWidth {
+  .main {
     grid-area: content;
-    display: grid;
-    padding: 1em 0;
+    min-width: 0;
   }
 
-  /* 60rem + 14rem + 4rem = 78rem */
-  @media (min-width: 78rem) {
+  MaxWidth {
+    display: grid;
+    padding: 1rem 0 4rem;
+  }
+
+  /* 60rem + 15rem + 4rem = 79rem */
+  @media (min-width: 79rem) {
     .layout {
-      display: grid;
       grid-template:
-        "breadcrumbs breadcrumbs" auto
         "menu content" 1fr
-        / 14em 1fr;
+        / 15rem 1fr;
     }
 
     nav {
@@ -49,10 +52,15 @@
       border-right: var(--thin-border);
       container-type: inline-size;
     }
-  }
 
-  .breadcrumbs {
-    grid-area: breadcrumbs;
+    .sticky {
+      position: sticky;
+      top: 3.5rem;
+      max-height: calc(100dvh - 3.5rem);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      padding: .5rem 0 1rem;
+    }
   }
 
   .breadcrumbs:empty {

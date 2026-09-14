@@ -1,11 +1,27 @@
+:ruby
+  # The theme is chosen with the ThemeSwitcher in the header. It lives here so
+  # it can set color-scheme on <body>, and reaches the switcher through context
+  # as @@theme and @@set_theme.
+  THEMES = %w[system light dark].freeze
+
+  def initialize
+    @theme = THEMES.first
+  end
+
+  def handle_set_theme(e)
+    value = e.dig(:currentTarget, :value)
+    @theme = value if THEMES.include?(value)
+  end
+
 %head
   %meta(name="charset" value="utf-8")
   %meta(name="generator" value="https://github.com/mayu-live/framework/releases/tag/v#{Mayu::VERSION}")
   %meta(name="viewport" content="width=device-width, initial-scale=1")
   %title
     Mayu Live
-%body
-  %slot
+%body{style: { color_scheme: @theme == "system" ? nil : @theme }}
+  = H.context(theme: @theme, set_theme: H.callback(self, :handle_set_theme)) do
+    %slot
 
 :css
   body {

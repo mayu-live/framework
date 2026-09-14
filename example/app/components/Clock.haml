@@ -1,6 +1,7 @@
 :ruby
   def initialize
     @time = Time.now.utc.round + 0.5
+    @face_id = "clock-face-#{SecureRandom.alphanumeric(8)}"
   end
 
   def mount
@@ -19,9 +20,14 @@
   end
 
 - stroke = $stroke || "var(--stroke, #000)"
-- fill = $fill || "var(--fill, transparent)"
+- fill = $gradient ? "url(##{@face_id})" : ($fill || "var(--fill, transparent)")
 %div(class=$class)
   %svg.svg(width="100" height="100" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg")
+    = if $gradient
+      %defs
+        %radialGradient(id=@face_id cx="35%" cy="30%" r="85%")
+          %stop(offset="0%"){style: { stop_color: "var(--face-start, #fff)" }}
+          %stop(offset="100%"){style: { stop_color: "var(--face-end, #ccc)" }}
     %circle(cx=0 cy=0 r=99 fill=fill stroke=stroke stroke-width="2")
     %g
       - x1, y1, x2 = [0, 0, 0]

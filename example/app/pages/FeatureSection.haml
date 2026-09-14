@@ -4,30 +4,50 @@
   Heading = import("/components/Layout/Heading")
   Section = import("./Section")
   Feature = import("./Feature")
+
 %Section
-  %article
-    %Heading#features(level=2)
-      Features
-    %p Here's a list of core features:
+  %header
+    %Heading#features(level=2) What you get
+    %p.lead
+      A full stack in one place: components, styling, assets, routing and a
+      live connection to the browser.
 
-    %Feature
+  %Feature
 
-    %p
-      Read more on
-      %Link(target="_blank" href="https://github.com/mayu-live/framework#readme")<
-        GitHub
-        %Icon(name="github" color="var(--dark)")<
+  %p.more
+    Read more on
+    %Link(target="_blank" href="https://github.com/mayu-live/framework#readme")<
+      GitHub
+      %Icon(name="github")<
+
 :css
   Section {
-    background: #E2D58B;
-    min-height: 50vh;
-    display: flex;
-    align-items: center;
+    background: light-dark(
+      color-mix(in oklab, var(--sand) 22%, var(--surface)),
+      color-mix(in oklab, var(--sand) 5%, var(--surface))
+    );
+  }
+
+  header {
+    max-width: 44rem;
+    margin-bottom: 2rem;
   }
 
   Heading {
-    margin-top: 0;
+    margin: 0 0 .5rem;
   }
 
-  article {
+  .lead {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+  }
+
+  .more {
+    margin: 2rem 0 0;
+    color: var(--text-muted);
+  }
+
+  .more Icon {
+    margin-left: .4em;
   }

@@ -56,26 +56,26 @@
   %div(slot="menu")
     %Details(open summary="Intro")
       %Menu
-        %MenuItem(href="/docs") Introduction
-        %MenuItem(href="/docs/getting-started") Getting started
-        %MenuItem(href="/docs/why-mayu") Why Mayu?
-        %MenuItem(href="/docs/concepts") Concepts
+        %MenuItem{href: "/docs", active: $path == "/docs"} Introduction
+        %MenuItem{href: "/docs/getting-started", active: $path == "/docs/getting-started"} Getting started
+        %MenuItem{href: "/docs/why-mayu", active: $path == "/docs/why-mayu"} Why Mayu?
+        %MenuItem{href: "/docs/concepts", active: $path == "/docs/concepts"} Concepts
     %Details(open summary="Components")
       %Menu
-        %MenuItem(href="/docs/components") Components
-        %MenuItem(href="/docs/reusing-components") Reusing components
-        %MenuItem(href="/docs/stylesheets") Stylesheets
-        %MenuItem(href="/docs/callbacks") Callbacks
-        %MenuItem(href="/docs/lifecycle-methods") Lifecycle methods
-        %MenuItem(href="/docs/state") State
-        %MenuItem(href="/docs/routing") Routing
-        %MenuItem(href="/docs/data-fetching") Data fetching
-        %MenuItem(href="/docs/images") Images
-        %MenuItem(href="/docs/syntax") Syntax guide
+        %MenuItem{href: "/docs/components", active: $path == "/docs/components"} Components
+        %MenuItem{href: "/docs/reusing-components", active: $path == "/docs/reusing-components"} Reusing components
+        %MenuItem{href: "/docs/stylesheets", active: $path == "/docs/stylesheets"} Stylesheets
+        %MenuItem{href: "/docs/callbacks", active: $path == "/docs/callbacks"} Callbacks
+        %MenuItem{href: "/docs/lifecycle-methods", active: $path == "/docs/lifecycle-methods"} Lifecycle methods
+        %MenuItem{href: "/docs/state", active: $path == "/docs/state"} State
+        %MenuItem{href: "/docs/routing", active: $path == "/docs/routing"} Routing
+        %MenuItem{href: "/docs/data-fetching", active: $path == "/docs/data-fetching"} Data fetching
+        %MenuItem{href: "/docs/images", active: $path == "/docs/images"} Images
+        %MenuItem{href: "/docs/syntax", active: $path == "/docs/syntax"} Syntax guide
     %Details(open summary="Other")
       %Menu
-        %MenuItem(href="/docs/deployment") Deployment
-        %MenuItem(href="/docs/faq") Frequently asked questions
+        %MenuItem{href: "/docs/deployment", active: $path == "/docs/deployment"} Deployment
+        %MenuItem{href: "/docs/faq", active: $path == "/docs/faq"} Frequently asked questions
 :css
   .layout {
     display: grid;

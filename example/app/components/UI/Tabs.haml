@@ -54,7 +54,8 @@
         %slot(name=name)
 :css
   .tabs {
-    border-radius: 2px;
+    border-radius: var(--radius);
+    overflow: hidden;
     border: var(--thin-border);
     background: var(--bright);
   }
@@ -62,7 +63,7 @@
   .tablist {
     display: flex;
     border-bottom: var(--thin-border);
-    background: #0001;
+    background: var(--surface-sunken);
     user-select: none;
   }
 
@@ -94,7 +95,7 @@
   button[aria-selected="true"] {
     background: var(--accent-color);
     font-weight: bold;
-    color: #fff;
+    color: var(--accent-contrast);
   }
 
   .panel {

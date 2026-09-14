@@ -1,35 +1,20 @@
-@property --angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 10deg;
-}
-
 section {
-  min-height: 100dvh;
-  --angle: 328deg;
-  transition: --angle 3s ease-in-out;
-  background-size: contain;
+  min-height: min(44rem, 88dvh);
   display: flex;
   position: relative;
   contain: content;
+  color: #fff;
 
-  background: radial-gradient(
-      ellipse at bottom,
-      color-mix(in srgb, var(--pink) 50%, var(--blue-background)),
-      transparent
-    ),
-    var(--blue-background);
-
-  background: radial-gradient(
+  background:
+    radial-gradient(
       ellipse at bottom in oklch,
-      color-mix(in oklab, var(--pink) 60%, var(--blue-background)),
+      color-mix(in oklab, var(--pink) 60%, var(--navy)),
       transparent
     ),
-    var(--blue-background);
+    var(--navy);
 }
 
 .background {
-  content: "";
   display: block;
   position: absolute;
   inset: 0;
@@ -37,64 +22,198 @@ section {
   mask-image: url(./hexagons.svg);
   mask-position: 50% 50%;
   mask-size: 2rem auto;
+  z-index: 0;
 }
 
 MaxWidth {
   container-type: inline-size;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8cqw;
-  padding: 10cqw 0;
+  align-items: center;
+  padding: 6rem 0 4rem;
+  z-index: 1;
+}
+
+.hero {
+  display: grid;
+  gap: 2rem;
+  justify-items: center;
+  text-align: center;
+  width: 100%;
+  position: relative;
+}
+
+.mascot {
+  width: min(16rem, 50cqw);
+  height: auto;
+  position: relative;
+  filter: drop-shadow(0 1rem 2rem oklch(0% 0 0 / 40%));
+}
+
+/* Soft glow behind the mascot. */
+.hero::before {
+  content: "";
+  position: absolute;
+  width: min(24rem, 70cqw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle in oklch,
+    oklch(70% 0.16 var(--hue-pink) / 55%),
+    oklch(60% 0.14 300 / 25%) 45%,
+    transparent 70%
+  );
+  filter: blur(1.5rem);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.text {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.actions a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.7em 1.4em;
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition:
+    transform 120ms,
+    box-shadow 120ms,
+    background 120ms;
+}
+
+.actions a:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  color: oklch(16% 0.03 var(--hue-navy));
+  /* Slightly translucent so the hero shows through the blur. */
+  background: linear-gradient(
+    135deg in oklch,
+    alpha(from oklch(80% 0.08 var(--hue-pink)) / 85%),
+    alpha(from var(--pink) / 85%)
+  );
+  backdrop-filter: blur(3px);
+  box-shadow:
+    0 8px 24px -10px oklch(0% 0 0 / 60%),
+    0 8px 24px -8px oklch(66% 0.16 var(--hue-pink) / 50%);
+}
+
+.primary:hover {
+  box-shadow:
+    0 12px 28px -10px oklch(0% 0 0 / 60%),
+    0 12px 28px -8px oklch(66% 0.16 var(--hue-pink) / 65%);
+}
+
+.secondary {
   color: #fff;
-  font-family: "Roboto Condensed", sans-serif;
+  border: 1px solid oklch(100% 0 0 / 25%);
+  background: oklch(100% 0 0 / 8%);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 8px 24px -10px oklch(0% 0 0 / 60%);
+}
 
-  filter: drop-shadow(0 0 0.5rem #fff9) drop-shadow(0 0 3rem var(--pink));
+.secondary:hover {
+  background: oklch(100% 0 0 / 12%);
+}
 
-  /*
-  background: #fff;
+.wordmark {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: clamp(4rem, 14cqw, 7rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  /* background-clip: text paints only inside the box, and the tight line-height
+     makes the box shorter than the glyphs. Pad the box and cancel the padding
+     with negative margins so layout is unchanged. */
+  padding: 0.15em 0.08em;
+  margin: -0.15em -0.08em;
+  background: linear-gradient(
+    100deg in oklch,
+    oklch(88% 0.06 var(--hue-pink)),
+    oklch(78% 0.12 var(--hue-pink)) 60%,
+    oklch(82% 0.12 60)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  mix-blend-mode: exclusion;
-  */
-}
-
-img {
-  max-width: 20rem;
-  display: block;
-  margin: 0 auto;
+  filter: drop-shadow(0 0 1.5rem oklch(66% 0.16 var(--hue-pink) / 50%));
 }
 
 h1 {
-  font-size: 7cqw;
-  line-height: 1em;
+  font-size: clamp(1.5rem, 4.5cqw, 2.5rem);
+  line-height: 1.1;
   margin: 0;
-  font-weight: 800;
-  text-align: center;
+  font-weight: 500;
 }
 
 h2 {
   margin: 0;
+  font-family: var(--font-regular);
   font-weight: 400;
-  font-size: 3.5cqw;
-  line-height: 1em;
+  font-size: clamp(1rem, 2.2cqw, 1.25rem);
+  line-height: 1.4;
   display: flex;
   flex-wrap: wrap;
-  gap: 1ch;
-  justify-content: center;
+  gap: 0 0.5ch;
+  color: #e9e6f3;
+}
+
+@container (min-width: 44rem) {
+  .hero {
+    grid-template-columns: auto 1fr;
+    gap: 4rem;
+    justify-items: start;
+    text-align: left;
+    align-items: center;
+  }
+
+  .text {
+    justify-items: start;
+  }
+
+  h2 {
+    justify-content: flex-start;
+  }
+}
+
+@container (max-width: 44rem) {
+  h2 {
+    justify-content: center;
+  }
 }
 
 .word {
   display: inline-block;
   --transition-length: 1000ms;
-  transition: text-shadow var(--transition-length),
+  transition:
+    color var(--transition-length),
     transform var(--transition-length);
-  text-shadow: 0 0 0 #fff0;
 }
 
 .active {
   --transition-length: 100ms;
-  text-shadow: 0 0 10px #ffff;
-  transform: translateY(-0.2em) scale(110%);
+  color: var(--pink-soft);
+  transform: translateY(-0.15em);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word {
+    transition: none;
+    transform: none;
+  }
 }
