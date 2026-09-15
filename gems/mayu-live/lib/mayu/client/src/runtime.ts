@@ -3,7 +3,6 @@
 
 import { updatePing } from "./ping";
 import { setTransferState } from "./transfer";
-import renderError, { clearRenderError } from "./renderError";
 import withViewTransition from "./view-transition";
 import type { Batch, CommandErrorPolicy } from "./protocol";
 
@@ -577,7 +576,10 @@ const CommandHandlers = {
   Pong(this: NodeSet, timestamp: number) {
     updatePing(performance.now() - timestamp);
   },
-  RenderError(
+  // The overlay and its custom element are only fetched when an error
+  // actually arrives. A production server never sends one, so a production
+  // page never loads them.
+  async RenderError(
     this: NodeSet,
     file: string,
     type: string,
@@ -589,7 +591,8 @@ const CommandHandlers = {
     column: number | null,
     hints: string[],
   ) {
-    renderError(
+    const { default: renderError } = await import("./renderError");
+    await renderError(
       file,
       type,
       message,
@@ -602,7 +605,7 @@ const CommandHandlers = {
     );
   },
   ReloadSucceeded(this: NodeSet) {
-    clearRenderError();
+    document.querySelectorAll("mayu-exception").forEach((e) => e.remove());
   },
   RegisterCustomElement(name: string, path: string) {
     if (customElements.get(name)) return;

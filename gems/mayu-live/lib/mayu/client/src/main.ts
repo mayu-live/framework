@@ -3,8 +3,6 @@ import { SESSION_PATH } from "./constants";
 import Mayu from "./mayu.js";
 import SessionConnection from "./session-connection.js";
 
-import "./custom-elements/mayu-exception";
-
 declare global {
   interface Window {
     Mayu: Mayu;

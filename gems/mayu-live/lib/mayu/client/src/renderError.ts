@@ -4,7 +4,7 @@ export function clearRenderError() {
   document.querySelectorAll("mayu-exception").forEach((e) => e.remove());
 }
 
-export default function renderError(
+export default async function renderError(
   file: string,
   type: string,
   message: string,
@@ -15,6 +15,10 @@ export default function renderError(
   column: number | null = null,
   hints: string[] = [],
 ) {
+  // Registers <mayu-exception>; loaded here so a page without errors never
+  // downloads the overlay.
+  await import("./custom-elements/mayu-exception");
+
   const location =
     line === null
       ? file

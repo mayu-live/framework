@@ -22,10 +22,10 @@ describe("renderError", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders listener errors without source code", () => {
+  it("renders listener errors without source code", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    renderError(
+    await renderError(
       "/app/pages/demos/exceptions/+page.haml",
       "NoMatchingPatternError",
       "The callback failed",
@@ -41,10 +41,10 @@ describe("renderError", () => {
     expect(exception?.textContent).toContain("%Page");
   });
 
-  it("highlights the source line named by a module id backtrace frame", () => {
+  it("highlights the source line named by a module id backtrace frame", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    renderError(
+    await renderError(
       "app:/CustomElement.tsx",
       "SyntaxError",
       "Expected an element",
@@ -63,10 +63,10 @@ describe("renderError", () => {
     expect(highlighted[0]?.textContent).toContain("const b = 2;");
   });
 
-  it("highlights the line a build error reports without a backtrace", () => {
+  it("highlights the line a build error reports without a backtrace", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    renderError(
+    await renderError(
       "app:/CustomElement.tsx",
       "Module not found",
       'Could not resolve "./colors.toml"',
@@ -99,7 +99,7 @@ describe("renderError", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     await import("./custom-elements/mayu-exception");
 
-    renderError(
+    await renderError(
       "app:/broken.haml",
       "Haml parse error",
       'Invalid tag: "%@$O".',
