@@ -5,7 +5,7 @@ require "minitest/autorun"
 require "minitest/focus"
 require "stringio"
 
-require_relative "../../../test"
+require "mayu/test"
 
 require_relative "../../engine"
 require_relative "../command_collector"

@@ -7,7 +7,7 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "environment"
-require_relative "build"
+require "mayu/build"
 
 class Mayu::EnvironmentTest < Minitest::Test
   def test_missing_client_runtime_explains_how_to_build_it

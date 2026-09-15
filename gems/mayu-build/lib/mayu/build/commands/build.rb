@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "../../klenod"
+require "mayu/klenod"
 
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
@@ -31,7 +31,7 @@ module Mayu
 
         def call
           require "terminal-table"
-          require_relative "../../configuration"
+          require "mayu/configuration"
           require_relative "../../build"
 
           Sync do

@@ -8,7 +8,7 @@ require "async"
 require "async/queue"
 require "klenod/build/watcher"
 
-require_relative "../hot_reload"
+require "mayu/hot_reload"
 require_relative "error_report"
 require_relative "update_logger"
 

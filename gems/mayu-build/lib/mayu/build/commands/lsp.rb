@@ -25,7 +25,7 @@ module Mayu
         end
 
         def call
-          require_relative "../../configuration"
+          require "mayu/configuration"
           require_relative "../../build"
           require "klenod/lsp"
 

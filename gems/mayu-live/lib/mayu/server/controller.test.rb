@@ -7,7 +7,7 @@ require "fileutils"
 require "rbconfig"
 require "async/http/client"
 require_relative "../server"
-require_relative "../build"
+require "mayu/build"
 
 class Mayu::Server::ControllerTest < Minitest::Test
   FIXTURE = File.expand_path("__test__/shutdown_server.rb", __dir__)

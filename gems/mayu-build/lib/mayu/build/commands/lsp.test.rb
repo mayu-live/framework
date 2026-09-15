@@ -8,7 +8,7 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "../../build"
-require_relative "../../commands"
+require "mayu/commands"
 
 class Mayu::Build::Commands::LspTest < Minitest::Test
   # Drives the command over pipes the way an editor would.

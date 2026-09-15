@@ -4,7 +4,7 @@
 require "async"
 require "vernier"
 
-require_relative "../../../test"
+require "mayu/test"
 require_relative "../../engine"
 require_relative "../collector"
 require_relative "../vdocument"

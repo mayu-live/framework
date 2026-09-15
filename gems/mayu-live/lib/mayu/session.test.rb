@@ -9,10 +9,10 @@ require "fileutils"
 require "tmpdir"
 
 require_relative "session"
-require_relative "build"
+require "mayu/build"
 require_relative "encrypted_marshal"
 require_relative "session/transfer_state"
-require_relative "test"
+require "mayu/test"
 
 class Mayu::SessionTest < Minitest::Test
   class FakeServerConfig

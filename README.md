@@ -84,7 +84,20 @@ in the project root.
 [libwebp](https://chromium.googlesource.com/webm/libwebp) are
 also required for resizing images.
 
-Install Ruby dependencies:
+Mayu ships as two gems. `mayu-live` runs a built app and is all production
+needs. `mayu-build` adds the development server, hot reloading, `mayu build`,
+`mayu test`, and the language server, so it goes in your Gemfile's development
+group:
+
+```ruby
+gem "mayu-live"
+
+group :development, :test do
+  gem "mayu-build"
+end
+```
+
+Both gems live in this repository under `gems/`. Install Ruby dependencies:
 
     bundle install
 
@@ -144,6 +157,10 @@ Depending on your system/browser you might need to do one of the following:
 Run the framework test suite from the repository root:
 
     rake test
+
+`rake test:live` and `rake test:build` run one gem's suite. Both run with both
+gems on the load path; the runtime boundary test in `mayu-live` proves that
+rendering a built app never loads `mayu-build` or klenod-build.
 
 Run application tests from the application directory:
 
@@ -538,7 +555,7 @@ implementation detail. To inspect it for an application, run:
 bin/mayu transform app/pages/Counter.haml
 ```
 
-[The Klenod-backed Haml integration tests](https://github.com/mayu-live/framework/blob/main/gems/mayu-live/lib/mayu/build/configuration.test.rb)
+[The Klenod-backed Haml integration tests](https://github.com/mayu-live/framework/blob/main/gems/mayu-build/lib/mayu/build/configuration.test.rb)
 cover the Mayu-specific component behavior.
 
 # Implementation notes
@@ -620,7 +637,10 @@ generate_assets = true
 
 The production server loads the Klenod bundle and assets produced by
 `bin/mayu build`. Start it with `bin/mayu start` after setting
-`MAYU_SECRET_KEY`.
+`MAYU_SECRET_KEY`. Only `mayu-live` is needed for this: install with
+`BUNDLE_WITHOUT=development:test` and `mayu-build` and klenod-build stay out
+of the image. `mayu start --assets-dir` and `--source-root` point it at the
+assets and sources when they are not in their default places.
 
 ```toml
 [production.server]

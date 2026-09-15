@@ -4,7 +4,7 @@
 require "minitest/autorun"
 require "stringio"
 
-require_relative "../../commands"
+require "mayu/commands"
 
 class Mayu::Build::Commands::TestTest < Minitest::Test
   def test_is_listed_after_dev

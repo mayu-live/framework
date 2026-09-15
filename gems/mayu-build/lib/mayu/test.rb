@@ -8,10 +8,10 @@ require "async"
 require "oga"
 require "rouge"
 
-require_relative "runtime"
-require_relative "runtime/h"
-require_relative "runtime/dom"
-require_relative "component"
+require "mayu/runtime"
+require "mayu/runtime/h"
+require "mayu/runtime/dom"
+require "mayu/component"
 require_relative "test/query"
 
 module Mayu

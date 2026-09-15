@@ -10,7 +10,7 @@ module Mayu
         self.description = "Run and watch Mayu application tests."
 
         def call
-          require_relative "../../configuration"
+          require "mayu/configuration"
           require_relative "../../build"
           require_relative "../test_runner"
 

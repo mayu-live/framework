@@ -7,7 +7,7 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "../../build"
-require_relative "../../commands"
+require "mayu/commands"
 
 class Mayu::Build::Commands::GraphTest < Minitest::Test
   def test_exports_a_mayu_bundle_as_graphviz_dot

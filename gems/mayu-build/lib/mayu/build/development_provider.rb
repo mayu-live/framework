@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "../klenod/provider"
+require "mayu/klenod/provider"
 
 module Mayu
   module Build

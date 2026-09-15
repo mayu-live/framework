@@ -3,7 +3,7 @@
 
 require "klenod/build/cli"
 require "open3"
-require_relative "../../klenod"
+require "mayu/klenod"
 
 module Mayu
   module Build

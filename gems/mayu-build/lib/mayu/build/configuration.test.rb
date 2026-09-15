@@ -5,8 +5,8 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "../build"
-require_relative "../component"
-require_relative "../runtime/vnodes/vcomponent"
+require "mayu/component"
+require "mayu/runtime/vnodes/vcomponent"
 
 class Mayu::Build::ConfigurationTest < Minitest::Test
   def test_development_and_runtime_providers_share_the_same_entry_exports

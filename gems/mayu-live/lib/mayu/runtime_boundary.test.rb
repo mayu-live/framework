@@ -7,7 +7,7 @@ require "fileutils"
 require "json"
 require "rbconfig"
 
-require_relative "build"
+require "mayu/build"
 
 # The production server must run on klenod-runtime and klenod-rack alone.
 # This builds a bundle here, then renders it in a fresh process and checks

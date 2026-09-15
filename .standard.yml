@@ -9,5 +9,5 @@ ignore:
   # Klenod requires a `Default` export from Markdown component maps.
   - "example/app/markdown-components.rb":
       - Naming/ConstantName
-  - "gems/mayu-live/lib/mayu/build/commands/init/template/app/markdown-components.rb":
+  - "gems/mayu-build/lib/mayu/build/commands/init/template/app/markdown-components.rb":
       - Naming/ConstantName

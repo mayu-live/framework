@@ -5,7 +5,7 @@
 # License: AGPL-3.0
 
 require "minitest/autorun"
-require_relative "test"
+require "mayu/test"
 
 class Mayu::Runtime::Test < Minitest::Test
   H = Mayu::Runtime::H

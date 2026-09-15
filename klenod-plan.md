@@ -32,9 +32,9 @@ green; the example must be restored by milestone 7.
   directory. The directory remains configurable through `RouterPlugin`.
 - Adopt Klenod route filenames and bracketed route segments.
 - Use Mayu defaults plus an optional application `klenod.config.rb` hook.
-- Keep a single Mayu dependency set for now. `mayu-live` installs Klenod build,
-  runtime, Rack, CSS, and JavaScript packages. A future `mayu-runtime` gem can
-  create the runtime-only production split.
+- Split Mayu into `mayu-live` (runtime: klenod-runtime and klenod-rack) and
+  `mayu-build` (klenod-build, tests, LSP, plugins). Production installs only
+  `mayu-live`. Superseded the earlier plan of a `mayu-runtime` gem.
 - Preserve Mayu's blurred image placeholder by adding an opt-in inline data URI
   placeholder to Klenod's generic image plugin.
 - Expose Klenod `+route.rb` handlers using hybrid page/handler dispatch.

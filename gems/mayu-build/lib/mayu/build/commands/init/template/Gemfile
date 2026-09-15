@@ -1,0 +1,10 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+gem "mayu-live"
+
+# Only needed to develop and build the app, never in production.
+group :development, :test do
+  gem "mayu-build"
+end

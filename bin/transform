@@ -2,6 +2,6 @@
 # frozen_string_literal: true
 
 require "bundler/setup"
-require_relative "../gems/mayu-live/lib/mayu/build/commands/transform"
+require_relative "../gems/mayu-build/lib/mayu/build/commands/transform"
 
 Mayu::Build::Commands::Transform.call

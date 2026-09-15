@@ -3,11 +3,13 @@
 source "https://rubygems.org"
 
 gemspec path: "gems/mayu-live"
+gemspec path: "gems/mayu-build"
 
 group :development do
   gem "guard", require: false
   gem "localhost", require: false
   gem "minitest", require: false
+  gem "rake", require: false
   gem "minitest-mock", require: false
   gem "minitest-reporters", require: false
   gem "minitest-focus", require: false

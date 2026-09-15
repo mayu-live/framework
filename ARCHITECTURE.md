@@ -22,7 +22,7 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 - `runtime.rb` + `runtime/*`: Server-side rendering/diff engine, vnode tree, command generation, serialization.
 - `component.rb` + `component/*`: Base component API, fetch helper, and CSS unit refinements. Klenod supplies generated component class names.
 - `klenod.rb` + `klenod/*`: the runtime half of Mayu's Klenod boundary: module provider, router, and asset adapter. Needs only klenod-runtime and klenod-rack.
-- `build.rb` + `build/*`: the build half: Klenod configuration and plugins, the development provider, hot reloading, and every CLI command except `start`. This is what the `mayu-build` gem ships.
+- `build.rb` + `build/*` (in `gems/mayu-build`): the build half: Klenod configuration and plugins, the development provider, hot reloading, and every CLI command except `start`. This is what the `mayu-build` gem ships.
 - `configuration.rb`: `mayu.toml` loading and environment config resolution.
 - `commands.rb` + `commands/start.rb`: the `mayu` CLI. Build commands are loaded from `Mayu::Build::Commands` when available and shown as placeholders otherwise.
 - `metrics.rb` + `metrics/*`: Prometheus metrics, multi-process collection/export.
@@ -283,14 +283,14 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
   - `gems/mayu-live/lib/mayu/runtime/vnodes/vattributes.rb`
   - `gems/mayu-live/lib/mayu/session.rb` (`Events.parse`)
 - Change route/file conventions:
-  - `gems/mayu-live/lib/mayu/build/configuration.rb`
+  - `gems/mayu-build/lib/mayu/build/configuration.rb`
   - `gems/mayu-live/lib/mayu/klenod/router.rb`
   - `gems/mayu-live/lib/mayu/session.rb` (`resolve_route`)
 - Change app import/compile behavior:
-  - `gems/mayu-live/lib/mayu/build/configuration.rb`
+  - `gems/mayu-build/lib/mayu/build/configuration.rb`
   - the corresponding Klenod plugin
 - Change HMR reload behavior:
-  - `gems/mayu-live/lib/mayu/build/hot_reloader.rb`
+  - `gems/mayu-build/lib/mayu/build/hot_reloader.rb`
   - `gems/mayu-live/lib/mayu/hot_reload.rb` (the update handed to sessions)
   - `gems/mayu-live/lib/mayu/session.rb` (`notify_hmr_update`)
 - Change asset generation/serving:

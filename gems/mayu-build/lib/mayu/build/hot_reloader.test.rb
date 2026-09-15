@@ -6,8 +6,8 @@ require "fileutils"
 require "stringio"
 
 require_relative "../build"
-require_relative "../component"
-require_relative "../runtime/vnodes/vcomponent"
+require "mayu/component"
+require "mayu/runtime/vnodes/vcomponent"
 
 class Mayu::Build::HotReloaderTest < Minitest::Test
   # Collects the updates the reloader would hand to the server's App.

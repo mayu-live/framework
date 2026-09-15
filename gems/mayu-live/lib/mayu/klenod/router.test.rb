@@ -5,7 +5,7 @@ require "minitest/autorun"
 require "tmpdir"
 require "fileutils"
 
-require_relative "../build"
+require "mayu/build"
 require_relative "../component/base"
 require_relative "../runtime/descriptors"
 require_relative "router"

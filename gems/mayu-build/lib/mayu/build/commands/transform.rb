@@ -21,7 +21,7 @@ module Mayu
 
         def call
           require "rouge"
-          require_relative "../../configuration"
+          require "mayu/configuration"
           require_relative "../../build"
 
           Mayu::Configuration.with(:development) do |config|

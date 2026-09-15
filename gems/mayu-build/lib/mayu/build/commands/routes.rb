@@ -21,7 +21,7 @@ module Mayu
         options { option "--regexp", "Include regexp patterns", default: false }
 
         def call
-          require_relative "../../configuration"
+          require "mayu/configuration"
           require_relative "../../build"
 
           Mayu::Configuration.with(:development) do |config|

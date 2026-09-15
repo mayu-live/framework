@@ -5,6 +5,10 @@ source "https://rubygems.org"
 # gem "mayu-live"
 gem "mayu-live", path: "../gems/mayu-live"
 
+group :development, :test do
+  gem "mayu-build", path: "../gems/mayu-build"
+end
+
 gem "fuzzy_match"
 
 gem "kramdown", "~> 2.4"

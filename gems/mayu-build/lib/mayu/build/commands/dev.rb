@@ -11,8 +11,8 @@ module Mayu
         self.description = "Start the development server"
 
         def call
-          require_relative "../../configuration"
-          require_relative "../../server"
+          require "mayu/configuration"
+          require "mayu/server"
           require_relative "../../build"
 
           Mayu::Configuration.with(:development) do |config|

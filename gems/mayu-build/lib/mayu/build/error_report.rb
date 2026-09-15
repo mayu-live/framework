@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "klenod/build/resolution_error_formatter"
-require_relative "../hot_reload"
+require "mayu/hot_reload"
 
 module Mayu
   module Build
