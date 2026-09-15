@@ -13,6 +13,7 @@ PATH
       oga (~> 3.4)
       reline (~> 0.6)
       rouge (~> 4.7)
+      samovar (~> 2.5)
       terminal-table (~> 4.0)
 
 PATH
@@ -33,7 +34,6 @@ PATH
       prometheus-client (~> 4.2.4)
       rack (>= 3.2.4)
       rbnacl (~> 7.1)
-      samovar (~> 2.5)
       toml (~> 0.3)
 
 GEM

@@ -8,7 +8,7 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "../../build"
-require "mayu/commands"
+require_relative "../cli"
 
 class Mayu::Build::Commands::LspTest < Minitest::Test
   # Drives the command over pipes the way an editor would.
@@ -103,7 +103,7 @@ class Mayu::Build::Commands::LspTest < Minitest::Test
 
   def test_application_does_not_print_the_banner
     build = lambda do |input, output, _root|
-      with_stdin(input) { Mayu::Commands::Application.new(["lsp"], output:) }
+      with_stdin(input) { Mayu::Build::CLI::Application.new(["lsp"], output:) }
     end
 
     with_app(build:) do |_root, client|

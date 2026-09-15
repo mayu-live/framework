@@ -7,7 +7,7 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "../../build"
-require "mayu/commands"
+require_relative "../cli"
 
 class Mayu::Build::Commands::GraphTest < Minitest::Test
   def test_exports_a_mayu_bundle_as_graphviz_dot
@@ -19,7 +19,7 @@ class Mayu::Build::Commands::GraphTest < Minitest::Test
       Mayu::Build::Configuration.new(root:).build(output: bundle_path)
 
       output = StringIO.new
-      Mayu::Commands::Application.new(["graph", bundle_path], output:).call
+      Mayu::Build::CLI::Application.new(["graph", bundle_path], output:).call
 
       assert(output.string.start_with?("digraph klenod"))
     end
@@ -32,7 +32,7 @@ class Mayu::Build::Commands::GraphTest < Minitest::Test
       Mayu::Build::Configuration.new(root:).build(output: File.join(root, "app.mayu-bundle"))
 
       output = StringIO.new
-      Dir.chdir(root) { Mayu::Commands::Application.new(["graph"], output:).call }
+      Dir.chdir(root) { Mayu::Build::CLI::Application.new(["graph"], output:).call }
 
       assert(output.string.start_with?("digraph klenod"))
     end

@@ -4,13 +4,13 @@
 require "minitest/autorun"
 require "stringio"
 
-require "mayu/commands"
+require_relative "../cli"
 
 class Mayu::Build::Commands::TestTest < Minitest::Test
   def test_is_listed_after_dev
     output = StringIO.new
 
-    Mayu::Commands::Application.new([], output:).call
+    Mayu::Build::CLI::Application.new([], output:).call
 
     assert_includes(
       output.string,

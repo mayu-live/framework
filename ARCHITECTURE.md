@@ -24,13 +24,13 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 - `klenod.rb` + `klenod/*`: the runtime half of Mayu's Klenod boundary: module provider, router, and asset adapter. Needs only klenod-runtime and klenod-rack.
 - `build.rb` + `build/*` (in `gems/mayu-build`): the build half: Klenod configuration and plugins, the development provider, hot reloading, and every CLI command except `start`. This is what the `mayu-build` gem ships.
 - `configuration.rb`: `mayu.toml` loading and environment config resolution.
-- `commands.rb` + `commands/start.rb`: the `mayu` CLI. Build commands are loaded from `Mayu::Build::Commands` when available and shown as placeholders otherwise.
+- `cli.rb`: the `mayu` executable. Hands every invocation to `Mayu::Build::CLI` when mayu-build is installed; otherwise it knows only `start`, parsed with the standard library, and tells you to install mayu-build for anything else.
 - `metrics.rb` + `metrics/*`: Prometheus metrics, multi-process collection/export.
 - `client/`: Browser runtime TypeScript workspace (batch consumer + session connection).
 
 ## End-to-End Flow (Request -> Session -> Commands)
 
-1. `Mayu::Build::Commands::Dev` / `Mayu::Commands::Start` creates `Mayu::Server` with a loader for the worker's `Mayu::Environment`.
+1. `Mayu::Build::Commands::Dev` / `Mayu::CLI.start` creates `Mayu::Server` with a loader for the worker's `Mayu::Environment`.
 2. `Mayu::Server::Controller` starts worker process(es) and loads `Mayu::Environment`.
 3. `Mayu::Server::App` handles HTTP requests.
 4. First HTML GET (non-`/.mayu`, `Accept: text/html`) creates `Mayu::Session`.

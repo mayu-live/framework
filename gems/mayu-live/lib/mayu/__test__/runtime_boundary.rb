@@ -5,6 +5,7 @@
 # runtime_boundary.test.rb so nothing from the test process leaks in.
 
 require "json"
+require_relative "../cli"
 require_relative "../configuration"
 require_relative "../server"
 
@@ -32,5 +33,5 @@ puts JSON.generate(
   klenod_build_defined: defined?(::Klenod::Build) ? true : false,
   mayu_build_defined: defined?(::Mayu::Build) ? true : false,
   build_features:
-    $LOADED_FEATURES.grep(%r{/klenod/(build|test|lsp|plugin)|/mayu/build}).sort
+    $LOADED_FEATURES.grep(%r{/klenod/(build|test|lsp|plugin)|/mayu/build|/samovar}).sort
 )

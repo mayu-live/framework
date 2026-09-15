@@ -59,9 +59,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rack", ">= 3.2.4"
   spec.add_dependency "rbnacl", "~> 7.1"
 
-  # Configuration and CLI
+  # Configuration
   spec.add_dependency "base64", "~> 0.3"
   spec.add_dependency "dotenv", "~> 3.2"
-  spec.add_dependency "samovar", "~> 2.5"
   spec.add_dependency "toml", "~> 0.3"
 end

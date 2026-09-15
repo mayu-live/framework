@@ -2,8 +2,7 @@
 
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
 
-require "mayu/version"
-require "mayu/commands"
+require "mayu/cli"
 
-result = Mayu::Commands.call(ARGV)
+result = Mayu::CLI.call(ARGV)
 exit result if result.is_a?(Integer)

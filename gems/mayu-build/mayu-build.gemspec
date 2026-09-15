@@ -48,7 +48,8 @@ Gem::Specification.new do |spec|
   # Self-signed certificates for the development server
   spec.add_dependency "localhost", "~> 1.7"
 
-  # Command line output and scaffolding
+  # The command line, its output, and scaffolding
+  spec.add_dependency "samovar", "~> 2.5"
   spec.add_dependency "reline", "~> 0.6"
   spec.add_dependency "rouge", "~> 4.7"
   spec.add_dependency "terminal-table", "~> 4.0"
