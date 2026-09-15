@@ -4,9 +4,9 @@
 require "minitest/autorun"
 require "stringio"
 
-require_relative "../commands"
+require_relative "../../commands"
 
-class Mayu::Commands::TestTest < Minitest::Test
+class Mayu::Build::Commands::TestTest < Minitest::Test
   def test_is_listed_after_dev
     output = StringIO.new
 
@@ -19,7 +19,7 @@ class Mayu::Commands::TestTest < Minitest::Test
   end
 
   def test_worker_command_reenters_mayu
-    command = Mayu::Commands::Test.new([])
+    command = Mayu::Build::Commands::Test.new([])
     worker_command = command.send(:worker_command)
 
     assert_equal(RbConfig.ruby, worker_command.first)
@@ -30,7 +30,7 @@ class Mayu::Commands::TestTest < Minitest::Test
   def test_description_mentions_mayu
     assert_equal(
       "Run and watch Mayu application tests.",
-      Mayu::Commands::Test.description
+      Mayu::Build::Commands::Test.description
     )
   end
 end

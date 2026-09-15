@@ -6,10 +6,10 @@ require "stringio"
 require "tmpdir"
 require "fileutils"
 
-require_relative "../build"
-require_relative "../commands"
+require_relative "../../build"
+require_relative "../../commands"
 
-class Mayu::Commands::GraphTest < Minitest::Test
+class Mayu::Build::Commands::GraphTest < Minitest::Test
   def test_exports_a_mayu_bundle_as_graphviz_dot
     Dir.mktmpdir("mayu-graph") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
@@ -46,7 +46,7 @@ class Mayu::Commands::GraphTest < Minitest::Test
       Mayu::Build::Configuration.new(root:).build(output: bundle_path)
 
       output = StringIO.new
-      command = Mayu::Commands::Graph.new(["--svg", bundle_path], output:)
+      command = Mayu::Build::Commands::Graph.new(["--svg", bundle_path], output:)
       command.define_singleton_method(:render_svg) { |dot| "<svg>#{dot.length}</svg>" }
 
       command.call
@@ -63,9 +63,9 @@ class Mayu::Commands::GraphTest < Minitest::Test
       Mayu::Build::Configuration.new(root:).build(output: bundle_path)
 
       output = StringIO.new
-      command = Mayu::Commands::Graph.new(["--svg", bundle_path], output:)
+      command = Mayu::Build::Commands::Graph.new(["--svg", bundle_path], output:)
       command.define_singleton_method(:render_svg) do |_dot|
-        raise Mayu::Commands::Graph::GraphvizUnavailableError, "Graphviz is required to generate an SVG."
+        raise Mayu::Build::Commands::Graph::GraphvizUnavailableError, "Graphviz is required to generate an SVG."
       end
 
       assert_equal(1, command.call)
@@ -76,7 +76,7 @@ class Mayu::Commands::GraphTest < Minitest::Test
   def test_uses_mayu_in_its_description
     assert_equal(
       "Export a Mayu runtime bundle as Graphviz DOT.",
-      Mayu::Commands::Graph.description
+      Mayu::Build::Commands::Graph.description
     )
   end
 end

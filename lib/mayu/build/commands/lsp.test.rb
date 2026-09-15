@@ -7,10 +7,10 @@ require "stringio"
 require "tmpdir"
 require "fileutils"
 
-require_relative "../build"
-require_relative "../commands"
+require_relative "../../build"
+require_relative "../../commands"
 
-class Mayu::Commands::LspTest < Minitest::Test
+class Mayu::Build::Commands::LspTest < Minitest::Test
   # Drives the command over pipes the way an editor would.
   class Client
     def initialize(server_input, server_output, status)
@@ -65,7 +65,7 @@ class Mayu::Commands::LspTest < Minitest::Test
     Dir.mktmpdir("mayu-lsp") do |dir|
       output = StringIO.new
 
-      status = Dir.chdir(dir) { Mayu::Commands::Lsp.new([], output:).call }
+      status = Dir.chdir(dir) { Mayu::Build::Commands::Lsp.new([], output:).call }
 
       assert_equal(1, status)
       assert_match(/Could not find mayu\.toml/, output.string)
@@ -117,7 +117,7 @@ class Mayu::Commands::LspTest < Minitest::Test
 
   def test_locates_the_app_from_a_directory_argument
     build = lambda do |input, output, root|
-      Mayu::Commands::Lsp.new([File.join(root, "app")], input:, output:)
+      Mayu::Build::Commands::Lsp.new([File.join(root, "app")], input:, output:)
     end
 
     with_app(build:, run_from: Dir.tmpdir) do |root, client|
@@ -147,7 +147,7 @@ class Mayu::Commands::LspTest < Minitest::Test
   end
 
   def with_app(
-    build: ->(input, output, _root) { Mayu::Commands::Lsp.new([], input:, output:) },
+    build: ->(input, output, _root) { Mayu::Build::Commands::Lsp.new([], input:, output:) },
     run_from: nil
   )
     Dir.mktmpdir("mayu-lsp") do |tmpdir|

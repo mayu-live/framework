@@ -21,15 +21,16 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 - `session.rb` + `session/*`: Per-client session lifecycle, event queueing, runtime engine orchestration, transfer/resume.
 - `runtime.rb` + `runtime/*`: Server-side rendering/diff engine, vnode tree, command generation, serialization.
 - `component.rb` + `component/*`: Base component API, fetch helper, and CSS unit refinements. Klenod supplies generated component class names.
-- `klenod.rb` + `klenod/*`: Mayu's Klenod configuration, component provider, and asset Rack adapter.
+- `klenod.rb` + `klenod/*`: the runtime half of Mayu's Klenod boundary: module provider, router, and asset adapter. Needs only klenod-runtime and klenod-rack.
+- `build.rb` + `build/*`: the build half: Klenod configuration and plugins, the development provider, hot reloading, and every CLI command except `start`. This is what the `mayu-build` gem ships.
 - `configuration.rb`: `mayu.toml` loading and environment config resolution.
-- `commands/*`: CLI commands (`dev`, `build`, `start`, etc.).
+- `commands.rb` + `commands/start.rb`: the `mayu` CLI. Build commands are loaded from `Mayu::Build::Commands` when available and shown as placeholders otherwise.
 - `metrics.rb` + `metrics/*`: Prometheus metrics, multi-process collection/export.
 - `client/`: Browser runtime TypeScript workspace (batch consumer + session connection).
 
 ## End-to-End Flow (Request -> Session -> Commands)
 
-1. `Mayu::Commands::Dev` / `Start` creates `Mayu::Server`.
+1. `Mayu::Build::Commands::Dev` / `Mayu::Commands::Start` creates `Mayu::Server` with a loader for the worker's `Mayu::Environment`.
 2. `Mayu::Server::Controller` starts worker process(es) and loads `Mayu::Environment`.
 3. `Mayu::Server::App` handles HTTP requests.
 4. First HTML GET (non-`/.mayu`, `Accept: text/html`) creates `Mayu::Session`.

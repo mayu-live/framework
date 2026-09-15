@@ -8,12 +8,12 @@ require "samovar"
 
 require_relative "build"
 
-class Mayu::Commands::BuildTest < Minitest::Test
+class Mayu::Build::Commands::BuildTest < Minitest::Test
   def test_no_color_disables_ansi_output
     previous_no_color = ENV["NO_COLOR"]
     ENV["NO_COLOR"] = "1"
 
-    command = Mayu::Commands::Build.new([])
+    command = Mayu::Build::Commands::Build.new([])
     command.define_singleton_method(:interactive?) { true }
     output =
       capture_io do
@@ -52,7 +52,7 @@ class Mayu::Commands::BuildTest < Minitest::Test
 
       output =
         Dir.chdir(root) do
-          capture_io { Mayu::Commands::Build.new([]).call }.first
+          capture_io { Mayu::Build::Commands::Build.new([]).call }.first
         end
 
       assert_includes(output, "Entrypoints: root.haml, virtual:router")

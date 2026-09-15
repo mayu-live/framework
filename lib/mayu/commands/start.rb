@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../klenod"
+
 #
 # Copyright Andreas Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
@@ -13,17 +15,17 @@ module Mayu
         option(
           "--filename <string>",
           "Filename of the generated bundle",
-          default: "app.mayu-bundle"
+          default: Klenod::BUNDLE_FILENAME
         )
         option(
           "--assets-dir <path>",
           "Directory with the assets written by mayu build",
-          default: ".assets"
+          default: Klenod::ASSETS_DIR
         )
         option(
           "--source-root <path>",
           "Directory the bundle was built from, for backtraces and source maps",
-          default: "app"
+          default: Klenod::SOURCE_DIR
         )
       end
 
