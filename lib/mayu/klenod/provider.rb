@@ -51,10 +51,6 @@ module Mayu
       end
 
       def asset_bytes(output_path)
-        if source.respond_to?(:asset_bytes)
-          return source.asset_bytes(output_path, assets_dir:)
-        end
-
         unless assets_dir
           raise ArgumentError, "assets_dir is required for a runtime bundle"
         end
@@ -68,25 +64,6 @@ module Mayu
 
       def asset_origin
         source.asset_origin
-      end
-
-      # Absolute path of a module's source file, used to show an excerpt for a
-      # build error that names a module but does not carry its source.
-      def absolute_path(module_id)
-        source.graph.absolute_path(module_id) if source.respond_to?(:graph)
-      end
-
-      # Whether a module's generated line numbers can still be translated back
-      # to its original source. A module that fails to load is replaced in the
-      # graph by a placeholder carrying only the error, so its source map is
-      # gone and its backtrace still points at generated Ruby.
-      def source_mapped?(module_id)
-        return false unless source.respond_to?(:graph)
-
-        mod = source.graph.mods[::Klenod::Build::ModuleId.parse(module_id.to_s)]
-        mod.respond_to?(:source_map) && !mod.source_map.nil?
-      rescue ::Klenod::Build::Error, ArgumentError
-        false
       end
 
       def format_exception(error, source_path: nil)
@@ -105,13 +82,32 @@ module Mayu
       private
 
       def source_maps
-        return source.graph.mods if source.respond_to?(:graph)
-        return source.modules if source.respond_to?(:modules)
-
-        {}
+        source.modules
       end
     end
 
+    # Serves a prebuilt bundle. This is the only provider production needs, so
+    # it must stay loadable with klenod-runtime and klenod-rack alone.
+    class RuntimeProvider < Provider
+      def self.load(bundle_path, source_root:, assets_dir:)
+        new(
+          ::Klenod::Runtime.load_bundle(bundle_path, source_root:),
+          assets_dir:
+        )
+      end
+
+      def module_id_for(reference)
+        # Runtime component classes use their evaluation path, while bundle
+        # lookups use source-relative paths or canonical module IDs.
+        if reference.is_a?(String) && source.source_root
+          reference = reference.delete_prefix("#{source.source_root}/")
+        end
+        super
+      end
+    end
+
+    # Serves modules from a live build context, so it can apply updates and
+    # read back sources for error reports.
     class DevelopmentProvider < Provider
       def context
         source
@@ -120,16 +116,32 @@ module Mayu
       def apply_update(event, entry:)
         source.apply_update(event, entry:, assets_dir:)
       end
-    end
 
-    class RuntimeProvider < Provider
-      def module_id_for(reference)
-        # Runtime component classes use their evaluation path, while bundle
-        # lookups use source-relative paths or canonical module IDs.
-        if reference.is_a?(String) && source.source_root
-          reference = reference.delete_prefix("#{source.source_root}/")
-        end
-        super
+      def asset_bytes(output_path)
+        source.asset_bytes(output_path, assets_dir:)
+      end
+
+      # Absolute path of a module's source file, used to show an excerpt for a
+      # build error that names a module but does not carry its source.
+      def absolute_path(module_id)
+        source.graph.absolute_path(module_id)
+      end
+
+      # Whether a module's generated line numbers can still be translated back
+      # to its original source. A module that fails to load is replaced in the
+      # graph by a placeholder carrying only the error, so its source map is
+      # gone and its backtrace still points at generated Ruby.
+      def source_mapped?(module_id)
+        mod = source.graph.mods[::Klenod::Build::ModuleId.parse(module_id.to_s)]
+        mod.respond_to?(:source_map) && !mod.source_map.nil?
+      rescue ::Klenod::Build::Error, ArgumentError
+        false
+      end
+
+      private
+
+      def source_maps
+        source.graph.mods
       end
     end
   end

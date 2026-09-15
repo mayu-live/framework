@@ -25,5 +25,9 @@ module Mayu
   # depend on providers, rather than reaching into a build graph or runtime
   # bundle directly.
   module Klenod
+    # Paths shared by `mayu build` and `mayu start`, relative to the app root.
+    BUNDLE_FILENAME = "app.mayu-bundle"
+    ASSETS_DIR = ".assets"
+    SOURCE_DIR = "app"
   end
 end

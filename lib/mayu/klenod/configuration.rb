@@ -19,12 +19,12 @@ module Mayu
       def initialize(
         root:,
         mode: :development,
-        source_dir: "app",
+        source_dir: SOURCE_DIR,
         pages_dir: "pages",
         entrypoints: DEFAULT_ENTRYPOINTS,
         base: DEFAULT_ASSET_BASE,
-        assets_dir: ".assets",
-        output: ".mayu/klenod.bundle",
+        assets_dir: ASSETS_DIR,
+        output: BUNDLE_FILENAME,
         plugins: nil
       )
         @root = File.expand_path(root)
@@ -80,8 +80,9 @@ module Mayu
       end
 
       def runtime_provider(bundle_path: output_path)
-        RuntimeProvider.new(
-          ::Klenod::Runtime.load_bundle(bundle_path, source_root: source_path),
+        RuntimeProvider.load(
+          bundle_path,
+          source_root: source_path,
           assets_dir: assets_path
         )
       end

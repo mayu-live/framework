@@ -19,7 +19,6 @@ module Mayu
     attr_reader :runtime_js_path
     attr_reader :init_js_body
     attr_reader :module_provider
-    attr_reader :klenod_configuration
     attr_reader :marshaller
     attr_reader :metrics
 
@@ -43,14 +42,9 @@ module Mayu
       new(config, metrics:)
     end
 
-    def initialize(
-      config,
-      module_provider: nil,
-      klenod_configuration: nil,
-      metrics: nil
-    )
+    def initialize(config, module_provider: nil, metrics: nil)
       @config = config
-      @app_dir = File.join(config.root, "app")
+      @app_dir = File.join(config.root, Klenod::SOURCE_DIR)
       @client_path = File.join(__dir__, "client", "dist")
 
       @runtime_js_path = load_runtime_js_path
@@ -69,24 +63,23 @@ module Mayu
           ttl: config.server.transfer_timeout_seconds
         )
 
-      @klenod_configuration =
-        klenod_configuration || Klenod::Configuration.new(root: config.root)
       @module_provider =
-        module_provider || @klenod_configuration.development_provider
+        module_provider ||
+        Klenod::Configuration.new(root: config.root).development_provider
       @klenod_update_subscribers = {}
       @klenod_update_subscribers_mutex = Mutex.new
     end
 
+    # Loads a prebuilt bundle. Nothing on this path may need klenod-build.
     def self.load_klenod_with_config(config, bundle_path, metrics: nil)
-      klenod_configuration =
-        Klenod::Configuration.new(root: config.root, mode: :production)
+      module_provider =
+        Klenod::RuntimeProvider.load(
+          bundle_path,
+          source_root: File.join(config.root, Klenod::SOURCE_DIR),
+          assets_dir: File.join(config.root, Klenod::ASSETS_DIR)
+        )
 
-      new(
-        config,
-        module_provider: klenod_configuration.runtime_provider(bundle_path:),
-        klenod_configuration:,
-        metrics:
-      )
+      new(config, module_provider:, metrics:)
     end
 
     def use(&)
@@ -124,7 +117,7 @@ module Mayu
 
       watcher =
         ::Klenod::Build::Watcher.new(
-          source_dir: @klenod_configuration.source_path,
+          source_dir: @app_dir,
           context:
         )
 
@@ -165,7 +158,7 @@ module Mayu
     def update_logger
       @update_logger ||=
         Klenod::UpdateLogger.new(
-          source_dir: @klenod_configuration.source_path,
+          source_dir: @app_dir,
           provider: @module_provider
         )
     end
