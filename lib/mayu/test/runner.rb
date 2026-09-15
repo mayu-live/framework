@@ -33,7 +33,7 @@ module Mayu
       attr_reader :root, :worker_command, :output, :error_output, :options
 
       def configuration
-        Mayu::Klenod::Configuration.load(root:, mode: :development)
+        Mayu::Klenod::Configuration.new(root:, mode: :development)
       end
 
       def execute(context, test_paths)

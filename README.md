@@ -385,18 +385,9 @@ For a real-world example, check out
 For applications upgrading from Mayu's former module system, see
 [the Klenod migration guide](MIGRATION.md).
 
-Mayu loads Klenod configuration from `klenod.config.rb`. By default, Klenod
-uses `app` as its source directory and `app/pages` for routes. To keep source
-files elsewhere or use another routes directory, configure both values:
-
-```ruby
-# klenod.config.rb
-source_dir "frontend"
-pages_dir "routes"
-```
-
-With this configuration, a route such as `/about` is defined by
-`frontend/routes/about/+page.haml`.
+Mayu configures Klenod itself: `app` is the source directory and `app/pages`
+holds the routes. A route such as `/about` is defined by
+`app/pages/about/+page.haml`. There is no separate Klenod configuration file.
 
 ### Route handlers
 
@@ -430,9 +421,8 @@ No browser refresh needed.
 server over stdin/stdout. It locates the app by searching upwards for
 `mayu.toml` from the current directory, or from a directory given as an
 argument (`bin/mayu lsp path/to/app`) for editors that start it elsewhere. It
-honours `klenod.config.rb` and analyzes `.haml` files under the app directory with
-the same Klenod plugins as the dev server, so editor diagnostics match build
-errors. It reports Haml and Ruby syntax errors and unresolved imports, and
+analyzes `.haml` files under the app directory with the same Klenod plugins as
+the dev server, so editor diagnostics match build errors. It reports Haml and Ruby syntax errors and unresolved imports, and
 provides go to definition, hover, and completion for `import("...")` and
 `%Component` tags. It never evaluates application code.
 

@@ -25,7 +25,7 @@ module Mayu
 
         Configuration.with(:development) do |config|
           transform_with_klenod(
-            Klenod::Configuration.load(root: config.root),
+            Klenod::Configuration.new(root: config.root),
             @path,
             line_numbers: !@options[:no_line_numbers],
             colors: !@options[:no_colors]

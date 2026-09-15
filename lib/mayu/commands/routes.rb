@@ -24,7 +24,7 @@ module Mayu
         require_relative "../klenod"
 
         Configuration.with(:development) do |config|
-          configuration = Klenod::Configuration.load(root: config.root)
+          configuration = Klenod::Configuration.new(root: config.root)
           @context = configuration.context
           @include_regexp = options[:regexp]
 

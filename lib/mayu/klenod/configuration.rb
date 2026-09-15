@@ -7,7 +7,14 @@ module Mayu
       DEFAULT_ASSET_BASE = "/.mayu/assets/"
 
       attr_reader :root,
-        :mode
+        :mode,
+        :source_dir,
+        :pages_dir,
+        :entrypoints,
+        :base,
+        :assets_dir,
+        :output,
+        :plugins
 
       def initialize(
         root:,
@@ -24,62 +31,12 @@ module Mayu
         @mode = mode.to_sym
         @source_dir = source_dir
         @pages_dir = pages_dir
-        @entrypoints = Array(entrypoints).dup
+        @entrypoints = Array(entrypoints).dup.freeze
         @base = base
         @assets_dir = assets_dir
         @output = output
         @plugins = plugins || default_plugins
       end
-
-      def self.load(root:, mode: :development, **overrides)
-        configuration = new(root:, mode:, **overrides)
-        path =
-          File.join(
-            configuration.root,
-            ::Klenod::Build::ConfigLoader::CONFIG_FILE
-          )
-        if File.file?(path)
-          configuration.instance_eval(File.read(path), path, 1)
-        end
-        configuration
-      end
-
-      def source_dir(value = nil) = value ? @source_dir = value : @source_dir
-
-      def pages_dir(value = nil)
-        return @pages_dir unless value
-
-        @pages_dir = value
-        @plugins =
-          @plugins.map do |plugin|
-            unless plugin.is_a?(::Klenod::Build::Plugins::RouterPlugin::Plugin)
-              next plugin
-            end
-
-            ::Klenod::Build::Plugins::RouterPlugin.new(
-              specifier: plugin.specifier,
-              pages_dir: value,
-              extensions: plugin.extensions,
-              route_base_class: plugin.route_base_class
-            )
-          end
-      end
-
-      def entrypoint(value) = @entrypoints << value
-
-      def entrypoints(*values) =
-        values.empty? ? @entrypoints : @entrypoints.concat(values.flatten)
-
-      def base(value = nil) = value ? @base = value : @base
-      def assets_dir(value = nil) = value ? @assets_dir = value : @assets_dir
-      def output(value = nil) = value ? @output = value : @output
-
-      def plugins(value = nil, &block) =
-        if value || block
-          @plugins = (block ? block.call : value)
-        else
-          @plugins
-        end
 
       def source_path = expand(source_dir)
       def assets_path = expand(assets_dir)

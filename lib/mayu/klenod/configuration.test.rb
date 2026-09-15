@@ -72,41 +72,21 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
     end
   end
 
-  def test_klenod_config_file_is_evaluated_against_mayu_defaults
-    Dir.mktmpdir("mayu-klenod") do |root|
-      File.write(File.join(root, "klenod.config.rb"), <<~RUBY)
-        source_dir "frontend"
-        pages_dir "routes"
-        entrypoints "entry", "virtual:router"
-        base "/assets/"
-      RUBY
-
-      configuration = Mayu::Klenod::Configuration.load(root:)
-
-      assert_equal("frontend", configuration.source_dir)
-      assert_equal("routes", configuration.pages_dir)
-      assert_equal(
-        %w[root.haml virtual:router entry virtual:router],
-        configuration.entrypoints
-      )
-      assert_equal("/assets/", configuration.base)
-    end
-  end
-
-  def test_pages_dir_configures_the_router_plugin_used_by_the_provider
+  def test_source_and_pages_dir_configure_the_router_plugin_used_by_the_provider
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "frontend", "routes"))
-      File.write(File.join(root, "klenod.config.rb"), <<~RUBY)
-        source_dir "frontend"
-        pages_dir "routes"
-      RUBY
       File.write(File.join(root, "frontend", "root.haml"), "%slot\n")
       File.write(
         File.join(root, "frontend", "routes", "+page.haml"),
         "%p Configured route\n"
       )
 
-      provider = Mayu::Klenod::Configuration.load(root:).development_provider
+      provider =
+        Mayu::Klenod::Configuration.new(
+          root:,
+          source_dir: "frontend",
+          pages_dir: "routes"
+        ).development_provider
       resolved = Mayu::Klenod::Router.new(provider).resolve("/")
 
       refute_nil(resolved)

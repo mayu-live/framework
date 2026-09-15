@@ -37,7 +37,7 @@ module Mayu
 
         Dir.chdir(root) do
           context =
-            Mayu::Klenod::Configuration.load(root:, mode: :development).context(analysis: true)
+            Mayu::Klenod::Configuration.new(root:, mode: :development).context(analysis: true)
           ::Klenod::LSP::Server.new(context:, input: @input, output:).start
         end
       end

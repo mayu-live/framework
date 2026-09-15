@@ -10,9 +10,8 @@ Open [`https://localhost:9292`](https://localhost:9292) with your browser.
 
 Open `app/pages/+page.haml` with your text editor to make changes.
 
-Routes use Klenod's `+page.haml` and `+layout.haml` conventions. Mayu loads an
-optional `klenod.config.rb` from the application root when you need to change
-the default `app/pages` route directory or Klenod plugins.
+Routes use Klenod's `+page.haml` and `+layout.haml` conventions under
+`app/pages`.
 
 ## Testing
 

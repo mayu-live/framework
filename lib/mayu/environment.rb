@@ -70,7 +70,7 @@ module Mayu
         )
 
       @klenod_configuration =
-        klenod_configuration || Klenod::Configuration.load(root: config.root)
+        klenod_configuration || Klenod::Configuration.new(root: config.root)
       @module_provider =
         module_provider || @klenod_configuration.development_provider
       @klenod_update_subscribers = {}
@@ -79,7 +79,7 @@ module Mayu
 
     def self.load_klenod_with_config(config, bundle_path, metrics: nil)
       klenod_configuration =
-        Klenod::Configuration.load(root: config.root, mode: :production)
+        Klenod::Configuration.new(root: config.root, mode: :production)
 
       new(
         config,
