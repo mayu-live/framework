@@ -20,7 +20,12 @@ module Mayu
             load_environment: ->(metrics:) do
               environment = Environment.with_config(config, metrics:)
               if config.server.hmr?
-                environment.on_start { environment.start_watcher }
+                reloader =
+                  Klenod::HotReloader.new(
+                    provider: environment.module_provider,
+                    source_dir: environment.app_dir
+                  )
+                environment.on_start { |app| reloader.start(app) }
               end
               environment
             end

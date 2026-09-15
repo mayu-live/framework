@@ -8,6 +8,7 @@ require_relative "runtime"
 require_relative "session/token"
 require_relative "session/error_page"
 require_relative "session/transfer_state"
+require_relative "hot_reload"
 require_relative "klenod"
 
 module Mayu
@@ -145,7 +146,6 @@ module Mayu
 
           barrier = Async::Barrier.new
 
-          run_code_reload_task(barrier) if @environment.config.server.hmr?
           run_incoming_events_task(barrier)
 
           @engine.start
@@ -213,30 +213,29 @@ module Mayu
       @engine.enqueue_command(Runtime::Commands::TransferFailed[])
     end
 
-    private
-
-    def run_code_reload_task(parent)
-      return unless module_provider.is_a?(Klenod::DevelopmentProvider)
-
-      run_klenod_reload_task(parent)
+    # Called by the App after a development build applied a source change.
+    # Re-resolves the route so the page picks up new module exports, or shows
+    # the build errors in the overlay.
+    def notify_hmr_update(update)
+      handle_reload_result(update) if running?
     end
 
-    def run_klenod_reload_task(parent)
-      parent.async do |task|
-        task.annotate("Session #{@id}: HMR")
-        updates = Async::Queue.new
-        subscription =
-          @environment.subscribe_klenod_updates do |update|
-            updates.enqueue(update)
-          end
+    private
 
-        while (update = updates.dequeue)
-          handle_reload_result(update)
-        end
-      ensure
-        @environment.unsubscribe_klenod_updates(subscription) if subscription
-        updates&.close
+    def handle_reload_result(update)
+      if update.success?
+        descriptor = resolve_route(@request_info.path)
+        @engine.replace_route_assets(
+          stylesheets: route_stylesheets,
+          scripts: route_scripts
+        )
+        @engine.refresh(descriptor)
+        @engine.enqueue_command(Runtime::Commands::ReloadSucceeded[])
+      else
+        emit_reload_error_commands(update)
       end
+    rescue => e
+      Console.logger.error(self, e)
     end
 
     def run_incoming_events_task(parent)
@@ -278,44 +277,16 @@ module Mayu
       Console.logger.error(self, e)
     end
 
-    def handle_reload_result(reload_result)
-      if reload_result.success?
-        descriptor = resolve_route(@request_info.path)
-        @engine.replace_route_assets(
-          stylesheets: route_stylesheets,
-          scripts: route_scripts
-        )
-        @engine.refresh(descriptor)
-        @engine.enqueue_command(Runtime::Commands::ReloadSucceeded[])
-      else
-        emit_reload_error_commands(reload_result)
-      end
-    rescue => e
-      Console.logger.error(self, e)
+    def emit_reload_error_commands(update)
+      return unless @engine.render_exceptions?
+
+      commands = update.errors.map { reload_error_command(it) }
+      @engine.enqueue_batch(Runtime::Batch[commands]) unless commands.empty?
     end
 
-    def emit_reload_error_commands(reload_result)
-      commands =
-        Array(reload_result.errors).map do |reload_error|
-          module_id, error =
-            (reload_error in [_, _]) ? reload_error : [nil, reload_error]
-
-          reload_error_command(error, module_id)
-        end
-
-      if @engine.render_exceptions? && !commands.empty?
-        @engine.enqueue_batch(Runtime::Batch[commands])
-      end
-    end
-
-    def reload_error_command(error, module_id)
-      rewrite_reload_error_backtrace(error)
-
-      report =
-        Klenod::ErrorReport.from(error, module_id:, provider: module_provider)
-
-      # A build error has no component tree to walk, so there is no tree path
-      # to show. The overlay hides the section when it is empty.
+    # A build error has no component tree to walk, so there is no tree path
+    # to show. The overlay hides the section when it is empty.
+    def reload_error_command(report)
       Runtime::Commands::RenderError[
         report.file,
         report.type,
@@ -333,17 +304,6 @@ module Mayu
       @environment.metrics.session_ping_count.increment
       @last_ping = Async::Clock.now
       @engine.ping(timestamp)
-    end
-
-    def rewrite_reload_error_backtrace(error)
-      return unless error.is_a?(Exception)
-
-      module_provider.rewrite_exception(error)
-    rescue => rewrite_error
-      Console.logger.warn(
-        self,
-        "Could not rewrite reload error backtrace: #{rewrite_error.message}"
-      )
     end
 
     def resolve_route(path)

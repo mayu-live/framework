@@ -66,8 +66,6 @@ module Mayu
       @module_provider =
         module_provider ||
         Klenod::Configuration.new(root: config.root).development_provider
-      @klenod_update_subscribers = {}
-      @klenod_update_subscribers_mutex = Mutex.new
       @start_hooks = []
       @started = []
     end
@@ -111,86 +109,7 @@ module Mayu
       started.each { it.stop if it.respond_to?(:stop) }
     end
 
-    def start_watcher
-      return unless @module_provider.is_a?(Klenod::DevelopmentProvider)
-
-      start_klenod_watcher
-    end
-
-    def subscribe_klenod_updates(&block)
-      token = Object.new
-      @klenod_update_subscribers_mutex.synchronize do
-        @klenod_update_subscribers[token] = block
-      end
-      token
-    end
-
-    def unsubscribe_klenod_updates(token)
-      @klenod_update_subscribers_mutex.synchronize do
-        @klenod_update_subscribers.delete(token)
-      end
-    end
-
     private
-
-    def start_klenod_watcher
-      provider = @module_provider
-      context = provider.context
-      root_entry = provider.entry("root.haml")
-      updates = Async::Queue.new
-      context.on_update { |event| updates.enqueue(event) }
-
-      watcher =
-        ::Klenod::Build::Watcher.new(
-          source_dir: @app_dir,
-          context:
-        )
-
-      Async do
-        watcher.start
-
-        loop do
-          event = updates.dequeue
-          publish_klenod_update(apply_klenod_update(provider, event, root_entry))
-        end
-      ensure
-        updates.close
-        watcher.stop
-      end
-    end
-
-    # Anything escaping here would break out of the watcher loop and stop hot
-    # reloading for the rest of the process, so report the failure as an update
-    # instead and let sessions render it.
-    def apply_klenod_update(provider, event, root_entry)
-      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      update = provider.apply_update(event, entry: root_entry)
-      update_logger.log(update:, duration: format_duration(start_time))
-      update
-    rescue StandardError, ScriptError => e
-      Console.logger.error(self, e)
-      ::Klenod::Build::AppliedUpdate.new(event, nil, nil, nil, [[nil, e]].freeze)
-    end
-
-    def publish_klenod_update(update)
-      subscribers =
-        @klenod_update_subscribers_mutex.synchronize do
-          @klenod_update_subscribers.values
-        end
-      subscribers.each { |subscriber| subscriber.call(update) }
-    end
-
-    def update_logger
-      @update_logger ||=
-        Klenod::UpdateLogger.new(
-          source_dir: @app_dir,
-          provider: @module_provider
-        )
-    end
-
-    def format_duration(start_time)
-      "%.4fms" % ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1_000)
-    end
 
     def load_runtime_js_path
       self.class.ensure_client_runtime!

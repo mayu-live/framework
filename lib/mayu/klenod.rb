@@ -16,6 +16,7 @@ require_relative "klenod/router"
 require_relative "klenod/asset_app"
 require_relative "klenod/error_report"
 require_relative "klenod/update_logger"
+require_relative "klenod/hot_reloader"
 
 module Mayu
   module ModuleNamespace

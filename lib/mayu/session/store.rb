@@ -22,6 +22,10 @@ module Mayu
         @sessions[session.id] = session
       end
 
+      def each(&)
+        @sessions.values.each(&)
+      end
+
       def authenticate!(id, token)
         session = @sessions.fetch(id) { raise Errors::SessionNotFoundError }
 

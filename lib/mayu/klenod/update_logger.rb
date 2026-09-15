@@ -51,7 +51,7 @@ module Mayu
       def log_errors(stream, update)
         update.each_error do |module_id, error|
           report = ErrorReport.from(error, module_id:, provider:)
-          stream.puts(indent(report.render(ansi: !env["NO_COLOR"])))
+          stream.puts(indent(ErrorReport.render(report, ansi: !env["NO_COLOR"])))
         end
       end
 

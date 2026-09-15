@@ -122,6 +122,11 @@ module Mayu
         error_response(403, "INTERNAL_SERVER_ERROR", **origin_header(request))
       end
 
+      # Called by the development build after it applied a source change.
+      def notify_hmr_update(update)
+        @sessions.each { |session| session.notify_hmr_update(update) }
+      end
+
       def begin_shutdown
         @stopping = true
         @sessions.stop

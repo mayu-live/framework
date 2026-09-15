@@ -19,7 +19,6 @@ class Mayu::SessionTest < Minitest::Test
       @render_exceptions = render_exceptions
     end
 
-    def hmr? = false
     def render_exceptions? = @render_exceptions
   end
 
@@ -47,14 +46,6 @@ class Mayu::SessionTest < Minitest::Test
       @metrics = Mayu::Test::FakeMetrics.new
       @marshaller = nil
       @module_provider = module_provider
-    end
-
-    def subscribe_klenod_updates(&block)
-      @subscription = block
-    end
-
-    def unsubscribe_klenod_updates(_subscription)
-      @subscription = nil
     end
   end
 
@@ -88,42 +79,6 @@ class Mayu::SessionTest < Minitest::Test
       @stylesheets = stylesheets
     end
   end
-
-  class ReloadErrorProvider
-    attr_reader :rewritten_error
-
-    def initialize(sources: {})
-      @sources = sources
-    end
-
-    def rewrite_exception(error)
-      @rewritten_error = error
-      error.set_backtrace(["app:/broken.haml:2"])
-    end
-
-    def absolute_path(module_id)
-      @sources[module_id.to_s]
-    end
-  end
-
-  # Stands in for a plugin's parse error. Klenod reports every source file it
-  # cannot compile as a SourceError subclass that fills in the location.
-  class FakeParseError < ::Klenod::Build::SourceError
-    def kind = "Haml parse error"
-
-    private
-
-    def location(error)
-      Location.new(
-        line: 2,
-        column: 4,
-        detail: error.message,
-        hints: ["Close the parenthesis"]
-      )
-    end
-  end
-
-  FakeDependency = Struct.new(:loc, :importer_id, :specifier)
 
   def test_session_uses_runtime_engine
     env = FakeEnvironment.new
@@ -447,9 +402,7 @@ class Mayu::SessionTest < Minitest::Test
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
 
-    reload_result = Struct.new(:errors) { def success? = true }.new([])
-
-    session.send(:handle_reload_result, reload_result)
+    session.send(:handle_reload_result, Mayu::HotReload::Update.success)
 
     assert(fake_engine.refreshed_descriptor)
     command =
@@ -460,7 +413,7 @@ class Mayu::SessionTest < Minitest::Test
     refute_nil(command)
   end
 
-  def test_klenod_reload_failure_emits_render_error_batch
+  def test_reload_failure_emits_render_error_batch
     env = FakeEnvironment.new
     request_info =
       Mayu::Session::RequestInfo.new(
@@ -469,23 +422,12 @@ class Mayu::SessionTest < Minitest::Test
         http2: false
       )
     session = Mayu::Session.new(environment: env, request_info: request_info)
-    provider = ReloadErrorProvider.new
-    env.module_provider = provider
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
 
-    error =
-      FakeParseError.new(
-        SyntaxError.new("unexpected token"),
-        source: "%p\n%p= )\n",
-        module_id: "app:/broken.haml"
-      )
-    reload_result =
-      Struct
-        .new(:errors) { def success? = false }
-        .new([["app:/broken.haml", error]])
+    update = Mayu::HotReload::Update.failure([broken_haml_report])
 
-    session.send(:handle_reload_result, reload_result)
+    session.send(:handle_reload_result, update)
 
     assert_equal(1, fake_engine.batches.length)
     command = fake_engine.commands.first
@@ -497,101 +439,12 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal(2, command.line)
     assert_equal(4, command.column)
     assert_equal(["Close the parenthesis"], command.hints)
-    # A build error has no component tree, and its backtrace runs through the
-    # build graph rather than the app.
-    assert_empty(command.backtrace)
-    assert_empty(command.tree_path)
-    assert_same(error, provider.rewritten_error)
-  end
-
-  def test_klenod_resolve_failure_reports_the_import_site
-    Dir.mktmpdir do |dir|
-      source = "import a from \"./a\";\nimport colors from \"./colors.toml\";\n"
-      path = Pathname(dir).join("CustomElement.tsx")
-      path.write(source)
-
-      env = FakeEnvironment.new
-      request_info =
-        Mayu::Session::RequestInfo.new(
-          path: "/missing",
-          headers: {},
-          http2: false
-        )
-      session = Mayu::Session.new(environment: env, request_info: request_info)
-      env.module_provider =
-        ReloadErrorProvider.new(sources: {"app:/CustomElement.tsx" => path})
-      fake_engine = FakeEngine.new
-      session.instance_variable_set(:@engine, fake_engine)
-
-      error =
-        ::Klenod::Build::ResolveError.new(
-          nil,
-          dependency:
-            FakeDependency.new(
-              loc:
-                ::Klenod::Build::SourceLocation.new(
-                  "app:/CustomElement.tsx",
-                  2,
-                  21
-                ),
-              importer_id: "app:/CustomElement.tsx",
-              specifier: "./colors.toml"
-            ),
-          importer_id: "app:/CustomElement.tsx",
-          reason: :not_found,
-          requested_specifier: "./colors.toml",
-          suggestions: ["./colors.json"]
-        )
-      reload_result =
-        Struct
-          .new(:errors) { def success? = false }
-          .new([["app:/CustomElement.tsx", error]])
-
-      session.send(:handle_reload_result, reload_result)
-
-      command = fake_engine.commands.first
-      assert_equal("app:/CustomElement.tsx", command.file)
-      assert_equal("Module not found", command.type)
-      assert_equal("Could not resolve \"./colors.toml\"", command.message)
-      assert_equal(2, command.line)
-      assert_equal(21, command.column)
-      assert_equal(["Did you mean ./colors.json?"], command.hints)
-      # ResolveError names the importing module but does not carry its source.
-      assert_equal(source, command.source)
-      assert_empty(command.backtrace)
-    end
-  end
-
-  def test_klenod_reload_failure_keeps_the_backtrace_for_unknown_errors
-    env = FakeEnvironment.new
-    request_info =
-      Mayu::Session::RequestInfo.new(
-        path: "/missing",
-        headers: {},
-        http2: false
-      )
-    session = Mayu::Session.new(environment: env, request_info: request_info)
-    env.module_provider = ReloadErrorProvider.new
-    fake_engine = FakeEngine.new
-    session.instance_variable_set(:@engine, fake_engine)
-
-    error = RuntimeError.new("something unexpected")
-    error.set_backtrace(["generated:/broken.rb:20"])
-    reload_result =
-      Struct
-        .new(:errors) { def success? = false }
-        .new([["app:/broken.haml", error]])
-
-    session.send(:handle_reload_result, reload_result)
-
-    command = fake_engine.commands.first
-    assert_equal("RuntimeError", command.type)
-    assert_equal("something unexpected", command.message)
     assert_equal(["app:/broken.haml:2"], command.backtrace)
-    assert_nil(command.line)
+    # A build error has no component tree to walk.
+    assert_empty(command.tree_path)
   end
 
-  def test_klenod_reload_error_overlay_can_be_disabled
+  def test_reload_error_overlay_can_be_disabled
     env = FakeEnvironment.new(render_exceptions: false)
     request_info =
       Mayu::Session::RequestInfo.new(
@@ -603,14 +456,43 @@ class Mayu::SessionTest < Minitest::Test
     fake_engine = FakeEngine.new(render_exceptions: false)
     session.instance_variable_set(:@engine, fake_engine)
 
-    error = SyntaxError.new("unexpected token")
-    reload_result =
-      Struct
-        .new(:errors) { def success? = false }
-        .new([["app:/broken.haml", error]])
+    update = Mayu::HotReload::Update.failure([broken_haml_report])
 
-    session.send(:handle_reload_result, reload_result)
+    session.send(:handle_reload_result, update)
 
     assert_empty(fake_engine.batches)
+  end
+
+  def test_notify_hmr_update_is_ignored_until_the_session_runs
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.notify_hmr_update(Mayu::HotReload::Update.success)
+
+    assert_nil(fake_engine.refreshed_descriptor)
+    assert_empty(fake_engine.batches)
+  end
+
+  private
+
+  def broken_haml_report
+    Mayu::HotReload::ErrorReport.new(
+      type: "Haml parse error",
+      detail: "unexpected token",
+      file: "app:/broken.haml",
+      line: 2,
+      column: 4,
+      source: "%p\n%p= )\n",
+      hints: ["Close the parenthesis"],
+      backtrace: ["app:/broken.haml:2"]
+    )
   end
 end
