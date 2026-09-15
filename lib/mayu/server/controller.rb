@@ -21,16 +21,16 @@ module Mayu
     class Controller < Async::Container::Controller
       def initialize(
         config:,
-        mayu_env:,
         endpoint:,
-        bundle_filename: nil,
+        load_environment:,
+        worker_count: nil,
         **options
       )
         super(**options)
         @config = config
-        @mayu_env = mayu_env
         @endpoint = endpoint
-        @bundle_filename = bundle_filename
+        @load_environment = load_environment
+        @worker_count = worker_count || Async::Container.processor_count
         @bound_endpoint = nil
         @graceful_stop = @config.server.shutdown_timeout_seconds + Worker::CLEANUP_TIMEOUT_SECONDS
       end
@@ -90,7 +90,7 @@ module Mayu
 
         container.run(
           name: self.class.name,
-          count: worker_count,
+          count: @worker_count,
           restart: true
         ) { |instance| setup_worker(instance, collector_endpoint:) }
       end
@@ -134,23 +134,7 @@ module Mayu
       end
 
       def load_environment(metrics:)
-        case @mayu_env
-        in :development
-          Environment.with_config(@config, metrics:)
-        in :production
-          bundle_filename = @bundle_filename || raise("Missing bundle filename")
-          Environment.load_klenod_with_config(
-            @config,
-            bundle_filename,
-            metrics:
-          )
-        end
-      end
-
-      def worker_count
-        return 1 if @mayu_env == :development
-
-        Async::Container.processor_count
+        @load_environment.call(metrics:)
       end
     end
   end

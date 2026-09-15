@@ -69,4 +69,5 @@ class ShutdownTestController < Mayu::Server::Controller
 end
 
 endpoint = Async::HTTP::Endpoint.parse(config.server.listen, protocol: Async::HTTP::Protocol::HTTP2)
-ShutdownTestController.new(config:, mayu_env: :production, endpoint:, bundle_filename: bundle).run
+load_environment = ->(metrics:) { Mayu::Environment.load_klenod_with_config(config, bundle, metrics:) }
+ShutdownTestController.new(config:, endpoint:, load_environment:).run

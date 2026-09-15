@@ -216,12 +216,6 @@ class Mayu::Server::ControllerTest < Minitest::Test
     refute_includes(logs, "Worker drain deadline expired")
   end
 
-  def test_development_always_uses_one_worker
-    controller = Mayu::Server::Controller.allocate
-    controller.instance_variable_set(:@mayu_env, :development)
-    assert_equal(1, controller.send(:worker_count))
-  end
-
   private
 
   def start_server(count: 1, delay: 0, timeout: 10, startup_delay: 0, ready: true, metrics: false, transfer_failure: nil)

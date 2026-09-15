@@ -59,6 +59,25 @@ class Mayu::EnvironmentTest < Minitest::Test
     end
   end
 
+  def test_start_hooks_run_with_the_app_and_stop_what_they_returned
+    environment =
+      Mayu::Environment.new(
+        config(Dir.mktmpdir("mayu-klenod")),
+        module_provider: Object.new,
+        metrics: Object.new
+      )
+    stoppable = Struct.new(:stopped) { def stop = self.stopped = true }.new(false)
+    seen = []
+    environment.on_start { |app| seen << app }
+    environment.on_start { |app| stoppable }
+
+    environment.start(:app)
+    environment.stop
+
+    assert_equal([:app], seen)
+    assert(stoppable.stopped)
+  end
+
   def test_klenod_update_subscriptions_receive_each_central_update_once
     environment =
       Mayu::Environment.new(

@@ -15,6 +15,16 @@ module Mayu
           "Filename of the generated bundle",
           default: "app.mayu-bundle"
         )
+        option(
+          "--assets-dir <path>",
+          "Directory with the assets written by mayu build",
+          default: ".assets"
+        )
+        option(
+          "--source-root <path>",
+          "Directory the bundle was built from, for backtraces and source maps",
+          default: "app"
+        )
       end
 
       def call
@@ -31,10 +41,21 @@ module Mayu
         require_relative "../server"
 
         Configuration.with(:production) do |config|
+          bundle_path = File.expand_path(options[:filename])
+          assets_dir = File.expand_path(options[:assets_dir])
+          source_root = File.expand_path(options[:source_root])
+
           Mayu::Server.new(
             config:,
-            mayu_env: :production,
-            bundle_filename: options[:filename]
+            load_environment: ->(metrics:) do
+              Environment.load_klenod_with_config(
+                config,
+                bundle_path,
+                metrics:,
+                source_root:,
+                assets_dir:
+              )
+            end
           ).run
         end
       rescue Interrupt

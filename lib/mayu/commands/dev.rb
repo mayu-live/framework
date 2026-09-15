@@ -14,7 +14,17 @@ module Mayu
         require_relative "../server"
 
         Configuration.with(:development) do |config|
-          Mayu::Server.new(config:, mayu_env: :development).run
+          Mayu::Server.new(
+            config:,
+            worker_count: 1,
+            load_environment: ->(metrics:) do
+              environment = Environment.with_config(config, metrics:)
+              if config.server.hmr?
+                environment.on_start { environment.start_watcher }
+              end
+              environment
+            end
+          ).run
         end
       end
     end

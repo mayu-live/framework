@@ -10,14 +10,18 @@ require_relative "server/controller"
 
 module Mayu
   class Server
-    def initialize(config:, mayu_env:, bundle_filename: nil)
+    # `load_environment` is called once per worker process with `metrics:`
+    # and returns the Environment that worker serves. The CLI decides what
+    # goes in it, so the server itself never knows whether it is running a
+    # prebuilt bundle or a live build.
+    def initialize(config:, load_environment:, worker_count: nil)
       @uri = URI.parse(config.server.listen)
       ssl_context = ssl_context_for(config)
 
       endpoint = Async::HTTP::Endpoint.new(@uri, ssl_context:)
 
       @controller =
-        Controller.new(config:, mayu_env:, endpoint:, bundle_filename:)
+        Controller.new(config:, endpoint:, load_environment:, worker_count:)
     end
 
     def run

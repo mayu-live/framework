@@ -68,15 +68,23 @@ module Mayu
         Klenod::Configuration.new(root: config.root).development_provider
       @klenod_update_subscribers = {}
       @klenod_update_subscribers_mutex = Mutex.new
+      @start_hooks = []
+      @started = []
     end
 
     # Loads a prebuilt bundle. Nothing on this path may need klenod-build.
-    def self.load_klenod_with_config(config, bundle_path, metrics: nil)
+    def self.load_klenod_with_config(
+      config,
+      bundle_path,
+      metrics: nil,
+      source_root: nil,
+      assets_dir: nil
+    )
       module_provider =
         Klenod::RuntimeProvider.load(
           bundle_path,
-          source_root: File.join(config.root, Klenod::SOURCE_DIR),
-          assets_dir: File.join(config.root, Klenod::ASSETS_DIR)
+          source_root: source_root || File.join(config.root, Klenod::SOURCE_DIR),
+          assets_dir: assets_dir || File.join(config.root, Klenod::ASSETS_DIR)
         )
 
       new(config, module_provider:, metrics:)
@@ -84,6 +92,23 @@ module Mayu
 
     def use(&)
       yield self
+    end
+
+    # Registers work to run in the worker once its App exists. A hook may
+    # return something responding to `stop`, which `stop` then calls when the
+    # worker drains.
+    def on_start(&block)
+      @start_hooks << block
+    end
+
+    def start(app)
+      @started = @start_hooks.filter_map { it.call(app) }
+    end
+
+    def stop
+      started = @started
+      @started = []
+      started.each { it.stop if it.respond_to?(:stop) }
     end
 
     def start_watcher

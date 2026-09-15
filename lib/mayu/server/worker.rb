@@ -28,9 +28,9 @@ module Mayu
               end
             end
 
-            environment = @load_environment.call(@reporter&.metrics)
-            @app = App.new(environment)
-            @watcher = environment.start_watcher if environment.config.server.hmr?
+            @environment = @load_environment.call(@reporter&.metrics)
+            @app = App.new(@environment)
+            @environment.start(@app)
             @server = HTTPServer.new(
               @app,
               @bound_endpoint,
@@ -69,7 +69,7 @@ module Mayu
         task.with_timeout(@config.server.shutdown_timeout_seconds) do
           @app.begin_shutdown
           @server.stop_accepting
-          @watcher&.stop
+          @environment.stop
           @app.stop
         end
         Console.logger.info(self, "Worker drained", pid: Process.pid)
@@ -79,7 +79,7 @@ module Mayu
 
       def cleanup(task)
         task.with_timeout(CLEANUP_TIMEOUT_SECONDS) do
-          [-> { @app&.abort }, -> { @server&.stop }, -> { @watcher&.stop },
+          [-> { @app&.abort }, -> { @server&.stop }, -> { @environment&.stop },
             -> { @reporter&.stop }, -> { @bound_endpoint.close }].each do |operation|
             operation.call
           rescue => error
