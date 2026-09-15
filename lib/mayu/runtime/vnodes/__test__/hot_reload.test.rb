@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 require_relative "test_helpers"
-require_relative "../../../klenod"
+require_relative "../../../build"
 
 require "fileutils"
 require "tmpdir"
@@ -260,7 +260,7 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
       component_path = File.join(app_dir, "counter.haml")
       File.write(component_path, component_source("before", increment: 1))
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       entry = provider.entry("counter.haml")
       before_class = provider.exports(entry)::Default
       engine =

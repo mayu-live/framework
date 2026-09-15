@@ -22,7 +22,7 @@ module Mayu
 
       def call
         require_relative "../configuration"
-        require_relative "../klenod"
+        require_relative "../build"
         require "klenod/lsp"
 
         start_dir = File.expand_path(dir)
@@ -37,7 +37,7 @@ module Mayu
 
         Dir.chdir(root) do
           context =
-            Mayu::Klenod::Configuration.new(root:, mode: :development).context(analysis: true)
+            Mayu::Build::Configuration.new(root:, mode: :development).context(analysis: true)
           ::Klenod::LSP::Server.new(context:, input: @input, output:).start
         end
       end

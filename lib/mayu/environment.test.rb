@@ -7,6 +7,7 @@ require "tmpdir"
 require "fileutils"
 
 require_relative "environment"
+require_relative "build"
 
 class Mayu::EnvironmentTest < Minitest::Test
   def test_missing_client_runtime_explains_how_to_build_it
@@ -28,7 +29,7 @@ class Mayu::EnvironmentTest < Minitest::Test
       File.write(File.join(root, "app", "entry.rb"), "VALUE = 42\n")
 
       bundle_path = File.join(root, "app.mayu-bundle")
-      Mayu::Klenod::Configuration.new(root:, entrypoints: ["entry"]).build(
+      Mayu::Build::Configuration.new(root:, entrypoints: ["entry"]).build(
         output: bundle_path
       )
 
@@ -44,18 +45,9 @@ class Mayu::EnvironmentTest < Minitest::Test
     end
   end
 
-  def test_development_environment_uses_klenod_without_legacy_state
-    Dir.mktmpdir("mayu-klenod") do |root|
-      FileUtils.mkdir_p(File.join(root, "app"))
-      File.write(File.join(root, "app", "root.haml"), "%slot\n")
-
-      environment =
-        Mayu::Environment.with_config(config(root), metrics: Object.new)
-
-      assert_instance_of(
-        Mayu::Klenod::DevelopmentProvider,
-        environment.module_provider
-      )
+  def test_environment_requires_a_module_provider
+    assert_raises(ArgumentError) do
+      Mayu::Environment.new(config(Dir.mktmpdir("mayu-klenod")), metrics: Object.new)
     end
   end
 

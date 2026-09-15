@@ -5,7 +5,7 @@ require "minitest/autorun"
 require "tmpdir"
 require "fileutils"
 
-require_relative "../klenod"
+require_relative "../build"
 require_relative "../component/base"
 require_relative "../runtime/descriptors"
 require_relative "router"
@@ -178,7 +178,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
       File.write(File.join(root, "app", "root.haml"), "%slot\n")
       File.write(File.join(root, "app", "pages", "+page.haml"), "%p Hello\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       resolved = Mayu::Klenod::Router.new(provider).resolve("/")
 
       assert_equal(200, resolved.status)
@@ -210,7 +210,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
         "%p Photo\n"
       )
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       router = Mayu::Klenod::Router.new(provider)
 
       assert_equal(
@@ -246,7 +246,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
       File.write(File.join(pages, "posts", "+page.haml"), "%p Posts\n")
       File.write(File.join(pages, "posts", "+page.css"), "p { color: red; }\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       stylesheets =
         Mayu::Klenod::Router.new(provider).resolve("/posts").stylesheets
       indexes =

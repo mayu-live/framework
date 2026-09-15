@@ -32,17 +32,7 @@ module Mayu
       raise "Mayu browser runtime is missing at #{client_runtime_entries_path}. Run `npm run build` before starting the server."
     end
 
-    def self.with(mayu_env)
-      Configuration.with(mayu_env) do |config|
-        with_config(config).use { |environment| yield environment }
-      end
-    end
-
-    def self.with_config(config, metrics: nil)
-      new(config, metrics:)
-    end
-
-    def initialize(config, module_provider: nil, metrics: nil)
+    def initialize(config, module_provider:, metrics: nil)
       @config = config
       @app_dir = File.join(config.root, Klenod::SOURCE_DIR)
       @client_path = File.join(__dir__, "client", "dist")
@@ -63,9 +53,7 @@ module Mayu
           ttl: config.server.transfer_timeout_seconds
         )
 
-      @module_provider =
-        module_provider ||
-        Klenod::Configuration.new(root: config.root).development_provider
+      @module_provider = module_provider
       @start_hooks = []
       @started = []
     end

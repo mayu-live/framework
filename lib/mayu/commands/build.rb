@@ -29,7 +29,7 @@ module Mayu
       def call
         require "terminal-table"
         require_relative "../configuration"
-        require_relative "../klenod"
+        require_relative "../build"
 
         Sync do
           profiler =
@@ -41,7 +41,7 @@ module Mayu
           elapsed =
             Async::Clock.measure do
               Configuration.with(:development) do |config|
-                Klenod::Configuration.new(
+                Mayu::Build::Configuration.new(
                   root: config.root,
                   mode: :production
                 ).build(

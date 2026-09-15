@@ -9,6 +9,7 @@ require "fileutils"
 require "tmpdir"
 
 require_relative "session"
+require_relative "build"
 require_relative "encrypted_marshal"
 require_relative "session/transfer_state"
 require_relative "test"
@@ -191,7 +192,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_session_renders_the_example_through_klenod
     provider =
-      Mayu::Klenod::Configuration.new(
+      Mayu::Build::Configuration.new(
         root: File.expand_path("../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
@@ -211,7 +212,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_session_renders_klenod_slots
     provider =
-      Mayu::Klenod::Configuration.new(
+      Mayu::Build::Configuration.new(
         root: File.expand_path("../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
@@ -231,7 +232,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_session_renders_the_exception_examples
     provider =
-      Mayu::Klenod::Configuration.new(
+      Mayu::Build::Configuration.new(
         root: File.expand_path("../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
@@ -253,7 +254,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_session_renders_the_life_demo
     provider =
-      Mayu::Klenod::Configuration.new(
+      Mayu::Build::Configuration.new(
         root: File.expand_path("../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
@@ -278,7 +279,7 @@ class Mayu::SessionTest < Minitest::Test
     source_environment =
       FakeEnvironment.new(
         module_provider:
-          Mayu::Klenod::Configuration.new(root:).development_provider
+          Mayu::Build::Configuration.new(root:).development_provider
       )
     source_environment.instance_variable_set(:@marshaller, marshaller)
     request_info =
@@ -294,7 +295,7 @@ class Mayu::SessionTest < Minitest::Test
     target_environment =
       FakeEnvironment.new(
         module_provider:
-          Mayu::Klenod::Configuration.new(root:).development_provider,
+          Mayu::Build::Configuration.new(root:).development_provider,
         render_exceptions: false
       )
     target_environment.instance_variable_set(:@marshaller, marshaller)
@@ -330,7 +331,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_session_renders_klenod_jsx_custom_elements
     provider =
-      Mayu::Klenod::Configuration.new(
+      Mayu::Build::Configuration.new(
         root: File.expand_path("../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
@@ -353,7 +354,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_session_renders_example_optional_catch_all_route_segments
     provider =
-      Mayu::Klenod::Configuration.new(
+      Mayu::Build::Configuration.new(
         root: File.expand_path("../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
@@ -378,7 +379,7 @@ class Mayu::SessionTest < Minitest::Test
       File.write(File.join(pages, "+page.rb"), "raise \"boom\"\n")
       File.write(File.join(pages, "+error.haml"), "%p= $error.message\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       env = FakeEnvironment.new(module_provider: provider)
       request_info =
         Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)

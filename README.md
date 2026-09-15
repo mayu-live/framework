@@ -538,7 +538,7 @@ implementation detail. To inspect it for an application, run:
 bin/mayu transform app/pages/Counter.haml
 ```
 
-[The Klenod-backed Haml integration tests](https://github.com/mayu-live/framework/blob/main/lib/mayu/klenod/configuration.test.rb)
+[The Klenod-backed Haml integration tests](https://github.com/mayu-live/framework/blob/main/lib/mayu/build/configuration.test.rb)
 cover the Mayu-specific component behavior.
 
 # Implementation notes

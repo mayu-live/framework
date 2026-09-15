@@ -6,7 +6,7 @@ require "stringio"
 require "tmpdir"
 require "fileutils"
 
-require_relative "../klenod"
+require_relative "../build"
 require_relative "../commands"
 
 class Mayu::Commands::GraphTest < Minitest::Test
@@ -16,7 +16,7 @@ class Mayu::Commands::GraphTest < Minitest::Test
       File.write(File.join(root, "app", "root.haml"), "%p Hello\n")
       bundle_path = File.join(root, "app.mayu-bundle")
 
-      Mayu::Klenod::Configuration.new(root:).build(output: bundle_path)
+      Mayu::Build::Configuration.new(root:).build(output: bundle_path)
 
       output = StringIO.new
       Mayu::Commands::Application.new(["graph", bundle_path], output:).call
@@ -29,7 +29,7 @@ class Mayu::Commands::GraphTest < Minitest::Test
     Dir.mktmpdir("mayu-graph") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
       File.write(File.join(root, "app", "root.haml"), "%p Hello\n")
-      Mayu::Klenod::Configuration.new(root:).build(output: File.join(root, "app.mayu-bundle"))
+      Mayu::Build::Configuration.new(root:).build(output: File.join(root, "app.mayu-bundle"))
 
       output = StringIO.new
       Dir.chdir(root) { Mayu::Commands::Application.new(["graph"], output:).call }
@@ -43,7 +43,7 @@ class Mayu::Commands::GraphTest < Minitest::Test
       FileUtils.mkdir_p(File.join(root, "app"))
       File.write(File.join(root, "app", "root.haml"), "%p Hello\n")
       bundle_path = File.join(root, "app.mayu-bundle")
-      Mayu::Klenod::Configuration.new(root:).build(output: bundle_path)
+      Mayu::Build::Configuration.new(root:).build(output: bundle_path)
 
       output = StringIO.new
       command = Mayu::Commands::Graph.new(["--svg", bundle_path], output:)
@@ -60,7 +60,7 @@ class Mayu::Commands::GraphTest < Minitest::Test
       FileUtils.mkdir_p(File.join(root, "app"))
       File.write(File.join(root, "app", "root.haml"), "%p Hello\n")
       bundle_path = File.join(root, "app.mayu-bundle")
-      Mayu::Klenod::Configuration.new(root:).build(output: bundle_path)
+      Mayu::Build::Configuration.new(root:).build(output: bundle_path)
 
       output = StringIO.new
       command = Mayu::Commands::Graph.new(["--svg", bundle_path], output:)

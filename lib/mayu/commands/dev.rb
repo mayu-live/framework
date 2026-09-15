@@ -12,17 +12,20 @@ module Mayu
       def call
         require_relative "../configuration"
         require_relative "../server"
+        require_relative "../build"
 
         Configuration.with(:development) do |config|
           Mayu::Server.new(
             config:,
             worker_count: 1,
             load_environment: ->(metrics:) do
-              environment = Environment.with_config(config, metrics:)
+              provider =
+                Mayu::Build::Configuration.new(root: config.root).development_provider
+              environment = Environment.new(config, module_provider: provider, metrics:)
               if config.server.hmr?
                 reloader =
-                  Klenod::HotReloader.new(
-                    provider: environment.module_provider,
+                  Mayu::Build::HotReloader.new(
+                    provider:,
                     source_dir: environment.app_dir
                   )
                 environment.on_start { |app| reloader.start(app) }

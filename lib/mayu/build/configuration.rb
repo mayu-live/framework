@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Mayu
-  module Klenod
+  module Build
     class Configuration
       DEFAULT_ENTRYPOINTS = %w[root.haml virtual:router].freeze
       DEFAULT_ASSET_BASE = "/.mayu/assets/"
@@ -19,12 +19,12 @@ module Mayu
       def initialize(
         root:,
         mode: :development,
-        source_dir: SOURCE_DIR,
+        source_dir: Klenod::SOURCE_DIR,
         pages_dir: "pages",
         entrypoints: DEFAULT_ENTRYPOINTS,
         base: DEFAULT_ASSET_BASE,
-        assets_dir: ASSETS_DIR,
-        output: BUNDLE_FILENAME,
+        assets_dir: Klenod::ASSETS_DIR,
+        output: Klenod::BUNDLE_FILENAME,
         plugins: nil
       )
         @root = File.expand_path(root)
@@ -80,7 +80,7 @@ module Mayu
       end
 
       def runtime_provider(bundle_path: output_path)
-        RuntimeProvider.load(
+        Klenod::RuntimeProvider.load(
           bundle_path,
           source_root: source_path,
           assets_dir: assets_path

@@ -4,9 +4,9 @@ require "minitest/autorun"
 require "stringio"
 require "tmpdir"
 
-require_relative "../klenod"
+require_relative "../build"
 
-class Mayu::Klenod::UpdateLoggerTest < Minitest::Test
+class Mayu::Build::UpdateLoggerTest < Minitest::Test
   Update = Data.define(:event, :errors) do
     def success? = errors.empty?
 
@@ -16,7 +16,7 @@ class Mayu::Klenod::UpdateLoggerTest < Minitest::Test
   def test_logs_changed_files_and_reloaded_components
     Dir.mktmpdir do |root|
       output = StringIO.new
-      logger = Mayu::Klenod::UpdateLogger.new(source_dir: root, output:, env: {"NO_COLOR" => "1"})
+      logger = Mayu::Build::UpdateLogger.new(source_dir: root, output:, env: {"NO_COLOR" => "1"})
       result = result(reloaded: ["app:/components/Card.haml"], reevaluated: ["virtual:/router.rb"])
       event = Klenod::Build::UpdateEvent.new(["#{root}/components/Card.haml"], [], 4, result)
 
@@ -36,7 +36,7 @@ class Mayu::Klenod::UpdateLoggerTest < Minitest::Test
     Dir.mktmpdir do |root|
       output = StringIO.new
       logger =
-        Mayu::Klenod::UpdateLogger.new(
+        Mayu::Build::UpdateLogger.new(
           source_dir: root,
           output:,
           error_output: output,
@@ -68,7 +68,7 @@ class Mayu::Klenod::UpdateLoggerTest < Minitest::Test
     Dir.mktmpdir do |root|
       output = StringIO.new
       logger =
-        Mayu::Klenod::UpdateLogger.new(
+        Mayu::Build::UpdateLogger.new(
           source_dir: root,
           output:,
           error_output: output,
@@ -110,7 +110,7 @@ class Mayu::Klenod::UpdateLoggerTest < Minitest::Test
           def absolute_path(_module_id) = raise("should not be read")
         end.new
       logger =
-        Mayu::Klenod::UpdateLogger.new(
+        Mayu::Build::UpdateLogger.new(
           source_dir: root,
           output:,
           error_output: output,

@@ -128,7 +128,7 @@ Key responsibilities:
 ## Routing, Modules, and Assets (Klenod)
 
 Mayu delegates source loading, transforms, routing, assets, source maps, and
-file watching to Klenod. `Mayu::Klenod::Configuration` supplies the framework
+file watching to Klenod. `Mayu::Build::Configuration` supplies the framework
 defaults: `app` as the source directory, `app/pages` as the route directory,
 Klenod Haml configured with Mayu's component base and VDOM factory, and
 Klenod's Ruby, CSS, JavaScript, image, SVG, JSON, and static-file plugins.
@@ -282,16 +282,16 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
   - `lib/mayu/runtime/vnodes/vattributes.rb`
   - `lib/mayu/session.rb` (`Events.parse`)
 - Change route/file conventions:
-  - `lib/mayu/klenod/configuration.rb`
+  - `lib/mayu/build/configuration.rb`
   - `lib/mayu/klenod/router.rb`
   - `lib/mayu/session.rb` (`resolve_route`)
 - Change app import/compile behavior:
-  - `lib/mayu/klenod/configuration.rb`
+  - `lib/mayu/build/configuration.rb`
   - the corresponding Klenod plugin
 - Change HMR reload behavior:
-  - `lib/mayu/environment.rb`
-  - `lib/mayu/klenod/provider.rb`
-  - `lib/mayu/session.rb` reload task
+  - `lib/mayu/build/hot_reloader.rb`
+  - `lib/mayu/hot_reload.rb` (the update handed to sessions)
+  - `lib/mayu/session.rb` (`notify_hmr_update`)
 - Change asset generation/serving:
   - Klenod asset plugins
   - `lib/mayu/klenod/asset_app.rb`

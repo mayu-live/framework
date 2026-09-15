@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Mayu
-  module Klenod
+  module Build
     class UpdateLogger
       COLORS = {
         reset: "\e[0m",

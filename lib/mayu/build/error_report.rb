@@ -4,7 +4,7 @@ require "klenod/build/resolution_error_formatter"
 require_relative "../hot_reload"
 
 module Mayu
-  module Klenod
+  module Build
     # Normalizes a hot-reload failure into the fields the terminal logger and
     # the browser overlay both need, as a HotReload::ErrorReport.
     #

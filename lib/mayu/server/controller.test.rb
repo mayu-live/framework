@@ -7,6 +7,7 @@ require "fileutils"
 require "rbconfig"
 require "async/http/client"
 require_relative "../server"
+require_relative "../build"
 
 class Mayu::Server::ControllerTest < Minitest::Test
   FIXTURE = File.expand_path("__test__/shutdown_server.rb", __dir__)
@@ -29,7 +30,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
       %p= "count=\#{@count}"
     HAML
     File.write(File.join(@root, "app/pages/pid/+route.rb"), "def GET(request); [200, {}, Process.pid.to_s]; end")
-    Mayu::Klenod::Configuration.new(root: @root, mode: :production).build(output: File.join(@root, "app.mayu-bundle"))
+    Mayu::Build::Configuration.new(root: @root, mode: :production).build(output: File.join(@root, "app.mayu-bundle"))
   end
 
   def teardown

@@ -10,11 +10,11 @@ module Mayu
 
       def call
         require_relative "../configuration"
-        require_relative "../klenod"
-        require_relative "../test/runner"
+        require_relative "../build"
+        require_relative "../build/test_runner"
 
         Configuration.with(:development) do |config|
-          Mayu::Test::Runner.new(
+          Mayu::Build::TestRunner.new(
             root: config.root,
             worker_command:,
             output:,

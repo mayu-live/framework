@@ -4,18 +4,18 @@ require "minitest/autorun"
 require "tmpdir"
 require "fileutils"
 
-require_relative "../klenod"
+require_relative "../build"
 require_relative "../component"
 require_relative "../runtime/vnodes/vcomponent"
 
-class Mayu::Klenod::ConfigurationTest < Minitest::Test
+class Mayu::Build::ConfigurationTest < Minitest::Test
   def test_development_and_runtime_providers_share_the_same_entry_exports
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
       File.write(File.join(root, "app", "entry.rb"), "VALUE = 42\n")
 
       configuration =
-        Mayu::Klenod::Configuration.new(
+        Mayu::Build::Configuration.new(
           root:,
           entrypoints: ["entry"],
           output: ".mayu/app.bundle"
@@ -36,13 +36,13 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
   end
 
   def test_development_context_uses_mayus_module_namespace
-    configuration = Mayu::Klenod::Configuration.new(root: Dir.pwd)
+    configuration = Mayu::Build::Configuration.new(root: Dir.pwd)
 
     assert_same(Mayu::ModuleNamespace, configuration.context.graph.namespace)
   end
 
   def test_default_context_includes_the_klenod_test_plugin
-    configuration = Mayu::Klenod::Configuration.new(root: Dir.pwd)
+    configuration = Mayu::Build::Configuration.new(root: Dir.pwd)
 
     assert(
       configuration.context.graph.plugins.any? do |plugin|
@@ -57,7 +57,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       File.write(File.join(root, "app", "entry.rb"), "VALUE = 42\n")
 
       configuration =
-        Mayu::Klenod::Configuration.new(root:, entrypoints: ["entry"])
+        Mayu::Build::Configuration.new(root:, entrypoints: ["entry"])
       output = File.join(root, "build", "app.mayu-bundle")
 
       configuration.build(output:)
@@ -82,7 +82,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       )
 
       provider =
-        Mayu::Klenod::Configuration.new(
+        Mayu::Build::Configuration.new(
           root:,
           source_dir: "frontend",
           pages_dir: "routes"
@@ -108,7 +108,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
         %p= "#{$title}:#{@@section}:#{@count}"
       HAML
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("card.haml"))::Default
       component = component_class.allocate
       component.instance_variable_set(:@__props, {title: "Ada"}.freeze)
@@ -145,7 +145,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       File.write(File.join(app, "page.md"), "# Imported heading\n")
       File.write(File.join(app, "page.haml"), ":markdown\n  # Inline heading\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       map = provider.exports(provider.entry("markdown-components.rb"))::Default
       markdown = provider.exports(provider.entry("page.md"))::Default
       inline = provider.exports(provider.entry("page.haml"))::Default
@@ -170,7 +170,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       File.write(File.join(root, "app", "card.haml"), "%p.title Card\n")
       File.write(File.join(root, "app", "card.css"), ".title { color: red; }\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("card.haml"))::Default
       descriptor = component_class.allocate.render
 
@@ -188,7 +188,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
       File.write(File.join(root, "app", "button.haml"), "%button{ **$* } Button\n")
       File.write(File.join(root, "app", "button.css"), "button { color: red; }\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("button.haml"))::Default
       component = component_class.allocate
       component.instance_variable_set(:@__props, {class: "caller", "data-id": "example"}.freeze)
@@ -215,7 +215,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
           %slot
       HAML
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("card.haml"))::Default
       label_class = provider.exports(provider.entry("label.haml"))::Default
       component = component_class.allocate
@@ -242,7 +242,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
           %slot(name="menu")
       HAML
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("layout.haml"))::Default
       component = component_class.allocate
       component.instance_variable_set(
@@ -271,7 +271,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
         %p= explode
       HAML
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("broken.haml"))::Default
 
       error = assert_raises(RuntimeError) { component_class.allocate.render }
@@ -295,7 +295,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
           Hello world
       HAML
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("button.haml"))::Default
       component = component_class.allocate
       descriptor = component.render
@@ -310,7 +310,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
   end
 
   def test_default_image_plugin_generates_klenod_inline_placeholders
-    configuration = Mayu::Klenod::Configuration.new(root: Dir.pwd)
+    configuration = Mayu::Build::Configuration.new(root: Dir.pwd)
     plugin =
       configuration.plugins.find do |candidate|
         candidate.is_a?(::Klenod::Build::Plugins::ImagePlugin::Plugin)
@@ -324,7 +324,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
 
   def test_default_plugins_include_google_fonts_with_a_project_cache
     root = File.expand_path("../../..", __dir__)
-    configuration = Mayu::Klenod::Configuration.new(root:)
+    configuration = Mayu::Build::Configuration.new(root:)
     plugin =
       configuration.plugins.find do |candidate|
         candidate.is_a?(::Klenod::Build::Plugins::GoogleFontsPlugin::Plugin)
@@ -345,7 +345,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
         "def GET(request) = request.path\n"
       )
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       router = provider.exports(provider.entry("virtual:router"))::Default
       handler = router.match("/api").handler
 
@@ -361,7 +361,7 @@ class Mayu::Klenod::ConfigurationTest < Minitest::Test
 
   def test_example_includes_a_klenod_route_handler
     provider =
-      Mayu::Klenod::Configuration.new(
+      Mayu::Build::Configuration.new(
         root: File.expand_path("../../../example", __dir__)
       ).development_provider
     router = provider.exports(provider.entry("virtual:router"))::Default

@@ -2,12 +2,12 @@
 
 require "klenod/test"
 
-require_relative "../klenod"
-require_relative "minitest_adapter"
+require_relative "../build"
+require_relative "../test/minitest_adapter"
 
 module Mayu
-  module Test
-    class Runner
+  module Build
+    class TestRunner
       def initialize(root:, worker_command:, output: $stdout, error_output: $stderr, **options)
         @root = root
         @worker_command = worker_command
@@ -33,7 +33,7 @@ module Mayu
       attr_reader :root, :worker_command, :output, :error_output, :options
 
       def configuration
-        Mayu::Klenod::Configuration.new(root:, mode: :development)
+        Configuration.new(root:, mode: :development)
       end
 
       def execute(context, test_paths)
@@ -51,7 +51,7 @@ module Mayu
       end
 
       def format_error(error, context)
-        Mayu::Klenod::DevelopmentProvider.new(context).format_exception(error)
+        DevelopmentProvider.new(context).format_exception(error)
       end
     end
   end

@@ -13,7 +13,7 @@ require_relative "error_report"
 require_relative "update_logger"
 
 module Mayu
-  module Klenod
+  module Build
     # Watches the app's sources, applies each change to the development
     # provider, and hands the outcome to the App as a HotReload::Update so it
     # can notify its sessions.

@@ -21,11 +21,11 @@ module Mayu
       def call
         require "rouge"
         require_relative "../configuration"
-        require_relative "../klenod"
+        require_relative "../build"
 
         Configuration.with(:development) do |config|
           transform_with_klenod(
-            Klenod::Configuration.new(root: config.root),
+            Mayu::Build::Configuration.new(root: config.root),
             @path,
             line_numbers: !@options[:no_line_numbers],
             colors: !@options[:no_colors]

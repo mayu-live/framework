@@ -5,11 +5,11 @@ require "tmpdir"
 require "fileutils"
 require "stringio"
 
-require_relative "../klenod"
+require_relative "../build"
 require_relative "../component"
 require_relative "../runtime/vnodes/vcomponent"
 
-class Mayu::Klenod::HotReloaderTest < Minitest::Test
+class Mayu::Build::HotReloaderTest < Minitest::Test
   # Collects the updates the reloader would hand to the server's App.
   class FakeApp
     attr_reader :updates
@@ -73,7 +73,7 @@ class Mayu::Klenod::HotReloaderTest < Minitest::Test
       css_path = File.join(app_dir, "root.css")
       File.write(File.join(app_dir, "root.haml"), "%p Before\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       app = FakeApp.new
 
       Async do
@@ -98,7 +98,7 @@ class Mayu::Klenod::HotReloaderTest < Minitest::Test
       root_path = File.join(app_dir, "root.haml")
       File.write(root_path, "%p Before\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       app = FakeApp.new
 
       Async do
@@ -134,7 +134,7 @@ class Mayu::Klenod::HotReloaderTest < Minitest::Test
       css_path = File.join(app_dir, "root.css")
       File.write(File.join(app_dir, "root.haml"), "%p Before\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       app = FakeApp.new
 
       Async do
@@ -170,7 +170,7 @@ class Mayu::Klenod::HotReloaderTest < Minitest::Test
       File.write(File.join(app_dir, "root.haml"), "%slot\n")
       File.write(File.join(pages_dir, "+page.haml"), "%p Home\n")
 
-      provider = Mayu::Klenod::Configuration.new(root:).development_provider
+      provider = Mayu::Build::Configuration.new(root:).development_provider
       router = Mayu::Klenod::Router.new(provider)
       assert_nil(router.resolve("/about"))
       app = FakeApp.new
@@ -297,11 +297,11 @@ class Mayu::Klenod::HotReloaderTest < Minitest::Test
   private
 
   def reloader(provider, source_dir)
-    Mayu::Klenod::HotReloader.new(
+    Mayu::Build::HotReloader.new(
       provider:,
       source_dir:,
       logger:
-        Mayu::Klenod::UpdateLogger.new(
+        Mayu::Build::UpdateLogger.new(
           source_dir:,
           provider:,
           output: StringIO.new,

@@ -7,7 +7,7 @@ require "stringio"
 require "tmpdir"
 require "fileutils"
 
-require_relative "../klenod"
+require_relative "../build"
 require_relative "../commands"
 
 class Mayu::Commands::LspTest < Minitest::Test

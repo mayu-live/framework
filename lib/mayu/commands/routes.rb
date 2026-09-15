@@ -21,10 +21,10 @@ module Mayu
 
       def call
         require_relative "../configuration"
-        require_relative "../klenod"
+        require_relative "../build"
 
         Configuration.with(:development) do |config|
-          configuration = Klenod::Configuration.new(root: config.root)
+          configuration = Mayu::Build::Configuration.new(root: config.root)
           @context = configuration.context
           @include_regexp = options[:regexp]
 
