@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   javascript:
@@ -17,11 +17,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           cache: npm
-          node-version: '19.3.0'
+          node-version: "19.3.0"
       - run: npm ci
       - name: Build
         run: |
-          npm run build:production -w lib/mayu/client
+          npm run build:production -w gems/mayu-live/lib/mayu/client
   ruby:
     name: Test Ruby
     runs-on: ubuntu-latest

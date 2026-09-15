@@ -3,7 +3,7 @@
 source "https://rubygems.org"
 
 # gem "mayu-live"
-gem "mayu-live", path: ".."
+gem "mayu-live", path: "../gems/mayu-live"
 
 gem "fuzzy_match"
 

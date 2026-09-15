@@ -193,7 +193,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_session_renders_the_example_through_klenod
     provider =
       Mayu::Build::Configuration.new(
-        root: File.expand_path("../../example", __dir__)
+        root: File.expand_path("../../../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
@@ -213,7 +213,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_session_renders_klenod_slots
     provider =
       Mayu::Build::Configuration.new(
-        root: File.expand_path("../../example", __dir__)
+        root: File.expand_path("../../../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
@@ -233,7 +233,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_session_renders_the_exception_examples
     provider =
       Mayu::Build::Configuration.new(
-        root: File.expand_path("../../example", __dir__)
+        root: File.expand_path("../../../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
@@ -255,7 +255,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_session_renders_the_life_demo
     provider =
       Mayu::Build::Configuration.new(
-        root: File.expand_path("../../example", __dir__)
+        root: File.expand_path("../../../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
@@ -274,7 +274,7 @@ class Mayu::SessionTest < Minitest::Test
   end
 
   def test_encrypted_transfer_restores_klenod_component_references
-    root = File.expand_path("../../example", __dir__)
+    root = File.expand_path("../../../../example", __dir__)
     marshaller = Mayu::EncryptedMarshal.new("transfer-test-secret")
     source_environment =
       FakeEnvironment.new(
@@ -332,7 +332,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_session_renders_klenod_jsx_custom_elements
     provider =
       Mayu::Build::Configuration.new(
-        root: File.expand_path("../../example", __dir__)
+        root: File.expand_path("../../../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
@@ -355,7 +355,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_session_renders_example_optional_catch_all_route_segments
     provider =
       Mayu::Build::Configuration.new(
-        root: File.expand_path("../../example", __dir__)
+        root: File.expand_path("../../../../example", __dir__)
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =

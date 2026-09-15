@@ -14,7 +14,7 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 - Browser runtime executes those commands against the real DOM.
 - Klenod compiles application files (`.haml`, `.css`, `.js`, and assets), resolves routes, tracks dependencies, and provides development updates for HMR.
 
-## Top-Level Responsibility Map (`lib/mayu`)
+## Top-Level Responsibility Map (`gems/mayu-live/lib/mayu`)
 
 - `environment.rb`: Bootstraps the Klenod-backed app environment, metrics, runtime JS entry path, and marshaller.
 - `server.rb` + `server/*`: HTTP server, routing of framework endpoints, session stream/event handling, static runtime files.
@@ -44,7 +44,7 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 10. Browser sends callback/navigate/ping events to `PATCH /.mayu/session/:id`.
 11. Session queues events -> engine updates -> command batches streamed back.
 
-## Core Runtime Architecture (`lib/mayu/runtime`)
+## Core Runtime Architecture (`gems/mayu-live/lib/mayu/runtime`)
 
 ### Key layers
 
@@ -107,7 +107,7 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
 - Unhandled errors are always logged. `server.render_exceptions` controls
   whether the server also sends a `RenderError` command for the browser overlay.
 
-## Components (`lib/mayu/component`)
+## Components (`gems/mayu-live/lib/mayu/component`)
 
 ### Base API
 
@@ -158,7 +158,7 @@ Klenod assets and serializes a Klenod runtime bundle; `mayu start` loads that
 bundle through the production provider. `Klenod::Rack::AssetApp` serves assets
 at `/.mayu/assets/`.
 
-## Server and Session Transport (`lib/mayu/server`, `lib/mayu/session`)
+## Server and Session Transport (`gems/mayu-live/lib/mayu/server`, `gems/mayu-live/lib/mayu/session`)
 
 ### `Server::App` endpoint split
 
@@ -189,7 +189,7 @@ On shutdown or an explicit transfer command:
 - browser stores transfer blob
 - next stream connect uses `POST` with transfer blob to resume session
 
-## Browser Runtime (`lib/mayu/client/src`)
+## Browser Runtime (`gems/mayu-live/lib/mayu/client/src`)
 
 ### Main pieces
 
@@ -205,8 +205,8 @@ On shutdown or an explicit transfer command:
 
 ### Command protocol boundary
 
-Ruby command types in `lib/mayu/runtime/commands.rb` must stay in sync with
-command handlers in `lib/mayu/client/src/runtime.ts`.
+Ruby command types in `gems/mayu-live/lib/mayu/runtime/commands.rb` must stay in sync with
+command handlers in `gems/mayu-live/lib/mayu/client/src/runtime.ts`.
 
 Every decoded MessagePack value is a batch (`Command[]`), and every command is
 a compact `[name, ...arguments]` tuple. There is no `Batch` command or extra
@@ -256,7 +256,7 @@ Notable command categories:
 - `Commands::Start`: loads bundle + runs server
 - bundle stores the marshaled Klenod provider plus version metadata
 
-## Metrics (`lib/mayu/metrics`)
+## Metrics (`gems/mayu-live/lib/mayu/metrics`)
 
 Metrics are integrated across server/session/runtime.
 
@@ -272,37 +272,37 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
 ## Where To Make Changes (Practical Guide)
 
 - Change component API/lifecycle/state behavior:
-  - `lib/mayu/component/base.rb`
-  - `lib/mayu/runtime/vnodes/vcomponent.rb`
+  - `gems/mayu-live/lib/mayu/component/base.rb`
+  - `gems/mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb`
 - Change diffing/command emission:
-  - `lib/mayu/runtime/vnodes/*`
-  - `lib/mayu/runtime/commands.rb` (wire commands; also update TS handlers)
-  - `lib/mayu/client/src/runtime.ts`
+  - `gems/mayu-live/lib/mayu/runtime/vnodes/*`
+  - `gems/mayu-live/lib/mayu/runtime/commands.rb` (wire commands; also update TS handlers)
+  - `gems/mayu-live/lib/mayu/client/src/runtime.ts`
 - Change event serialization or callback semantics:
-  - `lib/mayu/client/src/serializeEvent.ts`
-  - `lib/mayu/runtime/vnodes/vattributes.rb`
-  - `lib/mayu/session.rb` (`Events.parse`)
+  - `gems/mayu-live/lib/mayu/client/src/serializeEvent.ts`
+  - `gems/mayu-live/lib/mayu/runtime/vnodes/vattributes.rb`
+  - `gems/mayu-live/lib/mayu/session.rb` (`Events.parse`)
 - Change route/file conventions:
-  - `lib/mayu/build/configuration.rb`
-  - `lib/mayu/klenod/router.rb`
-  - `lib/mayu/session.rb` (`resolve_route`)
+  - `gems/mayu-live/lib/mayu/build/configuration.rb`
+  - `gems/mayu-live/lib/mayu/klenod/router.rb`
+  - `gems/mayu-live/lib/mayu/session.rb` (`resolve_route`)
 - Change app import/compile behavior:
-  - `lib/mayu/build/configuration.rb`
+  - `gems/mayu-live/lib/mayu/build/configuration.rb`
   - the corresponding Klenod plugin
 - Change HMR reload behavior:
-  - `lib/mayu/build/hot_reloader.rb`
-  - `lib/mayu/hot_reload.rb` (the update handed to sessions)
-  - `lib/mayu/session.rb` (`notify_hmr_update`)
+  - `gems/mayu-live/lib/mayu/build/hot_reloader.rb`
+  - `gems/mayu-live/lib/mayu/hot_reload.rb` (the update handed to sessions)
+  - `gems/mayu-live/lib/mayu/session.rb` (`notify_hmr_update`)
 - Change asset generation/serving:
   - Klenod asset plugins
-  - `lib/mayu/klenod/asset_app.rb`
-  - `lib/mayu/server/app.rb#handle_asset`
+  - `gems/mayu-live/lib/mayu/klenod/asset_app.rb`
+  - `gems/mayu-live/lib/mayu/server/app.rb#handle_asset`
 - Change session auth/transfer/recovery:
-  - `lib/mayu/server/cookies.rb`
-  - `lib/mayu/session/*`
-  - `lib/mayu/encrypted_marshal.rb`
-  - `lib/mayu/client/src/session-connection.ts`
-  - `lib/mayu/client/src/session-recovery.ts`
+  - `gems/mayu-live/lib/mayu/server/cookies.rb`
+  - `gems/mayu-live/lib/mayu/session/*`
+  - `gems/mayu-live/lib/mayu/encrypted_marshal.rb`
+  - `gems/mayu-live/lib/mayu/client/src/session-connection.ts`
+  - `gems/mayu-live/lib/mayu/client/src/session-recovery.ts`
 
 ## Sharp Edges / Agent Notes
 
@@ -313,13 +313,13 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
 
 ## Good Starting Files for New Contributors
 
-- `lib/mayu/server/app.rb`
-- `lib/mayu/session.rb`
-- `lib/mayu/runtime/engine.rb`
-- `lib/mayu/runtime/vnodes/vdocument.rb`
-- `lib/mayu/runtime/vnodes/vcomponent.rb`
-- `lib/mayu/runtime/vnodes/vchildren.rb`
-- `lib/mayu/modules/system.rb`
-- `lib/mayu/modules/README.md`
-- `lib/mayu/client/src/session-connection.ts`
-- `lib/mayu/client/src/runtime.ts`
+- `gems/mayu-live/lib/mayu/server/app.rb`
+- `gems/mayu-live/lib/mayu/session.rb`
+- `gems/mayu-live/lib/mayu/runtime/engine.rb`
+- `gems/mayu-live/lib/mayu/runtime/vnodes/vdocument.rb`
+- `gems/mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb`
+- `gems/mayu-live/lib/mayu/runtime/vnodes/vchildren.rb`
+- `gems/mayu-live/lib/mayu/modules/system.rb`
+- `gems/mayu-live/lib/mayu/modules/README.md`
+- `gems/mayu-live/lib/mayu/client/src/session-connection.ts`
+- `gems/mayu-live/lib/mayu/client/src/runtime.ts`

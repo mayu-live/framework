@@ -1,23 +1,20 @@
 # frozen_string_literal: true
-# typed: ignore
 
 require "bundler/setup"
-require "bundler/gem_tasks"
 require "standard/rake"
+require "fileutils"
 
-if ENV["DISABLE_SORBET"]
-  require_relative "lib/mayu/disable_sorbet"
-  Mayu::DisableSorbet.disable_sorbet!
-end
+GEMS = %w[mayu-live].freeze
+CLIENT_WORKSPACE = "gems/mayu-live/lib/mayu/client"
 
 unless ENV["BUNDLE_WITHOUT"].to_s.split(":").include?("test")
   require "minitest/test_task"
   require "minitest/reporters"
 
   Minitest::TestTask.create(:test) do |t|
-    t.libs << "lib"
+    GEMS.each { |name| t.libs << "gems/#{name}/lib" }
     t.warning = false
-    t.test_globs = ["lib/**/*.test.rb"]
+    t.test_globs = GEMS.map { |name| "gems/#{name}/lib/**/*.test.rb" }
   end
 
   task :client_build do
@@ -29,14 +26,22 @@ unless ENV["BUNDLE_WITHOUT"].to_s.split(":").include?("test")
   task default: :test
 end
 
+desc "Build all gem packages into pkg/"
 task :build do
-  system("npm", "-w", "lib/mayu/client", "run", "build:production")
-  system("gem", "build")
+  require_relative "gems/mayu-live/lib/mayu/version"
+
+  sh "npm", "-w", CLIENT_WORKSPACE, "run", "build:production"
+  FileUtils.mkdir_p("pkg")
+  GEMS.each do |name|
+    Dir.chdir("gems/#{name}") do
+      sh "gem", "build", "#{name}.gemspec", "--output", "../../pkg/#{name}-#{Mayu::VERSION}.gem"
+    end
+  end
 end
 
 namespace :profile do
   desc "Profile vnode update path with Vernier"
   task :vnodes_update do
-    sh "bundle", "exec", "ruby", "lib/mayu/runtime/vnodes/__test__/update_profile.rb"
+    sh "bundle", "exec", "ruby", "gems/mayu-live/lib/mayu/runtime/vnodes/__test__/update_profile.rb"
   end
 end

@@ -120,7 +120,7 @@ function serializeElement(elem: Element) {
       multiple: elem.multiple,
       selectedOptions: Array.from(
         elem.selectedOptions,
-        (option) => option.value
+        (option) => option.value,
       ),
       disabled: elem.disabled,
       required: elem.required,
@@ -176,7 +176,7 @@ function serializeDataset(elem: Element) {
 }
 
 function serializeModifierKeys(
-  e: Pick<MouseEvent, "ctrlKey" | "metaKey" | "shiftKey" | "altKey">
+  e: Pick<MouseEvent, "ctrlKey" | "metaKey" | "shiftKey" | "altKey">,
 ) {
   return {
     ctrlKey: e.ctrlKey,

@@ -34,7 +34,7 @@ describe("serializeEvent", () => {
         cancelable: true,
         button: 0,
         buttons: 1,
-      })
+      }),
     );
 
     expect(htmlPayload.currentTarget.dataset).toEqual({ action: "save" });
@@ -43,7 +43,7 @@ describe("serializeEvent", () => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     const circle = document.createElementNS(
       "http://www.w3.org/2000/svg",
-      "circle"
+      "circle",
     );
     circle.dataset.state = "active";
     svg.append(circle);
@@ -52,7 +52,7 @@ describe("serializeEvent", () => {
     const svgPayload = captureSerializedEvent(
       circle,
       "click",
-      new MouseEvent("click", { bubbles: true, cancelable: true })
+      new MouseEvent("click", { bubbles: true, cancelable: true }),
     );
 
     expect(svgPayload.currentTarget.dataset).toEqual({ state: "active" });
@@ -75,7 +75,7 @@ describe("serializeEvent", () => {
         repeat: true,
         ctrlKey: true,
         shiftKey: true,
-      })
+      }),
     );
 
     expect(payload.type).toBe("KeyboardEvent");
@@ -99,7 +99,7 @@ describe("serializeEvent", () => {
     const payload = captureSerializedEvent(
       textarea,
       "input",
-      new Event("input", { bubbles: true, cancelable: true })
+      new Event("input", { bubbles: true, cancelable: true }),
     );
 
     expect(payload.target).toMatchObject({
@@ -128,7 +128,7 @@ describe("serializeEvent", () => {
     const payload = captureSerializedEvent(
       select,
       "change",
-      new Event("change", { bubbles: true, cancelable: true })
+      new Event("change", { bubbles: true, cancelable: true }),
     );
 
     expect(payload.target).toMatchObject({
@@ -169,7 +169,7 @@ describe("serializeEvent", () => {
         bubbles: true,
         cancelable: true,
         submitter: submitButton,
-      })
+      }),
     );
 
     expect(payload.target.formData.tag).toEqual(["frontend", "ruby"]);

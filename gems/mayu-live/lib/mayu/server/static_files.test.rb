@@ -10,7 +10,7 @@ require_relative "static_files"
 
 class Mayu::Server::StaticFiles::Test < Minitest::Test
   def setup
-    @root = File.join(__dir__, "..", "..", "..", "example", "app")
+    @root = File.join(__dir__, "..", "..", "..", "..", "..", "example", "app")
     @static_files = Mayu::Server::StaticFiles.new(@root)
   end
 

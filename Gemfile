@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-gemspec
+gemspec path: "gems/mayu-live"
 
 group :development do
   gem "guard", require: false

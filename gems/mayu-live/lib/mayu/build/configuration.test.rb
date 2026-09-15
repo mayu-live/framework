@@ -362,7 +362,7 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
   def test_example_includes_a_klenod_route_handler
     provider =
       Mayu::Build::Configuration.new(
-        root: File.expand_path("../../../example", __dir__)
+        root: File.expand_path("../../../../../example", __dir__)
       ).development_provider
     router = provider.exports(provider.entry("virtual:router"))::Default
     handler = router.match("/api/health").handler

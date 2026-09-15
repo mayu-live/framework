@@ -22,13 +22,13 @@ class MayuPing extends HTMLElement {
     this.#div = this.shadowRoot!.querySelector(".mayu-ping") as HTMLDivElement;
     this.#ping = this.shadowRoot!.querySelector(".ping") as HTMLSpanElement;
     this.#disconnectDialog = this.shadowRoot!.querySelector(
-      ".disconnect-dialog"
+      ".disconnect-dialog",
     ) as HTMLDialogElement;
     this.#disconnectTitle = this.shadowRoot!.querySelector(
-      ".disconnect-title"
+      ".disconnect-title",
     ) as HTMLParagraphElement;
     this.#disconnectText = this.shadowRoot!.querySelector(
-      ".disconnect-text"
+      ".disconnect-text",
     ) as HTMLParagraphElement;
     this.#disconnectDialog?.addEventListener("cancel", (event) => {
       // Keep this modal non-cancelable while connection is unavailable.

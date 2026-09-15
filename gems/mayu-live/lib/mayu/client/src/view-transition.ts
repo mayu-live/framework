@@ -1,11 +1,11 @@
 type DocumentWithViewTransition = Document & {
   startViewTransition?: (
-    update: () => void | Promise<void>
+    update: () => void | Promise<void>,
   ) => { updateCallbackDone?: Promise<void> } | void;
 };
 
 export default async function withViewTransition(
-  update: () => void | Promise<void>
+  update: () => void | Promise<void>,
 ) {
   const start = (document as DocumentWithViewTransition).startViewTransition;
 

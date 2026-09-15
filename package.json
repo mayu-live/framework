@@ -5,9 +5,9 @@
   "type": "module",
   "description": "Main package.json for mayu",
   "scripts": {
-    "build": "npm -w lib/mayu/client run build:production",
-    "test": "npm -w lib/mayu/client run test",
-    "test:watch": "npm -w lib/mayu/client run test:watch",
+    "build": "npm -w gems/mayu-live/lib/mayu/client run build:production",
+    "test": "npm -w gems/mayu-live/lib/mayu/client run test",
+    "test:watch": "npm -w gems/mayu-live/lib/mayu/client run test:watch",
     "format": "bundle exec standardrb --fix && npm run prettier",
     "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,md,html,css,json,yaml,yml}'",
     "prepare": "husky install"
@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/mayu-live/prototype#readme",
   "workspaces": [
-    "lib/mayu/client"
+    "gems/mayu-live/lib/mayu/client"
   ],
   "devDependencies": {
     "husky": "^8.0.2",

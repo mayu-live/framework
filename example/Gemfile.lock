@@ -1,5 +1,5 @@
 PATH
-  remote: ..
+  remote: ../gems/mayu-live
   specs:
     mayu-live (0.0.6)
       async (~> 2.42)
