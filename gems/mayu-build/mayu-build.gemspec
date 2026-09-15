@@ -45,6 +45,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency "klenod-plugin-css", "= 0.0.15"
   spec.add_dependency "klenod-plugin-javascript", "= 0.0.15"
 
+  # Self-signed certificates for the development server
+  spec.add_dependency "localhost", "~> 1.7"
+
   # Command line output and scaffolding
   spec.add_dependency "reline", "~> 0.6"
   spec.add_dependency "rouge", "~> 4.7"

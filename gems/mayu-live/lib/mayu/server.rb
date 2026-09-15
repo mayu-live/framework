@@ -30,15 +30,33 @@ module Mayu
       @controller.run
     rescue Interrupt
       # Interrupt is expected when Ctrl+C is used for shutdown.
-    rescue Errno::EADDRINUSE => e
+    rescue Errno::EADDRINUSE, MissingLocalhostGemError => e
       puts format("\e[3;31m %s \e[0m", e.message)
       exit 1
     ensure
       Console.logger.info(self, "Stopped server")
     end
 
+    class MissingLocalhostGemError < StandardError
+      def initialize
+        super(
+          "self_signed_cert needs the localhost gem. It comes with mayu-build; " \
+          "for a server without mayu-build, add the localhost gem to your " \
+          "Gemfile or turn off self_signed_cert and terminate TLS elsewhere."
+        )
+      end
+    end
+
+    # Self-signed certificates are a development convenience, so the gem
+    # generating them ships with mayu-build rather than mayu-live.
     def self.self_signed_cert_ssl_context(hostname)
-      require "localhost"
+      begin
+        require "localhost"
+      rescue LoadError => error
+        raise unless error.path == "localhost"
+
+        raise MissingLocalhostGemError
+      end
 
       authority = Localhost::Authority.fetch(hostname)
 

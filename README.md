@@ -119,7 +119,10 @@ Now, open https://localhost:9292/ in your browser.
 
 HTTP/2 requires HTTPS to work, therefore in development mode,
 Mayu will use the [localhost](https://github.com/socketry/localhost) gem
-to generate a self-signed certificate for localhost.
+to generate a self-signed certificate for localhost. That gem comes with
+`mayu-build`. A production server that runs on `mayu-live` alone must either
+turn off `self_signed_cert` and let a proxy terminate TLS, or add the
+`localhost` gem to its Gemfile.
 
 Depending on your system/browser you might need to do one of the following:
 

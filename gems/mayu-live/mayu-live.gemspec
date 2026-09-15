@@ -53,7 +53,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "async-signals", "~> 0.6.0"
   spec.add_dependency "async-http", ">= 0.95.1", "< 0.104.0"
   spec.add_dependency "brotli", "~> 0.8"
-  spec.add_dependency "localhost", "~> 1.7"
   spec.add_dependency "mime-types", "~> 3.7"
   spec.add_dependency "msgpack", "~> 1.8"
   spec.add_dependency "prometheus-client", "~> 4.2.4"
