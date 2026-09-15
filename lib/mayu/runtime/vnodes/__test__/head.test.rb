@@ -147,7 +147,7 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
   end
 
   def test_custom_element_inline_registration_script
-    custom = Mayu::CustomElement["my-element", "my-element.js"]
+    custom = Mayu::Runtime::Descriptors::CustomElement["my-element", "my-element.js"]
     descriptor = H[:body, H[custom, H[:span, "Hello"]]]
 
     engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)

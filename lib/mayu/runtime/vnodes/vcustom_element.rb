@@ -5,7 +5,6 @@
 
 require_relative "base"
 require_relative "velement"
-require_relative "../../custom_element"
 require_relative "../commands"
 
 module Mayu

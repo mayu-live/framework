@@ -15,7 +15,6 @@ require_relative "vslot"
 require_relative "vstateless"
 require_relative "vtext"
 require_relative "vraw_text"
-require_relative "../../custom_element"
 
 module Mayu
   module Runtime
@@ -101,7 +100,7 @@ module Mayu
             VBody
           in Descriptors::Element[type: Proc]
             VStateless
-          in Descriptors::Element[type: CustomElement]
+          in Descriptors::Element[type: Descriptors::CustomElement]
             VCustomElement
           in Descriptors::Element[type: Class]
             VComponent

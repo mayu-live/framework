@@ -5,13 +5,12 @@
 # License: AGPL-3.0
 
 require_relative "descriptors"
-require_relative "../custom_element"
 
 module Mayu
   module Runtime
     module H
       def self.[](type, *children, **props)
-        type = Mayu::CustomElement.from_klenod(type) || type
+        type = Descriptors::CustomElement.from_klenod(type) || type
         Descriptors::Element[type, *children, **props]
       end
 

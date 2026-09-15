@@ -82,7 +82,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
   end
 
   def test_register_custom_element_patch
-    custom = Mayu::CustomElement["my-element", "my-element.js"]
+    custom = Mayu::Runtime::Descriptors::CustomElement["my-element", "my-element.js"]
     initial = H[:body]
     updated = H[:body, H[custom, H[:span, "Hello"]]]
 
