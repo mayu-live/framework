@@ -39,17 +39,24 @@ unless ENV["BUNDLE_WITHOUT"].to_s.split(":").include?("test")
   task default: :test
 end
 
-desc "Build all gem packages into pkg/"
-task :build do
-  require_relative "gems/mayu-live/lib/mayu/version"
+namespace :gems do
+  desc "Package every gem into pkg/ from the current client build"
+  task :build do
+    require_relative "gems/mayu-live/lib/mayu/version"
 
-  sh "npm", "-w", CLIENT_WORKSPACE, "run", "build:production"
-  FileUtils.mkdir_p("pkg")
-  GEMS.each do |name|
-    Dir.chdir("gems/#{name}") do
-      sh "gem", "build", "#{name}.gemspec", "--output", "../../pkg/#{name}-#{Mayu::VERSION}.gem"
+    FileUtils.mkdir_p("pkg")
+    GEMS.each do |name|
+      Dir.chdir("gems/#{name}") do
+        sh "gem", "build", "#{name}.gemspec", "--output", "../../pkg/#{name}-#{Mayu::VERSION}.gem"
+      end
     end
   end
+end
+
+desc "Build the browser runtime, then package every gem into pkg/"
+task :build do
+  sh "npm", "-w", CLIENT_WORKSPACE, "run", "build:production"
+  Rake::Task["gems:build"].invoke
 end
 
 namespace :profile do

@@ -1,94 +1,125 @@
 name: Release
 
 on:
-  workflow_dispatch:
   push:
     tags: ["v*"]
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
-  run-tests:
-    name: Run tests
+  verify:
+    name: Verify release
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+
     steps:
       - uses: actions/checkout@v4
-      - name: Ensure version matches the tag
-        run: |
-          GEM_VERSION=$(grep VERSION gems/mayu-live/lib/mayu/version.rb | head -n 1 | cut -d'"' -f2)
-          if [ "v$GEM_VERSION" != "${{ github.ref_name }}" ]; then
-            echo "Gem version does not match tag"
-            echo "  v$GEM_VERSION != ${{ github.ref_name }}"
-            exit 1
-          fi
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "4.0.6"
           bundler-cache: true
-      - name: Check types
-        run: bundle exec srb tc
-      - name: Run tests
-        run: bundle exec rake test
-
-  build-js:
-    name: Build client JS
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
+          node-version: "26"
           cache: npm
-          node-version: "19.3.0"
-      - run: npm ci
-      - name: Build
+      - name: Verify tag and release metadata
+        id: release
+        run: |
+          version="$(ruby -r./gems/mayu-live/lib/mayu/version -e 'print Mayu::VERSION')"
+          test "$GITHUB_REF_TYPE" = "tag"
+          if [ "$GITHUB_REF_NAME" != "v${version}" ]; then
+            echo "::error title=Tag does not match version::Tag ${GITHUB_REF_NAME} but gems/mayu-live/lib/mayu/version.rb says ${version}."
+            exit 1
+          fi
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error title=Release tag is not on main::Tag ${GITHUB_REF_NAME} points to ${GITHUB_SHA}, which is not contained in origin/main. Merge it to main, then rerun."
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+      - name: Install node packages
+        run: npm ci
+      - name: Build browser runtime
         run: |
           npm run build:production -w gems/mayu-live/lib/mayu/client
           brotli gems/mayu-live/lib/mayu/client/dist/*.{js,map}
-      - uses: actions/upload-artifact@v4
+      - name: Run tests
+        run: bundle exec rake test
+      - name: Package gems
+        run: bundle exec rake gems:build
+      - name: Upload gems
+        uses: actions/upload-artifact@v4
         with:
-          name: client-dist
-          path: gems/mayu-live/lib/mayu/client/dist/
+          name: release-gems
+          path: pkg/*.gem
+          if-no-files-found: error
+          retention-days: 30
 
-  build-gem:
-    needs:
-      - run-tests
-      - build-js
+  publish:
+    name: Publish release
+    needs: verify
     runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "4.0.6"
-          bundler-cache: true
-      - uses: actions/download-artifact@v4
-        name: "Download client JS"
+      - name: Download gems
+        uses: actions/download-artifact@v4
         with:
-          name: client-dist
-          path: gems/mayu-live/lib/mayu/client/dist/
-      - name: Build gem
-        run: bundle exec rake build
-      - name: Create GitHub release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "pkg/*.gem"
-      - name: Push Gem
-        working-directory: pkg/
+          name: release-gems
+          path: pkg
+      - name: Configure RubyGems credentials
+        uses: rubygems/configure-rubygems-credentials@v2
+      # mayu-build depends on mayu-live at the same version, so mayu-live goes
+      # first. A gem that is already published at this version is skipped, so
+      # a failed run can be retried.
+      - name: Publish gems to RubyGems.org
         env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_KEY }}
+          VERSION: ${{ needs.verify.outputs.version }}
         run: |
-          mkdir -p $HOME/.gem
-          touch $HOME/.gem/credentials
-          chmod 0600 $HOME/.gem/credentials
-          printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-          ls -l
-          for i in *.gem; do
-            if [ -f "$i" ]; then
-              if ! gem push "$i" >push.out; then
-                gemerr=$?
-                sed 's/^/::error:: /' push.out
-                if ! grep -q "Repushing of gem" push.out; then
-                  exit $gemerr
-                fi
-              fi
+          for name in mayu-live mayu-build; do
+            gem="pkg/${name}-${VERSION}.gem"
+            test -f "$gem"
+            if gem push "$gem" > push.out 2>&1; then
+              cat push.out
+            elif grep -q "Repushing of gem versions is not allowed" push.out; then
+              echo "${name} ${VERSION} is already published, skipping."
+            else
+              sed 's/^/::error:: /' push.out
+              exit 1
             fi
           done
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" pkg/*.gem --clobber
+          else
+            gh release create "$TAG" pkg/*.gem \
+              --verify-tag \
+              --generate-notes \
+              --title "Mayu ${VERSION}"
+          fi
