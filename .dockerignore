@@ -1,0 +1,14 @@
+# For example/Dockerfile, which builds with the repository root as context.
+.git
+**/node_modules
+**/vendor
+**/dist
+**/tmp
+**/.bundle
+pkg
+profile
+example/*.mayu-bundle
+example/.assets
+example/.claude
+example/.ruby-lsp
+example/.zed

@@ -579,6 +579,13 @@ tests for specific edge cases and trickier situations.
 
 The example app could also be considered to be a test.
 It should always work and be updated to use the latest features.
+`example/Dockerfile` builds it the way a deployed app would be built: it
+packages both gems, installs the app from them, runs `mayu build` with
+`mayu-build`, and starts the result on `mayu-live` alone. Build it from the
+repository root:
+
+    podman build -f example/Dockerfile -t mayu-example .
+    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret mayu-example
 
 Mayu applications can also colocate `*.test.rb` files with components. The
 test module is evaluated by Klenod and receives Mayu's test helpers:
