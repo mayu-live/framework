@@ -14,7 +14,8 @@ Routes live in `app/pages` by default. Rename route files to Klenod's names:
 - Error and not-found views become `+error.haml` and `+not-found.haml`.
 
 Dynamic segments use Klenod conventions, such as `[id]` and `[...parts]`.
-Configure a different source or pages directory in `klenod.config.rb`.
+The source directory is always `app` and routes always live under
+`app/pages`; there is no Klenod configuration file.
 
 ## Components and assets
 

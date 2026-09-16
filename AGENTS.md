@@ -2,25 +2,25 @@
 
 ## Project Structure & Module Organization
 
-- `lib/` contains the Ruby framework code; tests live alongside source as `*.test.rb` (e.g., `lib/mayu/state.rb` → `lib/mayu/state.test.rb`).
-- `lib/mayu/client/` holds the browser runtime (Node workspace).
+- `gems/mayu-live/` is the runtime gem and `gems/mayu-build/` the development tooling gem; tests live alongside source as `*.test.rb` (e.g., `gems/mayu-live/lib/mayu/session.rb` → `gems/mayu-live/lib/mayu/session.test.rb`).
+- `gems/mayu-live/lib/mayu/client/` holds the browser runtime (Node workspace).
 - `example/` is a runnable sample app plus `mayu.toml` server config.
-- `bin/` and `exe/` provide CLI entry points and scripts.
+- `bin/` holds repository scripts; `gems/mayu-live/exe/mayu` is the CLI entry point.
 - `vendor/` and `node_modules/` are dependency/vendor directories.
 
 ## Architecture Overview
 
 - Server-rendered HTML with server-side state; the client runtime applies DOM patches over streaming updates.
 - Components return VDOM descriptors; the server diffs component trees and sends patch instructions.
-- Client stream and event serialization live under `lib/mayu/client/src/` and `lib/mayu/client/src/serializeEvent.ts`.
+- Client stream and event serialization live under `gems/mayu-live/lib/mayu/client/src/`.
 
 ## Build, Test, and Development Commands
 
 - `bundle install` installs Ruby dependencies.
 - `npm install` installs Node dependencies (root workspace).
-- `npm run build` builds the browser runtime via the `lib/mayu/client` workspace.
-- `rake test` runs the Minitest suite (glob: `lib/**/*.test.rb`).
-- `rake build` runs the client production build and builds the gem.
+- `npm run build` builds the browser runtime via the `gems/mayu-live/lib/mayu/client` workspace.
+- `rake test` runs the Minitest suite for both gems (glob: `gems/*/lib/**/*.test.rb`); `rake test:live` and `rake test:build` run one gem.
+- `rake build` runs the client production build and packages both gems into `pkg/`.
 - `cd example && bundle install && bin/mayu dev` starts the example app at `https://localhost:9292/`.
 - `bin/mayu lsp` starts the language server (stdio) for editors; it finds the app via `mayu.toml`.
 
