@@ -19,10 +19,10 @@ class Mayu::CLITest < Minitest::Test
 
   def test_colors_are_used_unless_no_color_is_set
     ENV["NO_COLOR"] = nil
-    assert_equal("\e[1;36mmayu dev\e[0m", Mayu::CLI.color(:command, "mayu dev"))
+    assert_equal("\e[1mmayu dev\e[0m", Mayu::CLI.color(:bold, "mayu dev"))
 
     ENV["NO_COLOR"] = "1"
-    assert_equal("mayu dev", Mayu::CLI.color(:command, "mayu dev"))
+    assert_equal("mayu dev", Mayu::CLI.color(:bold, "mayu dev"))
   end
 
   def test_hands_everything_to_mayu_build_when_it_is_installed

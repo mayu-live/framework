@@ -19,7 +19,7 @@ module Mayu
 
     COLORS = {
       header: "1;35",
-      command: "1;36",
+      note: "36",
       bold: "1",
       dim: "2",
       error: "31"
@@ -38,7 +38,7 @@ module Mayu
         output.puts usage
         0
       when *BUILD_COMMANDS
-        output.puts "#{color(:command, "mayu #{command}")} requires the #{color(:bold, "mayu-build")} gem."
+        output.puts "#{color(:bold, "mayu #{command}")} requires the #{color(:bold, "mayu-build")} gem."
         output.puts "Add it to the development group of your Gemfile and run #{color(:bold, "bundle install")}."
         1
       else
@@ -59,14 +59,14 @@ module Mayu
     end
 
     def self.usage
-      commands = BUILD_COMMANDS.map { color(:command, it) }.join(", ")
+      commands = BUILD_COMMANDS.map { color(:bold, it) }.join(", ")
 
       <<~USAGE
         #{color(:header, "Mayu v#{Mayu::VERSION}")}
 
-        Usage: #{color(:command, "mayu start")} #{color(:dim, "[--filename <path>] [--assets-dir <path>] [--source-root <path>]")}
+        Usage: #{color(:bold, "mayu start")} #{color(:dim, "[--filename <path>] [--assets-dir <path>] [--source-root <path>]")}
 
-        Only the production server is available.
+        #{color(:note, "Only the production server is available.")}
         Install the #{color(:bold, "mayu-build")} gem for #{commands}.
       USAGE
     end
