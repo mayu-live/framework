@@ -43,19 +43,19 @@ class Mayu::CLITest < Minitest::Test
     status = without_build_gem { Mayu::CLI.call(["dev"], output:) }
 
     assert_equal(1, status)
-    assert_includes(output.string, "mayu dev requires the mayu-build gem")
+    assert_includes(output.string, "mayu dev is not available")
+    assert_includes(output.string, "Only mayu start works without the mayu-build gem")
     assert_includes(output.string, "gem \"mayu-build\", \"= #{Mayu::VERSION}\"")
-    assert_includes(output.string, "bundle add mayu-build --version \"= #{Mayu::VERSION}\" --group development,test")
   end
 
-  def test_unknown_commands_print_usage
+  def test_unknown_commands_get_the_same_advice
     output = StringIO.new
 
     status = without_build_gem { Mayu::CLI.call(["frobnicate"], output:) }
 
     assert_equal(1, status)
-    assert_includes(output.string, "Unknown command: frobnicate")
-    assert_includes(output.string, "mayu start")
+    assert_includes(output.string, "mayu frobnicate is not available")
+    assert_includes(output.string, "mayu-build")
   end
 
   def test_help_lists_start_and_the_build_commands

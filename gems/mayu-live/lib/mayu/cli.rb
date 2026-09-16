@@ -15,11 +15,9 @@ module Mayu
   # `start`, and parses it with the standard library alone, so a production
   # install needs no option parsing gem.
   module CLI
-    BUILD_COMMANDS = %w[init dev test build routes graph transform lsp].freeze
-
     COLORS = {
       header: "1;35",
-      note: "36",
+      note: "33",
       bold: "1",
       dim: "2",
       error: "31"
@@ -37,13 +35,11 @@ module Mayu
       when nil, "help", "--help", "-h"
         output.puts usage
         0
-      when *BUILD_COMMANDS
-        output.puts missing_build_gem_message(command)
-        1
       else
-        output.puts color(:error, "Unknown command: #{command}")
-        output.puts
-        output.puts usage
+        # Anything else is either a mayu-build command or a typo, and the fix
+        # for both starts with installing mayu-build. Keeping no list of its
+        # commands here means nothing to update when it grows one.
+        output.puts missing_build_gem_message(command)
         1
       end
     end
@@ -74,15 +70,15 @@ module Mayu
       version = Mayu::VERSION
 
       <<~MESSAGE
-        #{color(:bold, "mayu #{command}")} requires the #{color(:bold, "mayu-build")} gem.
+        #{color(:error, "#{color(:bold, "mayu #{command}")} is not available.")}
+
+        Only #{color(:bold, "mayu start")} works without the #{color(:bold, "mayu-build")} gem.
 
         Add it next to mayu-live in your Gemfile:
 
-          #{color(:dim, "group :development, :test do")}
-            #{color(:bold, "gem \"mayu-build\", \"= #{version}\"")}
-          #{color(:dim, "end")}
-
-        or run #{color(:bold, "bundle add mayu-build --version \"= #{version}\" --group development,test")}
+        #{color(:dim, "group :development, :test do")}
+          #{color(:bold, "gem \"mayu-build\", \"= #{version}\"")}
+        #{color(:dim, "end")}
       MESSAGE
     end
 
