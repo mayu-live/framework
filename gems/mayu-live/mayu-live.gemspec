@@ -44,8 +44,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Klenod platform: only the runtime half. Building an app needs mayu-build.
-  spec.add_dependency "klenod-runtime", "= 0.0.15"
-  spec.add_dependency "klenod-rack", "= 0.0.15"
+  spec.add_dependency "klenod-runtime", "= 0.0.16"
+  spec.add_dependency "klenod-rack", "= 0.0.16"
 
   # Server
   spec.add_dependency "async", "~> 2.42"
