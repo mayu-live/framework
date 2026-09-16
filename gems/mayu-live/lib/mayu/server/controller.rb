@@ -86,6 +86,10 @@ module Mayu
         if @config.metrics.enabled?
           collector_endpoint = Metrics.collector_endpoint(@config.root)
           setup_metrics_server(container, collector_endpoint)
+          # The collector reports ready once its socket accepts connections.
+          # Starting the workers only then spares every reporter a failed
+          # first connection and the warning that goes with it.
+          container.wait_until_ready
         end
 
         container.run(

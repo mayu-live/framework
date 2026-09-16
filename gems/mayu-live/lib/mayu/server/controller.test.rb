@@ -91,6 +91,8 @@ class Mayu::Server::ControllerTest < Minitest::Test
     end
     refute_includes(logs, "Worker drain deadline expired")
     refute_includes(logs, "Killing processes after graceful shutdown failed")
+    # Workers start after the collector is ready, so no reporter has to retry.
+    refute_includes(logs, "Metrics sync error")
   end
 
   def test_one_process_group_interrupt_is_graceful
