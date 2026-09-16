@@ -1,6 +1,6 @@
-FROM ruby:3.3.0-alpine3.18 as base
+FROM ruby:4.0.6-alpine3.24 as base
 
-ARG BUNDLER_VERSION=2.5.3
+ARG BUNDLER_VERSION=4.0.16
 ARG BUNDLE_WITHOUT=development:test
 ARG BUNDLE_PATH=vendor/bundle
 ENV BUNDLE_PATH ${BUNDLE_PATH}
@@ -13,6 +13,8 @@ SHELL ["/bin/bash", "-c"]
 WORKDIR /app
 
 FROM base AS install
+# The build needs mayu-build, which the app keeps in its development group.
+ENV BUNDLE_WITHOUT=""
 RUN apk update && apk add --no-cache \
   build-base gzip brotli \
   pkgconfig imagemagick-dev

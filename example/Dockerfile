@@ -12,6 +12,8 @@ SHELL ["/bin/bash", "-c"]
 WORKDIR /app
 
 FROM base AS install
+# The build needs mayu-build, which the app keeps in its development group.
+ENV BUNDLE_WITHOUT=""
 RUN apk update && apk add --no-cache \
   build-base gzip brotli \
   pkgconfig imagemagick-dev
