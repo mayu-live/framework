@@ -44,6 +44,8 @@ class Mayu::CLITest < Minitest::Test
 
     assert_equal(1, status)
     assert_includes(output.string, "mayu dev requires the mayu-build gem")
+    assert_includes(output.string, "gem \"mayu-build\", \"= #{Mayu::VERSION}\"")
+    assert_includes(output.string, "bundle add mayu-build --version \"= #{Mayu::VERSION}\" --group development,test")
   end
 
   def test_unknown_commands_print_usage

@@ -38,8 +38,7 @@ module Mayu
         output.puts usage
         0
       when *BUILD_COMMANDS
-        output.puts "#{color(:bold, "mayu #{command}")} requires the #{color(:bold, "mayu-build")} gem."
-        output.puts "Add it to the development group of your Gemfile and run #{color(:bold, "bundle install")}."
+        output.puts missing_build_gem_message(command)
         1
       else
         output.puts color(:error, "Unknown command: #{command}")
@@ -69,6 +68,24 @@ module Mayu
         #{color(:note, "Only the production server is available.")}
         Install the #{color(:bold, "mayu-build")} gem for #{commands}.
       USAGE
+    end
+
+    # mayu-build depends on mayu-live at exactly the same version, so the
+    # suggestion pins it rather than using a pessimistic constraint.
+    def self.missing_build_gem_message(command)
+      version = Mayu::VERSION
+
+      <<~MESSAGE
+        #{color(:bold, "mayu #{command}")} requires the #{color(:bold, "mayu-build")} gem.
+
+        Add it next to mayu-live in your Gemfile:
+
+          #{color(:dim, "group :development, :test do")}
+            #{color(:bold, "gem \"mayu-build\", \"= #{version}\"")}
+          #{color(:dim, "end")}
+
+        or run #{color(:bold, "bundle add mayu-build --version \"= #{version}\" --group development,test")}
+      MESSAGE
     end
 
     # Honors NO_COLOR (https://no-color.org): any non-empty value turns
