@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "author": "Andrés Alin <andreas.alin@gmail.com>",
-  "license": "AGPL-3.0",
+  "license": "MPL-2.0",
   "type": "module",
   "repository": {
     "type": "git",

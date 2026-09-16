@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   EOF
 
   spec.homepage = "https://mayu.live/"
-  spec.license = "AGPL-3.0"
+  spec.license = "MPL-2.0"
   spec.required_ruby_version = ">= 4.0"
 
   spec.metadata["homepage_uri"] = spec.homepage

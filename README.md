@@ -3,7 +3,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/mayu-live/framework/.github/workflows/test.yml?branch=main&label=Tests&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/test.yml)
 [![Release](https://img.shields.io/github/v/release/mayu-live/framework?sort=semver&style=flat-square)](https://github.com/mayu-live/framework/releases)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/w/mayu-live/framework/main?style=flat-square)](https://github.com/mayu-live/framework/commits)
-[![License AGPL-3.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING) ![Status: Experimental](https://img.shields.io/badge/status-experimental-critical?style=flat-square)
+[![License MPL-2.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING) ![Status: Experimental](https://img.shields.io/badge/status-experimental-critical?style=flat-square)
 
 [Documentation](https://mayu.live/docs)
 
