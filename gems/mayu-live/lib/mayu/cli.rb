@@ -58,15 +58,13 @@ module Mayu
     end
 
     def self.usage
-      commands = BUILD_COMMANDS.map { color(:bold, it) }.join(", ")
-
       <<~USAGE
         #{color(:header, "Mayu v#{Mayu::VERSION}")}
 
         Usage: #{color(:bold, "mayu start")} #{color(:dim, "[--filename <path>] [--assets-dir <path>] [--source-root <path>]")}
 
         #{color(:note, "Only the production server is available.")}
-        Install the #{color(:bold, "mayu-build")} gem for #{commands}.
+        Install the #{color(:bold, "mayu-build")} gem for the development commands.
       USAGE
     end
 

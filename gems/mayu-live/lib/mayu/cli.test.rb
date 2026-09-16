@@ -66,7 +66,7 @@ class Mayu::CLITest < Minitest::Test
     assert_equal(0, status)
     assert_includes(output.string, "Mayu v#{Mayu::VERSION}")
     assert_includes(output.string, "mayu start")
-    assert_includes(output.string, "init, dev, test, build")
+    assert_includes(output.string, "Install the mayu-build gem")
   end
 
   def test_start_parses_its_options_with_the_standard_library
