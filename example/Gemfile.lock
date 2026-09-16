@@ -240,6 +240,7 @@ DEPENDENCIES
   localhost
   mayu-build!
   mayu-live!
+  rouge (~> 4.7)
 
 CHECKSUMS
   ansi (1.6.0) sha256=ac9ea0c0ea8d32fb4e271348e609963ac78882f34b73836c2a02b3622e666658
