@@ -15,19 +15,16 @@ module Mayu
     # goes in it, so the server itself never knows whether it is running a
     # prebuilt bundle or a live build.
     def initialize(config:, load_environment:, worker_count: nil)
+      @config = config
+      @load_environment = load_environment
+      @worker_count = worker_count
       @uri = URI.parse(config.server.listen)
-      ssl_context = ssl_context_for(config)
-
-      endpoint = Async::HTTP::Endpoint.new(@uri, ssl_context:)
-
-      @controller =
-        Controller.new(config:, endpoint:, load_environment:, worker_count:)
     end
 
     def run
       puts "\e[33mStarting server on \e[94m#{@uri}\e[0m"
 
-      @controller.run
+      controller.run
     rescue Interrupt
       # Interrupt is expected when Ctrl+C is used for shutdown.
     rescue Errno::EADDRINUSE, MissingLocalhostGemError => e
@@ -73,6 +70,20 @@ module Mayu
     end
 
     private
+
+    # Built here rather than in `initialize` so a missing localhost gem is
+    # reported by `run` like any other startup failure.
+    def controller
+      endpoint =
+        Async::HTTP::Endpoint.new(@uri, ssl_context: ssl_context_for(@config))
+
+      Controller.new(
+        config: @config,
+        endpoint:,
+        load_environment: @load_environment,
+        worker_count: @worker_count
+      )
+    end
 
     def ssl_context_for(config)
       return nil unless config.server.self_signed_cert?
