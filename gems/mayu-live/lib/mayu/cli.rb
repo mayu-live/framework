@@ -17,6 +17,14 @@ module Mayu
   module CLI
     BUILD_COMMANDS = %w[init dev test build routes graph transform lsp].freeze
 
+    COLORS = {
+      header: "1;35",
+      command: "1;36",
+      bold: "1",
+      dim: "2",
+      error: "31"
+    }.freeze
+
     def self.call(argv, output: $stdout)
       build_cli = self.build_cli
       return build_cli.call(argv) if build_cli
@@ -30,11 +38,12 @@ module Mayu
         output.puts usage
         0
       when *BUILD_COMMANDS
-        output.puts "\e[31mmayu #{command} requires the mayu-build gem.\e[0m"
-        output.puts "Add it to your Gemfile's development group and run bundle install."
+        output.puts "#{color(:command, "mayu #{command}")} requires the #{color(:bold, "mayu-build")} gem."
+        output.puts "Add it to the development group of your Gemfile and run #{color(:bold, "bundle install")}."
         1
       else
-        output.puts "\e[31mUnknown command: #{command}\e[0m"
+        output.puts color(:error, "Unknown command: #{command}")
+        output.puts
         output.puts usage
         1
       end
@@ -50,14 +59,24 @@ module Mayu
     end
 
     def self.usage
+      commands = BUILD_COMMANDS.map { color(:command, it) }.join(", ")
+
       <<~USAGE
-        Mayu v#{Mayu::VERSION}
+        #{color(:header, "Mayu v#{Mayu::VERSION}")}
 
-        Usage: mayu start [--filename <path>] [--assets-dir <path>] [--source-root <path>]
+        Usage: #{color(:command, "mayu start")} #{color(:dim, "[--filename <path>] [--assets-dir <path>] [--source-root <path>]")}
 
-        Only the production server is available. Install the mayu-build gem
-        for #{BUILD_COMMANDS.join(", ")}.
+        Only the production server is available.
+        Install the #{color(:bold, "mayu-build")} gem for #{commands}.
       USAGE
+    end
+
+    # Honors NO_COLOR (https://no-color.org): any non-empty value turns
+    # colors off.
+    def self.color(name, text)
+      return text.to_s unless ENV["NO_COLOR"].to_s.empty?
+
+      "\e[#{COLORS.fetch(name)}m#{text}\e[0m"
     end
 
     def self.start_from_argv(args, output: $stdout)
@@ -78,7 +97,7 @@ module Mayu
 
       start(**options, output:)
     rescue OptionParser::ParseError => error
-      output.puts "\e[31m#{error.message}\e[0m"
+      output.puts color(:error, error.message)
       output.puts parser
       1
     end
@@ -87,8 +106,8 @@ module Mayu
     # both entry points behave the same.
     def self.start(filename:, assets_dir:, source_root:, output: $stdout)
       unless File.exist?(filename)
-        output.puts "\e[31mCould not find \e[1m#{filename}\e[0m"
-        output.puts "Try \e[1mbundle exec mayu build\e[0m to build the app."
+        output.puts color(:error, "Could not find #{color(:bold, filename)}")
+        output.puts "Try #{color(:bold, "bundle exec mayu build")} to build the app."
         return 1
       end
 
@@ -125,12 +144,12 @@ module Mayu
     def self.print_jit_message(const_name, output:)
       if RubyVM.const_defined?(const_name)
         if RubyVM.const_get(const_name).enabled?
-          output.puts "\e[1m#{const_name} is enabled!\e[0m"
+          output.puts color(:bold, "#{const_name} is enabled!")
         else
-          output.puts "\e[2m#{const_name} is disabled!\e[0m"
+          output.puts color(:dim, "#{const_name} is disabled!")
         end
       else
-        output.puts "\e[2m#{const_name} is not supported\e[0m"
+        output.puts color(:dim, "#{const_name} is not supported")
       end
     end
 
