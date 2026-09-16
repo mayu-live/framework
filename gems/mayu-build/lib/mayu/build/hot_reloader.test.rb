@@ -25,9 +25,14 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
 
   class ReloadErrorProvider
     attr_reader :rewritten_error
+    attr_accessor :applied
 
     def initialize(sources: {})
       @sources = sources
+    end
+
+    def apply_update(_event, entry:)
+      applied
     end
 
     def rewrite_exception(error)
@@ -59,8 +64,10 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
 
   FakeDependency = Struct.new(:loc, :importer_id, :specifier)
 
+  FakeEvent = Data.define(:graph_version, :changed_paths, :removed_paths, :result)
+
   AppliedUpdate =
-    Data.define(:errors) do
+    Data.define(:event, :errors) do
       def success? = errors.empty?
 
       def each_error(&) = errors.each(&)
@@ -211,10 +218,7 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
         module_id: "app:/broken.haml"
       )
 
-    update =
-      reloader(provider, "/tmp").to_update(
-        AppliedUpdate.new([["app:/broken.haml", error]])
-      )
+    update = report_errors(provider, "/tmp", [["app:/broken.haml", error]])
 
     refute(update.success?)
     report = update.errors.first
@@ -259,10 +263,7 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
           suggestions: ["./colors.json"]
         )
 
-      update =
-        reloader(provider, dir).to_update(
-          AppliedUpdate.new([["app:/CustomElement.tsx", error]])
-        )
+      update = report_errors(provider, dir, [["app:/CustomElement.tsx", error]])
 
       report = update.errors.first
       assert_equal("app:/CustomElement.tsx", report.file)
@@ -282,10 +283,7 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
     error = RuntimeError.new("something unexpected")
     error.set_backtrace(["generated:/broken.rb:20"])
 
-    update =
-      reloader(provider, "/tmp").to_update(
-        AppliedUpdate.new([["app:/broken.haml", error]])
-      )
+    update = report_errors(provider, "/tmp", [["app:/broken.haml", error]])
 
     report = update.errors.first
     assert_equal("RuntimeError", report.type)
@@ -295,6 +293,15 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
   end
 
   private
+
+  # Runs a failed update through the reloader the way the watcher loop does:
+  # apply it, log it, then turn it into the update sessions receive.
+  def report_errors(provider, source_dir, errors)
+    provider.applied =
+      AppliedUpdate.new(event: FakeEvent.new(1, [], [], nil), errors:)
+    reloader = reloader(provider, source_dir)
+    reloader.to_update(reloader.apply(provider.applied.event, nil))
+  end
 
   def reloader(provider, source_dir)
     Mayu::Build::HotReloader.new(

@@ -48,15 +48,20 @@ module Mayu
         end
       end
 
+      # Backtraces are rewritten to source paths before anything reports them,
+      # so the terminal and the browser overlay show the same frames.
+      #
       # Anything escaping here would break out of the watcher loop and stop hot
       # reloading for the rest of the process, so report the failure as an
       # update instead and let sessions render it.
       def apply(event, root_entry)
         start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         update = @provider.apply_update(event, entry: root_entry)
+        update.each_error { |_module_id, error| rewrite_backtrace(error) }
         @logger.log(update:, duration: format_duration(start_time))
         update
       rescue StandardError, ScriptError => e
+        rewrite_backtrace(e)
         Console.logger.error(self, e)
         ::Klenod::Build::AppliedUpdate.new(event, nil, nil, nil, [[nil, e]].freeze)
       end
@@ -64,11 +69,10 @@ module Mayu
       def to_update(applied)
         return HotReload::Update.success if applied.success?
 
-        errors = []
-        applied.each_error do |module_id, error|
-          rewrite_backtrace(error)
-          errors << ErrorReport.from(error, module_id:, provider: @provider)
-        end
+        errors =
+          applied.each_error.map do |module_id, error|
+            ErrorReport.from(error, module_id:, provider: @provider)
+          end
         HotReload::Update.failure(errors)
       end
 
