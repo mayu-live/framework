@@ -5,7 +5,7 @@ require_relative "lib/mayu/version"
 Gem::Specification.new do |spec|
   spec.name = "mayu-live"
   spec.version = Mayu::VERSION
-  spec.authors = ["Andreas Alin"]
+  spec.authors = ["Andrés Alin"]
   spec.email = ["andreas.alin@gmail.com"]
 
   spec.summary = "Server side VDOM framework"

@@ -5,7 +5,7 @@ require_relative "../mayu-live/lib/mayu/version"
 Gem::Specification.new do |spec|
   spec.name = "mayu-build"
   spec.version = Mayu::VERSION
-  spec.authors = ["Andreas Alin"]
+  spec.authors = ["Andrés Alin"]
   spec.email = ["andreas.alin@gmail.com"]
 
   spec.summary = "Development and build tooling for Mayu Live"

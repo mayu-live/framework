@@ -3,7 +3,7 @@
 require "mayu/klenod"
 
 #
-# Copyright Andreas Alin <andreas.alin@gmail.com>
+# Copyright Andrés Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
 module Mayu

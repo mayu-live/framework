@@ -2,7 +2,7 @@
   "name": "@mayu-live/client",
   "version": "0.0.0",
   "private": true,
-  "author": "Andreas Alin <andreas.alin@gmail.com>",
+  "author": "Andrés Alin <andreas.alin@gmail.com>",
   "license": "AGPL-3.0",
   "type": "module",
   "repository": {

@@ -5,7 +5,7 @@
 # https://github.com/facebook/react/blob/ec9400dc41715bb6ff0392d6320c33627fa7e2ba/packages/react-dom/src/__tests__/validate-test.js
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 #
-# Copyright Andreas Alin <andreas.alin@gmail.com>
+# Copyright Andrés Alin <andreas.alin@gmail.com>
 # License: AGPL-3.0
 
 require "bundler/setup"
