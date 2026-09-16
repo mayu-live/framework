@@ -565,9 +565,9 @@ cover the Mayu-specific component behavior.
 
 ## Tests
 
-Tests are located in the `lib/`-directory next to their implementation.
-So for `lib/mayu/state.rb` the test would be located in
-`lib/mayu/state.test.rb`.
+Tests live next to their implementation under each gem's `lib/` directory.
+So for `gems/mayu-live/lib/mayu/session.rb` the test is
+`gems/mayu-live/lib/mayu/session.test.rb`.
 
 This pattern is quite common in JavaScript
 ([Jest does this](https://jestjs.io/docs/configuration#testmatch-arraystring)),
@@ -643,7 +643,9 @@ The production server loads the Klenod bundle and assets produced by
 `MAYU_SECRET_KEY`. Only `mayu-live` is needed for this: install with
 `BUNDLE_WITHOUT=development:test` and `mayu-build` and klenod-build stay out
 of the image. `mayu start --assets-dir` and `--source-root` point it at the
-assets and sources when they are not in their default places.
+assets and sources when they are not in their default places. With
+`self_signed_cert = true` the server also needs the `localhost` gem, which
+`mayu init` adds to the Gemfile.
 
 ```toml
 [production.server]

@@ -5,6 +5,10 @@ source "https://rubygems.org"
 # gem "mayu-live"
 gem "mayu-live", path: "../gems/mayu-live"
 
+# Generates the self-signed certificate that `self_signed_cert = true` in
+# mayu.toml asks for. Drop it if a proxy terminates TLS in production.
+gem "localhost"
+
 group :development, :test do
   gem "mayu-build", path: "../gems/mayu-build"
 end

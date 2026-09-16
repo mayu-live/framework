@@ -237,6 +237,7 @@ PLATFORMS
 DEPENDENCIES
   fuzzy_match
   kramdown (~> 2.4)
+  localhost
   mayu-build!
   mayu-live!
 
