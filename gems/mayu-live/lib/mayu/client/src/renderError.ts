@@ -1,6 +1,6 @@
 import h from "./h";
 
-export function clearRenderError() {
+function clearRenderError() {
   document.querySelectorAll("mayu-exception").forEach((e) => e.remove());
 }
 
