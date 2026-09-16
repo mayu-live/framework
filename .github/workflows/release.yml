@@ -50,14 +50,10 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
       - name: Install node packages
         run: npm ci
-      - name: Build browser runtime
-        run: |
-          npm run build:production -w gems/mayu-live/lib/mayu/client
-          brotli gems/mayu-live/lib/mayu/client/dist/*.{js,map}
       - name: Run tests
         run: bundle exec rake test
-      - name: Package gems
-        run: bundle exec rake gems:build
+      - name: Build browser runtime and package gems
+        run: bundle exec rake build
       - name: Upload gems
         uses: actions/upload-artifact@v4
         with:
