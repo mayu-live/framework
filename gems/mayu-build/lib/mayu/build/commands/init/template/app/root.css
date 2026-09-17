@@ -22,22 +22,25 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100dvh;
+
+  color: var(--body-color);
+  font-family: sans-serif;
+
   background:
     radial-gradient(
       ellipse at bottom,
-      color-mix(in srgb, var(--pink) 50%, var(--body-background)),
+      color-mix(in oklab, var(--pink) 50%, var(--body-background)),
       transparent
     ),
     var(--body-background);
-  color: var(--body-color);
-  font-family: sans-serif;
-}
 
-.background {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: radial-gradient(at bottom, #0002, #0000);
-  mask-position: 50% 50%;
+  &::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: url("./hexagons.svg") center / auto repeat;
+    mask-image: radial-gradient(at bottom, black, transparent 70%);
+    opacity: 0.3;
+  }
 }
