@@ -66,7 +66,12 @@ This directory contains the browser-side runtime that:
   - `["Callback", id, event, ping]`.
 - `window.Mayu.navigate(href, pushState)` writes
   `["Navigate", href, pushState, ping]`.
-- `window.Mayu.ping()` writes `["Ping", ping]` every `PING_INTERVAL`.
+- `window.Mayu.ping()` writes `["Ping", ping]` every `PING_INTERVAL`. The ticker
+  runs in a dedicated worker when possible, because hidden tabs throttle page
+  timers far beyond the server's session timeout.
+- `["Visibility", hidden, ping]` is written on every `visibilitychange` and once
+  on connect from a hidden tab. The server slows that session's updates down
+  while it is hidden.
 - writes made without a live callback transport are dropped and are never
   replayed after reconnect.
 - Writes go through:

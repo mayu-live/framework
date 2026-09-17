@@ -117,7 +117,11 @@ Key responsibilities:
 
 - `render` returns descriptors (usually via `H[...]`).
 - `mount` / `unmount` lifecycle hooks.
-- `should_update?` exists but current vnode path primarily rerenders and diffs children.
+- `should_update?` exists but is not consulted. A vnode handed the descriptor object it
+  already holds is skipped instead (`VComponent#unchanged?`); a context provider whose
+  values changed forces its subtree through `Engine#force_render`.
+- `sleep` inside a component is runtime-aware: while the page is hidden, short sleeps are
+  stretched to the engine's `update_interval`.
 - `rerender!` is injected by `VComponent` when mounted.
 - `@__props`, `@__children`, `@__context` are runtime-managed internal state.
 
