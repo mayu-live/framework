@@ -121,8 +121,15 @@ module Mayu
           @children.map(&:dom_id_tree)
         end
 
+        def dom_ids
+          @children.flat_map(&:dom_ids)
+        end
+
+        # The ids of the DOM nodes these children contribute to the closest
+        # element, in order. Only the top level is needed: the browser keeps
+        # every node by id and replaces the element's children by those ids.
         def dom_id_list
-          dom_id_list_for(@children)
+          dom_ids
         end
 
         def dom_id_trees
@@ -320,18 +327,7 @@ module Mayu
         end
 
         def dom_id_list_for(children)
-          children.flat_map { |child| dom_id_list_from_tree(child.dom_id_tree) }
-        end
-
-        def dom_id_list_from_tree(tree)
-          case tree
-          when Array
-            tree.flat_map { |node| dom_id_list_from_tree(node) }
-          when DOM::IdNode
-            [tree.id]
-          else
-            []
-          end
+          children.flat_map(&:dom_ids)
         end
 
         def insert_comments_between_strings(descriptors)

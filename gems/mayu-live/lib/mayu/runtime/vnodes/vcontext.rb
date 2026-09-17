@@ -66,6 +66,10 @@ module Mayu
           @children.dom_id_tree
         end
 
+        def dom_ids
+          @children.dom_ids
+        end
+
         def marshal_dump
           [super, @children]
         end

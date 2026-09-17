@@ -230,6 +230,10 @@ module Mayu
           @children.dom_id_tree
         end
 
+        def dom_ids
+          @children.dom_ids
+        end
+
         def tree_path
           node = {name: component_label}
           path = @instance.class.module_path

@@ -72,6 +72,14 @@ module Mayu
           nil
         end
 
+        # The ids of the DOM nodes this vnode contributes to its parent
+        # element, without descending into them. Wrappers such as components
+        # flat-map their children, so a component rendering an array of
+        # elements contributes each of them.
+        def dom_ids
+          (id = dom_id) ? [id] : []
+        end
+
         def tree_path
           @parent&.tree_path || []
         end

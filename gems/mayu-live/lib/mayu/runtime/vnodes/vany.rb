@@ -71,6 +71,10 @@ module Mayu
           @child.dom_id_tree
         end
 
+        def dom_ids
+          @child.dom_ids
+        end
+
         def traverse(&block)
           yield self
           @child.traverse(&block)
