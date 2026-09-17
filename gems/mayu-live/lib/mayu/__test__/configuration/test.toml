@@ -1,5 +1,6 @@
 [development]
   secret_key = "dev"
+  log_file = "tmp/mayu.log"
 
   [development.server]
     listen = "https://localhost:9292"

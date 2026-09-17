@@ -57,6 +57,8 @@ class Mayu::Configuration::Test < Minitest::Test
 
     assert_equal true, config.metrics.enabled?
     assert_equal "http://localhost:9293", config.metrics.listen
+
+    assert_equal File.join(config.root, "tmp/mayu.log"), config.log_file
   end
 
   def test_configuration_production_env
@@ -74,6 +76,7 @@ class Mayu::Configuration::Test < Minitest::Test
     assert_equal 21, config.server.session_timeout_seconds
     assert_equal 22, config.server.transfer_timeout_seconds
     assert_equal 23, config.server.cookie_timeout_seconds
+    assert_nil config.log_file
   ensure
     ENV.delete("SECRET_KEY")
   end

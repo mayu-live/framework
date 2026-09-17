@@ -32,15 +32,26 @@ module Mayu
       end
     end
 
+    # `log_file` is optional. When set, the server writes its logs to that file
+    # (relative to the config root) in addition to the terminal.
     Config =
-      Data.define(:root, :secret_key, :server, :metrics) do
+      Data.define(:root, :secret_key, :server, :metrics, :log_file) do
+        def initialize(log_file: nil, **) = super
+
         def self.parse(root, config)
           new(
             root:,
             secret_key: Configuration.convert_env(config.fetch("secret_key")),
             server: ServerConfig.parse(config.fetch("server")),
-            metrics: MetricsConfig.parse(config.fetch("metrics"))
+            metrics: MetricsConfig.parse(config.fetch("metrics")),
+            log_file: parse_log_file(root, config["log_file"])
           )
+        end
+
+        def self.parse_log_file(root, value)
+          return nil if value.nil?
+
+          File.expand_path(Configuration.convert_env(value), root)
         end
       end
 

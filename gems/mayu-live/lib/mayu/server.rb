@@ -8,6 +8,9 @@
 
 require "async"
 require "async/http/endpoint"
+require "console"
+require "console/output/split"
+require "fileutils"
 
 require_relative "server/controller"
 
@@ -25,6 +28,8 @@ module Mayu
     end
 
     def run
+      install_log_file
+
       puts "\e[33mStarting server on \e[94m#{@uri}\e[0m"
 
       controller.run
@@ -73,6 +78,28 @@ module Mayu
     end
 
     private
+
+    # Logs go to the terminal as before and, when `log_file` is configured,
+    # to that file as plain text as well. `Console.logger=` is fiber-local, so
+    # this runs before the reactor starts and before workers fork; every task
+    # and worker process inherits the logger from here.
+    def install_log_file
+      path = @config.log_file
+      return unless path
+
+      FileUtils.mkdir_p(File.dirname(path))
+      file = File.open(path, "a")
+      file.sync = true
+
+      Console.logger =
+        Console::Logger.new(
+          Console::Output::Split[
+            Console::Output::Default.new($stderr),
+            Console::Output::Text.new(file)
+          ],
+          level: Console::Logger.default_log_level
+        )
+    end
 
     # Built here rather than in `initialize` so a missing localhost gem is
     # reported by `run` like any other startup failure.

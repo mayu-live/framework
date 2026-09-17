@@ -30,7 +30,7 @@ class Mayu::ServerTest < Minitest::Test
   def test_run_reports_the_missing_localhost_gem_and_exits
     server_config =
       Struct.new(:listen, :self_signed_cert?).new("https://localhost:0", true)
-    config = Struct.new(:server).new(server_config)
+    config = Struct.new(:server, :log_file).new(server_config, nil)
     server = Mayu::Server.new(config:, load_environment: nil)
 
     output, = capture_io do
