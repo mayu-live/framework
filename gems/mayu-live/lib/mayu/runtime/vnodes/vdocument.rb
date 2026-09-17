@@ -311,7 +311,8 @@ module Mayu
             error,
             component:,
             tree_path:,
-            provider: @engine.module_provider
+            provider: @engine.module_provider,
+            with_source: @engine.render_exceptions?
           )
         end
 

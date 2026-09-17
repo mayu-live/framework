@@ -87,7 +87,7 @@ module Mayu
         frames = Array(error.backtrace).filter_map { parse_frame(it) }
 
         frames.group_by(&:first).filter_map do |file, entries|
-          source = module_source(file)
+          module_id, source = module_source(file)
           next unless source
 
           lines = source.lines.map(&:chomp)
@@ -99,8 +99,23 @@ module Mayu
               end
             end
 
-          {file:, excerpts:}
+          {file: module_id, excerpts:}
         end
+      end
+
+      # The module and full source of the first backtrace frame that points
+      # into a module with a source map, with the line the frame names, as
+      # `{file:, source:, line:}`. Nil when no frame does.
+      def source_location(error)
+        Array(error.backtrace).each do |frame|
+          file, line = parse_frame(frame)
+          next unless file
+
+          module_id, source = module_source(file)
+          return {file: module_id, source:, line:} if source
+        end
+
+        nil
       end
 
       private
@@ -115,7 +130,8 @@ module Mayu
       end
 
       # Frames are matched the way the backtrace rewriter indexes modules:
-      # by module key, path or evaluation path.
+      # by module key, path or evaluation path. Returns the module id and
+      # the original source.
       def module_source(file)
         source_maps.each do |key, mod|
           next unless mod.respond_to?(:source_map)
@@ -127,7 +143,7 @@ module Mayu
           paths << mod.path.to_s if mod.respond_to?(:path)
           paths << mod.eval_path.to_s if mod.respond_to?(:eval_path)
 
-          return source_map.input if paths.include?(file)
+          return [key.to_s, source_map.input] if paths.include?(file)
         end
 
         nil

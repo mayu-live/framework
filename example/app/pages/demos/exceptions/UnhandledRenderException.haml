@@ -1,0 +1,44 @@
+:ruby
+  Button = import("/components/Form/Button")
+  Card = import("/components/UI/Card")
+  Details = import("/components/UI/Details")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+  RenderException = import("./RenderException")
+
+  def initialize =
+    @failed = false
+
+  def handle_raise =
+    @failed = true
+
+  def handle_reset =
+    @failed = false
+
+%Card
+  .content
+    %h3 Unhandled render exception
+    %p
+      The child below raises from its render method, and nothing here catches
+      it. The runtime reports the error in the server log with the path
+      through the component tree, and the development overlay shows the same
+      details. The page keeps its last good state until the next successful
+      render, so Reset brings the child back.
+    .buttons
+      %Button(onclick=handle_raise) Raise unhandled render error
+      %Button(onclick=handle_reset) Reset example
+    %RenderException(fail=@failed)
+    %Details(summary="Show source")
+      %HighlightedCodeBlock(language="haml")
+        = File.read(File.join(__dir__, "UnhandledRenderException.haml"))
+
+:css
+  .content {
+    padding: 1rem;
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    margin: 1em 0;
+  }

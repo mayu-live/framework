@@ -19,6 +19,10 @@ export default async function renderError(
   // downloads the overlay.
   await import("./custom-elements/mayu-exception");
 
+  // A file ends with a newline, which would otherwise show as an empty
+  // last line.
+  const sourceText = source === null ? null : source.replace(/\n$/, "");
+
   const location =
     line === null
       ? file
@@ -33,14 +37,9 @@ export default async function renderError(
   }
 
   backtrace.forEach((entry) => {
-    if (!entry.startsWith(`${file}:`)) return;
-
-    // Module ids contain colons ("app:/page.haml"), so the line number is the
-    // first segment after the filename, not after the first colon.
-    const lineNumber = Number.parseInt(entry.slice(file.length + 1), 10);
-
-    if (Number.isInteger(lineNumber)) {
-      interestingLines.add(lineNumber);
+    const frame = parseFrame(entry);
+    if (frame && frame.file === file) {
+      interestingLines.add(frame.line);
     }
   });
 
@@ -49,7 +48,7 @@ export default async function renderError(
     type,
     message,
     backtrace,
-    source,
+    sourceText,
     treePath,
     hints,
     interestingLines,
@@ -77,19 +76,27 @@ export default async function renderError(
     h("li", [hint], { slot: "hints", class: "hint-item" }),
   );
 
-  const treeItems = treePath.map((path, i) => {
-    const indent = "  ".repeat(i);
-    const text =
-      indent + "%" + path.name + (path.path ? ` (${path.path})` : "");
+  const treeItems = treeLines(treePath).map((nodes, depth) => {
+    const children = nodes.flatMap((node, i) => [
+      ...(i > 0 ? [treeSeparator()] : []),
+      ...treeNode(node),
+    ]);
 
-    return h("li", [text], { slot: "tree-path", class: "tree-item" });
+    return h("li", children, {
+      slot: "tree-path",
+      class: "tree-item",
+      style: `--depth: ${depth}`,
+    });
   });
 
   const backtraceItems = backtrace.map((entry) => {
-    const isInteresting = entry.startsWith(`${file}:`);
+    const frame = parseFrame(entry);
+    const isInteresting = frame !== null && frame.file === file;
     const className = isInteresting
       ? "trace-item is-interesting"
-      : "trace-item";
+      : isFrameworkFrame(frame)
+        ? "trace-item is-framework"
+        : "trace-item";
 
     return h("li", [entry], {
       slot: "backtrace",
@@ -97,7 +104,7 @@ export default async function renderError(
     });
   });
 
-  const sourceLines = source ? source.split("\n") : [];
+  const sourceLines = sourceText ? sourceText.split("\n") : [];
   const gutter = String(sourceLines.length).length;
   const sourceItems: HTMLElement[] = [];
 
@@ -168,15 +175,17 @@ function logToConsole(
     formats.push("color: #7fd1ff;");
   });
 
-  treePath.forEach((path, i) => {
-    const indent = "  ".repeat(i);
-    if (path.path) {
-      buf.push(`%c${indent}%%%c${path.name} %c(${path.path})`);
-      formats.push("color: #ff4d6d;", "color: #7fd1ff;", "color: #9aa3b2;");
-    } else {
-      buf.push(`%c${indent}%%%c${path.name}`);
-      formats.push("color: #ff4d6d;", "color: #7fd1ff;");
-    }
+  treeLines(treePath).forEach((nodes, depth) => {
+    const indent = "  ".repeat(depth);
+    const text = nodes
+      .map((node) => {
+        const path = modulePath(node);
+        const sigil = node.name.startsWith("#") ? "" : "%";
+        return sigil + node.name + (path ? ` (${path})` : "");
+      })
+      .join(" > ");
+    buf.push(`%c${indent}${text}`);
+    formats.push("color: #e39ad0;");
   });
 
   // Show a window around the error rather than the whole file.
@@ -202,4 +211,76 @@ function logToConsole(
   });
 
   console.error(buf.join("\n"), ...formats);
+}
+
+type TreeNode = { name: string; path?: string };
+
+// Internal components have no source file worth naming.
+function modulePath(node: TreeNode) {
+  return node.path && !node.path.startsWith("(internal)::") ? node.path : null;
+}
+
+// One line per component that comes from a module, each one level deeper.
+// Everything between two of those, elements and internal components alike,
+// shares a line. This matches the server log.
+function treeLines(treePath: TreeNode[]): TreeNode[][] {
+  const lines: TreeNode[][] = [];
+  let run: TreeNode[] | null = null;
+
+  for (const node of treePath) {
+    if (modulePath(node)) {
+      lines.push([node]);
+      run = null;
+    } else {
+      if (!run) {
+        run = [];
+        lines.push(run);
+      }
+      run.push(node);
+    }
+  }
+
+  return lines;
+}
+
+function treeNode(node: TreeNode): Node[] {
+  const path = modulePath(node);
+  const kind = path ? "component" : "tag";
+  const parts: Node[] = [];
+
+  if (!node.name.startsWith("#")) {
+    parts.push(h("span", ["%"], { style: `color: var(--tree-${kind}-sigil)` }));
+  }
+  parts.push(
+    h("span", [node.name], {
+      style: `color: var(--tree-${kind});${path ? " font-weight: 600;" : ""}`,
+    }),
+  );
+  if (path) {
+    parts.push(h("span", [` (${path})`], { style: "color: var(--tree-path)" }));
+  }
+
+  return parts;
+}
+
+function treeSeparator() {
+  return h("span", [" > "], { style: "color: var(--tree-path)" });
+}
+
+type Frame = { file: string; line: number };
+
+// The server names app frames by module id ("app:/page.haml:2:in ...").
+// Everything else ran through Mayu, a gem or Ruby itself.
+function isFrameworkFrame(frame: Frame | null) {
+  return frame === null || !/^[a-z][a-z0-9+.-]*:\//.test(frame.file);
+}
+
+// "app:/page.haml:2:in 'method'", "app:/x.tsx:2:24" or "<internal:kernel>:1".
+// Module ids contain colons, so the line is the number after the file,
+// followed by an optional column or ":in" part.
+function parseFrame(entry: string): Frame | null {
+  const match = /^(.*?):(\d+)(?::\d+)?(?::in .*)?$/.exec(entry);
+  if (!match) return null;
+
+  return { file: match[1], line: Number.parseInt(match[2], 10) };
 }

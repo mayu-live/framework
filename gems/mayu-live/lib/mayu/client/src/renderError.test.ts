@@ -58,7 +58,7 @@ describe("renderError", () => {
       "mayu-exception li.source-line.is-interesting",
     );
 
-    expect(lines).toHaveLength(4);
+    expect(lines).toHaveLength(3);
     expect(highlighted).toHaveLength(1);
     expect(highlighted[0]?.textContent).toContain("const b = 2;");
   });
@@ -119,5 +119,79 @@ describe("renderError", () => {
     expect(hidden("tree-path")).toBe(true);
     expect(hidden("hints")).toBe(true);
     expect(hidden("source")).toBe(false);
+  });
+});
+
+describe("renderError backtrace", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+    vi.restoreAllMocks();
+  });
+
+  it("highlights the frames of the module and dims the ones through Mayu", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await import("./custom-elements/mayu-exception");
+
+    await renderError(
+      "app:/pages/+page.haml",
+      "RuntimeError",
+      "boom",
+      [
+        "app:/pages/+page.haml:2:in 'render'",
+        "mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb:1:in 'update'",
+      ],
+      "%p hello\n= raise\n",
+      [],
+      2,
+      null,
+      [],
+    );
+
+    const element = document.querySelector("mayu-exception")!;
+    const items = [...element.querySelectorAll(".trace-item")];
+    expect(items[0].classList.contains("is-interesting")).toBe(true);
+    expect(items[1].classList.contains("is-framework")).toBe(true);
+    expect(
+      element.querySelector(".source-line.is-interesting")?.textContent,
+    ).toContain("= raise");
+  });
+
+  it("hides frames through Mayu until the checkbox asks for them", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await import("./custom-elements/mayu-exception");
+
+    await renderError(
+      "app:/pages/+page.haml",
+      "RuntimeError",
+      "boom",
+      [
+        "app:/pages/+page.haml:2:in 'render'",
+        "mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb:1:in 'update'",
+        "<internal:kernel>:187:in 'Kernel#loop'",
+      ],
+      null,
+      [],
+      null,
+      null,
+      [],
+    );
+
+    const element = document.querySelector("mayu-exception")!;
+    const root = element.shadowRoot!;
+    const label = root.querySelector<HTMLElement>("[data-framework-toggle]")!;
+    const checkbox = root.querySelector<HTMLInputElement>(
+      "[data-action='toggle-framework-frames']",
+    )!;
+
+    expect(label.hidden).toBe(false);
+    expect(root.querySelector("[data-framework-count]")?.textContent).toBe(
+      "Show 2 more frames through Mayu",
+    );
+    expect(element.hasAttribute("show-framework-frames")).toBe(false);
+
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event("change"));
+
+    expect(element.hasAttribute("show-framework-frames")).toBe(true);
   });
 });

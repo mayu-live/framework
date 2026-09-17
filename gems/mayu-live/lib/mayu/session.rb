@@ -112,7 +112,8 @@ module Mayu
           failure.error,
           component: vnode.instance_variable_get(:@instance),
           tree_path: vnode.tree_path,
-          provider: module_provider
+          provider: module_provider,
+          with_source: @environment.config.server.render_exceptions?
         )
       @startup_commands << command if @environment.config.server.render_exceptions?
 

@@ -24,10 +24,39 @@ export default class MayuException extends HTMLElement {
     this.dialog!.addEventListener("close", () => this.remove());
 
     this.hideEmptySections();
+    this.setupFrameworkFrames();
 
     if (!this.dialog!.open) {
       this.dialog!.showModal();
     }
+  }
+
+  // The frames through Mayu are hidden until the checkbox asks for them;
+  // its label says how many there are.
+  private setupFrameworkFrames() {
+    const root = this.shadowRoot!;
+    const toggle = root.querySelector<HTMLElement>("[data-framework-toggle]");
+    const checkbox = root.querySelector<HTMLInputElement>(
+      "[data-action='toggle-framework-frames']",
+    );
+    const count = root.querySelector<HTMLElement>("[data-framework-count]");
+    const slot = root.querySelector<HTMLSlotElement>("slot[name='backtrace']");
+    if (!toggle || !checkbox || !count || !slot) return;
+
+    checkbox.addEventListener("change", () => {
+      this.toggleAttribute("show-framework-frames", checkbox.checked);
+    });
+
+    const sync = () => {
+      const frames = slot
+        .assignedElements()
+        .filter((item) => item.classList.contains("is-framework")).length;
+      toggle.hidden = frames === 0;
+      count.textContent = `Show ${frames} more frames through Mayu`;
+    };
+
+    slot.addEventListener("slotchange", sync);
+    sync();
   }
 
   disconnectedCallback() {

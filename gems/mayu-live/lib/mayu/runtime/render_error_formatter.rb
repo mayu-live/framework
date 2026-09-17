@@ -29,6 +29,13 @@ module Console
           @terminal[:mayu_error_dim] ||= @terminal.style(nil, nil, :faint)
           @terminal[:mayu_error_file] ||= @terminal.style(nil, nil, :bold)
           @terminal[:mayu_error_highlight] ||= @terminal.style(:red)
+          # Tags: magenta sigil, bright magenta name. Components: yellow
+          # sigil, bold yellow name. 95 is the bright magenta code, which
+          # the palette has no name for.
+          @terminal[:mayu_error_element_sigil] ||= @terminal.style(:magenta)
+          @terminal[:mayu_error_element] ||= @terminal.style(nil, nil, 95)
+          @terminal[:mayu_error_component_sigil] ||= @terminal.style(:yellow)
+          @terminal[:mayu_error_component] ||= @terminal.style(:yellow, nil, :bold)
         end
 
         def format(event, stream, verbose: false, width: 80)
@@ -45,6 +52,14 @@ module Console
             stream.puts "  #{paint(:mayu_error_dim, "#{hidden} more frames through Mayu")}"
           end
 
+          tree_lines = tree_lines(event[:tree_path] || [])
+          unless tree_lines.empty?
+            stream.puts ""
+            tree_lines.each_with_index do |line, depth|
+              stream.puts "#{"  " * depth}#{line}"
+            end
+          end
+
           event[:sources].each do |source|
             stream.puts ""
             stream.puts paint(:mayu_error_file, source[:file].to_s.delete_prefix(root))
@@ -56,6 +71,37 @@ module Console
         end
 
         private
+
+        # One line per component that comes from a module, each one level
+        # deeper. Everything between two of those, elements and internal
+        # components alike, shares a line.
+        def tree_lines(tree_path)
+          lines = []
+          run = nil
+
+          tree_path.each do |node|
+            if node[:path]
+              lines << format_tree_node(node)
+              run = nil
+            else
+              run ||= lines.push([]).last
+              run << format_tree_node(node)
+            end
+          end
+
+          lines.map { |line| line.is_a?(Array) ? line.join(" > ") : line }
+        end
+
+        # Elements as in Haml, components with the module they come from,
+        # each kind in its own colours.
+        def format_tree_node(node)
+          name = node[:name].to_s
+          kind = (node[:component] || node[:path]) ? :mayu_error_component : :mayu_error_element
+          sigil = name.start_with?("#") ? "" : paint(:"#{kind}_sigil", "%")
+          text = sigil + paint(kind, name)
+          path = node[:path]
+          path ? "#{text} #{paint(:mayu_error_dim, "(#{path})")}" : text
+        end
 
         def format_line(line)
           text = sprintf("%s %3d: %s", line[:highlight] ? ">" : " ", line[:line], line[:text])
