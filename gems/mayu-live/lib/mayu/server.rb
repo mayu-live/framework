@@ -12,6 +12,10 @@ require "console"
 require "console/output/split"
 require "fileutils"
 
+# Console picks up event formatters when it creates its terminal output,
+# which happens on the first log line. The runtime itself is loaded lazily by
+# the worker, so its formatter is loaded here, before the server logs.
+require_relative "runtime/render_error_formatter"
 require_relative "server/controller"
 
 module Mayu

@@ -185,10 +185,6 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
 
         []
       end
-
-      def format_exception(error, source_path:)
-        "#{source_path}: #{error.class}: #{error.message}"
-      end
     end
 
   def setup
@@ -251,6 +247,35 @@ class Mayu::Runtime::VNodes::HotReloadTest < Minitest::Test
       rejected_events: [:render_error_mount]
     )
     assert_equal(1, EVENTS.count(:render_error_render))
+  end
+
+  def test_failed_replacement_keeps_updates_flowing_when_the_head_changes
+    families = {
+      BeforeProbe => "transactional",
+      RenderErrorAfterProbe => "transactional"
+    }
+    engine = build_engine(BeforeProbe, label: "old", families:)
+
+    run_engine_instance(engine) do
+      before_vnode = find_component(engine.root, BeforeProbe)
+      before = before_vnode.instance_variable_get(:@instance)
+      wait_until { EVENTS.include?(:before_mount) }
+
+      # A changed stylesheet marks the head dirty, so the batch that rejects
+      # the replacement also re-walks the tree to flush the head.
+      engine.root.replace_route_assets(stylesheets: ["/new.css"], scripts: [])
+      engine.refresh(descriptor(RenderErrorAfterProbe, label: "broken"))
+      wait_for_render_error(engine, "render boom")
+
+      # The broken class version is tried once, not on every pass.
+      assert_equal(1, EVENTS.count(:render_error_render))
+
+      # The old instance keeps rendering, with the props of the rejected
+      # descriptor, and updates still reach the browser.
+      before.increment
+      wait_for_text_patch(engine, "before 1 broken")
+      assert_equal(1, EVENTS.count(:render_error_render))
+    end
   end
 
   def test_refreshes_klenod_classes_and_keeps_new_state_defaults

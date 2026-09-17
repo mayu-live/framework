@@ -21,11 +21,15 @@ module Mayu
 
       def self.module_path = nil
 
+      # Components are labelled by their source path. In development that
+      # path is absolute, so it is shown relative to the app root, which is
+      # the working directory while the server runs.
       def self.to_s
         path = module_path
         return super if path.nil? || path.empty?
+        return path unless File.absolute_path?(path)
 
-        File.join("MAYU_ROOT", path)
+        path.delete_prefix("#{Dir.pwd}/")
       end
 
       def marshal_dump

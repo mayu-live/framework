@@ -97,6 +97,21 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     assert_match("<title>Static</title>", html)
   end
 
+  def test_flushing_the_head_leaves_it_clean
+    descriptor = H[:body, H[:head, H[:title, "Static"]], H[:main, "content"]]
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.replace_route_assets(stylesheets: ["/new.css"], scripts: [])
+    assert(engine.head_dirty?)
+
+    engine.flush_head(collector)
+
+    # The walk re-registers the head node. That must not dirty the head again,
+    # or every following batch would re-walk the whole document.
+    refute(engine.head_dirty?)
+  end
+
   def test_route_stylesheets_are_rendered_without_component_discovery
     engine =
       Mayu::Runtime::Engine.new(

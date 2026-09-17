@@ -10,6 +10,7 @@ require "async/queue"
 require_relative "base"
 require_relative "command_collector"
 require_relative "vcomponent"
+require_relative "../render_error_event"
 require_relative "internal_components/html"
 require_relative "internal_components/head"
 
@@ -149,10 +150,24 @@ module Mayu
           end
         end
 
+        # Flushing re-walks the tree like #update does, so a component that
+        # fails to render here is resolved the same way instead of escaping
+        # into the updater and stopping it.
+        #
+        # The walk re-adds every head node, which marks the head dirty again,
+        # so the flag is cleared afterwards. Clearing it first would leave it
+        # set and make every later batch re-walk the whole document.
         def flush_head(collector)
           return unless @head_dirty
-          @html.update(collector, init_html)
-          @head_dirty = false
+
+          checkpoint = collector.checkpoint
+          begin
+            @html.update(collector, init_html)
+          rescue VComponent::UnhandledRenderError => failure
+            resolve_render_error(collector, failure, checkpoint)
+          ensure
+            @head_dirty = false
+          end
         end
 
         def head_dirty?
@@ -300,13 +315,10 @@ module Mayu
           if provider&.respond_to?(:rewrite_exception)
             provider.rewrite_exception(error)
           end
-          formatted_error =
-            if provider
-              provider.format_exception(error, source_path: module_path)
-            else
-              error
-            end
-          Console.logger.error(component, formatted_error)
+          Console.logger.error(
+            component,
+            event: RenderErrorEvent.for(error, component:, provider:)
+          )
 
           Commands::RenderError[
             module_path,

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "klenod/build/resolution_error_formatter"
+require "mayu/backtrace"
 require "mayu/hot_reload"
 
 module Mayu
@@ -85,9 +86,8 @@ module Mayu
       # summarized rather than listed.
       def self.from_unknown(error, module_id:, provider:)
         frames = error.respond_to?(:backtrace) ? Array(error.backtrace) : []
-        app_frames = frames.reject { framework_frame?(it) }
-        hidden = frames.length - app_frames.length
-        app_frames <<= "#{hidden} more frames through the build" if hidden > 0
+        app_frames, hidden = Mayu::Backtrace.split(frames)
+        app_frames << "#{hidden} more frames through the build" if hidden > 0
 
         line = app_line(frames, module_id, provider)
 
@@ -101,10 +101,6 @@ module Mayu
           hints: [],
           backtrace: app_frames
         )
-      end
-
-      def self.framework_frame?(frame)
-        %r{/gems/|/vendor/bundle/|<internal:}.match?(frame.to_s)
       end
 
       # Only trust a line number when the module's source map is still around
@@ -169,7 +165,6 @@ module Mayu
         :resolve_detail,
         :resolve_hints,
         :read_source,
-        :framework_frame?,
         :app_line
     end
   end

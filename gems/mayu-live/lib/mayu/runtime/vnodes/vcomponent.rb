@@ -145,21 +145,29 @@ module Mayu
           if descriptor
             previous_type = @descriptor.type
 
-            if previous_type != descriptor.type
+            if previous_type == descriptor.type
+              @descriptor = descriptor
+            elsif descriptor.type.equal?(@failed_replacement_type)
+              # This class version already failed to replace the instance and
+              # the error has been reported. Keep rendering the old instance,
+              # with the new props, until hot reload delivers another version.
+              @descriptor = descriptor.with(type: previous_type)
+            else
               begin
                 replacement, replacement_children =
                   prepare_replacement(descriptor.type, descriptor)
               rescue UnhandledRenderError
+                @failed_replacement_type = descriptor.type
                 raise
               rescue => error
+                @failed_replacement_type = descriptor.type
                 raise UnhandledRenderError.new(error, self)
               end
 
+              @failed_replacement_type = nil
               replacement_rendered = true
               @descriptor = descriptor
               commit_replacement(replacement)
-            else
-              @descriptor = descriptor
             end
 
             @instance.instance_variable_set(

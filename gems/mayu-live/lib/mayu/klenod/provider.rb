@@ -79,10 +79,71 @@ module Mayu
         )
       end
 
+      # The source around every frame of a rewritten backtrace that points
+      # into a module with a source map, grouped by file. Each file gets one
+      # excerpt per run of nearby lines, as
+      # `{file:, excerpts: [[{line:, text:, highlight:}, ...], ...]}`.
+      def source_excerpts(error, context: 2)
+        frames = Array(error.backtrace).filter_map { parse_frame(it) }
+
+        frames.group_by(&:first).filter_map do |file, entries|
+          source = module_source(file)
+          next unless source
+
+          lines = source.lines.map(&:chomp)
+          numbers = entries.map(&:last).uniq
+          excerpts =
+            excerpt_ranges(numbers, context, lines.length).map do |range|
+              range.map do |number|
+                {line: number, text: lines[number - 1], highlight: numbers.include?(number)}
+              end
+            end
+
+          {file:, excerpts:}
+        end
+      end
+
       private
 
       def source_maps
         source.modules
+      end
+
+      def parse_frame(frame)
+        match = /\A(?<file>.*):(?<line>\d+):in /.match(frame.to_s)
+        match && [match[:file], match[:line].to_i]
+      end
+
+      # Frames are matched the way the backtrace rewriter indexes modules:
+      # by module key, path or evaluation path.
+      def module_source(file)
+        source_maps.each do |key, mod|
+          next unless mod.respond_to?(:source_map)
+
+          source_map = mod.source_map
+          next unless source_map
+
+          paths = [key.to_s]
+          paths << mod.path.to_s if mod.respond_to?(:path)
+          paths << mod.eval_path.to_s if mod.respond_to?(:eval_path)
+
+          return source_map.input if paths.include?(file)
+        end
+
+        nil
+      end
+
+      def excerpt_ranges(numbers, context, last_line)
+        numbers.sort.each_with_object([]) do |number, ranges|
+          range = [number - context, 1].max..[number + context, last_line].min
+          previous = ranges.last
+
+          if previous && range.begin <= previous.end + 1
+            ranges[-1] = previous.begin..[previous.end, range.end].max
+          else
+            ranges << range
+          end
+        end
       end
     end
 
