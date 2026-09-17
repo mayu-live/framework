@@ -10,7 +10,7 @@ require "async/queue"
 require_relative "base"
 require_relative "command_collector"
 require_relative "vcomponent"
-require_relative "../render_error_event"
+require_relative "../render_error"
 require_relative "internal_components/html"
 require_relative "internal_components/head"
 
@@ -307,32 +307,12 @@ module Mayu
         end
 
         def render_error_command(error, component, tree_path = [])
-          module_path =
-            component.class.respond_to?(:module_path) &&
-            component.class.module_path
-          module_path = component.class.name if module_path.nil? ||
-            module_path.empty?
-
-          provider = @engine.module_provider
-          if provider&.respond_to?(:rewrite_exception)
-            provider.rewrite_exception(error)
-          end
-          Console.logger.error(
-            component,
-            event: RenderErrorEvent.for(error, component:, provider:)
+          RenderError.report(
+            error,
+            component:,
+            tree_path:,
+            provider: @engine.module_provider
           )
-
-          Commands::RenderError[
-            module_path,
-            error.class.name,
-            error.message,
-            error.backtrace,
-            nil,
-            tree_path,
-            nil,
-            nil,
-            []
-          ]
         end
 
         def call_listener_safely(call, listener)

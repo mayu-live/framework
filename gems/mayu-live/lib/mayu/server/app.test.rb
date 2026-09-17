@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "minitest/mock"
 require "async/http/protocol"
 
 require_relative "app"
@@ -63,12 +64,19 @@ class Mayu::Server::AppTest < Minitest::Test
       error.set_backtrace(["app:/pages/api/+route.rb:3"])
     end
   end
-  Request = Data.define(:method, :path, :headers, :body) { def read = body }
+  Request =
+    Data.define(:method, :path, :headers, :body) do
+      def read = body
+
+      def version = "HTTP/1.1"
+    end
 
   class StreamSession
     DomIdTree = Data.define(:value) { def to_msgpack(packer) = packer.write(value) }
 
     attr_reader :id, :dom_id_tree
+
+    def startup_commands = []
 
     def initialize
       @id = "test-session"
@@ -165,6 +173,46 @@ class Mayu::Server::AppTest < Minitest::Test
       ["app:/pages/api/+route.rb:3"],
       provider.rewritten_error.backtrace
     )
+  end
+
+  ErrorConfig = Data.define(:render_exceptions) do
+    def server = self
+    def render_exceptions? = render_exceptions
+  end
+  ErrorEnvironment = Data.define(:module_provider, :init_js_body, :runtime_js_path, :config)
+
+  # Only reached when the error page itself fails to render.
+  def test_a_render_error_that_escapes_the_session_is_an_html_500
+    failure =
+      Mayu::Runtime::VNodes::VComponent::UnhandledRenderError.new(
+        RuntimeError.new("render boom"),
+        nil
+      )
+    failure.error.set_backtrace(["app/pages/+page.haml:3:in 'render'"])
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      ErrorEnvironment.new(nil, nil, nil, ErrorConfig.new(true))
+    )
+    request = Request.new("GET", "/", {"accept" => "text/html"}, "")
+
+    response =
+      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.call(request) }
+
+    assert_equal(500, response.status)
+    body = response.body.join
+    assert_includes(body, "RuntimeError: render boom")
+    assert_includes(body, "app/pages/+page.haml:3")
+
+    app.instance_variable_set(
+      :@environment,
+      ErrorEnvironment.new(nil, nil, nil, ErrorConfig.new(false))
+    )
+    response =
+      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.call(request) }
+
+    assert_equal(500, response.status)
+    assert_equal("Internal Server Error", response.body.join)
   end
 
   def test_serves_the_shared_client_initializer_without_a_session

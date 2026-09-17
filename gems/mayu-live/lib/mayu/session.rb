@@ -52,7 +52,7 @@ module Mayu
         end
       end
 
-    attr_reader :id, :route_status
+    attr_reader :id, :route_status, :startup_commands
     attr_reader :token
 
     def initialize(environment:, request_info:)
@@ -66,22 +66,58 @@ module Mayu
         "Initializing session #{@id} at \e[1;34m#{@request_info.path}\e[0m"
       )
 
+      @startup_commands = []
       descriptor = resolve_route(@request_info.path)
-      runtime_js = @request_info.http2 && init_js_path
 
-      @engine =
-        Runtime::Engine.new(
-          descriptor,
-          runtime_js:,
-          metrics: @environment.metrics,
-          module_provider:,
-          render_exceptions: @environment.config.server.render_exceptions?,
-          stylesheets: route_stylesheets,
-          scripts: route_scripts
-        )
+      begin
+        @engine = build_engine(descriptor)
+      rescue Runtime::VNodes::VComponent::UnhandledRenderError => failure
+        @engine = build_engine(error_page_for(failure))
+      end
 
       @last_ping = Async::Clock.now
       @incoming_events = Async::Queue.new
+    end
+
+    def build_engine(descriptor)
+      Runtime::Engine.new(
+        descriptor,
+        runtime_js: @request_info.http2 && init_js_path,
+        metrics: @environment.metrics,
+        module_provider:,
+        render_exceptions: @environment.config.server.render_exceptions?,
+        stylesheets: route_stylesheets,
+        scripts: route_scripts
+      )
+    end
+
+    # A component raised while the page was first rendered. It is reported
+    # like a render error in a live page, and the route's error page takes
+    # over, or a built-in one when the app has none. Either way the session
+    # stays alive: in development the overlay follows once the stream
+    # connects, and a hot reload that fixes the component renders the real
+    # page again.
+    def error_page_for(failure)
+      vnode = failure.component
+      command =
+        Runtime::RenderError.report(
+          failure.error,
+          component: vnode.instance_variable_get(:@instance),
+          tree_path: vnode.tree_path,
+          provider: module_provider
+        )
+      @startup_commands << command if @environment.config.server.render_exceptions?
+
+      provider = module_provider
+      resolved_page =
+        provider && Klenod::Router.new(provider).error(@request_info.path, error: failure.error)
+      return apply_resolved_page(resolved_page) if resolved_page
+
+      @route_status = 500
+      ErrorPage.render_failure(
+        failure.error,
+        details: @environment.config.server.render_exceptions?
+      )
     end
 
     def init_js_path

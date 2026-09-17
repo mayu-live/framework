@@ -13,6 +13,7 @@ require_relative "event_stream"
 require_relative "static_files"
 
 require_relative "../environment"
+require_relative "../runtime/engine"
 require_relative "../session"
 require_relative "../session/store"
 require_relative "../klenod"
@@ -117,12 +118,27 @@ module Mayu
           "Resource not found: #{request.path}",
           **origin_header(request)
         )
+      rescue Runtime::VNodes::VComponent::UnhandledRenderError => failure
+        # The session reported it, and its error page failed as well.
+        render_error_response(failure, request)
       rescue => e
         if @environment.module_provider&.respond_to?(:rewrite_exception)
           @environment.module_provider.rewrite_exception(e)
         end
         Console.logger.error(self, e)
         error_response(403, "INTERNAL_SERVER_ERROR", **origin_header(request))
+      end
+
+      def render_error_response(failure, request)
+        error = failure.error
+        body =
+          if @environment.config.server.render_exceptions?
+            ["#{error.class}: #{error.message}", "", *error.backtrace].join("\n")
+          else
+            "Internal Server Error"
+          end
+
+        text_response(500, body, **origin_header(request))
       end
 
       # Called by the development build after it applied a source change.
@@ -417,7 +433,8 @@ module Mayu
           Runtime::Batch[
             [
               Runtime::Commands::Initialize[session.dom_id_tree],
-              *session.listener_commands
+              *session.listener_commands,
+              *session.startup_commands
             ]
           ]
         )

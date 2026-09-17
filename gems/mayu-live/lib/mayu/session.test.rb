@@ -394,6 +394,82 @@ class Mayu::SessionTest < Minitest::Test
     end
   end
 
+  def test_a_page_that_fails_to_render_falls_back_to_the_error_page
+    with_failing_page(error_page: true) do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_equal(500, session.route_status)
+      assert_includes(session.render, "render boom")
+      overlay = session.startup_commands.first
+      assert_kind_of(Mayu::Runtime::Commands::RenderError, overlay)
+      assert_equal("render boom", overlay.message)
+    end
+  end
+
+  def test_the_overlay_is_only_queued_when_exceptions_are_rendered
+    with_failing_page(error_page: true) do |provider|
+      env = FakeEnvironment.new(module_provider: provider, render_exceptions: false)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_includes(session.render, "render boom")
+      assert_empty(session.startup_commands)
+    end
+  end
+
+  def test_without_an_error_page_development_shows_the_failure
+    with_failing_page(error_page: false) do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      html = session.render
+
+      assert_equal(500, session.route_status)
+      assert_includes(html, "RuntimeError: render boom")
+      assert_includes(html, "pages/+page.haml")
+      refute_includes(html, "vendor/bundle")
+      assert_kind_of(Mayu::Runtime::Commands::RenderError, session.startup_commands.first)
+    end
+  end
+
+  def test_a_hot_reload_that_fixes_the_page_renders_it_in_the_same_session
+    with_failing_page(error_page: false) do |provider, root|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      assert_includes(session.render, "render boom")
+
+      page = File.join(root, "app", "pages", "+page.haml")
+      File.write(page, "%p Fixed page\n")
+      provider.context.invalidate_paths([page])
+      session.send(:handle_reload_result, Mayu::HotReload::Update.success)
+
+      html = session.render
+      assert_includes(html, "Fixed page")
+      refute_includes(html, "render boom")
+    end
+  end
+
+  def test_without_an_error_page_production_shows_a_generic_page
+    with_failing_page(error_page: false) do |provider|
+      env = FakeEnvironment.new(module_provider: provider, render_exceptions: false)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      html = session.render
+
+      assert_equal(500, session.route_status)
+      assert_includes(html, "Something went wrong")
+      refute_includes(html, "render boom")
+      assert_empty(session.startup_commands)
+    end
+  end
+
   def test_reload_success_emits_reload_succeeded_command
     env = FakeEnvironment.new
     request_info =
@@ -498,5 +574,20 @@ class Mayu::SessionTest < Minitest::Test
       hints: ["Close the parenthesis"],
       backtrace: ["app:/broken.haml:2"]
     )
+  end
+
+  private
+
+  # A page that loads fine but raises while rendering.
+  def with_failing_page(error_page:)
+    Dir.mktmpdir("mayu-klenod-render-error") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(pages)
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(pages, "+page.haml"), "%p= raise \"render boom\"\n")
+      File.write(File.join(pages, "+error.haml"), "%p= $error.message\n") if error_page
+
+      yield Mayu::Build::Configuration.new(root:).development_provider, root
+    end
   end
 end
