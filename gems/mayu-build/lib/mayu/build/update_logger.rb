@@ -1,109 +1,52 @@
 # frozen_string_literal: true
 
+#
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require "console"
+
+require_relative "update_event"
+require_relative "console_formatter"
+
 module Mayu
   module Build
+    # Reports each hot reload through Console, so it lands wherever the
+    # server's other logs go: the terminal, a log file, or JSON.
     class UpdateLogger
-      COLORS = {
-        reset: "\e[0m",
-        dim: "\e[2m",
-        success: "\e[1;32m",
-        failure: "\e[1;31m",
-        changed: "\e[1;33m",
-        added: "\e[32m",
-        removed: "\e[31m"
-      }.freeze
-
-      def initialize(source_dir:, output: $stdout, error_output: $stderr, env: ENV, provider: nil)
-        @source_dir = Pathname.new(source_dir).expand_path
-        @output = output
-        @error_output = error_output
-        @env = env
+      def initialize(source_dir:, provider: nil, logger: nil)
+        @source_dir = source_dir
         @provider = provider
+        @logger = logger
       end
 
+      # This is the only place a reload failure is reported. Sessions used to
+      # log the exception as well, which repeated the whole backtrace once per
+      # open browser tab.
       def log(update:, duration:)
-        event = update.event
-        result = event.result
-        stream = update.success? ? output : error_output
-        status = update.success? ? "completed" : "failed"
-        color_name = update.success? ? :success : :failure
+        event =
+          UpdateEvent.new(
+            update:,
+            duration:,
+            source_dir: @source_dir,
+            provider: @provider
+          )
 
-        stream.puts "#{color(color_name, "Update ##{event.graph_version} #{status}")} #{color(:dim, "(#{duration})")}"
-        log_paths(stream, "changed files", event.changed_paths, marker: "~", color_name: :changed)
-        log_paths(stream, "removed files", event.removed_paths, marker: "-", color_name: :removed)
-
-        if update.success?
-          log_modules(result)
-          log_assets(result.asset_changes)
-          log_no_graph_changes(result)
+        if event.success?
+          logger.info(self, event:)
         else
-          log_errors(stream, update)
+          logger.error(self, event:)
         end
       end
 
       private
 
-      attr_reader :source_dir, :output, :error_output, :env, :provider
-
-      # This is the only place a reload failure is reported. Sessions used to
-      # log the exception as well, which repeated the whole backtrace once per
-      # open browser tab.
-      def log_errors(stream, update)
-        update.each_error do |module_id, error|
-          report = ErrorReport.from(error, module_id:, provider:)
-          stream.puts(indent(ErrorReport.render(report, ansi: !env["NO_COLOR"])))
-        end
-      end
-
-      def indent(text)
-        text.lines.map { |line| line.strip.empty? ? line : "  #{line}" }.join
-      end
-
-      def log_modules(result)
-        log_list(output, "reloaded", result.reloaded_module_ids, marker: "~", color_name: :changed)
-        log_list(output, "reevaluated", result.reevaluated_module_ids, marker: "*", color_name: :success)
-        log_list(output, "removed modules", result.removed_module_ids, marker: "-", color_name: :removed)
-      end
-
-      def log_assets(asset_changes)
-        return if asset_changes.empty?
-
-        output.puts "  assets:"
-        asset_changes.added.each { |path| output.puts "    #{color(:added, "+")} #{color(:added, path)}" }
-        asset_changes.changed.each { |path| output.puts "    #{color(:changed, "~")} #{color(:changed, path)}" }
-        asset_changes.removed.each { |path| output.puts "    #{color(:removed, "-")} #{color(:removed, path)}" }
-      end
-
-      def log_no_graph_changes(result)
-        return unless result.empty?
-
-        output.puts "  #{color(:dim, "modules: no loaded graph modules affected")}"
-      end
-
-      def log_paths(stream, label, paths, marker:, color_name:)
-        log_list(stream, label, paths.map { |path| relative_path(path) }, marker:, color_name:)
-      end
-
-      def log_list(stream, label, values, marker:, color_name:)
-        return if values.empty?
-
-        stream.puts "  #{label}:"
-        values.each { |value| stream.puts "    #{color(color_name, marker)} #{value}" }
-      end
-
-      def relative_path(path)
-        pathname = Pathname.new(path)
-        pathname = pathname.expand_path if pathname.absolute?
-        pathname.relative_path_from(source_dir).to_s
-      rescue ArgumentError
-        path.to_s
-      end
-
-      def color(name, value)
-        return value.to_s if env["NO_COLOR"]
-
-        "#{COLORS.fetch(name)}#{value}#{COLORS.fetch(:reset)}"
-      end
+      # Resolved per call: Console's logger is fiber-local and may be replaced
+      # after this object is created.
+      def logger = @logger || Console.logger
     end
   end
 end

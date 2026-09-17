@@ -311,8 +311,7 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
         Mayu::Build::UpdateLogger.new(
           source_dir:,
           provider:,
-          output: StringIO.new,
-          error_output: StringIO.new
+          logger: Console::Logger.new(Console::Output::Null.new)
         )
     )
   end

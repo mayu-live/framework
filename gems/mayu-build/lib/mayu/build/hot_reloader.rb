@@ -61,7 +61,7 @@ module Mayu
         start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         update = @provider.apply_update(event, entry: root_entry)
         update.each_error { |_module_id, error| rewrite_backtrace(error) }
-        @logger.log(update:, duration: format_duration(start_time))
+        @logger.log(update:, duration: elapsed_since(start_time))
         update
       rescue StandardError, ScriptError => e
         rewrite_backtrace(e)
@@ -92,8 +92,8 @@ module Mayu
         )
       end
 
-      def format_duration(start_time)
-        "%.4fms" % ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1_000)
+      def elapsed_since(start_time)
+        Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
       end
     end
   end

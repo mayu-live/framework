@@ -3,6 +3,7 @@
 require "minitest/autorun"
 require "stringio"
 require "tmpdir"
+require "console/output/terminal"
 
 require_relative "../build"
 
@@ -16,11 +17,11 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
   def test_logs_changed_files_and_reloaded_components
     Dir.mktmpdir do |root|
       output = StringIO.new
-      logger = Mayu::Build::UpdateLogger.new(source_dir: root, output:, env: {"NO_COLOR" => "1"})
+      logger = Mayu::Build::UpdateLogger.new(source_dir: root, logger: text_logger(output))
       result = result(reloaded: ["app:/components/Card.haml"], reevaluated: ["virtual:/router.rb"])
       event = Klenod::Build::UpdateEvent.new(["#{root}/components/Card.haml"], [], 4, result)
 
-      logger.log(update: Update.new(event, []), duration: "1.0000ms")
+      logger.log(update: Update.new(event, []), duration: 0.001)
 
       assert_includes(output.string, "Update #4 completed")
       assert_includes(output.string, "changed files:")
@@ -36,12 +37,7 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
     Dir.mktmpdir do |root|
       output = StringIO.new
       logger =
-        Mayu::Build::UpdateLogger.new(
-          source_dir: root,
-          output:,
-          error_output: output,
-          env: {"NO_COLOR" => "1"}
-        )
+        Mayu::Build::UpdateLogger.new(source_dir: root, logger: text_logger(output))
       event = Klenod::Build::UpdateEvent.new([], [], 7, result)
       error =
         ParseError.new(
@@ -52,7 +48,7 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
 
       logger.log(
         update: Update.new(event, [["app:/broken.haml", error]]),
-        duration: "1.0000ms"
+        duration: 0.001
       )
 
       assert_includes(output.string, "Update #7 failed")
@@ -68,12 +64,7 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
     Dir.mktmpdir do |root|
       output = StringIO.new
       logger =
-        Mayu::Build::UpdateLogger.new(
-          source_dir: root,
-          output:,
-          error_output: output,
-          env: {"NO_COLOR" => "1"}
-        )
+        Mayu::Build::UpdateLogger.new(source_dir: root, logger: text_logger(output))
       event = Klenod::Build::UpdateEvent.new([], [], 8, result)
       error = RuntimeError.new("something unexpected")
       error.set_backtrace(
@@ -86,7 +77,7 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
 
       logger.log(
         update: Update.new(event, [["app:/x.rb", error]]),
-        duration: "1.0000ms"
+        duration: 0.001
       )
 
       assert_includes(output.string, "something unexpected")
@@ -112,10 +103,8 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
       logger =
         Mayu::Build::UpdateLogger.new(
           source_dir: root,
-          output:,
-          error_output: output,
-          env: {"NO_COLOR" => "1"},
-          provider:
+          provider:,
+          logger: text_logger(output)
         )
       event = Klenod::Build::UpdateEvent.new([], [], 9, result)
       error = NameError.new("uninitialized constant Foobar")
@@ -123,7 +112,7 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
 
       logger.log(
         update: Update.new(event, [["app:/pages/+layout.haml", error]]),
-        duration: "1.0000ms"
+        duration: 0.001
       )
 
       assert_includes(output.string, "uninitialized constant Foobar")
@@ -132,6 +121,12 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
   end
 
   private
+
+  # Console's plain text format, the one used for log files: no colour, every
+  # line of the event indented under the log line.
+  def text_logger(io)
+    Console::Logger.new(Console::Output::Text.new(io))
+  end
 
   # Klenod reports every source file it cannot compile as a SourceError
   # subclass that fills in the location.
