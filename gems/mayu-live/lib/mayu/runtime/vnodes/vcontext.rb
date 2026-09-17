@@ -53,17 +53,17 @@ module Mayu
           with_context { @children.write_html(out) }
         end
 
-        def write_html_with_id_tree(out)
-          with_context { @children.write_html_with_id_tree(out) }
+        def write_html_with_id_tree(out, ids)
+          with_context { @children.write_html_with_id_tree(out, ids) }
+        end
+
+        def collect_id_tree(ids)
+          @children.collect_id_tree(ids)
         end
 
         def traverse(&block)
           yield self
           @children.traverse(&block)
-        end
-
-        def dom_id_tree
-          @children.dom_id_tree
         end
 
         def dom_ids

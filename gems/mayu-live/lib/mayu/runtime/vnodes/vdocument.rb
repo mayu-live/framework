@@ -40,7 +40,9 @@ module Mayu
         end
 
         def dom_id_tree
-          DOM::IdNode[@id, "#document", @html.dom_id_tree]
+          children = []
+          @html.collect_id_tree(children)
+          DOM::IdNode[@id, "#document", children]
         end
 
         def tree_path = [{name: "#document"}]

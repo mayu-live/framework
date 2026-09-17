@@ -66,7 +66,7 @@ class Mayu::Server::AppTest < Minitest::Test
   Request = Data.define(:method, :path, :headers, :body) { def read = body }
 
   class StreamSession
-    DomIdTree = Data.define(:value) { def serialize = value }
+    DomIdTree = Data.define(:value) { def to_msgpack(packer) = packer.write(value) }
 
     attr_reader :id, :dom_id_tree
 

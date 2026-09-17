@@ -1,6 +1,8 @@
 #!/usr/bin/env -S ruby -rbundler/setup
 # frozen_string_literal: true
 
+require "msgpack"
+
 require_relative "test_helpers"
 
 class Mayu::Runtime::VNodes::DomIdsTest < Minitest::Test
@@ -38,9 +40,59 @@ class Mayu::Runtime::VNodes::DomIdsTest < Minitest::Test
     assert_equal(ids.uniq, ids)
   end
 
+  def test_id_tree_is_nested_like_the_dom_with_no_arrays_or_nils
+    descriptor = H[:body, H[Wrapper], H[:p, H[:em, "nested"]], "text", H[Pair]]
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+
+    tree = engine.dom_id_tree
+
+    assert_equal("#document", tree.name)
+    assert_well_formed(tree)
+    assert_equal(top_level_ids(tree.children), tree.children.map(&:id))
+  end
+
+  def test_writing_html_with_id_tree_matches_plain_html_and_yields_one_node
+    descriptor = H[:body, H[:p, H[Pair], H[:br], "text"]]
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    body = nil
+    engine.root.send(:traverse) do |node|
+      body ||= node if node.is_a?(Mayu::Runtime::VNodes::VElement) && node.tag_name == "body"
+    end
+
+    plain = +""
+    body.write_html(plain)
+    html = +""
+    ids = []
+    body.write_html_with_id_tree(html, ids)
+
+    assert_equal(plain, html)
+    assert_equal(1, ids.length)
+    assert_equal("BODY", ids.first.name)
+    assert_well_formed(ids.first)
+    assert_equal(body.dom_id_tree, ids)
+  end
+
+  def test_msgpack_matches_the_serialized_form
+    descriptor = H[:body, H[Wrapper], H[:p, "text", H[:br]]]
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    tree = engine.dom_id_tree
+
+    assert_equal(MessagePack.pack(tree.serialize), MessagePack.pack(tree))
+    assert_equal(tree.serialize, MessagePack.unpack(MessagePack.pack(tree), symbolize_keys: true))
+  end
+
   private
 
   # The previous implementation: flatten the deep tree and keep each root id.
+  def assert_well_formed(node)
+    assert_kind_of(Mayu::Runtime::DOM::IdNode, node)
+    children = node.children
+    return if children.nil?
+
+    assert_kind_of(Array, children)
+    children.each { |child| assert_well_formed(child) }
+  end
+
   def top_level_ids(tree)
     case tree
     when Array then tree.flat_map { top_level_ids(it) }

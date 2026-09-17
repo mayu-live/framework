@@ -53,14 +53,28 @@ module Mayu
 
           def serialize
             if (c = children)
-              {id:, name:, children: c.flatten.compact.map(&:serialize)}
+              {id:, name:, children: c.map(&:serialize)}
             else
               {id:, name:}
             end
           end
 
+          # The same map as #serialize, written straight to the packer.
           def to_msgpack(packer)
-            packer.pack(serialize)
+            c = children
+            packer.write_map_header(c ? 3 : 2)
+            packer.write("id")
+            packer.write(id)
+            packer.write("name")
+            packer.write(name)
+
+            if c
+              packer.write("children")
+              packer.write_array_header(c.length)
+              c.each { |child| child.to_msgpack(packer) }
+            end
+
+            packer
           end
         end
 

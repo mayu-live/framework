@@ -55,9 +55,27 @@ module Mayu
         def write_html(_out)
         end
 
-        def write_html_with_id_tree(out)
+        # Like #write_html, and appends the IdNode of every DOM node written
+        # to `ids`, so the browser can adopt the nodes by id.
+        def write_html_with_id_tree(out, ids)
           write_html(out)
-          dom_id_tree
+          collect_id_tree(ids)
+        end
+
+        # Appends the IdNodes of the DOM nodes this vnode contributes to its
+        # parent element. Elements pass a fresh array to their children, so
+        # the tree comes out nested exactly like the DOM, with no arrays or
+        # nils to flatten away afterwards. Vnodes that render nothing, such
+        # as heads, append nothing.
+        def collect_id_tree(ids)
+        end
+
+        # The flat list of IdNodes this vnode contributes. The document
+        # overrides this with its single root node.
+        def dom_id_tree
+          ids = []
+          collect_id_tree(ids)
+          ids
         end
 
         def traverse(&block)
@@ -65,10 +83,6 @@ module Mayu
         end
 
         def dom_id
-          nil
-        end
-
-        def dom_id_tree
           nil
         end
 

@@ -108,17 +108,17 @@ module Mayu
           @children.each { |child| child.write_html(out) }
         end
 
-        def write_html_with_id_tree(out)
-          @children.map { |child| child.write_html_with_id_tree(out) }
+        def write_html_with_id_tree(out, ids)
+          @children.each { |child| child.write_html_with_id_tree(out, ids) }
+        end
+
+        def collect_id_tree(ids)
+          @children.each { |child| child.collect_id_tree(ids) }
         end
 
         def traverse(&block)
           yield self
           @children.each { |child| child.traverse(&block) }
-        end
-
-        def dom_id_tree
-          @children.map(&:dom_id_tree)
         end
 
         def dom_ids
@@ -130,10 +130,6 @@ module Mayu
         # every node by id and replaces the element's children by those ids.
         def dom_id_list
           dom_ids
-        end
-
-        def dom_id_trees
-          @children.map(&:dom_id_tree)
         end
 
         def marshal_dump
@@ -282,16 +278,17 @@ module Mayu
           node.insert
 
           html = +""
-          id_tree = node.write_html_with_id_tree(html)
-          if id_tree.is_a?(Array)
-            id_tree = id_tree.flatten.compact
-            if id_tree.length == 1
-              id_tree = id_tree.first
-            else
-              raise "CreateTree expects a single IdNode, got #{id_tree.length}"
-            end
+          ids = []
+          node.write_html_with_id_tree(html, ids)
+
+          case ids.length
+          when 0
+            # Nothing reached the DOM, like a head node.
+          when 1
+            collector << Commands::CreateTree[html, ids.first]
+          else
+            raise "CreateTree expects a single IdNode, got #{ids.length}"
           end
-          collector << Commands::CreateTree[html, id_tree] if id_tree
           node.traverse do |child|
             child.emit_listeners(collector) if child.is_a?(VElement)
           end

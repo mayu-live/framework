@@ -71,35 +71,30 @@ module Mayu
           out << "</#{tag_name}>"
         end
 
-        def write_html_with_id_tree(out)
+        def write_html_with_id_tree(out, ids)
           tag_name = self.tag_name
+          children = []
 
           out << "<#{tag_name}"
           @attributes.write_html(out)
+          out << ">"
 
-          if Mayu::Runtime::DOM::VOID_ELEMENTS.include?(tag_name)
-            out << ">"
-            return DOM::IdNode[dom_id, tag_name.upcase, []]
+          unless Mayu::Runtime::DOM::VOID_ELEMENTS.include?(tag_name)
+            @children.write_html_with_id_tree(out, children)
+            out << "</#{tag_name}>"
           end
 
-          out << ">"
-          children_trees =
-            @children.write_html_with_id_tree(out).flatten.compact
-          out << "</#{tag_name}>"
-
-          DOM::IdNode[dom_id, tag_name.upcase, children_trees]
+          ids << DOM::IdNode[dom_id, node_name, children]
         end
 
         def dom_id
           @id
         end
 
-        def dom_id_tree
-          DOM::IdNode[
-            dom_id,
-            tag_name.upcase,
-            @children.dom_id_trees.flatten.compact
-          ]
+        def collect_id_tree(ids)
+          children = []
+          @children.collect_id_tree(children)
+          ids << DOM::IdNode[dom_id, node_name, children]
         end
 
         def tree_path
@@ -149,8 +144,14 @@ module Mayu
           @attributes.rehydrate_listeners(component_map)
         end
 
+        # A vnode never changes type, so the name is computed once. It is
+        # used on every render and every id tree walk.
         def tag_name
-          @descriptor.type.to_s.downcase.delete_prefix("__").tr("_", "-")
+          @tag_name ||= @descriptor.type.to_s.downcase.delete_prefix("__").tr("_", "-").freeze
+        end
+
+        def node_name
+          @node_name ||= tag_name.upcase.freeze
         end
       end
     end

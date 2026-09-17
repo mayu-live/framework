@@ -222,12 +222,12 @@ module Mayu
           @children.write_html(out)
         end
 
-        def write_html_with_id_tree(out)
-          @children.write_html_with_id_tree(out)
+        def write_html_with_id_tree(out, ids)
+          @children.write_html_with_id_tree(out, ids)
         end
 
-        def dom_id_tree
-          @children.dom_id_tree
+        def collect_id_tree(ids)
+          @children.collect_id_tree(ids)
         end
 
         def dom_ids

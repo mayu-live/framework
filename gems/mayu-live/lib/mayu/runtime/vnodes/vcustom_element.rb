@@ -59,16 +59,16 @@ module Mayu
           @element.write_html(out)
         end
 
-        def write_html_with_id_tree(out)
-          @element.write_html_with_id_tree(out)
+        def write_html_with_id_tree(out, ids)
+          @element.write_html_with_id_tree(out, ids)
+        end
+
+        def collect_id_tree(ids)
+          @element.collect_id_tree(ids)
         end
 
         def dom_id
           @element.dom_id
-        end
-
-        def dom_id_tree
-          @element.dom_id_tree
         end
 
         def dom_ids

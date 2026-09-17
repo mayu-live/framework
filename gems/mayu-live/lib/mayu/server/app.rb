@@ -416,7 +416,7 @@ module Mayu
         body.write_batch(
           Runtime::Batch[
             [
-              Runtime::Commands::Initialize[session.dom_id_tree.serialize],
+              Runtime::Commands::Initialize[session.dom_id_tree],
               *session.listener_commands
             ]
           ]
