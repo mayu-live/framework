@@ -163,18 +163,51 @@ describe("Mayu pings", () => {
     expect(write).toHaveBeenCalledTimes(2);
   });
 
-  it("pings as soon as the tab becomes visible again", () => {
+  it("reports visibility changes and pings when the tab is visible again", () => {
     const write = vi.fn(async () => undefined);
     const mayu = new Mayu({ autoPing: false });
     mayu.setWriter({ write } as any);
-    Object.defineProperty(document, "visibilityState", {
-      value: "visible",
-      configurable: true,
-    });
 
+    setVisibility("hidden");
     document.dispatchEvent(new Event("visibilitychange"));
+    expect(write).toHaveBeenCalledWith([
+      "Visibility",
+      true,
+      expect.any(Number),
+    ]);
+    expect(write).not.toHaveBeenCalledWith(["Ping", expect.any(Number)]);
 
+    setVisibility("visible");
+    document.dispatchEvent(new Event("visibilitychange"));
+    expect(write).toHaveBeenCalledWith([
+      "Visibility",
+      false,
+      expect.any(Number),
+    ]);
     expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number)]);
     mayu.dispose();
   });
+
+  it("tells a session it connects from a hidden tab", () => {
+    const write = vi.fn(async () => undefined);
+    const mayu = new Mayu({ autoPing: false });
+    setVisibility("hidden");
+
+    mayu.setWriter({ write } as any);
+
+    expect(write).toHaveBeenCalledWith([
+      "Visibility",
+      true,
+      expect.any(Number),
+    ]);
+    setVisibility("visible");
+    mayu.dispose();
+  });
+
+  function setVisibility(value: "visible" | "hidden") {
+    Object.defineProperty(document, "visibilityState", {
+      value,
+      configurable: true,
+    });
+  }
 });

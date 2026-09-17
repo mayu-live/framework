@@ -12,4 +12,5 @@ export type ClientEvent =
       ping: number,
     ]
   | [name: "Navigate", href: string, pushState: boolean, ping: number]
-  | [name: "Ping", ping: number];
+  | [name: "Ping", ping: number]
+  | [name: "Visibility", hidden: boolean, ping: number];

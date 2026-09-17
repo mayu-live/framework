@@ -125,6 +125,11 @@ module Mayu
                   )
                 end
 
+                # Work queued during the pause is coalesced into the next pass.
+                if (interval = @engine&.update_interval)
+                  Async::Task.current.sleep(interval)
+                end
+
                 Fiber.scheduler.yield
               end
             end

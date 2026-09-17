@@ -55,10 +55,15 @@ class Mayu::SessionTest < Minitest::Test
 
   class FakeEngine
     attr_reader :batches, :refreshed_descriptor, :stylesheets
+    attr_accessor :update_interval
 
     def initialize(render_exceptions: true)
       @batches = []
       @render_exceptions = render_exceptions
+      @update_interval = nil
+    end
+
+    def ping(_timestamp)
     end
 
     def commands
@@ -168,6 +173,26 @@ class Mayu::SessionTest < Minitest::Test
       ],
       event
     )
+  end
+
+  def test_visibility_message_parses_to_a_typed_event
+    event = Mayu::Session::Events.parse(["Visibility", true, 5])
+
+    assert_equal(Mayu::Session::Events::VisibilityEvent[true, 5], event)
+  end
+
+  def test_a_hidden_tab_slows_the_engine_down_and_a_visible_one_restores_it
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(:handle_event, Mayu::Session::Events::VisibilityEvent[true, 1])
+    assert_equal(Mayu::Session::HIDDEN_UPDATE_INTERVAL_SECONDS, fake_engine.update_interval)
+
+    session.send(:handle_event, Mayu::Session::Events::VisibilityEvent[false, 2])
+    assert_nil(fake_engine.update_interval)
   end
 
   def test_receive_message_queues_exactly_one_event

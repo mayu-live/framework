@@ -30,6 +30,10 @@ module Mayu
       attr_writer :update_budget
       attr_writer :module_provider
       attr_writer :render_exceptions
+
+      # Seconds the updater waits after each pass, or nil to run as soon as
+      # there is work. Set while the page is hidden.
+      attr_accessor :update_interval
       alias_method :render_exceptions?, :render_exceptions
 
       def initialize(
@@ -47,6 +51,7 @@ module Mayu
         @module_provider = module_provider
         @render_exceptions = render_exceptions
         @output_queue = Async::Queue.new
+        @update_interval = nil
         @force_render = 0
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
@@ -74,6 +79,7 @@ module Mayu
         @runtime_js, @root, @update_budget, @render_exceptions = a
         @render_exceptions = true if @render_exceptions.nil?
         @output_queue = Async::Queue.new
+        @update_interval = nil
         @force_render = 0
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new

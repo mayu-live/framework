@@ -29,9 +29,10 @@ export default class Mayu {
     };
     window.addEventListener("popstate", this.#popstateListener);
 
-    // A tab coming back to the foreground pings right away, so a session
-    // that survived the background gets its status updated immediately.
+    // The server slows its updates down while nobody is looking, and a tab
+    // back in the foreground pings right away so its status updates.
     this.#visibilityListener = () => {
+      this.#sendVisibility();
       if (document.visibilityState === "visible") this.ping();
     };
     document.addEventListener("visibilitychange", this.#visibilityListener);
@@ -52,6 +53,13 @@ export default class Mayu {
 
   setWriter(writer: WritableStreamDefaultWriter<ClientEvent>) {
     this.#writer = writer;
+    // A session that connects from a hidden tab starts out slowed down.
+    if (document.visibilityState === "hidden") this.#sendVisibility();
+  }
+
+  #sendVisibility() {
+    const hidden = document.visibilityState === "hidden";
+    void this.#write(["Visibility", hidden, performance.now()]);
   }
 
   clearWriter() {

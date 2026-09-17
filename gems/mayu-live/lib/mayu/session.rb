@@ -26,6 +26,7 @@ module Mayu
       CallbackEvent = Data.define(:id, :payload, :ping)
       NavigateEvent = Data.define(:path, :push_state, :ping)
       PingEvent = Data.define(:ping)
+      VisibilityEvent = Data.define(:hidden, :ping)
 
       def self.parse(message)
         case message
@@ -35,6 +36,8 @@ module Mayu
           NavigateEvent[href, push_state, ping]
         in ["Ping", Numeric => ping]
           PingEvent[ping]
+        in ["Visibility", true | false => hidden, Numeric => ping]
+          VisibilityEvent[hidden, ping]
         else
           raise InvalidEventError, "Invalid event message: #{message.inspect}"
         end
@@ -51,6 +54,11 @@ module Mayu
           )
         end
       end
+
+    # How long the updater waits between passes while the tab is hidden.
+    # Nobody sees the page, so several state changes per second collapse
+    # into one render and one batch per second; the latest state still wins.
+    HIDDEN_UPDATE_INTERVAL_SECONDS = 1
 
     attr_reader :id, :route_status, :startup_commands
     attr_reader :token
@@ -297,6 +305,8 @@ module Mayu
       case event
       in Events::PingEvent
         nil
+      in Events::VisibilityEvent[hidden:]
+        @engine.update_interval = hidden ? HIDDEN_UPDATE_INTERVAL_SECONDS : nil
       in Events::CallbackEvent[id:, payload:]
         @engine.callback(id, payload)
       in Events::NavigateEvent[path:, push_state:]
