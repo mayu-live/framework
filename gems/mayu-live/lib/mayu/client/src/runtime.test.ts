@@ -75,6 +75,61 @@ describe("runtime listeners", () => {
   });
 });
 
+describe("runtime autofocus", () => {
+  beforeEach(() => {
+    // jsdom has no requestIdleCallback; run the callback right away.
+    vi.stubGlobal("requestIdleCallback", (callback: () => void) => callback());
+  });
+
+  afterEach(() => {
+    document.documentElement.innerHTML = "<head></head><body></body>";
+    vi.unstubAllGlobals();
+  });
+
+  it("focuses a textarea with autofocus after its parent is re-rendered", async () => {
+    document.body.innerHTML =
+      "<form><input name=other><textarea autofocus name=message></textarea></form>";
+    const runtime = new Runtime(vi.fn());
+    const textarea = document.querySelector("textarea")!;
+
+    await runtime.applyBatch([
+      [
+        "Initialize",
+        {
+          id: "document",
+          name: "#document",
+          children: [
+            {
+              id: "html",
+              name: "HTML",
+              children: [
+                { id: "head", name: "HEAD", children: [] },
+                {
+                  id: "body",
+                  name: "BODY",
+                  children: [
+                    {
+                      id: "form",
+                      name: "FORM",
+                      children: [
+                        { id: "other", name: "INPUT", children: [] },
+                        { id: "textarea", name: "TEXTAREA", children: [] },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      ["ReplaceChildren", "form", ["other", "textarea"]],
+    ]);
+
+    expect(document.activeElement).toBe(textarea);
+  });
+});
+
 describe("runtime command errors", () => {
   beforeEach(() => {
     vi.clearAllMocks();

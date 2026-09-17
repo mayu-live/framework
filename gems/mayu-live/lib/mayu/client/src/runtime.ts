@@ -619,12 +619,12 @@ const CommandHandlers = {
   },
 } as const;
 
+// Any focusable element can carry autofocus: inputs, textareas, selects,
+// buttons and contenteditable elements alike.
 function handleAutofocus(node: Node) {
-  if (node instanceof HTMLInputElement) {
-    if (node.autofocus) {
-      node.focus();
-      return;
-    }
+  if (node instanceof HTMLElement && node.autofocus) {
+    node.focus();
+    return;
   }
 
   for (const child of node.childNodes) {
