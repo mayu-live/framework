@@ -71,6 +71,27 @@ module Mayu
 
       private
 
+      # Components tick with sleep in their mount loops. While the page is
+      # hidden the runtime stretches short sleeps to its update interval, so a
+      # background tab animates at the pace it renders and no work goes into
+      # frames nobody sees. A visible page sleeps exactly as asked, and
+      # component code needs no change.
+      def sleep(duration = nil)
+        return super() if duration.nil?
+
+        Kernel.sleep(__sleep_duration(duration))
+      end
+
+      def __sleep_duration(duration)
+        interval = __update_interval
+        (interval && interval > duration) ? interval : duration
+      end
+
+      # Replaced by the runtime when the component is mounted.
+      def __update_interval
+        nil
+      end
+
       def rerender!
       end
 

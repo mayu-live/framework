@@ -41,6 +41,41 @@ class Mayu::Runtime::VNodes::UpdateIntervalTest < Minitest::Test
     end
   end
 
+  class Ticker < Mayu::Component::Base
+    attr_reader :ticks
+
+    def initialize
+      @ticks = 0
+    end
+
+    def mount
+      loop do
+        sleep 0.01
+        @ticks += 1
+      end
+    end
+
+    def render
+      H[:p, "ticker"]
+    end
+  end
+
+  def test_a_mount_loop_ticks_at_the_update_interval_while_paused
+    run_engine(H[:body, H[Ticker]]) do |engine|
+      instance = find_component(engine.root, Ticker).instance_variable_get(:@instance)
+      wait_until { instance.ticks > 0 }
+
+      Async::Task.current.sleep(0.3)
+      assert_operator(instance.ticks, :>=, 10, "expected fast ticks while visible")
+
+      engine.update_interval = 0.2
+      before = instance.ticks
+      Async::Task.current.sleep(0.5)
+
+      assert_operator(instance.ticks - before, :<=, 4, "expected slow ticks while paused")
+    end
+  end
+
   private
 
   def text_patch(engine, content)

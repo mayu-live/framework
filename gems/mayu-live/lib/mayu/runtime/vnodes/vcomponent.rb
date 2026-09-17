@@ -451,6 +451,9 @@ module Mayu
           instance.instance_variable_set(:@__vnode_queue, queue)
 
           vnode = self
+          instance.define_singleton_method(:__update_interval) do
+            vnode.engine.update_interval
+          end
           instance.define_singleton_method(:rerender!) do
             if @__view_transition
               vnode.instance_variable_set(:@__view_transition_pending, true)

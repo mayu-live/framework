@@ -21,6 +21,19 @@ class Mayu::Component::BaseTest < Minitest::Test
     assert_equal(AnonymousPathComponent.name, AnonymousPathComponent.to_s)
   end
 
+  class SlowedComponent < Mayu::Component::Base
+    def __update_interval = 1
+  end
+
+  def test_short_sleeps_are_stretched_to_the_update_interval
+    slowed = SlowedComponent.allocate
+    unslowed = AnonymousPathComponent.allocate
+
+    assert_equal(1, slowed.send(:__sleep_duration, 0.05))
+    assert_equal(2, slowed.send(:__sleep_duration, 2))
+    assert_equal(0.05, unslowed.send(:__sleep_duration, 0.05))
+  end
+
   def test_module_path_is_shown_relative_to_the_working_directory
     assert_equal("app/pages/+page.haml", AbsolutePathComponent.to_s)
     assert_equal("app/pages/+page.haml", RelativePathComponent.to_s)
