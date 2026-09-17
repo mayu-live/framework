@@ -19,9 +19,13 @@ module Mayu
 
         def children = @descriptor.children
 
+        # Only a change in content is worth a head flush. A parent that
+        # re-renders hands every head node a fresh descriptor, usually with
+        # the same title and tags as before.
         def update(_command_collector, descriptor)
+          changed = @descriptor != descriptor
           @descriptor = descriptor
-          add_to_document
+          closest(VDocument)&.mark_head_dirty if changed
         end
 
         def write_html(_out)

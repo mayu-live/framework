@@ -64,12 +64,14 @@ module Mayu
         end
 
         def add_head(vnode)
-          @head.add(vnode)
-          @head_dirty = true
+          @head_dirty = true if @head.add?(vnode)
         end
 
         def remove_head(vnode)
-          @head.delete(vnode)
+          @head_dirty = true if @head.delete?(vnode)
+        end
+
+        def mark_head_dirty
           @head_dirty = true
         end
 
@@ -156,20 +158,18 @@ module Mayu
         # fails to render here is resolved the same way instead of escaping
         # into the updater and stopping it.
         #
-        # The walk re-adds every head node, which marks the head dirty again,
-        # so the flag is cleared afterwards. Clearing it first would leave it
-        # set and make every later batch re-walk the whole document.
+        # The flag is cleared before the walk: the head content was captured
+        # by init_html already, so a head node that only appears during the
+        # walk belongs to the next flush. Re-registering the existing head
+        # nodes along the way does not dirty the head.
         def flush_head(collector)
           return unless @head_dirty
 
+          @head_dirty = false
           checkpoint = collector.checkpoint
-          begin
-            @html.update(collector, init_html)
-          rescue VComponent::UnhandledRenderError => failure
-            resolve_render_error(collector, failure, checkpoint)
-          ensure
-            @head_dirty = false
-          end
+          @html.update(collector, init_html)
+        rescue VComponent::UnhandledRenderError => failure
+          resolve_render_error(collector, failure, checkpoint)
         end
 
         def head_dirty?

@@ -112,6 +112,36 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     refute(engine.head_dirty?)
   end
 
+  class TitleProbe < Mayu::Component::Base
+    def render
+      [H[:head, H[:title, @__props[:title]]], H[:main, "content"]]
+    end
+  end
+
+  def test_rerendering_a_head_with_the_same_content_does_not_dirty_it
+    engine = Mayu::Runtime::Engine.new(H[:body, H[TitleProbe, title: "Same"]], metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    engine.flush_head(collector)
+    refute(engine.head_dirty?)
+
+    engine.update(H[:body, H[TitleProbe, title: "Same"]])
+
+    refute(engine.head_dirty?)
+  end
+
+  def test_changing_head_content_dirties_it_and_renders_the_change
+    engine = Mayu::Runtime::Engine.new(H[:body, H[TitleProbe, title: "Same"]], metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    engine.flush_head(collector)
+
+    engine.update(H[:body, H[TitleProbe, title: "Other"]])
+
+    assert(engine.head_dirty?)
+    engine.flush_head(collector)
+    refute(engine.head_dirty?)
+    assert_match("<title>Other</title>", render_html(engine.root))
+  end
+
   def test_route_stylesheets_are_rendered_without_component_discovery
     engine =
       Mayu::Runtime::Engine.new(
