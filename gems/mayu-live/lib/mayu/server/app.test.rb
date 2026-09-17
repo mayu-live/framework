@@ -167,7 +167,7 @@ class Mayu::Server::AppTest < Minitest::Test
         Request.new("GET", "/api", {"accept" => "application/json"}, "")
       )
 
-    assert_equal(403, response.status)
+    assert_equal(500, response.status)
     refute_nil(provider.rewritten_error)
     assert_equal(
       ["app:/pages/api/+route.rb:3"],

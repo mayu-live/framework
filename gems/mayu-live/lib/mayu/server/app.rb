@@ -126,7 +126,7 @@ module Mayu
           @environment.module_provider.rewrite_exception(e)
         end
         Console.logger.error(self, e)
-        error_response(403, "INTERNAL_SERVER_ERROR", **origin_header(request))
+        error_response(500, "INTERNAL_SERVER_ERROR", **origin_header(request))
       end
 
       def render_error_response(failure, request)
