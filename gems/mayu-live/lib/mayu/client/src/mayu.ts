@@ -17,8 +17,9 @@ type MayuOptions = {
 
 export default class Mayu {
   #writer: WritableStreamDefaultWriter<ClientEvent> | null;
-  #pingTimer: number | null;
+  #ticker: PingTicker | null;
   #popstateListener: () => void;
+  #visibilityListener: () => void;
 
   constructor({ autoPing = true }: MayuOptions = {}) {
     this.#writer = null;
@@ -28,14 +29,25 @@ export default class Mayu {
     };
     window.addEventListener("popstate", this.#popstateListener);
 
-    this.#pingTimer = null;
-    if (autoPing) this.#scheduleNextPing(100);
+    // A tab coming back to the foreground pings right away, so a session
+    // that survived the background gets its status updated immediately.
+    this.#visibilityListener = () => {
+      if (document.visibilityState === "visible") this.ping();
+    };
+    document.addEventListener("visibilitychange", this.#visibilityListener);
+
+    this.#ticker = null;
+    if (autoPing) {
+      this.#ticker = new PingTicker(PING_INTERVAL, () => this.ping());
+      this.#ticker.start();
+    }
   }
 
   dispose() {
     window.removeEventListener("popstate", this.#popstateListener);
-    if (this.#pingTimer !== null) clearTimeout(this.#pingTimer);
-    this.#pingTimer = null;
+    document.removeEventListener("visibilitychange", this.#visibilityListener);
+    this.#ticker?.stop();
+    this.#ticker = null;
   }
 
   setWriter(writer: WritableStreamDefaultWriter<ClientEvent>) {
@@ -89,14 +101,64 @@ export default class Mayu {
   }
 
   ping() {
-    this.#scheduleNextPing(PING_INTERVAL);
-
     void this.#write(["Ping", performance.now()]);
   }
+}
 
-  #scheduleNextPing(delay: number) {
-    if (this.#pingTimer !== null) clearTimeout(this.#pingTimer);
-    this.#pingTimer = setTimeout(() => this.ping(), delay);
+// Pings keep the session alive on the server. Browsers throttle a hidden
+// tab's timers, Chrome down to once a minute, which is longer than the
+// server's session timeout. Timers in a dedicated worker keep their cadence,
+// so the ticker runs there when it can and falls back to a page timer.
+export class PingTicker {
+  #interval: number;
+  #tick: () => void;
+  #worker: Worker | null = null;
+  #timer: ReturnType<typeof setInterval> | null = null;
+
+  constructor(interval: number, tick: () => void) {
+    this.#interval = interval;
+    this.#tick = tick;
+  }
+
+  start() {
+    const ticker = createTickerWorker(this.#interval);
+
+    if (ticker) {
+      this.#worker = ticker.worker;
+      this.#worker.onmessage = () => {
+        // The script has loaded once the first tick arrives.
+        if (ticker.url) URL.revokeObjectURL(ticker.url);
+        ticker.url = null;
+        this.#tick();
+      };
+    } else {
+      this.#timer = setInterval(() => this.#tick(), this.#interval);
+    }
+  }
+
+  stop() {
+    this.#worker?.terminate();
+    this.#worker = null;
+    if (this.#timer !== null) clearInterval(this.#timer);
+    this.#timer = null;
+  }
+}
+
+function createTickerWorker(
+  interval: number,
+): { worker: Worker; url: string | null } | null {
+  if (typeof Worker === "undefined") return null;
+  if (typeof URL.createObjectURL !== "function") return null;
+
+  try {
+    const source = `setInterval(() => postMessage(0), ${interval});`;
+    const url = URL.createObjectURL(
+      new Blob([source], { type: "text/javascript" }),
+    );
+    return { worker: new Worker(url), url };
+  } catch {
+    // A content security policy may forbid blob workers.
+    return null;
   }
 }
 

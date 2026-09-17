@@ -103,3 +103,78 @@ describe("Mayu callbacks", () => {
     mayu.dispose();
   });
 });
+
+describe("Mayu pings", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  class FakeWorker {
+    static instances: FakeWorker[] = [];
+    onmessage: ((event: MessageEvent) => void) | null = null;
+    terminated = false;
+    constructor(public url: string) {
+      FakeWorker.instances.push(this);
+    }
+    terminate() {
+      this.terminated = true;
+    }
+  }
+
+  function stubWorker() {
+    FakeWorker.instances = [];
+    vi.stubGlobal("Worker", FakeWorker);
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL: vi.fn(() => "blob:ticker"),
+      revokeObjectURL: vi.fn(),
+    });
+  }
+
+  it("pings from a worker ticker, which hidden tabs do not throttle", () => {
+    stubWorker();
+    const write = vi.fn(async () => undefined);
+    const mayu = new Mayu();
+    mayu.setWriter({ write } as any);
+
+    expect(FakeWorker.instances).toHaveLength(1);
+    FakeWorker.instances[0].onmessage!(new MessageEvent("message"));
+
+    expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number)]);
+    mayu.dispose();
+    expect(FakeWorker.instances[0].terminated).toBe(true);
+  });
+
+  it("falls back to a page timer without workers", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("Worker", undefined);
+    const write = vi.fn(async () => undefined);
+    const mayu = new Mayu();
+    mayu.setWriter({ write } as any);
+
+    vi.advanceTimersByTime(2_500);
+
+    expect(write).toHaveBeenCalledTimes(2);
+    expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number)]);
+    mayu.dispose();
+    vi.advanceTimersByTime(5_000);
+    expect(write).toHaveBeenCalledTimes(2);
+  });
+
+  it("pings as soon as the tab becomes visible again", () => {
+    const write = vi.fn(async () => undefined);
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write } as any);
+    Object.defineProperty(document, "visibilityState", {
+      value: "visible",
+      configurable: true,
+    });
+
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number)]);
+    mayu.dispose();
+  });
+});
