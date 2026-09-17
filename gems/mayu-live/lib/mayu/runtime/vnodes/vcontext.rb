@@ -25,12 +25,23 @@ module Mayu
         end
 
         def update(collector, descriptor = nil)
+          values_changed = false
+
           if descriptor
+            values_changed = @values != descriptor.values
             @descriptor = descriptor
             @values = @descriptor.values
           end
 
-          with_context { @children.update(collector, @descriptor.children) }
+          with_context do
+            if values_changed
+              @engine.force_render do
+                @children.update(collector, @descriptor.children)
+              end
+            else
+              @children.update(collector, @descriptor.children)
+            end
+          end
         end
 
         def start

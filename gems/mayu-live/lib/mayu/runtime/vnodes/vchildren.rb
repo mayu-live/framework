@@ -43,6 +43,12 @@ module Mayu
 
           return unless descriptors || @pending_update
 
+          # Same children object and nothing pending; see VComponent#unchanged?.
+          if descriptors&.equal?(@descriptor) && !@pending_update &&
+              !@engine&.force_render?
+            return
+          end
+
           if @pending_update
             @pending_descriptor = descriptors if descriptors
             @pending_enqueued = false

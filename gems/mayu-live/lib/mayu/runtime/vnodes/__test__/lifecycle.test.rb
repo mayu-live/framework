@@ -355,6 +355,8 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
       wait_until { document.instance_variable_get(:@listeners).any? }
       listener = document.instance_variable_get(:@listeners).values.first
       refute_nil(listener)
+      wait_until { instance.respond_to?(:rerender!) }
+      assert_equal(1, instance.renders)
 
       engine.callback(listener.id, {})
 

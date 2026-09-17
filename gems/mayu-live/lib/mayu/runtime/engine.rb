@@ -47,6 +47,7 @@ module Mayu
         @module_provider = module_provider
         @render_exceptions = render_exceptions
         @output_queue = Async::Queue.new
+        @force_render = 0
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @pending_custom_elements = Set.new
@@ -73,6 +74,7 @@ module Mayu
         @runtime_js, @root, @update_budget, @render_exceptions = a
         @render_exceptions = true if @render_exceptions.nil?
         @output_queue = Async::Queue.new
+        @force_render = 0
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @root.rehydrate(parent: nil, engine: self)
@@ -132,6 +134,21 @@ module Mayu
 
       def synchronize
         @updater.synchronize
+      end
+
+      # A vnode handed the very descriptor object it already holds has nothing
+      # new to show, unless a context provider above it changed its values:
+      # consumers read context while rendering, so the provider runs its
+      # subtree's update inside this block to make every component render.
+      def force_render
+        @force_render += 1
+        yield
+      ensure
+        @force_render -= 1
+      end
+
+      def force_render?
+        @force_render > 0
       end
 
       def callback(id, payload)

@@ -139,6 +139,8 @@ module Mayu
         end
 
         def update(collector, descriptor = nil)
+          return if unchanged?(descriptor)
+
           replacement_rendered = false
           replacement_children = nil
 
@@ -196,6 +198,13 @@ module Mayu
           rescue => error
             raise UnhandledRenderError.new(error, self)
           end
+        end
+
+        # The same descriptor object means the same props and children. State
+        # changes arrive separately through rerender!, and a context change
+        # above is forced by its provider, so there is nothing to render.
+        def unchanged?(descriptor)
+          !descriptor.nil? && descriptor.equal?(@descriptor) && !@engine&.force_render?
         end
 
         def handle_render_error(error)

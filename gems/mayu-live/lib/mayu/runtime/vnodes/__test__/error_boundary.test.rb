@@ -432,6 +432,7 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
     component = find_component(engine.root, ErrorBoundaryProbe)
     instance = component.instance_variable_get(:@instance)
     instance.instance_variable_set(:@should_fail, true)
+    engine.update(H[:body, H[ErrorBoundaryProbe]])
 
     html = render_html(engine.root)
     assert_match("<div>Error handled</div>", html)

@@ -26,6 +26,9 @@ module Mayu
 
         def update(collector, descriptor = nil)
           return unless descriptor
+          # Same object, same attributes and children; see VComponent#unchanged?.
+          return if descriptor.equal?(@descriptor) && !@engine&.force_render?
+
           @descriptor = descriptor
           @attributes.update(collector, @descriptor)
           @children.update(collector, @descriptor.children)
