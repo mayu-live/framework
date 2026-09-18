@@ -136,7 +136,7 @@
     end
   end
 
-%Card
+%Card.todo-app
   %header
     %form.add-todo-form(onsubmit=handle_submit autocomplete="off")[@form_key]
       %input(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
@@ -178,9 +178,14 @@
           %button.clear-button(onclick=handle_clear_completed) Clear completed
 
 :css
+  .todo-app {
+    overflow: hidden;
+  }
+
   header {
-    border-bottom: 1px solid #0003;
-    padding: 1em;
+    padding: 1.25rem;
+    background: color-mix(in oklab, var(--accent) 5%, var(--surface-raised));
+    border-bottom: 1px solid var(--border);
   }
 
   .title {
@@ -190,16 +195,18 @@
   }
 
   footer {
-    padding: 1em;
-    background: #fefefe;
-    box-shadow: inset 0 0 15px -10px #000;
+    padding: 0.875rem 1.25rem;
+    background: var(--surface-sunken);
+    border-top: 1px solid var(--border);
   }
 
   .footer-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
     align-items: center;
-    font-size: .8em;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
   }
 
   ul {
@@ -214,22 +221,31 @@
     grid-template-columns: subgrid;
     grid-column: 1 / -1;
     align-items: center;
-    gap: 1em;
-    padding: 1em;
+    gap: 0.875rem;
+    padding: 0.875rem 1.25rem;
     margin: 0;
-    background: linear-gradient(0turn, #0001 0%, #0000 100%);
-    border-bottom: 1px solid #0003;
+    background: var(--surface-raised);
+    border-bottom: 1px solid var(--border);
+    transition: background-color 150ms ease;
+  }
+
+  @media (hover: hover) {
+    li:hover {
+      background: color-mix(in oklab, var(--accent) 5%, var(--surface-raised));
+    }
   }
 
   .delete-button {
     opacity: 0;
     border: 0;
     background: transparent;
-    aspect-ratio: 1;
+    width: 1.75rem;
+    height: 1.75rem;
     display: block;
-    transition: opacity 200ms;
+    transition: opacity 150ms ease, background-color 150ms ease;
     cursor: pointer;
     position: relative;
+    border-radius: 50%;
 
     &::after {
       content: "×";
@@ -238,11 +254,17 @@
       top: 50%;
       left: 50%;
       color: var(--red);
-      transform: translate(-50%, -50%) scale(2.0);
+      font-size: 1.75rem;
+      line-height: 1;
+      transform: translate(-50%, -54%);
     }
 
     li:is(:hover, :focus-within) & {
       opacity: 1;
+    }
+
+    &:hover {
+      background: var(--red-bright);
     }
 
     &.placeholder {
@@ -253,7 +275,8 @@
   .add-todo-form {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 1em;
+    gap: 0.875rem;
+    align-items: center;
   }
 
   .edit-todo-form {
@@ -261,50 +284,74 @@
 
   .description {
     margin: 0;
+    color: var(--text);
   }
 
   input {
     &[type="checkbox"] {
       margin: 0;
-      width: 2em;
-      aspect-ratio: 1;
+      width: 1.25rem;
+      height: 1.25rem;
+      accent-color: var(--accent);
+      cursor: pointer;
     }
 
     &[type="text"] {
       display: block;
       width: 100%;
-      height: 2em;
+      min-height: 2.75rem;
+      padding: 0.5rem 0.75rem;
+      color: var(--text);
+      font: inherit;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      box-shadow: inset 0 1px 2px color-mix(in oklab, var(--text) 8%, transparent);
+
+      &::placeholder {
+        color: var(--text-muted);
+      }
+
+      &:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
     }
   }
 
   .completed {
     text-decoration: line-through;
-    opacity: .5;
+    color: var(--text-muted);
+    opacity: 0.7;
   }
 
   .filter {
     display: flex;
-    gap: .5em;
-    justify-content: space-around;
+    gap: 0.25rem;
+    justify-content: center;
   }
 
   .footer-button {
     border: 0;
     background: transparent;
-    padding: 0;
     margin: 0;
     cursor: pointer;
-    transition: opacity 200ms;
-    border-radius: 3px;
-    padding: 0.25em 1em;
+    color: inherit;
+    transition: color 150ms ease, background-color 150ms ease, opacity 150ms ease;
+    border-radius: 999px;
+    padding: 0.3rem 0.625rem;
   }
 
   .footer-button[aria-current="true"] {
-    font-weight: bold;
+    color: var(--accent);
+    font-weight: 700;
+    background: var(--accent-soft);
   }
 
   .footer-button:hover {
-    text-decoration: underline;
+    color: var(--text);
+    background: color-mix(in oklab, var(--text) 8%, transparent);
   }
 
   .footer-button:active {
@@ -325,5 +372,18 @@
   }
 
   .items-left {
-    opacity: .8;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (width < 36rem) {
+    .footer-grid {
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+    }
+
+    .filter {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: space-between;
+    }
   }

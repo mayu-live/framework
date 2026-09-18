@@ -28,32 +28,22 @@
 }
 
 :css
-  @keyframes alive {
-    0% { background-color: #0c0; }
-    1% { background-color: #000; }
-    100% { background-color: #999; }
-  }
-
   button {
     border: 0;
+    padding: 0;
     aspect-ratio: 1;
     flex: 1;
+    background-color: light-dark(oklch(97% 0.008 250), oklch(17% 0.018 250));
   }
 
-  button { background-color: #fff; }
-  button:hover { background-color: var(--text-muted); }
+  button:hover { background-color: light-dark(oklch(88% 0.035 155), oklch(29% 0.05 155)); }
 
   .alive {
-    background-color: #000;
-    animation-duration: 5s;
-    animation-name: alive;
-    animation-iteration-count: 1;
-    animation-fill-mode: forwards;
-    animation-timing-function: ease-out;
+    background-color: light-dark(oklch(46% 0.13 155), oklch(66% 0.13 155));
   }
 
   .alive:hover {
-    filter: brightness(150%);
+    filter: brightness(112%);
   }
 
-  button:active:hover { background-color: #000; }
+  button:active:hover { background-color: light-dark(oklch(38% 0.13 155), oklch(58% 0.13 155)); }

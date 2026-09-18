@@ -5,6 +5,8 @@
 :root {
   color-scheme: light dark;
   scrollbar-color: var(--scrollbar-thumb) transparent;
+  touch-action: manipulation;
+  interpolate-size: allow-keywords;
 
   /* Brand hues. Every shade below is derived from these in oklch. */
   --hue-navy: 275;

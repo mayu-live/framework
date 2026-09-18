@@ -208,11 +208,11 @@
     top: 50%;
     left: 50%;
     translate: -50% -50%;
-    color: #ff5f7a;
+    color: light-dark(oklch(57% 0.22 20), oklch(72% 0.18 20));
     font-weight: 700;
     font-size: 4em;
     margin: 0;
-    filter: drop-shadow(0 0 .2em #000);
+    filter: drop-shadow(0 0 0.2em light-dark(oklch(100% 0 0 / 65%), oklch(0% 0 0 / 75%)));
   }
 
   .grid {
@@ -220,15 +220,18 @@
     display: grid;
     grid-template-columns: repeat(var(--grid-cols), 1fr);
     grid-template-rows: repeat(var(--grid-rows), 1fr);
-    gap: 1px;
-    background: #0d0f14;
-    border: 1px solid #0d0f14;
+    gap: 2px;
+    padding: 2px;
+    background: light-dark(oklch(48% 0.045 250), oklch(35% 0.04 250));
+    border: 1px solid light-dark(oklch(42% 0.04 250), oklch(46% 0.035 250));
     width: 100%;
     outline: none;
     padding: 0;
     user-select: none;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     contain: paint;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
 
     &:focus {
       outline: 2px solid AccentColor;
@@ -237,15 +240,16 @@
 
   .cell {
     aspect-ratio: 1;
-    background: #f0f2f7;
+    background: light-dark(oklch(96% 0.01 250), oklch(18% 0.02 250));
+    transition: background-color 100ms ease;
 
     &.snake {
-      background: #3fdb86;
+      background: light-dark(oklch(58% 0.16 155), oklch(72% 0.14 155));
     }
     &.head {
-      background: #22b86a;
+      background: light-dark(oklch(46% 0.15 155), oklch(64% 0.14 155));
     }
     &.food {
-      background: #ff5f7a;
+      background: light-dark(oklch(58% 0.22 20), oklch(72% 0.18 20));
     }
   }

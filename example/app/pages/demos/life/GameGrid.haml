@@ -5,13 +5,17 @@
   .grid {
     user-select: none;
     touch-action: none;
+    width: min(100%, 30rem);
     margin: 2em auto;
-    background: #000;
-    border: 1px solid #000;
+    padding: 2px;
+    background: light-dark(oklch(54% 0.045 252), oklch(38% 0.035 252));
+    border: 1px solid light-dark(oklch(45% 0.04 252), oklch(48% 0.035 252));
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
     gap: 1px;
-    max-width: 30rem;
+    overflow: hidden;
   }
 
   .row {

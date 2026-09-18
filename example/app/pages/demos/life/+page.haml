@@ -157,9 +157,20 @@
   end
 
 :css
+  article {
+    max-width: 64rem;
+  }
+
+  fieldset {
+    margin-block: 1.5rem;
+    background: var(--surface-raised);
+    box-shadow: var(--shadow);
+  }
+
   .buttons {
     display: flex;
-    gap: 1em;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
 %article

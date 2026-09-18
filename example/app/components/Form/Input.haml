@@ -18,20 +18,48 @@
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow);
     transition: border-color 120ms, box-shadow 120ms;
-  }
 
-  input:hover {
-    border-color: var(--text-muted);
-  }
+    &:hover {
+      border-color: var(--text-muted);
+    }
 
-  input:focus-visible {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
-  }
+    &:focus-visible {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
 
-  input::placeholder {
-    color: transparent;
+    &::placeholder {
+      color: transparent;
+    }
+
+    &:focus + label,
+    &:not(:placeholder-shown) + label {
+      top: 0;
+      font-size: 0.8em;
+      background: var(--surface-raised);
+    }
+
+    &:focus-visible + label {
+      color: var(--accent);
+    }
+
+    &:required + label::after {
+      content: " *";
+      color: var(--red);
+    }
+
+    &:not(:placeholder-shown):invalid {
+      border-color: var(--red);
+    }
+
+    &:not(:placeholder-shown):invalid + label {
+      color: var(--red);
+    }
+
+    &:not(:placeholder-shown):valid {
+      border-color: var(--green);
+    }
   }
 
   label {
@@ -44,32 +72,4 @@
     padding: 0 0.3em;
     border-radius: 3px;
     transition: top 150ms ease-out, font-size 150ms ease-out;
-  }
-
-  input:focus + label,
-  input:not(:placeholder-shown) + label {
-    top: 0;
-    font-size: 0.8em;
-    background: var(--surface-raised);
-  }
-
-  input:focus-visible + label {
-    color: var(--accent);
-  }
-
-  input:required + label::after {
-    content: " *";
-    color: var(--red);
-  }
-
-  input:not(:placeholder-shown):invalid {
-    border-color: var(--red);
-  }
-
-  input:not(:placeholder-shown):invalid + label {
-    color: var(--red);
-  }
-
-  input:not(:placeholder-shown):valid {
-    border-color: var(--green);
   }
