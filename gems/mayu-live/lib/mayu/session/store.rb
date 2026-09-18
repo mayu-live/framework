@@ -47,9 +47,9 @@ module Mayu
             if connected
               begin
                 task.with_timeout(TRANSFER_TIMEOUT_SECONDS) { session.transfer! }
-                Console.logger.info(self, "Session transfer queued", session_id: session.id)
+                Console.logger.info(self, "Session transfer queued for #{session.id}")
               rescue => error
-                Console.logger.warn(self, "Session transfer failed", session_id: session.id, exception: error)
+                Console.logger.warn(self, "Session transfer failed for #{session.id}", exception: error)
                 session.transfer_failed!
               end
             else

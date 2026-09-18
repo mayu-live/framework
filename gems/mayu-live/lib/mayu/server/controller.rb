@@ -68,7 +68,7 @@ module Mayu
             end
           end
         rescue Interrupt
-          Console.logger.info(self, "Graceful shutdown requested", pid: Process.pid)
+          Console.logger.info(self, "Graceful shutdown requested")
           stop
         ensure
           stop(false)
@@ -81,7 +81,7 @@ module Mayu
       rescue Interrupt
         # Group#stop also kills its remaining children when interrupted. Keep
         # the controller reference until they have all been reaped.
-        Console.logger.warn(self, "Second interrupt: forcing shutdown", pid: Process.pid)
+        Console.logger.warn(self, "Second interrupt: forcing shutdown")
         super(false)
       end
 
@@ -103,13 +103,19 @@ module Mayu
         end
 
         container.run(
-          name: self.class.name,
+          name: process_title("worker"),
           count: @worker_count,
           restart: true
         ) { |instance| setup_worker(instance, collector_endpoint:) }
       end
 
       private
+
+      # Children replace their command line with this, so `ps aux | grep
+      # mayu` finds them and the app name tells two servers apart.
+      def process_title(role)
+        "mayu: #{role} (#{File.basename(@config.root)})"
+      end
 
       def with_signal_handlers
         interrupts = 0
@@ -133,6 +139,7 @@ module Mayu
           container,
           collector_endpoint:,
           listen: @config.metrics.listen,
+          name: process_title("metrics"),
           shutdown_timeout: @config.server.shutdown_timeout_seconds,
           inherited_endpoint: @bound_endpoint
         ) { |registry| Metrics::AppMetrics.setup(registry) }

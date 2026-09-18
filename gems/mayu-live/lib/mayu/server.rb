@@ -35,6 +35,7 @@ module Mayu
 
     def run
       install_log_file
+      quiet_container_logs
 
       puts "\e[33mStarting server on \e[94m#{@uri}\e[0m"
 
@@ -84,6 +85,16 @@ module Mayu
     end
 
     private
+
+    # async-container narrates every start and stop at info level, with the
+    # timeouts as a hash under each line. Mayu reports its own shutdown, so
+    # only the container's warnings and errors get through. The logger is
+    # inherited by every worker, so this applies to their container logs too.
+    def quiet_container_logs
+      [Async::Container::Forked, Async::Container::Group].each do |subject|
+        Console.logger.filter(subject, Console::Logger::WARN)
+      end
+    end
 
     # Logs go to the terminal as before and, when `log_file` is configured,
     # to that file as plain text as well. `Console.logger=` is fiber-local, so

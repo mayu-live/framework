@@ -42,8 +42,15 @@ module Mayu
         @reader.read(1) unless @requested
       end
 
+      # Once a shutdown was requested the handlers stay installed. The
+      # controller's interrupt can still arrive while this process exits,
+      # after the terminal already delivered Ctrl-C to the whole group.
+      # Restoring the previous trap would let that raise Interrupt past the
+      # exit path and end the process with a signal status. The handlers do
+      # nothing after the first signal, so they are safe to leave in place
+      # for the rest of a process that is about to exit anyway.
       def close
-        @registration&.close
+        @registration&.close unless @requested
         @reader.close
         @writer.close
       end

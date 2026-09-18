@@ -22,6 +22,33 @@ class Mayu::Server::ShutdownSignalTest < Minitest::Test
       Async::Signals.controller.dispatch("TERM")
       assert_equal([Signal.list.fetch("TERM")] * 2, received)
     end
+  ensure
+    # A requested shutdown leaves its handlers installed for the rest of the
+    # process, which here is the test run.
+    Async::Signals.controller.reset!
+  end
+
+  def test_a_repeated_signal_after_a_requested_shutdown_is_swallowed
+    previous = {}
+    handler = proc {}
+    [:INT, :TERM].each { |name| previous[name] = Signal.trap(name, handler) }
+
+    Mayu::Server::ShutdownSignal.open do |shutdown|
+      Async::Signals.controller.dispatch("INT")
+      shutdown.wait
+    end
+
+    # A real second interrupt, as the controller sends one, must neither
+    # raise Interrupt here nor reach the previous trap.
+    Process.kill(:INT, Process.pid)
+    sleep 0.05
+
+    [:INT, :TERM].each do |name|
+      refute_same(handler, Signal.trap(name, handler))
+    end
+  ensure
+    Async::Signals.controller.reset!
+    previous.each { |name, trap| Signal.trap(name, trap) }
   end
 
   def test_previous_traps_are_restored_even_when_the_scope_raises

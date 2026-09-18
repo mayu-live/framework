@@ -476,7 +476,10 @@ module Mayu
           end
 
           flushed = body.wait_finished
-          Console.logger.info(self, "Session stream finished", session_id: session.id, flushed:)
+          Console.logger.info(
+            self,
+            "Session stream finished for #{session.id}#{" before flushing" unless flushed}"
+          )
         rescue => e
           Console.logger.error(self, e)
           body.close(e)

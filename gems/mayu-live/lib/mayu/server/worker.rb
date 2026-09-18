@@ -65,16 +65,16 @@ module Mayu
       private
 
       def drain(task)
-        Console.logger.info(self, "Draining worker", pid: Process.pid)
+        Console.logger.info(self, "Draining worker")
         task.with_timeout(@config.server.shutdown_timeout_seconds) do
           @app.begin_shutdown
           @server.stop_accepting
           @environment.stop
           @app.stop
         end
-        Console.logger.info(self, "Worker drained", pid: Process.pid)
+        Console.logger.info(self, "Worker drained")
       rescue Async::TimeoutError
-        Console.logger.warn(self, "Worker drain deadline expired", pid: Process.pid, streams: @app.stream_count)
+        Console.logger.warn(self, "Worker drain deadline expired with #{@app.stream_count} streams open")
       end
 
       def cleanup(task)
@@ -88,7 +88,7 @@ module Mayu
           end
         end
       rescue Async::TimeoutError
-        Console.logger.warn(self, "Worker cleanup deadline expired", pid: Process.pid)
+        Console.logger.warn(self, "Worker cleanup deadline expired")
       ensure
         task.children&.to_a&.each(&:stop)
       end

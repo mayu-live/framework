@@ -38,11 +38,12 @@ module Mayu
       container,
       collector_endpoint:,
       listen:,
+      name: "mayu: metrics",
       shutdown_timeout: 10,
       inherited_endpoint: nil,
       &setup_registry
     )
-      container.run(name: "Mayu metrics", count: 1, restart: true) do |instance|
+      container.run(name:, count: 1, restart: true) do |instance|
         collector = nil
         collector_task = nil
         metrics_task = nil
@@ -115,9 +116,7 @@ module Mayu
 
       Console.logger.info(
         self,
-        "Waiting for metrics reporters to disconnect...",
-        active: internal_store.size,
-        timeout:
+        format("Waiting up to %gs for %d metrics reporters to disconnect", timeout, internal_store.size)
       )
 
       while internal_store.any?
