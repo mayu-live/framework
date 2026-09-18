@@ -1,41 +1,49 @@
 <style>
   .mayu-ping {
+    box-sizing: border-box;
     position: fixed;
-    bottom: 1rem;
-    right: 1rem;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    margin: 0;
+    transform: translate(
+      calc(-1 * var(--mayu-visual-viewport-right, 0px)),
+      calc(-1 * var(--mayu-visual-viewport-bottom, 0px))
+    );
+    padding: 0 2px;
 
-    z-index: 10000;
-    padding: 0.25rem 0.5rem;
+    pointer-events: none;
 
-    color: #fffc;
-    font-size: 12px;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 100;
     font-family: monospace;
-    background: #0006;
-    backdrop-filter: blur(5px);
+    font-variant-numeric: tabular-nums;
+    background: #17202ba6;
+    backdrop-filter: blur(3px);
 
-    border: 3px solid #0003;
-    border-radius: 100vw;
-    outline: 1px solid #0006;
+    border: 1px solid #ffffff4d;
+    border-radius: 2px 0 0 0;
+    border-width: 1px 0 0 1px;
 
-    box-shadow: 0 0 1em #0006;
-    transition: background-color 500ms;
-    opacity: 0.85;
+    box-shadow: 0 0 0.5rem #0008;
+    text-shadow: 0 1px 1px #000;
+    width: max-content;
   }
 
   .ping {
-    width: 6ch;
     display: block;
-    text-align: right;
   }
 
   .status-disconnected {
-    background-color: #e53935;
+    background-color: #a61b1ba6;
   }
   .status-connected {
-    background-color: #8bc34a;
+    background-color: #2f6b18a6;
   }
   .status-transferring {
-    background-color: #2196f3;
+    background-color: #0b5caba6;
   }
 
   .disconnect-dialog {
@@ -67,7 +75,7 @@
     color: #d7deee;
   }
 </style>
-<div class="mayu-ping">
+<div class="mayu-ping" popover="manual">
   <span class="ping">N/A</span>
 </div>
 <dialog class="disconnect-dialog" closedby="none" aria-label="Connection lost">

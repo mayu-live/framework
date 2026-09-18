@@ -9,6 +9,29 @@ class MayuPing extends HTMLElement {
   #disconnectDialog?: HTMLDialogElement;
   #disconnectTitle?: HTMLParagraphElement;
   #disconnectText?: HTMLParagraphElement;
+  #updateViewportOffset = () => {
+    const ping = this.#div;
+    const viewport = window.visualViewport;
+    if (!ping || !viewport) return;
+
+    // Fixed-positioned elements use the layout viewport. Compensate when the
+    // visual viewport is shortened by mobile browser controls or a keyboard.
+    const bottom = Math.max(
+      0,
+      document.documentElement.clientHeight -
+        viewport.height -
+        viewport.offsetTop,
+    );
+    const right = Math.max(
+      0,
+      document.documentElement.clientWidth -
+        viewport.width -
+        viewport.offsetLeft,
+    );
+
+    ping.style.setProperty("--mayu-visual-viewport-bottom", `${bottom}px`);
+    ping.style.setProperty("--mayu-visual-viewport-right", `${right}px`);
+  };
 
   static observedAttributes = ["ping", "status"];
 
@@ -30,6 +53,16 @@ class MayuPing extends HTMLElement {
     this.#disconnectText = this.shadowRoot!.querySelector(
       ".disconnect-text",
     ) as HTMLParagraphElement;
+    this.#showInTopLayer();
+    this.#updateViewportOffset();
+    window.visualViewport?.addEventListener(
+      "resize",
+      this.#updateViewportOffset,
+    );
+    window.visualViewport?.addEventListener(
+      "scroll",
+      this.#updateViewportOffset,
+    );
     this.#disconnectDialog?.addEventListener("cancel", (event) => {
       // Keep this modal non-cancelable while connection is unavailable.
       event.preventDefault();
@@ -42,7 +75,16 @@ class MayuPing extends HTMLElement {
     }
   }
 
-  disconnectedCallback() {}
+  disconnectedCallback() {
+    window.visualViewport?.removeEventListener(
+      "resize",
+      this.#updateViewportOffset,
+    );
+    window.visualViewport?.removeEventListener(
+      "scroll",
+      this.#updateViewportOffset,
+    );
+  }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
     switch (name) {
@@ -89,6 +131,19 @@ class MayuPing extends HTMLElement {
 
     if (dialog.open) {
       dialog.close();
+    }
+  }
+
+  #showInTopLayer() {
+    const ping = this.#div;
+    if (!ping) return;
+
+    // Popovers are promoted above every page stacking context. Older browsers
+    // simply keep the fixed-position fallback.
+    try {
+      ping.showPopover();
+    } catch {
+      // The Popover API is unavailable, or this element is no longer connected.
     }
   }
 }
