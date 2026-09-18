@@ -32,13 +32,14 @@
     position: sticky;
     top: 0;
 
+    font-size: clamp(0.8rem, 3.5vw, 1rem);
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 1rem;
+    gap: 1em;
     /* Fixed height so sticky elements below can line up exactly under it. */
     height: var(--header-height);
-    padding: 0 1.5rem;
+    padding: 0 1.5em;
     background: var(--header-background);
     border-bottom: 1px solid var(--chrome-border);
     box-shadow: var(--shadow-bar);
@@ -53,13 +54,30 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: .25rem;
+    gap: .25em;
     margin: 0;
     padding: 0;
+
+    & a {
+      &:any-link {
+        display: inline-flex;
+        place-items: center;
+        white-space: nowrap;
+        gap: 0.5em;
+        padding: .4em;
+        text-decoration: none;
+        color: var(--header-link-color);
+        transition: color 120ms;
+      }
+
+      &:is(:active, :hover, :focus-visible) {
+        color: var(--header-link-hover-color);
+      }
+    }
   }
 
   .switcher {
-    margin-left: .75rem;
+    margin-left: .75em;
   }
 
   h1 {
@@ -69,33 +87,16 @@
     display: flex;
   }
 
-  menu a:any-link {
-    display: inline-flex;
-    align-items: center;
-    white-space: nowrap;
-    gap: 0.5em;
-    padding: .4em .8em;
-    border-radius: 999px;
-    text-decoration: none;
-    color: var(--header-link-color);
-    transition: color 120ms, background 120ms;
-  }
-
-  menu a:is(:active, :hover, :focus-visible) {
-    color: var(--header-link-hover-color);
-    background: oklch(100% 0 0 / 8%);
-  }
-
   .title {
-    display: inline-flex;
+    display: grid;
+    grid-template-columns: auto auto;
     gap: .5em;
     align-items: center;
     text-decoration: none;
-    border-radius: 999px;
   }
 
   .logo {
-    height: 2.25rem;
+    height: 2.25em;
     width: auto;
     filter: drop-shadow(0 1px 2px oklch(0% 0 0 / 40%));
   }
@@ -103,11 +104,11 @@
   .wordmark {
     font-family: var(--font-heading);
     font-weight: 600;
-    font-size: 1.5rem;
-    line-height: 1;
+    font-size: 1.8em;
     letter-spacing: -0.02em;
     color: var(--pink-soft);
     transition: color 120ms;
+    text-box: trim-both ex alphabetic;
   }
 
   .title:hover .wordmark {
