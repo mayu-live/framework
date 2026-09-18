@@ -456,7 +456,10 @@ module Mayu
           end
           instance.define_singleton_method(:rerender!) do
             if @__view_transition
-              vnode.instance_variable_set(:@__view_transition_pending, true)
+              vnode.instance_variable_set(
+                :@__view_transition_pending,
+                @__view_transition
+              )
             end
             if vnode.instance_variable_get(:@handling_render_error)
               vnode.instance_variable_set(

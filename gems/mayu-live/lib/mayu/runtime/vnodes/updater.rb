@@ -97,26 +97,44 @@ module Mayu
                 end
                 @engine&.flush_dirty_elements(command_collector)
 
-                commands = command_collector.commands
-                commands = history_commands + head_commands + commands
-                unless commands.empty?
-                  if updates.keys.any? { |node|
-                       node.instance_variable_get(:@__view_transition_pending)
-                     }
-                    updates.keys.each do |node|
-                      node.instance_variable_set(
-                        :@__view_transition_pending,
-                        nil
-                      )
+                commands = history_commands + command_collector.commands
+                transition_nodes =
+                  updates.keys.select do |node|
+                    !node.instance_variable_get(:@__view_transition_pending).nil?
+                  end
+
+                if transition_nodes.any?
+                  # A head update can replace the stylesheet that styles the
+                  # transition pseudo-elements. Apply it before the browser
+                  # captures the old state, rather than inside the callback.
+                  @engine.enqueue_batch(Batch[head_commands]) unless head_commands.empty?
+
+                  transitions =
+                    transition_nodes.map do |node|
+                      node.instance_variable_get(:@__view_transition_pending)
                     end
+                  transition_types = transitions.flat_map { it[:types] }.uniq
+                  transition_scope = transitions.filter_map { it[:scope] }.first
+                  updates.keys.each do |node|
+                    node.instance_variable_set(:@__view_transition_pending, nil)
+                  end
+
+                  unless commands.empty?
                     @engine.enqueue_batch(
                       Batch[
-                        [Commands::ViewTransition[Batch[commands]]]
+                        [
+                          Commands::ViewTransition[
+                            Batch[commands],
+                            transition_types,
+                            transition_scope
+                          ]
+                        ]
                       ]
                     )
-                  else
-                    @engine.enqueue_batch(Batch[commands])
                   end
+                else
+                  commands = head_commands + commands
+                  @engine.enqueue_batch(Batch[commands]) unless commands.empty?
                 end
 
                 synchronizations.each do |synchronization|

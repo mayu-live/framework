@@ -18,7 +18,7 @@ class Mayu::Runtime::VNodes::ViewTransitionsTest < Minitest::Test
     end
 
     def increment
-      view_transition do
+      view_transition(types: [:reorder], scope: "transition-scope") do
         @value += 1
         rerender!
       end
@@ -26,6 +26,15 @@ class Mayu::Runtime::VNodes::ViewTransitionsTest < Minitest::Test
 
     def render
       H[:div, H[ViewTransitionChildProbe, value: @value]]
+    end
+  end
+
+  class ViewTransitionWithHeadProbe < ViewTransitionProbe
+    def render
+      [
+        H[:head, H[:title, @value.to_s]],
+        H[:div, H[ViewTransitionChildProbe, value: @value]]
+      ]
     end
   end
 
@@ -48,6 +57,8 @@ class Mayu::Runtime::VNodes::ViewTransitionsTest < Minitest::Test
         Mayu::Runtime::Commands::ViewTransition,
         batch.commands.first
       )
+      assert_equal(["reorder"], batch.commands.first.types)
+      assert_equal("transition-scope", batch.commands.first.scope)
 
       inner = unwrap_commands(batch)
       set_text =
@@ -81,6 +92,32 @@ class Mayu::Runtime::VNodes::ViewTransitionsTest < Minitest::Test
       refute(batch.commands.any? do |command|
         command.is_a?(Mayu::Runtime::Commands::ViewTransition)
       end)
+    end
+  end
+
+  def test_head_updates_are_sent_before_a_view_transition
+    descriptor = H[:body, H[ViewTransitionWithHeadProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, ViewTransitionWithHeadProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.increment
+
+      head_batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      refute(head_batch.commands.any? do |command|
+        command.is_a?(Mayu::Runtime::Commands::ViewTransition)
+      end)
+      refute_empty(head_batch.commands)
+
+      transition_batch =
+        Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      assert_kind_of(
+        Mayu::Runtime::Commands::ViewTransition,
+        transition_batch.commands.first
+      )
     end
   end
 end

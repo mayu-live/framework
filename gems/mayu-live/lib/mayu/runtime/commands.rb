@@ -147,7 +147,7 @@ module Mayu
         )
       end
 
-      ViewTransition = CommandData.define(:batch)
+      ViewTransition = CommandData.define(:batch, :types, :scope)
     end
   end
 end

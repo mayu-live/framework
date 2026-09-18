@@ -1,21 +1,28 @@
+:ruby
+  def initialize
+  end
+:ruby
+  query_params = URI.encode_www_form({
+    autoplay: $autoplay && 1,
+    list: $list,
+    listType: $list_type,
+    controls: ($controls == false) && 0,
+    origin: $origin,
+    fs: ($fs == false) && 0,
+    hl: $hl,
+    loop: $loop && 1,
+  }.select { _2 })
+%iframe(allowfullscreen class=$class){
+  allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+  frameborder: 0,
+  loading: "lazy",
+  title: $title || "YouTube video player",
+  src: "https://www.youtube.com/embed/#{$video_id}?#{query_params}",
+}
 :css
-  .wrapper {
-    position: relative;
-    aspect-ratio: 1.7777777;
-  }
-
   iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-.wrapper
-  %iframe(allowfullscreen){
-    allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
-    frameborder: 0,
-    loading: "lazy",
-    title: $title || "YouTube video player",
-    src: "https://www.youtube.com/embed/#$video_id",
+    display: block;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    contain: paint;
   }

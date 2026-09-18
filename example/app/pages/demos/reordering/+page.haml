@@ -1,0 +1,123 @@
+:ruby
+  YouTubeVideo = import("/components/UI/YouTubeVideo")
+  Button = import("/components/Form/Button")
+  Icon = import("/components/UI/Icon/Icon")
+
+  Video = Data.define(:id, :title)
+
+  VIDEOS = [
+    Video.new("dQw4w9WgXcQ", "Rick Astley – Never Gonna Give You Up"),
+    Video.new("djV11Xbc914", "a-ha – Take On Me"),
+    Video.new("Zi_XLOBDo_Y", "Michael Jackson – Billie Jean"),
+    Video.new("fJ9rUzIMcZQ", "Queen – Bohemian Rhapsody"),
+    Video.new("OJWJE0x7T4Q", "Peter Gabriel – Sledgehammer"),
+  ].freeze
+
+  VIDEOS_BY_ID = VIDEOS.to_h { [it.id, it] }.freeze
+
+  def initialize
+    @keys = VIDEOS.map(&:id)
+    @enabled = false
+  end
+
+  def handle_shuffle
+    view_transition(types: [:reorder], scope: "reordering-grid") do
+      loop do
+        shuffled = @keys.shuffle
+
+        unless @keys == shuffled
+          @keys = shuffled
+          break
+        end
+      end
+    end
+  end
+
+  def handle_move_up(e)
+    move(e.dig(:currentTarget, :value), -1)
+  end
+
+  def handle_move_down(e)
+    move(e.dig(:currentTarget, :value), 1)
+  end
+
+  def move(key, offset)
+    index = @keys.index(key)
+    target = index && index + offset
+    return unless target && target.between?(0, @keys.length - 1)
+
+    view_transition(types: [:reorder], scope: "reordering-grid") do
+      keys = @keys.dup
+      keys.insert(target, keys.delete_at(index))
+      @keys = keys
+    end
+  end
+
+%div
+  %h2 Reordering
+
+  %Button(onclick=handle_shuffle) Shuffle
+
+  .grid#reordering-grid
+    = @keys.each_with_index.map do |key, index|
+      - video = VIDEOS_BY_ID.fetch(key)
+      .video[key]{style: { view_transition_name: "video-#{key}" }}
+        %YouTubeVideo[key]{video_id: video.id, title: video.title }
+        %Button.icon-button{
+          onclick: handle_move_up,
+          value: key,
+          disabled: index.zero?,
+          aria_label: "Move #{video.title} up"
+        }
+          %Icon(name="arrow-up")
+        %Button.icon-button{
+          onclick: handle_move_down,
+          value: key,
+          disabled: index == @keys.length - 1,
+          aria_label: "Move #{video.title} down"
+        }
+          %Icon(name="arrow-down")
+:css
+  :global(#reordering-grid):active-view-transition-type(reorder)::view-transition-group(*) {
+    animation-duration: 400ms;
+    animation-timing-function: ease-in-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(#reordering-grid):active-view-transition-type(reorder)::view-transition-group(*) {
+      animation-duration: 1ms;
+    }
+  }
+
+  .grid {
+    display: flex;
+    flex-direction: column;
+    contain: layout;
+    gap: 1em;
+    margin-block: 1rem;
+  }
+
+  .video {
+    display: grid;
+    inline-size: min(100%, 36rem);
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: .5rem;
+    contain: layout paint;
+  }
+
+  YouTubeVideo {
+    border: 1px solid var(--gray);
+  }
+
+  .icon-button {
+    display: inline-grid;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    padding: .5rem;
+    font-size: 5cqw;
+  }
+
+  Icon {
+  }

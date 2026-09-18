@@ -36,11 +36,18 @@ class Mayu::Runtime::CommandsTest < Minitest::Test
       ]
     batch =
       Mayu::Runtime::Batch[
-        [Mayu::Runtime::Commands::ViewTransition[inner]]
+        [Mayu::Runtime::Commands::ViewTransition[inner, ["reorder"], nil]]
       ]
 
     assert_equal(
-      [["ViewTransition", [["SetTextContent", "label", "Ready"]]]],
+      [
+        [
+          "ViewTransition",
+          [["SetTextContent", "label", "Ready"]],
+          ["reorder"],
+          nil
+        ]
+      ],
       MessagePack.unpack(MessagePack.pack(batch))
     )
   end

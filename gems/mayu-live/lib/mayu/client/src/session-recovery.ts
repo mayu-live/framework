@@ -1,6 +1,6 @@
 import { SESSION_PATH } from "./constants";
 import { setTransferState } from "./transfer";
-import withViewTransition from "./view-transition";
+import withViewTransition, { type ViewTransitionRoot } from "./view-transition";
 
 const RESET_SESSION_ERROR_CODES = new Set([
   "TRANSFER_FAILED",
@@ -66,9 +66,13 @@ export async function resetSessionEntirely() {
     "font-size: 4em; font-weight: bold; font-family: monospace;",
   );
 
-  await withViewTransition(async () => {
-    morphdom.default(document.documentElement, html);
-  });
+  await withViewTransition(
+    document as unknown as ViewTransitionRoot,
+    async () => {
+      morphdom.default(document.documentElement, html);
+    },
+    ["session-recovery"],
+  );
 
   setTransferState(null);
 

@@ -100,11 +100,14 @@ module Mayu
         value
       end
 
-      def view_transition
-        @__view_transition = true
+      def view_transition(types: [], scope: nil)
+        @__view_transition = {
+          types: Array(types).compact.map(&:to_s),
+          scope:
+        }
         yield
       ensure
-        @__view_transition = false
+        @__view_transition = nil
       end
     end
   end

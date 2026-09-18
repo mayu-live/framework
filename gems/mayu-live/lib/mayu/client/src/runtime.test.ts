@@ -75,6 +75,83 @@ describe("runtime listeners", () => {
   });
 });
 
+describe("runtime view transitions", () => {
+  afterEach(() => {
+    delete (document as unknown as { startViewTransition?: unknown })
+      .startViewTransition;
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("passes transition types to the View Transitions API", async () => {
+    const startViewTransition = vi.fn(
+      (options: { update: () => void; types: string[] }) => {
+        options.update();
+        return { updateCallbackDone: Promise.resolve() };
+      },
+    );
+    (
+      document as unknown as { startViewTransition?: unknown }
+    ).startViewTransition = startViewTransition;
+    vi.stubGlobal("CSS", { supports: () => true });
+
+    const runtime = new Runtime(vi.fn());
+    await runtime.applyBatch([["ViewTransition", [], ["reorder"]]]);
+
+    expect(startViewTransition).toHaveBeenCalledWith(
+      expect.objectContaining({ types: ["reorder"] }),
+    );
+  });
+
+  it("uses an element scope when one is provided", async () => {
+    const startViewTransition = vi.fn((update: () => void) => {
+      update();
+      return { updateCallbackDone: Promise.resolve() };
+    });
+    document.body.innerHTML = '<div id="reordering-grid"></div>';
+    const scope = document.getElementById("reordering-grid") as HTMLElement & {
+      startViewTransition?: unknown;
+    };
+    scope.startViewTransition = startViewTransition;
+
+    const runtime = new Runtime(vi.fn());
+    await runtime.applyBatch([["ViewTransition", [], [], "reordering-grid"]]);
+
+    expect(startViewTransition).toHaveBeenCalledOnce();
+  });
+
+  it("waits for a transition animation to finish before completing the batch", async () => {
+    let finish!: () => void;
+    const finished = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const startViewTransition = vi.fn((update: () => void) => {
+      update();
+      return {
+        updateCallbackDone: Promise.resolve(),
+        finished,
+      };
+    });
+    (
+      document as unknown as { startViewTransition?: unknown }
+    ).startViewTransition = startViewTransition;
+
+    const runtime = new Runtime(vi.fn());
+    const applying = runtime.applyBatch([["ViewTransition", []]]);
+    let completed = false;
+    void applying.then(() => {
+      completed = true;
+    });
+
+    await Promise.resolve();
+    expect(completed).toBe(false);
+
+    finish();
+    await applying;
+    expect(completed).toBe(true);
+  });
+});
+
 describe("runtime autofocus", () => {
   beforeEach(() => {
     // jsdom has no requestIdleCallback; run the callback right away.

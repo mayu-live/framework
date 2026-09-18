@@ -20,9 +20,9 @@ export default function init(sessionId: string) {
 
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(`
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: 1s;
+  :root:active-view-transition-type(session-recovery)::view-transition-group(root) {
+    animation-duration: var(--mayu-session-recovery-transition-duration, 250ms);
+    animation-timing-function: ease-out;
   }
   `);
   document.adoptedStyleSheets.push(sheet);

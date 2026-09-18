@@ -6,7 +6,7 @@
 
 import { updatePing } from "./ping";
 import { setTransferState } from "./transfer";
-import withViewTransition from "./view-transition";
+import withViewTransition, { type ViewTransitionRoot } from "./view-transition";
 import type { Batch, CommandErrorPolicy } from "./protocol";
 
 type IdNode = {
@@ -339,7 +339,6 @@ function updateHead(
   nodeInfo: NodeInfo,
   newChildIds: string[],
 ) {
-  console.log("UPDATE HEAD");
   const oldChildIds = nodeInfo.childIds;
 
   const existingNodes = new Map();
@@ -466,9 +465,19 @@ async function applyCommands(
 }
 
 const CommandHandlers = {
-  async ViewTransition(this: NodeSet, batch: Batch) {
-    return withViewTransition(() =>
-      applyCommands(this, batch, this.commandErrorPolicy),
+  async ViewTransition(
+    this: NodeSet,
+    batch: Batch,
+    types: string[] = [],
+    scope?: string,
+  ) {
+    const transitionRoot = (
+      scope ? document.getElementById(scope) : document
+    ) as ViewTransitionRoot | null;
+    return withViewTransition(
+      transitionRoot,
+      () => applyCommands(this, batch, this.commandErrorPolicy),
+      types,
     );
   },
 
