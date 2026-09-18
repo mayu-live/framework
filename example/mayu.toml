@@ -3,11 +3,11 @@
 
   [development.server]
     listen = "https://localhost:9292"
+    self_signed_cert = true
 
     hmr = true
 
     render_exceptions = true
-    self_signed_cert = true
 
     generate_assets = true
 
@@ -23,12 +23,13 @@
   secret_key = "$MAYU_SECRET_KEY"
 
   [production.server]
-    listen = "https://0.0.0.0:3333"
+    listen = "http://0.0.0.0:3333"
+    self_signed_cert = false
+    h2c = true
 
     hmr = false
 
     render_exceptions = false
-    self_signed_cert = true
 
     generate_assets = false
 

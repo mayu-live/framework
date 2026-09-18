@@ -29,6 +29,7 @@
 
     render_exceptions = false
     self_signed_cert = false
+    h2c = true
 
     generate_assets = false
     session_timeout_seconds = 21

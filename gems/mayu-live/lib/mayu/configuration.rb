@@ -61,6 +61,7 @@ module Mayu
         :hmr?,
         :render_exceptions?,
         :self_signed_cert?,
+        :h2c?,
         :generate_assets?,
         :session_timeout_seconds,
         :transfer_timeout_seconds,
@@ -81,6 +82,7 @@ module Mayu
             hmr?: config.fetch("hmr", false),
             render_exceptions?: config.fetch("render_exceptions", false),
             self_signed_cert?: config.fetch("self_signed_cert", false),
+            h2c?: config.fetch("h2c", false),
             generate_assets?: config.fetch("generate_assets", false),
             session_timeout_seconds:
               config.fetch("session_timeout_seconds", 10).to_i,

@@ -16,6 +16,8 @@ end
 gem "fuzzy_match"
 
 gem "kramdown", "~> 2.4"
+# DynamicMarkdown renders GitHub-flavored Markdown at runtime.
+gem "kramdown-parser-gfm", "~> 1.1"
 
 # Syntax highlighting in app/components/UI/Highlight.haml
 gem "rouge", "~> 4.7"

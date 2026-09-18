@@ -7,8 +7,10 @@
 **/.bundle
 pkg
 profile
+editors
 example/*.mayu-bundle
 example/.assets
+example/.mayu
 example/.claude
 example/.ruby-lsp
 example/.zed

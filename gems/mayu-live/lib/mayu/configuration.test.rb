@@ -50,6 +50,7 @@ class Mayu::Configuration::Test < Minitest::Test
     assert_equal true, config.server.hmr?
     assert_equal true, config.server.render_exceptions?
     assert_equal true, config.server.self_signed_cert?
+    assert_equal false, config.server.h2c?
     assert_equal true, config.server.generate_assets?
     assert_equal 11, config.server.session_timeout_seconds
     assert_equal 12, config.server.transfer_timeout_seconds
@@ -72,6 +73,7 @@ class Mayu::Configuration::Test < Minitest::Test
     assert_equal false, config.server.hmr?
     assert_equal false, config.server.render_exceptions?
     assert_equal false, config.server.self_signed_cert?
+    assert_equal true, config.server.h2c?
     assert_equal false, config.server.generate_assets?
     assert_equal 21, config.server.session_timeout_seconds
     assert_equal 22, config.server.transfer_timeout_seconds

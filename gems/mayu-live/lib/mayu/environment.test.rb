@@ -98,6 +98,7 @@ class Mayu::EnvironmentTest < Minitest::Test
         hmr?: false,
         render_exceptions?: false,
         self_signed_cert?: false,
+        h2c?: false,
         generate_assets?: false,
         session_timeout_seconds: 10,
         transfer_timeout_seconds: 10,

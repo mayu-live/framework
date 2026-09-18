@@ -123,8 +123,13 @@ module Mayu
     # Built here rather than in `initialize` so a missing localhost gem is
     # reported by `run` like any other startup failure.
     def controller
+      protocol = protocol_for(@config)
       endpoint =
-        Async::HTTP::Endpoint.new(@uri, ssl_context: ssl_context_for(@config))
+        Async::HTTP::Endpoint.new(
+          @uri,
+          ssl_context: ssl_context_for(@config),
+          **(protocol ? {protocol:} : {})
+        )
 
       Controller.new(
         config: @config,
@@ -139,6 +144,12 @@ module Mayu
       return nil unless config.server.self_signed_cert?
 
       self.class.self_signed_cert_ssl_context(@uri.hostname)
+    end
+
+    def protocol_for(config)
+      # Sniff the HTTP/2 preface so h2c and HTTP/1.1 can share a plaintext
+      # listener. Fly uses h2c when `h2_backend` is enabled.
+      Async::HTTP::Protocol::HTTP if config.server.h2c?
     end
   end
 end

@@ -4,11 +4,9 @@
 #
 
 app = "mayu"
-primary_region = "bog"
+primary_region = "dfw"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
-
-[build]
 
 [deploy]
   strategy = "rolling"
@@ -16,33 +14,30 @@ kill_timeout = "5s"
 [env]
   ENABLE_YJIT = "true"
 
-[[services]]
-  protocol = "tcp"
-  internal_port = 3000
-  auto_stop_machines = true
+[http_service]
+  internal_port = 3333
+  force_https = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
+  processes = ['app']
 
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
-    force_https = true
+  # Fly's http handler normally downgrades to HTTP/1.1 towards the app.
+  # h2_backend makes it speak h2c (prior knowledge) instead, which server.rb supports.
+  [http_service.http_options]
+    h2_backend = true
 
-  [[services.ports]]
-    port = 443
-    handlers = ["tls"]
-    [services.ports.tls_options]
-      alpn = ["h2"]
-
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 25
+  [http_service.concurrency]
+    type = "requests"
     soft_limit = 20
+    hard_limit = 25
 
-  [[services.tcp_checks]]
+  [[http_service.checks]]
+    grace_period = "10s"
     interval = "15s"
-    timeout = "2s"
-    grace_period = "1s"
+    timeout = "5s"
+    method = "GET"
+    path = "/api/health"
 
 [[vm]]
   cpu_kind = "shared"
@@ -50,5 +45,5 @@ kill_timeout = "5s"
   memory_mb = 512
 
 [[metrics]]
-  port = 9092
+  port = 9091
   path = "/metrics"

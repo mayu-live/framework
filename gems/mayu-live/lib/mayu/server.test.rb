@@ -29,7 +29,7 @@ class Mayu::ServerTest < Minitest::Test
 
   def test_run_reports_the_missing_localhost_gem_and_exits
     server_config =
-      Struct.new(:listen, :self_signed_cert?).new("https://localhost:0", true)
+      Struct.new(:listen, :self_signed_cert?, :h2c?).new("https://localhost:0", true, false)
     config = Struct.new(:server, :log_file).new(server_config, nil)
     server = Mayu::Server.new(config:, load_environment: nil)
 
@@ -40,6 +40,38 @@ class Mayu::ServerTest < Minitest::Test
     end
 
     assert_includes(output, "self_signed_cert needs the localhost gem")
+  end
+
+  def test_h2c_uses_protocol_detection_for_a_plain_http_listener
+    server_config =
+      Struct.new(:listen, :self_signed_cert?, :h2c?, :shutdown_timeout_seconds).new(
+        "http://127.0.0.1:0",
+        false,
+        true,
+        10
+      )
+    config = Struct.new(:server, :log_file, :metrics, :root).new(server_config, nil, nil, Dir.pwd)
+    server = Mayu::Server.new(config:, load_environment: nil)
+
+    endpoint = server.send(:controller).instance_variable_get(:@endpoint)
+
+    assert_equal(Async::HTTP::Protocol::HTTP, endpoint.protocol)
+  end
+
+  def test_https_uses_the_endpoints_default_protocol
+    server_config =
+      Struct.new(:listen, :self_signed_cert?, :h2c?, :shutdown_timeout_seconds).new(
+        "https://localhost:0",
+        false,
+        false,
+        10
+      )
+    config = Struct.new(:server, :log_file, :metrics, :root).new(server_config, nil, nil, Dir.pwd)
+    server = Mayu::Server.new(config:, load_environment: nil)
+
+    endpoint = server.send(:controller).instance_variable_get(:@endpoint)
+
+    assert_equal(Async::HTTP::Protocol::HTTPS, endpoint.protocol)
   end
 
   def test_the_controller_runs_before_fork_before_starting_workers
