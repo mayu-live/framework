@@ -130,6 +130,113 @@ describe("runtime autofocus", () => {
   });
 });
 
+describe("runtime ReplaceChildren", () => {
+  const moveBeforeDescriptor = Object.getOwnPropertyDescriptor(
+    Element.prototype,
+    "moveBefore",
+  );
+
+  function listTree() {
+    return {
+      id: "document",
+      name: "#document",
+      children: [
+        {
+          id: "html",
+          name: "HTML",
+          children: [
+            { id: "head", name: "HEAD", children: [] },
+            {
+              id: "body",
+              name: "BODY",
+              children: [
+                {
+                  id: "list",
+                  name: "DIV",
+                  children: [
+                    { id: "first", name: "SPAN", children: [] },
+                    { id: "second", name: "SPAN", children: [] },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal("requestIdleCallback", (callback: () => void) => callback());
+    document.body.innerHTML =
+      "<div><span>first</span><span>second</span></div>";
+  });
+
+  afterEach(() => {
+    if (moveBeforeDescriptor) {
+      Object.defineProperty(
+        Element.prototype,
+        "moveBefore",
+        moveBeforeDescriptor,
+      );
+    } else {
+      delete (Element.prototype as { moveBefore?: unknown }).moveBefore;
+    }
+    document.documentElement.innerHTML = "<head></head><body></body>";
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("reorders retained children with moveBefore", async () => {
+    const moveBefore = vi.fn(function (
+      this: Element,
+      node: Node,
+      before: Node | null,
+    ) {
+      this.insertBefore(node, before);
+    });
+    Object.defineProperty(Element.prototype, "moveBefore", {
+      configurable: true,
+      value: moveBefore,
+    });
+
+    const runtime = new Runtime(vi.fn());
+    const list = document.body.firstElementChild!;
+    const replaceChildren = vi.spyOn(list, "replaceChildren");
+
+    await runtime.applyBatch([
+      ["Initialize", listTree()],
+      ["ReplaceChildren", "list", ["second", "first"]],
+    ]);
+
+    expect([...list.children].map((child) => child.textContent)).toEqual([
+      "second",
+      "first",
+    ]);
+    expect(moveBefore).toHaveBeenCalledWith(list.children[0], list.children[1]);
+    expect(replaceChildren).not.toHaveBeenCalled();
+  });
+
+  it("falls back to replaceChildren without moveBefore", async () => {
+    delete (Element.prototype as { moveBefore?: unknown }).moveBefore;
+
+    const runtime = new Runtime(vi.fn());
+    const list = document.body.firstElementChild!;
+    const replaceChildren = vi.spyOn(list, "replaceChildren");
+
+    await runtime.applyBatch([
+      ["Initialize", listTree()],
+      ["ReplaceChildren", "list", ["second", "first"]],
+    ]);
+
+    expect([...list.children].map((child) => child.textContent)).toEqual([
+      "second",
+      "first",
+    ]);
+    expect(replaceChildren).toHaveBeenCalledOnce();
+  });
+});
+
 describe("runtime command errors", () => {
   beforeEach(() => {
     vi.clearAllMocks();

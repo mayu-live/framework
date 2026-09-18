@@ -401,6 +401,46 @@ function updateHead(
   nodeInfo.childIds = newChildIds;
 }
 
+type MoveBeforeElement = Element & {
+  moveBefore: (node: Element | CharacterData, child: Node | null) => void;
+};
+
+function canMoveBefore(element: Element): element is MoveBeforeElement {
+  return typeof (element as MoveBeforeElement).moveBefore === "function";
+}
+
+function replaceChildrenWithMoves(
+  element: MoveBeforeElement,
+  children: Node[],
+) {
+  let cursor = element.firstChild;
+
+  for (const child of children) {
+    if (child === cursor) {
+      cursor = cursor.nextSibling;
+      continue;
+    }
+
+    if (child.parentNode === element) {
+      // moveBefore preserves state that insertBefore loses when moving an
+      // already-connected node, such as focus, transitions, and iframe loads.
+      element.moveBefore!(child as Element | CharacterData, cursor);
+    } else {
+      // New children are disconnected, which moveBefore intentionally rejects.
+      element.insertBefore(child, cursor);
+    }
+
+    cursor = child.nextSibling;
+  }
+
+  // Keep ReplaceChildren's contract: discard any untracked DOM children too.
+  while (cursor) {
+    const next = cursor.nextSibling;
+    element.removeChild(cursor);
+    cursor = next;
+  }
+}
+
 async function applyCommands(
   nodeSet: NodeSet,
   batch: Batch,
@@ -566,7 +606,17 @@ const CommandHandlers = {
       });
     }
 
-    element.replaceChildren(...this.getNodes(childIds));
+    const children = this.getNodes(childIds);
+
+    if (canMoveBefore(element)) {
+      replaceChildrenWithMoves(element, children);
+    } else {
+      // Safari does not yet support moveBefore. Keep the previous, fully
+      // compatible behavior there.
+      element.replaceChildren(...children);
+    }
+
+    if (nodeInfo) nodeInfo.childIds = childIds;
 
     requestIdleCallback(() => {
       handleAutofocus(element);
