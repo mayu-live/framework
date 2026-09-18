@@ -8,6 +8,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require_relative "runtime"
+require_relative "session/event"
 require_relative "session/token"
 require_relative "session/error_page"
 require_relative "session/transfer_state"
@@ -71,7 +72,7 @@ module Mayu
 
       Console.logger.info(
         self,
-        "Initializing session #{@id} at \e[1;34m#{@request_info.path}\e[0m"
+        event: Event.new(:initializing, session_id: @id, path: @request_info.path)
       )
 
       @startup_commands = []
@@ -190,7 +191,7 @@ module Mayu
       @task =
         Async do |task|
           task.annotate("Session #{@id}")
-          Console.logger.info(self, "Starting session")
+          Console.logger.info(self, event: Event.new(:starting, session_id: @id))
 
           barrier = Async::Barrier.new
 
@@ -202,7 +203,7 @@ module Mayu
         rescue => e
           Console.logger.error(self, e)
         ensure
-          Console.logger.info(self, "Stopping session")
+          Console.logger.info(self, event: Event.new(:stopping, session_id: @id))
           @engine.stop
           barrier.stop
           @task = nil
@@ -311,7 +312,7 @@ module Mayu
       in Events::CallbackEvent[id:, payload:]
         @engine.callback(id, payload)
       in Events::NavigateEvent[path:, push_state:]
-        Console.logger.info(self, "Navigating to \e[1;34m#{path}\e[0m")
+        Console.logger.info(self, event: Event.new(:navigating, session_id: @id, path:))
 
         @environment.metrics.session_navigate_count.increment(labels: {path:})
 

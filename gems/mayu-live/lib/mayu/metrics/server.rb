@@ -9,6 +9,8 @@
 
 require "prometheus/client/formats/text"
 
+require_relative "../server/listen_event"
+
 module Mayu
   module Metrics
     class Server
@@ -27,7 +29,10 @@ module Mayu
       end
 
       def run
-        puts "\e[32mStarting metrics server on \e[34m#{@server.endpoint.url}\e[0m"
+        Console.logger.info(
+          self,
+          event: Mayu::Server::ListenEvent.new(:metrics, url: @server.endpoint.url)
+        )
         @server.run
       end
 

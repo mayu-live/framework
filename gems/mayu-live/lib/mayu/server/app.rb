@@ -380,7 +380,7 @@ module Mayu
 
         Console.logger.info(
           self,
-          "\e[32mResuming transferred session stream #{session.id}\e[0m"
+          event: Mayu::Session::Event.new(:resuming_transferred, session_id: session.id)
         )
 
         run_session_stream(request, session)
@@ -400,7 +400,7 @@ module Mayu
 
         Console.logger.info(
           self,
-          "\e[32mResuming session stream #{session.id}\e[0m"
+          event: Mayu::Session::Event.new(:resuming, session_id: session.id)
         )
 
         run_session_stream(request, session)
@@ -478,7 +478,7 @@ module Mayu
           flushed = body.wait_finished
           Console.logger.info(
             self,
-            "Session stream finished for #{session.id}#{" before flushing" unless flushed}"
+            event: Mayu::Session::Event.new(:stream_finished, session_id: session.id, flushed:)
           )
         rescue => e
           Console.logger.error(self, e)

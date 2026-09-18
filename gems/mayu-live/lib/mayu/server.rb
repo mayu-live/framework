@@ -16,6 +16,8 @@ require "fileutils"
 # which happens on the first log line. The runtime itself is loaded lazily by
 # the worker, so its formatter is loaded here, before the server logs.
 require_relative "runtime/render_error_formatter"
+require_relative "session/event_formatter"
+require_relative "server/listen_event_formatter"
 require_relative "server/controller"
 
 module Mayu
@@ -37,7 +39,7 @@ module Mayu
       install_log_file
       quiet_container_logs
 
-      puts "\e[33mStarting server on \e[94m#{@uri}\e[0m"
+      Console.logger.info(self, event: ListenEvent.new(:server, url: @uri))
 
       controller.run
     rescue Interrupt

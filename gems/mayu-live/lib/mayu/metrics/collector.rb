@@ -9,6 +9,8 @@
 
 require "fileutils"
 
+require_relative "../server/listen_event"
+
 module Mayu
   module Metrics
     module Collector
@@ -107,7 +109,7 @@ module Mayu
 
           Console.logger.info(
             self,
-            "Starting metrics collection on #{File.expand_path(@endpoint.path)}"
+            event: Mayu::Server::ListenEvent.new(:collector, url: File.expand_path(@endpoint.path))
           )
 
           @endpoint.accept do |peer|

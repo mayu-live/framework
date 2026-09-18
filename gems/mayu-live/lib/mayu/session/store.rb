@@ -8,6 +8,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require_relative "errors"
+require_relative "event"
 
 module Mayu
   class Session
@@ -47,7 +48,7 @@ module Mayu
             if connected
               begin
                 task.with_timeout(TRANSFER_TIMEOUT_SECONDS) { session.transfer! }
-                Console.logger.info(self, "Session transfer queued for #{session.id}")
+                Console.logger.info(self, event: Mayu::Session::Event.new(:transfer_queued, session_id: session.id))
               rescue => error
                 Console.logger.warn(self, "Session transfer failed for #{session.id}", exception: error)
                 session.transfer_failed!
@@ -82,10 +83,7 @@ module Mayu
 
               @sessions.delete_if do |session_id, session|
                 if session.timed_out?(timeout)
-                  Console.logger.info(
-                    self,
-                    "\e[31mDeleting timed out session #{session_id}\e[0m"
-                  )
+                  Console.logger.info(self, event: Mayu::Session::Event.new(:timed_out, session_id:))
                   session.stop
                   @metrics.session_timeout_count.increment
                   true
