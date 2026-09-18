@@ -45,6 +45,25 @@ class Mayu::EnvironmentTest < Minitest::Test
     end
   end
 
+  def test_the_runtime_provider_preloads_every_module_in_the_bundle
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "entry.rb"), "VALUE = 42\n")
+
+      bundle_path = File.join(root, "app.mayu-bundle")
+      Mayu::Build::Configuration.new(root:, entrypoints: ["entry"]).build(
+        output: bundle_path
+      )
+
+      provider = Mayu::Environment.load_klenod_provider(config(root), bundle_path)
+      mods = provider.preload
+
+      refute_empty(mods)
+      assert(mods.all? { it.const_defined?(:Exports) })
+      assert_equal(42, provider.exports("entry")::VALUE)
+    end
+  end
+
   def test_environment_requires_a_module_provider
     assert_raises(ArgumentError) do
       Mayu::Environment.new(config(Dir.mktmpdir("mayu-klenod")), metrics: Object.new)

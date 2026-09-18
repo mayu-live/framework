@@ -23,10 +23,12 @@ module Mayu
     # `load_environment` is called once per worker process with `metrics:`
     # and returns the Environment that worker serves. The CLI decides what
     # goes in it, so the server itself never knows whether it is running a
-    # prebuilt bundle or a live build.
-    def initialize(config:, load_environment:, worker_count: nil)
+    # prebuilt bundle or a live build. `before_fork` runs in the controller
+    # before the workers are forked, for work every worker can share.
+    def initialize(config:, load_environment:, worker_count: nil, before_fork: nil)
       @config = config
       @load_environment = load_environment
+      @before_fork = before_fork
       @worker_count = worker_count
       @uri = URI.parse(config.server.listen)
     end
@@ -115,7 +117,8 @@ module Mayu
         config: @config,
         endpoint:,
         load_environment: @load_environment,
-        worker_count: @worker_count
+        worker_count: @worker_count,
+        before_fork: @before_fork
       )
     end
 

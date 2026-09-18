@@ -116,6 +116,23 @@ module Mayu
       1
     end
 
+    # Loads and evaluates the whole bundle, then lets Ruby settle the heap so
+    # the pages stay shared after the fork. Logs how long that took, so a
+    # slow boot can be traced to it.
+    def self.preload_bundle(config, bundle_path, source_root:, assets_dir:)
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      provider =
+        Environment.load_klenod_provider(config, bundle_path, source_root:, assets_dir:)
+      mods = provider.preload
+      Process.warmup if Process.respond_to?(:warmup)
+
+      elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      Console.logger.info(self, format("Loaded %d modules in %.0f ms", mods.length, elapsed * 1000))
+
+      provider
+    end
+
     # Starts the production server. Shared with mayu-build's `start` command so
     # both entry points behave the same.
     def self.start(filename:, assets_dir:, source_root:, output: $stdout)
@@ -136,16 +153,18 @@ module Mayu
         assets_dir = File.expand_path(assets_dir)
         source_root = File.expand_path(source_root)
 
+        # The bundle is loaded and evaluated once, in the controller before
+        # it forks. The workers share the evaluated modules copy-on-write
+        # and only build their own Environment around them.
+        provider = nil
+
         Mayu::Server.new(
           config:,
+          before_fork: -> do
+            provider = preload_bundle(config, bundle_path, source_root:, assets_dir:)
+          end,
           load_environment: ->(metrics:) do
-            Environment.load_klenod_with_config(
-              config,
-              bundle_path,
-              metrics:,
-              source_root:,
-              assets_dir:
-            )
+            Environment.new(config, module_provider: provider, metrics:)
           end
         ).run
       end

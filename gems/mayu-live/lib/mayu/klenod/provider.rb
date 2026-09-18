@@ -173,6 +173,13 @@ module Mayu
         )
       end
 
+      # Evaluates every module in the bundle. The production server does this
+      # in the controller before forking, so the workers share the evaluated
+      # modules and answer their first request without evaluating anything.
+      def preload
+        source.preload
+      end
+
       def module_id_for(reference)
         # Runtime component classes use their evaluation path, while bundle
         # lookups use source-relative paths or canonical module IDs.

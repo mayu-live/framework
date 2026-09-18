@@ -27,12 +27,14 @@ module Mayu
         endpoint:,
         load_environment:,
         worker_count: nil,
+        before_fork: nil,
         **options
       )
         super(**options)
         @config = config
         @endpoint = endpoint
         @load_environment = load_environment
+        @before_fork = before_fork
         @worker_count = worker_count || Async::Container.processor_count
         @bound_endpoint = nil
         @graceful_stop = @config.server.shutdown_timeout_seconds + Worker::CLEANUP_TIMEOUT_SECONDS
@@ -84,6 +86,11 @@ module Mayu
       end
 
       def setup(container)
+        # Runs in the controller while no child exists yet, on start and on
+        # every restart. What it loads is shared with the workers copy-on-
+        # write, and a SIGHUP still picks up a new bundle from disk.
+        @before_fork&.call
+
         collector_endpoint = nil
 
         if @config.metrics.enabled?

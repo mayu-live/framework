@@ -42,6 +42,28 @@ class Mayu::ServerTest < Minitest::Test
     assert_includes(output, "self_signed_cert needs the localhost gem")
   end
 
+  def test_the_controller_runs_before_fork_before_starting_workers
+    calls = []
+    server_config = Struct.new(:shutdown_timeout_seconds).new(1)
+    metrics_config = Struct.new(:enabled?).new(false)
+    config = Struct.new(:server, :metrics, :root).new(server_config, metrics_config, Dir.pwd)
+
+    controller =
+      Mayu::Server::Controller.new(
+        config:,
+        endpoint: nil,
+        load_environment: nil,
+        before_fork: -> { calls << :before_fork }
+      )
+
+    container = Object.new
+    container.define_singleton_method(:run) { |**| calls << :run }
+
+    controller.setup(container)
+
+    assert_equal([:before_fork, :run], calls)
+  end
+
   private
 
   def without_gem(missing_feature, &)

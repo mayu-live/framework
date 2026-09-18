@@ -62,6 +62,19 @@ module Mayu
     end
 
     # Loads a prebuilt bundle. Nothing on this path may need klenod-build.
+    def self.load_klenod_provider(
+      config,
+      bundle_path,
+      source_root: nil,
+      assets_dir: nil
+    )
+      Klenod::RuntimeProvider.load(
+        bundle_path,
+        source_root: source_root || File.join(config.root, Klenod::SOURCE_DIR),
+        assets_dir: assets_dir || File.join(config.root, Klenod::ASSETS_DIR)
+      )
+    end
+
     def self.load_klenod_with_config(
       config,
       bundle_path,
@@ -70,11 +83,7 @@ module Mayu
       assets_dir: nil
     )
       module_provider =
-        Klenod::RuntimeProvider.load(
-          bundle_path,
-          source_root: source_root || File.join(config.root, Klenod::SOURCE_DIR),
-          assets_dir: assets_dir || File.join(config.root, Klenod::ASSETS_DIR)
-        )
+        load_klenod_provider(config, bundle_path, source_root:, assets_dir:)
 
       new(config, module_provider:, metrics:)
     end
