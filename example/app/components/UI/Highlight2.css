@@ -16,7 +16,9 @@
 }
 .highlight > * {
   color: var(--color);
-  text-shadow: 0 0 2px #000, 0 0 0.5em var(--color);
+  text-shadow:
+    0 0 2px #000,
+    0 0 0.5em var(--color);
 }
 .highlight,
 .highlight .w {
