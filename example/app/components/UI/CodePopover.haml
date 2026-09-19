@@ -1,0 +1,80 @@
+:ruby
+  HighlightedCodeBlock = import("./HighlightedCodeBlock")
+
+  def initialize
+    @id = "code-#{SecureRandom.alphanumeric(8)}"
+  end
+
+- source_title = $title || $summary
+
+.source(class=$class)
+  %button.trigger(type="button" popovertarget=@id)= $summary
+  .popover(id=@id popover="auto")
+    %header
+      %strong= source_title
+      %button.close(type="button" popovertarget=@id popovertargetaction="hide" title="Close source") ×
+    %HighlightedCodeBlock(language=$language flush)
+      %slot
+
+:css
+  .source {
+    display: grid;
+    justify-items: center;
+  }
+
+  .trigger {
+    padding: 0;
+    color: var(--link-color);
+    background: transparent;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .trigger:hover,
+  .trigger:focus-visible {
+    text-decoration: underline;
+  }
+
+  .popover {
+    width: min(72rem, calc(100vw - 2rem));
+    max-height: calc(100svh - 2rem);
+    margin: auto;
+    padding: 0;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: var(--thin-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  .popover::backdrop {
+    background: oklch(0% 0 0 / 50%);
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5em 1em;
+    border-bottom: var(--thin-border);
+  }
+
+  .close {
+    padding: 0.1em 0.45em;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius);
+    font: inherit;
+    font-size: 1.5em;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .close:hover,
+  .close:focus-visible {
+    color: var(--text);
+    background: var(--bright);
+  }

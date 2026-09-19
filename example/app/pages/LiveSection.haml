@@ -1,8 +1,7 @@
 :ruby
   Heading = import("/components/Layout/Heading")
   Link = import("/components/UI/Link")
-  Details = import("/components/UI/Details")
-  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+  CodePopover = import("/components/UI/CodePopover")
   Card = import("/components/UI/Card")
   Clock = import("/components/Clock")
   Counter = import("./Counter")
@@ -20,8 +19,7 @@
       %p
         The buttons call Ruby methods. The new count is streamed back as a DOM patch.
       %Counter(initial_count=7)
-      %Details(summary="Show source" lazy)
-        %HighlightedCodeBlock(language="haml")= File.read(File.join(__dir__, "Counter.haml"))
+      %CodePopover(summary="Show source" title="Counter.haml" language="haml")= File.read(File.join(__dir__, "Counter.haml"))
 
     %Card.demo
       %h3 A clock
@@ -72,19 +70,16 @@
   .demo {
     padding: 1.5rem;
     gap: .75rem;
+    min-width: 0;
     border: 1px solid transparent;
     background:
       linear-gradient(var(--surface-raised), var(--surface-raised)) padding-box,
       linear-gradient(135deg in oklch, oklch(70% 0.15 var(--hue-pink) / 60%), oklch(75% 0.12 60 / 60%), var(--border)) border-box;
   }
 
-  /* Let the counter card take the full row while its source is open. */
-  .demo:has(details[open]) {
-    grid-column: 1 / -1;
-  }
-
   .demo pre {
     font-size: .8rem;
+    overflow-x: auto;
   }
 
   h3 {
@@ -111,6 +106,6 @@
     filter: drop-shadow(0 16px 32px oklch(66% 0.16 40 / 35%));
   }
 
-  .source {
+  .clock + .source {
     text-align: center;
   }
