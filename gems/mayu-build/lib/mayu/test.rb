@@ -19,6 +19,33 @@ require_relative "test/query"
 
 module Mayu
   module Test
+    class ComponentQueryError < QueryError
+    end
+
+    class ComponentNotFoundError < ComponentQueryError
+    end
+
+    class MultipleComponentsFoundError < ComponentQueryError
+    end
+
+    class ComponentHandle
+      def initialize(vnode)
+        @vnode = vnode
+      end
+
+      def props = @vnode.descriptor.props
+
+      def state(name)
+        instance!
+          .instance_variable_get(:@__state)
+          &.[](name.to_s.delete_prefix("@").to_sym)
+      end
+
+      # Accessing component methods is useful for deterministic unit tests,
+      # but should not replace assertions on user-observable behavior.
+      def instance! = @vnode.instance_variable_get(:@instance)
+    end
+
     class FakeMetrics
       NullCounter = Data.define { def increment(**) = nil }
       NullSummary = Data.define { def observe(_value = nil, **) = nil }
@@ -329,6 +356,35 @@ module Mayu
         Node.new(self, result) if result
       end
 
+      def get_component(klass)
+        components = get_all_components(klass)
+
+        case components.length
+        when 1 then components.first
+        when 0
+          raise ComponentNotFoundError, "Could not find a #{klass} component"
+        else
+          raise MultipleComponentsFoundError,
+            "Found #{components.length} #{klass} components; expected exactly one"
+        end
+      end
+
+      def query_component(klass)
+        components = get_all_components(klass)
+
+        case components.length
+        when 0 then nil
+        when 1 then components.first
+        else
+          raise MultipleComponentsFoundError,
+            "Found #{components.length} #{klass} components; expected at most one"
+        end
+      end
+
+      def get_all_components(klass)
+        component_vnodes(klass).map { ComponentHandle.new(it) }
+      end
+
       def fire_event(event, node, payload = nil, **fields)
         unless node.is_a?(Node) && node.page.equal?(self)
           raise ArgumentError,
@@ -378,6 +434,19 @@ module Mayu
       def query_page = self
       def query_container = @doc
 
+      def component_vnodes(klass)
+        components = []
+
+        @engine.root.send(:traverse) do |node|
+          next unless node.is_a?(Mayu::Runtime::VNodes::VComponent)
+
+          instance = node.instance_variable_get(:@instance)
+          components << node if instance.is_a?(klass)
+        end
+
+        components
+      end
+
       def each_command(value, &block)
         case value
         when Mayu::Runtime::Commands::ViewTransition
@@ -396,8 +465,8 @@ module Mayu
           @listener_bindings.clear
           setup_tree(@doc, id_tree)
         in Mayu::Runtime::Commands::CreateTree[html:, tree:]
-          node = Oga.parse_html(html).children.first
-          setup_tree(node, tree)
+          nodes = Oga.parse_html(html).children
+          nodes.zip(tree).each { |node, id_node| setup_tree(node, id_node) }
         in Mayu::Runtime::Commands::CreateElement[id:, type:]
           @nodes[id] = Oga::XML::Element.new(name: type.to_s)
         in Mayu::Runtime::Commands::CreateTextNode[id:, content:]

@@ -312,7 +312,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       main = find_element(engine.root, :main)
       refute_nil(main)
       assert_equal(main.dom_id, replace_children.id)
-      assert_includes(replace_children.child_ids, create_tree.tree.id)
+      assert_includes(replace_children.child_ids, create_tree.tree.first.id)
       assert_equal(3, replace_children.child_ids.length)
     end
   end
@@ -343,7 +343,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     end
   end
 
-  def test_createtree_error_emits_a_render_error
+  def test_createtree_supports_multiple_roots
     initial = H[:body]
     updated = H[:body, H[MultiRootProbe]]
 
@@ -354,13 +354,14 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
 
     document.update(collector, updated)
 
-    error =
+    create_tree =
       collector.commands.find do |command|
-        command.is_a?(Mayu::Runtime::Commands::RenderError)
+        command.is_a?(Mayu::Runtime::Commands::CreateTree)
       end
 
-    refute_nil(error)
-    assert_includes(error.message, "CreateTree expects a single IdNode")
+    refute_nil(create_tree)
+    assert_equal(2, create_tree.tree.length)
+    assert_equal(%w[P P], create_tree.tree.map(&:name))
   end
 
   class HeadNavProbe < Mayu::Component::Base

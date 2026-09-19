@@ -290,10 +290,8 @@ module Mayu
           case ids.length
           when 0
             # Nothing reached the DOM, like a head node.
-          when 1
-            collector << Commands::CreateTree[html, ids.first]
           else
-            raise "CreateTree expects a single IdNode, got #{ids.length}"
+            collector << Commands::CreateTree[html, ids]
           end
           node.traverse do |child|
             child.emit_listeners(collector) if child.is_a?(VElement)

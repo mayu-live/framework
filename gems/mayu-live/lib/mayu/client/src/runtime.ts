@@ -217,9 +217,10 @@ function createDomElement(type: string): Element {
   return document.createElement(type);
 }
 
-function createTreeRootNode(html: string, tree: IdNode): Node {
-  const rootTag = tree.name.toLowerCase();
-  const isSvgRoot = SVG_TAGS.has(rootTag);
+function createTreeRootNodes(html: string, trees: IdNode[]): Node[] {
+  const isSvgRoot = trees.every((tree) =>
+    SVG_TAGS.has(tree.name.toLowerCase()),
+  );
   const wrappedHtml = isSvgRoot
     ? `<svg xmlns="${SVG_NAMESPACE}">${html}</svg>`
     : html;
@@ -232,10 +233,15 @@ function createTreeRootNode(html: string, tree: IdNode): Node {
   const content = (template as HTMLTemplateElement).content;
 
   if (!isSvgRoot) {
-    const root = content.firstChild;
-    if (!root)
-      throw new Error(`CreateTree: missing root node for ${tree.name}`);
-    return root;
+    const roots = Array.from(content.childNodes).filter(
+      (child) => child.nodeType !== Node.DOCUMENT_TYPE_NODE,
+    );
+    if (roots.length !== trees.length) {
+      throw new Error(
+        `CreateTree: expected ${trees.length} root nodes, got ${roots.length}`,
+      );
+    }
+    return roots;
   }
 
   const svgWrapper = content.firstElementChild;
@@ -251,10 +257,12 @@ function createTreeRootNode(html: string, tree: IdNode): Node {
     }
     return true;
   });
-  const root = svgChildren[0] || svgWrapper.firstChild;
-  if (!root)
-    throw new Error(`CreateTree: missing SVG root node for ${tree.name}`);
-  return root;
+  if (svgChildren.length !== trees.length) {
+    throw new Error(
+      `CreateTree: expected ${trees.length} SVG root nodes, got ${svgChildren.length}`,
+    );
+  }
+  return svgChildren;
 }
 
 function debugTree(node: IdNode, level = 0): string {
@@ -487,8 +495,9 @@ const CommandHandlers = {
     this.clear();
     setupTree(this, document, tree);
   },
-  CreateTree(this: NodeSet, html: string, tree: IdNode) {
-    setupTree(this, createTreeRootNode(html, tree), tree);
+  CreateTree(this: NodeSet, html: string, trees: IdNode[]) {
+    const roots = createTreeRootNodes(html, trees);
+    trees.forEach((tree, index) => setupTree(this, roots[index], tree));
   },
   CreateElement(this: NodeSet, id: string, type: string) {
     this.setNode(id, createDomElement(type));

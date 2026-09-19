@@ -161,9 +161,7 @@ module Mayu
             IdNode[id, name.upcase, children.map(&:id_node)]
           end
 
-          def patch_insert
-            Commands::CreateTree[to_html, id_node]
-          end
+          def patch_insert = Commands::CreateTree[to_html, [id_node]]
 
           def patch_remove = Commands::RemoveNode[id]
 

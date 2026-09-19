@@ -89,6 +89,40 @@ class Mayu::Test::Test < Mayu::Test::Case
     end
   end
 
+  class MultiRootProbe < Mayu::Component::Base
+    def render
+      [H[:p, "One"], H[:p, "Two"]]
+    end
+  end
+
+  class InsertMultiRootProbe < Mayu::Component::Base
+    def initialize
+      @shown = false
+    end
+
+    def show
+      update!(@shown = true)
+    end
+
+    def render
+      H[
+        :main,
+        H[:button, "Show", onclick: H.callback(self, :show)],
+        (@shown ? H[MultiRootProbe] : nil)
+      ]
+    end
+  end
+
+  class ComponentQueryProbe < Mayu::Component::Base
+    def initialize
+      @__state[:count] = 1
+    end
+
+    def render
+      H[:output, @__state[:count].to_s]
+    end
+  end
+
   def test_queries_roles_text_css_and_scoped_content
     screen =
       render(
@@ -203,6 +237,41 @@ class Mayu::Test::Test < Mayu::Test::Case
     assert_equal("assistant", button["data-role"])
     assert_equal("assistant", button["aria-label"])
     assert_nil(button["datarole"])
+  end
+
+  def test_create_tree_supports_multiple_roots
+    screen = render(InsertMultiRootProbe)
+
+    screen.get_by_role(:button, name: "Show").click
+
+    assert_equal(["One", "Two"], screen.get_all_by_css("p").map(&:text))
+  end
+
+  def test_component_queries_expose_a_test_handle
+    screen = render(H[:main, H[ComponentQueryProbe, label: "Counter"]])
+
+    component = screen.get_component(ComponentQueryProbe)
+
+    assert_equal({label: "Counter"}, component.props)
+    assert_equal(1, component.state(:count))
+    assert_instance_of(ComponentQueryProbe, component.instance!)
+    assert_same(component.instance!, screen.query_component(ComponentQueryProbe).instance!)
+    assert_equal([component.instance!], screen.get_all_components(ComponentQueryProbe).map(&:instance!))
+  end
+
+  def test_component_queries_report_missing_and_ambiguous_components
+    screen = render(H[:main, H[ComponentQueryProbe], H[ComponentQueryProbe]])
+
+    assert_nil(screen.query_component(DataRoleProbe))
+    assert_raises(Mayu::Test::ComponentNotFoundError) do
+      screen.get_component(DataRoleProbe)
+    end
+    assert_raises(Mayu::Test::MultipleComponentsFoundError) do
+      screen.get_component(ComponentQueryProbe)
+    end
+    assert_raises(Mayu::Test::MultipleComponentsFoundError) do
+      screen.query_component(ComponentQueryProbe)
+    end
   end
 
   def test_fire_event_reports_missing_listeners

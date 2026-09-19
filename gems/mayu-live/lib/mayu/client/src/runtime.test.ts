@@ -75,6 +75,58 @@ describe("runtime listeners", () => {
   });
 });
 
+describe("runtime CreateTree", () => {
+  beforeEach(() => {
+    vi.stubGlobal("requestIdleCallback", (callback: () => void) => callback());
+  });
+
+  afterEach(() => {
+    document.documentElement.innerHTML = "<head></head><body></body>";
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("registers every root of a multi-root subtree", async () => {
+    document.body.innerHTML = "<div></div>";
+    const runtime = new Runtime(vi.fn());
+
+    await runtime.applyBatch([
+      [
+        "Initialize",
+        {
+          id: "document",
+          name: "#document",
+          children: [
+            {
+              id: "html",
+              name: "HTML",
+              children: [
+                { id: "head", name: "HEAD", children: [] },
+                {
+                  id: "body",
+                  name: "BODY",
+                  children: [{ id: "host", name: "DIV", children: [] }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      [
+        "CreateTree",
+        "<p>One</p><p>Two</p>",
+        [
+          { id: "first", name: "P", children: [] },
+          { id: "second", name: "P", children: [] },
+        ],
+      ],
+      ["ReplaceChildren", "host", ["first", "second"]],
+    ]);
+
+    expect(document.body.innerHTML).toBe("<div><p>One</p><p>Two</p></div>");
+  });
+});
+
 describe("runtime view transitions", () => {
   afterEach(() => {
     delete (document as unknown as { startViewTransition?: unknown })
