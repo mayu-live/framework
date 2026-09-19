@@ -34,8 +34,10 @@
       H[HighlightedCodeBlock, value]
     in type: :br
       H[:br]
+    in type: :hr
+      build(:hr, :hr)
     in type: :codespan, value:
-      build(:code, :code, value.strip)
+      build(:code, :code, value.strip, class: :inline_code)
     in type: :p, children:
       build(:p, :p, *visit_nodes(children))
     in type:, children:
@@ -64,12 +66,17 @@
   = visit_node(Kramdown::Document.new(Array(__children).join, input: "GFM", hard_wrap: false).to_hash_ast)
 
 :css
+  .markdown {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
   .unsupported {
-    font-family: var(--font-mono), monospace;
+    font-family: var(--font-mono);
     color: red;
   }
 
-  code {
+  .inline_code {
     padding: .25em;
     background: var(--surface-sunken);
     border: var(--thin-border);
@@ -78,4 +85,49 @@
 
   li > p {
     margin: .25em 0;
+  }
+
+  hr {
+    border: 0;
+    border-top: var(--thin-border);
+    margin: 1em 0;
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    inline-size: max-content;
+    max-inline-size: 100%;
+    margin: 0.75em 0;
+    font-size: 0.95em;
+    background: var(--surface-raised);
+    border: var(--thin-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  td {
+    padding: 0.45em 0.65em;
+    border-inline-end: var(--thin-border);
+    border-block-end: var(--thin-border);
+    vertical-align: top;
+  }
+
+  tr > td:last-child {
+    border-inline-end: 0;
+  }
+
+  tbody > tr:last-child > td {
+    border-block-end: 0;
+  }
+
+  thead td {
+    font-weight: 700;
+    color: var(--text);
+    background: var(--surface-sunken);
+    white-space: nowrap;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: color-mix(in oklch, var(--surface-sunken) 45%, transparent);
   }

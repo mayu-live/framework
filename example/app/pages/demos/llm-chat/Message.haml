@@ -1,16 +1,30 @@
 :ruby
   DynamicMarkdown = import("/components/DynamicMarkdown")
+  Spinner = import("/components/UI/Spinner/Spinner")
 
-%li{class: $role}
-  %strong= $role
-  %DynamicMarkdown= $text
+%li{data: {role: $role}}
+  = if $text.length > 0
+    %DynamicMarkdown= $text
+  = elsif $role == :assistant
+    %Spinner
 
 :css
   li {
     display: flex;
     gap: .5em;
-    padding: .5em;
+    padding: .5em 1em;
     margin: 0;
+
+    border-radius: .5em;
+
+    &[data-role="user"] {
+      background: var(--blue-dark);
+      align-self: end;
+    }
+
+    &[data-role="assistant"] {
+      background: var(--surface-sunken);
+    }
   }
 
   strong {
@@ -19,13 +33,6 @@
     }
   }
 
-  .user {
-    background: #0063;
-  }
-
-  .assistant {
-    background: #0603;
-  }
 
   DynamicMarkdown {
     & > :first-child {
@@ -35,4 +42,9 @@
     & > :last-child {
       margin-bottom: 0;
     }
+  }
+
+  Spinner {
+    width: 2em;
+    margin: 0 auto;
   }

@@ -1,12 +1,13 @@
 :ruby
   Heading = import("/components/Layout/Heading")
+  Card = import("/components/UI/Card")
   Button = import("/components/Form/Button")
   Link = import("/components/UI/Link")
   Message = import("./Message")
 
-  GithubModelsChat = import("/lib/GithubModelsChat")::GithubModelsChat
+  OpenRouterChat = import("/lib/OpenRouterChat")
 
-  MODEL = "Ministral-3B"
+  MODEL = "openrouter/free"
   SYSTEM_MESSAGE = <<~TEXT.strip
     You are an assistant at https://mayu.live/.
     Mayu Live is a web framework for making reactive web pages in Ruby.
@@ -24,7 +25,7 @@
     @messages = []
     @words = []
     @loading = false
-    @chat = GithubModelsChat.new(model: MODEL, system_message: SYSTEM_MESSAGE)
+    @chat = OpenRouterChat.new(model: MODEL, system_message: SYSTEM_MESSAGE)
   end
 
   def handle_submit(e)
@@ -57,7 +58,10 @@
           text: response
         }
       ]
-    rescue GithubModelsChat::UnauthorizedError => e
+    rescue OpenRouterChat::UnauthorizedError => e
+      @error = e.message
+    rescue OpenRouterChat::NetworkError => e
+      @words = []
       @error = e.message
     rescue => e
       Console.logger.error(self, e)
@@ -74,40 +78,33 @@
   = if @error
     %p.error= @error
   = else
-    .scroller
-      = if @messages.empty?
-        %div.type-your-message
-          %p
-            %strong Type a message to chat with #{MODEL}
-          %p
-            This is using the free tier of
-            %Link(href="https://github.com/marketplace/models")< Github Models
-            \.
-      %ul
-        = unless @words.empty?
-          %Message[:temp]{
-            role: :assistant,
-            text: @words.join.strip
-          }
-        = @messages.reverse.map do |message|
-          %Message[message[:id]]{
-            role: message[:role],
-            text: message[:text],
-          }
-    %form(onsubmit=handle_submit)
-      %input[@key]{
-        autofocus: true,
-        type: "text",
-        name: "message",
-        autocomplete: "off",
-        placeholder: "Type your message here…"
-      }
-      %Button(type="submit"){disabled: @loading} Send
+    %Card
+      .scroller
+        = if @messages.empty?
+          .type-your-message
+            %p
+              %strong Type a message to chat with #{MODEL}
+            %p
+              This is using
+              %Link(href="https://openrouter.ai/openrouter/free")< OpenRouter's free model router.
+            %p
+              Don't believe anything it says!
+        %ul
+          = unless @words.empty?
+            %Message[:temp]{
+              role: :assistant,
+              text: @words.join.strip
+            }
+          = @messages.reverse.map do |message|
+            %Message[message[:id]](role=message[:role] text=message[:text])
+      %form(onsubmit=handle_submit)
+        %input[@key](type="text" name="message" autocomplete="off" placeholder="Type your message here…")
+        %Button(type="submit"){disabled: @loading} Send
 
 :css
   section {
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     min-height: 20em;
     height: 100%;
     gap: 1em;
@@ -115,6 +112,13 @@
 
   Heading {
     margin-bottom: 0;
+  }
+
+  Card {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    padding: 1em;
+    gap: 1em;
   }
 
   .scroller {
@@ -125,13 +129,14 @@
     position: absolute;
     inset: 0;
     overflow-y: scroll;
-    font-family: "Roboto Mono";
+    scrollbar-width: thin;
     border: 1px solid #0003;
     border-radius: 3px;
     display: flex;
     flex-direction: column-reverse;
     margin: 0;
     padding: 0;
+    gap: 1em;
   }
 
   form {
@@ -141,7 +146,29 @@
   }
 
   input {
-    padding: .5em;
+    width: 100%;
+    font: inherit;
+    padding: 0.6em 0.75em;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    transition: border-color 120ms, box-shadow 120ms;
+
+    &:hover {
+      border-color: var(--text-muted);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
   }
 
   .type-your-message {
@@ -150,6 +177,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1;
+    text-align: center;
   }
 
   .error {

@@ -1,10 +1,12 @@
-:ruby
-  Spinner = import("./90-ring-with-bg.svg")
+.spinner(class=$class)
 :css
   .spinner {
     aspect-ratio: 1;
     background-size: contain;
     max-width: 10rem;
     margin: 1em auto;
+    mask-image: url("./90-ring-with-bg.svg");
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    background: currentcolor;
   }
-.spinner{style: { background_image: "url(#{Spinner})" }}
