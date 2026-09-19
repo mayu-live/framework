@@ -8,7 +8,7 @@
   padding: 0;
   margin: 1em;
   display: block;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-mono);
   font-size: 1em;
   white-space: pre;
   font-weight: 400;

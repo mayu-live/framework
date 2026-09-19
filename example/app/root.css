@@ -175,10 +175,8 @@ body {
   scrollbar-color: var(--scrollbar-thumb) transparent;
   min-height: 100dvh;
   background: var(--body-background);
-  background-size: stretch;
-  background-repeat: no-repeat;
   color: var(--body-color);
-  font-family: var(--font-regular), sans-serif;
+  font-family: var(--font-regular);
   line-height: 1.6;
 }
 
@@ -189,7 +187,7 @@ body {
 }
 
 :is(pre, code) {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-mono);
 }
 
 ::view-transition-group(root) {

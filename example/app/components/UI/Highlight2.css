@@ -9,7 +9,7 @@
   margin: 1em;
   font-size: 0.9em;
   display: block;
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-mono);
   font-size: 1.1em;
   white-space: pre;
   font-weight: 200;
