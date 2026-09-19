@@ -22,7 +22,7 @@ RUN npm run build
 # Packages both gems the way a release does, then unpacks them where the
 # example's Gemfile looks for its path gems. The app therefore installs
 # exactly the files a published gem carries.
-FROM ruby:4.0.6-alpine3.24 AS gems
+FROM ruby:4.0.7-alpine3.24 AS gems
 WORKDIR /src
 COPY gems gems
 COPY --from=client /src/gems/mayu-live/lib/mayu/client/dist gems/mayu-live/lib/mayu/client/dist
@@ -34,7 +34,7 @@ RUN set -e; for name in mayu-live mayu-build; do \
 # Installs every gem and builds the app's bundle and assets. This runs on
 # Debian because klenod's CSS and JavaScript plugins ship prebuilt native
 # gems for glibc, not for musl.
-FROM ruby:4.0.6-slim AS build
+FROM ruby:4.0.7-slim AS build
 WORKDIR /app
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -47,7 +47,7 @@ COPY example ./
 RUN bin/mayu build
 
 # Installs only what `mayu start` needs: mayu-build and klenod-build stay out.
-FROM ruby:4.0.6-alpine3.24 AS runtime-gems
+FROM ruby:4.0.7-alpine3.24 AS runtime-gems
 ENV BUNDLE_WITHOUT=development:test
 WORKDIR /app
 RUN apk add --no-cache build-base libsodium openssl-dev pkgconf
@@ -55,7 +55,7 @@ COPY --from=gems /gems /gems
 COPY example/Gemfile example/Gemfile.lock ./
 RUN bundle install
 
-FROM ruby:4.0.6-alpine3.24 AS runtime
+FROM ruby:4.0.7-alpine3.24 AS runtime
 ENV BUNDLE_WITHOUT=development:test
 ENV RUBY_YJIT_ENABLE=1
 WORKDIR /app
