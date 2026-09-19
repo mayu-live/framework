@@ -9,28 +9,18 @@ class MayuPing extends HTMLElement {
   #disconnectDialog?: HTMLDialogElement;
   #disconnectTitle?: HTMLParagraphElement;
   #disconnectText?: HTMLParagraphElement;
-  #updateViewportOffset = () => {
+  #closeDialogTimer?: number;
+  #updatePosition = () => {
     const ping = this.#div;
+    if (!ping) return;
+
     const viewport = window.visualViewport;
-    if (!ping || !viewport) return;
+    const offsetLeft = viewport?.offsetLeft ?? 0;
+    const offsetTop = viewport?.offsetTop ?? 0;
+    const width = viewport?.width ?? window.innerWidth;
+    const height = viewport?.height ?? window.innerHeight;
 
-    // Fixed-positioned elements use the layout viewport. Compensate when the
-    // visual viewport is shortened by mobile browser controls or a keyboard.
-    const bottom = Math.max(
-      0,
-      document.documentElement.clientHeight -
-        viewport.height -
-        viewport.offsetTop,
-    );
-    const right = Math.max(
-      0,
-      document.documentElement.clientWidth -
-        viewport.width -
-        viewport.offsetLeft,
-    );
-
-    ping.style.setProperty("--mayu-visual-viewport-bottom", `${bottom}px`);
-    ping.style.setProperty("--mayu-visual-viewport-right", `${right}px`);
+    ping.style.transform = `translate(${offsetLeft + width - ping.offsetWidth}px, ${offsetTop + height - ping.offsetHeight}px)`;
   };
 
   static observedAttributes = ["ping", "status"];
@@ -53,16 +43,10 @@ class MayuPing extends HTMLElement {
     this.#disconnectText = this.shadowRoot!.querySelector(
       ".disconnect-text",
     ) as HTMLParagraphElement;
-    this.#showInTopLayer();
-    this.#updateViewportOffset();
-    window.visualViewport?.addEventListener(
-      "resize",
-      this.#updateViewportOffset,
-    );
-    window.visualViewport?.addEventListener(
-      "scroll",
-      this.#updateViewportOffset,
-    );
+    this.#updatePosition();
+    window.addEventListener("scroll", this.#updatePosition, { passive: true });
+    window.visualViewport?.addEventListener("resize", this.#updatePosition);
+    window.visualViewport?.addEventListener("scroll", this.#updatePosition);
     this.#disconnectDialog?.addEventListener("cancel", (event) => {
       // Keep this modal non-cancelable while connection is unavailable.
       event.preventDefault();
@@ -76,14 +60,9 @@ class MayuPing extends HTMLElement {
   }
 
   disconnectedCallback() {
-    window.visualViewport?.removeEventListener(
-      "resize",
-      this.#updateViewportOffset,
-    );
-    window.visualViewport?.removeEventListener(
-      "scroll",
-      this.#updateViewportOffset,
-    );
+    window.removeEventListener("scroll", this.#updatePosition);
+    window.visualViewport?.removeEventListener("resize", this.#updatePosition);
+    window.visualViewport?.removeEventListener("scroll", this.#updatePosition);
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -91,6 +70,7 @@ class MayuPing extends HTMLElement {
       case "ping":
         if (!this.#ping) return;
         this.#ping.textContent = newValue;
+        this.#updatePosition();
         break;
       case "status":
         const classList = this.#div?.classList;
@@ -114,37 +94,41 @@ class MayuPing extends HTMLElement {
     if (status === "disconnected") {
       title.textContent = "Disconnected";
       text.textContent = "Trying to reconnect…";
-      if (!dialog.open) {
-        dialog.showModal();
-      }
+      this.#showConnectionDialog(dialog);
       return;
     }
 
     if (status === "transferring") {
       title.textContent = "Transferring";
       text.textContent = "Trying to restore connection…";
-      if (!dialog.open) {
-        dialog.showModal();
-      }
+      this.#showConnectionDialog(dialog);
       return;
     }
 
-    if (dialog.open) {
-      dialog.close();
-    }
+    this.#hideConnectionDialog(dialog);
   }
 
-  #showInTopLayer() {
-    const ping = this.#div;
-    if (!ping) return;
+  #showConnectionDialog(dialog: HTMLDialogElement) {
+    window.clearTimeout(this.#closeDialogTimer);
 
-    // Popovers are promoted above every page stacking context. Older browsers
-    // simply keep the fixed-position fallback.
-    try {
-      ping.showPopover();
-    } catch {
-      // The Popover API is unavailable, or this element is no longer connected.
+    if (dialog.classList.contains("is-visible")) return;
+
+    if (!dialog.open) {
+      dialog.showModal();
     }
+
+    // Force the scale(0) state to be painted before transitioning to scale(1).
+    void dialog.offsetWidth;
+    dialog.classList.add("is-visible");
+  }
+
+  #hideConnectionDialog(dialog: HTMLDialogElement) {
+    if (!dialog.open || !dialog.classList.contains("is-visible")) return;
+
+    dialog.classList.remove("is-visible");
+    this.#closeDialogTimer = window.setTimeout(() => {
+      if (!dialog.classList.contains("is-visible")) dialog.close();
+    }, 200);
   }
 }
 

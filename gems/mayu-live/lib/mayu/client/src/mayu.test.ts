@@ -140,11 +140,15 @@ describe("Mayu pings", () => {
     static instances: FakeWorker[] = [];
     onmessage: ((event: MessageEvent) => void) | null = null;
     terminated = false;
+    messages: unknown[] = [];
     constructor(public url: string) {
       FakeWorker.instances.push(this);
     }
     terminate() {
       this.terminated = true;
+    }
+    postMessage(message: unknown) {
+      this.messages.push(message);
     }
   }
 
@@ -158,33 +162,50 @@ describe("Mayu pings", () => {
     });
   }
 
-  it("pings from a worker ticker, which hidden tabs do not throttle", () => {
+  it("schedules an idle ping with a worker", async () => {
     stubWorker();
     const write = vi.fn(async () => undefined);
     const mayu = new Mayu();
     mayu.setWriter({ write } as any);
 
     expect(FakeWorker.instances).toHaveLength(1);
+    expect(FakeWorker.instances[0].messages).toEqual([4_000]);
     FakeWorker.instances[0].onmessage!(new MessageEvent("message"));
+    await Promise.resolve();
 
     expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number)]);
+    expect(FakeWorker.instances[0].messages).toEqual([4_000, 4_000]);
     mayu.dispose();
+    expect(FakeWorker.instances[0].messages).toContain(null);
     expect(FakeWorker.instances[0].terminated).toBe(true);
   });
 
-  it("falls back to a page timer without workers", () => {
+  it("resets the idle ping after an outbound event", async () => {
     vi.useFakeTimers();
     vi.stubGlobal("Worker", undefined);
     const write = vi.fn(async () => undefined);
     const mayu = new Mayu();
     mayu.setWriter({ write } as any);
 
-    vi.advanceTimersByTime(2_500);
+    await vi.advanceTimersByTimeAsync(3_000);
+    mayu.navigate("/next");
+    await vi.runAllTicks();
+    await vi.advanceTimersByTimeAsync(3_000);
+
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(write).toHaveBeenCalledWith([
+      "Navigate",
+      "/next",
+      true,
+      expect.any(Number),
+    ]);
+
+    await vi.advanceTimersByTimeAsync(1_000);
 
     expect(write).toHaveBeenCalledTimes(2);
     expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number)]);
     mayu.dispose();
-    vi.advanceTimersByTime(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     expect(write).toHaveBeenCalledTimes(2);
   });
 

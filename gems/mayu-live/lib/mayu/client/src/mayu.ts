@@ -17,7 +17,7 @@ type MayuOptions = {
 
 export default class Mayu {
   #writer: WritableStreamDefaultWriter<ClientEvent> | null;
-  #ticker: PingTicker | null;
+  #pingScheduler: PingScheduler | null;
   #popstateListener: () => void;
   #visibilityListener: () => void;
 
@@ -37,22 +37,22 @@ export default class Mayu {
     };
     document.addEventListener("visibilitychange", this.#visibilityListener);
 
-    this.#ticker = null;
+    this.#pingScheduler = null;
     if (autoPing) {
-      this.#ticker = new PingTicker(PING_INTERVAL, () => this.ping());
-      this.#ticker.start();
+      this.#pingScheduler = new PingScheduler(PING_INTERVAL, () => this.ping());
     }
   }
 
   dispose() {
     window.removeEventListener("popstate", this.#popstateListener);
     document.removeEventListener("visibilitychange", this.#visibilityListener);
-    this.#ticker?.stop();
-    this.#ticker = null;
+    this.#pingScheduler?.stop();
+    this.#pingScheduler = null;
   }
 
   setWriter(writer: WritableStreamDefaultWriter<ClientEvent>) {
     this.#writer = writer;
+    this.#pingScheduler?.reset();
     // A session that connects from a hidden tab starts out slowed down.
     if (document.visibilityState === "hidden") this.#sendVisibility();
   }
@@ -64,6 +64,7 @@ export default class Mayu {
 
   clearWriter() {
     this.#writer = null;
+    this.#pingScheduler?.cancel();
   }
 
   async #write(message: ClientEvent) {
@@ -76,6 +77,7 @@ export default class Mayu {
 
     try {
       await writer.write(message);
+      this.#pingScheduler?.reset();
       return true;
     } catch (error) {
       if (this.#writer === writer) this.#writer = null;
@@ -113,53 +115,62 @@ export default class Mayu {
   }
 }
 
-// Pings keep the session alive on the server. Browsers throttle a hidden
-// tab's timers, Chrome down to once a minute, which is longer than the
-// server's session timeout. Timers in a dedicated worker keep their cadence,
-// so the ticker runs there when it can and falls back to a page timer.
-export class PingTicker {
+// Pings keep an idle session alive. Every outbound event refreshes the same
+// server-side liveness timestamp, so the next ping is delayed until there has
+// been no traffic for the interval. A dedicated worker avoids hidden-tab timer
+// throttling and only holds one timeout at a time.
+export class PingScheduler {
   #interval: number;
   #tick: () => void;
   #worker: Worker | null = null;
-  #timer: ReturnType<typeof setInterval> | null = null;
+  #workerUnavailable = false;
+  #timer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(interval: number, tick: () => void) {
     this.#interval = interval;
     this.#tick = tick;
   }
 
-  start() {
-    const ticker = createTickerWorker(this.#interval);
-
-    if (ticker) {
-      this.#worker = ticker.worker;
-      this.#worker.onmessage = () => {
-        // The script has loaded once the first tick arrives.
+  reset() {
+    if (!this.#worker && !this.#workerUnavailable) {
+      const ticker = createPingWorker();
+      if (ticker) {
+        this.#worker = ticker.worker;
+        this.#worker.onmessage = () => this.#tick();
         if (ticker.url) URL.revokeObjectURL(ticker.url);
-        ticker.url = null;
-        this.#tick();
-      };
-    } else {
-      this.#timer = setInterval(() => this.#tick(), this.#interval);
+      } else {
+        this.#workerUnavailable = true;
+      }
     }
+
+    if (this.#worker) {
+      this.#worker.postMessage(this.#interval);
+      return;
+    }
+
+    if (this.#timer !== null) clearTimeout(this.#timer);
+    this.#timer = setTimeout(() => this.#tick(), this.#interval);
+  }
+
+  cancel() {
+    this.#worker?.postMessage(null);
+    if (this.#timer !== null) clearTimeout(this.#timer);
+    this.#timer = null;
   }
 
   stop() {
+    this.cancel();
     this.#worker?.terminate();
     this.#worker = null;
-    if (this.#timer !== null) clearInterval(this.#timer);
-    this.#timer = null;
   }
 }
 
-function createTickerWorker(
-  interval: number,
-): { worker: Worker; url: string | null } | null {
+function createPingWorker(): { worker: Worker; url: string | null } | null {
   if (typeof Worker === "undefined") return null;
   if (typeof URL.createObjectURL !== "function") return null;
 
   try {
-    const source = `setInterval(() => postMessage(0), ${interval});`;
+    const source = `let timer; onmessage = ({data}) => { clearTimeout(timer); if (data) timer = setTimeout(() => postMessage(0), data); };`;
     const url = URL.createObjectURL(
       new Blob([source], { type: "text/javascript" }),
     );

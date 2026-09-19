@@ -2,16 +2,13 @@
   .mayu-ping {
     box-sizing: border-box;
     position: fixed;
-    top: auto;
-    right: 0;
-    bottom: 0;
-    left: auto;
+    top: 0;
+    right: auto;
+    bottom: auto;
+    left: 0;
     margin: 0;
-    transform: translate(
-      calc(-1 * var(--mayu-visual-viewport-right, 0px)),
-      calc(-1 * var(--mayu-visual-viewport-bottom, 0px))
-    );
     padding: 0 2px;
+    z-index: 2147483647;
 
     pointer-events: none;
 
@@ -47,8 +44,56 @@
   }
 
   .disconnect-dialog {
-    font: inherit;
+    --spring-easing: linear(
+      0,
+      0.0014 0.3%,
+      0.0088 0.74%,
+      0.0409,
+      0.0932 2.51%,
+      0.1753 3.54%,
+      0.3533 5.31%,
+      0.853 9.74%,
+      0.9831,
+      1.0937,
+      1.182 13.73%,
+      1.2406,
+      1.2807 16.09%,
+      1.294 16.68%,
+      1.3046,
+      1.309 18.16%,
+      1.3067,
+      1.2971 19.93%,
+      1.278 20.96%,
+      1.2255 22.88%,
+      1.0563 27.75%,
+      0.9864 30.11%,
+      0.9557,
+      0.9323,
+      0.9161 34.1%,
+      0.9065 35.57%,
+      0.9045,
+      0.9051,
+      0.908 38.23%,
+      0.9138 39.27%,
+      0.9314 41.33%,
+      0.9822 46.06%,
+      1.0039 48.42%,
+      1.0201 50.93%,
+      1.0254,
+      1.0285 53.58%,
+      1.0294 55.5%,
+      1.0267 57.57%,
+      0.9993 66.57%,
+      0.9941,
+      0.9914 71.59%,
+      0.9917 75.87%,
+      0.9998 84.43%,
+      1.0024 88.72%,
+      1.0009 99.93%
+    );
+    --spring-duration: 500ms;
 
+    font: inherit;
     border: 1px solid #fff1;
     border-radius: 12px;
     background: #0f1218ee;
@@ -57,9 +102,31 @@
     min-width: 16rem;
     box-shadow: 0 1rem 2rem #0008;
     user-select: none;
+
+    opacity: 0;
+    scale: 0;
+    transition:
+      opacity 200ms ease-out,
+      scale 200ms ease-out;
+  }
+
+  .disconnect-dialog:open.is-visible {
+    opacity: 1;
+    scale: 1;
+    transition:
+      opacity 200ms ease-out,
+      scale var(--spring-duration) var(--spring-easing);
   }
 
   .disconnect-dialog::backdrop {
+    background: transparent;
+    backdrop-filter: blur(0);
+    transition:
+      background-color 200ms ease-out,
+      backdrop-filter 200ms ease-out;
+  }
+
+  .disconnect-dialog:open.is-visible::backdrop {
     background: rgb(10 14 20 / 0.52);
     backdrop-filter: blur(5px);
   }
@@ -75,7 +142,7 @@
     color: #d7deee;
   }
 </style>
-<div class="mayu-ping" popover="manual">
+<div class="mayu-ping">
   <span class="ping">N/A</span>
 </div>
 <dialog class="disconnect-dialog" closedby="none" aria-label="Connection lost">
