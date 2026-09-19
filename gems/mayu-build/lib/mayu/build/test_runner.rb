@@ -37,7 +37,7 @@ module Mayu
       end
 
       def execute(context, test_paths)
-        adapter = MinitestAdapter.new(output:)
+        adapter = Test::MinitestAdapter.new(output:)
         loaded = true
 
         test_paths.each do |path|
