@@ -173,11 +173,19 @@ body {
   /* Repeated here so the viewport scrollbar follows the theme switcher, which
      sets color-scheme on body rather than on the root. */
   scrollbar-color: var(--scrollbar-thumb) transparent;
-  min-height: 100dvh;
+  min-height: 100svh;
   background: var(--body-background);
   color: var(--body-color);
   font-family: var(--font-regular);
   line-height: 1.6;
+
+  /* No fixed height: the body must grow with its content, or sticky
+  children stop following once the viewport height is scrolled past. */
+  min-height: 100svh;
+  display: grid;
+  /* The header row is fixed so the start page hero can span it. */
+  grid-template-rows: var(--header-height) 1fr auto;
+  grid-template-columns: 1fr;
 }
 
 :is(h1, h2, h3, h4, h5, h6) {

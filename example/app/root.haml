@@ -21,15 +21,3 @@
 %body{style: { color_scheme: @theme == "system" ? nil : @theme }}
   = H.context(theme: @theme, set_theme: H.callback(self, :handle_set_theme)) do
     %slot
-
-:css
-  body {
-    /* No fixed height: the body must grow with its content, or sticky
-       children stop following once the viewport height is scrolled past. */
-    min-height: 100svh;
-    display: grid;
-    /* The header row is fixed so the start page hero can span it. */
-    grid-template-rows: var(--header-height) 1fr auto;
-    grid-template-columns: 1fr;
-    z-index: 0;
-  }
