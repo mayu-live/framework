@@ -215,7 +215,8 @@ module Mayu
 
         def each_listener
           @attributes.each do |name, listener|
-            yield name.to_s.delete_prefix("on").downcase, listener if
+            event_name = name.to_s.sub(/\Aon[-_]?/, "").downcase
+            yield event_name, listener if
               listener.is_a?(Listener)
           end
         end
@@ -301,7 +302,7 @@ module Mayu
             return old_value if old_value.callback&.same?(new_value)
             collector << Commands::RemoveListener[
               @parent.dom_id,
-              key.to_s.delete_prefix("on").downcase,
+              key.to_s.sub(/\Aon[-_]?/, "").downcase,
               old_value.id
             ]
           end
@@ -318,7 +319,7 @@ module Mayu
           listener = Listener[new_value].validate!
           collector << Commands::SetListener[
             @parent.dom_id,
-            key.to_s.delete_prefix("on").downcase,
+            key.to_s.sub(/\Aon[-_]?/, "").downcase,
             listener.id
           ]
           listener

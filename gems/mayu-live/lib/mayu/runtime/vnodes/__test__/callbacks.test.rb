@@ -188,6 +188,7 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
         H[
           :section,
           H[:button, "First", onclick: H.callback(component, :handle_click)],
+          H[:select, on_change: H.callback(component, :handle_click)],
           H[:form, onsubmit: H.callback(component, :handle_click)]
         ]
       ]
@@ -201,7 +202,7 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
         command.is_a?(Mayu::Runtime::Commands::SetListener)
       end
 
-    assert_equal(%w[click submit], listeners.map(&:name))
+    assert_equal(%w[click change submit], listeners.map(&:name))
   end
 
   def test_event_listener_unregistered_on_change

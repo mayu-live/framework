@@ -191,7 +191,7 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
       provider = Mayu::Build::Configuration.new(root:).development_provider
       component_class = provider.exports(provider.entry("button.haml"))::Default
       component = component_class.allocate
-      component.instance_variable_set(:@__props, {class: "caller", "data-id": "example"}.freeze)
+      component.instance_variable_set(:@__props, {class: "caller", data_id: "example"}.freeze)
       descriptor = component.render
 
       assert_equal(

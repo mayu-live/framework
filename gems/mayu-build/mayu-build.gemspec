@@ -39,11 +39,11 @@ Gem::Specification.new do |spec|
   spec.add_dependency "mayu-live", "= #{Mayu::VERSION}"
 
   # Klenod platform: compiling, watching, testing, and editor support.
-  spec.add_dependency "klenod-build", "= 0.0.16"
-  spec.add_dependency "klenod-test", "= 0.0.16"
-  spec.add_dependency "klenod-lsp", "= 0.0.16"
-  spec.add_dependency "klenod-plugin-css", "= 0.0.16"
-  spec.add_dependency "klenod-plugin-javascript", "= 0.0.16"
+  spec.add_dependency "klenod-build", "= 0.0.21"
+  spec.add_dependency "klenod-test", "= 0.0.21"
+  spec.add_dependency "klenod-lsp", "= 0.0.21"
+  spec.add_dependency "klenod-plugin-css", "= 0.0.21"
+  spec.add_dependency "klenod-plugin-javascript", "= 0.0.21"
 
   # Self-signed certificates for the development server
   spec.add_dependency "localhost", "~> 1.7"
