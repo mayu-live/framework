@@ -1,0 +1,209 @@
+:ruby
+  def initialize
+    @display = ""
+    @error = nil
+  end
+
+  def handle_key(event)
+    event => { currentTarget: { dataset: { key: } } }
+    append_key(key)
+  end
+
+  def handle_keydown(event)
+    event => { key: }
+
+    case key
+    when "Enter", "="
+      handle_equals
+    when "Backspace"
+      handle_backspace
+    when "Escape"
+      handle_clear
+    when /\A[0-9.+\-*\/]\z/
+      append_key(key)
+    end
+  end
+
+  def append_key(key)
+    @display += key
+    @error = nil
+  end
+
+  def handle_clear
+    @display = ""
+    @error = nil
+  end
+
+  def handle_backspace
+    @display = @display[0...-1]
+    @error = nil
+  end
+
+  def handle_equals
+    @display = format_number(evaluate(@display))
+    @error = nil
+  rescue ArgumentError, ZeroDivisionError
+    @error = "Check the expression."
+  end
+
+  def evaluate(expression)
+    raise ArgumentError if expression.empty?
+    tokens = expression.scan(/\d+(?:\.\d+)?|[+\-*\/]/)
+    raise ArgumentError unless tokens.join == expression
+
+    precedence = { "+" => 1, "-" => 1, "*" => 2, "/" => 2 }
+    output = []
+    operators = []
+    tokens.each do |token|
+      if token.match?(/\A\d/)
+        output << token.to_f
+      else
+        output << operators.pop while !operators.empty? && precedence.fetch(operators.last) >= precedence.fetch(token)
+        operators << token
+      end
+    end
+    output.concat(operators.reverse)
+
+    stack = []
+    output.each do |item|
+      if item.is_a?(Numeric)
+        stack << item
+      else
+        right = stack.pop
+        left = stack.pop
+        raise ArgumentError if left.nil? || right.nil?
+        raise ZeroDivisionError if item == "/" && right.zero?
+        stack << case item
+        when "+" then left + right
+        when "-" then left - right
+        when "*" then left * right
+        when "/" then left / right
+        end
+      end
+    end
+    raise ArgumentError unless stack.length == 1
+    stack.first
+  end
+
+  def format_number(number)
+    number == number.to_i ? number.to_i.to_s : number.round(8).to_s
+  end
+
+.calculator(tabindex=0 onkeydown=handle_keydown)
+  .display
+    %output(aria-live="polite"){ class: { error: @error } }
+      = @display.empty? ? "0" : @display.tr("*/", "×÷")
+    = if @error
+      %p.error-message(role="alert")= @error
+  .keypad
+    %button(type="button" onclick=handle_clear) C
+    %button(type="button" onclick=handle_backspace aria-label="Backspace") ⌫
+    %button(type="button" onclick=handle_key data-key="/") ÷
+    %button(type="button" onclick=handle_key data-key="*") ×
+    %button(type="button" onclick=handle_key data-key="7") 7
+    %button(type="button" onclick=handle_key data-key="8") 8
+    %button(type="button" onclick=handle_key data-key="9") 9
+    %button(type="button" onclick=handle_key data-key="-") −
+    %button(type="button" onclick=handle_key data-key="4") 4
+    %button(type="button" onclick=handle_key data-key="5") 5
+    %button(type="button" onclick=handle_key data-key="6") 6
+    %button(type="button" onclick=handle_key data-key="+") +
+    %button(type="button" onclick=handle_key data-key="1") 1
+    %button(type="button" onclick=handle_key data-key="2") 2
+    %button(type="button" onclick=handle_key data-key="3") 3
+    %button(type="button" onclick=handle_equals) =
+    %button.zero(type="button" onclick=handle_key data-key="0") 0
+    %button(type="button" onclick=handle_key data-key=".") .
+
+:css
+  .calculator {
+    max-width: 19.2em;
+    width: 100%;
+    margin: 0 auto;
+    font-family: var(--font-mono);
+    border: var(--thin-border);
+    border-radius: var(--radius);
+    contain: paint;
+    padding: .5em;
+  }
+
+  .calculator:focus,
+  .calculator:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: .75em;
+  }
+
+  .display {
+    position: relative;
+  }
+
+  output {
+    display: block;
+    padding: .25em;
+    border: var(--thin-border);
+    border-radius: var(--radius-sm);
+    color: white;
+    font-family: inherit;
+    font-size: 2.25em;
+    font-weight: 500;
+    line-height: 1;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .5em;
+    margin-top: .75em;
+  }
+
+  button {
+    min-height: 3.2em;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--surface-sunken);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.25em;
+    font-weight: 650;
+    cursor: pointer;
+    transition:
+      background .15s ease,
+      border-color .15s ease,
+      transform .1s ease;
+  }
+
+  button:hover {
+    background: color-mix(in oklab, var(--accent) 14%, var(--surface-sunken));
+    border-color: color-mix(in oklab, var(--accent) 35%, transparent);
+    transform: translateY(-1px);
+  }
+
+  button:active {
+    transform: translateY(1px) scale(.97);
+    background: color-mix(in oklab, var(--accent) 25%, var(--surface-sunken));
+  }
+
+  button.zero {
+    grid-column: span 2;
+  }
+
+  output.error {
+    background: oklch(32% 0.1 20);
+  }
+
+  .error-message {
+    position: absolute;
+    bottom: .5em;
+    left: .5em;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    color: var(--red);
+    font-weight: 500;
+    font-size: .75em;
+    line-height: 1;
+    pointer-events: none;
+  }

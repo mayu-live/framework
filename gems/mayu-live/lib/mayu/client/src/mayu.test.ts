@@ -78,6 +78,31 @@ describe("Mayu callbacks", () => {
     mayu.dispose();
   });
 
+  it("sends Backspace keydown callbacks", async () => {
+    const mayu = new Mayu({ autoPing: false });
+    const write = vi.fn(async (_message: ClientEvent) => undefined);
+    mayu.setWriter({ write } as any);
+    const calculator = document.createElement("div");
+    calculator.addEventListener("keydown", (event) =>
+      mayu.callback(event, "listener"),
+    );
+    document.body.append(calculator);
+
+    calculator.dispatchEvent(
+      new KeyboardEvent("keydown", { cancelable: true, key: "Backspace" }),
+    );
+    await Promise.resolve();
+
+    expect(write).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        "Callback",
+        "listener",
+        expect.objectContaining({ eventType: "keydown", key: "Backspace" }),
+      ]),
+    );
+    mayu.dispose();
+  });
+
   it("coalesces continuous events by event type and listener", async () => {
     vi.useFakeTimers();
     const mayu = new Mayu({ autoPing: false });

@@ -4,6 +4,7 @@
   CodePopover = import("/components/UI/CodePopover")
   Card = import("/components/UI/Card")
   Clock = import("/components/Clock")
+  Calculator = import("/components/Calculator")
   Counter = import("./Counter")
   Section = import("./Section")
 
@@ -14,21 +15,30 @@
       = "Everything on this page was rendered on the server at #{Time.now.utc.strftime("%H:%M:%S UTC")}. The only JavaScript in the browser is a small runtime that patches the DOM whenever state changes on the server."
 
   .grid
-    %Card.demo
-      %h3 A counter
-      %p
-        The buttons call Ruby methods. The new count is streamed back as a DOM patch.
-      %Counter(initial_count=7)
-      %CodePopover(summary="Show source" title="Counter.haml" language="haml")= File.read(File.join(__dir__, "Counter.haml"))
+    .stack
+      %Card.demo
+        %h3 A counter
+        %p
+          The buttons call Ruby methods. The new count is streamed back as a DOM patch.
+        %Counter(initial_count=7)
+        %CodePopover(summary="Show source" title="Counter.haml" language="haml")= File.read(File.join(__dir__, "Counter.haml"))
 
-    %Card.demo
-      %h3 A clock
-      %p
-        Ticks twice a second on the server, and only the hands are updated in the browser.
-      %Clock.clock(gradient)
-      %p.source
-        %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml" target="_blank")
-          Show source
+      %Card.demo
+        %h3 A calculator
+        %p
+          Each key updates Ruby state and streams the current display back to the browser.
+        %Calculator
+        %CodePopover(summary="Show source" title="Calculator.haml" language="haml")= File.read(File.expand_path("../components/Calculator.haml", __dir__))
+
+    .stack
+      %Card.demo
+        %h3 A clock
+        %p
+          Ticks twice a second on the server, and only the hands are updated in the browser.
+        %Clock.clock(gradient)
+        %p.source
+          %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml" target="_blank")
+            Show source
 
 :css
   Section {
@@ -67,6 +77,12 @@
     }
   }
 
+  .stack {
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+
   .demo {
     padding: 1.5rem;
     gap: .75rem;
@@ -94,6 +110,10 @@
 
   Counter {
     margin: 1rem auto;
+  }
+
+  Calculator {
+    display: block;
   }
 
   .clock {
