@@ -52,6 +52,9 @@
         = RubyVM::ZJIT.enabled? ? "enabled" : "disabled"
       = else
         = "Unsupported"
+    = if fly_region = ENV["FLY_REGION"]
+      %dt FLY_REGION
+      %dd= fly_region
 
   %p.badges
     = BADGES.map do |badge|
