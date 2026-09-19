@@ -143,11 +143,19 @@ module Mayu
 
           replacement_rendered = false
           replacement_children = nil
+          skip_render = false
 
           if descriptor
             previous_type = @descriptor.type
 
             if previous_type == descriptor.type
+              unless @engine&.force_render? || @descriptor.children != descriptor.children
+                begin
+                  skip_render = !@instance.should_update?(descriptor.props)
+                rescue => error
+                  raise UnhandledRenderError.new(error, self)
+                end
+              end
               @descriptor = descriptor
             elsif descriptor.type.equal?(@failed_replacement_type)
               # This class version already failed to replace the instance and
@@ -181,6 +189,8 @@ module Mayu
               @descriptor.props.freeze
             )
           end
+
+          return if skip_render
 
           begin
             metrics.update_summary(

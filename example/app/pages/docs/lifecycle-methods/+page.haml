@@ -49,11 +49,14 @@
 
     Called after the component has been unmounted.
 
-    **`def should_update?(next_props, next_state)`**
+    **`def should_update?(next_props)`**
 
-    By default, components will re-render on every change,
-    but in some cases you might want to skip rendering to
-    improve performance.
+    Return `false` to skip rendering for a parent-driven prop update.
+    The hook sees current props and receives the incoming props; incoming props
+    are committed even when rendering is skipped. By default it returns `true`.
+
+    Local state updates, explicit rerenders, changes to children or slots,
+    context changes, and hot reloads always render.
 
     Usually you don't need to override the default behavior.
 

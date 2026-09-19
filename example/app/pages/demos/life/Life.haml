@@ -1,0 +1,159 @@
+:ruby
+  GameGrid = import("./GameGrid")
+
+  Rule = Data.define(:id, :name, :born, :survive) do
+    def lookup
+      [born, survive].map do |counts|
+        Array.new(9) { |count| counts.include?(count) }.freeze
+      end.freeze
+    end
+  end
+
+  RULES = [
+    Rule["life", "Conway's Life (B3/S23)", [3], [2, 3]],
+    Rule["highlife", "HighLife (B36/S23)", [3, 6], [2, 3]],
+    Rule["seeds", "Seeds (B2/S)", [2], []],
+    Rule["replicator", "Replicator (B1357/S1357)", [1, 3, 5, 7], [1, 3, 5, 7]],
+    Rule["day_and_night", "Day & Night (B3678/S34678)", [3, 6, 7, 8], [3, 4, 6, 7, 8]],
+    Rule["maze", "Maze (B3/S12345)", [3], [1, 2, 3, 4, 5]],
+  ]
+
+  RULE_LOOKUPS = RULES.to_h { |rule| [rule.id, rule.lookup] }.freeze
+
+  def self.init_grid(width, height)
+    Array.new(width * height) do |i|
+      next false unless block_given?
+      x = i % width
+      y = i / width
+      yield x, y
+    end
+  end
+
+  def initialize
+    @width = $width
+    @height = $height
+    @grid = self.class.init_grid(@width, @height)
+    @reset_version = $reset_version
+    @randomize_version = $randomize_version
+    @step_version = $step_version
+    neighbor_positions
+  end
+
+  def mount
+    loop do
+      if $running
+        handle_step
+        sleep 1.0 / $fps
+      else
+        sleep 0.5
+      end
+    end
+  end
+
+  def get_position(event)
+    event => { target: { value: } }
+    value.split.map(&:to_i) => [x, y]
+    [x, y]
+  end
+
+  def handle_draw(event)
+    x, y = get_position(event)
+
+    case event
+    in { buttons: 0 }
+      # noop. It would be nice if these events were filtered in the client.
+    in { buttons: 1 }
+      set_cell_value(x, y, true)
+    in { buttons: 2 }
+      set_cell_value(x, y, false)
+    end
+  end
+
+  def set_cell_value(x, y, value)
+    idx = y * @width + x
+    return if @grid[idx] == value
+    @grid = @grid.dup.tap { |grid| grid[idx] = value }
+  end
+
+  def handle_step
+    next_grid = step_grid(@grid)
+    @grid = next_grid unless next_grid.equal?(@grid)
+  end
+
+  private
+
+  # Use ordinary instance data: Haml state assignments would queue renders.
+  # This derived table is rebuilt after restoration and when dimensions change.
+  def neighbor_positions
+    cached = instance_variable_get(:"@neighbor_positions")
+    return cached[2] if cached && cached[0] == @width && cached[1] == @height
+
+    width = @width
+    height = @height
+    positions = Array.new(width * height) do |index|
+      x = index % width
+      y = index / width
+      left = (x - 1) % width
+      right = (x + 1) % width
+      above = ((y - 1) % height) * width
+      row = y * width
+      below = ((y + 1) % height) * width
+      [above + left, above + x, above + right,
+        row + left, row + right,
+        below + left, below + x, below + right].freeze
+    end.freeze
+    instance_variable_set(:"@neighbor_positions", [width, height, positions].freeze)
+    positions
+  end
+
+  public
+
+  def marshal_dump
+    super.reject { |ivar, _| ivar == :"@neighbor_positions" }
+  end
+
+  def marshal_load(ivars)
+    instance_variable_set(:"@neighbor_positions", nil)
+    super
+  end
+
+  private
+
+  def step_grid(grid)
+    positions = neighbor_positions
+    born, survive = RULE_LOOKUPS.fetch($rule, RULE_LOOKUPS.fetch("life"))
+    next_grid = Array.new(grid.length, false)
+    changed = false
+
+    grid.length.times do |index|
+      a, b, c, d, e, f, g, h = positions[index]
+      neighbors = (grid[a] ? 1 : 0) + (grid[b] ? 1 : 0) +
+        (grid[c] ? 1 : 0) + (grid[d] ? 1 : 0) +
+        (grid[e] ? 1 : 0) + (grid[f] ? 1 : 0) +
+        (grid[g] ? 1 : 0) + (grid[h] ? 1 : 0)
+      alive = grid[index]
+      next_grid[index] = (alive ? survive : born)[neighbors]
+      changed = true if next_grid[index] != alive
+    end
+
+    changed ? next_grid : grid
+  end
+
+:ruby
+  if @width != $width || @height != $height || @reset_version != $reset_version
+    @width = $width
+    @height = $height
+    @reset_version = $reset_version
+    @randomize_version = $randomize_version
+    @step_version = $step_version
+    @grid = self.class.init_grid(@width, @height)
+    neighbor_positions
+  elsif @randomize_version != $randomize_version
+    @randomize_version = $randomize_version
+    @grid = self.class.init_grid(@width, @height) { rand(2).zero? }
+  elsif @step_version != $step_version
+    @step_version = $step_version
+    handle_step
+  end
+
+%GameGrid(ondraw=handle_draw){grid: @grid.each_slice(@width).to_a}

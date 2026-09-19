@@ -1,159 +1,64 @@
 :ruby
   Heading = import("/components/Layout/Heading")
   Fieldset = import("/components/Form/Fieldset")
-  Input = import("/components/Form/Input")
   Button = import("/components/Form/Button")
-  Details = import("/components/UI/Details")
   Link = import("/components/UI/Link")
-  GameGrid = import("./GameGrid")
-
-  # b = born
-  # s = survive
-  RULES = { b: 3..3, s: 2..3 }
-  # RULES = { b: 2..2, s: -1..-1 }
-  # RULES = { b: 3..3, s: 2..5 }
-  # RULES = { b: 3..4, s: 3..5 }
+  Life = import("./Life")
 
   MIN_SIZE = 8
-  MAX_SIZE = 48
+  MAX_SIZE = 64
   DEFAULT_SIZE = 24
 
   MIN_FPS = 1
   MAX_FPS = 20
   DEFAULT_FPS = 4
 
-  def self.init_grid(width, height)
-    Array.new(width * height) do |i|
-      next false unless block_given?
-      x = i % width
-      y = i / width
-      yield x, y
-    end
-  end
-
   def initialize
-    size = $initial_size || DEFAULT_SIZE
+    size = DEFAULT_SIZE
     @width = size
     @height = size
-    @grid = self.class.init_grid(size, size)
     @running = false
     @fps = DEFAULT_FPS
-  end
-
-  def mount
-    loop do
-      if @running
-        handle_step
-        sleep 1.0 / @fps
-      else
-        sleep 0.5
-      end
-    end
-  end
-
-  def get_position(event)
-    event => { target: { value: } }
-    value.split.map(&:to_i) => [x, y]
-    [x, y]
-  end
-
-  def handle_draw(event)
-    x, y = get_position(event)
-
-    case event
-    in { buttons: 0 }
-      # noop. It would be nice if these events were filtered in the client.
-    in { buttons: 1 }
-      set_cell_value(x, y, true)
-    in { buttons: 2 }
-      set_cell_value(x, y, false)
-    end
+    @rule = "life"
+    @reset_version = 0
+    @randomize_version = 0
+    @step_version = 0
   end
 
   def handle_reset
-    @grid = self.class.init_grid(@width, @height)
+    @reset_version += 1
   end
 
-  def handle_randomize(event)
-    @grid = self.class.init_grid(@width, @height) { rand(2).zero? }
-  end
-
-  def set_cell_value(x, y, value)
-    idx = y * @width + x
-    @grid = @grid.dup.tap { |grid| grid[idx] = value }
-  end
-
-  def handle_change_fps(e)
-    e => { target: { value: } }
-    @fps = value.to_i.clamp(MIN_FPS, MAX_FPS)
-  end
-
-  def handle_change_width(e)
-    e => { target: { value: } }
-    @width = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    handle_reset
-  end
-
-  def handle_change_height(e)
-    e => { target: { value: } }
-    @height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    handle_reset
-  end
-
-  def handle_change_size(e)
-    e => { target: { value: } }
-    size = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
-    @width = size
-    @height = size
-    handle_reset
+  def handle_randomize
+    @randomize_version += 1
   end
 
   def handle_step
-    @grid = step_grid(@grid)
+    @step_version += 1
   end
 
   def handle_toggle_running
     @running = !@running
   end
 
-  private
-
-  def step_grid(grid)
-    width = @width
-    height = @height
-    next_grid = Array.new(width * height, false)
-
-    height.times do |y|
-      width.times do |x|
-        alive = grid[y * width + x]
-        neighbors = count_neighbors(grid, x, y, width, height)
-        next_grid[y * width + x] =
-          RULES[alive ? :s : :b].include?(neighbors)
-      end
-    end
-
-    next_grid
+  def handle_change_fps(event)
+    event => { target: { value: } }
+    @fps = value.to_i.clamp(MIN_FPS, MAX_FPS)
   end
 
-  def count_neighbors(grid, x, y, width, height)
-    count = 0
+  def handle_change_rule(event)
+    event => { target: { value: } }
+    @rule = value
+  end
 
-    (-1..1).each do |yoff|
-      ny = y + yoff
-      ny += height if ny < 0
-      ny -= height if ny >= height
+  def handle_change_width(event)
+    event => { target: { value: } }
+    @width = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
+  end
 
-      (-1..1).each do |xoff|
-        next if yoff.zero? && xoff.zero?
-        nx = x + xoff
-        nx += width if nx < 0
-        nx -= width if nx >= width
-
-        count += 1 if grid[ny * width + nx]
-      end
-    end
-
-    count
+  def handle_change_height(event)
+    event => { target: { value: } }
+    @height = value.to_i.clamp(MIN_SIZE, MAX_SIZE)
   end
 
 :css
@@ -171,6 +76,52 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
+  }
+
+  .advanced-controls {
+    border-top: var(--thin-border);
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+  }
+
+  .advanced-controls h3 {
+    font-size: 1rem;
+    margin: 0 0 1rem;
+  }
+
+  .control-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .control {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .control label {
+    font-weight: 500;
+  }
+
+  .range-control {
+    align-items: center;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) 2.5rem;
+  }
+
+  .range-control input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  output {
+    background: var(--surface);
+    border-radius: var(--radius);
+    font-variant-numeric: tabular-nums;
+    padding: 0.2rem 0.4rem;
+    text-align: center;
   }
 
 %article
@@ -198,21 +149,37 @@
       }
         = @running ? "Stop" : "Start"
 
-    %Details(summary="Advanced controls")
-      %div
-        %label(for="grid-width") Grid width
-        %br
-        %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: @width}
-        %output= @width
-      %div
-        %label(for="grid-height") Grid height
-        %br
-        %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: @height}
-        %output= @height
-      %div
-        %label(for="game-fps") Frames per second
-        %br
-        %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
-        %output= @fps
+    %section.advanced-controls(aria-labelledby="advanced-controls-heading")
+      %h3(id="advanced-controls-heading") Advanced controls
+      .control-grid
+        .control
+          %label(for="grid-width") Grid width
+          .range-control
+            %input(id="grid-width" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_width){value: @width}
+            %output(for="grid-width")= @width
+        .control
+          %label(for="grid-height") Grid height
+          .range-control
+            %input(id="grid-height" type="range" min=MIN_SIZE max=MAX_SIZE step=1 oninput=handle_change_height){value: @height}
+            %output(for="grid-height")= @height
+        .control
+          %label(for="game-fps") Frames per second
+          .range-control
+            %input(id="game-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
+            %output(for="game-fps")= @fps
+        .control
+          %label(for="game-rule") Rule
+          %select(id="game-rule" onchange=handle_change_rule){value: @rule}
+            = Life::RULES.map do |rule|
+              %option(value=rule.id)= rule.name
 
-  %GameGrid(ondraw=handle_draw){grid: @grid.each_slice(@width).to_a}
+  %Life{
+    width: @width,
+    height: @height,
+    running: @running,
+    fps: @fps,
+    rule: @rule,
+    reset_version: @reset_version,
+    randomize_version: @randomize_version,
+    step_version: @step_version,
+  }

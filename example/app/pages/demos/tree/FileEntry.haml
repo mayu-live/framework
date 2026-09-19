@@ -16,7 +16,7 @@
     end
   end
 
-  def should_update?(_next_props, _next_state) = false
+  def should_update?(next_props) = $* != next_props
 
 :css
   h4 {

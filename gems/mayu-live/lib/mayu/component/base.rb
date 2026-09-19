@@ -53,7 +53,9 @@ module Mayu
       def unmount
       end
 
-      def should_update?(old_props, old_state)
+      # Filters parent-driven prop updates. Local state and forced updates
+      # always render; incoming props are committed even when this returns false.
+      def should_update?(next_props)
         true
       end
 

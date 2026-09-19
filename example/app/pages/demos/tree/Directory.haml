@@ -14,10 +14,6 @@
     end
   end
 
-  def should_update?(next_props, next_state)
-    state[:open] != next_state[:open]
-  end
-
   def handle_toggle
     @open = !@open
     @entries ||= @open && load_entries

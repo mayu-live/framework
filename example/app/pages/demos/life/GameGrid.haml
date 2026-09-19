@@ -1,11 +1,15 @@
 :ruby
   Cell = import("./Cell")
 
+  def should_update?(next_props)
+    $* != next_props
+  end
+
 :css
   .grid {
     user-select: none;
     touch-action: none;
-    width: min(100%, 30rem);
+    width: min(100%, 40rem);
     margin: 2em auto;
     padding: 2px;
     background: light-dark(oklch(54% 0.045 252), oklch(38% 0.035 252));
