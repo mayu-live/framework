@@ -69,6 +69,26 @@ class Mayu::Test::Test < Mayu::Test::Case
     end
   end
 
+  class DataRoleProbe < Mayu::Component::Base
+    def initialize
+      @role = "user"
+    end
+
+    def toggle
+      update!(@role = "assistant")
+    end
+
+    def render
+      H[
+        :button,
+        @role,
+        data_role: @role,
+        aria_label: @role,
+        onclick: H.callback(self, :toggle)
+      ]
+    end
+  end
+
   def test_queries_roles_text_css_and_scoped_content
     screen =
       render(
@@ -169,6 +189,20 @@ class Mayu::Test::Test < Mayu::Test::Case
     )
 
     assert_equal("true", screen.get_by_role(:status).text)
+  end
+
+  def test_attribute_updates_use_html_hyphenated_names
+    screen = render(DataRoleProbe)
+    button = screen.get_by_role(:button)
+
+    assert_equal("user", button["data-role"])
+    assert_nil(button["datarole"])
+
+    button.click
+
+    assert_equal("assistant", button["data-role"])
+    assert_equal("assistant", button["aria-label"])
+    assert_nil(button["datarole"])
   end
 
   def test_fire_event_reports_missing_listeners

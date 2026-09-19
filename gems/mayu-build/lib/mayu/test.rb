@@ -449,7 +449,7 @@ module Mayu
       def normalize_attribute_name(name)
         return "value" if name.to_s == "initial_value"
 
-        name.to_s.delete("_")
+        name.to_s.tr("_", "-")
       end
 
       def set_css_property(node, name, value)

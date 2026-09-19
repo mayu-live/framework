@@ -207,6 +207,32 @@ describe("runtime autofocus", () => {
   });
 });
 
+describe("runtime attributes", () => {
+  afterEach(() => {
+    document.documentElement.innerHTML = "<head></head><body></body>";
+  });
+
+  it("maps Ruby-style attribute underscores to HTML hyphens", async () => {
+    document.body.innerHTML = "<button>Go</button>";
+    const runtime = new Runtime(vi.fn());
+    const button = document.querySelector("button")!;
+
+    await runtime.applyBatch([
+      ["Initialize", tree()],
+      ["SetAttribute", "button", "data_role", "user"],
+      ["SetAttribute", "button", "aria_label", "Send message"],
+    ]);
+
+    expect(button.getAttribute("data-role")).toBe("user");
+    expect(button.getAttribute("aria-label")).toBe("Send message");
+    expect(button.hasAttribute("datarole")).toBe(false);
+
+    await runtime.applyBatch([["RemoveAttribute", "button", "data_role"]]);
+
+    expect(button.hasAttribute("data-role")).toBe(false);
+  });
+});
+
 describe("runtime ReplaceChildren", () => {
   const moveBeforeDescriptor = Object.getOwnPropertyDescriptor(
     Element.prototype,

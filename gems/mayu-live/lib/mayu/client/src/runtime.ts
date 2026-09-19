@@ -549,7 +549,7 @@ const CommandHandlers = {
     if (name === "initial_value") {
       name = "value";
     } else {
-      name = name.replaceAll(/_/g, "");
+      name = name.replaceAll(/_/g, "-");
     }
 
     element.setAttribute(name, value);
@@ -579,6 +579,12 @@ const CommandHandlers = {
           return;
         }
       }
+    }
+
+    if (name === "initial_value") {
+      name = "value";
+    } else {
+      name = name.replaceAll(/_/g, "-");
     }
 
     element.removeAttribute(name);
