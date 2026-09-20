@@ -67,6 +67,7 @@ export default class SessionConnection {
     const extensionCodec = createExtensionCodec();
     let failures = 0;
     let consecutiveEofs = 0;
+    let hasConnected = false;
 
     while (true) {
       const abortController = new AbortController();
@@ -78,7 +79,13 @@ export default class SessionConnection {
       try {
         const state = getTransferState();
 
-        updateConnectionStatus(state ? "transferring" : "disconnected");
+        // The initial connection is expected. Reporting it as disconnected
+        // briefly opens the recovery dialog before the first stream succeeds.
+        if (state) {
+          updateConnectionStatus("transferring");
+        } else if (hasConnected) {
+          updateConnectionStatus("disconnected");
+        }
 
         const input = await initInputStream(
           this.#endpoint,
@@ -100,13 +107,12 @@ export default class SessionConnection {
           .pipeTo(output.writable);
         void callbackPipeline.catch(() => undefined);
 
-        updateConnectionStatus("connected");
-
         const consumeInput = async () => {
           for await (const decoded of decodeMultiStream(input, {
             extensionCodec,
           })) {
             updateConnectionStatus("connected");
+            hasConnected = true;
             const batch = decoded as Batch;
 
             if (batch.some((command) => command[0] === "TransferFailed")) {
@@ -139,6 +145,7 @@ export default class SessionConnection {
       } catch (error: unknown) {
         consecutiveEofs = 0;
         failures += 1;
+        updateConnectionStatus("disconnected");
         const message = getErrorMessage(error);
 
         if (error instanceof StreamError) {

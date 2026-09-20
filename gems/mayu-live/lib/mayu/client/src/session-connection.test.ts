@@ -162,7 +162,96 @@ describe("session-connection", () => {
 
     expect(
       updateConnectionStatusMock.mock.calls.map(([status]) => status),
-    ).toEqual(["disconnected", "connected", "disconnected", "disconnected"]);
+    ).toEqual(["disconnected", "disconnected"]);
+  });
+
+  it("keeps the transfer dialog open until the resumed stream sends a batch", async () => {
+    const state = new Blob(["encrypted state"]);
+    const stop = new Error("stop test loop");
+    let resolveInput!: (stream: ReadableStream<Uint8Array>) => void;
+    setTransferState(state);
+    initInputStreamMock.mockReturnValueOnce(
+      new Promise<ReadableStream<Uint8Array>>((resolve) => {
+        resolveInput = resolve;
+      }),
+    );
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+
+    const connection = new SessionConnection({
+      runtime: {
+        applyBatch: async () => {
+          throw stop;
+        },
+      } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: async () => {
+        throw stop;
+      },
+    });
+
+    const running = connection.run();
+    await Promise.resolve();
+
+    expect(updateConnectionStatusMock).toHaveBeenCalledWith("transferring");
+    expect(updateConnectionStatusMock).not.toHaveBeenCalledWith("connected");
+
+    resolveInput(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(encode([[]]));
+          controller.close();
+        },
+      }),
+    );
+
+    await expect(running).rejects.toBe(stop);
+
+    expect(
+      updateConnectionStatusMock.mock.calls.map(([status]) => status),
+    ).toEqual(["transferring", "connected", "disconnected"]);
+  });
+
+  it("does not report a disconnect while establishing the first stream", async () => {
+    let resolveInput!: (stream: ReadableStream<Uint8Array>) => void;
+    const input = new Promise<ReadableStream<Uint8Array>>((resolve) => {
+      resolveInput = resolve;
+    });
+    const stop = new Error("stop test loop");
+
+    initInputStreamMock.mockReturnValueOnce(input);
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+
+    const connection = new SessionConnection({
+      runtime: { applyBatch: vi.fn() } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: async () => {
+        throw stop;
+      },
+    });
+
+    const running = connection.run();
+    await Promise.resolve();
+
+    expect(updateConnectionStatusMock).not.toHaveBeenCalled();
+
+    resolveInput(
+      new ReadableStream({
+        start(controller) {
+          controller.close();
+        },
+      }),
+    );
+
+    await expect(running).rejects.toBe(stop);
   });
 
   it("retains transferred state when a draining server rejects reconnection", async () => {
