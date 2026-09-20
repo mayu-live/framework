@@ -67,4 +67,19 @@ class Mayu::Runtime::CommandsTest < Minitest::Test
     refute(regular.terminal?)
     assert(transfer.terminal?)
   end
+
+  def test_navigation_terminal_commands_serialize_the_navigation_id
+    batch =
+      Mayu::Runtime::Batch[
+        [
+          Mayu::Runtime::Commands::NavigationComplete["nav-1"],
+          Mayu::Runtime::Commands::NavigationFailed["nav-2"]
+        ]
+      ]
+
+    assert_equal(
+      [["NavigationComplete", "nav-1"], ["NavigationFailed", "nav-2"]],
+      MessagePack.unpack(MessagePack.pack(batch))
+    )
+  end
 end

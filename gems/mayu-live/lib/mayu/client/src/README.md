@@ -42,7 +42,7 @@ This directory contains the browser-side runtime that:
 - `serializeEvent.ts`: serializes event/currentTarget/target payloads.
 - `throttle.ts`: per-target callback throttling (~30 FPS).
 - `transfer.ts`: in-memory session transfer blob between reconnects.
-- `ping.ts`: updates `<mayu-ping>` status and RTT label.
+- `ping.ts`: updates `<mayu-ping>` status, RTT label, and navigation progress.
 - `constants.ts`: shared MIME types, endpoint path, ping interval.
 
 ## Data Paths
@@ -70,9 +70,11 @@ This directory contains the browser-side runtime that:
   required for client-side routing; browsers without it perform normal document
   navigations.
 - `window.Mayu.navigate(href, pushState)` uses `navigation.navigate()` and the
-  intercepted navigation writes `["Navigate", href, ping]`. Its `pushState`
-  argument is retained for compatibility and maps to native push or replace
-  history behavior.
+  intercepted navigation writes `["Navigate", id, href, ping]`. Its
+  `pushState` argument is retained for compatibility and maps to native push or
+  replace history behavior. The interception remains pending until the server
+  streams `NavigationComplete(id)` after the route commands have been applied;
+  `NavigationFailed(id)`, aborts, and connection loss reject it instead.
 - `window.Mayu.ping()` writes `["Ping", ping]` after `PING_INTERVAL` of idle
   outbound traffic. Each callback, navigation, visibility, or ping frame resets
   that deadline. The scheduler uses a dedicated worker when possible because
@@ -105,6 +107,8 @@ This directory contains the browser-side runtime that:
 - `ViewTransition` wraps a nested batch in `document.startViewTransition(...)` when available, and falls back to immediate apply when not available.
 - `Transfer` stores transfer blob for reconnect handoff.
 - `Pong` updates measured ping in `<mayu-ping>`.
+- `NavigationComplete` and `NavigationFailed` settle the corresponding
+  Navigation API interception after prior commands in the stream have run.
 - `RenderError` renders server-side exception UI.
 
 ## Reconnect and Recovery (Current)

@@ -15,7 +15,7 @@ module Mayu
   module Runtime
     module VNodes
       class Updater
-        Navigation = Data.define(:descriptor)
+        Navigation = Data.define(:id)
         Synchronization = Data.define(:completion)
 
         attr_reader :queue, :task, :output_queue
@@ -81,6 +81,11 @@ module Mayu
                 @engine&.flush_dirty_elements(command_collector)
 
                 commands = command_collector.commands
+                navigation_id = navigations.last&.id
+                navigation_completion = nil
+                if navigation_id
+                  navigation_completion = Commands::NavigationComplete[navigation_id]
+                end
                 transition_nodes =
                   updates.keys.select do |node|
                     !node.instance_variable_get(:@__view_transition_pending).nil?
@@ -115,8 +120,10 @@ module Mayu
                       ]
                     )
                   end
+                  @engine.enqueue_command(navigation_completion) if navigation_completion
                 else
                   commands = head_commands + commands
+                  commands << navigation_completion if navigation_completion
                   @engine.enqueue_batch(Batch[commands]) unless commands.empty?
                 end
 

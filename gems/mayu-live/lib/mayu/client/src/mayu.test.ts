@@ -16,6 +16,7 @@ function navigationEvent(overrides: Partial<Record<string, unknown>> = {}) {
     formData: null,
     hashChange: false,
     navigationType: "push",
+    signal: new AbortController().signal,
     intercept: vi.fn(),
     ...overrides,
   });
@@ -166,13 +167,60 @@ describe("Mayu navigation", () => {
     navigation.dispatchEvent(event);
     const intercept = event.intercept as ReturnType<typeof vi.fn>;
     expect(intercept).toHaveBeenCalledTimes(1);
-    await intercept.mock.calls[0][0].handler();
+    const handled = intercept.mock.calls[0][0].handler();
+    let completed = false;
+    void handled.then(() => {
+      completed = true;
+    });
+    await Promise.resolve();
+    expect(completed).toBe(false);
+    mayu.completeNavigation("1");
+    await handled;
+    expect(completed).toBe(true);
 
     expect(write).toHaveBeenCalledWith([
       "Navigate",
+      "1",
       "/next?tab=details",
       expect.any(Number),
     ]);
+    mayu.dispose();
+  });
+
+  it("rejects a pending navigation when the server reports failure", async () => {
+    const navigation = new FakeNavigation();
+    vi.stubGlobal("navigation", navigation);
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+    const event = navigationEvent();
+
+    navigation.dispatchEvent(event);
+    const handled = (
+      event.intercept as ReturnType<typeof vi.fn>
+    ).mock.calls[0][0].handler();
+    await Promise.resolve();
+    mayu.failNavigation("1");
+
+    await expect(handled).rejects.toThrow("Navigation failed");
+    mayu.dispose();
+  });
+
+  it("rejects a pending navigation when the browser aborts it", async () => {
+    const navigation = new FakeNavigation();
+    vi.stubGlobal("navigation", navigation);
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+    const abortController = new AbortController();
+    const event = navigationEvent({ signal: abortController.signal });
+
+    navigation.dispatchEvent(event);
+    const handled = (
+      event.intercept as ReturnType<typeof vi.fn>
+    ).mock.calls[0][0].handler();
+    await Promise.resolve();
+    abortController.abort();
+
+    await expect(handled).rejects.toThrow("Navigation aborted");
     mayu.dispose();
   });
 
@@ -279,15 +327,19 @@ describe("Mayu pings", () => {
     await vi.advanceTimersByTimeAsync(3_000);
     const event = navigationEvent();
     navigation.dispatchEvent(event);
-    await (
+    const handled = (
       event.intercept as ReturnType<typeof vi.fn>
     ).mock.calls[0][0].handler();
+    await Promise.resolve();
+    mayu.completeNavigation("1");
+    await handled;
     await vi.runAllTicks();
     await vi.advanceTimersByTimeAsync(3_000);
 
     expect(write).toHaveBeenCalledTimes(1);
     expect(write).toHaveBeenCalledWith([
       "Navigate",
+      "1",
       "/next?tab=details",
       expect.any(Number),
     ]);

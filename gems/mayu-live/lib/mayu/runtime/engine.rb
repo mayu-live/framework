@@ -246,13 +246,14 @@ module Mayu
         end
       end
 
-      def navigate(descriptor)
+      def navigate(descriptor, navigation_id:)
         if @updater&.task
           @root.assign_descriptor(descriptor)
           enqueue_update(@root)
-          @updater.enqueue(VNodes::Updater::Navigation.new(descriptor))
+          @updater.enqueue(VNodes::Updater::Navigation.new(navigation_id))
         else
           update(descriptor)
+          enqueue_command(Commands::NavigationComplete[navigation_id])
         end
       end
 

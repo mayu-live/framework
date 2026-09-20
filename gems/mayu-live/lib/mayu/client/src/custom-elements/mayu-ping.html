@@ -43,6 +43,54 @@
     background-color: #0b5caba6;
   }
 
+  .navigation-progress {
+    box-sizing: border-box;
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 3px;
+    max-width: none;
+    border: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: transparent;
+  }
+
+  .navigation-progress::before {
+    display: block;
+    width: 100%;
+    height: 100%;
+    content: "";
+    background: #7dd3fc;
+    box-shadow: 0 0 0.5rem #38bdf8;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition:
+      transform 180ms ease-out,
+      opacity 180ms ease-out;
+  }
+
+  .navigation-progress:popover-open::before {
+    animation: navigation-progress 8s ease-out forwards;
+  }
+
+  .navigation-progress.is-complete::before {
+    animation: none;
+    opacity: 0;
+    transform: scaleX(1);
+  }
+
+  @keyframes navigation-progress {
+    from {
+      transform: scaleX(0.08);
+    }
+    to {
+      transform: scaleX(0.85);
+    }
+  }
+
   .disconnect-dialog {
     --spring-easing: linear(
       0,
@@ -145,6 +193,7 @@
 <div class="mayu-ping">
   <span class="ping">N/A</span>
 </div>
+<div class="navigation-progress" popover="manual" aria-hidden="true"></div>
 <dialog class="disconnect-dialog" closedby="none" aria-label="Connection lost">
   <p class="disconnect-title">Disconnected</p>
   <p class="disconnect-text">Trying to reconnect…</p>

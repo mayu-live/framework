@@ -25,7 +25,7 @@ module Mayu
       end
 
       CallbackEvent = Data.define(:id, :payload, :ping)
-      NavigateEvent = Data.define(:path, :ping)
+      NavigateEvent = Data.define(:id, :path, :ping)
       PingEvent = Data.define(:ping)
       VisibilityEvent = Data.define(:hidden, :ping)
 
@@ -33,8 +33,8 @@ module Mayu
         case message
         in ["Callback", String => id, Hash => event, Numeric => ping] unless id.empty?
           CallbackEvent[id, event, ping]
-        in ["Navigate", String => href, Numeric => ping]
-          NavigateEvent[href, ping]
+        in ["Navigate", String => id, String => href, Numeric => ping] unless id.empty?
+          NavigateEvent[id, href, ping]
         in ["Ping", Numeric => ping]
           PingEvent[ping]
         in ["Visibility", true | false => hidden, Numeric => ping]
@@ -311,18 +311,23 @@ module Mayu
         @engine.update_interval = hidden ? HIDDEN_UPDATE_INTERVAL_SECONDS : nil
       in Events::CallbackEvent[id:, payload:]
         @engine.callback(id, payload)
-      in Events::NavigateEvent[path:]
+      in Events::NavigateEvent[id:, path:]
         Console.logger.info(self, event: Event.new(:navigating, session_id: @id, path:))
 
         @environment.metrics.session_navigate_count.increment(labels: {path:})
 
-        @request_info = @request_info.with(path:)
-        descriptor = resolve_route(path)
-        @engine.replace_route_assets(
-          stylesheets: route_stylesheets,
-          scripts: route_scripts
-        )
-        @engine.navigate(descriptor)
+        begin
+          @request_info = @request_info.with(path:)
+          descriptor = resolve_route(path)
+          @engine.replace_route_assets(
+            stylesheets: route_stylesheets,
+            scripts: route_scripts
+          )
+          @engine.navigate(descriptor, navigation_id: id)
+        rescue
+          @engine.enqueue_command(Runtime::Commands::NavigationFailed[id])
+          raise
+        end
       end
     rescue => e
       Console.logger.error(self, e)

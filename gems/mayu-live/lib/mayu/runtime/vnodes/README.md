@@ -25,8 +25,9 @@ legacy vnodes system and is now wired into `Mayu::Runtime::Engine` and sessions.
   - VChildren marks nearest VElement dirty when direct child ids change.
   - Engine flushes dirty elements once per batch.
 - Batch ordering:
-  - `HistoryPushState` commands are first.
   - Head commands come before body commands.
+  - Navigation completion follows route commands; after a view transition it is
+    sent in a subsequent batch so the browser has finished the animation.
 - `CreateTree` enforces a single `DOM::IdNode` root.
 - Chunked updates with a configurable `update_budget` and metrics.
 

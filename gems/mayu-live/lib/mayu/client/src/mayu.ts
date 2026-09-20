@@ -1,5 +1,6 @@
 import serializeEvent from "./serializeEvent.js";
-import { PING_INTERVAL } from "./constants";
+import { NAVIGATION_PROGRESS_DELAY, PING_INTERVAL } from "./constants";
+import { updateNavigationProgress } from "./ping";
 import throttle from "./throttle";
 import type { ClientEvent } from "./protocol";
 
@@ -26,7 +27,18 @@ type NavigateEventLike = Event & {
   formData: FormData | null;
   hashChange: boolean;
   navigationType: string;
+  signal: AbortSignal;
   intercept(options: { handler: () => Promise<void> }): void;
+};
+
+type PendingNavigation = {
+  promise: Promise<void>;
+  resolve: () => void;
+  reject: (error: Error) => void;
+  showTimer: ReturnType<typeof setTimeout> | null;
+  shown: boolean;
+  signal: AbortSignal;
+  abortListener: () => void;
 };
 
 function browserNavigation(): NavigationLike | undefined {
@@ -39,6 +51,9 @@ export default class Mayu {
   #pingScheduler: PingScheduler | null;
   #navigationListener: (event: Event) => void;
   #visibilityListener: () => void;
+  #navigationSequence = 0;
+  #pendingNavigations = new Map<string, PendingNavigation>();
+  #activeNavigationId: string | null = null;
 
   constructor({ autoPing = true }: MayuOptions = {}) {
     this.#writer = null;
@@ -70,6 +85,7 @@ export default class Mayu {
     document.removeEventListener("visibilitychange", this.#visibilityListener);
     this.#pingScheduler?.stop();
     this.#pingScheduler = null;
+    this.#rejectPendingNavigations(new Error("Mayu was disposed"));
   }
 
   setWriter(writer: WritableStreamDefaultWriter<ClientEvent>) {
@@ -87,6 +103,9 @@ export default class Mayu {
   clearWriter() {
     this.#writer = null;
     this.#pingScheduler?.cancel();
+    this.#rejectPendingNavigations(
+      new Error("Navigation callback transport unavailable"),
+    );
   }
 
   async #write(message: ClientEvent) {
@@ -102,7 +121,7 @@ export default class Mayu {
       this.#pingScheduler?.reset();
       return true;
     } catch (error) {
-      if (this.#writer === writer) this.#writer = null;
+      if (this.#writer === writer) this.clearWriter();
       console.error(`Dropping ${eventName}: callback write failed`, error);
       return false;
     }
@@ -136,6 +155,14 @@ export default class Mayu {
     window.location.assign(href);
   }
 
+  completeNavigation(id: string) {
+    this.#settleNavigation(id);
+  }
+
+  failNavigation(id: string) {
+    this.#settleNavigation(id, new Error("Navigation failed"));
+  }
+
   #handleNavigation(event: NavigateEventLike) {
     if (
       !event.canIntercept ||
@@ -151,18 +178,78 @@ export default class Mayu {
     const url = new URL(event.destination.url);
     if (url.origin !== location.origin) return;
 
+    const id = `${++this.#navigationSequence}`;
+    const pending = this.#beginNavigation(id, event.signal);
+
     event.intercept({
       handler: async () => {
-        const wrote = await this.#sendNavigation(url.pathname + url.search);
-        if (!wrote)
-          throw new Error("Navigation callback transport unavailable");
+        const wrote = await this.#sendNavigation(id, url.pathname + url.search);
+        if (!wrote) this.failNavigation(id);
+        await pending.promise;
       },
     });
   }
 
-  #sendNavigation(href: string) {
+  #beginNavigation(id: string, signal: AbortSignal) {
+    this.#rejectPendingNavigations(new Error("Navigation superseded"));
+
+    let resolve!: () => void;
+    let reject!: (error: Error) => void;
+    const pending: PendingNavigation = {
+      promise: new Promise<void>((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+      }),
+      resolve,
+      reject,
+      showTimer: null,
+      shown: false,
+      signal,
+      abortListener: () =>
+        this.#settleNavigation(id, new Error("Navigation aborted")),
+    };
+
+    this.#pendingNavigations.set(id, pending);
+    this.#activeNavigationId = id;
+    signal.addEventListener("abort", pending.abortListener, { once: true });
+    pending.showTimer = setTimeout(() => {
+      if (this.#pendingNavigations.get(id) !== pending) return;
+
+      pending.shown = true;
+      updateNavigationProgress("pending");
+    }, NAVIGATION_PROGRESS_DELAY);
+    return pending;
+  }
+
+  #settleNavigation(id: string, error?: Error) {
+    const pending = this.#pendingNavigations.get(id);
+    if (!pending) return;
+
+    this.#pendingNavigations.delete(id);
+    if (pending.showTimer !== null) clearTimeout(pending.showTimer);
+    pending.signal.removeEventListener("abort", pending.abortListener);
+
+    if (this.#activeNavigationId === id) {
+      this.#activeNavigationId = null;
+      updateNavigationProgress(pending.shown && !error ? "complete" : null);
+    }
+
+    if (error) {
+      pending.reject(error);
+    } else {
+      pending.resolve();
+    }
+  }
+
+  #rejectPendingNavigations(error: Error) {
+    for (const id of this.#pendingNavigations.keys()) {
+      this.#settleNavigation(id, error);
+    }
+  }
+
+  #sendNavigation(id: string, href: string) {
     console.warn("navigate", href);
-    return this.#write(["Navigate", href, performance.now()]);
+    return this.#write(["Navigate", id, href, performance.now()]);
   }
 
   ping() {

@@ -202,6 +202,32 @@ describe("runtime view transitions", () => {
     await applying;
     expect(completed).toBe(true);
   });
+
+  it("notifies navigation completion after a view transition finishes", async () => {
+    let finish!: () => void;
+    const finished = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    (
+      document as unknown as { startViewTransition?: unknown }
+    ).startViewTransition = (update: () => void) => {
+      update();
+      return { updateCallbackDone: Promise.resolve(), finished };
+    };
+    const onNavigationComplete = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onNavigationComplete });
+
+    const applying = runtime.applyBatch([
+      ["ViewTransition", []],
+      ["NavigationComplete", "nav-1"],
+    ]);
+    await Promise.resolve();
+    expect(onNavigationComplete).not.toHaveBeenCalled();
+
+    finish();
+    await applying;
+    expect(onNavigationComplete).toHaveBeenCalledWith("nav-1");
+  });
 });
 
 describe("runtime autofocus", () => {

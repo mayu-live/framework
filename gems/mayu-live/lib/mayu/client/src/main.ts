@@ -28,9 +28,15 @@ export default function init(sessionId: string) {
   document.adoptedStyleSheets.push(sheet);
 
   const mayu = new Mayu();
-  const runtime = new Runtime((event, listenerId) => {
-    mayu.callback(event, listenerId);
-  });
+  const runtime = new Runtime(
+    (event, listenerId) => {
+      mayu.callback(event, listenerId);
+    },
+    {
+      onNavigationComplete: (id) => mayu.completeNavigation(id),
+      onNavigationFailed: (id) => mayu.failNavigation(id),
+    },
+  );
   window.Mayu = mayu;
 
   const endpoint = `${SESSION_PATH}/${sessionId}`;

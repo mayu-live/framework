@@ -253,13 +253,15 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     updated = H[:body, H[:p, "after"]]
 
     run_engine(initial) do |engine|
-      engine.navigate(updated)
+      engine.navigate(updated, navigation_id: "nav-1")
 
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
       patches = unwrap_commands(batch)
 
       refute_empty(patches)
       refute(patches.any? { |patch| patch.class.name.end_with?("HistoryPushState") })
+      assert_includes(patches, Mayu::Runtime::Commands::NavigationComplete["nav-1"])
+      assert_equal(Mayu::Runtime::Commands::NavigationComplete["nav-1"], patches.last)
     end
   end
 
@@ -284,7 +286,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       ]
 
     run_engine(initial) do |engine|
-      engine.navigate(updated)
+      engine.navigate(updated, navigation_id: "nav-1")
 
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
       patches = unwrap_commands(batch)
@@ -312,7 +314,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     updated = H[:body, H[:main, H[:section, H[:div, H[:span, "Nested"]]]]]
 
     run_engine(initial) do |engine|
-      engine.navigate(updated)
+      engine.navigate(updated, navigation_id: "nav-1")
 
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
       patches = unwrap_commands(batch)
@@ -380,7 +382,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       wait_until { instance.instance_variable_get(:@__vnode_task) }
       instance.set_title("B")
 
-      engine.navigate(updated)
+      engine.navigate(updated, navigation_id: "nav-1")
 
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
       patches = unwrap_commands(batch)

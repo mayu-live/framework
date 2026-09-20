@@ -9,7 +9,9 @@ class MayuPing extends HTMLElement {
   #disconnectDialog?: HTMLDialogElement;
   #disconnectTitle?: HTMLParagraphElement;
   #disconnectText?: HTMLParagraphElement;
+  #navigationProgress?: HTMLDivElement;
   #closeDialogTimer?: number;
+  #navigationCompleteTimer?: number;
   #updatePosition = () => {
     const ping = this.#div;
     if (!ping) return;
@@ -23,7 +25,7 @@ class MayuPing extends HTMLElement {
     ping.style.transform = `translate(${offsetLeft + width - ping.offsetWidth}px, ${offsetTop + height - ping.offsetHeight}px)`;
   };
 
-  static observedAttributes = ["ping", "status"];
+  static observedAttributes = ["ping", "status", "navigation"];
 
   connectedCallback() {
     if (!this.shadowRoot) {
@@ -43,6 +45,9 @@ class MayuPing extends HTMLElement {
     this.#disconnectText = this.shadowRoot!.querySelector(
       ".disconnect-text",
     ) as HTMLParagraphElement;
+    this.#navigationProgress = this.shadowRoot!.querySelector(
+      ".navigation-progress",
+    ) as HTMLDivElement;
     this.#updatePosition();
     window.addEventListener("scroll", this.#updatePosition, { passive: true });
     window.visualViewport?.addEventListener("resize", this.#updatePosition);
@@ -57,12 +62,18 @@ class MayuPing extends HTMLElement {
     if (status) {
       this.attributeChangedCallback("status", "", status);
     }
+
+    const navigation = this.getAttribute("navigation");
+    if (navigation) {
+      this.attributeChangedCallback("navigation", "", navigation);
+    }
   }
 
   disconnectedCallback() {
     window.removeEventListener("scroll", this.#updatePosition);
     window.visualViewport?.removeEventListener("resize", this.#updatePosition);
     window.visualViewport?.removeEventListener("scroll", this.#updatePosition);
+    window.clearTimeout(this.#navigationCompleteTimer);
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -81,6 +92,9 @@ class MayuPing extends HTMLElement {
           classList?.add(`status-${newValue}`);
         }
         this.#updateConnectionDialog(newValue);
+        break;
+      case "navigation":
+        this.#updateNavigationProgress(newValue);
         break;
     }
   }
@@ -129,6 +143,30 @@ class MayuPing extends HTMLElement {
     this.#closeDialogTimer = window.setTimeout(() => {
       if (!dialog.classList.contains("is-visible")) dialog.close();
     }, 200);
+  }
+
+  #updateNavigationProgress(state: string) {
+    const progress = this.#navigationProgress;
+    if (!progress) return;
+
+    window.clearTimeout(this.#navigationCompleteTimer);
+    if (state === "pending") {
+      progress.classList.remove("is-complete");
+      if (!progress.matches(":popover-open")) progress.showPopover();
+      return;
+    }
+
+    if (state === "complete") {
+      progress.classList.add("is-complete");
+      this.#navigationCompleteTimer = window.setTimeout(() => {
+        progress.hidePopover();
+        progress.classList.remove("is-complete");
+      }, 180);
+      return;
+    }
+
+    progress.hidePopover();
+    progress.classList.remove("is-complete");
   }
 }
 

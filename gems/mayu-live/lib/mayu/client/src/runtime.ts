@@ -19,6 +19,8 @@ export const COMMAND_ERROR_POLICY: CommandErrorPolicy = "continue";
 
 type RuntimeOptions = {
   commandErrorPolicy?: CommandErrorPolicy;
+  onNavigationComplete?: (id: string) => void;
+  onNavigationFailed?: (id: string) => void;
 };
 
 export default class Runtime {
@@ -27,9 +29,18 @@ export default class Runtime {
 
   constructor(
     onEvent: (event: Event, listenerId: string) => void,
-    { commandErrorPolicy = COMMAND_ERROR_POLICY }: RuntimeOptions = {},
+    {
+      commandErrorPolicy = COMMAND_ERROR_POLICY,
+      onNavigationComplete,
+      onNavigationFailed,
+    }: RuntimeOptions = {},
   ) {
-    this.#nodeSet = new NodeSet(onEvent, commandErrorPolicy);
+    this.#nodeSet = new NodeSet(
+      onEvent,
+      commandErrorPolicy,
+      onNavigationComplete,
+      onNavigationFailed,
+    );
     this.#commandErrorPolicy = commandErrorPolicy;
   }
 
@@ -58,14 +69,20 @@ class NodeSet {
     Map<string, { id: string; callback: EventListener }>
   >();
   #onEvent: (event: Event, listenerId: string) => void;
+  #onNavigationComplete?: (id: string) => void;
+  #onNavigationFailed?: (id: string) => void;
   readonly commandErrorPolicy: CommandErrorPolicy;
 
   constructor(
     onEvent: (event: Event, listenerId: string) => void,
     commandErrorPolicy: CommandErrorPolicy = COMMAND_ERROR_POLICY,
+    onNavigationComplete?: (id: string) => void,
+    onNavigationFailed?: (id: string) => void,
   ) {
     this.#onEvent = onEvent;
     this.commandErrorPolicy = commandErrorPolicy;
+    this.#onNavigationComplete = onNavigationComplete;
+    this.#onNavigationFailed = onNavigationFailed;
   }
 
   clear() {
@@ -176,6 +193,14 @@ class NodeSet {
     }
 
     throw new Error(`Node ${id} is not a CharacterData`);
+  }
+
+  completeNavigation(id: string) {
+    this.#onNavigationComplete?.(id);
+  }
+
+  failNavigation(id: string) {
+    this.#onNavigationFailed?.(id);
   }
 }
 
@@ -446,6 +471,12 @@ async function applyCommands(
 }
 
 const CommandHandlers = {
+  NavigationComplete(this: NodeSet, id: string) {
+    this.completeNavigation(id);
+  },
+  NavigationFailed(this: NodeSet, id: string) {
+    this.failNavigation(id);
+  },
   async ViewTransition(
     this: NodeSet,
     batch: Batch,
