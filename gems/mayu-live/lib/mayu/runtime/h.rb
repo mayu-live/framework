@@ -22,7 +22,9 @@ module Mayu
       end
 
       def self.callback(component, name)
-        Descriptors::Callback[component, name]
+        location = caller_locations(1, 1).first
+        source_location = [location.path, location.lineno] if location
+        Descriptors::Callback[component, name, source_location]
       end
 
       def self.context(**values, &block)

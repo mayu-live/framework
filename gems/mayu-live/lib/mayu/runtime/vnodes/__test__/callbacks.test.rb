@@ -58,6 +58,9 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     def handle_click
     end
 
+    def handle_subscribe
+    end
+
     def render
       callback =
         if @invalid
@@ -107,6 +110,25 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
       end
 
     assert_includes(error.message, "must accept no arguments")
+  end
+
+  def test_missing_callback_names_the_haml_location_and_suggests_a_handler
+    component = CallbackValidationProbe.new
+    callback =
+      Mayu::Runtime::Descriptors::Callback[
+        component,
+        :subscribe,
+        ["app:/pages/newsletter.haml", 17]
+      ]
+
+    error =
+      assert_raises(Mayu::Runtime::VNodes::VAttributes::NoCallbackMethodError) do
+        Mayu::Runtime::VNodes::VAttributes::Listener[callback].validate!
+      end
+
+    assert_equal(["app:/pages/newsletter.haml:17:in 'render'"], error.backtrace)
+    assert_includes(error.message, "Callback method :subscribe")
+    assert_includes(error.message, "Did you mean?  handle_subscribe")
   end
 
   def test_invalid_callback_created_during_an_update_emits_a_render_error

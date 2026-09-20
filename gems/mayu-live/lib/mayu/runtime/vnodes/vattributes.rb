@@ -8,6 +8,7 @@
 
 require "securerandom"
 require "cgi"
+require "did_you_mean"
 
 require_relative "base"
 require_relative "../inline_style"
@@ -17,6 +18,25 @@ module Mayu
   module Runtime
     module VNodes
       class VAttributes < Base
+        class NoCallbackMethodError < ArgumentError
+          def initialize(callback, component, suggestions)
+            component_name =
+              component.class.respond_to?(:module_path) &&
+              component.class.module_path
+            component_name = component.class.name if component_name.nil? || component_name.empty?
+
+            message =
+              "Callback method #{callback.method_name.inspect} is not defined on #{component_name}"
+            message += "\n\nDid you mean?  #{suggestions.join("\n               ")}" unless suggestions.empty?
+            super(message)
+
+            if callback.source_location
+              path, line = callback.source_location
+              set_backtrace(["#{path}:#{line}:in 'render'"])
+            end
+          end
+        end
+
         class Listener
           def self.[](callback) = new(SecureRandom.alphanumeric(32), callback)
 
@@ -65,37 +85,39 @@ module Mayu
             end
 
             self
-          rescue NameError => error
+          rescue NameError
             component = callback.component
-            component_path =
-              component.class.respond_to?(:module_path) &&
-              component.class.module_path
-            component_name =
-              if component_path.nil? || component_path.empty?
-                component.class.name
-              else
-                component_path
-              end
-            raise ArgumentError,
-              "Callback method #{callback.method_name.inspect} is not defined on #{component_name}",
-              cause: error
+            raise NoCallbackMethodError.new(
+              callback,
+              component,
+              callback_suggestions(component, callback.method_name)
+            )
+          end
+
+          private def callback_suggestions(component, method_name)
+            methods = component.class.public_instance_methods(false)
+            name = method_name.to_s
+            prefixed = methods.select { it.to_s.delete_prefix("handle_") == name }
+            corrected = DidYouMean::SpellChecker.new(dictionary: methods).correct(name)
+            (prefixed + corrected).map(&:to_s).uniq.first(3)
           end
 
           def marshal_dump
             component_id =
               callback.component.instance_variable_get(:@__vnode_id)
-            [id, component_id, callback.method_name]
+            [id, component_id, callback.method_name, callback.source_location]
           end
 
           def marshal_load(a)
-            @id, @component_id, @method_name = a
+            @id, @component_id, @method_name, @source_location = a
             @callback = nil
           end
 
           def rehydrate(component_map)
             component = component_map[@component_id]
             return unless component
-            @callback = Descriptors::Callback[component, @method_name]
+            @callback =
+              Descriptors::Callback[component, @method_name, @source_location]
           end
 
           def rebind_component(vnode_id, component)
@@ -105,7 +127,11 @@ module Mayu
             return unless current_id == vnode_id
 
             @callback =
-              Descriptors::Callback[component, callback.method_name]
+              Descriptors::Callback[
+                component,
+                callback.method_name,
+                callback.source_location
+              ]
           end
         end
 

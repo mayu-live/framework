@@ -117,7 +117,7 @@ module Mayu
         end
 
       Callback =
-        Data.define(:component, :method_name) do
+        Data.define(:component, :method_name, :source_location) do
           def same?(other) =
             self.class === other && component == other.component &&
               method_name == other.method_name
@@ -126,12 +126,16 @@ module Mayu
           # Persisting the component object here would retain Klenod's anonymous
           # export class, which cannot cross a Marshal boundary.
           def marshal_dump
-            [component.instance_variable_get(:@__vnode_id), method_name]
+            [
+              component.instance_variable_get(:@__vnode_id),
+              method_name,
+              source_location
+            ]
           end
 
           def marshal_load(a)
-            _component_id, method_name = a
-            initialize(component: nil, method_name:)
+            _component_id, method_name, source_location = a
+            initialize(component: nil, method_name:, source_location:)
           end
         end
 
