@@ -15,6 +15,10 @@ module Mayu
       end
 
       def []=(key, value)
+        @owner&.send(:__before_state_update!) if @owner&.respond_to?(
+          :__before_state_update!,
+          true
+        )
         @values[key] = value
         @owner&.send(:update!, value)
       end

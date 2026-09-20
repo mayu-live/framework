@@ -81,6 +81,7 @@ module Mayu
           @context = Context.new(parent: parent_context)
 
           @instance = build_instance(@descriptor.type, @descriptor)
+          bind_initial_runtime(@instance)
           @mount_task = nil
           @mount_started = false
           @replacing_instance = false
@@ -407,6 +408,7 @@ module Mayu
             replacement.instance_variable_set(:@__state, state)
           end
           state.bind(replacement)
+          bind_state_runtime(replacement)
 
           [replacement, render_instance(replacement)]
         end
@@ -464,21 +466,39 @@ module Mayu
           instance.define_singleton_method(:__update_interval) do
             vnode.engine.update_interval
           end
+          bind_state_runtime(instance)
           instance.define_singleton_method(:rerender!) do
-            if @__view_transition
-              vnode.instance_variable_set(
-                :@__view_transition_pending,
-                @__view_transition
-              )
-            end
-            if vnode.instance_variable_get(:@handling_render_error)
-              vnode.instance_variable_set(
-                :@rerender_requested_during_error,
-                true
-              )
-            else
-              vnode.engine.enqueue_update(vnode)
-            end
+            vnode.send(:schedule_rerender, self)
+          end
+        end
+
+        def bind_initial_runtime(instance)
+          bind_runtime(instance, nil, nil)
+          instance.singleton_class.send(:private, :rerender!)
+        end
+
+        def bind_state_runtime(instance)
+          vnode = self
+          instance.define_singleton_method(:__before_state_update!) do
+            vnode.engine.wait_for_render_completion
+          end
+          instance.define_singleton_method(:__schedule_state_update!) do
+            vnode.send(:schedule_rerender, self) unless
+              vnode.engine.state_update_during_render?(self)
+          end
+        end
+
+        def schedule_rerender(instance)
+          if instance.instance_variable_get(:@__view_transition)
+            instance_variable_set(
+              :@__view_transition_pending,
+              instance.instance_variable_get(:@__view_transition)
+            )
+          end
+          if @handling_render_error
+            @rerender_requested_during_error = true
+          else
+            engine.enqueue_update(self)
           end
         end
 
@@ -516,12 +536,14 @@ module Mayu
         end
 
         def render_instance(instance)
-          metrics.update_summary(
-            metrics.component_patch_times,
-            labels: {
-              component: component_label(instance)
-            }
-          ) { instance.render }
+          engine.with_render_gate do
+            metrics.update_summary(
+              metrics.component_patch_times,
+              labels: {
+                component: component_label(instance)
+              }
+            ) { instance.render }
+          end
         end
 
         def component_label(instance = @instance)

@@ -98,8 +98,17 @@ module Mayu
       end
 
       def update!(value)
-        rerender!
+        __schedule_state_update!
         value
+      end
+
+      # Replaced by the runtime when mounted. State writes go through these
+      # hooks so another fiber cannot mutate state while a component renders.
+      def __before_state_update!
+      end
+
+      def __schedule_state_update!
+        rerender!
       end
 
       def view_transition(types: [], scope: nil)

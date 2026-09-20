@@ -1,6 +1,8 @@
 #!/usr/bin/env -S ruby -rbundler/setup
 # frozen_string_literal: true
 
+require "console"
+
 require_relative "test_helpers"
 
 class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
@@ -175,6 +177,54 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
     end
   end
 
+  class RenderStateMutationProbe < Mayu::Component::Base
+    attr_reader :renders
+
+    def initialize
+      @renders = 0
+    end
+
+    def render
+      @renders += 1
+      @__state[:count] = @__state[:count].to_i + 1
+      @__state[:count] = @__state[:count].to_i + 1
+      H[:div, @__state[:count].to_s]
+    end
+  end
+
+  class ConcurrentRenderStateMutationProbe < Mayu::Component::Base
+    attr_reader :renders, :render_started, :release_render
+
+    def initialize
+      @renders = 0
+      @block_render = false
+      @render_started = Async::Queue.new
+      @release_render = Async::Queue.new
+    end
+
+    def block_next_render!
+      @block_render = true
+    end
+
+    def write_count(value)
+      @__state[:count] = value
+    end
+
+    def count
+      @__state[:count]
+    end
+
+    def render
+      @renders += 1
+      if @block_render
+        @block_render = false
+        @render_started.enqueue(true)
+        @release_render.dequeue
+      end
+      H[:div, @__state[:count].to_i.to_s]
+    end
+  end
+
   class SerializedCallbackProbe < Mayu::Component::Base
     attr_reader :calls
 
@@ -335,6 +385,64 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
 
       Async::Task.current.sleep(0.05)
       assert_equal(2, instance.renders)
+    end
+  end
+
+  def test_state_updates_during_render_do_not_schedule_another_render
+    output = StringIO.new
+    Async do
+      previous_logger = Console.logger
+      Console.logger = Console::Logger.new(Console::Output::Text.new(output))
+      engine = Mayu::Runtime::Engine.new(
+        H[:body, H[RenderStateMutationProbe]],
+        metrics: NullMetrics.new
+      )
+      engine.start
+      component = find_component(engine.root, RenderStateMutationProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      Async::Task.current.sleep(0.05)
+
+      assert_equal(1, instance.renders)
+      assert_match(/>2<\/div>/, render_html(engine.root))
+      assert_equal(
+        1,
+        output.string.scan("State update occurred during render").length
+      )
+      assert_match(/lifecycle\.test\.rb:\d+/, output.string)
+    ensure
+      engine&.stop
+      Console.logger = previous_logger
+    end
+      .wait
+  end
+
+  def test_state_writes_from_other_fibers_wait_for_the_active_render
+    descriptor = H[:body, H[ConcurrentRenderStateMutationProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, ConcurrentRenderStateMutationProbe)
+      instance = component.instance_variable_get(:@instance)
+      instance.block_next_render!
+      instance.send(:rerender!)
+
+      instance.render_started.dequeue
+      assert_equal(1, engine.instance_variable_get(:@render_depth))
+      writer_complete = false
+      Async::Task.current.async do
+        instance.write_count(1)
+        writer_complete = true
+      end
+
+      Async::Task.current.sleep(0)
+      assert_nil(instance.count)
+      refute(writer_complete)
+
+      instance.release_render.enqueue(true)
+      wait_until { writer_complete && instance.renders == 3 }
+
+      assert_equal(1, instance.count)
+      assert_match(/>1<\/div>/, render_html(engine.root))
     end
   end
 

@@ -8,6 +8,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require "async/queue"
+require "async/condition"
 require "stringio"
 
 require_relative "vnodes/vdocument"
@@ -19,6 +20,15 @@ require_relative "marshalling"
 module Mayu
   module Runtime
     class Engine
+      RENDER_TOKEN_KEY = :__mayu_render_token
+      RENDER_GATE_INTERNAL_PATHS =
+        [
+          __FILE__,
+          File.expand_path("vnodes/vcomponent.rb", __dir__),
+          File.expand_path("../component/base.rb", __dir__),
+          File.expand_path("../component/state.rb", __dir__)
+        ].freeze
+
       attr_reader :runtime_js,
         :root,
         :output_queue,
@@ -53,6 +63,7 @@ module Mayu
         @output_queue = Async::Queue.new
         @update_interval = nil
         @force_render = 0
+        initialize_render_gate
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @pending_custom_elements = Set.new
@@ -81,6 +92,7 @@ module Mayu
         @output_queue = Async::Queue.new
         @update_interval = nil
         @force_render = 0
+        initialize_render_gate
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @root.rehydrate(parent: nil, engine: self)
@@ -155,6 +167,47 @@ module Mayu
 
       def force_render?
         @force_render > 0
+      end
+
+      # Marks component rendering on the current fiber. Other fibers wait for
+      # the outermost render to complete before they mutate component state.
+      def with_render_gate
+        previous_token = Thread.current[RENDER_TOKEN_KEY]
+        outermost_render = @render_depth.zero?
+        @render_depth += 1
+        if outermost_render
+          @render_fiber = Fiber.current
+          @render_warnings.clear
+        end
+        Thread.current[RENDER_TOKEN_KEY] = @render_token
+        yield
+      ensure
+        Thread.current[RENDER_TOKEN_KEY] = previous_token
+        @render_depth -= 1
+        if @render_depth.zero?
+          @render_fiber = nil
+          @render_finished.signal
+        end
+      end
+
+      def wait_for_render_completion
+        return unless @render_depth.positive?
+        return if rendering_in_current_fiber?
+
+        @render_finished.wait while @render_depth.positive?
+      end
+
+      def state_update_during_render?(component)
+        return false unless rendering_in_current_fiber?
+        return true unless @render_warnings.add?(component)
+
+        location = caller_locations.find do |candidate|
+          !RENDER_GATE_INTERNAL_PATHS.include?(candidate.absolute_path || candidate.path)
+        end
+        message = "State update occurred during render"
+        message += " at #{location.path}:#{location.lineno}" if location
+        Console.logger.warn(component, message)
+        true
       end
 
       def callback(id, payload)
@@ -274,6 +327,20 @@ module Mayu
       end
 
       private
+
+      def initialize_render_gate
+        @render_depth = 0
+        @render_token = Object.new
+        @render_finished = Async::Condition.new
+        @render_warnings = Set.new
+        @render_fiber = nil
+      end
+
+      def rendering_in_current_fiber?
+        @render_depth.positive? &&
+          @render_fiber.equal?(Fiber.current) &&
+          Thread.current[RENDER_TOKEN_KEY].equal?(@render_token)
+      end
 
       def component_identity(type)
         return unless Marshalling.component_class?(type)
