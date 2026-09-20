@@ -9,9 +9,11 @@
 
 require "minitest/autorun"
 require "fileutils"
+require "stringio"
 require "tmpdir"
 
 require_relative "session"
+require_relative "runtime/state_update_warning_formatter"
 require "mayu/build"
 require_relative "encrypted_marshal"
 require_relative "session/transfer_state"
@@ -397,6 +399,45 @@ class Mayu::SessionTest < Minitest::Test
 
     assert_includes(html, "Route segments")
     assert_includes(html, "Segments: alpha / beta")
+  end
+
+  def test_session_renders_silent_haml_demo_route
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/silent-haml",
+        headers: {},
+        http2: false
+      )
+
+    output = StringIO.new
+    previous_logger = Console.logger
+    Console.logger = Console::Logger.new(Console::Output::Text.new(output))
+    page = File.expand_path("../../../../example/app/pages/demos/silent-haml/+page.haml", __dir__)
+    setup_line = File.readlines(page, chomp: true).index("- @setup_runs += 1") + 1
+
+    html = Mayu::Session.new(environment: env, request_info:).render
+
+    assert_includes(html, "Silent Haml control flow")
+    assert_includes(html, "The if branch")
+    assert_includes(html, "Alpha selected")
+    assert_includes(html, "alpha-1")
+    assert_includes(html, "Stopped early")
+    assert_match(/<span[^>]*>A<\/span>/, html)
+    assert_match(/<span[^>]*>B<\/span>/, html)
+    refute_match(/<span[^>]*>C<\/span>/, html)
+    refute_match(/<p[^>]*>The else branch<\/p>/, html)
+    assert_includes(
+      output.string,
+      "State update during render at app:/pages/demos/silent-haml/+page.haml:#{setup_line}"
+    )
+    assert_includes(output.string, "> %3d: - @setup_runs += 1" % setup_line)
+  ensure
+    Console.logger = previous_logger
   end
 
   def test_session_renders_the_klenod_error_view_after_page_resolution_failure

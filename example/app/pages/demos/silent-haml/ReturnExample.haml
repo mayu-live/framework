@@ -1,0 +1,5 @@
+%section.return-example
+  - ["A", "stop"].each do |item|
+    - return if $stop && item == "stop"
+      %p Stopped early
+    %p= item

@@ -1,0 +1,199 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Button = import("/components/Form/Button")
+  Select = import("/components/Form/Select")
+  ReturnExample = import("./ReturnExample")
+
+  ITEMS = %w[alpha beta gamma].freeze
+  CONTROL_ITEMS = ["A", "skip", "B", "stop", "C"].freeze
+  SETUP_SOURCE = "- @setup_runs += 1"
+  CONDITIONS_SOURCE = <<~HAML
+    - if @show_if
+      %p The if branch
+    - else
+      %p The else branch
+
+    - unless @show_unless
+      %p The unless branch
+    - else
+      %p The unless else branch
+  HAML
+  CASE_SOURCE = <<~HAML
+    - case @case_value
+    - when "alpha"
+      %p Alpha selected
+    - when "beta"
+      %p Beta selected
+    - else
+      %p Fallback selected
+  HAML
+  ITERATOR_SOURCE = <<~HAML
+    %ul
+      - ITEMS.each do |item|
+        %li= item
+
+    %ul
+      - ITEMS.each { |item|
+        %li= item
+  HAML
+  LOOPS_SOURCE = <<~HAML
+    - index = 0
+    - while index < ITEMS.length
+      %span= ITEMS.fetch(index)
+      - index += 1
+
+    - index = ITEMS.length
+    - until index.zero?
+      - index -= 1
+      %span= ITEMS.fetch(index)
+
+    - for item in ITEMS
+      %span= item
+  HAML
+  NESTED_LOOPS_SOURCE = <<~'HAML'
+    - ITEMS.each do |item|
+      - [1, 2].each do |number|
+        %span= "#{item}-#{number}"
+
+    - CONTROL_ITEMS.each do |item|
+      - next if item == "skip"
+      - break if item == "stop"
+      %span= item
+  HAML
+  RETURN_SOURCE = <<~HAML
+    - ["A", "stop"].each do |item|
+      - return if $stop && item == "stop"
+        %p Stopped early
+      %p= item
+  HAML
+
+  def initialize
+    @show_if = true
+    @show_unless = false
+    @case_value = "alpha"
+    @return_early = true
+    @setup_runs = 0
+  end
+
+  def toggle_if = @show_if = !@show_if
+  def toggle_unless = @show_unless = !@show_unless
+  def toggle_return = @return_early = !@return_early
+
+  def set_case(event)
+    @case_value = event.dig(:currentTarget, :value)
+  end
+
+- @setup_runs += 1
+
+%article.silent-haml-demo
+  %Heading(level=2) Silent Haml control flow
+  %p.intro
+    Nested Haml under silent
+    %code -
+    scripts becomes rendered children. Childless scripts still run, but evaluate to
+    %code nil
+    and add no child.
+
+  %section.example
+    %h3 Childless setup code
+    .example-grid
+      %pre
+        %code= SETUP_SOURCE
+      .result
+        %p
+          The side effect has run
+          %strong<>= @setup_runs
+          times for this component instance.
+        %p.muted The setup script itself produces no visible node.
+
+  %section.example
+    %h3 Conditions
+    .controls
+      %Button(onclick=toggle_if)= "Toggle if (#{@show_if})"
+      %Button(onclick=toggle_unless)= "Toggle unless (#{@show_unless})"
+    .example-grid
+      %pre
+        %code= CONDITIONS_SOURCE
+      .result
+        - if @show_if
+          %p The if branch
+        - else
+          %p The else branch
+        - unless @show_unless
+          %p The unless branch
+        - else
+          %p The unless else branch
+
+  %section.example
+    %h3 Case branches
+    .controls
+      %Select(label="Case value" onchange=set_case value=@case_value)
+        %option(value="alpha") alpha
+        %option(value="beta") beta
+        %option(value="other") other
+    .example-grid
+      %pre
+        %code= CASE_SOURCE
+      .result
+        - case @case_value
+        - when "alpha"
+          %p Alpha selected
+        - when "beta"
+          %p Beta selected
+        - else
+          %p Fallback selected
+
+  %section.example
+    %h3 Iterator blocks
+    .example-grid
+      %pre
+        %code= ITERATOR_SOURCE
+      .result.two-results
+        %ul
+          - ITEMS.each do |item|
+            %li= item
+        %ul
+          - ITEMS.each { |item|
+            %li= item
+
+  %section.example
+    %h3 Ruby loops
+    .example-grid
+      %pre
+        %code= LOOPS_SOURCE
+      .result.loop-result
+        - index = 0
+        - while index < ITEMS.length
+          %span= ITEMS.fetch(index)
+          - index += 1
+        - index = ITEMS.length
+        - until index.zero?
+          - index -= 1
+          %span= ITEMS.fetch(index)
+        - for item in ITEMS
+          %span= item
+
+  %section.example
+    %h3 Nested loops, next, and break
+    .example-grid
+      %pre
+        %code= NESTED_LOOPS_SOURCE
+      .result.loop-result
+        - ITEMS.each do |item|
+          - [1, 2].each do |number|
+            %span= "#{item}-#{number}"
+        - CONTROL_ITEMS.each do |item|
+          - next if item == "skip"
+          - break if item == "stop"
+          %span= item
+
+  %section.example
+    %h3 Nested return
+    %p A separate component keeps an early return local to its own render method.
+    .controls
+      %Button(onclick=toggle_return)= "Toggle early return (#{@return_early})"
+    .example-grid
+      %pre
+        %code= RETURN_SOURCE
+      .result
+        %ReturnExample(stop=@return_early)
