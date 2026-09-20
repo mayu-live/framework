@@ -11,8 +11,14 @@ module Mayu
   module Runtime
     autoload :Engine, File.join(__dir__, "runtime", "engine")
 
-    def self.init(descriptor, metrics:, runtime_js:, render_exceptions: true)
-      Engine.new(descriptor, metrics:, runtime_js:, render_exceptions:)
+    def self.init(
+      descriptor,
+      metrics:,
+      runtime_js:,
+      render_exceptions: true,
+      module_provider: nil
+    )
+      Engine.new(descriptor, metrics:, runtime_js:, render_exceptions:, module_provider:)
     end
   end
 end

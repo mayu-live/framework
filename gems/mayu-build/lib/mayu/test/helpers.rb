@@ -64,12 +64,14 @@ module Mayu
       end
 
       def render_in_current_task(descriptor)
+        module_provider = __test_module_provider if respond_to?(:__test_module_provider, true)
         page =
           Mayu::Test::Page.new(
             Mayu::Runtime.init(
               descriptor,
               metrics: Mayu::Test::FakeMetrics.new,
-              runtime_js: "test.js"
+              runtime_js: "test.js",
+              module_provider:
             )
           )
         previous_page = Fiber[:current_test_page]

@@ -37,7 +37,8 @@ module Mayu
       end
 
       def execute(context, test_paths)
-        adapter = Test::MinitestAdapter.new(output:)
+        provider = DevelopmentProvider.new(context)
+        adapter = Test::MinitestAdapter.new(output:, module_provider: provider)
         loaded = true
 
         test_paths.each do |path|
