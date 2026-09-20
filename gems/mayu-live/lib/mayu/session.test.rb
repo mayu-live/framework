@@ -206,12 +206,12 @@ class Mayu::SessionTest < Minitest::Test
     session = Mayu::Session.new(environment: env, request_info: request_info)
     queue = session.instance_variable_get(:@incoming_events)
 
-    session.receive_message(["Navigate", "/next", true, 123])
+    session.receive_message(["Navigate", "/next", 123])
 
     Async do
       event = Async::Task.current.with_timeout(0.5) { queue.dequeue }
       assert_equal(
-        Mayu::Session::Events::NavigateEvent["/next", true, 123],
+        Mayu::Session::Events::NavigateEvent["/next", 123],
         event
       )
       assert(queue.empty?)

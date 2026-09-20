@@ -11,6 +11,6 @@ export type ClientEvent =
       event: Record<string, unknown>,
       ping: number,
     ]
-  | [name: "Navigate", href: string, pushState: boolean, ping: number]
+  | [name: "Navigate", href: string, ping: number]
   | [name: "Ping", ping: number]
   | [name: "Visibility", hidden: boolean, ping: number];

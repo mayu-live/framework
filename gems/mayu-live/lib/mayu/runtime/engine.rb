@@ -246,16 +246,13 @@ module Mayu
         end
       end
 
-      def navigate(path, descriptor, push_state: true)
+      def navigate(descriptor)
         if @updater&.task
           @root.assign_descriptor(descriptor)
           enqueue_update(@root)
-          @updater.enqueue(
-            VNodes::Updater::Navigation.new(path, descriptor, push_state)
-          )
+          @updater.enqueue(VNodes::Updater::Navigation.new(descriptor))
         else
           update(descriptor)
-          enqueue_command(Commands::HistoryPushState[path]) if push_state
         end
       end
 

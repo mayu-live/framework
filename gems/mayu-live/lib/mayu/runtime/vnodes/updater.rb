@@ -15,7 +15,7 @@ module Mayu
   module Runtime
     module VNodes
       class Updater
-        Navigation = Data.define(:path, :descriptor, :push_state)
+        Navigation = Data.define(:descriptor)
         Synchronization = Data.define(:completion)
 
         attr_reader :queue, :task, :output_queue
@@ -72,23 +72,6 @@ module Mayu
                 # this batch (including any error-boundary recovery) has settled.
                 @engine&.root&.rebuild_listener_index!
 
-                navigations.each do |nav|
-                  if nav.push_state
-                    command_collector << Commands::HistoryPushState[nav.path]
-                  end
-                end
-
-                history_commands = []
-                if navigations.any?
-                  history_commands =
-                    command_collector.commands.select do |command|
-                      command.is_a?(Commands::HistoryPushState)
-                    end
-                  command_collector.commands.reject! do |command|
-                    command.is_a?(Commands::HistoryPushState)
-                  end
-                end
-
                 head_commands = []
                 if @engine&.head_dirty?
                   head_collector = CommandCollector.new
@@ -97,7 +80,7 @@ module Mayu
                 end
                 @engine&.flush_dirty_elements(command_collector)
 
-                commands = history_commands + command_collector.commands
+                commands = command_collector.commands
                 transition_nodes =
                   updates.keys.select do |node|
                     !node.instance_variable_get(:@__view_transition_pending).nil?

@@ -25,7 +25,7 @@ module Mayu
       end
 
       CallbackEvent = Data.define(:id, :payload, :ping)
-      NavigateEvent = Data.define(:path, :push_state, :ping)
+      NavigateEvent = Data.define(:path, :ping)
       PingEvent = Data.define(:ping)
       VisibilityEvent = Data.define(:hidden, :ping)
 
@@ -33,8 +33,8 @@ module Mayu
         case message
         in ["Callback", String => id, Hash => event, Numeric => ping] unless id.empty?
           CallbackEvent[id, event, ping]
-        in ["Navigate", String => href, true | false => push_state, Numeric => ping]
-          NavigateEvent[href, push_state, ping]
+        in ["Navigate", String => href, Numeric => ping]
+          NavigateEvent[href, ping]
         in ["Ping", Numeric => ping]
           PingEvent[ping]
         in ["Visibility", true | false => hidden, Numeric => ping]
@@ -311,7 +311,7 @@ module Mayu
         @engine.update_interval = hidden ? HIDDEN_UPDATE_INTERVAL_SECONDS : nil
       in Events::CallbackEvent[id:, payload:]
         @engine.callback(id, payload)
-      in Events::NavigateEvent[path:, push_state:]
+      in Events::NavigateEvent[path:]
         Console.logger.info(self, event: Event.new(:navigating, session_id: @id, path:))
 
         @environment.metrics.session_navigate_count.increment(labels: {path:})
@@ -322,7 +322,7 @@ module Mayu
           stylesheets: route_stylesheets,
           scripts: route_scripts
         )
-        @engine.navigate(path, descriptor, push_state:)
+        @engine.navigate(descriptor)
       end
     rescue => e
       Console.logger.error(self, e)

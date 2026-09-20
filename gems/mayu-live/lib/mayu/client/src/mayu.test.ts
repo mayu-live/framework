@@ -3,11 +3,31 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import Mayu from "./mayu";
 import type { ClientEvent } from "./protocol";
 
+class FakeNavigation extends EventTarget {
+  navigate = vi.fn();
+}
+
+function navigationEvent(overrides: Partial<Record<string, unknown>> = {}) {
+  const event = new Event("navigate") as Event & Record<string, unknown>;
+  Object.assign(event, {
+    canIntercept: true,
+    destination: { url: new URL("/next?tab=details", location.origin).href },
+    downloadRequest: null,
+    formData: null,
+    hashChange: false,
+    navigationType: "push",
+    intercept: vi.fn(),
+    ...overrides,
+  });
+  return event;
+}
+
 describe("Mayu callbacks", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     vi.useRealTimers();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("drops events explicitly when no callback transport is active", () => {
@@ -129,6 +149,73 @@ describe("Mayu callbacks", () => {
   });
 });
 
+describe("Mayu navigation", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("intercepts same-origin navigations and sends their path and query", async () => {
+    const navigation = new FakeNavigation();
+    vi.stubGlobal("navigation", navigation);
+    const write = vi.fn(async () => undefined);
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write } as any);
+    const event = navigationEvent();
+
+    navigation.dispatchEvent(event);
+    const intercept = event.intercept as ReturnType<typeof vi.fn>;
+    expect(intercept).toHaveBeenCalledTimes(1);
+    await intercept.mock.calls[0][0].handler();
+
+    expect(write).toHaveBeenCalledWith([
+      "Navigate",
+      "/next?tab=details",
+      expect.any(Number),
+    ]);
+    mayu.dispose();
+  });
+
+  it.each([
+    ["a hash change", { hashChange: true }],
+    ["a download", { downloadRequest: "file" }],
+    ["a form submission", { formData: new FormData() }],
+    ["a reload", { navigationType: "reload" }],
+    [
+      "a cross-origin destination",
+      { destination: { url: "https://example.com/next" } },
+    ],
+  ])("does not intercept %s", (_name, overrides) => {
+    const navigation = new FakeNavigation();
+    vi.stubGlobal("navigation", navigation);
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+    const event = navigationEvent(overrides);
+
+    navigation.dispatchEvent(event);
+
+    expect(event.intercept).not.toHaveBeenCalled();
+    mayu.dispose();
+  });
+
+  it("uses the native Navigation API for programmatic navigation", () => {
+    const navigation = new FakeNavigation();
+    vi.stubGlobal("navigation", navigation);
+    const mayu = new Mayu({ autoPing: false });
+
+    mayu.navigate("/next");
+    mayu.navigate("/current", false);
+
+    expect(navigation.navigate).toHaveBeenNthCalledWith(1, "/next", {
+      history: "push",
+    });
+    expect(navigation.navigate).toHaveBeenNthCalledWith(2, "/current", {
+      history: "replace",
+    });
+    mayu.dispose();
+  });
+});
+
 describe("Mayu pings", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -183,20 +270,25 @@ describe("Mayu pings", () => {
   it("resets the idle ping after an outbound event", async () => {
     vi.useFakeTimers();
     vi.stubGlobal("Worker", undefined);
+    const navigation = new FakeNavigation();
+    vi.stubGlobal("navigation", navigation);
     const write = vi.fn(async () => undefined);
     const mayu = new Mayu();
     mayu.setWriter({ write } as any);
 
     await vi.advanceTimersByTimeAsync(3_000);
-    mayu.navigate("/next");
+    const event = navigationEvent();
+    navigation.dispatchEvent(event);
+    await (
+      event.intercept as ReturnType<typeof vi.fn>
+    ).mock.calls[0][0].handler();
     await vi.runAllTicks();
     await vi.advanceTimersByTimeAsync(3_000);
 
     expect(write).toHaveBeenCalledTimes(1);
     expect(write).toHaveBeenCalledWith([
       "Navigate",
-      "/next",
-      true,
+      "/next?tab=details",
       expect.any(Number),
     ]);
 

@@ -15,19 +15,38 @@ type MayuOptions = {
   autoPing?: boolean;
 };
 
+type NavigationLike = EventTarget & {
+  navigate(url: string, options?: { history?: "push" | "replace" }): unknown;
+};
+
+type NavigateEventLike = Event & {
+  canIntercept: boolean;
+  destination: { url: string };
+  downloadRequest: unknown | null;
+  formData: FormData | null;
+  hashChange: boolean;
+  navigationType: string;
+  intercept(options: { handler: () => Promise<void> }): void;
+};
+
+function browserNavigation(): NavigationLike | undefined {
+  return (globalThis as typeof globalThis & { navigation?: NavigationLike })
+    .navigation;
+}
+
 export default class Mayu {
   #writer: WritableStreamDefaultWriter<ClientEvent> | null;
   #pingScheduler: PingScheduler | null;
-  #popstateListener: () => void;
+  #navigationListener: (event: Event) => void;
   #visibilityListener: () => void;
 
   constructor({ autoPing = true }: MayuOptions = {}) {
     this.#writer = null;
 
-    this.#popstateListener = () => {
-      this.navigate(location.pathname + location.search, false);
+    this.#navigationListener = (event) => {
+      this.#handleNavigation(event as NavigateEventLike);
     };
-    window.addEventListener("popstate", this.#popstateListener);
+    browserNavigation()?.addEventListener("navigate", this.#navigationListener);
 
     // The server slows its updates down while nobody is looking, and a tab
     // back in the foreground pings right away so its status updates.
@@ -44,7 +63,10 @@ export default class Mayu {
   }
 
   dispose() {
-    window.removeEventListener("popstate", this.#popstateListener);
+    browserNavigation()?.removeEventListener(
+      "navigate",
+      this.#navigationListener,
+    );
     document.removeEventListener("visibilitychange", this.#visibilityListener);
     this.#pingScheduler?.stop();
     this.#pingScheduler = null;
@@ -105,9 +127,42 @@ export default class Mayu {
   }
 
   navigate(href: string, pushState: boolean = true) {
-    console.warn("navigate", href);
+    const navigation = browserNavigation();
+    if (navigation) {
+      navigation.navigate(href, { history: pushState ? "push" : "replace" });
+      return;
+    }
 
-    void this.#write(["Navigate", href, pushState, performance.now()]);
+    window.location.assign(href);
+  }
+
+  #handleNavigation(event: NavigateEventLike) {
+    if (
+      !event.canIntercept ||
+      event.hashChange ||
+      event.downloadRequest !== null ||
+      event.formData !== null ||
+      event.navigationType === "reload" ||
+      !this.#writer
+    ) {
+      return;
+    }
+
+    const url = new URL(event.destination.url);
+    if (url.origin !== location.origin) return;
+
+    event.intercept({
+      handler: async () => {
+        const wrote = await this.#sendNavigation(url.pathname + url.search);
+        if (!wrote)
+          throw new Error("Navigation callback transport unavailable");
+      },
+    });
+  }
+
+  #sendNavigation(href: string) {
+    console.warn("navigate", href);
+    return this.#write(["Navigate", href, performance.now()]);
   }
 
   ping() {

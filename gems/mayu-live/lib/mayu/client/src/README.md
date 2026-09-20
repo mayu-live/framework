@@ -4,7 +4,7 @@ This directory contains the browser-side runtime that:
 
 - opens a server command stream,
 - applies incoming command batches,
-- sends user callbacks/navigation/ping events back to the server,
+- sends user callbacks, navigations, and pings back to the server,
 - reconnects and restores state when possible.
 
 ## High-Level Flow
@@ -64,8 +64,15 @@ This directory contains the browser-side runtime that:
 
 - `window.Mayu.callback(event, id)` serializes and writes:
   - `["Callback", id, event, ping]`.
-- `window.Mayu.navigate(href, pushState)` writes
-  `["Navigate", href, pushState, ping]`.
+- Mayu uses the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API)
+  to intercept same-origin navigations in one place. Hash changes, downloads,
+  reloads, and form submissions retain browser behavior. The Navigation API is
+  required for client-side routing; browsers without it perform normal document
+  navigations.
+- `window.Mayu.navigate(href, pushState)` uses `navigation.navigate()` and the
+  intercepted navigation writes `["Navigate", href, ping]`. Its `pushState`
+  argument is retained for compatibility and maps to native push or replace
+  history behavior.
 - `window.Mayu.ping()` writes `["Ping", ping]` after `PING_INTERVAL` of idle
   outbound traffic. Each callback, navigation, visibility, or ping frame resets
   that deadline. The scheduler uses a dedicated worker when possible because

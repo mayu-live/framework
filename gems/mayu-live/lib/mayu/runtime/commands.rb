@@ -92,8 +92,6 @@ module Mayu
       Pong = CommandData.define(:timestamp)
 
       ReloadSucceeded = CommandData.define
-      HistoryPushState = CommandData.define(:path)
-
       RegisterCustomElement = CommandData.define(:name, :path)
 
       RenderError =

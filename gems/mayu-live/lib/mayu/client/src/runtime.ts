@@ -274,29 +274,6 @@ function debugTree(node: IdNode, level = 0): string {
     .join("\n");
 }
 
-const configuredLinks = new WeakSet<HTMLAnchorElement>();
-
-function configureLink(a: HTMLAnchorElement) {
-  if (configuredLinks.has(a)) return;
-  configuredLinks.add(a);
-  a.addEventListener("click", (e) => {
-    if (a.host !== location.host) {
-      return;
-    }
-
-    if (a.target === "_blank") {
-      return;
-    }
-
-    if (e.metaKey) {
-      return;
-    }
-
-    e.preventDefault();
-    window.Mayu.navigate(a.pathname + a.search);
-  });
-}
-
 function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
   if (!domNode) return;
 
@@ -307,10 +284,6 @@ function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
   }
 
   const nodeInfo = nodeSet.setNode(idNode.id, domNode);
-
-  if (domNode.nodeName === "A") {
-    configureLink(domNode as HTMLAnchorElement);
-  }
 
   if (!idNode.children) return;
 
@@ -510,15 +483,6 @@ const CommandHandlers = {
   },
   RemoveNode(this: NodeSet, id: string) {
     this.deleteNode(id);
-  },
-  HistoryPushState(this: NodeSet, path: string) {
-    const currentPath = location.pathname + location.search;
-
-    if (currentPath === path) return;
-
-    console.warn("pushState going from", currentPath, "to", path);
-
-    history.pushState({ path: currentPath }, "", path);
   },
   SetClassName(this: NodeSet, id: string, value: string) {
     (this.getElement(id) as HTMLElement).className = value;

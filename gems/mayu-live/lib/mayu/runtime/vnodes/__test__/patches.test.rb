@@ -248,28 +248,18 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     end
   end
 
-  def test_navigation_emits_history_and_dom_patches
+  def test_navigation_emits_dom_patches
     initial = H[:body, H[:p, "before"]]
     updated = H[:body, H[:p, "after"]]
 
     run_engine(initial) do |engine|
-      engine.navigate("/next", updated)
+      engine.navigate(updated)
 
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
       patches = unwrap_commands(batch)
 
-      history =
-        patches.find do |patch|
-          patch.is_a?(Mayu::Runtime::Commands::HistoryPushState)
-        end
-      dom_patches =
-        patches.reject do |patch|
-          patch.is_a?(Mayu::Runtime::Commands::HistoryPushState)
-        end
-
-      refute_nil(history)
-      assert_equal("/next", history.path)
-      refute_empty(dom_patches)
+      refute_empty(patches)
+      refute(patches.any? { |patch| patch.class.name.end_with?("HistoryPushState") })
     end
   end
 
@@ -294,7 +284,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       ]
 
     run_engine(initial) do |engine|
-      engine.navigate("/complex", updated)
+      engine.navigate(updated)
 
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
       patches = unwrap_commands(batch)
@@ -322,7 +312,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     updated = H[:body, H[:main, H[:section, H[:div, H[:span, "Nested"]]]]]
 
     run_engine(initial) do |engine|
-      engine.navigate("/tree", updated)
+      engine.navigate(updated)
 
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
       patches = unwrap_commands(batch)
@@ -379,7 +369,7 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     end
   end
 
-  def test_navigation_emits_history_before_head
+  def test_navigation_emits_head_before_dom_patches
     initial = H[:body, H[HeadNavProbe]]
     updated = H[:body, H[HeadNavProbe]]
 
@@ -390,17 +380,12 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       wait_until { instance.instance_variable_get(:@__vnode_task) }
       instance.set_title("B")
 
-      engine.navigate("/nav", updated)
+      engine.navigate(updated)
 
       batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
       patches = unwrap_commands(batch)
 
-      assert(patches.first.is_a?(Mayu::Runtime::Commands::HistoryPushState))
-      assert(
-        patches.any? do |patch|
-          patch.is_a?(Mayu::Runtime::Commands::HistoryPushState)
-        end
-      )
+      refute(patches.any? { |patch| patch.class.name.end_with?("HistoryPushState") })
 
       assert(
         patches.any? do |patch|
