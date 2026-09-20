@@ -16,6 +16,7 @@ require_relative "vnodes/updater"
 require_relative "vnodes/command_collector"
 require_relative "commands"
 require_relative "marshalling"
+require_relative "state_update_warning_event"
 
 module Mayu
   module Runtime
@@ -204,9 +205,16 @@ module Mayu
         location = caller_locations.find do |candidate|
           !RENDER_GATE_INTERNAL_PATHS.include?(candidate.absolute_path || candidate.path)
         end
-        message = "State update occurred during render"
-        message += " at #{location.path}:#{location.lineno}" if location
-        Console.logger.warn(component, message)
+        return true unless location
+
+        event =
+          StateUpdateWarningEvent.for(
+            component,
+            path: location.path,
+            line: location.lineno,
+            provider: module_provider
+          )
+        Console.logger.warn(component, event:)
         true
       end
 

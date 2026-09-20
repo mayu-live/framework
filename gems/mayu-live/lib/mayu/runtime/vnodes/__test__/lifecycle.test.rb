@@ -389,10 +389,14 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
   end
 
   def test_state_updates_during_render_do_not_schedule_another_render
-    output = StringIO.new
+    events = []
+    logger = Object.new
+    logger.define_singleton_method(:warn) do |_subject, event: nil, **|
+      events << event
+    end
     Async do
       previous_logger = Console.logger
-      Console.logger = Console::Logger.new(Console::Output::Text.new(output))
+      Console.logger = logger
       engine = Mayu::Runtime::Engine.new(
         H[:body, H[RenderStateMutationProbe]],
         metrics: NullMetrics.new
@@ -405,11 +409,10 @@ class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
 
       assert_equal(1, instance.renders)
       assert_match(/>2<\/div>/, render_html(engine.root))
-      assert_equal(
-        1,
-        output.string.scan("State update occurred during render").length
-      )
-      assert_match(/lifecycle\.test\.rb:\d+/, output.string)
+      assert_equal(1, events.length)
+      event = events.first
+      assert_instance_of(Mayu::Runtime::StateUpdateWarningEvent, event)
+      assert_match(/lifecycle\.test\.rb:\d+/, event.to_hash[:location])
     ensure
       engine&.stop
       Console.logger = previous_logger
