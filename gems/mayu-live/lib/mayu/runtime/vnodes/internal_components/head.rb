@@ -17,17 +17,24 @@ module Mayu
           Script = InternalComponents::Script
 
           def render
-            H[:__head, *fixed_tags, *user_tags]
+            H[:__head, *fixed_tags, *user_tags, *asset_tags]
           end
 
           private
 
           def fixed_tags
+            [H[:meta, charset: "utf-8"]]
+          end
+
+          def asset_tags
             [
-              H[:meta, charset: "utf-8"],
+              *stylesheet_links,
+              # A module script without `async` is deferred until parsing is
+              # complete. Keeping it after the stylesheets prevents the
+              # client from applying its initial update before the browser has
+              # discovered the CSS that styles the server-rendered document.
               runtime_script,
               *module_scripts,
-              *stylesheet_links,
               *custom_element_scripts
             ].compact
           end
@@ -39,7 +46,6 @@ module Mayu
               :script,
               type: "module",
               src: runtime_js,
-              async: true,
               key: "runtime_js"
             ]
           end

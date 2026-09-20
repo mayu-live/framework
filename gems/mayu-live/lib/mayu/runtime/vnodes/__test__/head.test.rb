@@ -163,6 +163,29 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     )
   end
 
+  def test_stylesheets_precede_the_deferred_runtime_script
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[
+          :body,
+          H[:head, H[:title, "Example"], H[:meta, name: "viewport", content: "width=device-width"]],
+          H[:main, "content"]
+        ],
+        metrics: NullMetrics.new,
+        runtime_js: "/.mayu/init.js#session",
+        stylesheets: ["/.mayu/assets/routes/home.css"]
+      )
+
+    html = render_html(engine.root)
+    stylesheet = '<link rel="stylesheet" href="/.mayu/assets/routes/home.css">'
+    runtime = '<script type="module" src="/.mayu/init.js#session"></script>'
+
+    assert_operator(html.index("<title>Example</title>"), :<, html.index(stylesheet))
+    assert_operator(html.index('name="viewport"'), :<, html.index(stylesheet))
+    assert_operator(html.index(stylesheet), :<, html.index(runtime))
+    refute_includes(html, "async=")
+  end
+
   def test_head_updates_with_multiple_titles
     descriptor = H[:body, H[HeadToggleProbe]]
     engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
