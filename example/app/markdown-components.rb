@@ -3,6 +3,7 @@
 MarkdownHeading = import("/components/Markdown/Heading")
 MarkdownCodeBlock = import("/components/Markdown/CodeBlock")
 MarkdownListItem = import("/components/Markdown/ListItem")
+MarkdownTable = import("/components/Markdown/Table")
 Highlight = import("/components/UI/Highlight")
 Link = import("/components/UI/Link")
 
@@ -18,5 +19,6 @@ Default = {
   h5: MarkdownHeading::H5,
   h6: MarkdownHeading::H6,
   li: MarkdownListItem,
-  pre: MarkdownCodeBlock
+  pre: MarkdownCodeBlock,
+  table: MarkdownTable
 }.freeze
