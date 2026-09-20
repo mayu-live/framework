@@ -193,6 +193,8 @@ module Mayu
                 value = InlineStyle.stringify(value)
               end
 
+              next if attr == :style && value == ""
+
               value = value.join(" ") if attr == :class && value.is_a?(Array)
 
               rendered_value =
@@ -261,7 +263,11 @@ module Mayu
             obj[key] = if key.to_s.start_with?("on")
               ((value == false) ? nil : value)
             elsif key == :style
-              value
+              if value.is_a?(Hash)
+                InlineStyle.compact(value)
+              else
+                ((value == false) ? nil : value)
+              end
             elsif key == :class
               normalize_class_names(value)
             else
@@ -354,8 +360,8 @@ module Mayu
         end
 
         def update_style(collector, key, old_value, new_value)
-          old_styles = old_value.is_a?(Hash) ? old_value : {}
-          new_styles = new_value.is_a?(Hash) ? new_value : {}
+          old_styles = old_value.is_a?(Hash) ? InlineStyle.compact(old_value) : {}
+          new_styles = new_value.is_a?(Hash) ? InlineStyle.compact(new_value) : {}
 
           if new_styles.empty?
             unless old_styles.empty?

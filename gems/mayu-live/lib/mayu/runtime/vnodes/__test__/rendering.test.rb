@@ -47,6 +47,16 @@ class Mayu::Runtime::VNodes::RenderingTest < Minitest::Test
     )
   end
 
+  def test_omits_an_empty_inline_style_attribute
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, style: {color_scheme: nil, display: false}],
+        metrics: NullMetrics.new
+      )
+
+    refute_includes(render_html(engine.root), "<body style=")
+  end
+
   def test_dom_id_tree_structure
     descriptor =
       H[:body, H[:header, H[:h1, "Title"]], H[:main, H[:p, "Content"]]]

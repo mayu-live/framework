@@ -61,11 +61,15 @@ module Mayu
       def self.stringify(properties)
         return properties if properties in String
 
-        properties
+        compact(properties)
           .map do |property, value|
             "#{format_property(property)}:#{format_value(property, value)};"
           end
           .join
+      end
+
+      def self.compact(properties)
+        properties.reject { |_property, value| value.nil? || value == false }
       end
 
       def self.diff(dom_id, old_properties, new_properties)

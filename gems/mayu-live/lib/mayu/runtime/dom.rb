@@ -135,6 +135,8 @@ module Mayu
                     value = InlineStyle.stringify(value)
                   end
 
+                  next if attr == :style && (value.nil? || value == false || value == "")
+
                   value = value.join(" ") if attr == :class && value in Array
 
                   format(
