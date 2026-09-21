@@ -2,6 +2,7 @@
   PageLayout = import("/components/Layout/FullWidthPageWithMenu")
   Menu = import("/components/Layout/Menu")
   MenuItem = import("/components/Layout/MenuItem")
+  Details = import("/pages/docs/Details")
   Breadcrumbs = import("/components/UI/Breadcrumbs/Breadcrumbs")
 
   LINKS = {
@@ -22,6 +23,7 @@
     "/demos/fonts" => "Fonts",
     "/demos/view-transitions" => "View transitions",
     "/demos/json" => "Importing JSON",
+    "/demos/i18n" => "Internationalization",
     "/demos/context" => "Context",
     "/demos/gc" => "GC stats",
     "/demos/segments" => "Route segments",
@@ -53,6 +55,38 @@
   %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)
 
   %nav(slot="menu")
-    %Menu
-      = LINKS.map do |path, text|
-        %MenuItem[path]{href: path, active: path == $path}= text
+    %Details(open summary="Overview")
+      %Menu
+        %MenuItem{href: "/demos", active: $path == "/demos"} Demos
+    %Details(open summary="Applications")
+      %Menu
+        %MenuItem{href: "/demos/pokemon", active: $path == "/demos/pokemon"} Pokémon
+        %MenuItem{href: "/demos/llm-chat", active: $path == "/demos/llm-chat"} LLM chat
+        %MenuItem{href: "/demos/tree", active: $path == "/demos/tree"} App tree
+        %MenuItem{href: "/demos/todo", active: $path == "/demos/todo"} Todo app
+    %Details(open summary="Games")
+      %Menu
+        %MenuItem{href: "/demos/life", active: $path == "/demos/life"} Game of life
+        %MenuItem{href: "/demos/snake", active: $path == "/demos/snake"} Snake
+    %Details(open summary="Interactions")
+      %Menu
+        %MenuItem{href: "/demos/form", active: $path == "/demos/form"} Form elements
+        %MenuItem{href: "/demos/events", active: $path == "/demos/events"} Events
+        %MenuItem{href: "/demos/sorting", active: $path == "/demos/sorting"} Sorting
+        %MenuItem{href: "/demos/reordering", active: $path == "/demos/reordering"} Reordering
+    %Details(open summary="Rendering")
+      %Menu
+        %MenuItem{href: "/demos/images", active: $path == "/demos/images"} Images
+        %MenuItem{href: "/demos/svg", active: $path == "/demos/svg"} SVGs
+        %MenuItem{href: "/demos/fonts", active: $path == "/demos/fonts"} Fonts
+        %MenuItem{href: "/demos/custom-elements", active: $path == "/demos/custom-elements"} Custom elements
+        %MenuItem{href: "/demos/view-transitions", active: $path == "/demos/view-transitions"} View transitions
+    %Details(open summary="Framework features")
+      %Menu
+        %MenuItem{href: "/demos/context", active: $path == "/demos/context"} Context
+        %MenuItem{href: "/demos/segments", active: $path == "/demos/segments"} Route segments
+        %MenuItem{href: "/demos/json", active: $path == "/demos/json"} Importing JSON
+        %MenuItem{href: "/demos/i18n", active: $path == "/demos/i18n"} Internationalization
+        %MenuItem{href: "/demos/silent-haml", active: $path == "/demos/silent-haml"} Silent Haml
+        %MenuItem{href: "/demos/gc", active: $path == "/demos/gc"} GC stats
+        %MenuItem{href: "/demos/exceptions", active: $path == "/demos/exceptions"} Exceptions
