@@ -57,6 +57,38 @@ class Mayu::Runtime::VNodes::RenderingTest < Minitest::Test
     refute_includes(render_html(engine.root), "<body style=")
   end
 
+  def test_normalizes_nested_class_names
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[
+          :body,
+          H[
+            :p,
+            "Classes",
+            class: [:button, ["primary large", nil, [:icon]], :button]
+          ]
+        ],
+        metrics: NullMetrics.new
+      )
+
+    assert_includes(
+      render_html(engine.root),
+      '<p class="button primary large icon button">Classes</p>'
+    )
+  end
+
+  def test_ignores_false_class_names
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[:p, "Classes", class: [false, [:button, false]]]],
+        metrics: NullMetrics.new
+      )
+
+    html = render_html(engine.root)
+    assert_includes(html, '<p class="button">Classes</p>')
+    refute_includes(html, "false")
+  end
+
   def test_flattens_nested_props_without_flattening_inline_styles
     attributes = Mayu::Runtime::VNodes::VAttributes.allocate
     style = {color: "red", hover: {color: "blue"}}

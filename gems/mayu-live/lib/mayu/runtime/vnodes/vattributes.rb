@@ -355,8 +355,8 @@ module Mayu
         end
 
         def update_class(collector, key, old_value, new_value)
-          old_classes = normalize_class_names(old_value)
-          new_classes = normalize_class_names(new_value)
+          old_classes = old_value || []
+          new_classes = new_value || []
 
           if new_classes.empty?
             unless old_classes.empty?
@@ -364,6 +364,8 @@ module Mayu
             end
             return nil
           end
+
+          return new_classes if old_classes == new_classes
 
           added = new_classes - old_classes
           removed = old_classes - new_classes
@@ -378,8 +380,17 @@ module Mayu
           new_classes
         end
 
-        def normalize_class_names(value)
-          Array(value).flatten.compact.flat_map { it.to_s.split }
+        def normalize_class_names(value, class_names = [])
+          case value
+          when nil, false
+            nil
+          when Array
+            value.each { |item| normalize_class_names(item, class_names) }
+          else
+            class_names.concat(value.to_s.split)
+          end
+
+          class_names
         end
 
         def update_style(collector, key, old_value, new_value)

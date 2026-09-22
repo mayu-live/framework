@@ -182,6 +182,42 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     assert_equal(["first"], remove_class.classes)
   end
 
+  def test_equivalent_class_values_emit_no_patches
+    initial = H[:body, H[:p, "Hello", class: [:button, "primary large"]]]
+    updated =
+      H[:body, H[:p, "Hello", class: [["button primary"], nil, :large]]]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+
+    refute(
+      collector.commands.any? do |command|
+        command.is_a?(Mayu::Runtime::Commands::AddClass) ||
+          command.is_a?(Mayu::Runtime::Commands::RemoveClass)
+      end
+    )
+  end
+
+  def test_nested_class_values_emit_token_level_patches
+    initial = H[:body, H[:p, "Hello", class: [:button, ["primary large"]]]]
+    updated = H[:body, H[:p, "Hello", class: [[:button], "large selected"]]]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+
+    add_class =
+      collector.commands.find { it.is_a?(Mayu::Runtime::Commands::AddClass) }
+    remove_class =
+      collector.commands.find do
+        it.is_a?(Mayu::Runtime::Commands::RemoveClass)
+      end
+
+    assert_equal(["selected"], add_class.classes)
+    assert_equal(["primary"], remove_class.classes)
+  end
+
   def test_class_and_style_removal_patches
     initial =
       H[:body, H[:p, "Hello", class: ["greeting"], style: {color: "red"}]]
