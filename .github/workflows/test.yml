@@ -5,6 +5,9 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
 
 jobs:
   javascript:
@@ -34,7 +37,52 @@ jobs:
           bundler-cache: true
       - name: Run tests
         run: bundle exec rake test
+
+  performance:
+    name: Performance
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.7"
+          bundler-cache: true
+      - name: Benchmark workloads
+        run: |
+          mkdir -p artifacts/performance
+          MAYU_PROFILE=0 MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 \
+            MAYU_PROFILE_RESULT=artifacts/performance/reconciliation.json \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/reconciliation_profile.rb
+          MAYU_PROFILE=0 MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 \
+            MAYU_WORKLOAD=attributes MAYU_PROFILE_RESULT=artifacts/performance/attributes.json \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
+          MAYU_PROFILE=0 MAYU_PROFILE_ITERATIONS=200 MAYU_PROFILE_WARMUP=50 \
+            MAYU_WORKLOAD=subtree MAYU_PROFILE_RESULT=artifacts/performance/subtree.json \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
+      - name: Write performance summary
+        run: |
+          bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/performance_summary.rb \
+            artifacts/performance/reconciliation.json \
+            artifacts/performance/attributes.json \
+            artifacts/performance/subtree.json \
+            > artifacts/performance/summary.md
+          cat artifacts/performance/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Capture Firefox profiles
+        run: |
+          MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/reconciliation_profile.rb
+          mv mayu-vnode-reconciliation.json artifacts/performance/reconciliation-profile.json
+          MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 MAYU_WORKLOAD=attributes \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
+          mv mayu-vnode-attributes.json artifacts/performance/attributes-profile.json
+          MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 MAYU_WORKLOAD=subtree \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
+          mv mayu-vnode-subtree.json artifacts/performance/subtree-profile.json
       - uses: actions/upload-artifact@v4
         with:
-          name: profile
-          path: profile/
+          name: performance-${{ github.sha }}
+          path: artifacts/performance/
+          if-no-files-found: error
+          retention-days: 14

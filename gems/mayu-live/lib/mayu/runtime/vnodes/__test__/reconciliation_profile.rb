@@ -3,6 +3,7 @@
 
 require "async"
 require "benchmark"
+require "json"
 require "vernier"
 
 require "mayu/test"
@@ -275,12 +276,14 @@ module Mayu
 
             unless PROFILE
               measurement = Benchmark.measure(&run)
+              cpu_ms_per_update = measurement.total * 1000 / ITERATIONS
               puts format(
                 "Done: %.6f wall, %.6f CPU seconds; %.3f CPU ms/update",
                 measurement.real,
                 measurement.total,
-                measurement.total * 1000 / ITERATIONS
+                cpu_ms_per_update
               )
+              write_result("reconciliation", measurement, cpu_ms_per_update)
               next
             end
 
@@ -311,6 +314,23 @@ module Mayu
           UpdateTraceHook.trace_update(index, instance.operation) do
             Async::Task.current.with_timeout(5.0) { engine.dequeue_batch }
           end
+        end
+
+        def self.write_result(workload, measurement, cpu_ms_per_update)
+          filename = ENV["MAYU_PROFILE_RESULT"]
+          return unless filename
+
+          File.write(
+            filename,
+            JSON.pretty_generate(
+              workload:,
+              iterations: ITERATIONS,
+              warmup: WARMUP,
+              wall_seconds: measurement.real,
+              cpu_seconds: measurement.total,
+              cpu_ms_per_update:
+            )
+          )
         end
 
         def self.drain_queue(engine)
