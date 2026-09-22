@@ -21,11 +21,13 @@ type RuntimeOptions = {
   commandErrorPolicy?: CommandErrorPolicy;
   onNavigationComplete?: (id: string) => void;
   onNavigationFailed?: (id: string) => void;
+  onBatchApplied?: (batch: Batch, durationMs: number) => void;
 };
 
 export default class Runtime {
   #nodeSet: NodeSet;
   #commandErrorPolicy: CommandErrorPolicy;
+  #onBatchApplied?: (batch: Batch, durationMs: number) => void;
 
   constructor(
     onEvent: (event: Event, listenerId: string) => void,
@@ -33,6 +35,7 @@ export default class Runtime {
       commandErrorPolicy = COMMAND_ERROR_POLICY,
       onNavigationComplete,
       onNavigationFailed,
+      onBatchApplied,
     }: RuntimeOptions = {},
   ) {
     this.#nodeSet = new NodeSet(
@@ -42,10 +45,16 @@ export default class Runtime {
       onNavigationFailed,
     );
     this.#commandErrorPolicy = commandErrorPolicy;
+    this.#onBatchApplied = onBatchApplied;
   }
 
   async applyBatch(batch: Batch) {
-    await applyCommands(this.#nodeSet, batch, this.#commandErrorPolicy);
+    const startedAt = performance.now();
+    try {
+      await applyCommands(this.#nodeSet, batch, this.#commandErrorPolicy);
+    } finally {
+      this.#onBatchApplied?.(batch, performance.now() - startedAt);
+    }
   }
 }
 

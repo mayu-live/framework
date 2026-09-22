@@ -50,6 +50,20 @@ starts handling it; handler duration excludes later rendering and reconciliation
 Command-batch byte counters cover server-to-browser commands, including each
 batch's streaming compression flush, not request or asset traffic.
 
+## Browser command application
+
+| Metric                                                  | Meaning                                                    | Useful view                                           |
+| ------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------- |
+| `mayu_client_command_apply_batches_total`               | Command batches reported as applied by connected browsers. | Per-second rate; compare with server command batches. |
+| `mayu_client_command_apply_commands_total`              | Commands reported as applied by connected browsers.        | Commands per batch: `rate(commands) / rate(batches)`. |
+| `mayu_client_command_apply_duration_milliseconds_total` | Browser time spent applying those batches.                 | Average apply time: `rate(duration) / rate(batches)`. |
+
+The browser accumulates these values and sends them with its next callback,
+navigation, visibility event, or ping. They are therefore delayed by at most
+the ping interval for a connected idle tab, and absent for tabs that disconnect
+before sending another event. They measure the browser runtime's command work,
+including awaited view transitions, rather than network delivery time.
+
 ## Metric lifecycle
 
 The old metric names were replaced rather than emitted in parallel. Update

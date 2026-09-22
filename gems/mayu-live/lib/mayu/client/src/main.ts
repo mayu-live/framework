@@ -35,6 +35,8 @@ export default function init(sessionId: string) {
     {
       onNavigationComplete: (id) => mayu.completeNavigation(id),
       onNavigationFailed: (id) => mayu.failNavigation(id),
+      onBatchApplied: (batch, durationMs) =>
+        mayu.recordCommandApply(batch.length, durationMs),
     },
   );
   window.Mayu = mayu;

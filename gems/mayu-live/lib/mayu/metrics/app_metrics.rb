@@ -23,6 +23,9 @@ module Mayu
         :command_batch_commands_total,
         :command_batch_uncompressed_bytes_total,
         :command_batch_compressed_bytes_total,
+        :client_command_apply_batches_total,
+        :client_command_apply_commands_total,
+        :client_command_apply_duration_ms_total,
         :component_mounts_total,
         :component_render_duration_ms,
         :component_reconcile_duration_ms,
@@ -122,6 +125,27 @@ module Mayu
               registry.counter(
                 :mayu_command_batch_compressed_bytes_total,
                 docstring: "Total compressed bytes in command batches written to session streams",
+                labels: [*preset_labels.keys],
+                preset_labels:
+              ),
+            client_command_apply_batches_total:
+              registry.counter(
+                :mayu_client_command_apply_batches_total,
+                docstring: "Total command batches applied by connected browsers",
+                labels: [*preset_labels.keys],
+                preset_labels:
+              ),
+            client_command_apply_commands_total:
+              registry.counter(
+                :mayu_client_command_apply_commands_total,
+                docstring: "Total commands applied by connected browsers",
+                labels: [*preset_labels.keys],
+                preset_labels:
+              ),
+            client_command_apply_duration_ms_total:
+              registry.counter(
+                :mayu_client_command_apply_duration_milliseconds_total,
+                docstring: "Total browser time applying command batches in milliseconds",
                 labels: [*preset_labels.keys],
                 preset_labels:
               ),

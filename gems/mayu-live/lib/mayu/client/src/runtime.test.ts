@@ -57,6 +57,16 @@ describe("runtime listeners", () => {
     expect(onEvent).toHaveBeenCalledTimes(2);
   });
 
+  it("reports each applied batch with its duration", async () => {
+    const onBatchApplied = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onBatchApplied });
+    const batch = [["Initialize", tree()]] as const;
+
+    await runtime.applyBatch(batch as any);
+
+    expect(onBatchApplied).toHaveBeenCalledWith(batch, expect.any(Number));
+  });
+
   it("clears listeners before applying a reconnect bootstrap", async () => {
     document.body.innerHTML = "<button>Go</button>";
     const onEvent = vi.fn();

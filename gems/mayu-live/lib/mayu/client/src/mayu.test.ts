@@ -99,6 +99,28 @@ describe("Mayu callbacks", () => {
     mayu.dispose();
   });
 
+  it("attaches accumulated command-apply telemetry to the next event", async () => {
+    const mayu = new Mayu({ autoPing: false });
+    const write = vi.fn(async (_message: ClientEvent) => undefined);
+    mayu.setWriter({ write } as any);
+
+    mayu.recordCommandApply(2, 1.25);
+    mayu.recordCommandApply(3, 2.5);
+    mayu.ping();
+    await Promise.resolve();
+
+    expect(write).toHaveBeenCalledWith([
+      "Ping",
+      expect.any(Number),
+      { batches: 2, commands: 5, duration_ms: 3.75 },
+    ]);
+
+    mayu.ping();
+    await Promise.resolve();
+    expect(write).toHaveBeenLastCalledWith(["Ping", expect.any(Number)]);
+    mayu.dispose();
+  });
+
   it("sends Backspace keydown callbacks", async () => {
     const mayu = new Mayu({ autoPing: false });
     const write = vi.fn(async (_message: ClientEvent) => undefined);

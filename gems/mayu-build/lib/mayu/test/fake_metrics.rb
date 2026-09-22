@@ -18,6 +18,9 @@ module Mayu
       def command_batch_commands_total = NullCounter.new
       def command_batch_uncompressed_bytes_total = NullCounter.new
       def command_batch_compressed_bytes_total = NullCounter.new
+      def client_command_apply_batches_total = NullCounter.new
+      def client_command_apply_commands_total = NullCounter.new
+      def client_command_apply_duration_ms_total = NullCounter.new
       def component_mounts_total = NullCounter.new
       def component_reconcile_duration_ms = NullSummary.new
       def component_render_duration_ms = NullSummary.new

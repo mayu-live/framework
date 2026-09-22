@@ -183,6 +183,33 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal(Mayu::Session::Events::VisibilityEvent[true, 5], event)
   end
 
+  def test_ping_message_parses_client_command_apply_telemetry
+    event =
+      Mayu::Session::Events.parse(
+        [
+          "Ping",
+          123,
+          {batches: 2, commands: 5, duration_ms: 3.25}
+        ]
+      )
+
+    assert_equal(
+      Mayu::Session::Events::PingEvent[
+        123,
+        Mayu::Session::Events::ClientCommandApplyMetrics[2, 5, 3.25]
+      ],
+      event
+    )
+  end
+
+  def test_invalid_client_command_apply_telemetry_is_rejected
+    assert_raises(Mayu::Session::Events::InvalidEventError) do
+      Mayu::Session::Events.parse(
+        ["Ping", 123, {batches: 2, commands: 1, duration_ms: 3.25}]
+      )
+    end
+  end
+
   def test_a_hidden_tab_slows_the_engine_down_and_a_visible_one_restores_it
     env = FakeEnvironment.new
     request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)

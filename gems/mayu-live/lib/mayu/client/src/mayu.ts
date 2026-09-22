@@ -2,7 +2,7 @@ import serializeEvent from "./serializeEvent.js";
 import { NAVIGATION_PROGRESS_DELAY, PING_INTERVAL } from "./constants";
 import { updateNavigationProgress } from "./ping";
 import throttle from "./throttle";
-import type { ClientEvent } from "./protocol";
+import type { ClientEvent, CommandApplyTelemetry } from "./protocol";
 
 const CONTINUOUS_EVENTS = new Set([
   "input",
@@ -41,6 +41,17 @@ type PendingNavigation = {
   abortListener: () => void;
 };
 
+type OutboundEvent =
+  | [
+      name: "Callback",
+      listenerId: string,
+      event: Record<string, unknown>,
+      ping: number,
+    ]
+  | [name: "Navigate", id: string, href: string, ping: number]
+  | [name: "Ping", ping: number]
+  | [name: "Visibility", hidden: boolean, ping: number];
+
 function browserNavigation(): NavigationLike | undefined {
   return (globalThis as typeof globalThis & { navigation?: NavigationLike })
     .navigation;
@@ -54,6 +65,11 @@ export default class Mayu {
   #navigationSequence = 0;
   #pendingNavigations = new Map<string, PendingNavigation>();
   #activeNavigationId: string | null = null;
+  #commandApplyTelemetry: CommandApplyTelemetry = {
+    batches: 0,
+    commands: 0,
+    duration_ms: 0,
+  };
 
   constructor({ autoPing = true }: MayuOptions = {}) {
     this.#writer = null;
@@ -108,7 +124,13 @@ export default class Mayu {
     );
   }
 
-  async #write(message: ClientEvent) {
+  recordCommandApply(commands: number, durationMs: number) {
+    this.#commandApplyTelemetry.batches += 1;
+    this.#commandApplyTelemetry.commands += commands;
+    this.#commandApplyTelemetry.duration_ms += durationMs;
+  }
+
+  async #write(message: OutboundEvent) {
     const eventName = message[0].toLowerCase();
     const writer = this.#writer;
     if (!writer) {
@@ -116,15 +138,33 @@ export default class Mayu {
       return false;
     }
 
+    const telemetry = this.#takeCommandApplyTelemetry();
+    const event: ClientEvent = telemetry ? [...message, telemetry] : message;
+
     try {
-      await writer.write(message);
+      await writer.write(event);
       this.#pingScheduler?.reset();
       return true;
     } catch (error) {
+      if (telemetry) this.#restoreCommandApplyTelemetry(telemetry);
       if (this.#writer === writer) this.clearWriter();
       console.error(`Dropping ${eventName}: callback write failed`, error);
       return false;
     }
+  }
+
+  #takeCommandApplyTelemetry() {
+    if (this.#commandApplyTelemetry.batches === 0) return undefined;
+
+    const telemetry = this.#commandApplyTelemetry;
+    this.#commandApplyTelemetry = { batches: 0, commands: 0, duration_ms: 0 };
+    return telemetry;
+  }
+
+  #restoreCommandApplyTelemetry(telemetry: CommandApplyTelemetry) {
+    this.#commandApplyTelemetry.batches += telemetry.batches;
+    this.#commandApplyTelemetry.commands += telemetry.commands;
+    this.#commandApplyTelemetry.duration_ms += telemetry.duration_ms;
   }
 
   callback(event: Event, id: string) {

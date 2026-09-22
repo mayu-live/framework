@@ -24,25 +24,70 @@ module Mayu
       class EventRejectedError < StandardError
       end
 
-      CallbackEvent = Data.define(:id, :payload, :ping)
-      NavigateEvent = Data.define(:id, :path, :ping)
-      PingEvent = Data.define(:ping)
-      VisibilityEvent = Data.define(:hidden, :ping)
+      ClientCommandApplyMetrics = Data.define(:batches, :commands, :duration_ms)
+
+      CallbackEvent =
+        Data.define(:id, :payload, :ping, :client_command_apply_metrics) do
+          def self.[](id, payload, ping, metrics = nil)
+            new(id, payload, ping, metrics)
+          end
+        end
+      NavigateEvent =
+        Data.define(:id, :path, :ping, :client_command_apply_metrics) do
+          def self.[](id, path, ping, metrics = nil)
+            new(id, path, ping, metrics)
+          end
+        end
+      PingEvent =
+        Data.define(:ping, :client_command_apply_metrics) do
+          def self.[](ping, metrics = nil)
+            new(ping, metrics)
+          end
+        end
+      VisibilityEvent =
+        Data.define(:hidden, :ping, :client_command_apply_metrics) do
+          def self.[](hidden, ping, metrics = nil)
+            new(hidden, ping, metrics)
+          end
+        end
 
       def self.parse(message)
         case message
         in ["Callback", String => id, Hash => event, Numeric => ping] unless id.empty?
           CallbackEvent[id, event, ping]
+        in ["Callback", String => id, Hash => event, Numeric => ping, telemetry] unless id.empty?
+          CallbackEvent[id, event, ping, parse_client_command_apply_metrics(telemetry)]
         in ["Navigate", String => id, String => href, Numeric => ping] unless id.empty?
           NavigateEvent[id, href, ping]
+        in ["Navigate", String => id, String => href, Numeric => ping, telemetry] unless id.empty?
+          NavigateEvent[id, href, ping, parse_client_command_apply_metrics(telemetry)]
         in ["Ping", Numeric => ping]
           PingEvent[ping]
+        in ["Ping", Numeric => ping, telemetry]
+          PingEvent[ping, parse_client_command_apply_metrics(telemetry)]
         in ["Visibility", true | false => hidden, Numeric => ping]
           VisibilityEvent[hidden, ping]
+        in ["Visibility", true | false => hidden, Numeric => ping, telemetry]
+          VisibilityEvent[hidden, ping, parse_client_command_apply_metrics(telemetry)]
         else
           raise InvalidEventError, "Invalid event message: #{message.inspect}"
         end
       end
+
+      def self.parse_client_command_apply_metrics(telemetry)
+        case telemetry
+        in {
+             batches: Integer => batches,
+             commands: Integer => commands,
+             duration_ms: Numeric => duration_ms
+           } if batches.positive? && commands >= batches && duration_ms >= 0
+          ClientCommandApplyMetrics[batches, commands, duration_ms]
+        else
+          raise InvalidEventError,
+            "Invalid client command-apply telemetry: #{telemetry.inspect}"
+        end
+      end
+      private_class_method :parse_client_command_apply_metrics
     end
 
     RequestInfo =
@@ -303,6 +348,7 @@ module Mayu
 
     def handle_event(event)
       record_ping(event.ping)
+      record_client_command_apply_metrics(event.client_command_apply_metrics)
 
       case event
       in Events::PingEvent
@@ -331,6 +377,20 @@ module Mayu
       end
     rescue => e
       Console.logger.error(self, e)
+    end
+
+    def record_client_command_apply_metrics(metrics)
+      return unless metrics
+
+      @environment.metrics.client_command_apply_batches_total.increment(
+        by: metrics.batches
+      )
+      @environment.metrics.client_command_apply_commands_total.increment(
+        by: metrics.commands
+      )
+      @environment.metrics.client_command_apply_duration_ms_total.increment(
+        by: metrics.duration_ms
+      )
     end
 
     def emit_reload_error_commands(update)

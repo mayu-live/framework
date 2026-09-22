@@ -18,6 +18,9 @@ class Mayu::Metrics::AppMetricsTest < Minitest::Test
         mayu_callback_events_total
         mayu_callback_handler_duration_milliseconds
         mayu_callback_queue_duration_milliseconds
+        mayu_client_command_apply_batches_total
+        mayu_client_command_apply_commands_total
+        mayu_client_command_apply_duration_milliseconds_total
         mayu_command_batch_commands_total
         mayu_command_batch_compressed_bytes_total
         mayu_command_batch_uncompressed_bytes_total
