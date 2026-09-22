@@ -399,21 +399,34 @@ module Mayu
           new_styles
         end
 
-        def flatten_props(hash, path = [])
-          hash.reduce({}) do |obj, (k, v)|
-            next {**obj, k => v} if k == :style && path.empty?
+        def flatten_props(hash)
+          flatten_props_into(hash, {}, nil)
+        end
 
-            current_path = [*path, k]
+        def flatten_props_into(hash, attributes, prefix)
+          hash.each do |key, value|
+            if prefix.nil? && key == :style
+              attributes[key] = value
+              next
+            end
 
-            obj.merge(
-              case v
-              when Hash
-                flatten_props(v, current_path)
-              else
-                {current_path.join("-").to_sym => v}
-              end
-            )
+            if value.is_a?(Hash)
+              child_prefix = prefix ? "#{prefix}-#{key}" : key.to_s
+              flatten_props_into(value, attributes, child_prefix)
+            else
+              name =
+                if prefix
+                  :"#{prefix}-#{key}"
+                elsif key.is_a?(Symbol)
+                  key
+                else
+                  key.to_s.to_sym
+                end
+              attributes[name] = value
+            end
           end
+
+          attributes
         end
       end
     end

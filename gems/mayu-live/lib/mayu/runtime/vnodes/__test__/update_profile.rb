@@ -173,7 +173,7 @@ module Mayu
               next
             end
 
-            run = lambda do
+            run = proc do
               ITERATIONS.times do
                 print_progress(it, ITERATIONS) if SHOW_PROGRESS
                 tick(engine, instance, it)

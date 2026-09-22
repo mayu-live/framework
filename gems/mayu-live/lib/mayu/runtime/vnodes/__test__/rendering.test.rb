@@ -57,6 +57,34 @@ class Mayu::Runtime::VNodes::RenderingTest < Minitest::Test
     refute_includes(render_html(engine.root), "<body style=")
   end
 
+  def test_flattens_nested_props_without_flattening_inline_styles
+    attributes = Mayu::Runtime::VNodes::VAttributes.allocate
+    style = {color: "red", hover: {color: "blue"}}
+
+    flattened =
+      attributes.send(
+        :flatten_props,
+        {
+          id: "probe",
+          data: {controller: {action: "save"}, active: true},
+          aria: {label: "Save"},
+          style:
+        }
+      )
+
+    assert_equal(
+      {
+        id: "probe",
+        "data-controller-action": "save",
+        "data-active": true,
+        "aria-label": "Save",
+        style:
+      },
+      flattened
+    )
+    assert_same(style, flattened[:style])
+  end
+
   def test_dom_id_tree_structure
     descriptor =
       H[:body, H[:header, H[:h1, "Title"]], H[:main, H[:p, "Content"]]]
