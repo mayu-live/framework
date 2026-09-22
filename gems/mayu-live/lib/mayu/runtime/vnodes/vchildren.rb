@@ -127,15 +127,17 @@ module Mayu
           @children.each { |child| child.traverse(&block) }
         end
 
-        def dom_ids
-          @children.flat_map(&:dom_ids)
+        def collect_dom_ids(ids)
+          @children.each { |child| child.collect_dom_ids(ids) }
         end
 
         # The ids of the DOM nodes these children contribute to the closest
         # element, in order. Only the top level is needed: the browser keeps
         # every node by id and replaces the element's children by those ids.
         def dom_id_list
-          dom_ids
+          ids = []
+          collect_dom_ids(ids)
+          ids
         end
 
         def marshal_dump

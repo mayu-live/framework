@@ -40,6 +40,18 @@ class Mayu::Runtime::VNodes::DomIdsTest < Minitest::Test
     assert_equal(ids.uniq, ids)
   end
 
+  def test_collect_dom_ids_matches_dom_ids_for_nested_wrappers
+    descriptor = H[:body, H[Wrapper], H[Pair]]
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    body = find_element(engine.root, :body)
+    children = body.instance_variable_get(:@children)
+    collected_ids = []
+
+    children.collect_dom_ids(collected_ids)
+
+    assert_equal(children.dom_ids, collected_ids)
+  end
+
   def test_vnode_ids_are_compact_unique_frozen_strings
     descriptor = H[:body, H[:p, "One"], H[:p, "Two"]]
     engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)

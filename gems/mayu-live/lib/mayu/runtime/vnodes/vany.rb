@@ -71,8 +71,8 @@ module Mayu
           @child.dom_id
         end
 
-        def dom_ids
-          @child.dom_ids
+        def collect_dom_ids(ids)
+          @child.collect_dom_ids(ids)
         end
 
         def traverse(&block)

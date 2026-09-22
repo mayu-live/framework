@@ -84,12 +84,20 @@ module Mayu
           nil
         end
 
+        # Appends the IDs of the DOM nodes this vnode contributes to its
+        # parent element. Wrapper vnodes delegate to their children, allowing
+        # callers to build one flat list without intermediate arrays.
+        def collect_dom_ids(ids)
+          ids << dom_id if dom_id
+        end
+
         # The ids of the DOM nodes this vnode contributes to its parent
-        # element, without descending into them. Wrappers such as components
-        # flat-map their children, so a component rendering an array of
-        # elements contributes each of them.
+        # element. Most update paths should prefer #collect_dom_ids so they
+        # can append into an existing output array.
         def dom_ids
-          (id = dom_id) ? [id] : []
+          ids = []
+          collect_dom_ids(ids)
+          ids
         end
 
         def tree_path

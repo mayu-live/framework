@@ -77,8 +77,8 @@ module Mayu
           @children.traverse(&block)
         end
 
-        def dom_ids
-          @children.dom_ids
+        def collect_dom_ids(ids)
+          @children.collect_dom_ids(ids)
         end
 
         def marshal_dump
