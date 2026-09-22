@@ -89,6 +89,24 @@ class Mayu::Runtime::VNodes::RenderingTest < Minitest::Test
     refute_includes(html, "false")
   end
 
+  def test_normalizes_nested_child_arrays_and_separates_text_nodes
+    children = Mayu::Runtime::VNodes::VChildren.allocate
+
+    normalized =
+      children.send(:normalize_descriptors, ["one", [nil, 2, ["three"]]])
+
+    assert_equal(
+      [
+        "one",
+        Mayu::Runtime::Descriptors::Comment[""],
+        "2",
+        Mayu::Runtime::Descriptors::Comment[""],
+        "three"
+      ],
+      normalized
+    )
+  end
+
   def test_flattens_nested_props_without_flattening_inline_styles
     attributes = Mayu::Runtime::VNodes::VAttributes.allocate
     style = {color: "red", hover: {color: "blue"}}

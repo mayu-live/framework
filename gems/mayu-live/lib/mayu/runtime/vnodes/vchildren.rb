@@ -19,7 +19,7 @@ module Mayu
           Data.define(
             :diff_children,
             :removed,
-            :previous_ids,
+            :children_changed,
             :cursor,
             :new_children
           )
@@ -172,7 +172,6 @@ module Mayu
           if @pending_update
             state = @pending_update
           else
-            previous_ids = dom_id_list_for(old_children)
             diff =
               diff_children(
                 old_children,
@@ -183,19 +182,20 @@ module Mayu
               UpdateState.new(
                 diff[:children],
                 diff[:removed],
-                previous_ids,
+                diff[:changed],
                 0,
                 []
               )
           end
 
           budget_remaining = @engine.update_budget
+          cursor = state.cursor
 
-          while state.cursor < state.diff_children.length
+          while cursor < state.diff_children.length
             break if budget_remaining && budget_remaining <= 0
 
-            update = state.diff_children[state.cursor]
-            state = state.with(cursor: state.cursor + 1)
+            update = state.diff_children[cursor]
+            cursor += 1
 
             node =
               case update[:type]
@@ -213,16 +213,16 @@ module Mayu
             budget_remaining -= 1 if budget_remaining
           end
 
-          remaining =
-            state
-              .diff_children
-              .drop(state.cursor)
-              .map { |update| (update[:type] == :updated) ? update[:node] : nil }
-              .compact
-
-          if state.cursor < state.diff_children.length
+          if cursor < state.diff_children.length
+            remaining =
+              state
+                .diff_children
+                .drop(cursor)
+                .filter_map do |update|
+                  update[:node] if update[:type] == :updated
+                end
             @children = state.new_children + remaining
-            @pending_update = state
+            @pending_update = state.with(cursor:)
             enqueue_resume
             return
           end
@@ -231,7 +231,7 @@ module Mayu
 
           state.removed.each { |removed| remove_node(collector, removed) }
 
-          mark_parent_children_dirty if state.previous_ids != dom_id_list
+          mark_parent_children_dirty if state.children_changed
 
           @pending_update = nil
           @pending_enqueued = false
@@ -259,6 +259,7 @@ module Mayu
 
         def diff_children(old_children, descriptors, created_nodes)
           source = old_children.dup
+          children_changed = false
 
           new_children =
             descriptors.map do |descriptor|
@@ -266,16 +267,19 @@ module Mayu
                 @engine.same_descriptor?(descriptor, it.descriptor)
               end
               if index
+                children_changed ||= !index.zero?
                 found = source.delete_at(index)
                 {type: :updated, node: found, descriptor: descriptor}
               else
+                children_changed = true
                 node = VAny.new(descriptor, parent: self, engine: @engine)
                 created_nodes << node
                 {type: :created, node:}
               end
             end
 
-          {children: new_children, removed: source}
+          children_changed ||= !source.empty?
+          {children: new_children, removed: source, changed: children_changed}
         end
 
         def insert_node(collector, node)
@@ -319,32 +323,30 @@ module Mayu
         end
 
         def normalize_descriptors(descriptors)
-          Array(descriptors)
-            .flatten
-            .map { Descriptors.descriptor_or_string(it) }
-            .compact
-            .then { insert_comments_between_strings(it) }
+          normalized = []
+          append_normalized_descriptors(descriptors, normalized)
+          normalized
         end
 
         def mark_parent_children_dirty
           closest(VElement)&.mark_children_dirty
         end
 
-        def dom_id_list_for(children)
-          children.flat_map(&:dom_ids)
-        end
-
-        def insert_comments_between_strings(descriptors)
-          [nil, *descriptors].each_cons(2)
-            .map do |prev, descriptor|
-              case [prev, descriptor]
-              in [String, String]
-                [STRING_SEPARATOR, descriptor]
-              else
-                descriptor
-              end
+        def append_normalized_descriptors(descriptors, normalized)
+          if (nested = Array.try_convert(descriptors))
+            nested.each do |descriptor|
+              append_normalized_descriptors(descriptor, normalized)
             end
-            .flatten
+            return
+          end
+
+          descriptor = Descriptors.descriptor_or_string(descriptors)
+          return unless descriptor
+
+          if descriptor.is_a?(String) && normalized.last.is_a?(String)
+            normalized << STRING_SEPARATOR
+          end
+          normalized << descriptor
         end
       end
     end

@@ -41,6 +41,23 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     end
   end
 
+  class RootShapeProbe < Mayu::Component::Base
+    def initialize
+      @expanded = false
+    end
+
+    def expand!
+      @expanded = true
+      rerender!
+    end
+
+    def render
+      return H[:p, "First"] unless @expanded
+
+      [H[:p, "First"], H[:p, "Second"]]
+    end
+  end
+
   def test_update_patches_for_insert_and_remove
     initial =
       H[
@@ -79,6 +96,33 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
 
     assert_match("<section><h2>News</h2></section>", create_patch.html)
     refute_nil(remove_patch.id)
+  end
+
+  def test_keyed_reordering_marks_parent_children_dirty
+    initial =
+      H[
+        :body,
+        H[:ul, H[:li, "First", key: :first], H[:li, "Second", key: :second]]
+      ]
+    updated =
+      H[
+        :body,
+        H[:ul, H[:li, "Second", key: :second], H[:li, "First", key: :first]]
+      ]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+    engine.flush_dirty_elements(collector)
+
+    list = find_element(engine.root, :ul)
+    replace =
+      collector.commands.find do |command|
+        command.is_a?(Mayu::Runtime::Commands::ReplaceChildren) &&
+          command.id == list.dom_id
+      end
+
+    refute_nil(replace)
   end
 
   def test_register_custom_element_patch
@@ -378,6 +422,32 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
         end
 
       assert_equal(1, replace_children.count)
+    end
+  end
+
+  def test_component_root_shape_change_marks_enclosing_element_dirty
+    descriptor = H[:body, H[RootShapeProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, RootShapeProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.respond_to?(:rerender!) }
+      instance.expand!
+
+      patches =
+        unwrap_commands(
+          Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+        )
+      body = find_element(engine.root, :body)
+      replace =
+        patches.find do |patch|
+          patch.is_a?(Mayu::Runtime::Commands::ReplaceChildren) &&
+            patch.id == body.dom_id
+        end
+
+      refute_nil(replace)
+      assert_equal(3, replace.child_ids.length)
     end
   end
 
