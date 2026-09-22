@@ -242,6 +242,10 @@ module Mayu
         @dirty_elements.add(element)
       end
 
+      def register_dirty_listener_element(element)
+        @root&.mark_listener_index_dirty(element)
+      end
+
       def flush_dirty_elements(commands)
         return if @dirty_elements.empty?
         @dirty_elements.each do |element|

@@ -144,6 +144,7 @@ module Mayu
         def update(collector, descriptor = nil)
           return unless descriptor
           @descriptor = descriptor
+          listeners_changed = false
 
           new_attributes =
             normalize_attributes(flatten_props(@descriptor.props))
@@ -154,12 +155,14 @@ module Mayu
             new_value = new_attributes[key]
 
             if key.to_s.start_with?("on")
-              updated_attributes[key] = update_callback(
+              updated_value = update_callback(
                 collector,
                 key,
                 old_value,
                 new_value
               )
+              listeners_changed ||= !updated_value.equal?(old_value)
+              updated_attributes[key] = updated_value
               next
             end
 
@@ -203,6 +206,7 @@ module Mayu
           end
 
           @attributes = updated_attributes
+          @parent.mark_listeners_dirty if listeners_changed
         end
 
         def write_html(out)
@@ -247,13 +251,6 @@ module Mayu
             yield event_name, listener if
               listener.is_a?(Listener)
           end
-        end
-
-        def remove_listeners
-          # Listener dispatch is indexed by VDocument from the committed VDOM.
-          # There is deliberately nothing to remove here: removing a vnode while
-          # rendering a fallback must not mutate the live dispatch index before
-          # that fallback has been committed.
         end
 
         def rehydrate_listeners(component_map)

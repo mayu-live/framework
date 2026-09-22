@@ -70,7 +70,7 @@ module Mayu
 
                 # Listener registration is committed only after every update in
                 # this batch (including any error-boundary recovery) has settled.
-                @engine&.root&.rebuild_listener_index!
+                @engine&.root&.flush_listener_index!
 
                 head_commands = []
                 if @engine&.head_dirty?

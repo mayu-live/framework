@@ -31,6 +31,8 @@ module Mayu
         )
           super(descriptor, parent:, engine:)
           @listeners = {}
+          @listener_entries_by_element = {}
+          @dirty_listener_elements = Set.new
           @styles = Set.new(stylesheets)
           @scripts = Set.new(scripts)
           @custom_elements = Set.new
@@ -56,7 +58,7 @@ module Mayu
         rescue VComponent::UnhandledRenderError => failure
           resolve_render_error(collector, failure, checkpoint)
         ensure
-          rebuild_listener_index!
+          flush_listener_index!
         end
 
         def assign_descriptor(descriptor)
@@ -92,13 +94,29 @@ module Mayu
         # retain callbacks which never reached the browser.
         def rebuild_listener_index!
           @listeners.clear
+          @listener_entries_by_element.clear
           traverse do |node|
             next unless node.is_a?(VElement)
 
-            node.instance_variable_get(:@attributes).each_listener do |_name, listener|
-              @listeners[listener.id] = listener if listener.callback
-            end
+            index_listener_element(node)
           end
+          @dirty_listener_elements.clear
+        end
+
+        # Listener changes are collected while a render is in progress and
+        # reconciled only after the render (including error recovery) settles.
+        # This keeps the dispatch index transactional without walking the
+        # entire VDOM after every update.
+        def mark_listener_index_dirty(element)
+          @dirty_listener_elements.add(element)
+        end
+
+        def flush_listener_index!
+          return if @dirty_listener_elements.empty?
+
+          dirty_elements = @dirty_listener_elements
+          @dirty_listener_elements = Set.new
+          dirty_elements.each { |element| index_listener_element(element) }
         end
 
         def call_listener(id, payload)
@@ -170,6 +188,8 @@ module Mayu
           @html.update(collector, init_html)
         rescue VComponent::UnhandledRenderError => failure
           resolve_render_error(collector, failure, checkpoint)
+        ensure
+          flush_listener_index!
         end
 
         def head_dirty?
@@ -211,6 +231,8 @@ module Mayu
           @scripts = scripts
           @custom_elements = custom_elements
           @listeners = listeners || {}
+          @listener_entries_by_element = {}
+          @dirty_listener_elements = Set.new
           @head = Set.new
           @head_dirty = false
         end
@@ -271,6 +293,25 @@ module Mayu
         end
 
         private
+
+        def index_listener_element(element)
+          if (old_entries = @listener_entries_by_element.delete(element))
+            old_entries.each do |id, listener|
+              @listeners.delete(id) if @listeners[id].equal?(listener)
+            end
+          end
+
+          return if element.removed?
+
+          entries = {}
+          element.each_listener do |_name, listener|
+            next unless listener.callback
+
+            entries[listener.id] = listener
+            @listeners[listener.id] = listener
+          end
+          @listener_entries_by_element[element] = entries unless entries.empty?
+        end
 
         def init_html
           H[Html, init_head, @descriptor]

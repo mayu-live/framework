@@ -258,6 +258,26 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     assert_equal(0, listeners.size)
   end
 
+  def test_listener_updates_do_not_traverse_the_document
+    component = CallbackProbe.new
+    initial =
+      H[
+        :body,
+        H[:button, "Click", onclick: H.callback(component, :handle_click)]
+      ]
+    updated = H[:body, H[:button, "Click", onclick: nil]]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    document = engine.root
+
+    document.define_singleton_method(:traverse) do |*|
+      raise "listener index performed a full-tree traversal"
+    end
+
+    document.update(Mayu::Runtime::VNodes::CommandCollector.new, updated)
+
+    assert_empty(document.instance_variable_get(:@listeners))
+  end
+
   def test_engine_callback_emits_patches
     initial = H[:body, H[CallbackProbe]]
 

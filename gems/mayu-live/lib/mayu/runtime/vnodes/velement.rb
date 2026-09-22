@@ -47,12 +47,20 @@ module Mayu
         end
 
         def remove
-          @attributes.remove_listeners
+          mark_listeners_dirty
           @children.remove
         end
 
+        def each_listener(&block)
+          @attributes.each_listener(&block)
+        end
+
+        def mark_listeners_dirty
+          @engine&.register_dirty_listener_element(self)
+        end
+
         def emit_listeners(collector)
-          @attributes.each_listener do |name, listener|
+          each_listener do |name, listener|
             collector << Commands::SetListener[dom_id, name, listener.id]
           end
         end

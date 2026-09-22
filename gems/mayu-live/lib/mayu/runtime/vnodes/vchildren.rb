@@ -298,6 +298,9 @@ module Mayu
           end
 
           node.mark_inserted
+          node.traverse do |child|
+            child.mark_listeners_dirty if child.is_a?(VElement)
+          end
         end
 
         def remove_node(collector, node)
