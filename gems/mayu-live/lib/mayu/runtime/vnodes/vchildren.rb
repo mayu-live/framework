@@ -258,6 +258,10 @@ module Mayu
         end
 
         def diff_children(old_children, descriptors, created_nodes)
+          if keyed_children?(old_children, descriptors)
+            return diff_keyed_children(old_children, descriptors, created_nodes)
+          end
+
           source = old_children.dup
           children_changed = false
 
@@ -280,6 +284,53 @@ module Mayu
 
           children_changed ||= !source.empty?
           {children: new_children, removed: source, changed: children_changed}
+        end
+
+        # A keyed list is the common case for collections that are reordered.
+        # Matching it through a hash avoids repeatedly scanning and deleting
+        # from the old child array. Keep duplicate keys in a candidate list so
+        # their historical first-match behavior remains unchanged.
+        def diff_keyed_children(old_children, descriptors, created_nodes)
+          candidates_by_key = Hash.new { |hash, key| hash[key] = [] }
+          old_children.each do |child|
+            candidates_by_key[child.descriptor.key] << child
+          end
+
+          matched = {}
+          children_changed = false
+          new_children =
+            descriptors.each_with_index.map do |descriptor, position|
+              candidates = candidates_by_key[descriptor.key]
+              candidate_index =
+                candidates.index do |candidate|
+                  @engine.same_descriptor?(descriptor, candidate.descriptor)
+                end
+
+              if candidate_index
+                child = candidates.delete_at(candidate_index)
+                matched[child] = true
+                children_changed ||= child != old_children[position]
+                {type: :updated, node: child, descriptor:}
+              else
+                children_changed = true
+                child = VAny.new(descriptor, parent: self, engine: @engine)
+                created_nodes << child
+                {type: :created, node: child}
+              end
+            end
+
+          removed = old_children.reject { |child| matched[child] }
+          children_changed ||= !removed.empty?
+          {children: new_children, removed:, changed: children_changed}
+        end
+
+        def keyed_children?(old_children, descriptors)
+          old_children.all? { |child| keyed_descriptor?(child.descriptor) } &&
+            descriptors.all? { |descriptor| keyed_descriptor?(descriptor) }
+        end
+
+        def keyed_descriptor?(descriptor)
+          descriptor.is_a?(Descriptors::Element) && !descriptor.key.nil?
         end
 
         def insert_node(collector, node)

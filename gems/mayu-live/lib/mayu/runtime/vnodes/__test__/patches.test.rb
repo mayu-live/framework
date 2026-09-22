@@ -125,6 +125,75 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     refute_nil(replace)
   end
 
+  def test_keyed_reordering_preserves_vnode_identity
+    initial =
+      H[
+        :body,
+        H[
+          :ul,
+          H[:li, "First", key: :first],
+          H[:li, "Second", key: :second],
+          H[:li, "Third", key: :third]
+        ]
+      ]
+    updated =
+      H[
+        :body,
+        H[
+          :ul,
+          H[:li, "Third updated", key: :third],
+          H[:li, "First updated", key: :first],
+          H[:li, "Second updated", key: :second]
+        ]
+      ]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    original_ids = keyed_element_ids(engine.root, :li)
+
+    engine.update(updated)
+
+    assert_equal(
+      {third: original_ids.fetch(:third), first: original_ids.fetch(:first), second: original_ids.fetch(:second)},
+      keyed_element_ids(engine.root, :li)
+    )
+  end
+
+  def test_duplicate_keys_keep_their_historical_first_match_order
+    initial =
+      H[
+        :body,
+        H[:ul, H[:li, "First", key: :duplicate], H[:li, "Second", key: :duplicate]]
+      ]
+    updated =
+      H[
+        :body,
+        H[:ul, H[:li, "Second updated", key: :duplicate], H[:li, "First updated", key: :duplicate]]
+      ]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    list = find_element(engine.root, :ul)
+    original_ids = child_element_ids(list)
+
+    engine.update(updated)
+
+    assert_equal(original_ids, child_element_ids(list))
+  end
+
+  private def keyed_element_ids(root, type)
+    ids = {}
+    root.send(:traverse) do |node|
+      next unless node.is_a?(Mayu::Runtime::VNodes::VElement)
+      descriptor = node.instance_variable_get(:@descriptor)
+      next unless descriptor.type == type && descriptor.key
+
+      ids[descriptor.key] = node.id
+    end
+    ids
+  end
+
+  private def child_element_ids(element)
+    children = element.instance_variable_get(:@children).children
+    children.map { |child| child.instance_variable_get(:@child).id }
+  end
+
   def test_register_custom_element_patch
     custom = Mayu::Runtime::Descriptors::CustomElement["my-element", "my-element.js"]
     initial = H[:body]
