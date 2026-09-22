@@ -16,7 +16,13 @@ module Mayu
         :session_timeouts_total,
         :session_pings_total,
         :callback_events_total,
+        :callback_queue_duration_ms,
+        :callback_handler_duration_ms,
         :navigations_total,
+        :command_batches_total,
+        :command_batch_commands_total,
+        :command_batch_uncompressed_bytes_total,
+        :command_batch_compressed_bytes_total,
         :component_mounts_total,
         :component_render_duration_ms,
         :component_reconcile_duration_ms,
@@ -70,10 +76,52 @@ module Mayu
                 labels: [:component, :method, *preset_labels.keys],
                 preset_labels:
               ),
+            callback_queue_duration_ms:
+              registry.summary(
+                :mayu_callback_queue_duration_milliseconds,
+                docstring: "Time callbacks wait before their component can handle them in milliseconds",
+                labels: [:component, :method, *preset_labels.keys],
+                preset_labels:
+              ),
+            callback_handler_duration_ms:
+              registry.summary(
+                :mayu_callback_handler_duration_milliseconds,
+                docstring: "Time spent running callback handlers in milliseconds",
+                labels: [:component, :method, *preset_labels.keys],
+                preset_labels:
+              ),
             navigations_total:
               registry.counter(
                 :mayu_navigations_total,
                 docstring: "Total number of client-side navigations handled",
+                labels: [*preset_labels.keys],
+                preset_labels:
+              ),
+            command_batches_total:
+              registry.counter(
+                :mayu_command_batches_total,
+                docstring: "Total command batches written to session streams",
+                labels: [*preset_labels.keys],
+                preset_labels:
+              ),
+            command_batch_commands_total:
+              registry.counter(
+                :mayu_command_batch_commands_total,
+                docstring: "Total commands written to session streams",
+                labels: [*preset_labels.keys],
+                preset_labels:
+              ),
+            command_batch_uncompressed_bytes_total:
+              registry.counter(
+                :mayu_command_batch_uncompressed_bytes_total,
+                docstring: "Total MessagePack bytes in command batches before stream compression",
+                labels: [*preset_labels.keys],
+                preset_labels:
+              ),
+            command_batch_compressed_bytes_total:
+              registry.counter(
+                :mayu_command_batch_compressed_bytes_total,
+                docstring: "Total compressed bytes in command batches written to session streams",
                 labels: [*preset_labels.keys],
                 preset_labels:
               ),

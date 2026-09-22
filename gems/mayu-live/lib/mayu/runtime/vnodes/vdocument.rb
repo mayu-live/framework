@@ -126,11 +126,12 @@ module Mayu
               return
             end
           if (callback = listener.callback)
+            labels = {
+              component: component_label_for(callback.component),
+              method: callback.method_name
+            }
             metrics.callback_events_total.increment(
-              labels: {
-                component: component_label_for(callback.component),
-                method: callback.method_name
-              }
+              labels:
             )
           end
 
@@ -139,9 +140,25 @@ module Mayu
           queue = component&.instance_variable_get(:@__vnode_queue)
 
           completion = Async::Queue.new
+          queued_at =
+            Process.clock_gettime(Process::CLOCK_MONOTONIC, :float_millisecond)
           call =
             lambda do
-              call_listener_safely(-> { listener.call(payload) }, listener)
+              if callback
+                metrics.callback_queue_duration_ms.observe(
+                  Process.clock_gettime(
+                    Process::CLOCK_MONOTONIC,
+                    :float_millisecond
+                  ) - queued_at,
+                  labels:
+                )
+                metrics.update_summary(
+                  metrics.callback_handler_duration_ms,
+                  labels:
+                ) { call_listener_safely(-> { listener.call(payload) }, listener) }
+              else
+                call_listener_safely(-> { listener.call(payload) }, listener)
+              end
             ensure
               completion.enqueue(true)
             end

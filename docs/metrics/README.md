@@ -34,6 +34,22 @@ otherwise create unbounded Prometheus series.
 Use both with callback rate: a component that is slow but rarely used is a
 different problem from a cheap component called thousands of times per minute.
 
+## Callback latency and stream cost
+
+| Metric                                        | Meaning                                                                                 | Useful view                                                           |
+| --------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `mayu_callback_queue_duration_milliseconds`   | Time a callback waits for its component's work queue, labelled by component and method. | Average duration; sustained growth means component work is backed up. |
+| `mayu_callback_handler_duration_milliseconds` | Time spent running a callback handler, labelled by component and method.                | Average duration and slowest callback.                                |
+| `mayu_command_batches_total`                  | Command batches written to open session streams.                                        | Per-second rate.                                                      |
+| `mayu_command_batch_commands_total`           | Individual commands in those batches.                                                   | Commands per batch: `rate(commands) / rate(batches)`.                 |
+| `mayu_command_batch_uncompressed_bytes_total` | MessagePack bytes before stream compression.                                            | Byte rate and compression ratio.                                      |
+| `mayu_command_batch_compressed_bytes_total`   | Deflate bytes written to the session stream.                                            | Actual server-to-browser payload byte rate.                           |
+
+Callback queue duration covers time from receiving an event until its component
+starts handling it; handler duration excludes later rendering and reconciliation.
+Command-batch byte counters cover server-to-browser commands, including each
+batch's streaming compression flush, not request or asset traffic.
+
 ## Metric lifecycle
 
 The old metric names were replaced rather than emitted in parallel. Update

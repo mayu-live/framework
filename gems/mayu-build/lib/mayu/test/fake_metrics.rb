@@ -11,7 +11,13 @@ module Mayu
       def session_timeouts_total = NullCounter.new
       def session_pings_total = NullCounter.new
       def callback_events_total = NullCounter.new
+      def callback_queue_duration_ms = NullSummary.new
+      def callback_handler_duration_ms = NullSummary.new
       def navigations_total = NullCounter.new
+      def command_batches_total = NullCounter.new
+      def command_batch_commands_total = NullCounter.new
+      def command_batch_uncompressed_bytes_total = NullCounter.new
+      def command_batch_compressed_bytes_total = NullCounter.new
       def component_mounts_total = NullCounter.new
       def component_reconcile_duration_ms = NullSummary.new
       def component_render_duration_ms = NullSummary.new

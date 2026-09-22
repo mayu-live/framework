@@ -41,8 +41,9 @@ module Mayu
       end
 
       class Writer < Async::HTTP::Body::Writable
-        def initialize(...)
-          super
+        def initialize(*args, metrics: nil, **kwargs, &block)
+          super(*args, **kwargs, &block)
+          @metrics = metrics
           @deflate =
             Zlib::Deflate.new(
               Zlib::BEST_COMPRESSION,
@@ -84,10 +85,10 @@ module Mayu
               "Attempted to write to a closed #{self.class.name}"
           end
 
-          batch
-            .then { @wrapper.pack(it) }
-            .then { deflate_chunk(it) }
-            .then { write(it) }
+          packed = @wrapper.pack(batch)
+          compressed = deflate_chunk(packed)
+          record_batch(batch, packed, compressed)
+          write(compressed)
         end
 
         def close_write(reason = nil)
@@ -108,6 +109,19 @@ module Mayu
         end
 
         private
+
+        def record_batch(batch, packed, compressed)
+          return unless @metrics
+
+          @metrics.command_batches_total.increment
+          @metrics.command_batch_commands_total.increment(by: batch.commands.size)
+          @metrics.command_batch_uncompressed_bytes_total.increment(
+            by: packed.bytesize
+          )
+          @metrics.command_batch_compressed_bytes_total.increment(
+            by: compressed.bytesize
+          )
+        end
 
         def deflate_chunk(input)
           expected_total = @deflate.total_in + input.bytesize

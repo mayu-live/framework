@@ -11,6 +11,26 @@ class Mayu::Server::EventStreamTest < Minitest::Test
 
   Request = Data.define(:body)
 
+  class Counter
+    attr_reader :value
+
+    def initialize
+      @value = 0
+    end
+
+    def increment(by: 1, **)
+      @value += by
+    end
+  end
+
+  Metrics =
+    Data.define(
+      :command_batches_total,
+      :command_batch_commands_total,
+      :command_batch_uncompressed_bytes_total,
+      :command_batch_compressed_bytes_total
+    )
+
   def test_reads_the_client_ping_frame_fixture
     request =
       Request.new(
@@ -156,6 +176,27 @@ class Mayu::Server::EventStreamTest < Minitest::Test
   ensure
     writer&.close
     inflater&.close
+  end
+
+  def test_records_command_batch_counts_and_stream_bytes
+    metrics = Metrics.new(Counter.new, Counter.new, Counter.new, Counter.new)
+    writer = Writer.new(metrics:)
+    batch =
+      Mayu::Runtime::Batch[
+        [
+          Mayu::Runtime::Commands::Initialize[{}],
+          Mayu::Runtime::Commands::Transfer["state"]
+        ]
+      ]
+
+    writer.write_batch(batch)
+
+    assert_equal(1, metrics.command_batches_total.value)
+    assert_equal(2, metrics.command_batch_commands_total.value)
+    assert_operator(metrics.command_batch_uncompressed_bytes_total.value, :>, 0)
+    assert_operator(metrics.command_batch_compressed_bytes_total.value, :>, 0)
+  ensure
+    writer&.close
   end
 
   def test_wait_after_consumer_disconnect_is_not_lost

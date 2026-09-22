@@ -302,6 +302,126 @@
       ],
       "title": "Most frequent callbacks",
       "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "showPoints": "auto"
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 8, "x": 0, "y": 26 },
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mayu_command_batches_total[$__rate_interval]))",
+          "legendFormat": "batches",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(mayu_command_batch_commands_total[$__rate_interval]))",
+          "legendFormat": "commands",
+          "refId": "B"
+        }
+      ],
+      "title": "Command stream work",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "showPoints": "auto"
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 8, "x": 8, "y": 26 },
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mayu_command_batch_uncompressed_bytes_total[$__rate_interval]))",
+          "legendFormat": "before compression",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(mayu_command_batch_compressed_bytes_total[$__rate_interval]))",
+          "legendFormat": "sent to browser",
+          "refId": "B"
+        }
+      ],
+      "title": "Command stream bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "showPoints": "auto"
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 8, "x": 16, "y": 26 },
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(mayu_callback_queue_duration_milliseconds_sum[$__rate_interval])) / sum(rate(mayu_callback_queue_duration_milliseconds_count[$__rate_interval]))",
+          "legendFormat": "queue wait",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(mayu_callback_handler_duration_milliseconds_sum[$__rate_interval])) / sum(rate(mayu_callback_handler_duration_milliseconds_count[$__rate_interval]))",
+          "legendFormat": "handler",
+          "refId": "B"
+        }
+      ],
+      "title": "Average callback latency",
+      "type": "timeseries"
     }
   ],
   "schemaVersion": 39,

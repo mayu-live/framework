@@ -426,7 +426,7 @@ module Mayu
           )
         end
 
-        body = EventStream::Writer.new
+        body = EventStream::Writer.new(metrics: @environment&.metrics)
         @streams[session.id] = body
 
         body.write_batch(
