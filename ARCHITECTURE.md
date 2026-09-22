@@ -73,6 +73,12 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
   - `RemoveNode`
   - `ReplaceChildren` when child ID lists change
   - chunked updates using `Engine#update_budget`
+- A `ReplaceChildren` command carries the ordered IDs of the direct DOM nodes
+  contributed by an element's vnode children. Components, contexts, slots, and
+  other wrapper vnodes contribute the top-level DOM nodes they render, so a
+  component that renders several siblings contributes several IDs. The client
+  uses that list to retain existing nodes, remove absent ones, and insert or
+  move nodes into the server's order.
 - `VAttributes` handles attribute/class/style diffs and retains callback
   listener descriptors. `VDocument` derives the dispatch index from committed
   VDOM state; callback wiring is not rendered into SSR HTML and is sent as
