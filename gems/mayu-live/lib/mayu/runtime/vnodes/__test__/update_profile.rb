@@ -2,11 +2,12 @@
 # frozen_string_literal: true
 
 require "async"
+require "benchmark"
 require "vernier"
 
 require "mayu/test"
 require_relative "../../engine"
-require_relative "../collector"
+require_relative "../command_collector"
 require_relative "../vdocument"
 
 module Mayu
@@ -19,6 +20,8 @@ module Mayu
         # ITERATIONS = Integer(ENV.fetch("MAYU_PROFILE_ITERATIONS", "5000"))
         ITERATIONS = Integer(ENV.fetch("MAYU_PROFILE_ITERATIONS", "100"))
         WARMUP = Integer(ENV.fetch("MAYU_PROFILE_WARMUP", "200"))
+        SHOW_PROGRESS = ENV.fetch("MAYU_PROFILE_PROGRESS", "1") != "0"
+        PROFILE = ENV.fetch("MAYU_PROFILE", "1") != "0"
 
         START_OF_LINE_AND_CLEAR = "\r\e[2K"
 
@@ -138,7 +141,7 @@ module Mayu
             puts "Warming up..."
 
             WARMUP.times do
-              print_progress(it, WARMUP)
+              print_progress(it, WARMUP) if SHOW_PROGRESS
               tick(engine, instance)
             end
 
@@ -150,19 +153,33 @@ module Mayu
             # root.write_html(out)
             # puts out
 
-            puts "Profiling..."
+            puts(PROFILE ? "Profiling..." : "Benchmarking...")
+
+            run = proc do
+              ITERATIONS.times do
+                print_progress(it, ITERATIONS) if SHOW_PROGRESS
+                tick(engine, instance, it)
+              end
+            end
+
+            unless PROFILE
+              measurement = Benchmark.measure(&run)
+              clear_print format(
+                "Done: %.6f wall, %.6f CPU seconds; %.3f CPU ms/update\n",
+                measurement.real,
+                measurement.total,
+                measurement.total * 1000 / ITERATIONS
+              )
+              next
+            end
 
             result =
               Vernier.profile(
                 name: "mayu-vnode-update",
                 out: filename,
-                hooks: [UpdateTraceHook]
-              ) do
-                ITERATIONS.times do
-                  print_progress(it, ITERATIONS)
-                  tick(engine, instance, it)
-                end
-              end
+                hooks: [UpdateTraceHook],
+                &run
+              )
 
             clear_print "Done\n"
 
