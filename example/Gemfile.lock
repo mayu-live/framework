@@ -1,5 +1,5 @@
 PATH
-  remote: ../gems/mayu-build
+  remote: ../gems
   specs:
     mayu-build (0.0.6)
       klenod-build (= 0.0.22)
@@ -15,10 +15,6 @@ PATH
       rouge (~> 4.7)
       samovar (~> 2.5)
       terminal-table (~> 4.0)
-
-PATH
-  remote: ../gems/mayu-live
-  specs:
     mayu-live (0.0.6)
       async (~> 2.42)
       async-container (~> 0.30.0)
@@ -236,9 +232,7 @@ PLATFORMS
 
 DEPENDENCIES
   fuzzy_match
-  kramdown (~> 2.4)
   kramdown-parser-gfm (~> 1.1)
-  localhost
   mayu-build!
   mayu-live!
   rouge (~> 4.7)
