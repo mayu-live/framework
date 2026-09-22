@@ -195,7 +195,7 @@ module Mayu
 
           begin
             metrics.update_summary(
-              metrics.component_children_update_times,
+              metrics.component_reconcile_duration_ms,
               labels: {
                 component: component_label
               }
@@ -507,7 +507,7 @@ module Mayu
 
           @mount_started = true
           @mount_task = @task.async do
-            metrics.component_mount_count.increment(
+            metrics.component_mounts_total.increment(
               labels: {
                 component: component_label
               }
@@ -538,7 +538,7 @@ module Mayu
         def render_instance(instance)
           engine.with_render_gate do
             metrics.update_summary(
-              metrics.component_patch_times,
+              metrics.component_render_duration_ms,
               labels: {
                 component: component_label(instance)
               }

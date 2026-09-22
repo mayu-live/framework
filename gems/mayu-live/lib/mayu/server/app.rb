@@ -320,7 +320,7 @@ module Mayu
 
         if request.version == "HTTP/2"
           @sessions.store(session)
-          @environment.metrics.session_init_count.increment
+          @environment.metrics.session_starts_total.increment
         end
 
         body = session.render

@@ -530,6 +530,8 @@ Second page load with Slow 3G throttling (cache):
 ## Realtime metrics
 
 Mayu exposes a [Prometheus](https://prometheus.io/)-endpoint for metrics so you can see how your app performs.
+See [Reading Mayu metrics](docs/metrics/README.md) for the metric glossary and
+an importable Grafana overview dashboard.
 
 Screenshots from [Grafana on Fly.io](https://fly.io/docs/reference/metrics/#managed-grafana-preview).
 

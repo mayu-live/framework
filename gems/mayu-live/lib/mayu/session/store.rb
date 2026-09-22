@@ -85,12 +85,12 @@ module Mayu
                 if session.timed_out?(timeout)
                   Console.logger.info(self, event: Mayu::Session::Event.new(:timed_out, session_id:))
                   session.stop
-                  @metrics.session_timeout_count.increment
+                  @metrics.session_timeouts_total.increment
                   true
                 end
               end
 
-              @metrics.session_count.set(@sessions.size)
+              @metrics.active_sessions.set(@sessions.size)
             end
           end
       end

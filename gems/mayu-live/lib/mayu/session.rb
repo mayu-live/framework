@@ -314,7 +314,7 @@ module Mayu
       in Events::NavigateEvent[id:, path:]
         Console.logger.info(self, event: Event.new(:navigating, session_id: @id, path:))
 
-        @environment.metrics.session_navigate_count.increment(labels: {path:})
+        @environment.metrics.navigations_total.increment
 
         begin
           @request_info = @request_info.with(path:)
@@ -357,7 +357,7 @@ module Mayu
     end
 
     def record_ping(timestamp)
-      @environment.metrics.session_ping_count.increment
+      @environment.metrics.session_pings_total.increment
       @last_ping = Async::Clock.now
       @engine.ping(timestamp)
     end

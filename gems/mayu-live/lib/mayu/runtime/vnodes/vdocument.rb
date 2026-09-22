@@ -126,7 +126,7 @@ module Mayu
               return
             end
           if (callback = listener.callback)
-            metrics.session_callback_count.increment(
+            metrics.callback_events_total.increment(
               labels: {
                 component: component_label_for(callback.component),
                 method: callback.method_name

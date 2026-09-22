@@ -121,7 +121,7 @@ module Mayu
         def emit_replace_children(collector)
           return unless @children_dirty
           child_ids = @children.dom_id_list
-          metrics.update_child_id_count.increment(labels: {tag_name:})
+          metrics.replace_children_ids_total.increment(labels: {tag_name:})
           collector << Commands::ReplaceChildren[dom_id, child_ids]
           @children_dirty = false
         end

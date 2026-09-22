@@ -250,7 +250,7 @@ module Mayu
           return if @pending_enqueued
           @pending_enqueued = true
           if (element = closest(VElement))
-            metrics.update_chunk_count.increment(
+            metrics.reconcile_continuations_total.increment(
               labels: {
                 tag_name: element.tag_name
               }

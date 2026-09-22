@@ -11,18 +11,17 @@ module Mayu
   module Metrics
     AppMetrics =
       Data.define(
-        :session_count,
-        :session_init_count,
-        :session_timeout_count,
-        :session_ping_count,
-        :session_callback_count,
-        :session_navigate_count,
-        :component_mount_count,
-        :component_patch_times,
-        :component_children_update_times,
-        :update_child_id_count,
-        :update_chunk_count,
-        :error_count
+        :active_sessions,
+        :session_starts_total,
+        :session_timeouts_total,
+        :session_pings_total,
+        :callback_events_total,
+        :navigations_total,
+        :component_mounts_total,
+        :component_render_duration_ms,
+        :component_reconcile_duration_ms,
+        :replace_children_ids_total,
+        :reconcile_continuations_total
       ) do
         def self.setup(registry, **preset_labels)
           gauge_store_settings =
@@ -35,88 +34,81 @@ module Mayu
             end
 
           new(
-            session_count:
+            active_sessions:
               registry.gauge(
-                :mayu_session_count,
-                docstring: "Number of active sessions",
+                :mayu_active_sessions,
+                docstring: "Number of currently active sessions",
                 labels: [*preset_labels.keys],
                 preset_labels:,
                 store_settings: gauge_store_settings
               ),
-            session_init_count:
+            session_starts_total:
               registry.counter(
-                :mayu_session_init_count,
-                docstring: "Total number of sessions created",
+                :mayu_session_starts_total,
+                docstring: "Total number of sessions started",
                 labels: [*preset_labels.keys],
                 preset_labels:
               ),
-            session_timeout_count:
+            session_timeouts_total:
               registry.counter(
-                :mayu_session_timeout_count,
+                :mayu_session_timeouts_total,
                 docstring: "Total number of sessions timed out",
                 labels: [*preset_labels.keys],
                 preset_labels:
               ),
-            session_ping_count:
+            session_pings_total:
               registry.counter(
-                :mayu_session_ping_count,
-                docstring: "Total number of pings",
+                :mayu_session_pings_total,
+                docstring: "Total number of session pings",
                 labels: [*preset_labels.keys],
                 preset_labels:
               ),
-            session_callback_count:
+            callback_events_total:
               registry.counter(
-                :mayu_session_callback_count,
-                docstring: "Total number of callbacks",
+                :mayu_callback_events_total,
+                docstring: "Total number of callback events handled",
                 labels: [:component, :method, *preset_labels.keys],
                 preset_labels:
               ),
-            session_navigate_count:
+            navigations_total:
               registry.counter(
-                :mayu_session_navigate_count,
-                docstring: "Total number of navigates",
-                labels: [:path, *preset_labels.keys],
-                preset_labels:
-              ),
-            error_count:
-              registry.counter(
-                :mayu_error_count,
-                docstring: "Total number errors",
+                :mayu_navigations_total,
+                docstring: "Total number of client-side navigations handled",
                 labels: [*preset_labels.keys],
                 preset_labels:
               ),
-            component_mount_count:
+            component_mounts_total:
               registry.counter(
-                :mayu_component_mount_times,
-                docstring: "Component mount count",
+                :mayu_component_mounts_total,
+                docstring: "Total number of component mounts",
                 labels: [:component, *preset_labels.keys],
                 preset_labels:
               ),
-            component_children_update_times:
+            component_reconcile_duration_ms:
               registry.summary(
-                :mayu_component_children_update_times,
-                docstring: "Component patch times",
+                :mayu_component_reconcile_duration_milliseconds,
+                docstring: "Time spent reconciling a component's rendered children in milliseconds",
                 labels: [:component, *preset_labels.keys],
                 preset_labels:
               ),
-            component_patch_times:
+            component_render_duration_ms:
               registry.summary(
-                :mayu_component_patch_times,
-                docstring: "Component patch times",
+                :mayu_component_render_duration_milliseconds,
+                docstring: "Time spent running a component's render method in milliseconds",
                 labels: [:component, *preset_labels.keys],
                 preset_labels:
               ),
-            update_child_id_count:
+            replace_children_ids_total:
               registry.counter(
-                :mayu_update_child_id_count,
-                docstring: "Number of child IDs updated",
+                :mayu_replace_children_ids_total,
+                docstring: "Total child IDs sent in ReplaceChildren commands",
                 labels: [:tag_name, *preset_labels.keys],
                 preset_labels:
               ),
-            update_chunk_count:
+            reconcile_continuations_total:
               registry.counter(
-                :mayu_update_chunk_count,
-                docstring: "Number of chunked child update resumes",
+                :mayu_reconcile_continuations_total,
+                docstring: "Total reconciliation passes continued after exceeding the update budget",
                 labels: [:tag_name, *preset_labels.keys],
                 preset_labels:
               )
