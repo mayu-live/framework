@@ -40,6 +40,21 @@ class Mayu::Runtime::VNodes::DomIdsTest < Minitest::Test
     assert_equal(ids.uniq, ids)
   end
 
+  def test_vnode_ids_are_compact_unique_frozen_strings
+    descriptor = H[:body, H[:p, "One"], H[:p, "Two"]]
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    other_engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    ids = [engine.root.id]
+
+    engine.root.send(:traverse) { |node| ids << node.id }
+
+    assert_equal("v1", engine.root.id)
+    assert_equal("v1", other_engine.root.id)
+    assert_equal(ids.uniq, ids)
+    assert(ids.all? { it.match?(/\Av[0-9a-z]+\z/) })
+    assert(ids.all?(&:frozen?))
+  end
+
   def test_id_tree_is_nested_like_the_dom_with_no_arrays_or_nils
     descriptor = H[:body, H[Wrapper], H[:p, H[:em, "nested"]], "text", H[Pair]]
     engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)

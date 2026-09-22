@@ -205,6 +205,27 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
     refute(restored.render_exceptions?)
   end
 
+  def test_engine_serialization_preserves_the_vnode_id_sequence
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[:p, "Before"]],
+        metrics: NullMetrics.new
+      )
+    existing_ids = []
+    engine.root.send(:traverse) { |node| existing_ids << node.id }
+    restored = Mayu::Runtime::Engine.restore(engine.dump, metrics: NullMetrics.new)
+
+    restored.update(H[:body, H[:p, "Before"], H[:p, "After"]])
+
+    ids = []
+    restored.root.send(:traverse) { |node| ids << node.id }
+    inserted_id = (ids - existing_ids).last
+
+    refute_nil(inserted_id)
+    refute_includes(existing_ids, inserted_id)
+    assert_match(/\Av[0-9a-z]+\z/, inserted_id)
+  end
+
   def test_serialization_restores_callback_listeners
     descriptor = H[:body, H[CallbackProbe]]
 

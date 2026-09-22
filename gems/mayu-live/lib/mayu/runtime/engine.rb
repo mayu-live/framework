@@ -61,6 +61,7 @@ module Mayu
         @update_budget = update_budget
         @module_provider = module_provider
         @render_exceptions = render_exceptions
+        @vnode_id_sequence = 0
         @output_queue = Async::Queue.new
         @update_interval = nil
         @force_render = 0
@@ -84,11 +85,30 @@ module Mayu
       end
 
       def marshal_dump
-        [@runtime_js, @root, @update_budget, @render_exceptions]
+        [
+          @runtime_js,
+          @root,
+          @update_budget,
+          @render_exceptions,
+          @vnode_id_sequence
+        ]
       end
 
       def marshal_load(a)
-        @runtime_js, @root, @update_budget, @render_exceptions = a
+        case a
+        in [runtime_js, root, update_budget, render_exceptions, vnode_id_sequence]
+          @runtime_js = runtime_js
+          @root = root
+          @update_budget = update_budget
+          @render_exceptions = render_exceptions
+          @vnode_id_sequence = vnode_id_sequence
+        in [runtime_js, root, update_budget, render_exceptions]
+          @runtime_js = runtime_js
+          @root = root
+          @update_budget = update_budget
+          @render_exceptions = render_exceptions
+          @vnode_id_sequence = 0
+        end
         @render_exceptions = true if @render_exceptions.nil?
         @output_queue = Async::Queue.new
         @update_interval = nil
@@ -149,6 +169,14 @@ module Mayu
 
       def enqueue_update(vnode)
         @updater.enqueue(vnode)
+      end
+
+      # Vnode IDs only need to be unique within an engine: one engine owns one
+      # browser-side node map. Base 36 keeps long-lived sessions compact while
+      # the prefix keeps IDs distinguishable from legacy random IDs.
+      def next_vnode_id
+        @vnode_id_sequence += 1
+        @vnode_id_sequence.to_s(36).prepend("v").freeze
       end
 
       def synchronize
