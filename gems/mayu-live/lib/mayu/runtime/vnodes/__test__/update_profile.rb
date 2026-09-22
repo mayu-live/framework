@@ -173,6 +173,24 @@ module Mayu
               next
             end
 
+            run = lambda do
+              ITERATIONS.times do
+                print_progress(it, ITERATIONS) if SHOW_PROGRESS
+                tick(engine, instance, it)
+              end
+            end
+
+            unless PROFILE
+              measurement = Benchmark.measure(&run)
+              clear_print format(
+                "Done: %.6f wall, %.6f CPU seconds; %.3f CPU ms/update\n",
+                measurement.real,
+                measurement.total,
+                measurement.total * 1000 / ITERATIONS
+              )
+              next
+            end
+
             result =
               Vernier.profile(
                 name: "mayu-vnode-update",
