@@ -258,6 +258,37 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     assert_equal(0, listeners.size)
   end
 
+  def test_equivalent_callback_preserves_the_listener
+    component = CallbackProbe.new
+    initial =
+      H[
+        :body,
+        H[:button, "Click", onclick: H.callback(component, :handle_click)]
+      ]
+    updated =
+      H[
+        :body,
+        H[:button, "Click", onclick: H.callback(component, :handle_click)]
+      ]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    document = engine.root
+    listener = document.instance_variable_get(:@listeners).values.fetch(0)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    document.update(collector, updated)
+
+    assert_same(
+      listener,
+      document.instance_variable_get(:@listeners).values.fetch(0)
+    )
+    refute(
+      collector.commands.any? do |command|
+        command.is_a?(Mayu::Runtime::Commands::SetListener) ||
+          command.is_a?(Mayu::Runtime::Commands::RemoveListener)
+      end
+    )
+  end
+
   def test_listener_updates_do_not_traverse_the_document
     component = CallbackProbe.new
     initial =

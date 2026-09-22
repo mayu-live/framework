@@ -165,6 +165,103 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     assert_equal("World", set_text.content)
   end
 
+  def test_general_attribute_updates_and_removals
+    initial =
+      H[
+        :body,
+        H[:p, "Hello", title: "Before", data: {state: "old"}, hidden: true]
+      ]
+    updated =
+      H[
+        :body,
+        H[:p, "Hello", title: "After", aria: {label: "Greeting"}]
+      ]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+
+    set_attributes =
+      collector.commands.select do |command|
+        command.is_a?(Mayu::Runtime::Commands::SetAttribute)
+      end
+    remove_attributes =
+      collector.commands.select do |command|
+        command.is_a?(Mayu::Runtime::Commands::RemoveAttribute)
+      end
+
+    assert_equal(
+      [[:title, "After"], [:"aria-label", "Greeting"]],
+      set_attributes.map { [it.name, it.value] }
+    )
+    assert_equal(
+      [:"data-state", :hidden],
+      remove_attributes.map(&:name)
+    )
+  end
+
+  def test_removed_attributes_are_not_retained
+    initial =
+      H[
+        :body,
+        H[:p, "Hello", title: "Greeting", class: "message", style: {color: "red"}]
+      ]
+    updated = H[:body, H[:p, "Hello"]]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+
+    element = find_element(engine.root, :p)
+    attributes = element.instance_variable_get(:@attributes)
+    values = attributes.instance_variable_get(:@attributes)
+
+    assert_empty(values)
+  end
+
+  def test_style_updates_emit_property_level_patches
+    initial =
+      H[
+        :body,
+        H[:p, "Hello", style: {color: "red", margin_top: 4}]
+      ]
+    updated =
+      H[
+        :body,
+        H[:p, "Hello", style: {color: "blue", padding: 2}]
+      ]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+
+    style_commands =
+      collector.commands.select do |command|
+        command.is_a?(Mayu::Runtime::Commands::SetCSSProperty) ||
+          command.is_a?(Mayu::Runtime::Commands::RemoveCSSProperty)
+      end
+
+    assert_equal(
+      [
+        Mayu::Runtime::Commands::SetCSSProperty[
+          find_element(engine.root, :p).dom_id,
+          "color",
+          "blue"
+        ],
+        Mayu::Runtime::Commands::RemoveCSSProperty[
+          find_element(engine.root, :p).dom_id,
+          "margin-top"
+        ],
+        Mayu::Runtime::Commands::SetCSSProperty[
+          find_element(engine.root, :p).dom_id,
+          "padding",
+          "2px"
+        ]
+      ],
+      style_commands
+    )
+  end
+
   def test_class_patches_split_whitespace_separated_class_names
     initial = H[:body, H[:p, "Hello", class: "first second"]]
     updated = H[:body, H[:p, "Hello", class: "second third"]]

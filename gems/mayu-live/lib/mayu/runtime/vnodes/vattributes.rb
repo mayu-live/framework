@@ -18,6 +18,9 @@ module Mayu
   module Runtime
     module VNodes
       class VAttributes < Base
+        EMPTY_CLASS_NAMES = [].freeze
+        EMPTY_STYLES = {}.freeze
+
         class NoCallbackMethodError < ArgumentError
           def initialize(callback, component, suggestions)
             component_name =
@@ -148,61 +151,52 @@ module Mayu
 
           new_attributes =
             normalize_attributes(flatten_props(@descriptor.props))
+          return if @attributes.empty? && new_attributes.empty?
+
           updated_attributes = @attributes.dup
 
           (@attributes.keys | new_attributes.keys).each do |key|
             old_value = @attributes[key]
             new_value = new_attributes[key]
 
-            if key.to_s.start_with?("on")
-              updated_value = update_callback(
-                collector,
-                key,
-                old_value,
-                new_value
-              )
-              listeners_changed ||= !updated_value.equal?(old_value)
-              updated_attributes[key] = updated_value
-              next
-            end
-
-            if key == :class
-              updated_attributes[key] = update_class(
-                collector,
-                key,
-                old_value,
-                new_value
-              )
-              next
-            end
-
-            if key == :style
-              updated_attributes[key] = update_style(
-                collector,
-                key,
-                old_value,
-                new_value
-              )
-              next
-            end
-
-            if new_value.nil?
-              if old_value
-                collector << Commands::RemoveAttribute[@parent.dom_id, key]
+            case key
+            when :class
+              value = update_class(collector, key, old_value, new_value)
+              if value.nil?
+                updated_attributes.delete(key)
+              elsif !value.equal?(old_value)
+                updated_attributes[key] = value
               end
-              updated_attributes[key] = nil
-              next
+            when :style
+              value = update_style(collector, key, old_value, new_value)
+              if value.nil?
+                updated_attributes.delete(key)
+              elsif !value.equal?(old_value)
+                updated_attributes[key] = value
+              end
+            else
+              if key.start_with?("on")
+                value = update_callback(collector, key, old_value, new_value)
+                listeners_changed ||= !value.equal?(old_value)
+                if value.nil?
+                  updated_attributes.delete(key)
+                elsif !value.equal?(old_value)
+                  updated_attributes[key] = value
+                end
+              elsif new_value.nil?
+                if old_value
+                  collector << Commands::RemoveAttribute[@parent.dom_id, key]
+                end
+                updated_attributes.delete(key)
+              elsif old_value != new_value
+                collector << Commands::SetAttribute[
+                  @parent.dom_id,
+                  key,
+                  new_value.to_s
+                ]
+                updated_attributes[key] = new_value
+              end
             end
-
-            next if old_value == new_value
-
-            collector << Commands::SetAttribute[
-              @parent.dom_id,
-              key,
-              new_value.to_s
-            ]
-
-            updated_attributes[key] = new_value
           end
 
           @attributes = updated_attributes
@@ -264,7 +258,7 @@ module Mayu
 
         def normalize_listeners!(attrs)
           attrs.each do |key, value|
-            next unless key.to_s.start_with?("on")
+            next unless key.start_with?("on")
             next if value.nil?
 
             if value.is_a?(Listener)
@@ -283,9 +277,7 @@ module Mayu
 
         def normalize_attributes(attrs)
           attrs.each_with_object({}) do |(key, value), obj|
-            obj[key] = if key.to_s.start_with?("on")
-              ((value == false) ? nil : value)
-            elsif key == :style
+            obj[key] = if key == :style
               if value.is_a?(Hash)
                 InlineStyle.compact(value)
               else
@@ -293,6 +285,8 @@ module Mayu
               end
             elsif key == :class
               normalize_class_names(value)
+            elsif key.start_with?("on")
+              ((value == false) ? nil : value)
             else
               normalize_attribute_value(key, value)
             end
@@ -355,8 +349,8 @@ module Mayu
         end
 
         def update_class(collector, key, old_value, new_value)
-          old_classes = old_value || []
-          new_classes = new_value || []
+          old_classes = old_value || EMPTY_CLASS_NAMES
+          new_classes = new_value || EMPTY_CLASS_NAMES
 
           if new_classes.empty?
             unless old_classes.empty?
@@ -365,7 +359,7 @@ module Mayu
             return nil
           end
 
-          return new_classes if old_classes == new_classes
+          return old_classes if old_classes == new_classes
 
           added = new_classes - old_classes
           removed = old_classes - new_classes
@@ -394,8 +388,8 @@ module Mayu
         end
 
         def update_style(collector, key, old_value, new_value)
-          old_styles = old_value.is_a?(Hash) ? InlineStyle.compact(old_value) : {}
-          new_styles = new_value.is_a?(Hash) ? InlineStyle.compact(new_value) : {}
+          old_styles = old_value.is_a?(Hash) ? old_value : EMPTY_STYLES
+          new_styles = new_value.is_a?(Hash) ? new_value : EMPTY_STYLES
 
           if new_styles.empty?
             unless old_styles.empty?
@@ -403,6 +397,8 @@ module Mayu
             end
             return nil
           end
+          return old_styles if old_styles == new_styles
+
           InlineStyle.diff(@parent.dom_id, old_styles, new_styles) do |command|
             collector << command
           end
