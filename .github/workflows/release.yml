@@ -55,7 +55,7 @@ jobs:
       - name: Build browser runtime and package gems
         run: bundle exec rake build
       - name: Upload gems
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-gems
           path: pkg/*.gem

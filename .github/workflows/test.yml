@@ -80,7 +80,7 @@ jobs:
           MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 MAYU_WORKLOAD=subtree \
             bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
           mv mayu-vnode-subtree.json artifacts/performance/subtree-profile.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: performance-${{ github.sha }}
           path: artifacts/performance/
