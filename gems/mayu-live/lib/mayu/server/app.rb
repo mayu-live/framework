@@ -73,8 +73,6 @@ module Mayu
           handle_favicon(request)
         in {path: "/.mayu", method: "OPTIONS"}
           handle_options(request)
-        in {method: "GET", path: "/.mayu/init.js"}
-          handle_init_js(request)
         in path: %r{\A/.mayu/runtime/.+\.js(\.map)?}
           handle_script(request)
         in {path: %r{\A/\.mayu/assets/(.+)\z}, method: "GET"}
@@ -232,18 +230,6 @@ module Mayu
         response(204, **ALLOW_HEADERS, **origin_header(request))
       end
 
-      def handle_init_js(request)
-        Protocol::HTTP::Response[
-          200,
-          {
-            "content-type": "application/javascript",
-            "cache-control": "no-store",
-            **origin_header(request)
-          },
-          @environment.init_js_body
-        ]
-      end
-
       def handle_script(request)
         path =
           Pathname
@@ -337,10 +323,6 @@ module Mayu
 
       def link_header(session)
         [
-          # "<%s>; rel=preload; as=script; crossorigin=same-origin; fetchpriority=high" %
-          #   escape_link_header_path(session.init_js_path),
-          "<%s>; rel=modulepreload; as=script; crossorigin=same-origin; fetchpriority=high" %
-            escape_link_header_path(@environment.runtime_js_path),
           *session.styles.map do
             "<%s>; rel=preload; as=style" %
               escape_link_header_path(asset_url(it))

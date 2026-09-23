@@ -4,6 +4,7 @@
 require "minitest/autorun"
 require "minitest/mock"
 require "async/http/protocol"
+require "tmpdir"
 
 require_relative "app"
 require_relative "../runtime/commands"
@@ -31,7 +32,7 @@ class Mayu::Server::AppTest < Minitest::Test
   end
 
   Match = Data.define(:page, :handler, :params)
-  Environment = Data.define(:module_provider, :init_js_body, :runtime_js_path)
+  Environment = Data.define(:module_provider)
   Session = Data.define(:styles)
   Provider =
     Data.define(:exports_module) do
@@ -159,7 +160,7 @@ class Mayu::Server::AppTest < Minitest::Test
     app = Mayu::Server::App.allocate
     app.instance_variable_set(
       :@environment,
-      Environment.new(provider, nil, nil)
+      Environment.new(provider)
     )
 
     response =
@@ -179,7 +180,7 @@ class Mayu::Server::AppTest < Minitest::Test
     def server = self
     def render_exceptions? = render_exceptions
   end
-  ErrorEnvironment = Data.define(:module_provider, :init_js_body, :runtime_js_path, :config)
+  ErrorEnvironment = Data.define(:module_provider, :config)
 
   # Only reached when the error page itself fails to render.
   def test_a_render_error_that_escapes_the_session_is_an_html_500
@@ -192,7 +193,7 @@ class Mayu::Server::AppTest < Minitest::Test
     app = Mayu::Server::App.allocate
     app.instance_variable_set(
       :@environment,
-      ErrorEnvironment.new(nil, nil, nil, ErrorConfig.new(true))
+      ErrorEnvironment.new(nil, ErrorConfig.new(true))
     )
     request = Request.new("GET", "/", {"accept" => "text/html"}, "")
 
@@ -206,7 +207,7 @@ class Mayu::Server::AppTest < Minitest::Test
 
     app.instance_variable_set(
       :@environment,
-      ErrorEnvironment.new(nil, nil, nil, ErrorConfig.new(false))
+      ErrorEnvironment.new(nil, ErrorConfig.new(false))
     )
     response =
       Mayu::Session.stub(:new, ->(**) { raise failure }) { app.call(request) }
@@ -215,29 +216,29 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("Internal Server Error", response.body.join)
   end
 
-  def test_serves_the_shared_client_initializer_without_a_session
-    app = Mayu::Server::App.allocate
-    app.instance_variable_set(
-      :@environment,
-      Environment.new(nil, "export default null\n", nil)
-    )
+  def test_serves_the_hashed_client_initializer_with_immutable_caching
+    Dir.mktmpdir("mayu-client") do |root|
+      File.write(File.join(root, "init-abc123.js"), "export default null\n")
+      app = Mayu::Server::App.allocate
+      app.instance_variable_set(:@client_files, Mayu::Server::StaticFiles.new(root))
+      app.instance_variable_set(:@environment, Environment.new(nil))
 
-    response =
-      app.send(:handle_init_js, Request.new("GET", "/.mayu/init.js", {}, ""))
+      response =
+        app.send(:handle_script, Request.new("GET", "/.mayu/runtime/init-abc123.js", {}, ""))
 
-    assert_equal(200, response.status)
-    assert_equal(
-      ["application/javascript"],
-      response.headers.to_h.fetch(:"content-type")
-    )
-    assert_equal("export default null\n", response.body.read)
+      assert_equal(200, response.status)
+      headers = response.headers.to_a.to_h
+      assert_includes(Array(headers.fetch(:"content-type")), "text/javascript")
+      assert_includes(Array(headers.fetch(:"cache-control")), Mayu::Server::App::ASSET_CACHE_CONTROL)
+      assert_equal("export default null\n", Brotli.inflate(response.body.join))
+    end
   end
 
   def test_link_header_keeps_klenod_asset_urls_absolute
     app = Mayu::Server::App.allocate
     app.instance_variable_set(
       :@environment,
-      Environment.new(nil, nil, "/.mayu/runtime/client.js")
+      Environment.new(nil)
     )
 
     header =
@@ -301,7 +302,7 @@ class Mayu::Server::AppTest < Minitest::Test
     app = Mayu::Server::App.allocate
     app.instance_variable_set(
       :@environment,
-      Environment.new(provider, nil, nil)
+      Environment.new(provider)
     )
     app.send(:handle_provider_route, Request.new(method, path, headers, ""))
   end

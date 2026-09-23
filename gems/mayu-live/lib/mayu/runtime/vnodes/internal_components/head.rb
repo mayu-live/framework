@@ -42,7 +42,6 @@ module Mayu
             H[
               :script,
               type: "module",
-              async: true,
               src: runtime_js,
               key: "runtime_js"
             ]

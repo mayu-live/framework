@@ -23,6 +23,18 @@ class Mayu::EnvironmentTest < Minitest::Test
     assert_includes(error.message, "npm run build")
   end
 
+  def test_client_runtime_manifest_identifies_the_hashed_initializer
+    Dir.mktmpdir("mayu-runtime") do |root|
+      entries_path = File.join(root, "entries.json")
+      File.write(entries_path, '{"init":"init-abc123.js"}')
+      File.write(File.join(root, "init-abc123.js"), "")
+
+      Mayu::Environment.stub(:client_runtime_entries_path, entries_path) do
+        assert_equal("init-abc123.js", Mayu::Environment.ensure_client_runtime!)
+      end
+    end
+  end
+
   def test_load_klenod_with_config_uses_runtime_provider_without_legacy_state
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))
@@ -85,6 +97,7 @@ class Mayu::EnvironmentTest < Minitest::Test
     environment.start(:app)
     environment.stop
 
+    assert_match(%r{\A/.mayu/runtime/init-[\w-]+\.js\z}, environment.runtime_init_js_path)
     assert_equal([:app], seen)
     assert(stoppable.stopped)
   end

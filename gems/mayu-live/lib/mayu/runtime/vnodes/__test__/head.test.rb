@@ -172,13 +172,13 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
           H[:main, "content"]
         ],
         metrics: NullMetrics.new,
-        runtime_js: "/.mayu/init.js#session",
+        runtime_js: "/.mayu/runtime/init-abc123.js#session",
         stylesheets: ["/.mayu/assets/routes/home.css"]
       )
 
     html = render_html(engine.root)
     stylesheet = '<link rel="stylesheet" href="/.mayu/assets/routes/home.css">'
-    runtime = '<script type="module" async="true" src="/.mayu/init.js#session"></script>'
+    runtime = '<script type="module" src="/.mayu/runtime/init-abc123.js#session"></script>'
 
     assert_operator(html.index("<title>Example</title>"), :<, html.index(stylesheet))
     assert_operator(html.index('name="viewport"'), :<, html.index(stylesheet))

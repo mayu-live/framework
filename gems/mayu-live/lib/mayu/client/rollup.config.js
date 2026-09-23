@@ -11,18 +11,16 @@ function entriesJSON() {
   return {
     name: "entriesJSON",
     generateBundle(_outputOptions, bundle) {
-      const data = {};
-
-      for (const chunk of Object.values(bundle)) {
-        if (chunk.isEntry) {
-          data[chunk.name] = chunk.fileName;
-        }
-      }
+      const entries = Object.fromEntries(
+        Object.values(bundle)
+          .filter((chunk) => chunk.type === "chunk" && chunk.isEntry)
+          .map((chunk) => [chunk.name, chunk.fileName]),
+      );
 
       this.emitFile({
         type: "asset",
         fileName: "entries.json",
-        source: JSON.stringify(data, null, 2) + "\n",
+        source: JSON.stringify(entries) + "\n",
       });
     },
   };
@@ -45,7 +43,7 @@ function minifyHTML(minifyOptions = {}) {
 }
 
 export default {
-  input: ["src/main.ts"],
+  input: ["src/init.ts"],
   output: {
     dir: "dist/",
     format: "esm",

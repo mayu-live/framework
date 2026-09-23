@@ -13,14 +13,14 @@ require_relative "component"
 require_relative "metrics"
 require_relative "utils"
 require_relative "klenod"
+require "json"
 
 module Mayu
   class Environment
     attr_reader :config
     attr_reader :app_dir
     attr_reader :client_path
-    attr_reader :runtime_js_path
-    attr_reader :init_js_body
+    attr_reader :runtime_init_js_path
     attr_reader :module_provider
     attr_reader :marshaller
     attr_reader :metrics
@@ -30,9 +30,18 @@ module Mayu
     end
 
     def self.ensure_client_runtime!
-      return if File.file?(client_runtime_entries_path)
+      entries_path = client_runtime_entries_path
+      unless File.file?(entries_path)
+        raise "Mayu browser runtime is missing at #{entries_path}. Run `npm run build` before starting the server."
+      end
 
-      raise "Mayu browser runtime is missing at #{client_runtime_entries_path}. Run `npm run build` before starting the server."
+      filename = JSON.parse(File.read(entries_path)).fetch("init")
+      init_path = File.join(File.dirname(entries_path), filename)
+      unless File.file?(init_path)
+        raise "Mayu browser runtime is missing at #{init_path}. Run `npm run build` before starting the server."
+      end
+
+      filename
     end
 
     def initialize(config, module_provider:, metrics: nil)
@@ -40,17 +49,8 @@ module Mayu
       @app_dir = File.join(config.root, Klenod::SOURCE_DIR)
       @client_path = File.join(__dir__, "client", "dist")
 
-      @runtime_js_path = load_runtime_js_path
-      @init_js_body = <<~JS.freeze
-        import init from #{JSON.generate(@runtime_js_path)};
-        const sessionId = new URL(import.meta.url).hash.slice(1);
-        // An async head script can finish before the server-rendered body exists.
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", () => init(sessionId), { once: true });
-        } else {
-          init(sessionId);
-        }
-      JS
+      @runtime_init_js_path =
+        File.join("/.mayu/runtime", self.class.ensure_client_runtime!)
 
       @metrics =
         metrics || Metrics::AppMetrics.setup(Prometheus::Client.registry)
@@ -112,17 +112,6 @@ module Mayu
       started = @started
       @started = []
       started.each { it.stop if it.respond_to?(:stop) }
-    end
-
-    private
-
-    def load_runtime_js_path
-      self.class.ensure_client_runtime!
-      File
-        .read(self.class.client_runtime_entries_path)
-        .then { JSON.parse(it) }
-        .fetch("main")
-        .then { File.join("/.mayu/runtime", it) }
     end
   end
 end

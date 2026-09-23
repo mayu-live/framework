@@ -46,6 +46,8 @@ class Mayu::SessionTest < Minitest::Test
     attr_reader :config, :router, :metrics, :marshaller
     attr_accessor :module_provider
 
+    def runtime_init_js_path = "/.mayu/runtime/init-testhash.js"
+
     def initialize(module_provider: nil, render_exceptions: true)
       @config = FakeConfig.new(render_exceptions:)
       @router = FakeRouter.new
@@ -278,6 +280,7 @@ class Mayu::SessionTest < Minitest::Test
     session = Mayu::Session.new(environment: env, request_info: request_info)
 
     initial_html = session.render
+    assert_includes(initial_html, "/.mayu/runtime/init-testhash.js##{session.id}")
     assert_includes(initial_html, "Source is loading.")
     assert_includes(initial_html, "github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml")
     refute_includes(initial_html, "handle_increment")

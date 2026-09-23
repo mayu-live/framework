@@ -176,7 +176,7 @@ module Mayu
     end
 
     def init_js_path
-      "/.mayu/init.js##{@id}"
+      "#{@environment.runtime_init_js_path}##{@id}"
     end
 
     def resume_transferred(environment)
