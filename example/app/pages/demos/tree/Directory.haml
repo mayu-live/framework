@@ -4,7 +4,7 @@
   FileEntry = import("./FileEntry")
 
   def initialize
-    @open = $initial_open || false
+    @open = $initial_open || contains_selected_path?
     @entries = @open && load_entries
   end
 
@@ -21,12 +21,16 @@
 
   private
 
+  def contains_selected_path?
+    @@selected_path.to_s.start_with?("#{$path}/")
+  end
+
   def load_entries
     entries =
       Dir
-        .entries(File.join($root, $path))
-        .difference(%w[. ..])
+        .children(File.join($root, $path))
         .sort
+        .difference([".claude", ".DS_Store"])
         .map { File.join($path, _1) }
         .group_by { File.directory?(File.join($root, _1)) }
 
@@ -38,11 +42,13 @@
 
 :ruby
   icon = @open ? "folder-open" : "folder"
+  basename = File.basename($path)
 
 %div
   %Name(icon=icon color="var(--blue)")
     %button(type="button" onclick=handle_toggle)
-      #{File.basename($path)}/
+      = basename
+      \/
 
   = if @open
     = if @entries

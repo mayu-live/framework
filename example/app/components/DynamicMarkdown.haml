@@ -29,9 +29,9 @@
         H[:a, *visit_nodes(children), **attrs]
       end
     in type: :codeblock, value:, options: { lang: }
-      H[HighlightedCodeBlock, value, language: lang]
+      H[HighlightedCodeBlock, value, language: lang, **HamlHelper.merge_props(self.class, class: :code_block)]
     in type: :codeblock, value:
-      H[HighlightedCodeBlock, value]
+      H[HighlightedCodeBlock, value, **HamlHelper.merge_props(self.class, class: :code_block)]
     in type: :br
       H[:br]
     in type: :hr
@@ -66,6 +66,10 @@
   = visit_node(Kramdown::Document.new(Array(__children).join, input: "GFM", hard_wrap: false).to_hash_ast)
 
 :css
+  .code_block {
+    margin: 1em 0;
+  }
+
   .markdown {
     max-width: 100%;
     overflow-x: auto;

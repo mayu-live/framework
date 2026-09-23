@@ -1,11 +1,15 @@
 :ruby
   Heading = import("/components/Layout/Heading")
   Card = import("/components/UI/Card")
-  FileContents = import("./FileContents")
   Directory = import("./Directory")
 
-  def initialize
-    @selected_path = nil
+  BASE_PATH = "/demos/tree/"
+
+  # The tree highlights this file and opens the directories above it.
+  def selected_path
+    return unless $path.start_with?(BASE_PATH)
+
+    URI.decode_uri_component($path.delete_prefix(BASE_PATH))
   end
 
 - root = File.expand_path("../../../..", __dir__)
@@ -20,7 +24,8 @@
   .grid
     .column
       .scroll.tree
-        %Directory{initial_open: true, root:, path: "app"}
+        = H.context(selected_path:) do
+          %Directory{initial_open: true, root:, path: "app"}
     .column
       .scroll
         %slot
@@ -38,12 +43,13 @@
     flex: 1;
     display: grid;
     gap: 1em;
+    min-height: 80svh;
   }
 
   .tree {
     padding: 2em;
     background: var(--surface-sunken);
-    box-shadow: 0 0 1em var(--border);
+    border: 2px solid var(--border);
     border-radius: 2px;
     list-style-type: none;
     font-size: .8em;

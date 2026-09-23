@@ -3,8 +3,9 @@
 
   ALLOWED_EXTENSIONS = %w[.rb .css .haml .txt .svg]
 
-- full_path = File.expand_path(Array($params[:paths]).join("/"), "/")
-- root = File.expand_path("../../../..", __dir__)
+- segments = Array($params[:paths]).map { URI.decode_uri_component(_1) }
+- full_path = File.expand_path(segments.join("/"), "/")
+- root = Dir.pwd
 
 - return unless full_path.start_with?("/app/")
   %p #{full_path} is not valid
@@ -24,27 +25,18 @@
     \-file
 
 - source = File.read(absolute_path)
-- language = extname == ".txt" ? nil : extname.delete_prefix(".").to_sym
+- language = extname.delete_prefix(".")
 
-%article.article
-  %h3.path= full_path
-  %HighlightedCodeBlock(language=language)= source
+%article
+  %HighlightedCodeBlock.code(language=language filename=full_path)= source
 
 :css
-  .article {
+  article {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
-  .path {
-    font-family: var(--font-mono);
-    font-size: 1em;
-    margin: 0;
-  }
-
-  .pre {
-    white-space: pre-wrap;
-    font-size: 1em;
-    background: var(--blue-bright);
-    border: 1px solid var(--blue);
-    border-radius: 2px;
-    padding: 1em;
+  .code {
+    max-height: 100%;
   }

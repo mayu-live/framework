@@ -16,15 +16,19 @@
     end
   end
 
+  def selected? = @@selected_path == $path
+
   def should_update?(next_props) = $* != next_props
 
 :css
-  h4 {
-    display: inline-flex;
-    align-items: center;
-    gap: .5em;
+  .selected {
+    margin-inline: -.25em;
+    padding-inline: .25em;
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
   }
 
-%Name(icon=icon)
-  %Link{href: File.join("/demos/tree", $path)}
+%Name(icon=icon){class: selected? && :selected}
+  %Link{href: File.join("/demos/tree", $path), aria_current: selected? && "page"}
     = File.basename($path)
