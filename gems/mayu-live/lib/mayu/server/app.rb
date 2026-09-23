@@ -514,12 +514,16 @@ module Mayu
           )
         end
 
-        json_response(
+        # A 204 has no body. A body would make the server send content-length,
+        # which HTTP/2 clients reject on a 204.
+        Protocol::HTTP::Response[
           204,
-          "ok",
-          **@cookies.set_token_cookie_header(session),
-          **origin_header(request)
-        )
+          {
+            **@cookies.set_token_cookie_header(session),
+            **origin_header(request)
+          },
+          nil
+        ]
       end
 
       # Helpers

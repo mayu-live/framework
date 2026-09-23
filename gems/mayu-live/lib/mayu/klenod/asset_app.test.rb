@@ -46,5 +46,6 @@ class Mayu::Klenod::AssetAppTest < Minitest::Test
     assert_equal(200, response.status)
     assert_equal("text/css", response.headers["content-type"])
     assert_equal("body {}", response.body.read)
+    assert_nil(response.headers["content-length"])
   end
 end

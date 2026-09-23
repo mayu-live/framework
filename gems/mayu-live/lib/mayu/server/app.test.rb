@@ -303,6 +303,32 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("Server is stopping", response.read)
   end
 
+  def test_session_events_are_acknowledged_with_an_empty_204
+    Async do
+      app = Mayu::Server::App.allocate
+      session = Object.new
+      session.define_singleton_method(:wait) {}
+      sessions = Object.new
+      sessions.define_singleton_method(:authenticate!) { |_id, _token| session }
+      app.instance_variable_set(:@sessions, sessions)
+      cookies = Object.new
+      cookies.define_singleton_method(:get_token_cookie_value) { |_request| "token" }
+      cookies.define_singleton_method(:set_token_cookie_header) { |_session| {} }
+      app.instance_variable_set(:@cookies, cookies)
+      body = Object.new
+      body.define_singleton_method(:close) {}
+      request = Struct.new(:headers, :body).new({}, body)
+
+      response =
+        Mayu::Server::EventStream.stub(:each_incoming_message, ->(_request) {}) do
+          app.send(:handle_session_event, request, "session")
+        end
+
+      assert_equal(204, response.status)
+      assert_nil(response.body)
+    end.wait
+  end
+
   def test_stopping_a_session_closes_its_patch_stream
     Async do |task|
       app = Mayu::Server::App.allocate

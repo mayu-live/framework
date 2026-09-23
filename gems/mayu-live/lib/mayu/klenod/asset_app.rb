@@ -25,9 +25,11 @@ module Mayu
           )
         return nil unless response
 
+        # The HTTP server derives content-length from the body, and HTTP/2
+        # clients reject a response that repeats it.
         Protocol::HTTP::Response[
           response.status,
-          response.headers.merge(headers),
+          response.headers.except("content-length").merge(headers),
           response.body
         ]
       end

@@ -48,13 +48,8 @@ module Mayu
           def headers
             {
               "content-type": content_type,
-              "content-length": content_length,
               **encoded_content.headers
             }
-          end
-
-          def content_length
-            encoded_content.content.bytesize
           end
         end
 

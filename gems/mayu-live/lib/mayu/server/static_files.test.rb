@@ -62,4 +62,14 @@ class Mayu::Server::StaticFiles::StaticFile::Test < Minitest::Test
     )
     assert_equal(Digest::SHA256.digest("content"), asset.content_hash)
   end
+
+  def test_headers_leave_content_length_to_the_server
+    asset =
+      Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.js", "content")
+
+    assert_equal(
+      {"content-type": "text/javascript", "content-encoding": "br"},
+      asset.headers
+    )
+  end
 end
