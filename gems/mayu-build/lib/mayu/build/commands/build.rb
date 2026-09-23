@@ -49,7 +49,7 @@ module Mayu
                 Mayu::Configuration.with(:development) do |config|
                   Mayu::Build::Configuration.new(
                     root: config.root,
-                    mode: :production
+                    mode: :build
                   ).build(
                     output: File.expand_path(options[:filename]),
                     asset_generation_concurrency: options[:concurrency],

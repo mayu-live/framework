@@ -103,6 +103,20 @@ module Mayu
         end || raise("Klenod configuration does not include RouterPlugin")
       end
 
+      # Builds drop the component path from generated names. The hash comes
+      # from the stylesheet source, so names stay unique across files, and
+      # [local] goes first because a hash may start with a digit. Tags use a
+      # different separator than classes so `button` and `.button` differ.
+      def css_name_patterns
+        return {} unless mode == :build
+
+        {
+          class_pattern: "[local]_[hash]",
+          tag_pattern: "[local]-[hash]",
+          variable_pattern: "[local]_[hash]"
+        }
+      end
+
       def default_plugins
         ::Klenod::Build::Context.default_plugins.map do |plugin|
           case plugin
@@ -143,7 +157,7 @@ module Mayu
             ::Klenod::Build::Plugins::GoogleFontsPlugin.new(
               cache_path: File.join(root, ".mayu", "google_fonts")
             ),
-            ::Klenod::Build::Plugins::CSSPlugin.new,
+            ::Klenod::Build::Plugins::CSSPlugin.new(**css_name_patterns),
             ::Klenod::Build::Plugins::JavaScriptPlugin.new
           ]
       end

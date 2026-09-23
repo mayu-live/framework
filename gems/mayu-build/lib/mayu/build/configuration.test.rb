@@ -182,6 +182,48 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_build_mode_emits_short_css_names_and_minified_css
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "card.haml"), "%p.title Card\n")
+      File.write(
+        File.join(root, "app", "card.css"),
+        ".title {\n  color: red;\n}\n\np {\n  margin: 0;\n}\n"
+      )
+
+      configuration =
+        Mayu::Build::Configuration.new(
+          root:,
+          mode: :build,
+          entrypoints: ["card.haml"]
+        )
+      configuration.build
+      runtime = configuration.runtime_provider
+      class_names = runtime.exports("card.haml")::Default::ClassNames
+
+      assert_match(/\Atitle_[A-Za-z0-9_-]{8}\z/, class_names[:title])
+      assert_match(/\Ap-[A-Za-z0-9_-]{8}\z/, class_names[:__p])
+
+      stylesheets = Dir[File.join(configuration.assets_path, "**", "*.css")]
+      assert_equal(1, stylesheets.length)
+      css = File.read(stylesheets.first)
+      assert_includes(css, ".#{class_names[:title]}{color:red}")
+    end
+  end
+
+  def test_development_mode_keeps_component_paths_in_css_names
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "card.haml"), "%p.title Card\n")
+      File.write(File.join(root, "app", "card.css"), ".title { color: red; }\n")
+
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      component_class = provider.exports(provider.entry("card.haml"))::Default
+
+      assert_match(/\Acard\.title\?/, component_class::ClassNames[:title])
+    end
+  end
+
   def test_default_haml_plugin_merges_scoped_classes_with_component_props
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))

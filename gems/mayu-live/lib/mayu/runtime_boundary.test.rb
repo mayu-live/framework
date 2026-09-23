@@ -21,7 +21,7 @@ class Mayu::RuntimeBoundaryTest < Minitest::Test
       File.write(File.join(root, "app", "root.haml"), "%slot\n")
       File.write(File.join(root, "app", "pages", "+page.haml"), "%p Runtime only\n")
       bundle = File.join(root, Mayu::Klenod::BUNDLE_FILENAME)
-      Mayu::Build::Configuration.new(root:, mode: :production).build(output: bundle)
+      Mayu::Build::Configuration.new(root:, mode: :build).build(output: bundle)
 
       output =
         IO.popen(
