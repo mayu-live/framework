@@ -216,6 +216,48 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("Internal Server Error", response.body.join)
   end
 
+  PageSession = Data.define(:id, :styles, :route_status) do
+    def render = "<html></html>"
+  end
+  PageEnvironment = Data.define(:module_provider, :metrics)
+  PageRequest =
+    Data.define(:method, :path, :headers, :body, :version) do
+      def read = body
+    end
+
+  def test_pages_are_served_to_non_browser_clients_without_storing_the_session
+    stored, response = start_page("/page", "*/*")
+
+    assert_equal(200, response.status)
+    assert_equal("<html></html>", response.body.join)
+    assert_equal("Accept", response.headers.to_a.to_h.fetch(:vary))
+    assert_empty(stored)
+  end
+
+  def test_browser_navigations_store_the_session
+    stored, response = start_page("/page", "text/html,*/*;q=0.8")
+
+    assert_equal(200, response.status)
+    assert_equal("Accept", response.headers.to_a.to_h.fetch(:vary))
+    assert_equal(["page-session"], stored.map(&:id))
+  end
+
+  def test_missing_pages_are_a_plain_404_for_non_browser_clients
+    stored, response = start_page("/missing.png", "image/*,*/*;q=0.8")
+
+    assert_equal(404, response.status)
+    assert_equal("file not found", response.body.join)
+    assert_empty(stored)
+  end
+
+  def test_missing_pages_render_the_not_found_page_for_browsers
+    _stored, response =
+      start_page("/missing", "text/html", route_status: 404)
+
+    assert_equal(404, response.status)
+    assert_equal("<html></html>", response.body.join)
+  end
+
   def test_serves_the_hashed_client_initializer_with_immutable_caching
     Dir.mktmpdir("mayu-client") do |root|
       File.write(File.join(root, "init-abc123.js"), "export default null\n")
@@ -305,6 +347,40 @@ class Mayu::Server::AppTest < Minitest::Test
       Environment.new(provider)
     )
     app.send(:handle_provider_route, Request.new(method, path, headers, ""))
+  end
+
+  def start_page(path, accept, route_status: 200)
+    router = Module.new
+    router.define_singleton_method(:match) do |match_path|
+      Match.new(Page, nil, {}) if match_path == "/page"
+    end
+    exports = Module.new
+    exports.const_set(:Default, router)
+
+    counter = Object.new
+    counter.define_singleton_method(:increment) {}
+    metrics = Struct.new(:session_starts_total).new(counter)
+
+    stored = []
+    sessions = Object.new
+    sessions.define_singleton_method(:store) { |session| stored << session }
+
+    cookies = Object.new
+    cookies.define_singleton_method(:set_token_cookie_header) { |_session| {} }
+
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      PageEnvironment.new(Provider.new(exports), metrics)
+    )
+    app.instance_variable_set(:@sessions, sessions)
+    app.instance_variable_set(:@cookies, cookies)
+
+    session = PageSession.new("page-session", [], route_status)
+    request = PageRequest.new("GET", path, {"accept" => accept}, "", "HTTP/2")
+    response = Mayu::Session.stub(:new, ->(**) { session }) { app.call(request) }
+
+    [stored, response]
   end
 
   def provider

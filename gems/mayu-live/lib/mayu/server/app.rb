@@ -85,7 +85,7 @@ module Mayu
           handle_session_event(request, $~[:session_id])
         in _ if response = handle_provider_route(request)
           response
-        in method: "GET" | "HEAD" | "POST" if is_new_session_request?(request)
+        in method: "GET" | "HEAD" | "POST" if page_request?(request)
           handle_session_start(request)
         else
           handle_404(request)
@@ -169,9 +169,23 @@ module Mayu
 
       private
 
-      def is_new_session_request?(request)
-        !request.path.start_with?("/.mayu") &&
-          request.headers["accept"]&.include?("text/html")
+      # Pages are served to any client. Paths without a page only render the
+      # app's not-found page for browser navigations, so stray asset requests
+      # get a plain 404 instead.
+      def page_request?(request)
+        return false if request.path.start_with?("/.mayu")
+
+        provider = @environment.module_provider
+        return true unless provider
+        return true if Klenod::Router.new(provider).match(request.path)&.page
+
+        browser_navigation?(request)
+      end
+
+      # Only browser navigations keep a live session, so scripted clients like
+      # curl get the HTML without filling the session store.
+      def browser_navigation?(request)
+        request.headers["accept"].to_s.include?("text/html")
       end
 
       def handle_provider_route(request)
@@ -211,7 +225,7 @@ module Mayu
           return false
         end
 
-        request.headers["accept"].to_s.include?("text/html")
+        browser_navigation?(request)
       end
 
       def handler_methods(handler)
@@ -304,7 +318,7 @@ module Mayu
           return text_response(503, "Server is stopping")
         end
 
-        if request.version == "HTTP/2"
+        if request.version == "HTTP/2" && browser_navigation?(request)
           @sessions.store(session)
           @environment.metrics.session_starts_total.increment
         end
@@ -312,9 +326,10 @@ module Mayu
         body = session.render
 
         response(
-          200,
+          session.route_status || 200,
           body,
           "content-type": "text/html; charset=utf-8",
+          vary: "Accept",
           "x-mayu-session-id": session.id,
           **@cookies.set_token_cookie_header(session),
           link: link_header(session)
