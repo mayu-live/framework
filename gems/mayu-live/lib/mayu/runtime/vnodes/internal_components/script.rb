@@ -15,7 +15,7 @@ module Mayu
       module InternalComponents
         class Script < Base
           def render
-            H[:script, H[RawText, content: @__props[:content]], type: "module"]
+            H[:script, H[RawText, content: @__props[:content]], type: "module", async: true]
           end
         end
       end

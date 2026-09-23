@@ -8,6 +8,10 @@
   Counter = import("./Counter")
   Section = import("./Section")
 
+  COUNTER_SOURCE = File.read(File.join(__dir__, "Counter.haml"))
+  CALCULATOR_SOURCE = File.read(File.expand_path("../components/Calculator.haml", __dir__))
+  CLOCK_SOURCE = File.read(File.expand_path("../components/Clock.haml", __dir__))
+
 %Section
   %header
     %Heading#live(level=2) Live from the server
@@ -21,14 +25,24 @@
         %p
           The buttons call Ruby methods. The new count is streamed back as a DOM patch.
         %Counter(initial_count=7)
-        %CodePopover(summary="Show source" title="Counter.haml" language="haml")= File.read(File.join(__dir__, "Counter.haml"))
+        %CodePopover(summary="Show source"
+          title="Counter.haml"
+          language="haml"
+          defer
+          fallback_href="https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml"
+        )= COUNTER_SOURCE
 
       %Card.demo
         %h3 A calculator
         %p
           Each key updates Ruby state and streams the current display back to the browser.
         %Calculator
-        %CodePopover(summary="Show source" title="Calculator.haml" language="haml")= File.read(File.expand_path("../components/Calculator.haml", __dir__))
+        %CodePopover(summary="Show source"
+          title="Calculator.haml"
+          language="haml"
+          defer
+          fallback_href="https://github.com/mayu-live/framework/blob/main/example/app/components/Calculator.haml"
+        )= CALCULATOR_SOURCE
 
     .stack
       %Card.demo
@@ -36,9 +50,12 @@
         %p
           Ticks twice a second on the server, and only the hands are updated in the browser.
         %Clock.clock(gradient)
-        %p.source
-          %Link(href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml" target="_blank")
-            Show source
+        %CodePopover(summary="Show source"
+          title="Clock.haml"
+          language="haml"
+          defer
+          fallback_href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml"
+        )= CLOCK_SOURCE
 
 :css
   Section {

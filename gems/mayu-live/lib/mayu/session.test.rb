@@ -267,6 +267,37 @@ class Mayu::SessionTest < Minitest::Test
     refute_empty(session.listener_commands)
   end
 
+  def test_homepage_source_popovers_load_after_the_live_session_starts
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: true)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+
+    initial_html = session.render
+    assert_includes(initial_html, "Source is loading.")
+    assert_includes(initial_html, "github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml")
+    refute_includes(initial_html, "handle_increment")
+    refute_includes(initial_html, "handle_clear")
+
+    Async do
+      session.start
+      Async::Task.current.with_timeout(1) do
+        until session.render.include?("handle_increment") &&
+            session.render.include?("handle_clear")
+          Async::Task.current.sleep(0.01)
+        end
+      end
+      assert_includes(session.render, "handle_increment")
+      assert_includes(session.render, "handle_clear")
+    ensure
+      session.stop
+    end.wait
+  end
+
   def test_session_renders_klenod_slots
     provider =
       Mayu::Build::Configuration.new(

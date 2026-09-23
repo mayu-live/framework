@@ -163,7 +163,7 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     )
   end
 
-  def test_stylesheets_precede_the_deferred_runtime_script
+  def test_stylesheets_precede_the_async_runtime_script
     engine =
       Mayu::Runtime::Engine.new(
         H[
@@ -178,12 +178,11 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
 
     html = render_html(engine.root)
     stylesheet = '<link rel="stylesheet" href="/.mayu/assets/routes/home.css">'
-    runtime = '<script type="module" src="/.mayu/init.js#session"></script>'
+    runtime = '<script type="module" async="true" src="/.mayu/init.js#session"></script>'
 
     assert_operator(html.index("<title>Example</title>"), :<, html.index(stylesheet))
     assert_operator(html.index('name="viewport"'), :<, html.index(stylesheet))
     assert_operator(html.index(stylesheet), :<, html.index(runtime))
-    refute_includes(html, "async=")
   end
 
   def test_head_updates_with_multiple_titles
@@ -222,7 +221,7 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
 
     html = render_html(engine.root)
 
-    assert_match('<script type="module"', html)
+    assert_match('<script type="module" async="true"', html)
     assert_match('import("/.mayu/assets/my-element.js")', html)
     refute_match("customElements.define", html)
   end

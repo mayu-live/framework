@@ -3,6 +3,12 @@
 
   def initialize
     @id = "code-#{SecureRandom.alphanumeric(8)}"
+    @source_ready = !$defer
+  end
+
+  def mount
+    # Add highlighted source through the live stream, outside the initial HTML.
+    @source_ready = true if $defer
   end
 
 - source_title = $title || $summary
@@ -13,8 +19,15 @@
     %header
       %strong= source_title
       %button.close(type="button" popovertarget=@id popovertargetaction="hide" title="Close source") ×
-    %HighlightedCodeBlock(language=$language flush)
-      %slot
+    = if @source_ready
+      %HighlightedCodeBlock(language=$language flush)
+        %slot
+    = elsif $fallback_href
+      %p.fallback
+        Source is loading.
+        %a(href=$fallback_href target="_blank") View it on GitHub
+    = else
+      %p.fallback Source is loading.
 
 :css
   .source {
@@ -51,6 +64,10 @@
 
   .popover::backdrop {
     background: oklch(0% 0 0 / 50%);
+  }
+
+  .fallback {
+    padding: 1em;
   }
 
   header {

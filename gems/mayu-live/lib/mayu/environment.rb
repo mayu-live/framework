@@ -44,7 +44,12 @@ module Mayu
       @init_js_body = <<~JS.freeze
         import init from #{JSON.generate(@runtime_js_path)};
         const sessionId = new URL(import.meta.url).hash.slice(1);
-        init(sessionId);
+        // An async head script can finish before the server-rendered body exists.
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", () => init(sessionId), { once: true });
+        } else {
+          init(sessionId);
+        }
       JS
 
       @metrics =

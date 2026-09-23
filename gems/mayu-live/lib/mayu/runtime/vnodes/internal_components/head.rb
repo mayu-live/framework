@@ -29,10 +29,6 @@ module Mayu
           def asset_tags
             [
               *stylesheet_links,
-              # A module script without `async` is deferred until parsing is
-              # complete. Keeping it after the stylesheets prevents the
-              # client from applying its initial update before the browser has
-              # discovered the CSS that styles the server-rendered document.
               runtime_script,
               *module_scripts,
               *custom_element_scripts
@@ -42,9 +38,11 @@ module Mayu
           def runtime_script
             return unless (runtime_js = @__props[:runtime_js])
 
+            # The HTML and stylesheets can paint while the client loads.
             H[
               :script,
               type: "module",
+              async: true,
               src: runtime_js,
               key: "runtime_js"
             ]
