@@ -203,11 +203,12 @@ On shutdown or an explicit transfer command:
 
 ### Main pieces
 
-- `main.ts`: entrypoint called by server-generated init shim.
+- `init.ts`: bundled initializer that loads the runtime on DOM readiness.
+- `main.ts`: runtime entrypoint called by the initializer.
 - `session-connection.ts`: reconnect loop, stream setup, batch decoding, callback stream setup.
 - `stream.ts`: HTTP stream connect helpers for command stream + outgoing event stream/fallback.
 - `runtime.ts`: command dispatcher against real DOM + node ID registry.
-- `mayu.ts`: `window.Mayu` bridge for callbacks/navigation/pings.
+- `mayu.ts`: client session state and event transport for callbacks/navigation/pings.
 - `serializeEvent.ts`: serializes DOM event payloads.
 - `client-event-codec.ts`: encodes, frames, and optionally compresses
   client-to-server event tuples.

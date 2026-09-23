@@ -3,20 +3,11 @@ import { SESSION_PATH } from "./constants";
 import Mayu from "./mayu.js";
 import SessionConnection from "./session-connection.js";
 
-declare global {
-  interface Window {
-    Mayu: Mayu;
-  }
-}
+let initialized = false;
 
 export default function init(sessionId: string) {
-  if (window.Mayu) {
-    console.error(
-      "%cwindow.Mayu is already defined",
-      "font-size: 1.5em; color: #c00;",
-    );
-    throw "window.Mayu is already defined";
-  }
+  if (initialized) throw new Error("Mayu is already initialized");
+  initialized = true;
 
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(`
@@ -39,8 +30,6 @@ export default function init(sessionId: string) {
         mayu.recordCommandApply(batch.length, durationMs),
     },
   );
-  window.Mayu = mayu;
-
   const endpoint = `${SESSION_PATH}/${sessionId}`;
   const connection = new SessionConnection({ runtime, mayu, endpoint });
   void connection.run();

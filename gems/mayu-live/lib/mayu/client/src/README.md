@@ -12,7 +12,7 @@ This directory contains the browser-side runtime that:
 1. `init(sessionId)` in `main.ts`:
    - installs a default view-transition stylesheet,
    - creates `Runtime`,
-   - creates `Mayu` API instance and stores it on `window.Mayu`,
+   - creates a `Mayu` instance for callbacks, navigation, and pings,
    - creates `SessionConnection`,
    - starts session connection loop at `/.mayu/session/:sessionId`.
 2. `SessionConnection.run()` loop:
@@ -30,7 +30,7 @@ This directory contains the browser-side runtime that:
 ## Module Map
 
 - `main.ts`: minimal bootstrap and wiring.
-- `mayu.ts`: browser API used by runtime and app (`callback`, `navigate`, `ping`, writer accessors).
+- `mayu.ts`: client session state and event transport (`callback`, navigation, pings, writer accessors).
 - `session-connection.ts`: stream loop, batch decode/apply, reconnect/backoff.
 - `session-recovery.ts`: reset policy (`shouldResetSession`) and full session reset (`resetSessionEntirely`).
 - `view-transition.ts`: shared transition wrapper with fallback when View Transitions API is unavailable.
@@ -62,20 +62,20 @@ This directory contains the browser-side runtime that:
 
 ### Client -> Server (callback stream)
 
-- `window.Mayu.callback(event, id)` serializes and writes:
+- The runtime calls `mayu.callback(event, id)` to serialize and write:
   - `["Callback", id, event, ping]`.
 - Mayu uses the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API)
   to intercept same-origin navigations in one place. Hash changes, downloads,
   reloads, and form submissions retain browser behavior. The Navigation API is
   required for client-side routing; browsers without it perform normal document
   navigations.
-- `window.Mayu.navigate(href, pushState)` uses `navigation.navigate()` and the
+- `mayu.navigate(href, pushState)` uses `navigation.navigate()` and the
   intercepted navigation writes `["Navigate", id, href, ping]`. Its
   `pushState` argument is retained for compatibility and maps to native push or
   replace history behavior. The interception remains pending until the server
   streams `NavigationComplete(id)` after the route commands have been applied;
   `NavigationFailed(id)`, aborts, and connection loss reject it instead.
-- `window.Mayu.ping()` writes `["Ping", ping]` after `PING_INTERVAL` of idle
+- `mayu.ping()` writes `["Ping", ping]` after `PING_INTERVAL` of idle
   outbound traffic. Each callback, navigation, visibility, or ping frame resets
   that deadline. The scheduler uses a dedicated worker when possible because
   hidden tabs throttle page timers far beyond the server's session timeout.
@@ -133,7 +133,7 @@ In `SessionConnection.run(...)`:
 - at iteration teardown (`finally`):
   - abort active requests/streams,
   - abort/release callback writer,
-  - clear `window.Mayu` writer reference.
+  - clear the `Mayu` instance's writer reference.
 
 ## Structured Stream Errors
 
