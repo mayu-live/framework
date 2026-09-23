@@ -18,8 +18,8 @@
           Docs
       %li
         %a(href="https://github.com/mayu-live/framework" target="_blank")
+          %Icon(name="github")
           GitHub
-          %Icon(name="up-right-from-square")
       %li.switcher
         %ThemeSwitcher
 
@@ -58,17 +58,15 @@
     margin: 0;
     padding: 0;
 
-    & a {
-      &:any-link {
-        display: inline-flex;
-        place-items: center;
-        white-space: nowrap;
-        gap: 0.5em;
-        padding: .4em;
-        text-decoration: none;
-        color: var(--header-link-color);
-        transition: color 120ms;
-      }
+    a:any-link {
+      display: inline-flex;
+      place-items: center;
+      white-space: nowrap;
+      gap: 0.5em;
+      padding: .4em;
+      text-decoration: none;
+      color: var(--header-link-color);
+      transition: color 120ms;
 
       &:is(:active, :hover, :focus-visible) {
         color: var(--header-link-hover-color);
