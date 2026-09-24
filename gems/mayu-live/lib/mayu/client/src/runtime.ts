@@ -21,8 +21,11 @@ type RuntimeOptions = {
   commandErrorPolicy?: CommandErrorPolicy;
   onNavigationComplete?: (id: string) => void;
   onNavigationFailed?: (id: string) => void;
+  onBrowserAction?: BrowserActionHandler;
   onBatchApplied?: (batch: Batch, durationMs: number) => void;
 };
+
+export type BrowserActionHandler = (name: string, args: unknown[]) => void;
 
 export default class Runtime {
   #nodeSet: NodeSet;
@@ -35,6 +38,7 @@ export default class Runtime {
       commandErrorPolicy = COMMAND_ERROR_POLICY,
       onNavigationComplete,
       onNavigationFailed,
+      onBrowserAction,
       onBatchApplied,
     }: RuntimeOptions = {},
   ) {
@@ -43,6 +47,7 @@ export default class Runtime {
       commandErrorPolicy,
       onNavigationComplete,
       onNavigationFailed,
+      onBrowserAction,
     );
     this.#commandErrorPolicy = commandErrorPolicy;
     this.#onBatchApplied = onBatchApplied;
@@ -80,6 +85,7 @@ class NodeSet {
   #onEvent: (event: Event, listenerId: string) => void;
   #onNavigationComplete?: (id: string) => void;
   #onNavigationFailed?: (id: string) => void;
+  #onBrowserAction?: BrowserActionHandler;
   readonly commandErrorPolicy: CommandErrorPolicy;
 
   constructor(
@@ -87,11 +93,13 @@ class NodeSet {
     commandErrorPolicy: CommandErrorPolicy = COMMAND_ERROR_POLICY,
     onNavigationComplete?: (id: string) => void,
     onNavigationFailed?: (id: string) => void,
+    onBrowserAction?: BrowserActionHandler,
   ) {
     this.#onEvent = onEvent;
     this.commandErrorPolicy = commandErrorPolicy;
     this.#onNavigationComplete = onNavigationComplete;
     this.#onNavigationFailed = onNavigationFailed;
+    this.#onBrowserAction = onBrowserAction;
   }
 
   clear() {
@@ -210,6 +218,10 @@ class NodeSet {
 
   failNavigation(id: string) {
     this.#onNavigationFailed?.(id);
+  }
+
+  browserAction(name: string, args: unknown[]) {
+    this.#onBrowserAction?.(name, args);
   }
 }
 
@@ -485,6 +497,9 @@ const CommandHandlers = {
   },
   NavigationFailed(this: NodeSet, id: string) {
     this.failNavigation(id);
+  },
+  BrowserAction(this: NodeSet, name: string, args: unknown[]) {
+    this.browserAction(name, args);
   },
   async ViewTransition(
     this: NodeSet,

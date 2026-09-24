@@ -17,6 +17,9 @@ module Mayu
       class Updater
         Navigation = Data.define(:id)
         Synchronization = Data.define(:completion)
+        # A command that must reach the client after the DOM updates queued
+        # before it, such as a browser action from a callback.
+        Command = Data.define(:command)
 
         attr_reader :queue, :task, :output_queue
 
@@ -37,6 +40,7 @@ module Mayu
 
                 command_collector = CommandCollector.new
                 navigations = []
+                trailing_commands = []
                 synchronizations = []
                 updates = {}
 
@@ -45,6 +49,8 @@ module Mayu
                     synchronizations << item
                   elsif item.is_a?(Navigation)
                     navigations << item
+                  elsif item.is_a?(Command)
+                    trailing_commands << item.command
                   else
                     updates[item] ||= nil
                   end
@@ -121,9 +127,11 @@ module Mayu
                     )
                   end
                   @engine.enqueue_command(navigation_completion) if navigation_completion
+                  @engine.enqueue_batch(Batch[trailing_commands]) unless trailing_commands.empty?
                 else
                   commands = head_commands + commands
                   commands << navigation_completion if navigation_completion
+                  commands.concat(trailing_commands)
                   @engine.enqueue_batch(Batch[commands]) unless commands.empty?
                 end
 

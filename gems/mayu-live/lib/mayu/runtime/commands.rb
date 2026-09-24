@@ -95,6 +95,8 @@ module Mayu
       NavigationComplete = CommandData.define(:id)
       NavigationFailed = CommandData.define(:id)
       RegisterCustomElement = CommandData.define(:name, :path)
+      # Runs a built-in browser action, such as navigate or alert.
+      BrowserAction = CommandData.define(:name, :args)
 
       RenderError =
         CommandData.define(

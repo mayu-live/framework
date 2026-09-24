@@ -7,8 +7,6 @@
   def initialize
     @result = nil
     @error = nil
-    @page = $query[:page].to_i
-    @per_page = $per_page.to_i.nonzero? || 20
   end
 
   def mount
@@ -22,8 +20,8 @@
 
   def handle_set_per_page(e)
     e => { target: { value: } }
-    @page = 0
-    @per_page = value.to_i
+    # Start over on the first page with the new page size.
+    browser.navigate("?per_page=#{value.to_i}", replace: true)
   end
 
 :css
@@ -50,16 +48,18 @@
 :ruby
   @result => results:
 
-  total_pages = (results.length / @per_page).floor
+  per_page = $query[:per_page].to_i
+  per_page = 20 unless [20, 40, 80].include?(per_page)
+  total_pages = (results.length / per_page).floor
   page = $query[:page].to_i.clamp(1, total_pages.succ)
-  results_on_this_page = results.slice(page.pred * @per_page, @per_page) || []
+  results_on_this_page = results.slice(page.pred * per_page, per_page) || []
 
 %article
   %Filter{results:}
 
   %Pagination(on_change_per_page=handle_set_per_page){
     page:,
-    per_page: @per_page,
+    per_page:,
     total_pages:,
     window_size: 7,
   }
@@ -75,7 +75,7 @@
 
   %Pagination(on_change_per_page=handle_set_per_page){
     page:,
-    per_page: @per_page,
+    per_page:,
     total_pages:,
     window_size: 7
   }

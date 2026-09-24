@@ -350,6 +350,18 @@ module Mayu
         end
       end
 
+      # Browser actions reach the client after the DOM updates that were
+      # queued before them.
+      def browser_action(name, args)
+        command = Commands::BrowserAction[name, args]
+
+        if @updater&.task
+          @updater.enqueue(VNodes::Updater::Command.new(command))
+        else
+          enqueue_command(command)
+        end
+      end
+
       def enqueue_command(command)
         enqueue_batch(Batch[[command]])
       end

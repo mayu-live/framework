@@ -18,8 +18,9 @@
   end
 
 :ruby
-  prev_page_link = $page > 1 && "?page=#{$page.pred}"
-  next_page_link = $page <= $total_pages && "?page=#{$page.succ}"
+  page_link = ->(page) { "?page=#{page}&per_page=#{$per_page}" }
+  prev_page_link = $page > 1 && page_link.($page.pred)
+  next_page_link = $page <= $total_pages && page_link.($page.succ)
 
   pages =
     pagination_window(
@@ -41,7 +42,7 @@
         = pages.map do |page|
           %li[page]
             %a.page{
-              href: "?page=#{page}",
+              href: page_link.(page),
               aria: { current: $page == page && "page" }
             }= page
 

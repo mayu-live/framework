@@ -10,6 +10,7 @@
 require_relative "../runtime/h"
 require_relative "css_units"
 require_relative "fetch"
+require_relative "browser"
 
 module Mayu
   module Component
@@ -95,6 +96,15 @@ module Mayu
       end
 
       def rerender!
+      end
+
+      def browser
+        Browser.new(method(:__browser_action))
+      end
+
+      # Replaced by the runtime when the component is mounted.
+      def __browser_action(name, _args)
+        raise "browser.#{name} can only be called once the component is mounted"
       end
 
       def update!(value)

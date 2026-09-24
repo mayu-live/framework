@@ -10,7 +10,7 @@
   end
 
   def handle_alert
-    helpers.alert("Hello world\nCount: #{@count}")
+    browser.alert("Hello world\nCount: #{@count}")
 
     @count += 1
   end

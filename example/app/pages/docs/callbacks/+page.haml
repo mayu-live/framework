@@ -63,3 +63,28 @@
       }
     }
     ```
+
+    ## Browser actions
+
+    A handler can ask the browser to do something with `browser`.
+    Actions run after the DOM updates from the same handler.
+
+    ```haml
+    :ruby
+      def handle_set_per_page(event)
+        event => { target: { value: } }
+        browser.navigate("?per_page=\#{value}", replace: true)
+      end
+
+      def handle_greet
+        browser.alert("Hello world")
+      end
+    ```
+
+    `browser.navigate(href, replace: false)` navigates like a link click,
+    so the route renders again with the new `$query` and `$params`.
+    Relative hrefs such as `?page=2` resolve against the current URL.
+    Pass `replace: true` to replace the current history entry
+    instead of adding one.
+
+    `browser.alert(message)` shows a browser alert.

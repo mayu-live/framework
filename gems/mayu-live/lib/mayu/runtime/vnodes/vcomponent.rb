@@ -466,6 +466,9 @@ module Mayu
           instance.define_singleton_method(:__update_interval) do
             vnode.engine.update_interval
           end
+          instance.define_singleton_method(:__browser_action) do |name, args|
+            vnode.engine.browser_action(name, args)
+          end
           bind_state_runtime(instance)
           instance.define_singleton_method(:rerender!) do
             vnode.send(:schedule_rerender, self)

@@ -1,6 +1,7 @@
 import Runtime from "./runtime.js";
 import { SESSION_PATH } from "./constants";
 import Mayu from "./mayu.js";
+import { createBrowserActionHandler } from "./browser-actions.js";
 import SessionConnection from "./session-connection.js";
 
 let initialized = false;
@@ -26,6 +27,7 @@ export default function init(sessionId: string) {
     {
       onNavigationComplete: (id) => mayu.completeNavigation(id),
       onNavigationFailed: (id) => mayu.failNavigation(id),
+      onBrowserAction: createBrowserActionHandler(mayu),
       onBatchApplied: (batch, durationMs) =>
         mayu.recordCommandApply(batch.length, durationMs),
     },

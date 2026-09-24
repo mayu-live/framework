@@ -240,6 +240,19 @@ describe("runtime view transitions", () => {
   });
 });
 
+describe("runtime browser actions", () => {
+  it("passes browser actions to the handler", async () => {
+    const onBrowserAction = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onBrowserAction });
+
+    await runtime.applyBatch([
+      ["BrowserAction", "navigate", ["?page=2", true]],
+    ]);
+
+    expect(onBrowserAction).toHaveBeenCalledWith("navigate", ["?page=2", true]);
+  });
+});
+
 describe("runtime autofocus", () => {
   beforeEach(() => {
     // jsdom has no requestIdleCallback; run the callback right away.
