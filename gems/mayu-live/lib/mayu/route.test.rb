@@ -24,5 +24,6 @@ class Mayu::RouteTest < Minitest::Test
     assert_equal('{"title":"Klenod"}', wrapped.body)
     assert_equal({id: "42"}, wrapped.params)
     assert_equal({"format" => "json", "locale" => "en"}, wrapped.query)
+    assert_equal("json", wrapped.query.fetch(:format))
   end
 end

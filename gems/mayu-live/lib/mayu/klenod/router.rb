@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "uri"
+require_relative "../query_params"
 
 module Mayu
   module Klenod
@@ -55,7 +56,7 @@ module Mayu
 
       def resolved_page_for(match, path, uri, props: {})
         return unless match&.page
-        query = URI.decode_www_form(uri.query.to_s).to_h
+        query = QueryParams.parse(uri.query)
 
         page = Runtime::H[match.page, params: match.params, query:, **props]
 

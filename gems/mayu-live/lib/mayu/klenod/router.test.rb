@@ -84,11 +84,13 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     assert_equal(Layout, layout.type)
     assert_equal({id: "42"}, layout.props[:params])
     assert_equal({"draft" => "true"}, layout.props[:query])
+    assert_equal("true", layout.props[:query][:draft])
 
     page = layout.children.descriptors.fetch(0)
     assert_equal(Page, page.type)
     assert_equal({id: "42"}, page.props[:params])
     assert_equal({"draft" => "true"}, page.props[:query])
+    assert_equal("true", page.props[:query].fetch(:draft))
   end
 
   def test_returns_nil_when_klenod_has_no_page_route

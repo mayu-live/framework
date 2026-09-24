@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "uri"
+require_relative "query_params"
 
 module Mayu
   # Base class for Klenod `+route.rb` handlers. It is intentionally small: the
@@ -10,7 +11,7 @@ module Mayu
       Data.define(:method, :path, :headers, :body, :params, :query) do
         def self.from_async(request, params: {})
           uri = URI.parse(request.path)
-          query = URI.decode_www_form(uri.query.to_s).to_h.freeze
+          query = QueryParams.parse(uri.query).freeze
 
           new(
             method: request.method,
