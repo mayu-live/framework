@@ -251,7 +251,7 @@ describe("runtime autofocus", () => {
     vi.unstubAllGlobals();
   });
 
-  it("focuses a textarea with autofocus after its parent is re-rendered", async () => {
+  async function rerenderFormWithAutofocus() {
     document.body.innerHTML =
       "<form><input name=other><textarea autofocus name=message></textarea></form>";
     const runtime = new Runtime(vi.fn());
@@ -290,6 +290,21 @@ describe("runtime autofocus", () => {
       ],
       ["ReplaceChildren", "form", ["other", "textarea"]],
     ]);
+
+    return textarea;
+  }
+
+  it("focuses a textarea with autofocus after its parent is re-rendered", async () => {
+    const textarea = await rerenderFormWithAutofocus();
+
+    expect(document.activeElement).toBe(textarea);
+  });
+
+  it("focuses autofocus elements without requestIdleCallback", async () => {
+    vi.stubGlobal("requestIdleCallback", undefined);
+
+    const textarea = await rerenderFormWithAutofocus();
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(document.activeElement).toBe(textarea);
   });

@@ -646,7 +646,7 @@ const CommandHandlers = {
 
     if (nodeInfo) nodeInfo.childIds = childIds;
 
-    requestIdleCallback(() => {
+    whenIdle(() => {
       handleAutofocus(element);
     });
   },
@@ -696,6 +696,15 @@ const CommandHandlers = {
     void import(path);
   },
 } as const;
+
+// Safari has no requestIdleCallback.
+function whenIdle(callback: () => void) {
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(callback);
+  } else {
+    setTimeout(callback, 0);
+  }
+}
 
 // Any focusable element can carry autofocus: inputs, textareas, selects,
 // buttons and contenteditable elements alike.
