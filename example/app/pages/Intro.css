@@ -104,8 +104,8 @@ MaxWidth {
   /* Slightly translucent so the hero shows through the blur. */
   background: linear-gradient(
     135deg in oklch,
-    alpha(from oklch(80% 0.08 var(--hue-pink)) / 85%),
-    alpha(from var(--pink) / 85%)
+    oklch(80% 0.08 var(--hue-pink) / 85%),
+    oklch(from var(--pink) l c h / 85%)
   );
   backdrop-filter: blur(3px);
   box-shadow:

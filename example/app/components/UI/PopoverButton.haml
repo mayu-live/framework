@@ -62,9 +62,11 @@
     display: none;
     gap: 0.125rem;
     position: absolute;
-    top: anchor(bottom);
-    left: auto;
-    right: anchor(right);
+    /* Below the button, right edges aligned. */
+    position-area: bottom span-left;
+    inset: auto;
+    /* Safari stretches the rows to fill the whole area below the button. */
+    align-content: start;
     min-width: 11rem;
     margin: 0.5rem 0 0;
     padding: 0.375rem;
