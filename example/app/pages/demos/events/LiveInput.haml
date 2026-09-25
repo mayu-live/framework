@@ -34,10 +34,7 @@
       %Button(type="submit") Submit
     %dl.stats
       %dt Server value
-      - if @text.empty?
-        %dd –
-      - else
-        %dd= @text
+      %dd= @text.empty? ? "–" : @text
       %dt Handled
       %dd= @handled
     - unless @submitted.empty?
