@@ -22,6 +22,21 @@ module Mayu
         Html = InternalComponents::Html
         Head = InternalComponents::Head
 
+        # High-frequency events where only the latest one matters. Keep in
+        # sync with CONTINUOUS_EVENTS in client/src/mayu.ts.
+        CONTINUOUS_EVENT_TYPES = Set[
+          "input",
+          "mousemove",
+          "pointermove",
+          "touchmove",
+          "wheel",
+          "scroll",
+          "drag",
+          "dragover"
+        ].freeze
+
+        PendingContinuousCall = Struct.new(:queue, :payload, :completion)
+
         def initialize(
           descriptor,
           parent:,
@@ -31,6 +46,7 @@ module Mayu
         )
           super(descriptor, parent:, engine:)
           @listeners = {}
+          @pending_continuous_calls = {}
           @listener_entries_by_element = {}
           @dirty_listener_elements = Set.new
           @styles = Set.new(stylesheets)
@@ -139,11 +155,33 @@ module Mayu
           task = component&.instance_variable_get(:@__vnode_task)
           queue = component&.instance_variable_get(:@__vnode_queue)
 
+          # While a continuous event waits behind a running handler, newer
+          # events of the same listener replace its payload instead of
+          # queueing up, so the handler runs next with the latest one.
+          pending = nil
+          if task && queue &&
+              CONTINUOUS_EVENT_TYPES.include?(payload[:eventType])
+            queued = @pending_continuous_calls[id]
+            if queued&.queue.equal?(queue)
+              queued.payload = payload
+              return queued.completion
+            end
+
+            pending = PendingContinuousCall.new(queue, payload, nil)
+            @pending_continuous_calls[id] = pending
+          end
+
           completion = Async::Queue.new
+          pending&.completion = completion
           queued_at =
             Process.clock_gettime(Process::CLOCK_MONOTONIC, :float_millisecond)
           call =
             lambda do
+              if pending
+                @pending_continuous_calls.delete(id) if @pending_continuous_calls[id].equal?(pending)
+                payload = pending.payload
+              end
+
               if callback
                 metrics.callback_queue_duration_ms.observe(
                   Process.clock_gettime(
@@ -248,6 +286,7 @@ module Mayu
           @scripts = scripts
           @custom_elements = custom_elements
           @listeners = listeners || {}
+          @pending_continuous_calls = {}
           @listener_entries_by_element = {}
           @dirty_listener_elements = Set.new
           @head = Set.new

@@ -16,6 +16,13 @@ export default function serializeEvent(e: Event) {
 
   if (e.currentTarget instanceof Element) {
     payload.currentTarget = serializeElement(e.currentTarget);
+
+    if (e.type === "scroll") {
+      Object.assign(
+        payload.currentTarget,
+        serializeScrollPosition(e.currentTarget),
+      );
+    }
   }
 
   if (e.target instanceof Element) {
@@ -37,6 +44,8 @@ export default function serializeEvent(e: Event) {
     payload.buttons = e.buttons;
     payload.clientX = e.clientX;
     payload.clientY = e.clientY;
+    payload.offsetX = e.offsetX;
+    payload.offsetY = e.offsetY;
     Object.assign(payload, serializeModifierKeys(e));
   }
 
@@ -171,6 +180,17 @@ function serializeElement(elem: Element) {
   }
 
   return base;
+}
+
+function serializeScrollPosition(elem: Element) {
+  return {
+    scrollTop: elem.scrollTop,
+    scrollLeft: elem.scrollLeft,
+    scrollHeight: elem.scrollHeight,
+    scrollWidth: elem.scrollWidth,
+    clientHeight: elem.clientHeight,
+    clientWidth: elem.clientWidth,
+  };
 }
 
 function serializeDataset(elem: Element) {

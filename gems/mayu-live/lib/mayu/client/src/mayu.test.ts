@@ -170,6 +170,84 @@ describe("Mayu callbacks", () => {
     expect((message?.[2] as any).target.value).toBe("abc");
     mayu.dispose();
   });
+
+  it("opens a new throttle window after sending a trailing event", async () => {
+    vi.useFakeTimers();
+    const mayu = new Mayu({ autoPing: false });
+    const write = vi.fn(async (_message: ClientEvent) => undefined);
+    mayu.setWriter({ write } as any);
+    const pad = document.createElement("div");
+    pad.addEventListener("pointermove", (event) =>
+      mayu.callback(event, "listener"),
+    );
+    document.body.append(pad);
+
+    // Pointer events at 60 Hz for one second.
+    for (let i = 0; i < 60; i++) {
+      pad.dispatchEvent(new MouseEvent("pointermove", { clientX: i }));
+      await vi.advanceTimersByTimeAsync(1_000 / 60);
+    }
+    await vi.runAllTimersAsync();
+
+    expect(write.mock.calls.length).toBeGreaterThanOrEqual(29);
+    expect(write.mock.calls.length).toBeLessThanOrEqual(32);
+    const last = write.mock.calls.at(-1)?.[0];
+    expect((last?.[2] as any).clientX).toBe(59);
+    mayu.dispose();
+  });
+
+  it("throttles scroll events", async () => {
+    vi.useFakeTimers();
+    const mayu = new Mayu({ autoPing: false });
+    const write = vi.fn(async (_message: ClientEvent) => undefined);
+    mayu.setWriter({ write } as any);
+    const list = document.createElement("div");
+    list.addEventListener("scroll", (event) =>
+      mayu.callback(event, "listener"),
+    );
+    document.body.append(list);
+
+    for (let i = 0; i < 10; i++) list.dispatchEvent(new Event("scroll"));
+    await vi.runAllTimersAsync();
+
+    expect(write).toHaveBeenCalledTimes(2);
+    mayu.dispose();
+  });
+
+  it("sends pending continuous events before a discrete event", async () => {
+    vi.useFakeTimers();
+    const mayu = new Mayu({ autoPing: false });
+    const write = vi.fn(async (_message: ClientEvent) => undefined);
+    mayu.setWriter({ write } as any);
+    const form = document.createElement("form");
+    const input = document.createElement("input");
+    form.append(input);
+    input.addEventListener("input", (event) =>
+      mayu.callback(event, "input-listener"),
+    );
+    form.addEventListener("submit", (event) =>
+      mayu.callback(event, "submit-listener"),
+    );
+    document.body.append(form);
+
+    input.value = "a";
+    input.dispatchEvent(new InputEvent("input"));
+    input.value = "ab";
+    input.dispatchEvent(new InputEvent("input"));
+    form.dispatchEvent(new SubmitEvent("submit", { cancelable: true }));
+    await vi.runAllTimersAsync();
+
+    const sent = write.mock.calls.map(([message]) => [
+      message[1],
+      (message[2] as any).target?.value,
+    ]);
+    expect(sent).toEqual([
+      ["input-listener", "a"],
+      ["input-listener", "ab"],
+      ["submit-listener", undefined],
+    ]);
+    mayu.dispose();
+  });
 });
 
 describe("Mayu navigation", () => {

@@ -1,0 +1,74 @@
+:ruby
+  Card = import("/components/UI/Card")
+  Button = import("/components/Form/Button")
+
+  def initialize
+    @text = ""
+    @submitted = []
+    @handled = 0
+    @form_key = "form-0"
+  end
+
+  def handle_input(e)
+    @text = e.dig(:currentTarget, :value)
+    @handled += 1
+  end
+
+  def handle_submit(e)
+    text = e.dig(:currentTarget, :formData, :text).to_s.strip
+    @submitted = [text, *@submitted].first(5) unless text.empty?
+    @text = ""
+    # A new key recreates the form, which clears the input.
+    @form_key = @form_key.succ
+  end
+
+%Card
+  .body
+    %h3 Input
+    %p
+      Input events are throttled too, but a submit always waits for the
+      input events before it. Type fast and press Enter: the whole text is
+      submitted and the field is cleared.
+    %form.form(onsubmit=handle_submit)[@form_key]
+      %input.input(name="text" oninput=handle_input autocomplete="off" placeholder="Type something")
+      %Button(type="submit") Submit
+    %dl.stats
+      %dt Server value
+      - if @text.empty?
+        %dd –
+      - else
+        %dd= @text
+      %dt Handled
+      %dd= @handled
+    - unless @submitted.empty?
+      %ul
+        = @submitted.map.with_index do |text, i|
+          %li[i]= text
+
+:css
+  .body {
+    padding: 1em;
+  }
+
+  .form {
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
+  }
+
+  .input {
+    flex: 1;
+    font: inherit;
+    padding: 0.5em 0.75em;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25em 1em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  dd {
+    margin: 0;
+  }

@@ -1,43 +1,70 @@
-const TIMEOUT_MS = 1_000 / 30;
-
-const ThrottledNodes = new WeakMap<EventTarget, Map<string, ThrottleEntry>>();
+import { CONTINUOUS_EVENT_INTERVAL_MS } from "./constants";
 
 type ThrottleEntry = {
-  timeout: number;
-  cb: (() => void) | null;
+  timeout: ReturnType<typeof setTimeout>;
+  pending: (() => void) | null;
 };
 
-export default function throttle(
-  target: EventTarget,
-  key: string,
-  cb: () => void,
-) {
-  let entries = ThrottledNodes.get(target);
-  if (!entries) {
-    entries = new Map();
-    ThrottledNodes.set(target, entries);
+// Leading and trailing throttle per key. The first call runs right away and
+// opens a window; calls inside the window replace each other, and the latest
+// one runs when the window closes and opens the next window.
+export default class Throttle {
+  #entries = new Map<string, ThrottleEntry>();
+  #interval: number;
+
+  constructor(interval: number = CONTINUOUS_EVENT_INTERVAL_MS) {
+    this.#interval = interval;
   }
 
-  const entry = entries.get(key);
+  call(key: string, cb: () => void) {
+    const entry = this.#entries.get(key);
 
-  if (entry) {
-    entry.cb = cb;
-    return;
+    if (entry) {
+      entry.pending = cb;
+      return;
+    }
+
+    this.#open(key);
+    cb();
   }
 
-  entries.set(key, {
-    timeout: setTimeout(() => {
-      const targetEntries = ThrottledNodes.get(target);
-      const entry = targetEntries?.get(key);
-      targetEntries?.delete(key);
-      if (targetEntries?.size === 0) ThrottledNodes.delete(target);
-      if (entry) {
-        clearTimeout(entry.timeout);
-        entry.cb?.();
-      }
-    }, TIMEOUT_MS),
-    cb: null,
-  });
+  // Runs every pending call now, so that they are sent before whatever
+  // the caller is about to send.
+  flush() {
+    const pending = this.#takeAll();
+    for (const cb of pending) cb();
+  }
 
-  cb();
+  clear() {
+    this.#takeAll();
+  }
+
+  #open(key: string) {
+    this.#entries.set(key, {
+      timeout: setTimeout(() => this.#close(key), this.#interval),
+      pending: null,
+    });
+  }
+
+  #close(key: string) {
+    const entry = this.#entries.get(key);
+    this.#entries.delete(key);
+
+    if (!entry?.pending) return;
+
+    this.#open(key);
+    entry.pending();
+  }
+
+  #takeAll() {
+    const pending: (() => void)[] = [];
+
+    for (const entry of this.#entries.values()) {
+      clearTimeout(entry.timeout);
+      if (entry.pending) pending.push(entry.pending);
+    }
+
+    this.#entries.clear();
+    return pending;
+  }
 }

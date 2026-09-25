@@ -111,6 +111,43 @@ describe("serializeEvent", () => {
     });
   });
 
+  it("serializes the scroll position of scroll event targets only", () => {
+    const list = document.createElement("div");
+    Object.defineProperties(list, {
+      scrollTop: { value: 120 },
+      scrollLeft: { value: 4 },
+      scrollHeight: { value: 800 },
+      scrollWidth: { value: 300 },
+      clientHeight: { value: 200 },
+      clientWidth: { value: 296 },
+    });
+    document.body.append(list);
+
+    const scrollPayload = captureSerializedEvent(
+      list,
+      "scroll",
+      new Event("scroll"),
+    );
+
+    expect(scrollPayload.currentTarget).toMatchObject({
+      tagName: "DIV",
+      scrollTop: 120,
+      scrollLeft: 4,
+      scrollHeight: 800,
+      scrollWidth: 300,
+      clientHeight: 200,
+      clientWidth: 296,
+    });
+
+    const clickPayload = captureSerializedEvent(
+      list,
+      "click",
+      new MouseEvent("click"),
+    );
+
+    expect(clickPayload.currentTarget).not.toHaveProperty("scrollTop");
+  });
+
   it("serializes select metadata for multi-select controls", () => {
     const select = document.createElement("select");
     select.name = "flavor";

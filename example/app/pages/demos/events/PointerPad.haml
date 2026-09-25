@@ -1,0 +1,77 @@
+:ruby
+  Card = import("/components/UI/Card")
+
+  def initialize
+    @x = nil
+    @y = nil
+    @handled = 0
+    @slow = false
+  end
+
+  def handle_pointermove(e)
+    sleep 0.25 if @slow
+
+    @x = e[:offsetX].round
+    @y = e[:offsetY].round
+    @handled += 1
+  end
+
+  def handle_toggle_slow(e)
+    @slow = e.dig(:currentTarget, :checked)
+  end
+
+%Card
+  .body
+    %h3 Pointer move
+    %p
+      Moving the pointer fires far more events than the server needs.
+      The browser sends at most 30 per second, and while a handler is still
+      running the server keeps only the latest one.
+    .pad(onpointermove=handle_pointermove)
+      - if @x
+        .dot{style: { left: "#{@x}px", top: "#{@y}px" }}
+    %dl.stats
+      %dt Position
+      %dd= @x ? "#{@x}, #{@y}" : "–"
+      %dt Handled
+      %dd= @handled
+    %label
+      %input(type="checkbox" checked=@slow onchange=handle_toggle_slow)
+      Slow handler (250 ms)
+
+:css
+  .body {
+    padding: 1em;
+  }
+
+  .pad {
+    position: relative;
+    height: 12rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-sunken, var(--slightly-darker));
+    touch-action: none;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  .dot {
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    margin: -0.5rem 0 0 -0.5rem;
+    border-radius: 50%;
+    background: var(--accent);
+    pointer-events: none;
+    transition: left 80ms linear, top 80ms linear;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25em 1em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  dd {
+    margin: 0;
+  }

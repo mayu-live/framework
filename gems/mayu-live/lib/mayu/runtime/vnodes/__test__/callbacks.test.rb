@@ -21,6 +21,25 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  class SlowHandlerProbe < Mayu::Component::Base
+    class << self
+      attr_accessor :gate, :received
+    end
+
+    def render
+      H[
+        :div,
+        onmousemove: H.callback(self, :handle_event),
+        onclick: H.callback(self, :handle_event)
+      ]
+    end
+
+    def handle_event(event)
+      self.class.received << event[:n]
+      self.class.gate.dequeue
+    end
+  end
+
   class InvalidCallbackProbe < Mayu::Component::Base
     def handle_click(_first, _second)
     end
@@ -344,6 +363,18 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  def test_queued_continuous_callbacks_run_once_with_the_latest_payload
+    received = run_slow_handler("mousemove")
+
+    assert_equal([1, 5], received)
+  end
+
+  def test_queued_discrete_callbacks_all_run
+    received = run_slow_handler("click")
+
+    assert_equal([1, 2, 3, 4, 5], received)
+  end
+
   def test_callback_error_overlay_can_be_disabled
     engine =
       Mayu::Runtime::Engine.new(
@@ -359,5 +390,38 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
 
       assert_no_patches(engine)
     end
+  end
+
+  private
+
+  # Sends four events while the handler is blocked on the first one, then
+  # lets every handler run and returns the payloads they received.
+  def run_slow_handler(event_type)
+    SlowHandlerProbe.gate = Async::Queue.new
+    SlowHandlerProbe.received = []
+
+    run_engine(H[:body, H[SlowHandlerProbe]]) do |engine|
+      document = engine.root
+      component = find_component(document, SlowHandlerProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.instance_variable_get(:@__vnode_queue) }
+
+      listener = nil
+      find_element(document, :div).each_listener do |name, candidate|
+        listener = candidate if name == event_type
+      end
+
+      send = ->(n) { engine.callback(listener.id, {eventType: event_type, n:}) }
+      completions = [send.call(1)]
+      wait_until { SlowHandlerProbe.received.any? }
+      completions += (2..5).map(&send)
+
+      5.times { SlowHandlerProbe.gate.enqueue(true) }
+      Async::Task.current.with_timeout(0.5) do
+        completions.uniq.each(&:dequeue)
+      end
+    end
+
+    SlowHandlerProbe.received
   end
 end

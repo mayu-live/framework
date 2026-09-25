@@ -1,7 +1,7 @@
 import serializeEvent from "./serializeEvent.js";
 import { NAVIGATION_PROGRESS_DELAY, PING_INTERVAL } from "./constants";
 import { updateNavigationProgress } from "./ping";
-import throttle from "./throttle";
+import Throttle from "./throttle";
 import type { ClientEvent, CommandApplyTelemetry } from "./protocol";
 
 const CONTINUOUS_EVENTS = new Set([
@@ -10,6 +10,9 @@ const CONTINUOUS_EVENTS = new Set([
   "pointermove",
   "touchmove",
   "wheel",
+  "scroll",
+  "drag",
+  "dragover",
 ]);
 
 type MayuOptions = {
@@ -60,6 +63,7 @@ function browserNavigation(): NavigationLike | undefined {
 export default class Mayu {
   #writer: WritableStreamDefaultWriter<ClientEvent> | null;
   #pingScheduler: PingScheduler | null;
+  #throttle = new Throttle();
   #navigationListener: (event: Event) => void;
   #visibilityListener: () => void;
   #navigationSequence = 0;
@@ -99,6 +103,7 @@ export default class Mayu {
       this.#navigationListener,
     );
     document.removeEventListener("visibilitychange", this.#visibilityListener);
+    this.#throttle.clear();
     this.#pingScheduler?.stop();
     this.#pingScheduler = null;
     this.#rejectPendingNavigations(new Error("Mayu was disposed"));
@@ -118,6 +123,7 @@ export default class Mayu {
 
   clearWriter() {
     this.#writer = null;
+    this.#throttle.clear();
     this.#pingScheduler?.cancel();
     this.#rejectPendingNavigations(
       new Error("Navigation callback transport unavailable"),
@@ -179,8 +185,11 @@ export default class Mayu {
     };
 
     if (CONTINUOUS_EVENTS.has(event.type)) {
-      throttle(event.currentTarget!, `${event.type}:${id}`, write);
+      this.#throttle.call(`${event.type}:${id}`, write);
     } else {
+      // Send held back continuous events first, so that an input value
+      // reaches the server before the submit that follows it.
+      this.#throttle.flush();
       write();
     }
   }

@@ -4,6 +4,9 @@
   Card = import("/components/UI/Card")
   Details = import("/components/UI/Details")
   Button = import("/components/Form/Button")
+  PointerPad = import("./PointerPad")
+  ScrollBox = import("./ScrollBox")
+  LiveInput = import("./LiveInput")
 
   def initialize
     @count = 0
@@ -20,3 +23,16 @@
   %p This page contains some experiments with events
 
   %Button(onclick=handle_alert) Alert
+
+  .grid
+    %PointerPad
+    %ScrollBox
+    %LiveInput
+
+:css
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1em;
+    margin-top: 1em;
+  }
