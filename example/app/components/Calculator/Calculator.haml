@@ -1,0 +1,378 @@
+:ruby
+  Icon = import("/components/UI/Icon/Icon")
+
+  OPERATORS = { "+" => "+", "-" => "−", "*" => "×", "/" => "÷" }
+  PRECEDENCE = { "+" => 1, "-" => 1, "*" => 2, "/" => 2 }
+  Percent = Data.define(:value)
+
+  def initialize
+    handle_clear
+  end
+
+  def handle_digit(event)
+    event => { currentTarget: { value: } }
+    input_digit(value)
+  end
+
+  def handle_operator(event)
+    event => { currentTarget: { value: } }
+    input_operator(value)
+  end
+
+  def handle_keydown(event)
+    event => { key: }
+
+    case key
+    when "Enter", "=" then handle_equals
+    when "Backspace" then handle_backspace
+    when "Escape" then handle_clear
+    when "%" then handle_percent
+    when "." then handle_decimal
+    when /\A[0-9]\z/ then input_digit(key)
+    when /\A[+\-*\/]\z/ then input_operator(key)
+    end
+  end
+
+  def input_digit(digit)
+    handle_clear if @result
+    number = number_token
+    return if number&.end_with?("%")
+
+    if number.nil?
+      push_token(digit)
+    elsif number.delete("-") == "0"
+      replace_token(number.sub("0", digit))
+    else
+      replace_token(number + digit)
+    end
+  end
+
+  def handle_decimal
+    handle_clear if @result
+    number = number_token
+    return if number&.end_with?("%")
+
+    if number.nil?
+      push_token("0.")
+    elsif !number.include?(".")
+      replace_token(number + ".")
+    end
+  end
+
+  def input_operator(operator)
+    continue_from_result if @result
+    push_token("0") if @tokens.empty?
+
+    if number_token
+      push_token(operator)
+    else
+      replace_token(operator)
+    end
+  end
+
+  def handle_negate
+    continue_from_result if @result
+    number = number_token
+
+    if number.nil?
+      push_token("-0")
+    else
+      replace_token(number.start_with?("-") ? number.delete_prefix("-") : "-#{number}")
+    end
+  end
+
+  def handle_percent
+    continue_from_result if @result
+    number = number_token
+    replace_token("#{number}%") if number && !number.end_with?("%")
+  end
+
+  def handle_backspace
+    return handle_clear if @result
+    return if @tokens.empty?
+
+    last = @tokens.last.chop
+    if last.empty? || last == "-"
+      @tokens = @tokens[...-1]
+    else
+      replace_token(last)
+    end
+  end
+
+  def handle_clear
+    @tokens = []
+    @history = nil
+    @result = false
+    @error = false
+  end
+
+  def handle_equals
+    return if @result || @tokens.empty?
+
+    @tokens = @tokens[...-1] unless number_token
+    expression = format_tokens(@tokens)
+    @tokens = [format_number(evaluate(@tokens))]
+    @history = expression
+    @result = true
+  rescue ZeroDivisionError
+    @tokens = []
+    @history = expression
+    @result = true
+    @error = true
+  end
+
+  def continue_from_result
+    @history = nil
+    @result = false
+    @error = false
+  end
+
+  def push_token(token)
+    @tokens = [*@tokens, token]
+  end
+
+  def replace_token(token)
+    @tokens = [*@tokens[...-1], token]
+  end
+
+  def number_token
+    last = @tokens.last
+    last unless last.nil? || OPERATORS.key?(last)
+  end
+
+  def evaluate(tokens)
+    output = []
+    operators = []
+
+    tokens.each do |token|
+      if OPERATORS.key?(token)
+        output << operators.pop while operators.any? && PRECEDENCE.fetch(operators.last) >= PRECEDENCE.fetch(token)
+        operators << token
+      else
+        output << (token.end_with?("%") ? Percent.new(token.to_r) : token.to_r)
+      end
+    end
+
+    result =
+      output.concat(operators.reverse).each_with_object([]) do |item, stack|
+        next stack << item unless OPERATORS.key?(item)
+
+        right = stack.pop
+        left = percent_value(stack.pop)
+        right = percent_value(right, of: (left if item in "+" | "-"))
+        raise ZeroDivisionError if item == "/" && right.zero?
+        stack << left.public_send(item, right)
+      end.first
+
+    percent_value(result)
+  end
+
+  # 100+20% adds 20% of 100, while 50×20% multiplies by 0.2.
+  def percent_value(item, of: nil)
+    return item unless item.is_a?(Percent)
+
+    of ? of * item.value / 100 : item.value / 100
+  end
+
+  def format_number(number)
+    number = number.round(10)
+    return number.to_i.to_s if number.denominator == 1
+
+    format("%.10f", number).sub(/0+\z/, "")
+  end
+
+  def format_tokens(tokens)
+    tokens.map { OPERATORS[it] || group_digits(it) }.join
+  end
+
+  def group_digits(number)
+    percent = number.end_with?("%") ? "%" : ""
+    integer, fraction = number.delete_suffix("%").split(".", 2)
+    integer = integer.reverse.scan(/\d{1,3}/).join(",").reverse
+    integer = "-#{integer}" if number.start_with?("-")
+    [integer, fraction].compact.join(".") + percent
+  end
+
+  def display
+    return "Error" if @error
+    return "0" if @tokens.empty?
+
+    format_tokens(@tokens)
+  end
+
+  def display_size
+    case display.length
+    when 0..8 then :large
+    when 9..13 then :medium
+    else :small
+    end
+  end
+
+.calculator(tabindex=0 onkeydown=handle_keydown)
+  .display
+    %p.history= @history
+    %output(aria-live="polite"){ class: { display_size => true } }= display
+  .keypad
+    %button.function(type="button" onclick=handle_backspace aria-label="Backspace")
+      %Icon.icon(name="delete-left")
+    %button.function(type="button" onclick=handle_clear aria-label="All clear") AC
+    %button.function(type="button" onclick=handle_percent aria-label="Percent") %
+    %button.operator(type="button" onclick=handle_operator value="/" aria-label="Divide")
+      %Icon.icon(name="divide")
+    %button(type="button" onclick=handle_digit value="7") 7
+    %button(type="button" onclick=handle_digit value="8") 8
+    %button(type="button" onclick=handle_digit value="9") 9
+    %button.operator(type="button" onclick=handle_operator value="*" aria-label="Multiply")
+      %Icon.icon(name="xmark")
+    %button(type="button" onclick=handle_digit value="4") 4
+    %button(type="button" onclick=handle_digit value="5") 5
+    %button(type="button" onclick=handle_digit value="6") 6
+    %button.operator(type="button" onclick=handle_operator value="-" aria-label="Subtract")
+      %Icon.icon(name="minus")
+    %button(type="button" onclick=handle_digit value="1") 1
+    %button(type="button" onclick=handle_digit value="2") 2
+    %button(type="button" onclick=handle_digit value="3") 3
+    %button.operator(type="button" onclick=handle_operator value="+" aria-label="Add")
+      %Icon.icon(name="plus")
+    %button(type="button" onclick=handle_negate aria-label="Toggle sign")
+      %Icon.icon(name="plus-minus")
+    %button(type="button" onclick=handle_digit value="0") 0
+    %button(type="button" onclick=handle_decimal aria-label="Decimal point") .
+    %button.operator(type="button" onclick=handle_equals aria-label="Equals")
+      %Icon.icon(name="equals")
+
+:css
+  .calculator {
+    --key-size: 4.5em;
+    --key-gap: .75em;
+    --calculator-background: light-dark(
+      var(--surface-raised),
+      oklch(12% 0.02 var(--hue-navy))
+    );
+    --calculator-border: light-dark(var(--border), transparent);
+    --calculator-text: light-dark(var(--text), #fff);
+    --history-text: light-dark(var(--text-muted), oklch(70% 0.03 var(--hue-navy)));
+    --digit-background: light-dark(
+      oklch(93% 0.016 300),
+      oklch(30% 0.03 var(--hue-navy))
+    );
+    --function-background: light-dark(
+      oklch(85% 0.035 300),
+      oklch(48% 0.05 var(--hue-navy))
+    );
+    --operator-background: light-dark(var(--button-background), var(--pink));
+    --operator-text: #fff;
+
+    --transition-duration: 300ms;
+
+    width: fit-content;
+    margin: 0 auto;
+    padding: 1.25em;
+    border: 1px solid var(--calculator-border);
+    border-radius: 2em;
+    background: var(--calculator-background);
+    color: var(--calculator-text);
+    box-shadow: var(--shadow-lg);
+    font-family: var(--font-heading);
+    user-select: none;
+
+    transition:
+      background var(--transition-duration) ease,
+      color var(--transition-duration) ease;
+
+
+    font-size: clamp(0.5em, 3.0vw, 1em);
+  }
+
+  .calculator:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+
+  .display {
+    display: grid;
+    align-content: end;
+    min-height: 7.5em;
+    padding: 0 .5em .5em;
+    text-align: right;
+  }
+
+  .history {
+    min-height: 1.5em;
+    margin: 0;
+    color: var(--history-text);
+    font-size: 1.25em;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  output {
+    display: block;
+    font-weight: 300;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  output.large { font-size: 3.5em; }
+  output.medium { font-size: 2.5em; }
+  output.small { font-size: 1.75em; }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(4, var(--key-size));
+    grid-auto-rows: var(--key-size);
+    gap: var(--key-gap);
+  }
+
+  button {
+    --key-background: var(--digit-background);
+
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--key-background);
+    color: inherit;
+    font: inherit;
+    font-size: 1.75em;
+    cursor: pointer;
+
+    transition:
+      background var(--transition-duration) ease,
+      color var(--transition-duration) ease;
+
+    &:hover {
+      background: color-mix(in oklab, var(--key-background), currentColor 12%);
+    }
+
+    &:active {
+      background: color-mix(in oklab, var(--key-background), currentColor 30%);
+      transition-duration: 0s;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    &.function {
+      --key-background: var(--function-background);
+      font-size: 1.5em;
+    }
+
+    &.operator {
+      --key-background: var(--operator-background);
+      color: var(--operator-text);
+      font-size: 2em;
+    }
+  }
+
+  .icon {
+    font-size: .6em;
+
+    .function & {
+      font-size: 1.125em;
+    }
+  }

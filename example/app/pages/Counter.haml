@@ -15,63 +15,67 @@
     @count += 1
 
 %Card
-  %article
-    %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled) －
-    %output= @count
-    %button(title="Increment" onclick=handle_increment) ＋
+  %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled) －
+  %output= @count
+  %button(title="Increment" onclick=handle_increment) ＋
 
 :css
   Card {
     margin: 0 auto;
-    width: 100%;
-    max-width: 10em;
-  }
+    font-size: 1.5rem;
+    background: var(--surface-sunken);
 
-  article {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     padding: 1em;
     align-items: center;
+    justify-content: space-between;
     user-select: none;
   }
 
   output {
-    flex-basis: 3em;
-    font-size: 1.2em;
+    min-width: 4ch;
+    font-size: 1.5em;
     text-align: center;
   }
 
   button {
-    flex: 1;
+    --transition-length: 200ms;
+
+    display: block;
+    font-size: 2em;
+    font-weight: bold;
+    width: 1em;
+    line-height: 1;
     padding: 0;
     margin: 0;
     aspect-ratio: 1;
-    transform: scale(1);
+    scale: 1;
     background: var(--button-background);
     color: var(--button-text);
     border: 0;
-    border-radius: 100%;
+    border-radius: 100vw;
     box-shadow: rgba(0, 0, 0, 0.34) 0px 2px 4px;
-    font-weight: bold;
     cursor: pointer;
-    --transition-length: 100ms;
+
     transition:
       filter var(--transition-length),
       box-shadow var(--transition-length),
-      transform var(--transition-length);
-  }
+      scale var(--transition-length);
 
-  button:hover {
-    filter: brightness(110%);
-    transform: scale(1.2);
-  }
+    &:hover {
+      filter: brightness(110%);
+      scale: 1.2;
+    }
 
-  button:active {
-    filter: brightness(80%);
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
-  }
+    &:active {
+      filter: brightness(80%);
+      box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
+    }
 
-  button:disabled {
-    filter: grayscale(100%);
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
+    &:disabled {
+      filter: grayscale(100%);
+      scale: 1;
+      cursor: not--allowed;
+    }
   }
-
