@@ -830,4 +830,53 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
       refute_nil(second)
     end
   end
+
+  class PausedReorderProbe < Mayu::Component::Base
+    def initialize
+      @swapped = false
+    end
+
+    def swap!
+      @swapped = true
+      rerender!
+    end
+
+    def render
+      if @swapped
+        H[:p, H[:i, "3"], H[:b, "4"]]
+      else
+        H[:p, H[:b, "1"], H[:i, "2"]]
+      end
+    end
+  end
+
+  def test_paused_update_puts_children_in_current_order
+    descriptor = H[:body, H[PausedReorderProbe]]
+
+    run_engine(descriptor) do |engine|
+      engine.update_budget = 1
+
+      component = find_component(engine.root, PausedReorderProbe)
+      instance = component.instance_variable_get(:@instance)
+      p_id = find_element(engine.root, :p).dom_id
+      b_id = find_element(engine.root, :b).dom_id
+      i_id = find_element(engine.root, :i).dom_id
+
+      wait_until { instance.instance_variable_get(:@__vnode_task) }
+      instance.swap!
+
+      first =
+        dequeue_until(engine, max_batches: 1) do |batch_patches|
+          !batch_patches.empty?
+        end
+
+      # The first chunk updates <i> only. The same batch must move it first,
+      # or the browser shows "1" and "3" in the old order until the update
+      # has finished.
+      assert_includes(
+        first,
+        Mayu::Runtime::Commands::ReplaceChildren[p_id, [i_id, b_id]]
+      )
+    end
+  end
 end

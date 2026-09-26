@@ -225,6 +225,10 @@ module Mayu
                 end
             @children = state.new_children + remaining
             @pending_update = state.with(cursor:)
+            # Put the DOM in the current order before pausing. Otherwise the
+            # browser shows updated nodes in their old positions until the
+            # last chunk has been processed.
+            mark_parent_children_dirty if state.children_changed
             enqueue_resume
             return
           end
