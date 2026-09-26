@@ -1,0 +1,36 @@
+:ruby
+  Button = import("/components/Form/Button")
+
+  def initialize =
+    @count = $initial_count || 0
+
+  def handle_reset =
+    @count = $initial_count || 0
+
+  def handle_increment =
+    @count += 1
+
+  def handle_decrement =
+    @count -= 1
+
+.counter
+  %p Count: #{@count}
+  %Button(onclick=handle_decrement) Decrement
+  %Button(onclick=handle_reset) Reset
+  %Button(onclick=handle_increment) Increment
+
+:css
+  .counter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5em;
+    align-items: center;
+    justify-content: end;
+  }
+
+  p {
+    margin: 0;
+    flex-basis: 100%;
+    font-size: 1.5em;
+    font-variant-numeric: tabular-nums;
+  }

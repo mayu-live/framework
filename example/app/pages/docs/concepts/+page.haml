@@ -3,13 +3,18 @@
   Image = import("/components/UI/Image")
   Link = import("/components/UI/Link")
   YouTubeVideo = import("/components/UI/YouTubeVideo")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+
   NoCache = import("./no-cache-fs8.png")
   DiskCache = import("./disk-cache-fs8.png")
   MemoryCache = import("./memory-cache-fs8.png")
   Metrics = import("./metrics-fs8.png")
-  HotReload = import("./hot-reload-fs8.png")
   GlobalScale = import("./global-scale-fs8.png")
   Haml = import("./haml-fs8.png")
+
+  HamlExample = import("HamlExample")
+  HamlExampleSource = File.read(File.join(__dir__, "HamlExample.haml"))
+  UpdateLog = import("UpdateLog")
 
 %head
   %title Concepts
@@ -86,21 +91,6 @@
     Everything loads in parallel over HTTP/2 so bundling CSS-files
     together would actually only make things worse.
 
-    Here are some screenshots showing how assets are loaded in Chrome.
-
-  %Card
-    %figure
-      %Image(lazy image=NoCache alt="")
-      %figcaption First full page load, no cache.
-  %Card
-    %figure
-      %Image(lazy image=DiskCache alt="")
-      %figcaption Second full page load, disk cache.
-  %Card
-    %figure
-      %Image(lazy image=MemoryCache alt="")
-      %figcaption Third full page load, utilizing memory cache.
-
   :markdown
     ## Metrics
 
@@ -118,20 +108,21 @@
   :markdown
     ## Easy to use
 
-    Mayu is written in Ruby which is famous for being user friendly
+    Mayu is written in Ruby, which is famous for being user friendly
     and has been used on the web for a very long time.
 
     Mayu uses [Haml](https://haml.info/about.html) in a similar way that
     [React uses JSX](https://reactjs.org/docs/introducing-jsx.html),
     which results in clean and simple markup in your components.
 
-  %Card
-    %figure
-      %Image(lazy image=Haml alt="")
-      %figcaption Haml is the markup language that powers Mayu.
+  .example
+    %HighlightedCodeBlock(language="haml" filename="HamlExample.haml" flush)
+      = HamlExampleSource
+    .result
+      .label Rendered component
+      %HamlExample
 
   :markdown
-
     Mayu was designed with hot reloading in mind from the start.
     This is a popular feature in many JavaScript build tools like
     [Webpack](https://webpack.js.org/) and [Vite](https://vitejs.dev/),
@@ -141,15 +132,9 @@
     its serializable local state while replacing the component class. The
     replacement receives current props, and its mount lifecycle is restarted.
 
-  %Card
-    %figure
-      %Image(lazy image=HotReload alt="")
-      %figcaption Hot reloading makes development super fast.
+    Hot reloading makes development super fast.
 
-  %Card
-    %figure
-      %YouTubeVideo(video-id="GdwDXqr6wFk")
-      %figcaption Hot reloading in action.
+  %UpdateLog
 
   :markdown
     ## Built for the future
@@ -158,7 +143,7 @@
 
 :css
   Card {
-    margin: 2em;
+    margin: 2em 0;
   }
 
   figure {
@@ -171,4 +156,28 @@
 
   Image {
     display: block;
+  }
+
+  .example {
+    display: grid;
+    margin: 2em 0;
+    border: var(--thin-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  .result {
+    display: grid;
+    gap: .75em;
+    padding: 1em;
+    background: var(--surface-raised);
+  }
+
+  .label {
+    color: var(--text-muted);
+    font-size: .8em;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
   }

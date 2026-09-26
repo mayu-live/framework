@@ -1,13 +1,8 @@
-.container
-  .card
-    %pre{**$*}
-      %slot
+.card{**$*}
+  %pre
+    %slot
 
 :css
-  .container {
-    display: grid;
-  }
-
   .card {
     display: grid;
     background: light-dark(var(--deep-purple), var(--surface-sunken));
