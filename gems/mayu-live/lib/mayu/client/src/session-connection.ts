@@ -4,7 +4,7 @@ import Runtime from "./runtime.js";
 import { initInputStream, initCallbackStream, StreamError } from "./stream.js";
 import { ClientEventEncoderStream } from "./client-event-codec.js";
 import { SESSION_MIME_TYPE } from "./constants";
-import { updateConnectionStatus } from "./ping";
+import { updateConnectionStatus, updateReconnectStatus } from "./ping";
 import type { Batch, ClientEvent } from "./protocol";
 import { getTransferState, setTransferState } from "./transfer";
 import {
@@ -41,6 +41,13 @@ type SessionConnectionOptions = {
   sleep?: (milliseconds: number) => Promise<void>;
 };
 
+// A held transfer state means the session is waiting to resume on another
+// server. Deriving the status from it keeps the dialog title stable while
+// retries fail, instead of flipping between the two on every attempt.
+function reportDisconnected() {
+  updateConnectionStatus(getTransferState() ? "transferring" : "disconnected");
+}
+
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
@@ -70,6 +77,9 @@ export default class SessionConnection {
     let hasConnected = false;
 
     while (true) {
+      // Count attempts the same way the retry delays back off, so the number
+      // shown next to a countdown always matches the delay being waited out.
+      const attempt = failures + Math.max(0, consecutiveEofs - 1) + 1;
       const abortController = new AbortController();
       let callbackWriter: WritableStreamDefaultWriter<ClientEvent> | null =
         null;
@@ -81,11 +91,10 @@ export default class SessionConnection {
 
         // The initial connection is expected. Reporting it as disconnected
         // briefly opens the recovery dialog before the first stream succeeds.
-        if (state) {
-          updateConnectionStatus("transferring");
-        } else if (hasConnected) {
-          updateConnectionStatus("disconnected");
+        if (state || hasConnected) {
+          reportDisconnected();
         }
+        updateReconnectStatus({ attempt, retryAt: null });
 
         const input = await initInputStream(
           this.#endpoint,
@@ -112,7 +121,11 @@ export default class SessionConnection {
             extensionCodec,
           })) {
             updateConnectionStatus("connected");
+            updateReconnectStatus(null);
             hasConnected = true;
+            // A working stream ends the failure streak. consecutiveEofs is
+            // kept, since it backs off servers that close every new stream.
+            failures = 0;
             const batch = decoded as Batch;
 
             if (batch.some((command) => command[0] === "TransferFailed")) {
@@ -141,11 +154,11 @@ export default class SessionConnection {
         failures = 0;
         consecutiveEofs += 1;
         retryDelay = Math.min(10_000, 1000 * Math.max(0, consecutiveEofs - 1));
-        updateConnectionStatus("disconnected");
+        reportDisconnected();
       } catch (error: unknown) {
         consecutiveEofs = 0;
         failures += 1;
-        updateConnectionStatus("disconnected");
+        reportDisconnected();
         const message = getErrorMessage(error);
 
         if (error instanceof StreamError) {
@@ -187,7 +200,10 @@ export default class SessionConnection {
         }
       }
 
-      if (retryDelay && retryDelay > 0) await this.#sleep(retryDelay);
+      if (retryDelay && retryDelay > 0) {
+        updateReconnectStatus({ attempt, retryAt: Date.now() + retryDelay });
+        await this.#sleep(retryDelay);
+      }
     }
   }
 }

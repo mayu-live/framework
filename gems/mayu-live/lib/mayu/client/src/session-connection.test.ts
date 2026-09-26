@@ -8,6 +8,7 @@ const {
   shouldResetSessionMock,
   resetSessionEntirelyMock,
   updateConnectionStatusMock,
+  updateReconnectStatusMock,
 } = vi.hoisted(() => {
   return {
     initInputStreamMock: vi.fn(),
@@ -18,6 +19,7 @@ const {
     shouldResetSessionMock: vi.fn(),
     resetSessionEntirelyMock: vi.fn(),
     updateConnectionStatusMock: vi.fn(),
+    updateReconnectStatusMock: vi.fn(),
   };
 });
 
@@ -46,6 +48,7 @@ vi.mock("./session-recovery.js", () => ({
 
 vi.mock("./ping", () => ({
   updateConnectionStatus: updateConnectionStatusMock,
+  updateReconnectStatus: updateReconnectStatusMock,
 }));
 
 import SessionConnection from "./session-connection";
@@ -165,6 +168,35 @@ describe("session-connection", () => {
     ).toEqual(["disconnected", "disconnected"]);
   });
 
+  it("reports reconnect attempts and when the next one starts", async () => {
+    const stop = new Error("stop test loop");
+    vi.spyOn(Date, "now").mockReturnValue(10_000);
+    initInputStreamMock.mockRejectedValue(new Error("stream down"));
+    shouldResetSessionMock.mockReturnValue(false);
+    const sleepMock = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(stop);
+
+    const connection = new SessionConnection({
+      runtime: { applyBatch: vi.fn() } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: sleepMock,
+    });
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(
+      updateReconnectStatusMock.mock.calls.map(([status]) => status),
+    ).toEqual([
+      { attempt: 1, retryAt: null },
+      { attempt: 1, retryAt: 11_000 },
+      { attempt: 2, retryAt: null },
+      { attempt: 2, retryAt: 12_000 },
+    ]);
+  });
+
   it("keeps the transfer dialog open until the resumed stream sends a batch", async () => {
     const state = new Blob(["encrypted state"]);
     const stop = new Error("stop test loop");
@@ -271,6 +303,117 @@ describe("session-connection", () => {
     await expect(connection.run()).rejects.toBe(stop);
     expect(getTransferState()).toBe(state);
     expect(resetSessionEntirelyMock).not.toHaveBeenCalled();
+  });
+
+  it("starts counting failures again after a stream connects", async () => {
+    const stop = new Error("stop test loop");
+    const callbackError = new Error("callback stream failed");
+    initInputStreamMock
+      .mockRejectedValueOnce(new Error("stream down"))
+      .mockRejectedValueOnce(new Error("stream down"))
+      .mockResolvedValueOnce(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(encode([[]]));
+          },
+        }),
+      );
+    let failCallback!: (error: Error) => void;
+    // Only the third, successful attempt gets as far as the callback stream.
+    initCallbackStreamMock.mockReturnValueOnce({
+      writable: new WritableStream(),
+      failure: new Promise<never>((_resolve, reject) => {
+        failCallback = reject;
+      }),
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+    const runtime = {
+      applyBatch: vi.fn(async () => failCallback(callbackError)),
+    };
+    const sleepMock = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(stop);
+
+    const connection = new SessionConnection({
+      runtime: runtime as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: sleepMock,
+    });
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(runtime.applyBatch).toHaveBeenCalledOnce();
+    expect(sleepMock.mock.calls.map(([delay]) => delay)).toEqual([
+      1000, 2000, 1000,
+    ]);
+  });
+
+  it("keeps counting attempts while the server keeps closing new streams", async () => {
+    const stop = new Error("stop test loop");
+    vi.spyOn(Date, "now").mockReturnValue(10_000);
+    initInputStreamMock.mockImplementation(
+      async () =>
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(encode([[]]));
+            controller.close();
+          },
+        }),
+    );
+    // A fresh stream per attempt: an aborted one would fail the next pipeline
+    // and turn the clean close into an error.
+    initCallbackStreamMock.mockImplementation(() => ({
+      writable: new WritableStream(),
+      failure: null,
+    }));
+    const sleepMock = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(stop);
+
+    const connection = new SessionConnection({
+      runtime: { applyBatch: vi.fn() } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: sleepMock,
+    });
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(
+      updateReconnectStatusMock.mock.calls
+        .map(([status]) => status)
+        .filter((status) => status?.retryAt),
+    ).toEqual([
+      { attempt: 1, retryAt: 11_000 },
+      { attempt: 2, retryAt: 12_000 },
+    ]);
+  });
+
+  it("keeps reporting a transfer while reconnect attempts fail", async () => {
+    setTransferState(new Blob(["encrypted state"]));
+    initInputStreamMock.mockRejectedValue(new Error("Server is stopping"));
+    shouldResetSessionMock.mockReturnValue(false);
+    const stop = new Error("stop test loop");
+    const sleepMock = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(stop);
+    const connection = new SessionConnection({
+      runtime: { applyBatch: vi.fn() } as any,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() } as any,
+      endpoint: "/.mayu/session/test",
+      sleep: sleepMock,
+    });
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(
+      updateConnectionStatusMock.mock.calls.map(([status]) => status),
+    ).toEqual(["transferring", "transferring", "transferring", "transferring"]);
   });
 
   it("reconnects when the callback transport fails", async () => {

@@ -9,6 +9,11 @@ class MayuPing extends HTMLElement {
   #disconnectDialog?: HTMLDialogElement;
   #disconnectTitle?: HTMLParagraphElement;
   #disconnectText?: HTMLParagraphElement;
+  #reconnectStatus?: HTMLParagraphElement;
+  #reconnectCountdown?: HTMLDivElement;
+  #reconnectSeconds?: HTMLSpanElement;
+  #reconnectTimer?: number;
+  #renderedRetryAt?: number | null;
   #navigationProgress?: HTMLDivElement;
   #closeDialogTimer?: number;
   #navigationCompleteTimer?: number;
@@ -25,7 +30,13 @@ class MayuPing extends HTMLElement {
     ping.style.transform = `translate(${offsetLeft + width - ping.offsetWidth}px, ${offsetTop + height - ping.offsetHeight}px)`;
   };
 
-  static observedAttributes = ["ping", "status", "navigation"];
+  static observedAttributes = [
+    "ping",
+    "status",
+    "navigation",
+    "reconnect-attempt",
+    "reconnect-at",
+  ];
 
   connectedCallback() {
     if (!this.shadowRoot) {
@@ -45,6 +56,15 @@ class MayuPing extends HTMLElement {
     this.#disconnectText = this.shadowRoot!.querySelector(
       ".disconnect-text",
     ) as HTMLParagraphElement;
+    this.#reconnectStatus = this.shadowRoot!.querySelector(
+      ".reconnect-status",
+    ) as HTMLParagraphElement;
+    this.#reconnectCountdown = this.shadowRoot!.querySelector(
+      ".reconnect-countdown",
+    ) as HTMLDivElement;
+    this.#reconnectSeconds = this.shadowRoot!.querySelector(
+      ".reconnect-seconds",
+    ) as HTMLSpanElement;
     this.#navigationProgress = this.shadowRoot!.querySelector(
       ".navigation-progress",
     ) as HTMLDivElement;
@@ -63,6 +83,9 @@ class MayuPing extends HTMLElement {
       this.attributeChangedCallback("status", "", status);
     }
 
+    this.#renderedRetryAt = undefined;
+    this.#updateReconnectStatus();
+
     const navigation = this.getAttribute("navigation");
     if (navigation) {
       this.attributeChangedCallback("navigation", "", navigation);
@@ -74,6 +97,7 @@ class MayuPing extends HTMLElement {
     window.visualViewport?.removeEventListener("resize", this.#updatePosition);
     window.visualViewport?.removeEventListener("scroll", this.#updatePosition);
     window.clearTimeout(this.#navigationCompleteTimer);
+    window.clearInterval(this.#reconnectTimer);
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -95,6 +119,10 @@ class MayuPing extends HTMLElement {
         break;
       case "navigation":
         this.#updateNavigationProgress(newValue);
+        break;
+      case "reconnect-attempt":
+      case "reconnect-at":
+        this.#updateReconnectStatus();
         break;
     }
   }
@@ -120,6 +148,60 @@ class MayuPing extends HTMLElement {
     }
 
     this.#hideConnectionDialog(dialog);
+  }
+
+  #updateReconnectStatus() {
+    const status = this.#reconnectStatus;
+    const countdown = this.#reconnectCountdown;
+    const seconds = this.#reconnectSeconds;
+    if (!status || !countdown || !seconds) return;
+
+    const attempt = this.getAttribute("reconnect-attempt");
+    const retryAtAttribute = this.getAttribute("reconnect-at");
+    const retryAt = retryAtAttribute ? Number(retryAtAttribute) : null;
+
+    window.clearInterval(this.#reconnectTimer);
+
+    if (!attempt) {
+      status.hidden = true;
+      countdown.hidden = true;
+      countdown.classList.remove("is-connecting", "is-waiting");
+      this.#renderedRetryAt = undefined;
+      return;
+    }
+
+    status.hidden = false;
+    countdown.hidden = false;
+
+    if (!retryAt) {
+      status.textContent = `Attempt ${attempt} · connecting…`;
+      seconds.textContent = "";
+      countdown.classList.remove("is-waiting");
+      countdown.classList.add("is-connecting");
+      this.#renderedRetryAt = null;
+      return;
+    }
+
+    status.textContent = `Attempt ${attempt} failed`;
+    const renderSeconds = () => {
+      const remaining = Math.max(0, Math.ceil((retryAt - Date.now()) / 1000));
+      seconds.textContent = `${remaining}s`;
+    };
+    renderSeconds();
+    this.#reconnectTimer = window.setInterval(renderSeconds, 250);
+
+    // Both attributes change per update; only restart the arc for a new deadline.
+    if (this.#renderedRetryAt === retryAt) return;
+    this.#renderedRetryAt = retryAt;
+
+    countdown.classList.remove("is-connecting", "is-waiting");
+    countdown.style.setProperty(
+      "--retry-duration",
+      `${Math.max(0, retryAt - Date.now())}ms`,
+    );
+    // Force the class removal to be applied so the countdown animation restarts.
+    void countdown.getBoundingClientRect();
+    countdown.classList.add("is-waiting");
   }
 
   #showConnectionDialog(dialog: HTMLDialogElement) {

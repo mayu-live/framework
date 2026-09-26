@@ -1,4 +1,33 @@
 <style>
+  :host {
+    /* light-dark() follows the color-scheme inherited from the page. A page
+       that declares none gets the light colors. */
+    --ping-color: light-dark(#1b2430, #fff);
+    --ping-background: light-dark(#ffffffa6, #17202ba6);
+    --ping-border: light-dark(#0000001f, #ffffff4d);
+    --ping-shadow: light-dark(#0003, #0008);
+    --ping-text-shadow: light-dark(#fff, #000);
+    --ping-disconnected: light-dark(#fca5a5a6, #a61b1ba6);
+    --ping-connected: light-dark(#bbf7d0a6, #2f6b18a6);
+    --ping-transferring: light-dark(#bfdbfea6, #0b5caba6);
+
+    --navigation-progress-color: light-dark(#0284c7, #7dd3fc);
+    --navigation-progress-glow: light-dark(#7dd3fc, #38bdf8);
+
+    --dialog-color: light-dark(#000c, #fffc);
+    --dialog-background: light-dark(#ffffffee, #0f1218ee);
+    --dialog-border: light-dark(#0000001a, #fff1);
+    --dialog-shadow: light-dark(#0003, #0008);
+    --dialog-backdrop: light-dark(
+      rgb(240 243 248 / 0.52),
+      rgb(10 14 20 / 0.52)
+    );
+    --dialog-accent: light-dark(#d6204a, #ff90a3);
+    --dialog-text: light-dark(#2a3140, #d7deee);
+    --dialog-muted: light-dark(#2a314099, #d7deee99);
+    --countdown-track: light-dark(#d6204a33, #ff90a366);
+  }
+
   .mayu-ping {
     box-sizing: border-box;
     position: fixed;
@@ -12,20 +41,20 @@
 
     pointer-events: none;
 
-    color: #fff;
+    color: var(--ping-color);
     font-size: 9px;
     font-weight: 100;
     font-family: monospace;
     font-variant-numeric: tabular-nums;
-    background: #17202ba6;
+    background: var(--ping-background);
     backdrop-filter: blur(3px);
 
-    border: 1px solid #ffffff4d;
+    border: 1px solid var(--ping-border);
     border-radius: 2px 0 0 0;
     border-width: 1px 0 0 1px;
 
-    box-shadow: 0 0 0.5rem #0008;
-    text-shadow: 0 1px 1px #000;
+    box-shadow: 0 0 0.5rem var(--ping-shadow);
+    text-shadow: 0 1px 1px var(--ping-text-shadow);
     width: max-content;
   }
 
@@ -34,13 +63,13 @@
   }
 
   .status-disconnected {
-    background-color: #a61b1ba6;
+    background-color: var(--ping-disconnected);
   }
   .status-connected {
-    background-color: #2f6b18a6;
+    background-color: var(--ping-connected);
   }
   .status-transferring {
-    background-color: #0b5caba6;
+    background-color: var(--ping-transferring);
   }
 
   .navigation-progress {
@@ -63,8 +92,8 @@
     width: 100%;
     height: 100%;
     content: "";
-    background: #7dd3fc;
-    box-shadow: 0 0 0.5rem #38bdf8;
+    background: var(--navigation-progress-color);
+    box-shadow: 0 0 0.5rem var(--navigation-progress-glow);
     transform: scaleX(0);
     transform-origin: left;
     transition:
@@ -142,13 +171,13 @@
     --spring-duration: 500ms;
 
     font: inherit;
-    border: 1px solid #fff1;
+    border: 1px solid var(--dialog-border);
     border-radius: 12px;
-    background: #0f1218ee;
-    color: #fffc;
+    background: var(--dialog-background);
+    color: var(--dialog-color);
     padding: 1rem;
     min-width: 16rem;
-    box-shadow: 0 1rem 2rem #0008;
+    box-shadow: 0 1rem 2rem var(--dialog-shadow);
     user-select: none;
 
     opacity: 0;
@@ -175,19 +204,107 @@
   }
 
   .disconnect-dialog:open.is-visible::backdrop {
-    background: rgb(10 14 20 / 0.52);
+    background: var(--dialog-backdrop);
     backdrop-filter: blur(5px);
   }
 
   .disconnect-title {
     margin: 0;
     font-weight: 700;
-    color: #ff90a3;
+    color: var(--dialog-accent);
   }
 
   .disconnect-text {
     margin: 0.55rem 0 0;
-    color: #d7deee;
+    color: var(--dialog-text);
+  }
+
+  .reconnect-status {
+    margin: 0.35rem 0 0;
+    color: var(--dialog-muted);
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .disconnect-body {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .reconnect-countdown {
+    position: relative;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .reconnect-countdown[hidden] {
+    display: none;
+  }
+
+  .reconnect-countdown svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    rotate: -90deg;
+  }
+
+  .reconnect-track,
+  .reconnect-arc {
+    fill: none;
+    stroke-width: 3;
+  }
+
+  .reconnect-track {
+    stroke: var(--countdown-track);
+  }
+
+  .reconnect-arc {
+    stroke: var(--dialog-accent);
+    stroke-linecap: round;
+    stroke-dasharray: 1 1;
+  }
+
+  .reconnect-countdown.is-waiting .reconnect-arc {
+    animation: reconnect-countdown var(--retry-duration, 0ms) linear forwards;
+  }
+
+  .reconnect-countdown.is-connecting .reconnect-arc {
+    stroke-dasharray: 0.25 0.75;
+  }
+
+  .reconnect-countdown.is-connecting svg {
+    animation: reconnect-spin 1s linear infinite;
+  }
+
+  .reconnect-seconds {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--dialog-text);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @keyframes reconnect-countdown {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  @keyframes reconnect-spin {
+    from {
+      rotate: -90deg;
+    }
+    to {
+      rotate: 270deg;
+    }
   }
 </style>
 <div class="mayu-ping">
@@ -195,6 +312,18 @@
 </div>
 <div class="navigation-progress" popover="manual" aria-hidden="true"></div>
 <dialog class="disconnect-dialog" closedby="none" aria-label="Connection lost">
-  <p class="disconnect-title">Disconnected</p>
-  <p class="disconnect-text">Trying to reconnect…</p>
+  <div class="disconnect-body">
+    <div class="reconnect-countdown" hidden aria-hidden="true">
+      <svg viewBox="0 0 36 36">
+        <circle class="reconnect-track" cx="18" cy="18" r="16" />
+        <circle class="reconnect-arc" cx="18" cy="18" r="16" pathLength="1" />
+      </svg>
+      <span class="reconnect-seconds"></span>
+    </div>
+    <div>
+      <p class="disconnect-title">Disconnected</p>
+      <p class="disconnect-text">Trying to reconnect…</p>
+      <p class="reconnect-status" hidden></p>
+    </div>
+  </div>
 </dialog>
