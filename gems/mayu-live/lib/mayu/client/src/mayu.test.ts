@@ -356,10 +356,57 @@ describe("Mayu navigation", () => {
 
     expect(navigation.navigate).toHaveBeenNthCalledWith(1, "/next", {
       history: "push",
+      info: "mayu:browser-action",
     });
     expect(navigation.navigate).toHaveBeenNthCalledWith(2, "/current", {
       history: "replace",
+      info: "mayu:browser-action",
     });
+    mayu.dispose();
+  });
+
+  it("keeps focus and scroll when a programmatic navigation only changes the query", () => {
+    const navigation = new FakeNavigation();
+    vi.stubGlobal("navigation", navigation);
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+    const event = navigationEvent({
+      destination: { url: new URL("?q=char", location.href).href },
+      info: "mayu:browser-action",
+    });
+
+    navigation.dispatchEvent(event);
+
+    expect(event.intercept).toHaveBeenCalledWith(
+      expect.objectContaining({ focusReset: "manual", scroll: "manual" }),
+    );
+    mayu.completeNavigation("1");
+    mayu.dispose();
+  });
+
+  it.each([
+    [
+      "a link to the same path",
+      { destination: { url: new URL("?q=char", location.href).href } },
+    ],
+    [
+      "a programmatic navigation to another path",
+      { info: "mayu:browser-action" },
+    ],
+  ])("resets focus and scroll after %s", (_name, overrides) => {
+    const navigation = new FakeNavigation();
+    vi.stubGlobal("navigation", navigation);
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+    const event = navigationEvent(overrides);
+
+    navigation.dispatchEvent(event);
+
+    const options = (event.intercept as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
+    expect(options).not.toHaveProperty("focusReset");
+    expect(options).not.toHaveProperty("scroll");
+    mayu.completeNavigation("1");
     mayu.dispose();
   });
 });

@@ -20,7 +20,10 @@ type MayuOptions = {
 };
 
 type NavigationLike = EventTarget & {
-  navigate(url: string, options?: { history?: "push" | "replace" }): unknown;
+  navigate(
+    url: string,
+    options?: { history?: "push" | "replace"; info?: unknown },
+  ): unknown;
 };
 
 type NavigateEventLike = Event & {
@@ -29,10 +32,18 @@ type NavigateEventLike = Event & {
   downloadRequest: unknown | null;
   formData: FormData | null;
   hashChange: boolean;
+  info?: unknown;
   navigationType: string;
   signal: AbortSignal;
-  intercept(options: { handler: () => Promise<void> }): void;
+  intercept(options: {
+    handler: () => Promise<void>;
+    focusReset?: "after-transition" | "manual";
+    scroll?: "after-transition" | "manual";
+  }): void;
 };
+
+// Marks navigations started by `browser.navigate` on the server.
+const BROWSER_ACTION_NAVIGATION = "mayu:browser-action";
 
 type PendingNavigation = {
   promise: Promise<void>;
@@ -197,7 +208,10 @@ export default class Mayu {
   navigate(href: string, pushState: boolean = true) {
     const navigation = browserNavigation();
     if (navigation) {
-      navigation.navigate(href, { history: pushState ? "push" : "replace" });
+      navigation.navigate(href, {
+        history: pushState ? "push" : "replace",
+        info: BROWSER_ACTION_NAVIGATION,
+      });
       return;
     }
 
@@ -230,12 +244,21 @@ export default class Mayu {
     const id = `${++this.#navigationSequence}`;
     const pending = this.#beginNavigation(id, event.signal);
 
+    // A server-initiated navigation that only changes the query string
+    // updates the current page, e.g. a search field that syncs to ?q=. The
+    // browser would otherwise move focus to <body> and reset the scroll
+    // position once the navigation finishes.
+    const inPlace =
+      event.info === BROWSER_ACTION_NAVIGATION &&
+      url.pathname === location.pathname;
+
     event.intercept({
       handler: async () => {
         const wrote = await this.#sendNavigation(id, url.pathname + url.search);
         if (!wrote) this.failNavigation(id);
         await pending.promise;
       },
+      ...(inPlace ? ({ focusReset: "manual", scroll: "manual" } as const) : {}),
     });
   }
 
