@@ -62,10 +62,23 @@
 
     Should return `true` or `false`.
 
-    **`def did_update(prev_props, prev_state)`**
+    **`def did_update(prev_props)`**
 
-    The `did_update` method is called right
-    after a component has been updated.
+    Called after a parent-driven prop update has rendered, with the props
+    from before the update. The new props are already in place.
+
+    Like `mount`, it runs in its own task, so it can fetch data and update
+    state. It is not called for local state updates, so state written from
+    the hook does not call it again.
+
+    ```haml
+    :ruby
+      def mount = load($id)
+
+      def did_update(prev_props)
+        load($id) if prev_props[:id] != $id
+      end
+    ```
 
     **`def self.get_derived_state_from_props(props, state)`**
 

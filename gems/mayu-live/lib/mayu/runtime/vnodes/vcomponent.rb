@@ -145,11 +145,13 @@ module Mayu
           replacement_rendered = false
           replacement_children = nil
           skip_render = false
+          previous_props = nil
 
           if descriptor
             previous_type = @descriptor.type
 
             if previous_type == descriptor.type
+              previous_props = @instance.instance_variable_get(:@__props)
               unless @engine&.force_render? || @descriptor.children != descriptor.children
                 begin
                   skip_render = !@instance.should_update?(descriptor.props)
@@ -209,6 +211,19 @@ module Mayu
           rescue => error
             raise UnhandledRenderError.new(error, self)
           end
+
+          start_did_update(@instance, previous_props) if previous_props
+        end
+
+        # Runs did_update(prev_props) after a parent-driven update has
+        # rendered. Like mount, it runs in its own task under the component's
+        # task, so it can fetch and write state, and it stops with the
+        # component.
+        def start_did_update(instance, previous_props)
+          return unless @task
+          return unless instance.respond_to?(:did_update)
+
+          @task.async { instance.did_update(previous_props) }
         end
 
         # The same descriptor object means the same props and children. State
