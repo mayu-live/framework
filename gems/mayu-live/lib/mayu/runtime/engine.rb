@@ -125,6 +125,7 @@ module Mayu
 
       def dump!
         stop
+        finish_updates!
         dump
       end
 
@@ -167,7 +168,26 @@ module Mayu
         @task&.stop
       end
 
+      # Runs queued updates to completion after #stop, ignoring the update
+      # budget. A paused update is not serialized, so it must finish, and its
+      # commands must be queued, before the state is dumped for a transfer.
+      # Rerenders requested meanwhile are dropped, so a component that
+      # rerenders while rendering cannot keep the drain going.
+      def finish_updates!
+        update_budget = @update_budget
+        @update_budget = nil
+        @finishing_updates = true
+        @updater.drain
+      ensure
+        @update_budget = update_budget
+        @finishing_updates = false
+      end
+
       def enqueue_update(vnode)
+        # Only the remaining chunks of paused updates may run while updates
+        # are finishing.
+        return if @finishing_updates && !vnode.is_a?(VNodes::VChildren)
+
         @updater.enqueue(vnode)
       end
 

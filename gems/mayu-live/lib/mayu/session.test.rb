@@ -17,6 +17,7 @@ require_relative "runtime/state_update_warning_formatter"
 require "mayu/build"
 require_relative "encrypted_marshal"
 require_relative "session/transfer_state"
+require_relative "server/event_stream"
 require "mayu/test"
 
 class Mayu::SessionTest < Minitest::Test
@@ -362,6 +363,56 @@ class Mayu::SessionTest < Minitest::Test
     assert_includes(html, "Game of life")
     refute_includes(html, "Mayu.callback")
     refute_empty(session.listener_commands)
+  end
+
+  class TransferEngine
+    attr_reader :calls, :batches
+
+    def initialize
+      @calls = []
+      @batches = []
+    end
+
+    def stop
+      @calls << :stop
+    end
+
+    def finish_updates!
+      @calls << :finish_updates!
+      enqueue_batch(Mayu::Runtime::Batch[[Mayu::Runtime::Commands::SetTextContent["v1", "done"]]])
+    end
+
+    def enqueue_command(command)
+      enqueue_batch(Mayu::Runtime::Batch[[command]])
+    end
+
+    def enqueue_batch(batch)
+      @batches << batch
+    end
+  end
+
+  def test_transfer_sends_the_remaining_updates_before_the_state
+    env = FakeEnvironment.new
+    env.instance_variable_set(
+      :@marshaller,
+      Mayu::EncryptedMarshal.new("transfer-test-secret")
+    )
+    request_info =
+      Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info:)
+    engine = TransferEngine.new
+    session.instance_variable_set(:@engine, engine)
+
+    session.transfer!
+
+    assert_equal(%i[stop finish_updates!], engine.calls)
+    assert_equal(
+      [
+        Mayu::Runtime::Commands::SetTextContent,
+        Mayu::Runtime::Commands::Transfer
+      ],
+      engine.batches.flat_map(&:commands).map(&:class)
+    )
   end
 
   def test_encrypted_transfer_restores_klenod_component_references

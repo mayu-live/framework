@@ -188,6 +188,108 @@ class Mayu::Runtime::VNodes::SerializationTest < Minitest::Test
     assert_equal(2, instance.unmount_count)
   end
 
+  class PausedUpdateProbe < Mayu::Component::Base
+    def initialize
+      @items = %w[a b c]
+    end
+
+    def replace!
+      @items = %w[x y z]
+      rerender!
+    end
+
+    def render
+      H[:ul, @items.map { H[:li, it] }]
+    end
+  end
+
+  def test_engine_serialization_finishes_paused_updates
+    provider = Provider.new(StaticComponentResolver.new(PausedUpdateProbe))
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[PausedUpdateProbe]],
+        metrics: NullMetrics.new,
+        module_provider: provider
+      )
+
+    run_engine_instance(engine) do
+      engine.update_budget = 1
+      # Like a hidden tab: the rest of the update waits for the next pass.
+      engine.update_interval = 10
+      component = find_component(engine.root, PausedUpdateProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.instance_variable_get(:@__vnode_task) }
+      instance.replace!
+
+      first =
+        dequeue_until(engine, max_batches: 1) do |batch_patches|
+          !batch_patches.empty?
+        end
+      assert_equal(["x"], first.map(&:content))
+    end
+
+    dumped = engine.dump!
+
+    # The rest of the update is queued for the browser before the state.
+    remaining = []
+    output_queue = engine.instance_variable_get(:@output_queue)
+    remaining.concat(unwrap_commands(output_queue.dequeue)) until output_queue.empty?
+    assert_equal(%w[y z], remaining.map(&:content))
+
+    restored =
+      Mayu::Runtime::Engine.restore(
+        dumped,
+        metrics: NullMetrics.new,
+        module_provider: provider
+      )
+    assert_match("<ul><li>x</li><li>y</li><li>z</li></ul>", render_html(restored.root))
+    assert_equal(1, restored.update_budget)
+  end
+
+  class RerenderingProbe < Mayu::Component::Base
+    attr_reader :renders
+
+    def initialize
+      @renders = 0
+      @rerender_while_rendering = false
+    end
+
+    def rerender_while_rendering!
+      @rerender_while_rendering = true
+      rerender!
+    end
+
+    def render
+      @renders += 1
+      # Capped so the test fails instead of hanging.
+      rerender! if @rerender_while_rendering && @renders < 50
+      H[:p, @renders.to_s]
+    end
+  end
+
+  def test_finishing_updates_ignores_new_rerenders
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[RerenderingProbe]],
+        metrics: NullMetrics.new
+      )
+    instance = nil
+
+    run_engine_instance(engine) do
+      component = find_component(engine.root, RerenderingProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.instance_variable_get(:@__vnode_task) }
+    end
+
+    renders = instance.renders
+    instance.rerender_while_rendering!
+    engine.finish_updates!
+
+    assert_equal(renders + 1, instance.renders)
+    assert(engine.instance_variable_get(:@updater).queue.empty?)
+  end
+
   def test_engine_serialization_preserves_render_exception_policy
     engine =
       Mayu::Runtime::Engine.new(

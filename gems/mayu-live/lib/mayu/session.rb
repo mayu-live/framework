@@ -293,6 +293,8 @@ module Mayu
       stop
       running_task&.wait
       @engine.stop
+      # The browser must receive the remaining updates before the state.
+      @engine.finish_updates!
       @engine.enqueue_command(
         Runtime::Commands::Transfer[
           Mayu::Server::EventStream::Blob[
