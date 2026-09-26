@@ -49,17 +49,22 @@
     so easy to make a stateful class component.
 
     ```jsx
-    import { Component } from 'react'
-    export default class MyComponent extends Component {
+    export default class MyComponent extends React.Component {
       constructor(props) {
         super(props)
         this.handleClick = this.handleClick.bind(this)
       }
+
       handleClick(e) {
         console.log("MyComponent", e)
       }
+
       render() {
-        <button onClick={this.handleClick}>Click me</button>
+        return (
+          <button onClick={this.handleClick}>
+            Click me
+          </button>
+        )
       }
     }
     ```
