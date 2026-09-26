@@ -20,7 +20,7 @@ module Mayu
   module Klenod
     # Paths shared by `mayu build` and `mayu start`, relative to the app root.
     BUNDLE_FILENAME = "app.mayu-bundle"
-    ASSETS_DIR = ".assets"
+    ASSETS_DIR = ".mayu/assets"
     SOURCE_DIR = "app"
   end
 end

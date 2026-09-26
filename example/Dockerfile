@@ -67,6 +67,6 @@ COPY --from=gems /gems /gems
 COPY --from=build /app/Gemfile /app/Gemfile.lock /app/mayu.toml /app/app.mayu-bundle ./
 COPY --from=build /app/bin ./bin
 COPY --from=build /app/app ./app
-COPY --from=build /app/.assets ./.assets
+COPY --from=build /app/.mayu/assets ./.mayu/assets
 EXPOSE 3333
 CMD ["bin/mayu", "start"]

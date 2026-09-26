@@ -110,7 +110,7 @@ class Mayu::CLITest < Minitest::Test
         Dir.chdir(root) do
           Mayu::CLI.start(
             filename: "app.mayu-bundle",
-            assets_dir: ".assets",
+            assets_dir: Mayu::Klenod::ASSETS_DIR,
             source_root: "app",
             output:
           )

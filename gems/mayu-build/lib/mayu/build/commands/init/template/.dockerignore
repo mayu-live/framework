@@ -1,6 +1,6 @@
 /*.mayu-bundle
 /vendor
-/.assets
+/.mayu
 /Dockerfile
 /dist
 /tmp

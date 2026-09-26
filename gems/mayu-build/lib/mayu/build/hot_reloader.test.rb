@@ -91,7 +91,7 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
         update = app.updates.dequeue(timeout: 2)
 
         assert(update.success?)
-        refute_empty(Dir.glob(File.join(root, ".assets", "*.css")))
+        refute_empty(Dir.glob(File.join(root, Mayu::Klenod::ASSETS_DIR, "*.css")))
       ensure
         task&.stop
       end.wait
@@ -149,7 +149,7 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
         File.write(css_path, "p { color: red; }\n")
         publish_update(provider, css_path, graph_version: 1)
         assert(app.updates.dequeue(timeout: 2).success?)
-        refute_empty(Dir.glob(File.join(root, ".assets", "*.css")))
+        refute_empty(Dir.glob(File.join(root, Mayu::Klenod::ASSETS_DIR, "*.css")))
 
         File.delete(css_path)
         result =
@@ -160,7 +160,7 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
         update = app.updates.dequeue(timeout: 2)
 
         assert(update.success?)
-        assert_empty(Dir.glob(File.join(root, ".assets", "*.css")))
+        assert_empty(Dir.glob(File.join(root, Mayu::Klenod::ASSETS_DIR, "*.css")))
       ensure
         task&.stop
       end.wait
