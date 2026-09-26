@@ -1,0 +1,389 @@
+:ruby
+  Button = import("/components/Form/Button")
+  Input = import("/components/Form/Input")
+  Select = import("/components/Form/Select")
+
+  ARTWORK_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/%d.png"
+
+  ROUND_SECONDS = 20
+  # How long a correct answer stays on screen before the next round.
+  REVEAL_SECONDS = 3
+  MAX_SUGGESTIONS = 6
+
+  GENERATIONS = {
+    "1" => ["Generation I", 1..151],
+    "2" => ["Generation II", 152..251],
+    "3" => ["Generation III", 252..386],
+    "4" => ["Generation IV", 387..493],
+    "5" => ["Generation V", 494..649],
+    "6" => ["Generation VI", 650..721],
+    "7" => ["Generation VII", 722..809],
+    "8" => ["Generation VIII", 810..905],
+    "9" => ["Generation IX", 906..1025],
+    "all" => ["All generations", 1..1025],
+  }
+
+  def initialize
+    @generation = "1"
+    @score = 0
+    @streak = 0
+    @best_streak = 0
+    @current = nil
+    @form_key = "guess-0"
+    next_round
+  end
+
+  def mount
+    loop do
+      sleep 1
+      tick
+    end
+  end
+
+  def tick
+    case @status
+    when :guessing
+      @seconds_left -= 1
+      reveal(:timeout) if @seconds_left <= 0
+    when :correct
+      @reveal_ticks += 1
+      next_round if @reveal_ticks >= REVEAL_SECONDS
+    end
+  end
+
+  def pool
+    _label, ids = GENERATIONS.fetch(@generation)
+    $pokemon.select { ids.cover?(it[:id]) }
+  end
+
+  def next_round
+    candidates = pool
+    candidates = candidates.reject { it == @current } if candidates.size > 1
+
+    @current = candidates.sample
+    @status = :guessing
+    @seconds_left = ROUND_SECONDS
+    @reveal_ticks = 0
+    @points = 0
+    @wrong_guesses = []
+    @suggestions = []
+    @form_key = @form_key.succ
+  end
+
+  def reveal(status)
+    view_transition do
+      @status = status
+      @suggestions = []
+
+      if status == :correct
+        @points = @seconds_left
+        @score += @points
+        @streak += 1
+        @best_streak = [@best_streak, @streak].max
+      else
+        @streak = 0
+      end
+    end
+  end
+
+  def check_guess(guess)
+    return unless @status == :guessing
+    return if normalize(guess).empty?
+
+    if normalize(guess) == normalize(@current[:name])
+      reveal(:correct)
+    else
+      @wrong_guesses = [*@wrong_guesses, guess.strip]
+      @suggestions = []
+      # A new form clears the input and replays the shake animation.
+      @form_key = @form_key.succ
+    end
+  end
+
+  def suggest(input)
+    input = normalize(input)
+    return [] if input.empty?
+
+    names = $pokemon.map { it[:name] }
+    prefix, rest = names.partition { normalize(it).start_with?(input) }
+    substring = rest.select { normalize(it).include?(input) }
+
+    [*prefix, *substring].first(MAX_SUGGESTIONS)
+  end
+
+  def normalize(name) =
+    name.to_s.downcase.gsub(/[^a-z0-9]/, "")
+
+  def display_name(name) =
+    name.split("-").map(&:capitalize).join(" ")
+
+  def handle_input(e)
+    e => { target: { value: } }
+    @suggestions = suggest(value)
+  end
+
+  def handle_guess(e)
+    e => { target: { formData: { guess: } } }
+    check_guess(guess)
+  end
+
+  def handle_pick(e)
+    e => { currentTarget: { value: } }
+    check_guess(value)
+  end
+
+  def handle_skip
+    reveal(:skipped) if @status == :guessing
+  end
+
+  def handle_next =
+    view_transition { next_round }
+
+  def handle_set_generation(e)
+    e => { target: { value: } }
+    return unless GENERATIONS.key?(value)
+
+    @generation = value
+    @score = 0
+    @streak = 0
+    next_round
+  end
+
+:ruby
+  guessing = @status == :guessing
+  name = display_name(@current[:name])
+
+.quiz
+  .header
+    %h3 Who’s that Pokémon?
+    %Select(label="Pokémon from" value=@generation onchange=handle_set_generation)
+      = GENERATIONS.map do |key, (label, _ids)|
+        %option[key](value=key)= label
+
+  %dl.stats
+    .stat
+      %dt Score
+      %dd= @score
+    .stat
+      %dt Streak
+      %dd= @streak
+    .stat
+      %dt Best streak
+      %dd= @best_streak
+
+  .timer(role="progressbar" aria-label="Time left" aria-valuemin=0 aria-valuemax=ROUND_SECONDS){
+    aria: { valuenow: @seconds_left },
+    style: { __progress: @seconds_left.fdiv(ROUND_SECONDS) },
+    class: { low: guessing && @seconds_left <= 5 }
+  }
+
+  .stage
+    %img.artwork{
+      src: format(ARTWORK_URL, @current[:id]),
+      alt: guessing ? "A mystery Pokémon" : name,
+      class: { silhouette: guessing },
+      draggable: "false",
+      width: 320,
+      height: 320
+    }
+
+  = if guessing
+    %form.guess(onsubmit=handle_guess autocomplete="off"){class: { shake: @wrong_guesses.any? }}[@form_key]
+      .field
+        %Input(label="Your guess" name="guess" autofocus oninput=handle_input)
+        = if @suggestions.any?
+          %ul.suggestions
+            = @suggestions.map do |suggestion|
+              %li[suggestion]
+                %button(type="button" value=suggestion onclick=handle_pick)
+                  = display_name(suggestion)
+      .actions
+        %Button(type="submit") Guess
+        %Button(type="button" onclick=handle_skip color="var(--gray)") Skip
+      = if @wrong_guesses.any?
+        %p.message.wrong
+          Not #{@wrong_guesses.map { display_name(it) }.join(", not ")}. Try again!
+  = else
+    .result
+      %p.message{class: @status.to_s}
+        = if @status == :correct
+          It’s #{name}! +#{@points}
+        = elsif @status == :timeout
+          Time’s up! It was #{name}.
+        = else
+          It was #{name}.
+      = unless @status == :correct
+        %Button(onclick=handle_next autofocus) Next Pokémon
+
+:css
+  .quiz {
+    display: grid;
+    gap: 1em;
+    max-width: 32rem;
+    margin: 0 auto;
+  }
+
+  .header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 1em;
+  }
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 1.75em;
+  }
+
+  .stats {
+    display: flex;
+    gap: 1em;
+    margin: 0;
+  }
+
+  .stat {
+    flex: 1;
+    padding: 0.5em;
+    text-align: center;
+    border-radius: var(--radius-sm);
+    background: var(--surface-sunken);
+  }
+
+  dt {
+    font-size: 0.8em;
+    color: var(--text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer {
+    height: 0.5em;
+    border-radius: 1em;
+    background: var(--surface-sunken);
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      display: block;
+      height: 100%;
+      background: var(--green);
+      transform: scaleX(var(--progress));
+      transform-origin: left;
+      transition: transform 1s linear, background 300ms;
+    }
+
+    &.low::before {
+      background: var(--red);
+    }
+  }
+
+  .stage {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: var(--radius);
+    background: radial-gradient(circle, var(--yellow-bright) 0%, var(--blue-bright) 70%);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .artwork {
+    width: 80%;
+    height: auto;
+    user-select: none;
+    view-transition-name: pokemon-quiz-artwork;
+  }
+
+  .silhouette {
+    filter: brightness(0);
+  }
+
+  .guess {
+    display: grid;
+    gap: 0.5em;
+  }
+
+  .field {
+    position: relative;
+  }
+
+  .suggestions {
+    position: absolute;
+    z-index: 1;
+    inset-inline: 0;
+    top: calc(100% - 0.75em);
+    margin: 0;
+    padding: 0.25em;
+    list-style-type: none;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .suggestions button {
+    display: block;
+    width: 100%;
+    padding: 0.5em 0.75em;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:is(:hover, :focus-visible) {
+      background: var(--accent-soft);
+      outline: none;
+    }
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.5em;
+  }
+
+  .result {
+    display: grid;
+    justify-items: center;
+    gap: 0.5em;
+  }
+
+  .message {
+    margin: 0;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .message.correct {
+    font-family: var(--font-heading);
+    font-size: 2em;
+    color: var(--green-dark);
+  }
+
+  .message.wrong,
+  .message.timeout {
+    color: var(--red);
+  }
+
+  .shake {
+    animation: shake 400ms;
+  }
+
+  @keyframes shake {
+    20%, 60% { translate: -0.5em 0; }
+    40%, 80% { translate: 0.5em 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shake { animation: none; }
+    .timer::before { transition: none; }
+  }

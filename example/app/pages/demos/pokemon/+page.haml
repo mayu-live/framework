@@ -1,43 +1,139 @@
 :ruby
   Spinner = import("/components/UI/Spinner/Spinner")
   Link = import("/components/UI/Link")
-  Filter = import("./Filter")
+  Input = import("/components/Form/Input")
   Pagination = import("./Pagination")
 
+  PER_PAGE_OPTIONS = [24, 48, 96]
+  SPRITE_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/%d.png"
+
   def initialize
-    @result = nil
+    @pokemon = nil
     @error = nil
+    # The search field is uncontrolled, so re-renders never overwrite what
+    # the user is typing. Only the initial value comes from the URL.
+    @initial_search = $query[:q].to_s
   end
 
   def mount
     sleep 1
 
     res = fetch("https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0")
-    @result = res.json(symbolize_names: true)
+
+    @pokemon =
+      res.json(symbolize_names: true).fetch(:results).map do |result|
+        { id: result[:url].split("/").last.to_i, name: result[:name] }
+      end
   rescue => e
     @error = e.message
+  end
+
+  def handle_search(e)
+    e => { target: { value: } }
+    # Start over on the first page with the new search.
+    navigate_with(q: value.strip, page: nil)
   end
 
   def handle_set_per_page(e)
     e => { target: { value: } }
     # Start over on the first page with the new page size.
-    browser.navigate("?per_page=#{value.to_i}", replace: true)
+    navigate_with(per_page: value.to_i, page: nil)
   end
 
+  def navigate_with(**changes)
+    params = { q: $query[:q], per_page: $query[:per_page], **changes }
+    params = params.reject { |_key, value| value.to_s.empty? }
+    browser.navigate("?#{URI.encode_www_form(params)}", replace: true)
+  end
+
+  def search(pokemon, query)
+    return pokemon if query.empty?
+
+    if query.match?(/\A\d+\z/)
+      pokemon.select { it[:id] == query.to_i }
+    else
+      pokemon.select { it[:name].include?(query) }
+    end
+  end
+
+  def display_name(name) =
+    name.split("-").map(&:capitalize).join(" ")
+
 :css
-  ul {
-    list-style-type: none;
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 1.5em;
   }
 
-  li {
+  .search {
+    flex: 1 1 16em;
+  }
+
+  .quiz-link {
+    display: inline-block;
+    padding: 0.6em 1em;
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.5em, 1fr));
+    gap: 0.75em;
     list-style-type: none;
-    margin: 0.5em 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .pokemon {
+    display: grid;
+    justify-items: center;
+    padding: 0.5em;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow);
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 150ms, border-color 150ms;
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+  }
+
+  .pokemon img {
+    width: 96px;
+    height: 96px;
+    image-rendering: pixelated;
+  }
+
+  .id {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    color: var(--text-muted);
+  }
+
+  .name {
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .empty {
+    color: var(--text-muted);
   }
 
 - return if @error
   %p Error: #{@error}
 
-- return unless @result
+- return unless @pokemon
   %div
     %p
       Loading Pokémon from
@@ -46,36 +142,42 @@
     %Spinner
 
 :ruby
-  @result => results:
+  query = $query[:q].to_s.strip.downcase
+  matches = search(@pokemon, query)
 
   per_page = $query[:per_page].to_i
-  per_page = 20 unless [20, 40, 80].include?(per_page)
-  total_pages = (results.length / per_page).floor
-  page = $query[:page].to_i.clamp(1, total_pages.succ)
-  results_on_this_page = results.slice(page.pred * per_page, per_page) || []
+  per_page = PER_PAGE_OPTIONS.first unless PER_PAGE_OPTIONS.include?(per_page)
+  total_pages = [(matches.length / per_page.to_f).ceil, 1].max
+  page = $query[:page].to_i.clamp(1, total_pages)
+  matches_on_this_page = matches.slice((page - 1) * per_page, per_page) || []
+
+  pagination = {
+    page:,
+    per_page:,
+    per_page_options: PER_PAGE_OPTIONS,
+    total: matches.length,
+    total_pages:,
+    link_params: { q: query.empty? ? nil : query },
+    window_size: 5,
+  }
 
 %article
-  %Filter{results:}
+  .toolbar
+    .search
+      %Input(label="Search by name or number" type="search" autocomplete="off" value=@initial_search oninput=handle_search)
+    %a.quiz-link(href="/demos/pokemon/quiz") Play “Who’s that Pokémon?” →
 
-  %Pagination(on_change_per_page=handle_set_per_page){
-    page:,
-    per_page:,
-    total_pages:,
-    window_size: 7,
-  }
+  %Pagination(on_change_per_page=handle_set_per_page){**pagination}
 
-  %ul
-    = results_on_this_page.map do |result|
-      - id = result[:url].split("/").last.to_i
+  = if matches.empty?
+    %p.empty No Pokémon match “#{query}”.
+  = else
+    %ul.grid
+      = matches_on_this_page.map do |pokemon|
+        %li[pokemon[:id]]
+          %a.pokemon(href="/demos/pokemon/#{pokemon[:id]}")
+            %img(alt="" loading="lazy" width=96 height=96){src: format(SPRITE_URL, pokemon[:id])}
+            %span.id= "##{pokemon[:id].to_s.rjust(4, "0")}"
+            %span.name= display_name(pokemon[:name])
 
-      %li[result[:url]]
-        = "#{id}. "
-        %Link(href="/demos/pokemon/#{id}")
-          = result[:name].capitalize
-
-  %Pagination(on_change_per_page=handle_set_per_page){
-    page:,
-    per_page:,
-    total_pages:,
-    window_size: 7
-  }
+  %Pagination(on_change_per_page=handle_set_per_page){**pagination}

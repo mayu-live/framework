@@ -8,6 +8,7 @@
   LINKS = {
     "/demos" => "Demos",
     "/demos/pokemon" => "Pokémon",
+    "/demos/pokemon/quiz" => "Who’s that Pokémon?",
     "/demos/llm-chat" => "LLM chat",
     "/demos/tree" => "App tree",
     "/demos/form" => "Form elements",
@@ -68,6 +69,7 @@
       %Menu
         %MenuItem{href: "/demos/life", active: $path == "/demos/life"} Game of life
         %MenuItem{href: "/demos/snake", active: $path == "/demos/snake"} Snake
+        %MenuItem{href: "/demos/pokemon/quiz", active: $path == "/demos/pokemon/quiz"} Who’s that Pokémon?
     %Details(open summary="Interactions")
       %Menu
         %MenuItem{href: "/demos/form", active: $path == "/demos/form"} Form elements

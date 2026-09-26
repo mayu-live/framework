@@ -1,21 +1,88 @@
 :ruby
+  PokemonDetails = import("./PokemonDetails")
 
-  def mount
-    $params => { id: /\A\d+\z/ => id }
-    res = fetch("https://pokeapi.co/api/v2/pokemon/#{id}/")
-    @pokemon = res.json(symbolize_names: true)
-  rescue => e
-    @error = e.message
-  end
+  SPRITE_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/%d.png"
+  # Species go up to 1025. Alternate forms start at 10001.
+  LAST_SPECIES = 1025
+  FIRST_FORM = 10001
 
-- return unless @pokemon
-  %p Loading pokémon
+  def number(id) =
+    "##{id.to_s.rjust(4, "0")}"
+
+:css
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    max-width: 48rem;
+  }
+
+  .steps {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: auto;
+    user-select: none;
+  }
+
+  a:any-link {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 2em;
+    background: var(--surface-raised);
+    box-shadow: var(--shadow);
+    color: var(--text);
+    text-decoration: none;
+    transition: border-color 150ms, transform 150ms;
+
+    &:hover {
+      border-color: var(--accent);
+    }
+  }
+
+  .step {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  .step img {
+    width: 40px;
+    height: 40px;
+    margin-block: -0.5rem;
+    image-rendering: pixelated;
+  }
+
+  a.prev:hover {
+    transform: translateX(-2px);
+  }
+
+  a.next:hover {
+    transform: translateX(2px);
+  }
 
 %article
-  %h1= @pokemon[:name]
-  %img{src: @pokemon.dig(:sprites, :front_default)}
-  %dl
-    %dt Weight
-    %dd= @pokemon[:weight]
-    %dt Base experience
-    %dd= @pokemon[:base_experience]
+  = if $params[:id].match?(/\A\d+\z/)
+    - id = $params[:id].to_i
+
+    %nav(aria-label="Pokédex navigation")
+      %a(href="/demos/pokemon") ← All Pokémon
+      .steps
+        = if id > 1 && id != FIRST_FORM
+          %a.step.prev(rel="prev"){href: "/demos/pokemon/#{id - 1}"}
+            ←
+            %img(alt="" width=40 height=40){src: format(SPRITE_URL, id - 1)}
+            = number(id - 1)
+        = if id != LAST_SPECIES
+          %a.step.next(rel="next"){href: "/demos/pokemon/#{id + 1}"}
+            = number(id + 1)
+            %img(alt="" width=40 height=40){src: format(SPRITE_URL, id + 1)}
+            →
+
+    %PokemonDetails(id=id)
+  = else
+    %p “#{$params[:id]}” is not a Pokédex number.

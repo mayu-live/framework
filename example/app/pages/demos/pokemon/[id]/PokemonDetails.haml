@@ -1,0 +1,383 @@
+:ruby
+  Spinner = import("/components/UI/Spinner/Spinner")
+
+  TYPE_COLORS = {
+    "normal" => "#a8a77a",
+    "fire" => "#ee8130",
+    "water" => "#6390f0",
+    "electric" => "#f7d02c",
+    "grass" => "#7ac74c",
+    "ice" => "#96d9d6",
+    "fighting" => "#c22e28",
+    "poison" => "#a33ea1",
+    "ground" => "#e2bf65",
+    "flying" => "#a98ff3",
+    "psychic" => "#f95587",
+    "bug" => "#a6b91a",
+    "rock" => "#b6a136",
+    "ghost" => "#735797",
+    "dragon" => "#6f35fc",
+    "dark" => "#705746",
+    "steel" => "#b7b7ce",
+    "fairy" => "#d685ad",
+  }
+
+  STAT_LABELS = {
+    "hp" => "HP",
+    "attack" => "Attack",
+    "defense" => "Defense",
+    "special-attack" => "Sp. Atk",
+    "special-defense" => "Sp. Def",
+    "speed" => "Speed",
+  }
+
+  # Base stats top out at 255, but almost all are below this.
+  STAT_SCALE = 180
+
+  def initialize
+    @pokemon = nil
+    @species = nil
+    @error = nil
+    @shiny = false
+  end
+
+  def mount = load($id)
+
+  # The same instance stays mounted while the visitor steps between Pokémon.
+  # The current entry stays on screen until the next one has loaded, and the
+  # two are then swapped in a view transition.
+  def did_update(prev_props)
+    load($id) if prev_props[:id] != $id
+  end
+
+  def load(id)
+    res = fetch("https://pokeapi.co/api/v2/pokemon/#{id}/")
+    raise "There is no Pokémon with number #{id}." unless res.ok?
+    pokemon = res.json(symbolize_names: true)
+
+    # Genus and Pokédex text live on the species. The entry is still useful
+    # without them.
+    species = fetch(pokemon.dig(:species, :url))
+    species = species.ok? ? species.json(symbolize_names: true) : nil
+
+    view_transition do
+      @pokemon = pokemon
+      @species = species
+      @error = nil
+      @shiny = false
+    end
+  rescue => e
+    @error = e.message
+  end
+
+  def handle_toggle_shiny
+    view_transition { @shiny = !@shiny }
+  end
+
+  def titleize(name) =
+    name.split("-").map(&:capitalize).join(" ")
+
+  def english(entries) =
+    entries.to_a.reverse.find { it.dig(:language, :name) == "en" }
+
+  # Stats go from red for low values to green for high ones.
+  def stat_hue(value) =
+    (25 + 120 * value.clamp(0, 150) / 150.0).round
+
+:css
+  .entry {
+    --type-color: #888;
+    transition: opacity 200ms;
+
+    /* Dim only when a load takes noticeably long. A quick step to the next
+       Pokémon goes straight into the view transition at full opacity. */
+    &[aria-busy="true"] {
+      opacity: 0.6;
+      transition-delay: 400ms;
+    }
+
+    display: grid;
+    gap: 1.5rem;
+    max-width: 48rem;
+  }
+
+  .hero {
+    view-transition-name: pokemon-hero;
+    display: grid;
+    grid-template-columns: minmax(12rem, 1fr) 1.2fr;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid color-mix(in oklab, var(--type-color) 45%, var(--border));
+    border-radius: var(--radius);
+    background:
+      radial-gradient(circle at 25% 45%, color-mix(in oklab, var(--type-color) 45%, transparent), transparent 60%),
+      linear-gradient(135deg, color-mix(in oklab, var(--type-color) 18%, var(--surface-raised)), var(--surface-raised));
+    box-shadow: var(--shadow-lg);
+
+    @media (width < 36rem) {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+  }
+
+  .artwork {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  .artwork img {
+    width: 100%;
+    max-width: 16rem;
+    aspect-ratio: 1;
+    filter: drop-shadow(0 0.75rem 1rem oklch(0% 0 0 / 30%));
+    view-transition-name: pokemon-artwork;
+  }
+
+  .shiny {
+    display: inline-flex;
+    gap: 0.35em;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: 0.3em 0.7em;
+    border: 1px solid var(--border-strong);
+    border-radius: 2em;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+
+    &[aria-pressed="true"] {
+      border-color: var(--yellow);
+      background: var(--yellow-bright);
+    }
+  }
+
+  .number {
+    margin: 0;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+  }
+
+  h1 {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.1;
+  }
+
+  .genus {
+    margin: 0.25rem 0 0;
+    color: var(--text-muted);
+  }
+
+  .types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    padding: 0;
+    list-style-type: none;
+
+    @media (width < 36rem) {
+      justify-content: center;
+    }
+  }
+
+  .type {
+    padding: 0.2em 0.9em;
+    border: 1px solid var(--type-color);
+    border-radius: 2em;
+    background: color-mix(in oklab, var(--type-color) 30%, var(--surface-raised));
+    font-weight: bold;
+    font-size: 0.9em;
+  }
+
+  /* Always four lines tall, so the hero keeps its height between Pokémon. */
+  .flavor {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    overflow: hidden;
+    min-height: calc(4 * 1.5em);
+    margin: 0;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: 1.5rem;
+  }
+
+  .panel {
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-raised);
+    box-shadow: var(--shadow);
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0;
+  }
+
+  .stats dt {
+    color: var(--text-muted);
+    font-size: 0.9em;
+  }
+
+  .stats dd {
+    display: contents;
+  }
+
+  .value {
+    text-align: right;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bar {
+    height: 0.6rem;
+    border-radius: 1em;
+    background: var(--surface-sunken);
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      display: block;
+      height: 100%;
+      width: calc(var(--ratio) * 100%);
+      border-radius: inherit;
+      background: oklch(72% 0.17 var(--hue));
+    }
+  }
+
+  .total {
+    margin: 0.75rem 0 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 0;
+  }
+
+  .facts dt {
+    color: var(--text-muted);
+    font-size: 0.85em;
+  }
+
+  .facts dd {
+    margin: 0.15rem 0 0;
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+
+  .abilities {
+    grid-column: 1 / -1;
+  }
+
+  .abilities dd {
+    font-size: 1em;
+  }
+
+  .hidden {
+    margin-left: 0.4em;
+    color: var(--text-muted);
+    font-weight: normal;
+    font-size: 0.85em;
+  }
+
+  .loading {
+    display: grid;
+    place-items: center;
+    min-height: 20rem;
+  }
+
+- return if @error
+  %p Error: #{@error}
+
+- return unless @pokemon
+  .loading
+    %Spinner
+
+:ruby
+  types = @pokemon[:types].map { it.dig(:type, :name) }
+  artwork = @pokemon.dig(:sprites, :other, :"official-artwork")
+  artwork_src = (@shiny && artwork[:front_shiny]) || artwork[:front_default] || @pokemon.dig(:sprites, :front_default)
+  name = titleize(@pokemon[:name])
+  genus = english(@species&.dig(:genera))&.dig(:genus)
+  flavor = english(@species&.dig(:flavor_text_entries))&.dig(:flavor_text)&.gsub(/\s+/, " ")
+  stats = @pokemon[:stats].map { [it.dig(:stat, :name), it[:base_stat]] }
+
+%article.entry{style: { __type_color: TYPE_COLORS.fetch(types.first, "#888") }, aria: { busy: (@pokemon[:id] != $id).to_s }}
+  %section.hero
+    .artwork
+      %img{src: artwork_src, alt: name, width: 256, height: 256}
+      = if artwork[:front_shiny]
+        %button.shiny(type="button" onclick=handle_toggle_shiny){aria: { pressed: @shiny.to_s }}
+          %span(aria-hidden="true") ✨
+          Shiny
+    %div
+      %p.number= "##{@pokemon[:id].to_s.rjust(4, "0")}"
+      %h1= name
+      %p.genus= genus || "Pokémon"
+      %ul.types
+        = types.map do |type|
+          %li.type[type]{style: { __type_color: TYPE_COLORS.fetch(type, "#888") }}= type.capitalize
+      %p.flavor= flavor || "No Pokédex entry."
+
+  .panels
+    %section.panel
+      %h2 Base stats
+      %dl.stats
+        = stats.map do |stat, value|
+          %div[stat](style="display: contents")
+            %dt= STAT_LABELS.fetch(stat, titleize(stat))
+            %dd
+              %span.value= value
+              %span.bar{style: { __ratio: [value.fdiv(STAT_SCALE), 1].min, __hue: stat_hue(value) }}
+      %p.total Total #{stats.sum { it[1] }}
+
+    %section.panel
+      %h2 Profile
+      %dl.facts
+        %div
+          %dt Height
+          %dd #{@pokemon[:height] / 10.0} m
+        %div
+          %dt Weight
+          %dd #{@pokemon[:weight] / 10.0} kg
+        %div
+          %dt Base experience
+          %dd= @pokemon[:base_experience] || "—"
+        %div
+          %dt Species
+          %dd= titleize(@pokemon.dig(:species, :name))
+        .abilities
+          %dt Abilities
+          %dd
+            = @pokemon[:abilities].map do |ability|
+              %div[ability.dig(:ability, :name)]
+                = titleize(ability.dig(:ability, :name))
+                = if ability[:is_hidden]
+                  %span.hidden (hidden)
