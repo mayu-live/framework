@@ -26,12 +26,24 @@ environment =
   Mayu::Environment.load_klenod_with_config(config, bundle)
 request_info =
   Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
-html = Mayu::Session.new(environment:, request_info:).render
+session = Mayu::Session.new(environment:, request_info:)
+html = session.render
+
+# Devtools queries must go unanswered in production: only `mayu dev` installs
+# an inspector.
+engine = session.instance_variable_get(:@engine)
+session.send(:handle_event, Mayu::Session::Events.parse(["Inspect", "1", {type: "tree"}, 0]))
+commands = []
+commands.concat(engine.dequeue_batch.commands) until engine.output_queue.empty?
+inspect_result = commands.find { it.is_a?(Mayu::Runtime::Commands::InspectResult) }
 
 puts JSON.generate(
   html:,
   klenod_build_defined: defined?(::Klenod::Build) ? true : false,
   mayu_build_defined: defined?(::Mayu::Build) ? true : false,
+  mayu_devtools_defined: defined?(::Mayu::Devtools) ? true : false,
+  inspector: !environment.inspector.nil?,
+  inspect_result: inspect_result&.deconstruct,
   build_features:
-    $LOADED_FEATURES.grep(%r{/klenod/(build|test|lsp|plugin)|/mayu/build|/samovar}).sort
+    $LOADED_FEATURES.grep(%r{/klenod/(build|test|lsp|plugin)|/mayu/(build|devtools)|/samovar}).sort
 )

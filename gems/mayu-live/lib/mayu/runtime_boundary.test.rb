@@ -35,6 +35,9 @@ class Mayu::RuntimeBoundaryTest < Minitest::Test
       assert_includes(report.fetch("html"), "Runtime only")
       refute(report.fetch("klenod_build_defined"), "Klenod::Build was loaded")
       refute(report.fetch("mayu_build_defined"), "Mayu::Build was loaded")
+      refute(report.fetch("mayu_devtools_defined"), "Mayu::Devtools was loaded")
+      refute(report.fetch("inspector"), "The environment has a devtools inspector")
+      assert_equal(["1", nil], report.fetch("inspect_result"))
       assert_empty(report.fetch("build_features"))
     end
   end

@@ -3,6 +3,7 @@
 source "https://rubygems.org"
 
 gemspec path: "gems/mayu-live"
+gemspec path: "gems/mayu-devtools"
 gemspec path: "gems/mayu-build"
 
 group :development do

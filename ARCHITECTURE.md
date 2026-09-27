@@ -254,12 +254,23 @@ Notable command categories:
 - request streaming and the per-request fallback use the same frame format
 - server parses frames in `Server::EventStream.each_incoming_message`
 - `Session#receive_message` turns each tuple into exactly one typed event
-  (`CallbackEvent`, `NavigateEvent`, or `PingEvent`)
+  (`CallbackEvent`, `NavigateEvent`, `PingEvent`, `VisibilityEvent`, or
+  `InspectEvent`)
 - callbacks are serialized per component while different components can run
   concurrently
 - server-to-client: `VDOM -> CommandCollector -> Batch -> Engine queue -> stream -> applyBatch -> DOM`
 - client-to-server: `browser event -> tuple -> MessagePack frame -> receive_message -> session event -> callback/navigation -> VDOM`
 - command batches are streamed as deflate-raw compressed MessagePack arrays
+
+### Devtools
+
+The browser extension in `gems/mayu-devtools/extension` defines
+`window.__MAYU_DEVTOOLS_HOOK__` before the page loads, and `main.ts` registers
+the runtime with it when present (`client/src/devtools.ts`). The hook can map
+DOM nodes to vnode ids and back, and send `Inspect` events. The session answers
+each one with an `InspectResult` command from `environment.inspector`, which
+only `mayu dev` sets (`Mayu::Devtools::Inspector` in `gems/mayu-devtools`).
+Without an inspector the answer is `nil`.
 
 ## Environment and Build Modes (`environment.rb`, `commands/*`)
 
@@ -270,6 +281,7 @@ Notable command categories:
 - Klenod's watcher drives HMR updates
 - Klenod asset plugins generate changed assets
 - route changes are applied through Klenod's router update
+- `Mayu::Devtools.install` answers queries from the browser devtools extension
 
 ### Production
 

@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-- `gems/mayu-live/` is the runtime gem and `gems/mayu-build/` the development tooling gem; tests live alongside source as `*.test.rb` (e.g., `gems/mayu-live/lib/mayu/session.rb` → `gems/mayu-live/lib/mayu/session.test.rb`).
+- `gems/mayu-live/` is the runtime gem, `gems/mayu-build/` the development tooling gem, and `gems/mayu-devtools/` the server side of the browser devtools, with the extension itself in `gems/mayu-devtools/extension/` (Node workspace); tests live alongside source as `*.test.rb` (e.g., `gems/mayu-live/lib/mayu/session.rb` → `gems/mayu-live/lib/mayu/session.test.rb`).
 - `gems/mayu-live/lib/mayu/client/` holds the browser runtime (Node workspace).
 - `example/` is a runnable sample app plus `mayu.toml` server config.
 - `bin/` holds repository scripts; `gems/mayu-live/exe/mayu` is the CLI entry point.
@@ -19,8 +19,9 @@
 - `bundle install` installs Ruby dependencies.
 - `npm install` installs Node dependencies (root workspace).
 - `npm run build` builds the browser runtime via the `gems/mayu-live/lib/mayu/client` workspace.
-- `rake test` runs the Minitest suite for both gems (glob: `gems/*/lib/**/*.test.rb`); `rake test:live` and `rake test:build` run one gem.
-- `rake build` runs the client production build and packages both gems into `pkg/`.
+- `rake test` runs the Minitest suite for all gems (glob: `gems/*/lib/**/*.test.rb`); `rake test:live`, `rake test:build` and `rake test:devtools` run one gem.
+- `npm -w gems/mayu-devtools/extension run build` builds the devtools extension into `dist/chrome` and `dist/firefox`.
+- `rake build` runs the client production build and packages the gems into `pkg/`.
 - `cd example && bundle install && bin/mayu dev` starts the example app at `https://localhost:9292/`.
 - `bin/mayu lsp` starts the language server (stdio) for editors; it finds the app via `mayu.toml`.
 

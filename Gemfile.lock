@@ -8,6 +8,7 @@ PATH
       klenod-plugin-javascript (= 0.0.26)
       klenod-test (= 0.0.26)
       localhost (~> 1.7)
+      mayu-devtools (= 0.0.6)
       mayu-live (= 0.0.6)
       minitest (~> 6.0)
       oga (~> 3.4)
@@ -15,6 +16,12 @@ PATH
       rouge (~> 4.7)
       samovar (~> 2.5)
       terminal-table (~> 4.0)
+
+PATH
+  remote: gems/mayu-devtools
+  specs:
+    mayu-devtools (0.0.6)
+      mayu-live (= 0.0.6)
 
 PATH
   remote: gems/mayu-live
@@ -343,6 +350,7 @@ DEPENDENCIES
   irb
   localhost
   mayu-build!
+  mayu-devtools!
   mayu-live!
   minitest
   minitest-focus

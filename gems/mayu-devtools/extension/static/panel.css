@@ -1,0 +1,154 @@
+:root {
+  --background: #fff;
+  --text: #1f1f1f;
+  --muted: #6e6e6e;
+  --border: #d6d6d6;
+  --toolbar: #f3f3f3;
+  --hover: #eef3fd;
+  --selected: #cfe8fc;
+  --component: #8b2fc9;
+  --element: #881280;
+  --error: #c00;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --background: #202124;
+  --text: #e3e3e3;
+  --muted: #9aa0a6;
+  --border: #3c3c3c;
+  --toolbar: #292a2d;
+  --hover: #2d3240;
+  --selected: #073655;
+  --component: #c792ea;
+  --element: #5db0d7;
+  --error: #f28b82;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  font:
+    12px/1.5 system-ui,
+    sans-serif;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--toolbar);
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbar label {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.toolbar button {
+  margin-left: auto;
+}
+
+.tree {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  white-space: nowrap;
+  cursor: default;
+  padding-right: 8px;
+}
+
+.row:hover {
+  background: var(--hover);
+}
+
+.row.selected {
+  background: var(--selected);
+}
+
+.toggle {
+  display: inline-block;
+  width: 1em;
+  color: var(--muted);
+  text-align: center;
+}
+
+.component .name {
+  color: var(--component);
+}
+
+.element .name {
+  color: var(--element);
+}
+
+.internal {
+  opacity: 0.6;
+}
+
+.path {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status {
+  padding: 8px 12px;
+  color: var(--muted);
+  font-family: system-ui, sans-serif;
+}
+
+.status.error {
+  color: var(--error);
+}
+
+.details {
+  border-top: 1px solid var(--border);
+  padding: 4px 8px;
+  background: var(--toolbar);
+}
+
+.details dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 12px;
+  margin: 0;
+}
+
+.details dt {
+  color: var(--muted);
+}
+
+.details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
