@@ -393,10 +393,6 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
       error.set_backtrace(["app:/broken.haml:7"])
     end
 
-    def format_exception(error, source_path:)
-      "#{source_path}: #{error.class}: #{error.message}"
-    end
-
     def assets_for_module(_module_path, type:)
       raise "Unexpected asset type #{type}" unless type == :css
 
@@ -825,10 +821,6 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
     provider =
       Data
         .define do
-          def format_exception(error, source_path:)
-            "#{source_path}: #{error.class}: #{error.message}"
-          end
-
           def assets_for_module(_module_path, type:)
             raise "Unexpected asset type #{type}" unless type == :css
 

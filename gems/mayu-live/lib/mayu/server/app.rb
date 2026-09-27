@@ -152,7 +152,8 @@ module Mayu
       end
 
       def exception_text(error)
-        ["#{error.class}: #{error.message}", "", *error.backtrace].join("\n")
+        message = Runtime::Commands.utf8(error.message)
+        ["#{error.class}: #{message}", "", *error.backtrace].join("\n")
       end
 
       # Called by the development build after it applied a source change.

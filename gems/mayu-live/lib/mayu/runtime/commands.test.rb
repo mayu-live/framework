@@ -7,6 +7,18 @@ require "msgpack"
 require_relative "commands"
 
 class Mayu::Runtime::CommandsTest < Minitest::Test
+  def test_utf8_strips_colors_and_terminal_hyperlinks
+    report =
+      "\e[1;31m× Parse error\e[0m at " \
+        "\e]8;;file:///app/broken.haml\e\\app:/broken.haml:2\e]8;;\e\\ " \
+        "\e]8;;file:///app/x.rb\aapp:/x.rb:1\e]8;;\a"
+
+    assert_equal(
+      "× Parse error at app:/broken.haml:2 app:/x.rb:1",
+      Mayu::Runtime::Commands.utf8(report)
+    )
+  end
+
   def test_batch_serializes_as_a_top_level_command_array
     batch =
       Mayu::Runtime::Batch[

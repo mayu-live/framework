@@ -52,7 +52,11 @@ module Mayu
       end
 
       def format_error(error, context)
-        DevelopmentProvider.new(context).format_exception(error)
+        DevelopmentProvider.new(context).format_exception(error, ansi: color?)
+      end
+
+      def color?
+        !ENV.key?("NO_COLOR") && error_output.respond_to?(:tty?) && error_output.tty?
       end
     end
   end

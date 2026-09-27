@@ -52,10 +52,10 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
       )
 
       assert_includes(output.string, "Update #7 failed")
-      assert_includes(output.string, "app:/broken.haml:2:3: Haml parse error")
-      assert_includes(output.string, "Invalid tag")
-      assert_includes(output.string, "> 2 |   %@$O")
-      assert_includes(output.string, "Close the tag")
+      assert_includes(output.string, "× Haml parse error: Invalid tag")
+      assert_includes(output.string, "╭─[app:/broken.haml:2:3]")
+      assert_includes(output.string, "> 2 │   %@$O")
+      assert_includes(output.string, "hint: Close the tag")
       refute_includes(output.string, "vendor/bundle")
     end
   end
@@ -81,11 +81,11 @@ class Mayu::Build::UpdateLoggerTest < Minitest::Test
       )
 
       assert_includes(output.string, "something unexpected")
-      assert_includes(output.string, "Backtrace:")
-      assert_includes(output.string, "app:/x.rb:3:in 'foo'")
+      assert_includes(output.string, "at app:/x.rb:3:in 'foo'")
       # Frames through the build graph are summarized, not listed.
       refute_includes(output.string, "klenod-build")
-      assert_includes(output.string, "2 more frames through the build")
+      assert_includes(output.string, "  2 more frames through the build")
+      refute_includes(output.string, "at 2 more frames")
     end
   end
 

@@ -20,6 +20,8 @@ module Mayu
     # and the browser overlay are laid out by the same code that formats a
     # SourceError's own message.
     module ErrorReport
+      HIDDEN_FRAMES = /\A\d+ more frames through the build\z/
+
       def self.from(error, module_id: nil, provider: nil)
         case error
         when ::Klenod::Build::SourceError
@@ -46,8 +48,13 @@ module Mayu
 
         return body if report.backtrace.empty?
 
-        backtrace = report.backtrace.map { "  #{it}" }.join("\n")
-        [body, "Backtrace:\n#{backtrace}"].join("\n\n")
+        # Frames follow the report as "at" lines, like klenod's own reports.
+        # The count of hidden frames is not a frame.
+        frames =
+          report.backtrace.map do
+            HIDDEN_FRAMES.match?(it) ? "  #{it}" : "  at #{it}"
+          end
+        [body, *frames].join("\n")
       end
 
       def self.from_source_error(error, module_id:)

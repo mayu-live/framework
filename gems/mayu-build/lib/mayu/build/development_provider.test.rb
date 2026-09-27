@@ -34,6 +34,24 @@ class Mayu::Build::DevelopmentProviderTest < Minitest::Test
     refute_includes(report, "\e[")
   end
 
+  def test_a_build_error_formats_as_its_own_report
+    provider = Mayu::Build::DevelopmentProvider.allocate
+    error =
+      FakeParseError.new(
+        SyntaxError.new("unexpected token"),
+        source: "%p\n%p= )\n",
+        module_id: "app:/broken.haml"
+      )
+
+    assert_includes(provider.format_exception(error), "\e[")
+
+    report = provider.format_exception(error, ansi: false)
+
+    assert_includes(report, "× Haml parse error: unexpected token")
+    assert_includes(report, "app:/broken.haml:2:4")
+    refute_includes(report, "\e")
+  end
+
   def test_other_errors_are_left_to_the_default_logger
     provider = Mayu::Build::DevelopmentProvider.allocate
 

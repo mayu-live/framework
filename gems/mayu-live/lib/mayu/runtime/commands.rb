@@ -138,7 +138,8 @@ module Mayu
           end
         end
 
-      ANSI_ESCAPE = /\e\[[0-9;]*m/
+      # Colors, and the OSC 8 hyperlinks klenod wraps file locations in.
+      ANSI_ESCAPE = /\e\[[0-9;]*m|\e\]8;[^\e\a]*(?:\e\\|\a)/
 
       # Build errors format their source excerpts for a terminal, and the
       # browser would show the escape sequences verbatim.

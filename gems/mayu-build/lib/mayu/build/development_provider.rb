@@ -26,6 +26,20 @@ module Mayu
         source.graph.absolute_path(module_id)
       end
 
+      # A development report for any error. Build errors already format
+      # themselves; anything else gets its backtrace rewritten to the original
+      # sources, in place, so call this once per error.
+      def format_exception(error, ansi: true)
+        case error
+        when ::Klenod::Build::SourceError
+          ansi ? error.message : ::Klenod::Build::SourceExcerpt.strip(error.message)
+        when ::Klenod::Build::ResolveError
+          ::Klenod::Build::ResolutionErrorFormatter.format(error, ansi:)
+        else
+          ::Klenod::Build::ExceptionFormatter.format(error, mods: source.graph.mods, ansi:)
+        end
+      end
+
       # A build error raised while serving a request, as the same report the
       # hot reloader prints: the source excerpt and hints, no backtrace. Nil
       # for any other error, which keeps its backtrace.

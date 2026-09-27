@@ -358,7 +358,7 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
 
       error = assert_raises(RuntimeError) { component_class.allocate.render }
       formatted =
-        provider.format_exception(error, source_path: "app:/broken.haml")
+        provider.format_exception(error, ansi: false)
 
       assert_includes(formatted, "broken.haml")
       assert_includes(formatted, 'raise "boom"')

@@ -66,13 +66,6 @@ module Mayu
         source.asset_origin
       end
 
-      def format_exception(error, source_path: nil)
-        ::Klenod::Runtime::BacktraceRewriter.new(source_maps).format_exception(
-          error,
-          source_path:
-        )
-      end
-
       def rewrite_exception(error)
         ::Klenod::Runtime::BacktraceRewriter.new(source_maps).rewrite_exception(
           error
