@@ -132,6 +132,33 @@ class Mayu::SessionTest < Minitest::Test
     refute(session.running?)
   end
 
+  # The server stops a session from two ensure blocks when its stream is
+  # cancelled. The second stop must not interrupt the cleanup of the first,
+  # or the session stays running and component tasks leak.
+  def test_stopping_twice_finishes_the_cleanup
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: true)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    session.render
+
+    Async do |task|
+      session.start
+      task.sleep(0.05)
+
+      session.stop
+      session.stop
+      session.wait
+
+      refute(session.running?)
+      refute(task.children?, "session tasks outlived the session")
+    end.wait
+  end
+
   def test_events_can_be_queued_before_the_session_starts
     env = FakeEnvironment.new
     request_info =

@@ -282,10 +282,14 @@ module Mayu
         rescue => e
           Console.logger.error(self, e)
         ensure
-          Console.logger.info(self, event: Event.new(:stopping, session_id: @id))
-          @engine.stop
-          barrier.stop
-          @task = nil
+          # Stopping components switches fibers, so a second #stop can arrive
+          # while this runs. Defer it so the cleanup always finishes.
+          task.defer_cancel do
+            Console.logger.info(self, event: Event.new(:stopping, session_id: @id))
+            @engine.stop
+            barrier.stop
+            @task = nil
+          end
         end
     end
 
