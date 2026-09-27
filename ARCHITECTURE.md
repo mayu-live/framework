@@ -254,12 +254,36 @@ Notable command categories:
 - request streaming and the per-request fallback use the same frame format
 - server parses frames in `Server::EventStream.each_incoming_message`
 - `Session#receive_message` turns each tuple into exactly one typed event
-  (`CallbackEvent`, `NavigateEvent`, or `PingEvent`)
+  (`CallbackEvent`, `NavigateEvent`, `PingEvent`, `VisibilityEvent`, or
+  `InspectEvent`)
 - callbacks are serialized per component while different components can run
   concurrently
 - server-to-client: `VDOM -> CommandCollector -> Batch -> Engine queue -> stream -> applyBatch -> DOM`
 - client-to-server: `browser event -> tuple -> MessagePack frame -> receive_message -> session event -> callback/navigation -> VDOM`
 - command batches are streamed as deflate-raw compressed MessagePack arrays
+
+### Devtools
+
+The browser extension in `gems/mayu-devtools/extension` defines
+`window.__MAYU_DEVTOOLS_HOOK__` before the page loads, and `main.ts` registers
+the runtime with it when present (`client/src/devtools.ts`). The hook can map
+DOM nodes to vnode ids and back, and send `Inspect` events. The session answers
+each one with an `InspectResult` command from `environment.inspector`, which
+only `mayu dev` sets (`Mayu::Devtools::Inspector` in `gems/mayu-devtools`).
+Without an inspector the answer is `nil`.
+
+The inspector answers these queries:
+
+- `{type: "tree"}`: components and elements, with Klenod module ids and
+  element classes as written in the source
+- `{type: "details", id:}`: a component's props, state, context, instance
+  variables and handled events, or an element's attributes and handlers
+- `{type: "timings", reset:}`: render, update and callback timings, recorded
+  by wrapping the engine's metrics from the first such query
+
+Component data must never reach a production page: the runtime boundary test
+(`runtime_boundary.test.rb`) checks that the production path has no inspector
+and answers `Inspect` with `nil`.
 
 ## Environment and Build Modes (`environment.rb`, `commands/*`)
 
@@ -270,6 +294,7 @@ Notable command categories:
 - Klenod's watcher drives HMR updates
 - Klenod asset plugins generate changed assets
 - route changes are applied through Klenod's router update
+- `Mayu::Devtools.install` answers queries from the browser devtools extension
 
 ### Production
 

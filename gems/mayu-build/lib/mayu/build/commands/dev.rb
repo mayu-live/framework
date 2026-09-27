@@ -16,6 +16,7 @@ module Mayu
         def call
           require "mayu/configuration"
           require "mayu/server"
+          require "mayu/devtools"
           require_relative "../../build"
 
           Mayu::Configuration.with(:development) do |config|
@@ -26,6 +27,7 @@ module Mayu
                 provider =
                   Mayu::Build::Configuration.new(root: config.root).development_provider
                 environment = Mayu::Environment.new(config, module_provider: provider, metrics:)
+                Mayu::Devtools.install(environment)
                 if config.server.hmr?
                   reloader =
                     Mayu::Build::HotReloader.new(

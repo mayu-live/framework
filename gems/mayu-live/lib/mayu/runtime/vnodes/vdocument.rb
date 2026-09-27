@@ -378,6 +378,10 @@ module Mayu
           collector << command if @engine.render_exceptions?
         end
 
+        def traverse(&block)
+          @html.traverse(&block)
+        end
+
         private
 
         def index_listener_element(element)
@@ -412,10 +416,6 @@ module Mayu
             custom_elements: @custom_elements,
             descriptors: @head.map(&:children).flatten.compact
           ]
-        end
-
-        def traverse(&block)
-          @html.traverse(&block)
         end
 
         def rebuild_head_and_listeners(component_map)

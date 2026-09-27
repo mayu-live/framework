@@ -23,7 +23,8 @@
   },
   "homepage": "https://github.com/mayu-live/prototype#readme",
   "workspaces": [
-    "gems/mayu-live/lib/mayu/client"
+    "gems/mayu-live/lib/mayu/client",
+    "gems/mayu-devtools/extension"
   ],
   "devDependencies": {
     "husky": "^8.0.2",

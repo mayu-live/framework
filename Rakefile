@@ -4,7 +4,7 @@ require "bundler/setup"
 require "standard/rake"
 require "fileutils"
 
-GEMS = %w[mayu-live mayu-build].freeze
+GEMS = %w[mayu-live mayu-devtools mayu-build].freeze
 CLIENT_WORKSPACE = "gems/mayu-live/lib/mayu/client"
 
 unless ENV["BUNDLE_WITHOUT"].to_s.split(":").include?("test")
@@ -26,6 +26,7 @@ unless ENV["BUNDLE_WITHOUT"].to_s.split(":").include?("test")
   namespace :test do
     minitest_task(:live, "Run mayu-live tests", ["gems/mayu-live/lib/**/*.test.rb"])
     minitest_task(:build, "Run mayu-build tests", ["gems/mayu-build/lib/**/*.test.rb"])
+    minitest_task(:devtools, "Run mayu-devtools tests", ["gems/mayu-devtools/lib/**/*.test.rb"])
   end
 
   minitest_task(:test, "Run all gem tests", GEMS.map { |name| "gems/#{name}/lib/**/*.test.rb" })

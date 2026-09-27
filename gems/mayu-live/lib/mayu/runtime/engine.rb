@@ -328,6 +328,11 @@ module Mayu
         @root.dom_id_tree
       end
 
+      # Yields every vnode, parents before their children.
+      def traverse(&)
+        @root.traverse(&)
+      end
+
       def listener_commands
         @root.listener_commands
       end

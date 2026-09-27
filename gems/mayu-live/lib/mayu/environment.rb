@@ -25,6 +25,10 @@ module Mayu
     attr_reader :marshaller
     attr_reader :metrics
 
+    # Answers devtools queries: `call(engine, query)` returns a
+    # MessagePack-serializable value. Nil disables devtools.
+    attr_accessor :inspector
+
     def self.client_runtime_entries_path
       File.join(__dir__, "client", "dist", "entries.json")
     end
