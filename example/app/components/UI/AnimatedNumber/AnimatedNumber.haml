@@ -1,0 +1,49 @@
+:ruby
+  # Usage:
+  #
+  #   %AnimatedNumber{ value: @count }
+  #   %AnimatedNumber(format="signed"){ value: delta(:count) }
+  #   %AnimatedNumber(format="bytes"){ value: @bytes }
+  #   %AnimatedNumber(format="percent"){ value: @ratio }
+  #   %AnimatedNumber(suffix=" ms"){ value: @time }
+  #
+  # Renders the formatted number on the server, and tweens between values in
+  # the browser. The formatting here must match NumberTween.tsx.
+
+  NumberTween = import("./NumberTween.tsx")
+
+  BYTE_UNITS = %w[B KiB MiB GiB]
+
+  def formatted
+    value = $value || 0
+
+    text =
+      case $format
+      when "signed"
+        value.round.positive? ? "+#{delimit(value)}" : delimit(value)
+      when "bytes"
+        bytes(value)
+      when "percent"
+        "#{value.round}%"
+      else
+        delimit(value)
+      end
+
+    "#{text}#{$suffix}"
+  end
+
+  def delimit(value) =
+    value.round.to_s.gsub(/\B(?=(\d{3})+(?!\d))/, ",")
+
+  def bytes(value)
+    exponent =
+      if value.positive?
+        (Math.log(value) / Math.log(1024)).floor.clamp(0, BYTE_UNITS.size - 1)
+      else
+        0
+      end
+
+    format("%.1f %s", value.to_f / 1024**exponent, BYTE_UNITS[exponent])
+  end
+
+%NumberTween(value=$value format=$format suffix=$suffix duration=$duration class=$class)= formatted

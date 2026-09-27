@@ -1,83 +1,508 @@
 :ruby
   Heading = import("/components/Layout/Heading")
   Button = import("/components/Form/Button")
-  Ellipsis = import("./Ellipsis")
+  Details = import("/components/UI/Details")
   Link = import("/components/UI/Link")
+  AnimatedNumber = import("/components/UI/AnimatedNumber/AnimatedNumber")
+
+  PRODUCTION = ENV["MAYU_ENV"] == "production"
+  INTERVAL = 1.0
+  GC_TRIGGERS = {
+    newobj: "object allocation",
+    malloc: "malloc",
+    method: "GC.start",
+    capi: "the C API",
+    stress: "GC.stress"
+  }
+  MAJOR_REASONS = {
+    force: "forced",
+    oldgen: "old objects",
+    oldmalloc: "old malloc",
+    nofree: "no free slots",
+    shady: "shady objects"
+  }
+  HISTORY_SIZE = 60
+  SPARKLINE_WIDTH = 200
+  SPARKLINE_HEIGHT = 40
 
   def initialize
+    @running = false
     @stats = GC.stat
-    @objcount = ObjectSpace.count_objects
+    @previous_stats = @stats
+    @objects = ObjectSpace.count_objects
+    @last_gc = GC.latest_gc_info
+    @sampled_at = monotonic_time
+    @elapsed = 0.0
+    @history = [@stats[:heap_live_slots]]
   end
 
-  def handle_refresh =
-    initialize
+  def mount
+    loop do
+      if @running
+        sample
+        sleep INTERVAL
+      else
+        sleep 0.1
+      end
+    end
+  end
 
-  # def mount =
-  #   loop do
-  #     sleep 1
-  #     update(Self.get_initial_state)
-  #   end
+  def handle_toggle_running
+    @running = !@running
+  end
+
+  def handle_sample
+    sample
+  end
+
+  def handle_start_gc
+    return if PRODUCTION
+
+    GC.start
+    sample
+  end
+
+  def handle_allocate
+    return if PRODUCTION
+
+    Array.new(500_000) { "garbage" * 4 }
+    sample
+  end
+
+  def sample
+    now = monotonic_time
+    @previous_stats = @stats
+    @stats = GC.stat
+    @objects = ObjectSpace.count_objects
+    @last_gc = GC.latest_gc_info
+    @elapsed = now - @sampled_at
+    @sampled_at = now
+    @history = [*@history, @stats[:heap_live_slots]].last(HISTORY_SIZE)
+  end
+
+  def monotonic_time =
+    Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+  def delta(key) =
+    @stats[key] - @previous_stats[key]
+
+  def allocation_rate
+    return 0 if @elapsed.zero?
+    (delta(:total_allocated_objects) / @elapsed).round
+  end
+
+  def percent(value, max) =
+    max.zero? ? 0 : (value * 100.0 / max).clamp(0, 100)
+
+  def meter_color(value) =
+    if value >= 90
+      "var(--red)"
+    elsif value >= 75
+      "var(--orange)"
+    else
+      "var(--green)"
+    end
+
+  def sparkline_points
+    min, max = @history.minmax
+    range = [max - min, 1].max
+    step = SPARKLINE_WIDTH.to_f / (HISTORY_SIZE - 1)
+    offset = HISTORY_SIZE - @history.size
+
+    @history.each_with_index.map do |value, i|
+      x = (offset + i) * step
+      y = SPARKLINE_HEIGHT - (value - min) * SPARKLINE_HEIGHT.to_f / range
+      format("%.1f,%.1f", x, y)
+    end.join(" ")
+  end
+
+  def object_types
+    @objects.except(:TOTAL, :FREE).sort_by { |_, count| -count }
+  end
+
+  def last_gc_description
+    trigger = GC_TRIGGERS.fetch(@last_gc[:gc_by], @last_gc[:gc_by].to_s)
+
+    if (major_by = @last_gc[:major_by])
+      "Last: major (#{MAJOR_REASONS.fetch(major_by, major_by.to_s)}), by #{trigger}"
+    else
+      "Last: minor, by #{trigger}"
+    end
+  end
+
+  def live_objects =
+    @objects[:TOTAL] - @objects[:FREE]
 
 %article
-  %Heading(level=2)
-    GC Stats
-  %p
-    %Button(onclick=handle_refresh)
-      Refresh
-    %Link(href="https://docs.ruby-lang.org/en/master/GC.html#method-c-stat" target="_blank")
-      Documentation for these values
-  .flex
-    = @stats.each_slice(@stats.size.succ / 3).with_index.map do |slice, i|
-      %table[slice, i]
-        %tbody
-          = slice.map do |key, value|
-            %tr
-              %th
-                %Ellipsis= key.to_s
-              %td= value.to_s
-    %table
-      %tbody
-        = @objcount.map do |key, value|
-          %tr[key]
-            %th= key.to_s
-            %td= value.to_s
+  %Heading(level=2) GC Stats
+
+  %p Live garbage collector numbers from the Ruby process serving this page.
+
+  .toolbar
+    %Button(onclick=handle_toggle_running){
+      color: @running ? "var(--red)" : "var(--green-dark)"
+    }
+      = @running ? "Pause" : "Play"
+    %Button(onclick=handle_sample disabled=@running) Refresh
+    - unless PRODUCTION
+      %Button(onclick=handle_start_gc) Run GC.start
+      %Button(onclick=handle_allocate) Allocate 500k strings
+    %span.status{class: { live: @running }}
+      = @running ? "Sampling every #{INTERVAL.to_i}s" : "Paused"
+
+  .tiles
+    .tile
+      .label GC runs
+      .value
+        %AnimatedNumber{ value: @stats[:count] }
+      .detail.words
+        %AnimatedNumber{ value: @stats[:minor_gc_count] }
+        minor ·
+        %AnimatedNumber{ value: @stats[:major_gc_count] }
+        major
+      .detail= last_gc_description
+      .delta
+        %AnimatedNumber(format="signed"){ value: delta(:count) }
+
+    .tile
+      .label GC time
+      .value
+        %AnimatedNumber(suffix=" ms"){ value: @stats[:time] }
+      .detail.words
+        %AnimatedNumber(suffix=" ms"){ value: @stats[:marking_time] }
+        marking ·
+        %AnimatedNumber(suffix=" ms"){ value: @stats[:sweeping_time] }
+        sweeping
+      .delta
+        %AnimatedNumber(format="signed" suffix=" ms"){ value: delta(:time) }
+
+    .tile
+      .label Allocations
+      .value
+        %AnimatedNumber{ value: @stats[:total_allocated_objects] }
+      .detail.words
+        %AnimatedNumber{ value: @stats[:total_freed_objects] }
+        freed
+      .delta
+        %AnimatedNumber(suffix="/s"){ value: allocation_rate }
+
+    .tile.wide
+      .label Live slots
+      .value
+        %AnimatedNumber{ value: @stats[:heap_live_slots] }
+      .detail.words
+        of
+        %AnimatedNumber{ value: @stats[:heap_available_slots] }
+        available in
+        %AnimatedNumber{ value: @stats[:heap_allocated_pages] }
+        pages
+      %svg.sparkline(viewBox="0 0 #{SPARKLINE_WIDTH} #{SPARKLINE_HEIGHT}" preserveAspectRatio="none" aria-hidden="true")
+        %polyline(points=sparkline_points)
+      .delta
+        %AnimatedNumber(format="signed"){ value: delta(:heap_live_slots) }
+
+    - live_percent = percent(@stats[:heap_live_slots], @stats[:heap_available_slots])
+    - old_percent = percent(@stats[:old_objects], @stats[:old_objects_limit])
+    - malloc_percent = percent(@stats[:malloc_increase_bytes], @stats[:malloc_increase_bytes_limit])
+    .tile.wide
+      .label Pressure
+      .meters
+        .meter
+          .meter-label
+            %span Heap slots in use
+            %AnimatedNumber(format="percent"){ value: live_percent }
+          .track
+            .fill{style: { width: "#{live_percent}%", background: meter_color(live_percent) }}
+        .meter
+          .meter-label
+            %span Old objects until major GC
+            %AnimatedNumber(format="percent"){ value: old_percent }
+          .track
+            .fill{style: { width: "#{old_percent}%", background: meter_color(old_percent) }}
+        .meter
+          .meter-label
+            %span.words
+              Malloc until minor GC
+              %small.words
+                %AnimatedNumber(format="bytes"){ value: @stats[:malloc_increase_bytes] }
+                \/
+                %AnimatedNumber(format="bytes"){ value: @stats[:malloc_increase_bytes_limit] }
+            %AnimatedNumber(format="percent"){ value: malloc_percent }
+          .track
+            .fill{style: { width: "#{malloc_percent}%", background: meter_color(malloc_percent) }}
+
+  %section.objects
+    .section-header
+      %Heading(level=3) Objects by type
+      %p.caption.words
+        %AnimatedNumber{ value: live_objects }
+        live objects,
+        %AnimatedNumber{ value: @objects[:FREE] }
+        free slots
+    %ol.bars
+      - max = object_types.first&.last || 1
+      = object_types.map do |type, count|
+        %li[type]
+          %span.type= type.to_s.delete_prefix("T_")
+          %span.bar
+            %span.bar-fill{style: { width: "#{percent(count, max)}%" }}
+          %AnimatedNumber.count{ value: count }
+
+  %Details(summary="All GC.stat values")
+    %dl.raw
+      = @stats.map do |key, value|
+        .row[key]
+          %dt= key.to_s
+          %dd
+            %AnimatedNumber{ value: value }
+    %p.docs
+      %Link(href="https://docs.ruby-lang.org/en/master/GC.html#method-c-stat" target="_blank")
+        Documentation for these values
+
 :css
-  .flex {
+  article {
+    display: grid;
+    align-content: start;
+    gap: 1.5rem;
+  }
+
+  article > p {
+    margin: 0;
+  }
+
+  .toolbar {
     display: flex;
     flex-wrap: wrap;
-    align-items: start;
-    gap: 1em;
-  }
-
-  table {
-    flex: 1 0 20em;
-    font-size: .8em;
-    border: var(--thin-border)
-    border-radius: 2px;
-    border-spacing: 1px;
-  }
-
-  .key {
-    white-space: nowrap;
-    overflow: hidden;
-    display: inline-block;
-  }
-
-  th {
-    text-align: left;
-    width: 100%;
-  }
-  td {
-    text-align: right;
-  }
-  th, td {
-    border: 1px solid #0003;
-    border-radius: 2px;
-    padding: 0 .5em;
-  }
-
-  p {
-    gap: 1em;
-    display: flex;
     align-items: center;
+    gap: 0.75rem;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    color: var(--text-muted);
+    font-size: 0.9em;
+  }
+
+  .status::before {
+    content: "";
+    width: 0.6em;
+    height: 0.6em;
+    border-radius: 50%;
+    background: var(--gray);
+  }
+
+  .status.live::before {
+    background: var(--green);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    50% { opacity: 0.3; }
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .tile {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface-raised);
+    border: var(--thin-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    grid-column: span 2;
+  }
+
+  .tile.wide {
+    grid-column: span 3;
+  }
+
+  @media (max-width: 48rem) {
+    .tile,
+    .tile.wide {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .label {
+    color: var(--text-muted);
+    font-size: 0.85em;
+  }
+
+  .value {
+    font-family: var(--font-heading);
+    font-size: 1.75em;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .detail {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .words {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.3em;
+  }
+
+  .delta {
+    position: absolute;
+    top: 1rem;
+    right: 1.25rem;
+    color: var(--text-muted);
+    font-size: 0.8em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sparkline {
+    width: 100%;
+    height: 2.5rem;
+    margin-top: 0.5rem;
+    overflow: visible;
+  }
+
+  .sparkline polyline {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .meters {
+    display: grid;
+    gap: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  .meter {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .meter-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.9em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .meter-label small {
+    color: var(--text-muted);
+  }
+
+  .track,
+  .bar {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--surface-sunken);
+    overflow: hidden;
+  }
+
+  .fill,
+  .bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transition: width 400ms ease-out;
+  }
+
+  .objects {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .section-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    column-gap: 1rem;
+  }
+
+  .caption {
+    margin: 0;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bars {
+    columns: 3 14rem;
+    column-gap: 6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.85em;
+  }
+
+  .bars li {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr 4.5rem;
+    align-items: center;
+    gap: 0.6rem;
+    break-inside: avoid;
+    background: var(--surface-raised);
+    padding: 0.6rem;
+    margin-block: 1px;
+    border-radius: var(--radius-sm);
+  }
+
+  .bars .bar {
+    height: 0.35rem;
+  }
+
+  .type {
+    font-family: var(--font-mono);
+  }
+
+  .bar-fill {
+    background: var(--accent);
+  }
+
+  .count {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .raw {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    gap: 0 2rem;
+    margin: 0;
+    font-size: 0.9em;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.3rem 0;
+    border-bottom: var(--thin-border);
+  }
+
+  .row dt {
+    font-family: var(--font-mono);
+    overflow-wrap: anywhere;
+  }
+
+  .row dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .docs {
+    margin: 1rem 0 0;
   }

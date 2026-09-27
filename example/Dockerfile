@@ -58,6 +58,7 @@ RUN bundle install
 FROM ruby:4.0.7-alpine3.24 AS runtime
 ENV BUNDLE_WITHOUT=development:test
 ENV RUBY_YJIT_ENABLE=1
+ENV MAYU_ENV=production
 WORKDIR /app
 RUN apk add --no-cache libsodium
 COPY --from=runtime-gems /usr/local/bundle /usr/local/bundle
