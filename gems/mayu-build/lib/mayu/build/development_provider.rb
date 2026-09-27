@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "mayu/klenod/provider"
+require_relative "error_report"
 
 module Mayu
   module Build
@@ -23,6 +24,16 @@ module Mayu
       # build error that names a module but does not carry its source.
       def absolute_path(module_id)
         source.graph.absolute_path(module_id)
+      end
+
+      # A build error raised while serving a request, as the same report the
+      # hot reloader prints: the source excerpt and hints, no backtrace. Nil
+      # for any other error, which keeps its backtrace.
+      def build_error_report(error)
+        case error
+        when ::Klenod::Build::SourceError, ::Klenod::Build::ResolveError
+          ErrorReport.render(ErrorReport.from(error, provider: self), ansi: false)
+        end
       end
 
       # Whether a module's generated line numbers can still be translated back

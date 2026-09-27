@@ -216,6 +216,54 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("Internal Server Error", response.body.join)
   end
 
+  class BuildErrorProvider
+    def entry(name) = name
+
+    def exports(_entry) = raise(ArgumentError, "Invalid attribute list")
+
+    def build_error_report(error) = "Haml parse error: #{error.message}"
+  end
+
+  def test_a_build_error_is_rendered_as_its_report_in_development
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      ErrorEnvironment.new(BuildErrorProvider.new, ErrorConfig.new(true))
+    )
+
+    response = app.call(Request.new("GET", "/", {"accept" => "text/html"}, ""))
+
+    assert_equal(500, response.status)
+    assert_equal("Haml parse error: Invalid attribute list", response.body.join)
+  end
+
+  def test_a_build_error_is_a_json_500_for_non_browser_requests
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      ErrorEnvironment.new(BuildErrorProvider.new, ErrorConfig.new(true))
+    )
+
+    response =
+      app.call(Request.new("GET", "/", {"accept" => "application/json"}, ""))
+
+    assert_equal(500, response.status)
+    assert_includes(response.body.join, "INTERNAL_SERVER_ERROR")
+  end
+
+  def test_a_build_error_is_not_rendered_without_render_exceptions
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      ErrorEnvironment.new(BuildErrorProvider.new, ErrorConfig.new(false))
+    )
+
+    response = app.call(Request.new("GET", "/", {"accept" => "text/html"}, ""))
+
+    assert_equal(500, response.status)
+    refute_includes(response.body.join, "Invalid attribute list")
+  end
+
   PageSession = Data.define(:id, :styles, :route_status) do
     def render = "<html></html>"
   end

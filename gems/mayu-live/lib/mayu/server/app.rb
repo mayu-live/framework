@@ -125,23 +125,34 @@ module Mayu
         # The session reported it, and its error page failed as well.
         render_error_response(failure, request)
       rescue => e
-        if @environment.module_provider&.respond_to?(:rewrite_exception)
-          @environment.module_provider.rewrite_exception(e)
+        provider = @environment.module_provider
+        provider.rewrite_exception(e) if provider.respond_to?(:rewrite_exception)
+        # A build error already says where it happened, so the development
+        # provider formats it without the backtrace through the build graph.
+        report = provider.build_error_report(e) if provider.respond_to?(:build_error_report)
+        Console.logger.error(self, report || e)
+
+        if browser_navigation?(request) && @environment.config.server.render_exceptions?
+          text_response(500, report || exception_text(e), **origin_header(request))
+        else
+          error_response(500, "INTERNAL_SERVER_ERROR", **origin_header(request))
         end
-        Console.logger.error(self, e)
-        error_response(500, "INTERNAL_SERVER_ERROR", **origin_header(request))
       end
 
       def render_error_response(failure, request)
         error = failure.error
         body =
           if @environment.config.server.render_exceptions?
-            ["#{error.class}: #{error.message}", "", *error.backtrace].join("\n")
+            exception_text(error)
           else
             "Internal Server Error"
           end
 
         text_response(500, body, **origin_header(request))
+      end
+
+      def exception_text(error)
+        ["#{error.class}: #{error.message}", "", *error.backtrace].join("\n")
       end
 
       # Called by the development build after it applied a source change.
