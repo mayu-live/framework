@@ -9,7 +9,7 @@
 
 import Connection from "./connection";
 import { isDetected, selectedId } from "./page";
-import { isTree, ownerComponents, type TreeNode } from "./tree";
+import { findPath, isTree, ownerComponents, type TreeNode } from "./tree";
 import { isDetails, toPlain } from "./values";
 
 chrome.devtools.panels.create("Mayu", "icon.svg", "panel.html");
@@ -41,11 +41,26 @@ async function describeSelection(): Promise<Record<string, unknown>> {
     type: "details",
     id: component.id,
   });
+  // The selection may be a text node; its handlers are on its element.
+  const element = findPath(tree, id)?.findLast(
+    (node) => node.type === "element",
+  );
+  const elementDetails =
+    element && (await connection.inspect({ type: "details", id: element.id }));
 
   return {
     component: component.name,
     path: component.path ?? null,
     id: component.id,
+    ...(isDetails(elementDetails) &&
+    elementDetails.type === "element" &&
+    elementDetails.handlers?.length
+      ? {
+          handlers: Object.fromEntries(
+            elementDetails.handlers.map((h) => [h.event, h.handler]),
+          ),
+        }
+      : {}),
     ...(isDetails(details) && details.type === "component"
       ? { props: toPlain(details.props), state: toPlain(details.state) }
       : {}),

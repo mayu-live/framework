@@ -28,7 +28,17 @@ export type Value = {
 
 export type Entry = { key: string; value: Value };
 
-// The answer to a "details" query.
+// An event handler: `handler` is the method and where the template refers
+// to it, such as `Counter#increment app:/pages/Counter.haml:12`.
+export type Handler = {
+  event: string;
+  element: string;
+  elementId: string;
+  handler: string;
+};
+
+// The answer to a "details" query. Handlers are optional: a dev server
+// running an older mayu-devtools doesn't send them.
 export type Details =
   | {
       id: string;
@@ -37,8 +47,9 @@ export type Details =
       state: Entry[];
       instanceVariables: Entry[];
       context: Entry[];
+      handlers?: Handler[];
     }
-  | { id: string; type: "element"; attributes: Entry[] }
+  | { id: string; type: "element"; attributes: Entry[]; handlers?: Handler[] }
   | { id: string; type: "other" };
 
 export function isDetails(value: unknown): value is Details {

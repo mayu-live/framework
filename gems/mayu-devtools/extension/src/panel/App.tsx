@@ -33,6 +33,7 @@ import {
   isDetails,
   type Details as DetailsAnswer,
   type Entry,
+  type Handler,
 } from "../values";
 import Entries from "./ValueView";
 
@@ -504,12 +505,46 @@ function Details({ node, owners, details, onShowInElements }: DetailsProps) {
             entries={details.instanceVariables}
           />
           <Section title="Context" entries={details.context} />
+          <Handlers handlers={details.handlers} showElement />
         </>
       )}
       {details?.type === "element" && (
-        <Section title="Attributes" entries={details.attributes} />
+        <>
+          <Section title="Attributes" entries={details.attributes} />
+          <Handlers handlers={details.handlers} />
+        </>
       )}
     </footer>
+  );
+}
+
+// An element lists its own handlers. A component lists the events its
+// methods handle, which can be on elements anywhere below it (such as those
+// it passes to other components), so it names the element of each.
+function Handlers({
+  handlers = [],
+  showElement = false,
+}: {
+  handlers?: Handler[];
+  showElement?: boolean;
+}) {
+  if (handlers.length === 0) return null;
+
+  return (
+    <section class="values">
+      <h2>{showElement ? "Handled events" : "Handlers"}</h2>
+      <ul class="entries handlers">
+        {handlers.map((handler) => (
+          <li key={`${handler.elementId}:${handler.event}`}>
+            {showElement && (
+              <span class="handler-element">&lt;{handler.element}&gt; </span>
+            )}
+            <span class="key">{handler.event}</span>
+            <span class="value function">{handler.handler}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

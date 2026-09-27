@@ -81,11 +81,23 @@ class Mayu::Devtools::FormatterTest < Minitest::Test
   end
 
   def test_procs_show_where_they_are_defined
-    formatter = Mayu::Devtools::Formatter.new { "app:/#{File.basename(it)}" }
+    formatter = Mayu::Devtools::Formatter.new(module_id: ->(path) { "app:/#{File.basename(path)}" }, original_line: ->(_path, _line) { 7 })
     formatted = formatter.format(-> {})
 
     assert_equal("function", formatted[:kind])
-    assert_match(%r{\Aapp:/formatter\.test\.rb:\d+\z}, formatted[:value])
+    assert_equal("app:/formatter.test.rb:7", formatted[:value])
+  end
+
+  class Owner < Mayu::Component::Base
+  end
+
+  def test_callbacks_show_the_method_they_call
+    callback = Mayu::Runtime::Descriptors::Callback[Owner.allocate, :save, ["/app/Owner.haml", 3]]
+
+    assert_equal(
+      {kind: "function", class: "Callback", value: "Owner#save /app/Owner.haml:3"},
+      formatted_value(callback)
+    )
   end
 
   def test_entries_are_keyed_like_the_source

@@ -225,3 +225,18 @@ body {
 .value.cycle {
   color: var(--muted);
 }
+
+.handlers li {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.handlers .key::after {
+  content: " →";
+  color: var(--muted);
+}
+
+.handler-element {
+  color: var(--element);
+}

@@ -193,6 +193,67 @@ class Mayu::Devtools::InspectorTest < Minitest::Test
     assert_equal(["id", "style"], details[:attributes].map { it[:key] })
   end
 
+  class Clicker < Mayu::Component::Base
+    def increment
+    end
+
+    def render
+      H[:div, H[:button, "+", onclick: H.callback(self, :increment)], H[Item, label: "inner"]]
+    end
+  end
+
+  def test_element_details_show_handlers
+    engine = build_engine(H[:body, H[Clicker]])
+    button = find(Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})) { it[:name] == "button" }
+
+    details = Mayu::Devtools::Inspector.new.call(engine, {type: "details", id: button[:id]})
+
+    assert_equal(1, details[:handlers].size)
+    handler = details[:handlers].first
+    assert_equal({event: "click", element: "button", elementId: button[:id]}, handler.except(:handler))
+    assert_match(/\AClicker#increment .*inspector\.test\.rb:\d+\z/, handler[:handler])
+  end
+
+  class Frame < Mayu::Component::Base
+    def render
+      H[:section, H[:button, "frame", onclick: H.callback(self, :close)], H[:slot]]
+    end
+
+    def close
+    end
+  end
+
+  class Framed < Mayu::Component::Base
+    def save
+    end
+
+    def render
+      H[Frame, H[:button, "save", onclick: H.callback(self, :save)]]
+    end
+  end
+
+  def test_slotted_handlers_belong_to_the_component_that_wrote_them
+    engine = build_engine(H[:body, H[Framed]])
+    tree = Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})
+    framed = find(tree) { it[:name] == "Framed" }
+    frame = find(tree) { it[:name] == "Frame" }
+
+    framed_details = Mayu::Devtools::Inspector.new.call(engine, {type: "details", id: framed[:id]})
+    frame_details = Mayu::Devtools::Inspector.new.call(engine, {type: "details", id: frame[:id]})
+
+    assert_equal(["Framed#save"], framed_details[:handlers].map { it[:handler].split.first })
+    assert_equal(["Frame#close"], frame_details[:handlers].map { it[:handler].split.first })
+  end
+
+  def test_component_details_show_the_handlers_of_its_own_elements
+    engine = build_engine(H[:body, H[Clicker]])
+    clicker = find(Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})) { it[:name] == "Clicker" }
+
+    details = Mayu::Devtools::Inspector.new.call(engine, {type: "details", id: clicker[:id]})
+
+    assert_equal(["click"], details[:handlers].map { it[:event] })
+  end
+
   def test_details_of_a_missing_node_are_an_error
     engine = build_engine(H[:body])
 

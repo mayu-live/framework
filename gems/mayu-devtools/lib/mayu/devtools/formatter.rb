@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require "mayu/runtime/commands"
+require "mayu/runtime/descriptors"
 require "mayu/component"
 
 module Mayu
@@ -25,9 +26,11 @@ module Mayu
       # MessagePack can't pack integers wider than 64 bits.
       INTEGER_RANGE = (-(2**63))...(2**64)
 
-      # The block turns a component's source path into its Klenod module id.
-      def initialize(&module_id)
-        @module_id = module_id || ->(path) { path }
+      # `module_id` turns a source path into its Klenod module id, and
+      # `original_line` a line of compiled code into the line of its template.
+      def initialize(module_id: ->(path) { path }, original_line: ->(_path, line) { line })
+        @module_id = module_id
+        @original_line = original_line
       end
 
       def format(value)
@@ -41,6 +44,13 @@ module Mayu
         hash.first(MAX_ENTRIES).map do |key, value|
           {key: text("#{prefix}#{key}"), value: format_value(value, 1, seen)}
         end
+      end
+
+      # A callback as `Counter#increment app:/pages/Counter.haml:12`, with
+      # where the template refers to it.
+      def callback_label(callback)
+        method = "#{component_name(callback.component)}##{callback.method_name}"
+        text([method, location(*callback.source_location)].compact.join(" "))
       end
 
       private
@@ -61,6 +71,8 @@ module Mayu
           {kind: "symbol", value: text(value.to_s)}
         when Proc, Method, UnboundMethod
           function(value)
+        when Runtime::Descriptors::Callback
+          {kind: "function", class: "Callback", value: callback_label(value)}
         when Module
           {kind: "class", value: text(value.name || value.to_s)}
         when Mayu::Component::Base
@@ -127,16 +139,23 @@ module Mayu
 
       def function(value)
         name = value.respond_to?(:name) ? value.name : nil
-        file, line = value.source_location
-        location = file && "#{@module_id.call(file)}:#{line}"
-        {kind: "function", class: value.class.name, value: text([name, location].compact.join(" "))}
+        label = [name, location(*value.source_location)].compact.join(" ")
+        {kind: "function", class: value.class.name, value: text(label)}
+      end
+
+      def location(file = nil, line = nil)
+        file && "#{@module_id.call(file)}:#{@original_line.call(file, line)}"
       end
 
       def component(value)
         path = value.class.module_path
-        name = value.class.name&.split("::")&.last || "(anonymous)"
+        name = component_name(value)
         label = (path && !path.empty?) ? "#{name} (#{@module_id.call(path)})" : name
         {kind: "component", value: text(label)}
+      end
+
+      def component_name(component)
+        component.class.name&.split("::")&.last || "(anonymous)"
       end
 
       def text(value) = Runtime::Commands.utf8(value)

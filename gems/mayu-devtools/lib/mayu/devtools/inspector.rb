@@ -36,13 +36,23 @@ module Mayu
         return {error: "Node #{id} is not on the page"} unless vnode
 
         provider = engine.module_provider
-        formatter = Formatter.new { module_id(provider, it) }
+        module_ids = Hash.new { |ids, path| ids[path] = module_id(provider, path) }
+        lines = Hash.new { |cache, (path, line)| cache[[path, line]] = original_line(provider, path, line) }
+        formatter = Formatter.new(
+          module_id: ->(path) { module_ids[path] },
+          original_line: ->(path, line) { lines[[path, line]] }
+        )
 
         case vnode
         when VNodes::VComponent
           component_details(vnode, formatter)
         when VNodes::VElement
-          {id:, type: "element", attributes: formatter.entries(attributes(vnode))}
+          {
+            id:,
+            type: "element",
+            attributes: formatter.entries(attributes(vnode)),
+            handlers: handlers(vnode, formatter)
+          }
         else
           {id:, type: "other"}
         end
@@ -63,8 +73,40 @@ module Mayu
           props: formatter.entries(props, prefix: "$"),
           state: formatter.entries(state, prefix: "@"),
           instanceVariables: formatter.entries(ivars),
-          context: formatter.entries(context_values(vnode), prefix: "@@")
+          context: formatter.entries(context_values(vnode), prefix: "@@"),
+          handlers: component_handlers(vnode, formatter)
         }
+      end
+
+      # The event handlers of an element: which method each event calls, and
+      # where the template refers to it. The block picks callbacks.
+      def handlers(element, formatter)
+        result = []
+        element.each_listener do |event, listener|
+          next unless listener.callback
+          next if block_given? && !yield(listener.callback)
+
+          result << {
+            event: text(event),
+            element: text(element.tag_name),
+            elementId: element.id,
+            handler: formatter.callback_label(listener.callback)
+          }
+        end
+        result
+      end
+
+      # The handlers that call the component's methods. They can be on
+      # elements it passed to another component as children, so the whole
+      # subtree is searched.
+      def component_handlers(component, formatter)
+        instance = component.instance_variable_get(:@instance)
+        result = []
+        component.traverse do |vnode|
+          next unless vnode.is_a?(VNodes::VElement)
+          result.concat(handlers(vnode, formatter) { it.component.equal?(instance) })
+        end
+        result
       end
 
       # The values a component can read from its context, with inner values
@@ -225,6 +267,20 @@ module Mayu
         provider.module_id_for(path).to_s
       rescue
         path
+      end
+
+      # The template line of a line of compiled code: Klenod evaluates
+      # templates as Ruby, so callbacks and procs know compiled lines. The
+      # provider's backtrace rewriter maps them through the source maps.
+      def original_line(provider, path, line)
+        return line unless provider.respond_to?(:rewrite_exception)
+
+        error = StandardError.new
+        error.set_backtrace(["#{path}:#{line}:in 'render'"])
+        provider.rewrite_exception(error)
+        error.backtrace.first[/:(\d+):in /, 1]&.to_i || line
+      rescue
+        line
       end
 
       # MessagePack sends binary strings as bytes, which the browser can't
