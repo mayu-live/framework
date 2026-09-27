@@ -1,53 +1,73 @@
 :ruby
   Heading = import("/components/Layout/Heading")
   Clock = import("/components/Clock")
-
-  PATHS = [
-    "M 10 10 C 20 20, 40 20, 50 10",
-    "M 70 10 C 70 20, 110 20, 110 10",
-    "M 130 10 C 120 20, 180 20, 170 10",
-    "M 10 60 C 20 80, 40 80, 50 60",
-    "M 70 60 C 70 80, 110 80, 110 60",
-    "M 130 60 C 120 80, 180 80, 170 60",
-    "M 10 110 C 20 140, 40 140, 50 110",
-    "M 70 110 C 70 140, 110 140, 110 110",
-    "M 130 110 C 120 140, 180 140, 170 110",
-  ]
+  Spirograph = import("./Spirograph")
+  PelicanOnABicycle = import("./PelicanOnABicycle")
 
 :css
-  .svg {
-    border: 5px solid fuchsia;
-    width: 100%;
-    height: auto;
+  article {
+    max-width: 64rem;
   }
 
-  .text {
-    font-size: 30px;
+  .lead {
+    color: var(--text-muted);
   }
 
-  .flex {
-    display: flex;
-    gap: 1em;
+  .grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
   }
 
-  .col {
-    flex-basis: 50%;
+  .card {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--surface-raised);
+    border: var(--thin-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+
+    & h3 {
+      margin: 0;
+    }
+
+    & p {
+      margin: 0;
+      color: var(--text-muted);
+    }
+  }
+
+  .clock {
+    font-size: 0;
+    width: min(100%, 16rem);
+    margin: 1rem auto;
+    color: var(--text);
+    --face-start: light-dark(oklch(99% 0.01 85), oklch(30% 0.04 var(--hue-navy)));
+    --face-end: light-dark(oklch(88% 0.05 85), oklch(18% 0.03 var(--hue-navy)));
+    filter: drop-shadow(0 12px 24px light-dark(oklch(28% 0.06 var(--hue-navy) / 25%), oklch(0% 0 0 / 60%)));
   }
 
 %article
-  %Heading(level=2) SVG demo
-  %p
-    This example shows some SVGs.
-    The time is updated on the server.
-  .flex
-    .col
-      %Clock
-    .col
-      %svg.svg(width="190" height="160" viewBox="0 0 190 160" xmlns="http://www.w3.org/2000/svg")
-        %circle(cx="95" cy="80" r="80" fill="#0c09")
-        %g
-          - stroke = "black"
-          - fill = "#f0f9"
-          = PATHS.map do |d|
-            %path(stroke=stroke fill=fill d=d)
-        %text.text(x="95" y="50" text-anchor="middle" fill="white") SVG
+  %Heading(level=2) SVG
+  %p.lead
+    SVG elements are rendered on the server like any other element.
+    When state changes, only the changed attributes are patched in the browser.
+
+  .grid
+    %section.card
+      %h3 Clock
+      %p The hands are rotated on the server twice per second and eased with a CSS transition.
+      %Clock.clock(gradient)
+
+    %section.card
+      %h3 Spirograph
+      %p Each slider change recomputes the curve in Ruby and sends a new path.
+
+      %Spirograph
+
+    %section.card
+      %h3 Pelican on a bicycle
+      %p A cartoon drawn with paths, gradients and a few circles.
+      %PelicanOnABicycle

@@ -19,7 +19,7 @@
     ].map { _1 * length }.map { _1.round(5) }
   end
 
-- stroke = $stroke || "var(--stroke, #000)"
+- stroke = $stroke || "var(--stroke, currentColor)"
 - fill = $gradient ? "url(##{@face_id})" : ($fill || "var(--fill, transparent)")
 %div(class=$class)
   %svg.svg(width="100" height="100" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg")

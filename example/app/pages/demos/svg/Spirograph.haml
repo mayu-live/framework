@@ -1,0 +1,184 @@
+:ruby
+  Fieldset = import("/components/Form/Fieldset")
+  Button = import("/components/Form/Button")
+
+  # A spirograph draws a hypotrochoid: a wheel with `r` teeth rolls inside a
+  # ring with `R` teeth, and the pen sits `d` percent of the way to the rim.
+  RING = 40..120
+  WHEEL_MIN = 5
+  PEN = 10..150
+
+  # The drawing is scaled to fit a circle with this radius in the viewBox.
+  RADIUS = 90.0
+  STEPS_PER_TURN = 72
+  MAX_POINTS = 1800
+
+  def initialize
+    @ring = 96
+    @wheel = 60
+    @pen = 80
+    @gradient_id = "spiro-#{SecureRandom.alphanumeric(8)}"
+  end
+
+  def handle_ring(e)
+    e => { target: { value: } }
+    @ring = value.to_i.clamp(RING)
+    @wheel = @wheel.clamp(WHEEL_MIN, @ring - 1)
+  end
+
+  def handle_wheel(e)
+    e => { target: { value: } }
+    @wheel = value.to_i.clamp(WHEEL_MIN, @ring - 1)
+  end
+
+  def handle_pen(e)
+    e => { target: { value: } }
+    @pen = value.to_i.clamp(PEN)
+  end
+
+  def handle_randomize
+    @ring = rand(RING)
+    @wheel = rand(WHEEL_MIN..(@ring - 1))
+    @pen = rand(PEN)
+  end
+
+  # The wheel returns to where it started after this many trips around the
+  # ring, which is also the number of lobes in the finished figure.
+  def turns = @wheel / @ring.gcd(@wheel)
+  def lobes = @ring / @ring.gcd(@wheel)
+
+  def pen_distance = @wheel * @pen / 100.0
+
+  def scale = RADIUS / ((@ring - @wheel) + pen_distance)
+
+  def spiro_path
+    ratio = (@ring - @wheel).to_f / @wheel
+    count = [turns * STEPS_PER_TURN, MAX_POINTS].min
+
+    points = (0..count).map do |i|
+      t = i * turns * 2 * Math::PI / count
+      [
+        (@ring - @wheel) * Math.cos(t) + pen_distance * Math.cos(ratio * t),
+        (@ring - @wheel) * Math.sin(t) - pen_distance * Math.sin(ratio * t),
+      ].map { format("%.1f", _1 * scale) }.join(" ")
+    end
+
+    "M #{points.join(" L ")} Z"
+  end
+
+.spirograph
+  %svg.canvas(viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Spirograph drawing")
+    %defs
+      %linearGradient(id=@gradient_id x1="0" y1="0" x2="1" y2="1")
+        %stop(offset="0%"){style: { stop_color: "var(--pink)" }}
+        %stop(offset="50%"){style: { stop_color: "var(--sun)" }}
+        %stop(offset="100%"){style: { stop_color: "var(--lime)" }}
+    %circle.guide(cx=0 cy=0){r: (@ring * scale).round(1)}
+    %circle.guide(cy=0){cx: ((@ring - @wheel) * scale).round(1), r: (@wheel * scale).round(1)}
+    %path.curve(d=spiro_path){stroke: "url(##{@gradient_id})"}
+    %circle.pen(cy=0 r=2.5){cx: ((@ring - @wheel + pen_distance) * scale).round(1)}
+
+  %dl.stats
+    %div
+      %dt Lobes
+      %dd= lobes
+    %div
+      %dt Turns
+      %dd= turns
+
+  %Fieldset
+    %legend Gears
+    .controls
+      .control
+        %label(for="spiro-ring") Ring teeth
+        %input(id="spiro-ring" type="range" min=RING.min max=RING.max oninput=handle_ring){value: @ring}
+        %output(for="spiro-ring")= @ring
+      .control
+        %label(for="spiro-wheel") Wheel teeth
+        %input(id="spiro-wheel" type="range" min=WHEEL_MIN oninput=handle_wheel){max: @ring - 1, value: @wheel}
+        %output(for="spiro-wheel")= @wheel
+      .control
+        %label(for="spiro-pen") Pen offset
+        %input(id="spiro-pen" type="range" min=PEN.min max=PEN.max oninput=handle_pen){value: @pen}
+        %output(for="spiro-pen")= "#{@pen}%"
+      %div
+        %Button(onclick=handle_randomize) Randomize
+
+:css
+  .spirograph {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .canvas {
+    display: block;
+    width: min(100%, 36rem);
+    margin-inline: auto;
+    height: auto;
+    border-radius: var(--radius-sm);
+    background: var(--surface-sunken);
+  }
+
+  .guide {
+    fill: none;
+    stroke: var(--border-strong);
+    stroke-dasharray: 2 3;
+  }
+
+  .curve {
+    fill: none;
+    stroke-width: 0.8;
+    stroke-linejoin: round;
+  }
+
+  .pen {
+    fill: var(--accent);
+  }
+
+  .stats {
+    display: flex;
+    gap: 1.5rem;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+
+    & div {
+      display: grid;
+    }
+
+    & dt {
+      color: var(--text-muted);
+      font-size: 0.85em;
+    }
+
+    & dd {
+      margin: 0;
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+    }
+  }
+
+  .controls {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .control {
+    display: grid;
+    align-items: center;
+    gap: 0.75rem;
+    grid-template-columns: 7rem minmax(0, 1fr) 3.25rem;
+
+    & input {
+      min-width: 0;
+      width: 100%;
+    }
+  }
+
+  output {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    font-variant-numeric: tabular-nums;
+    padding: 0.2rem 0.4rem;
+    text-align: center;
+  }
+
