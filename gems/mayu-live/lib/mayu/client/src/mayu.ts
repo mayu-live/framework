@@ -64,7 +64,18 @@ type OutboundEvent =
     ]
   | [name: "Navigate", id: string, href: string, ping: number]
   | [name: "Ping", ping: number]
-  | [name: "Visibility", hidden: boolean, ping: number];
+  | [name: "Visibility", hidden: boolean, ping: number]
+  | [name: "Inspect", id: string, query: Record<string, unknown>, ping: number];
+
+type PendingInspect = {
+  resolve: (result: unknown) => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+};
+
+// Events are dropped rather than replayed across disconnects, so an inspect
+// request may never be answered.
+const INSPECT_TIMEOUT = 5000;
 
 function browserNavigation(): NavigationLike | undefined {
   return (globalThis as typeof globalThis & { navigation?: NavigationLike })
@@ -80,6 +91,8 @@ export default class Mayu {
   #navigationSequence = 0;
   #pendingNavigations = new Map<string, PendingNavigation>();
   #activeNavigationId: string | null = null;
+  #inspectSequence = 0;
+  #pendingInspects = new Map<string, PendingInspect>();
   #commandApplyTelemetry: CommandApplyTelemetry = {
     batches: 0,
     commands: 0,
@@ -118,6 +131,9 @@ export default class Mayu {
     this.#pingScheduler?.stop();
     this.#pingScheduler = null;
     this.#rejectPendingNavigations(new Error("Mayu was disposed"));
+    for (const id of this.#pendingInspects.keys()) {
+      this.#settleInspect(id, undefined, new Error("Mayu was disposed"));
+    }
   }
 
   setWriter(writer: WritableStreamDefaultWriter<ClientEvent>) {
@@ -326,6 +342,48 @@ export default class Mayu {
 
   ping() {
     void this.#write(["Ping", performance.now()]);
+  }
+
+  // Asks the server's devtools inspector a question. Resolves with its
+  // answer, which is null when the server has no inspector.
+  inspect(query: Record<string, unknown>): Promise<unknown> {
+    const id = `${++this.#inspectSequence}`;
+    const promise = new Promise<unknown>((resolve, reject) => {
+      const timer = setTimeout(
+        () =>
+          this.#settleInspect(id, undefined, new Error("Inspect timed out")),
+        INSPECT_TIMEOUT,
+      );
+      this.#pendingInspects.set(id, { resolve, reject, timer });
+    });
+
+    void this.#write(["Inspect", id, query, performance.now()]).then(
+      (wrote) => {
+        if (!wrote) {
+          this.#settleInspect(id, undefined, new Error("Inspect not sent"));
+        }
+      },
+    );
+
+    return promise;
+  }
+
+  resolveInspect(id: string, result: unknown) {
+    this.#settleInspect(id, result);
+  }
+
+  #settleInspect(id: string, result: unknown, error?: Error) {
+    const pending = this.#pendingInspects.get(id);
+    if (!pending) return;
+
+    this.#pendingInspects.delete(id);
+    clearTimeout(pending.timer);
+
+    if (error) {
+      pending.reject(error);
+    } else {
+      pending.resolve(result);
+    }
   }
 }
 

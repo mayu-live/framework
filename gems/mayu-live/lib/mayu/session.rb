@@ -50,6 +50,12 @@ module Mayu
             new(hidden, ping, metrics)
           end
         end
+      InspectEvent =
+        Data.define(:id, :query, :ping, :client_command_apply_metrics) do
+          def self.[](id, query, ping, metrics = nil)
+            new(id, query, ping, metrics)
+          end
+        end
 
       def self.parse(message)
         case message
@@ -69,6 +75,10 @@ module Mayu
           VisibilityEvent[hidden, ping]
         in ["Visibility", true | false => hidden, Numeric => ping, telemetry]
           VisibilityEvent[hidden, ping, parse_client_command_apply_metrics(telemetry)]
+        in ["Inspect", String => id, Hash => query, Numeric => ping] unless id.empty?
+          InspectEvent[id, query, ping]
+        in ["Inspect", String => id, Hash => query, Numeric => ping, telemetry] unless id.empty?
+          InspectEvent[id, query, ping, parse_client_command_apply_metrics(telemetry)]
         else
           raise InvalidEventError, "Invalid event message: #{message.inspect}"
         end
@@ -387,7 +397,13 @@ module Mayu
     end
 
     def handle_event(event)
-      record_ping(event.ping)
+      if event.is_a?(Events::InspectEvent)
+        # Devtools queries keep the session alive like any event, but aren't
+        # answered with a Pong: the page would show them as pings.
+        @last_ping = Async::Clock.now
+      else
+        record_ping(event.ping)
+      end
       record_client_command_apply_metrics(event.client_command_apply_metrics)
 
       case event
@@ -397,6 +413,10 @@ module Mayu
         @engine.update_interval = hidden ? HIDDEN_UPDATE_INTERVAL_SECONDS : nil
       in Events::CallbackEvent[id:, payload:]
         @engine.callback(id, payload)
+      in Events::InspectEvent[id:, query:]
+        @engine.enqueue_command(
+          Runtime::Commands::InspectResult[id, inspect_engine(query)]
+        )
       in Events::NavigateEvent[id:, path:]
         Console.logger.info(self, event: Event.new(:navigating, session_id: @id, path:))
 
@@ -417,6 +437,15 @@ module Mayu
       end
     rescue => e
       Console.logger.error(self, e)
+    end
+
+    # Answers a devtools query with the environment's inspector. Sessions
+    # without one answer nil, so the client can tell devtools are disabled.
+    def inspect_engine(query)
+      @environment.inspector&.call(@engine, query)
+    rescue => e
+      Console.logger.error(self, e)
+      {error: "#{e.class}: #{e.message}"}
     end
 
     def record_client_command_apply_metrics(metrics)

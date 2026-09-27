@@ -31,4 +31,11 @@ export type ClientEvent =
       hidden: boolean,
       ping: number,
       telemetry?: CommandApplyTelemetry,
+    ]
+  | [
+      name: "Inspect",
+      id: string,
+      query: Record<string, unknown>,
+      ping: number,
+      telemetry?: CommandApplyTelemetry,
     ];

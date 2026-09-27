@@ -23,6 +23,7 @@ type RuntimeOptions = {
   onNavigationFailed?: (id: string) => void;
   onBrowserAction?: BrowserActionHandler;
   onBatchApplied?: (batch: Batch, durationMs: number) => void;
+  onInspectResult?: (id: string, result: unknown) => void;
 };
 
 export type BrowserActionHandler = (name: string, args: unknown[]) => void;
@@ -40,6 +41,7 @@ export default class Runtime {
       onNavigationFailed,
       onBrowserAction,
       onBatchApplied,
+      onInspectResult,
     }: RuntimeOptions = {},
   ) {
     this.#nodeSet = new NodeSet(
@@ -48,6 +50,7 @@ export default class Runtime {
       onNavigationComplete,
       onNavigationFailed,
       onBrowserAction,
+      onInspectResult,
     );
     this.#commandErrorPolicy = commandErrorPolicy;
     this.#onBatchApplied = onBatchApplied;
@@ -60,6 +63,16 @@ export default class Runtime {
     } finally {
       this.#onBatchApplied?.(batch, performance.now() - startedAt);
     }
+  }
+
+  // The DOM node with the given ID, for devtools.
+  node(id: string): Node | undefined {
+    return this.#nodeSet.findNode(id);
+  }
+
+  // The ID of a DOM node, for devtools.
+  nodeId(node: Node): string | undefined {
+    return this.#nodeSet.getNodeInfo(node)?.id;
   }
 }
 
@@ -86,6 +99,7 @@ class NodeSet {
   #onNavigationComplete?: (id: string) => void;
   #onNavigationFailed?: (id: string) => void;
   #onBrowserAction?: BrowserActionHandler;
+  #onInspectResult?: (id: string, result: unknown) => void;
   readonly commandErrorPolicy: CommandErrorPolicy;
 
   constructor(
@@ -94,12 +108,14 @@ class NodeSet {
     onNavigationComplete?: (id: string) => void,
     onNavigationFailed?: (id: string) => void,
     onBrowserAction?: BrowserActionHandler,
+    onInspectResult?: (id: string, result: unknown) => void,
   ) {
     this.#onEvent = onEvent;
     this.commandErrorPolicy = commandErrorPolicy;
     this.#onNavigationComplete = onNavigationComplete;
     this.#onNavigationFailed = onNavigationFailed;
     this.#onBrowserAction = onBrowserAction;
+    this.#onInspectResult = onInspectResult;
   }
 
   clear() {
@@ -180,6 +196,10 @@ class NodeSet {
     return node;
   }
 
+  findNode(id: string): Node | undefined {
+    return this.#nodes[id];
+  }
+
   getNodeInfo(node: Node) {
     return this.#nodeInfo.get(node);
   }
@@ -222,6 +242,10 @@ class NodeSet {
 
   browserAction(name: string, args: unknown[]) {
     this.#onBrowserAction?.(name, args);
+  }
+
+  inspectResult(id: string, result: unknown) {
+    this.#onInspectResult?.(id, result);
   }
 }
 
@@ -505,6 +529,9 @@ const CommandHandlers = {
   },
   BrowserAction(this: NodeSet, name: string, args: unknown[]) {
     this.browserAction(name, args);
+  },
+  InspectResult(this: NodeSet, id: string, result: unknown) {
+    this.inspectResult(id, result);
   },
   async ViewTransition(
     this: NodeSet,

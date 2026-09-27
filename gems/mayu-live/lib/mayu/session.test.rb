@@ -45,7 +45,7 @@ class Mayu::SessionTest < Minitest::Test
 
   class FakeEnvironment
     attr_reader :config, :router, :metrics, :marshaller
-    attr_accessor :module_provider
+    attr_accessor :module_provider, :inspector
 
     def runtime_init_js_path = "/.mayu/runtime/init-testhash.js"
 
@@ -68,7 +68,8 @@ class Mayu::SessionTest < Minitest::Test
       @update_interval = nil
     end
 
-    def ping(_timestamp)
+    def ping(timestamp)
+      enqueue_command(Mayu::Runtime::Commands::Pong[timestamp])
     end
 
     def commands
@@ -252,6 +253,91 @@ class Mayu::SessionTest < Minitest::Test
 
     session.send(:handle_event, Mayu::Session::Events::VisibilityEvent[false, 2])
     assert_nil(fake_engine.update_interval)
+  end
+
+  def test_inspect_message_parses_to_a_typed_event
+    event = Mayu::Session::Events.parse(["Inspect", "req-1", {type: "tree"}, 5])
+
+    assert_equal(
+      Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 5],
+      event
+    )
+  end
+
+  def test_inspect_answers_with_the_environment_inspector
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+    env.inspector = ->(engine, query) { {engine: engine.class.name, type: query[:type]} }
+
+    session.send(:handle_event, Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 1])
+
+    assert_equal(
+      [Mayu::Runtime::Commands::InspectResult["req-1", {engine: FakeEngine.name, type: "tree"}]],
+      fake_engine.commands
+    )
+  end
+
+  def test_inspect_keeps_the_session_alive_without_a_pong
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+    session.instance_variable_set(:@last_ping, Async::Clock.now - 60)
+
+    session.send(:handle_event, Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 1])
+
+    refute(session.timed_out?)
+    assert_empty(fake_engine.commands.grep(Mayu::Runtime::Commands::Pong))
+  end
+
+  def test_other_events_are_answered_with_a_pong
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(:handle_event, Mayu::Session::Events::PingEvent[42])
+
+    assert_equal([Mayu::Runtime::Commands::Pong[42]], fake_engine.commands)
+  end
+
+  def test_inspect_answers_nil_without_an_inspector
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(:handle_event, Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 1])
+
+    assert_equal([Mayu::Runtime::Commands::InspectResult["req-1", nil]], fake_engine.commands)
+  end
+
+  def test_inspect_reports_inspector_errors_in_the_result
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+    env.inspector = ->(_engine, _query) { raise ArgumentError, "bad query" }
+
+    previous_logger = Console.logger
+    Console.logger = Console::Logger.new(Console::Output::Null.new)
+    begin
+      session.send(:handle_event, Mayu::Session::Events::InspectEvent["req-1", {}, 1])
+    ensure
+      Console.logger = previous_logger
+    end
+
+    assert_equal(
+      [Mayu::Runtime::Commands::InspectResult["req-1", {error: "ArgumentError: bad query"}]],
+      fake_engine.commands
+    )
   end
 
   def test_receive_message_queues_exactly_one_event
