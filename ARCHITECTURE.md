@@ -272,6 +272,19 @@ each one with an `InspectResult` command from `environment.inspector`, which
 only `mayu dev` sets (`Mayu::Devtools::Inspector` in `gems/mayu-devtools`).
 Without an inspector the answer is `nil`.
 
+The inspector answers these queries:
+
+- `{type: "tree"}`: components and elements, with Klenod module ids and
+  element classes as written in the source
+- `{type: "details", id:}`: a component's props, state, context, instance
+  variables and handled events, or an element's attributes and handlers
+- `{type: "timings", reset:}`: render, update and callback timings, recorded
+  by wrapping the engine's metrics from the first such query
+
+Component data must never reach a production page: the runtime boundary test
+(`runtime_boundary.test.rb`) checks that the production path has no inspector
+and answers `Inspect` with `nil`.
+
 ## Environment and Build Modes (`environment.rb`, `commands/*`)
 
 ### Development

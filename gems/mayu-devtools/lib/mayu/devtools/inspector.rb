@@ -8,6 +8,7 @@
 
 require "mayu/runtime"
 require_relative "formatter"
+require_relative "recorder"
 
 module Mayu
   module Devtools
@@ -21,12 +22,45 @@ module Mayu
           tree(engine)
         in {type: "details", id: String => id}
           details(engine, id)
+        in {type: "timings"}
+          timings(engine, reset: query[:reset] == true)
         else
           {error: "Unknown query: #{query.inspect}"}
         end
       end
 
       private
+
+      # Render and callback timings since the devtools first asked, or since
+      # the last reset. The first query starts the recording.
+      def timings(engine, reset:)
+        recorder = Recorder.install(engine)
+        recorder.reset if reset
+
+        provider = engine.module_provider
+        module_ids = Hash.new { |ids, label| ids[label] = text(module_id(provider, label.to_s)) }
+
+        {
+          since: recorder.started_at,
+          renders: timing_rows(recorder.timings[:render]) { module_ids[it] },
+          reconciles: timing_rows(recorder.timings[:reconcile]) { module_ids[it] },
+          callbacks: timing_rows(recorder.timings[:callback]) { |(component, method)| "#{module_ids[component]}##{method}" }
+        }
+      end
+
+      def timing_rows(timings)
+        rows =
+          timings.map do |key, timing|
+            {
+              name: yield(key),
+              count: timing.count,
+              totalMs: timing.total_ms.round(3),
+              maxMs: timing.max_ms.round(3),
+              lastMs: timing.last_ms.round(3)
+            }
+          end
+        rows.sort_by { -it[:totalMs] }
+      end
 
       # What the panel shows for the selected node. A component's values are
       # keyed the way Klenod Haml reads them: `$prop`, `@state` and

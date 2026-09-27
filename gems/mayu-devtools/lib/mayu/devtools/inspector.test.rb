@@ -254,6 +254,32 @@ class Mayu::Devtools::InspectorTest < Minitest::Test
     assert_equal(["click"], details[:handlers].map { it[:event] })
   end
 
+  def test_timings_are_recorded_from_the_first_query
+    engine = build_engine(H[:body, H[List]])
+    inspector = Mayu::Devtools::Inspector.new
+
+    first = inspector.call(engine, {type: "timings"})
+    engine.update(H[:body, H[List]])
+    second = inspector.call(engine, {type: "timings"})
+
+    assert_equal([], first[:renders])
+    list = second[:renders].find { it[:name].end_with?("::List") }
+    assert_equal(1, list[:count])
+    assert_equal(%i[name count totalMs maxMs lastMs], list.keys)
+    assert_kind_of(Integer, second[:since])
+  end
+
+  def test_timings_can_be_reset
+    engine = build_engine(H[:body, H[List]])
+    inspector = Mayu::Devtools::Inspector.new
+    inspector.call(engine, {type: "timings"})
+    engine.update(H[:body, H[List]])
+
+    reset = inspector.call(engine, {type: "timings", reset: true})
+
+    assert_equal([], reset[:renders])
+  end
+
   def test_details_of_a_missing_node_are_an_error
     engine = build_engine(H[:body])
 

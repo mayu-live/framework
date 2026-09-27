@@ -310,3 +310,38 @@ body {
 .batch-log td.number {
   text-align: right;
 }
+
+.timings {
+  padding: 0 8px;
+}
+
+.timings .status {
+  padding: 8px 0 0;
+}
+
+.timing-table {
+  border-collapse: collapse;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.timing-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: default;
+}
+
+.timing-table th.sorted {
+  color: var(--text);
+}
+
+.timing-table th,
+.timing-table td {
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.timing-table td.number {
+  text-align: right;
+}

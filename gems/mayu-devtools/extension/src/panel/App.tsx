@@ -39,6 +39,7 @@ import {
 } from "../values";
 import Entries from "./ValueView";
 import BatchLog from "./BatchLog";
+import Timings from "./Timings";
 
 type Status =
   | { kind: "loading" }
@@ -62,7 +63,7 @@ export default function App({ connection }: { connection: Connection }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [componentsOnly, setComponentsOnly] = useState(true);
   const [showInternal, setShowInternal] = useState(false);
-  const [tab, setTab] = useState<"tree" | "batches">("tree");
+  const [tab, setTab] = useState<"tree" | "batches" | "timings">("tree");
   const [highlightUpdates, setHighlightUpdates] = useState(true);
   // How many times each row has flashed: a changed count restarts the flash.
   const [flashes, setFlashes] = useState<Record<string, number>>({});
@@ -313,6 +314,13 @@ export default function App({ connection }: { connection: Connection }) {
           >
             Batches
           </button>
+          <button
+            type="button"
+            class={tab === "timings" ? "active" : ""}
+            onClick={() => setTab("timings")}
+          >
+            Timings
+          </button>
         </nav>
         {tab === "tree" ? (
           <>
@@ -351,7 +359,7 @@ export default function App({ connection }: { connection: Connection }) {
               Refresh
             </button>
           </>
-        ) : (
+        ) : tab === "batches" ? (
           <>
             <button type="button" onClick={() => setPaused(!paused)}>
               {paused ? "Resume" : "Pause"}
@@ -360,7 +368,7 @@ export default function App({ connection }: { connection: Connection }) {
               Clear
             </button>
           </>
-        )}
+        ) : null}
       </header>
       {tab === "tree" ? (
         <>
@@ -392,9 +400,13 @@ export default function App({ connection }: { connection: Connection }) {
             />
           )}
         </>
-      ) : (
+      ) : tab === "batches" ? (
         <main class="log">
           <BatchLog entries={batches} />
+        </main>
+      ) : (
+        <main class="log">
+          <Timings connection={connection} />
         </main>
       )}
     </div>

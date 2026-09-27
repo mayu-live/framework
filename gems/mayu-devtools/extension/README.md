@@ -12,7 +12,9 @@ adds:
   written in the source (`<a.title>`), not the generated ones. With _Highlight
   updates_, rows flash when the page changes what they render. The _Batches_
   tab lists the batches of DOM changes the page applied, with their commands
-  and how long applying them took.
+  and how long applying them took. The _Timings_ tab shows how long each
+  component class took to render and update, and each callback to run, since
+  the tab was first opened.
 - a **Mayu** pane in the Elements panel's sidebar, showing the components that
   render the selected element, the element's event handlers, and the props and
   state of its component. Selecting an element also selects its component in
