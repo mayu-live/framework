@@ -252,6 +252,11 @@ const SVG_TAGS = new Set([
   "radialgradient",
   "stop",
   "foreignobject",
+  "animate",
+  "animatemotion",
+  "animatetransform",
+  "mpath",
+  "set",
 ]);
 
 function createDomElement(type: string): Element {

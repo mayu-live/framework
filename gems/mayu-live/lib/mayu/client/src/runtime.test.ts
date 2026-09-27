@@ -135,6 +135,59 @@ describe("runtime CreateTree", () => {
 
     expect(document.body.innerHTML).toBe("<div><p>One</p><p>Two</p></div>");
   });
+
+  it("creates SVG animation elements in the SVG namespace", async () => {
+    document.body.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg"><path></path></svg>';
+    const runtime = new Runtime(vi.fn());
+
+    await runtime.applyBatch([
+      [
+        "Initialize",
+        {
+          id: "document",
+          name: "#document",
+          children: [
+            {
+              id: "html",
+              name: "HTML",
+              children: [
+                { id: "head", name: "HEAD", children: [] },
+                {
+                  id: "body",
+                  name: "BODY",
+                  children: [
+                    {
+                      id: "svg",
+                      name: "svg",
+                      children: [{ id: "path", name: "path", children: [] }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      [
+        "CreateTree",
+        '<animate attributeName="d" values="M 0 0;M 1 1" dur="1s"></animate><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="1s"></animateTransform>',
+        [
+          { id: "animate", name: "animate", children: [] },
+          { id: "transform", name: "animateTransform", children: [] },
+        ],
+      ],
+      ["ReplaceChildren", "path", ["animate", "transform"]],
+    ]);
+
+    const [animate, transform] = Array.from(
+      document.querySelector("path")!.children,
+    );
+    expect(animate.namespaceURI).toBe("http://www.w3.org/2000/svg");
+    expect(transform.namespaceURI).toBe("http://www.w3.org/2000/svg");
+    expect(transform.localName).toBe("animateTransform");
+    expect(transform.getAttribute("attributeName")).toBe("transform");
+  });
 });
 
 describe("runtime view transitions", () => {
