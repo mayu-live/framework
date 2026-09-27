@@ -37,6 +37,12 @@ jobs:
         with:
           ruby-version: "4.0.7"
           bundler-cache: true
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+          cache: npm
+      - run: npm ci
       - name: Run tests
         run: bundle exec rake test
 
