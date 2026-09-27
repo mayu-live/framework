@@ -4,12 +4,15 @@ A browser devtools extension for Mayu Live apps, for Chrome and Firefox. It
 adds:
 
 - a **Mayu** panel with the component tree of the page, which refreshes as the
-  page updates. Hovering a row highlights what it renders in the page, and
-  clicking it selects it in the Elements panel. Elements show their classes
-  as written in the source (`<a.title>`), not the generated ones.
+  page updates. Hovering a row highlights what it renders in the page.
+  Selecting a row shows its details: a component's props (`$title`), state
+  (`@count`), context (`@@theme`) and instance variables, or an element's
+  attributes. _Show in Elements_ selects it in the Elements panel. Elements
+  show their classes as written in the source (`<a.title>`), not the
+  generated ones.
 - a **Mayu** pane in the Elements panel's sidebar, showing the components that
   render the selected element. Selecting an element also selects its component
-  in the Mayu panel.
+  in the Mayu panel, and shows its props and state.
 
 Devtools only work against `mayu dev`, which installs the server side
 (`Mayu::Devtools` in this gem).

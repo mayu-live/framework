@@ -157,6 +157,51 @@ class Mayu::Devtools::InspectorTest < Minitest::Test
     assert_equal([], find(tree) { it[:name] == "ul" }[:classes])
   end
 
+  # Klenod Haml reads `$title` from @__props, `@count` from @__state and
+  # `@@theme` from @__context. Ruby components can also keep plain ivars.
+  class Stateful < Mayu::Component::Base
+    def initialize
+      @__state[:count] = 3
+      @label = "plain"
+    end
+
+    def render
+      H[:p, "count", id: "count", style: {color: "red"}]
+    end
+  end
+
+  def test_component_details_show_props_state_context_and_ivars
+    engine = build_engine(H[:body, H.context(theme: "dark") { H[Stateful, title: "Hi"] }])
+    stateful = find(Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})) { it[:name] == "Stateful" }
+
+    details = Mayu::Devtools::Inspector.new.call(engine, {type: "details", id: stateful[:id]})
+
+    assert_equal("component", details[:type])
+    assert_equal([{key: "$title", value: {kind: "string", value: "Hi"}}], details[:props])
+    assert_equal([{key: "@count", value: {kind: "number", value: 3}}], details[:state])
+    assert_equal([{key: "@label", value: {kind: "string", value: "plain"}}], details[:instanceVariables])
+    assert_equal([{key: "@@theme", value: {kind: "string", value: "dark"}}], details[:context])
+  end
+
+  def test_element_details_show_attributes
+    engine = build_engine(H[:body, H[Stateful]])
+    paragraph = find(Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})) { it[:name] == "p" }
+
+    details = Mayu::Devtools::Inspector.new.call(engine, {type: "details", id: paragraph[:id]})
+
+    assert_equal("element", details[:type])
+    assert_equal(["id", "style"], details[:attributes].map { it[:key] })
+  end
+
+  def test_details_of_a_missing_node_are_an_error
+    engine = build_engine(H[:body])
+
+    assert_equal(
+      {error: "Node nope is not on the page"},
+      Mayu::Devtools::Inspector.new.call(engine, {type: "details", id: "nope"})
+    )
+  end
+
   def test_unknown_queries_are_answered_with_an_error
     engine = build_engine(H[:body])
 

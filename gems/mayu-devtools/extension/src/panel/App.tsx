@@ -29,6 +29,12 @@ import {
   topElements,
   type TreeNode,
 } from "../tree";
+import {
+  isDetails,
+  type Details as DetailsAnswer,
+  type Entry,
+} from "../values";
+import Entries from "./ValueView";
 
 type Status =
   | { kind: "loading" }
@@ -180,9 +186,14 @@ export default function App({ connection }: { connection: Connection }) {
     });
   }, [shown, highlightedId]);
 
-  const select = useCallback(
+  // Selecting a row shows its details here. Going to the Elements panel is a
+  // separate action, like in React's devtools.
+  const select = useCallback((node: TreeNode) => {
+    setSelectedId(node.id);
+  }, []);
+
+  const showInElements = useCallback(
     (node: TreeNode) => {
-      setSelectedId(node.id);
       if (!tree) return;
 
       // A component has no DOM node of its own; reveal its first element.
@@ -239,6 +250,7 @@ export default function App({ connection }: { connection: Connection }) {
     tree && highlightedId
       ? findPath(tree, highlightedId)?.at(-1)
       : selectedNode;
+  const details = useDetails(connection, detailNode?.id ?? null);
 
   return (
     <div class="app">
@@ -286,10 +298,49 @@ export default function App({ connection }: { connection: Connection }) {
         <Details
           node={detailNode}
           owners={ownerComponents(tree, detailNode.id)}
+          details={details?.id === detailNode.id ? details : null}
+          onShowInElements={showInElements}
         />
       )}
     </div>
   );
+}
+
+// The server's details of a node: props, state and so on for a component.
+// They are fetched again after each batch, since those can change them.
+function useDetails(connection: Connection, id: string | null) {
+  const [details, setDetails] = useState<DetailsAnswer | null>(null);
+  const json = useRef("null");
+
+  useEffect(() => {
+    if (!id) return;
+
+    let current = true;
+    const load = async () => {
+      const answer = await connection
+        .inspect({ type: "details", id })
+        .catch(() => null);
+      if (!current || !isDetails(answer)) return;
+
+      // Most batches don't change the details; keep the same objects then.
+      const next = JSON.stringify(answer);
+      if (next === json.current) return;
+      json.current = next;
+      setDetails(answer);
+    };
+
+    void load();
+    const unsubscribe = connection.subscribe((message) => {
+      if (message.type === "batch") void load();
+    });
+
+    return () => {
+      current = false;
+      unsubscribe();
+    };
+  }, [connection, id]);
+
+  return details;
 }
 
 function displayName(node: TreeNode) {
@@ -393,11 +444,25 @@ function Row({
   );
 }
 
-function Details({ node, owners }: { node: TreeNode; owners: TreeNode[] }) {
+type DetailsProps = {
+  node: TreeNode;
+  owners: TreeNode[];
+  details: DetailsAnswer | null;
+  onShowInElements: (node: TreeNode) => void;
+};
+
+function Details({ node, owners, details, onShowInElements }: DetailsProps) {
   const ancestors = owners.filter((owner) => owner.id !== node.id);
 
   return (
     <footer class="details">
+      <button
+        type="button"
+        class="show-in-elements"
+        onClick={() => onShowInElements(node)}
+      >
+        Show in Elements
+      </button>
       <dl>
         <dt>{node.type === "component" ? "Component" : "Element"}</dt>
         <dd>{displayName(node)}</dd>
@@ -430,6 +495,31 @@ function Details({ node, owners }: { node: TreeNode; owners: TreeNode[] }) {
           </>
         )}
       </dl>
+      {details?.type === "component" && (
+        <>
+          <Section title="Props" entries={details.props} />
+          <Section title="State" entries={details.state} />
+          <Section
+            title="Instance variables"
+            entries={details.instanceVariables}
+          />
+          <Section title="Context" entries={details.context} />
+        </>
+      )}
+      {details?.type === "element" && (
+        <Section title="Attributes" entries={details.attributes} />
+      )}
     </footer>
+  );
+}
+
+function Section({ title, entries }: { title: string; entries: Entry[] }) {
+  if (entries.length === 0) return null;
+
+  return (
+    <section class="values">
+      <h2>{title}</h2>
+      <Entries entries={entries} />
+    </section>
   );
 }

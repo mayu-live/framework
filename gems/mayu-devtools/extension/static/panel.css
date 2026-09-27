@@ -9,6 +9,7 @@
   --component: #8b2fc9;
   --element: #881280;
   --error: #c00;
+  --string: #c41a16;
   color-scheme: light;
 }
 
@@ -23,6 +24,7 @@
   --component: #c792ea;
   --element: #5db0d7;
   --error: #f28b82;
+  --string: #f28b54;
   color-scheme: dark;
 }
 
@@ -131,9 +133,16 @@ body {
 }
 
 .details {
+  position: relative;
+  max-height: 50%;
+  overflow: auto;
   border-top: 1px solid var(--border);
   padding: 4px 8px;
   background: var(--toolbar);
+}
+
+.show-in-elements {
+  float: right;
 }
 
 .details dl {
@@ -154,5 +163,65 @@ body {
 }
 
 .rendered-class {
+  color: var(--muted);
+}
+
+.values h2 {
+  margin: 8px 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.entries {
+  margin: 0;
+  padding: 0 0 0 12px;
+  list-style: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.values > .entries {
+  padding-left: 0;
+}
+
+.entry {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.entry.expandable {
+  cursor: default;
+}
+
+.entry .key {
+  color: var(--component);
+}
+
+.entry .key::after {
+  content: ":";
+  color: var(--muted);
+}
+
+.entry .value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.value.string {
+  color: var(--string);
+}
+
+.value.number,
+.value.boolean,
+.value.symbol,
+.value.nil {
+  color: var(--element);
+}
+
+.value.collection,
+.value.object,
+.value.function,
+.value.cycle {
   color: var(--muted);
 }

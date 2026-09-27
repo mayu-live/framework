@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require "mayu/runtime"
+require_relative "formatter"
 
 module Mayu
   module Devtools
@@ -18,12 +19,80 @@ module Mayu
         case query
         in {type: "tree"}
           tree(engine)
+        in {type: "details", id: String => id}
+          details(engine, id)
         else
           {error: "Unknown query: #{query.inspect}"}
         end
       end
 
       private
+
+      # What the panel shows for the selected node. A component's values are
+      # keyed the way Klenod Haml reads them: `$prop`, `@state` and
+      # `@@context`.
+      def details(engine, id)
+        vnode = find_vnode(engine, id)
+        return {error: "Node #{id} is not on the page"} unless vnode
+
+        provider = engine.module_provider
+        formatter = Formatter.new { module_id(provider, it) }
+
+        case vnode
+        when VNodes::VComponent
+          component_details(vnode, formatter)
+        when VNodes::VElement
+          {id:, type: "element", attributes: formatter.entries(attributes(vnode))}
+        else
+          {id:, type: "other"}
+        end
+      end
+
+      def component_details(vnode, formatter)
+        instance = vnode.instance_variable_get(:@instance)
+        props = instance.instance_variable_get(:@__props) || {}
+        state = instance.instance_variable_get(:@__state)&.marshal_dump || {}
+        # Components written in Ruby keep their own instance variables.
+        ivars =
+          (instance.instance_variables - instance.instance_variables.grep(/\A@__/))
+            .to_h { [it, instance.instance_variable_get(it)] }
+
+        {
+          id: vnode.id,
+          type: "component",
+          props: formatter.entries(props, prefix: "$"),
+          state: formatter.entries(state, prefix: "@"),
+          instanceVariables: formatter.entries(ivars),
+          context: formatter.entries(context_values(vnode), prefix: "@@")
+        }
+      end
+
+      # The values a component can read from its context, with inner values
+      # shadowing outer ones. H.context only sets its values while rendering,
+      # so they are read from the context vnodes above the component.
+      # Components' own `@@name =` assignments stay in their context.
+      def context_values(vnode)
+        levels = []
+        while vnode
+          case vnode
+          when VNodes::VContext
+            levels.unshift(vnode.descriptor.values)
+          when VNodes::VComponent
+            levels.unshift(vnode.context.marshal_dump.first)
+          end
+          vnode = vnode.parent
+        end
+        levels.reduce({}, :merge)
+      end
+
+      def attributes(vnode)
+        vnode.instance_variable_get(:@attributes).render_for_html.compact.except(:class)
+      end
+
+      def find_vnode(engine, id)
+        engine.traverse { |vnode| return vnode if vnode.id == id }
+        nil
+      end
 
       # The components and elements of the page. Wrapper vnodes such as
       # children lists, contexts and slots are left out, so every node is

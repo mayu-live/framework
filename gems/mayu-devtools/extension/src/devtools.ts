@@ -10,6 +10,7 @@
 import Connection from "./connection";
 import { isDetected, selectedId } from "./page";
 import { isTree, ownerComponents, type TreeNode } from "./tree";
+import { isDetails, toPlain } from "./values";
 
 chrome.devtools.panels.create("Mayu", "icon.svg", "panel.html");
 
@@ -36,10 +37,18 @@ async function describeSelection(): Promise<Record<string, unknown>> {
   const [component, ...ancestors] = ownerComponents(tree, id);
   if (!component) return { status: "Not rendered by a component" };
 
+  const details = await connection.inspect({
+    type: "details",
+    id: component.id,
+  });
+
   return {
     component: component.name,
     path: component.path ?? null,
     id: component.id,
+    ...(isDetails(details) && details.type === "component"
+      ? { props: toPlain(details.props), state: toPlain(details.state) }
+      : {}),
     ancestors: ancestors.map(label),
   };
 }
