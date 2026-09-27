@@ -1,37 +1,315 @@
 :ruby
   Heading = import("/components/Layout/Heading")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
   Image = import("/components/UI/Image")
-  Link = import("/components/UI/Link")
-  MayuDolphin = import("./mayu-dolphin.jpeg")
-  MayuDolphin2 = import("./mayu-dolphin2.jpeg")
+  Picture = import("/components/UI/Picture")
+
+  # Each query string produces a different set of generated assets.
+  Responsive = import("./mayu-dolphin.jpeg?width=320,640,960&format=webp&quality=75")
+  Fallback = import("./mayu-dolphin2.jpeg?width=480,960&format=jpeg,webp&quality=80")
+  Original = import("./mayu-dolphin2.jpeg")
+
+  QUALITIES = {
+    5 => import("./mayu-dolphin.jpeg?width=640&format=webp&quality=5"),
+    10 => import("./mayu-dolphin.jpeg?width=640&format=webp&quality=10"),
+    20 => import("./mayu-dolphin.jpeg?width=640&format=webp&quality=20"),
+    40 => import("./mayu-dolphin.jpeg?width=640&format=webp&quality=40"),
+    60 => import("./mayu-dolphin.jpeg?width=640&format=webp&quality=60"),
+    80 => import("./mayu-dolphin.jpeg?width=640&format=webp&quality=80"),
+    95 => import("./mayu-dolphin.jpeg?width=640&format=webp&quality=95"),
+  }
+
+  # The placeholder is resized to fit inside a 16px square, so its long side
+  # is 16 pixels. See the ImagePlugin placeholder options in mayu-build.
+  PLACEHOLDER_SIZE = 16
+  PLACEHOLDER_COLUMNS =
+    (PLACEHOLDER_SIZE.to_f * Original.width / [Original.width, Original.height].max).round
+
+  def initialize
+    @quality = QUALITIES.keys.first
+    @pixelated = false
+    @show_original = false
+  end
+
+  def handle_toggle_original
+    @show_original = !@show_original
+  end
+
+  # The slider moves through the imported qualities by index, since only
+  # those files exist.
+  def handle_quality(e)
+    e => { target: { value: } }
+    index = value.to_i.clamp(0, QUALITIES.size - 1)
+    @quality = QUALITIES.keys.fetch(index)
+  end
+
+  def handle_toggle_pixelated
+    @pixelated = !@pixelated
+  end
 
 %article
   %Heading(level=2) Images
   %p
-    This demo shows some images.
-  .grid
+    Importing an image gives you its metadata: dimensions, a tiny
+    placeholder, and every variant generated at build time. Options go in
+    the query string of the import, so each import below produces its own
+    set of assets from the same two JPEG files.
+
+  %section
+    %Heading(level=3) Responsive variants
+    %p
+      Listing widths generates one resized file per width. The
+      %code Image
+      component puts them in
+      %code srcset
+      so the browser downloads the smallest one that fits.
+    %HighlightedCodeBlock(language="ruby")
+      = %(Responsive = import("./mayu-dolphin.jpeg?width=320,640,960&format=webp&quality=75"))
+    .split
+      %figure
+        %Image(blur image=Responsive alt="The Mayu dolphin reimagined in the jungle")
+        %figcaption
+          Source #{Responsive.width}×#{Responsive.height}, served as WebP.
+      %table
+        %thead
+          %tr
+            %th Variant
+            %th Size
+            %th Type
+        %tbody
+          = Responsive.variants.map do |variant|
+            %tr[variant.src]
+              %td
+                %a(href=variant.src target="_blank")= variant.descriptor
+              %td #{variant.width}×#{variant.height}
+              %td= variant.content_type
+
+  %section
+    %Heading(level=3) Format fallback
+    %p
+      With several formats, the variants are grouped by type into
+      %code= "<source>"
+      elements inside a
+      %code= "<picture>"
+      element. The first format becomes the fallback
+      %code= "<img>"
+      for browsers without WebP support.
+    %HighlightedCodeBlock(language="ruby")
+      = %(Fallback = import("./mayu-dolphin2.jpeg?width=480,960&format=jpeg,webp&quality=80"))
+    .split
+      %figure
+        %Picture(blur lazy image=Fallback alt="The Mayu dolphin reimagined in a retro landscape")
+        %figcaption
+          Right-click and open the image in a new tab to see which file your
+          browser picked.
+      %table
+        %thead
+          %tr
+            %th Variant
+            %th Size
+            %th Type
+        %tbody
+          = Fallback.variants.map do |variant|
+            %tr[variant.src]
+              %td
+                %a(href=variant.src target="_blank")= variant.descriptor
+              %td #{variant.width}×#{variant.height}
+              %td= variant.content_type
+
+  %section
+    %Heading(level=3) Quality
+    %p
+      Every quality is its own import, so all #{QUALITIES.size} files exist
+      up front. Moving the slider only changes which one the server renders.
+    .range
+      %label(for="quality") WebP quality
+      %input(id="quality" type="range" min=0 step=1 oninput=handle_quality){
+        max: QUALITIES.size - 1,
+        value: QUALITIES.keys.index(@quality),
+        aria: { valuetext: "Quality #{@quality}" },
+      }
+      %output(for="quality")= @quality
     %figure
-      %Image(blur image=MayuDolphin alt="The Mayu dolphin")
+      -# All qualities stay in the DOM, stacked, so moving the slider only
+      -# changes which one is visible instead of loading a new src. Hidden
+      -# images are not decoded until shown, and async decoding would paint
+      -# an empty frame the first time each one appears.
+      .loupe
+        = QUALITIES.map do |quality, image|
+          %Image[quality](image=image decoding="sync" alt="The Mayu dolphin at WebP quality #{quality}"){
+            class: [:zoomed, quality != @quality && :stacked],
+          }
       %figcaption
-        The Mayu dolphin reimagined in the jungle.
-        = " (#{MayuDolphin.width}x#{MayuDolphin.height})"
+        640px WebP at quality #{@quality}, shown at 2× to make the
+        compression artifacts visible.
+
+  %section
+    %Heading(level=3) Placeholders
+    %p
+      Every import carries a #{Original.placeholder.bytesize}-byte data URI
+      of the image scaled down to 16px. The components use it as a
+      background while the real image loads, so the layout never jumps and
+      the page is never blank.
+    .toggles
+      %button(type="button" onclick=handle_toggle_pixelated){
+        aria: { pressed: @pixelated.to_s }
+      } Show pixels
+      %button(type="button" onclick=handle_toggle_original){
+        aria: { pressed: @show_original.to_s }
+      } Show original
     %figure
-      %Image(blur image=MayuDolphin2 alt="The Mayu dolphin")
-      %figcaption
-        The Mayu dolphin reimagined in a retro landscape.
-        = " (#{MayuDolphin2.width}x#{MayuDolphin2.height})"
+      -# The original is laid over the placeholder in the same grid cell and
+      -# fades in when shown.
+      .blend
+        .placeholder-frame{style: {__columns: PLACEHOLDER_COLUMNS}}
+          %img.placeholder(src=Original.placeholder alt="" aria-hidden="true"){
+            class: @pixelated ? :pixelated : :smooth,
+            width: Original.width,
+            height: Original.height,
+            # The placeholder's own aspect ratio differs slightly after rounding.
+            style: { aspect_ratio: "#{Original.width} / #{Original.height}" },
+          }
+        %Image(lazy image=Original alt="The Mayu dolphin reimagined in a retro landscape"){
+          class: [:original, @show_original && :shown],
+        }
+      %figcaption The placeholder, with the original JPEG fading in on top.
 
 :css
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-    gap: 2rem;
+  section {
+    margin-block: 3rem;
   }
 
   figure {
     margin: 0;
   }
 
-  .green-bg {
-    background: var(--green);
+  figcaption {
+    margin-top: 0.5em;
+    color: var(--text-muted);
+    font-size: 0.9em;
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: 2rem;
+    align-items: start;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+
+    & th,
+    & td {
+      text-align: left;
+      padding: 0.4em 0.6em;
+      border-bottom: var(--thin-border);
+    }
+
+    & td:nth-child(2) {
+      font-family: var(--font-mono);
+    }
+  }
+
+  .range {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    margin-bottom: 1em;
+
+    & input {
+      flex: 1;
+      max-width: 20rem;
+    }
+
+    & output {
+      font-family: var(--font-mono);
+      min-width: 2ch;
+    }
+  }
+
+  .toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+  }
+
+  button {
+    font: inherit;
+    font-family: var(--font-mono);
+    padding: 0.4em 0.9em;
+    border: var(--thin-border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    color: var(--text);
+    cursor: pointer;
+
+    &[aria-pressed="true"] {
+      background: var(--button-background);
+      color: var(--button-text);
+    }
+  }
+
+  .loupe {
+    display: grid;
+    max-width: 40rem;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--radius);
+
+    /* Classes passed to Image, since page styles can't select its img. */
+    & .zoomed {
+      grid-area: 1 / 1;
+      width: 200%;
+      max-width: none;
+      transform: translate(-25%, -30%);
+
+      &.stacked {
+        visibility: hidden;
+      }
+    }
+  }
+
+  .blend {
+    display: grid;
+    max-width: 28rem;
+
+    & .placeholder-frame,
+    & .original {
+      grid-area: 1 / 1;
+    }
+
+    & .original {
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 600ms ease;
+
+      &.shown {
+        opacity: 1;
+      }
+    }
+  }
+
+  .placeholder-frame {
+    container-type: inline-size;
+    overflow: hidden;
+  }
+
+  .placeholder {
+    max-width: 100%;
+    height: auto;
+    object-fit: fill;
+    vertical-align: middle;
+
+    &.pixelated {
+      image-rendering: pixelated;
+    }
+
+    &.smooth {
+      /* About one placeholder pixel at any rendered width. */
+      filter: blur(calc(100cqi / var(--columns)));
+    }
   }
