@@ -4,6 +4,8 @@ module Mayu
   module Build
     class Configuration
       DEFAULT_ENTRYPOINTS = %w[root.haml virtual:router].freeze
+      # Bundled when present in the source dir. Apps without them still build.
+      OPTIONAL_ENTRYPOINTS = %w[robots.txt].freeze
       DEFAULT_ASSET_BASE = "/.mayu/assets/"
 
       attr_reader :root,
@@ -42,6 +44,14 @@ module Mayu
       def assets_path = expand(assets_dir)
       def output_path = expand(output)
 
+      def bundle_entrypoints
+        present = OPTIONAL_ENTRYPOINTS.select do |entry|
+          File.file?(File.join(source_path, entry))
+        end
+
+        [*entrypoints, *present].uniq
+      end
+
       def context(**overrides)
         ::Klenod::Build::Context.new(
           source_dir: source_path,
@@ -59,6 +69,7 @@ module Mayu
 
       def build(output: output_path, assets_dir: assets_path, **overrides, &reporter)
         context = context(**overrides)
+        entrypoints = bundle_entrypoints
         reporter&.call(:collecting_bundle, entrypoints:)
         bundle = context.graph.bundle(entrypoints:)
         reporter&.call(:bundle_collected, bundle:, assets: context.assets.values)

@@ -35,6 +35,46 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_build_bundles_robots_txt_when_the_app_has_one
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "entry.rb"), "VALUE = 42\n")
+      File.write(File.join(root, "app", "robots.txt"), "User-agent: *\n")
+
+      configuration =
+        Mayu::Build::Configuration.new(
+          root:,
+          entrypoints: ["entry"],
+          output: ".mayu/app.bundle"
+        )
+      configuration.build
+      runtime = configuration.runtime_provider
+
+      assert_equal(
+        "User-agent: *\n",
+        runtime.exports(runtime.entry("robots.txt"))::Default
+      )
+    end
+  end
+
+  def test_build_succeeds_without_robots_txt
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "entry.rb"), "VALUE = 42\n")
+
+      configuration =
+        Mayu::Build::Configuration.new(
+          root:,
+          entrypoints: ["entry"],
+          output: ".mayu/app.bundle"
+        )
+      configuration.build
+      runtime = configuration.runtime_provider
+
+      assert_raises(KeyError) { runtime.entry("robots.txt") }
+    end
+  end
+
   def test_development_context_uses_mayus_module_namespace
     configuration = Mayu::Build::Configuration.new(root: Dir.pwd)
 

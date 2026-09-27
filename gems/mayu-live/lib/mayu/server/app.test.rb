@@ -258,6 +258,40 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("<html></html>", response.body.join)
   end
 
+  class RobotsProvider
+    def initialize(robots_txt) = @robots_txt = robots_txt
+
+    def entry(name) = name
+
+    def exports(entry)
+      raise KeyError unless entry == "robots.txt" && @robots_txt
+
+      exports = Module.new
+      exports.const_set(:Default, @robots_txt)
+      exports
+    end
+  end
+
+  def test_serves_robots_txt_from_the_module_provider
+    response = robots_txt_response(RobotsProvider.new("User-agent: *\n"))
+
+    assert_equal(200, response.status)
+    headers = response.headers.to_a.to_h
+    assert_equal("text/plain; charset=utf-8", headers.fetch(:"content-type"))
+    assert_equal(
+      Mayu::Server::App::ROBOTS_TXT_CACHE_CONTROL,
+      headers.fetch(:"cache-control")
+    )
+    assert_equal("User-agent: *\n", response.body.join)
+  end
+
+  def test_robots_txt_is_a_404_when_the_app_has_none
+    response = robots_txt_response(RobotsProvider.new(nil))
+
+    assert_equal(404, response.status)
+    assert_equal("file not found", response.body.join)
+  end
+
   def test_serves_the_hashed_client_initializer_with_immutable_caching
     Dir.mktmpdir("mayu-client") do |root|
       File.write(File.join(root, "init-abc123.js"), "export default null\n")
@@ -407,6 +441,12 @@ class Mayu::Server::AppTest < Minitest::Test
     response = Mayu::Session.stub(:new, ->(**) { session }) { app.call(request) }
 
     [stored, response]
+  end
+
+  def robots_txt_response(provider)
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(:@environment, Environment.new(provider))
+    app.call(Request.new("GET", "/robots.txt", {}, ""))
   end
 
   def provider

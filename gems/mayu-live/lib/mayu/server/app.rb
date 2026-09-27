@@ -41,6 +41,9 @@ module Mayu
         "immutable"
       ].join(", ").freeze
 
+      ROBOTS_TXT_ENTRY = "robots.txt"
+      ROBOTS_TXT_CACHE_CONTROL = "public, max-age=#{60 * 60}"
+
       ASSET_CACHE_CONTROL_HEADER = {
         "cache-control": ASSET_CACHE_CONTROL
       }.freeze
@@ -71,6 +74,8 @@ module Mayu
         case request
         in path: "/favicon.ico"
           handle_favicon(request)
+        in {path: "/robots.txt", method: "GET" | "HEAD"}
+          handle_robots_txt(request)
         in {path: "/.mayu", method: "OPTIONS"}
           handle_options(request)
         in path: %r{\A/.mayu/runtime/.+\.js(\.map)?}
@@ -298,6 +303,31 @@ module Mayu
           "image/png",
           {**origin_header(request), **ASSET_CACHE_CONTROL_HEADER}
         )
+      end
+
+      def handle_robots_txt(request)
+        provider = @environment.module_provider
+        return handle_404(request) unless provider
+
+        # Read the export on every request so dev serves hot-reloaded edits.
+        robots_txt = provider.exports(provider.entry(ROBOTS_TXT_ENTRY))::Default
+        send_file(
+          robots_txt,
+          "text/plain; charset=utf-8",
+          {**origin_header(request), "cache-control": ROBOTS_TXT_CACHE_CONTROL}
+        )
+      rescue *missing_entry_errors
+        handle_404(request)
+      end
+
+      # A runtime bundle raises KeyError for an entry it doesn't contain. The
+      # development provider raises Klenod::Build::ResolveError, which is only
+      # defined when mayu-build is loaded.
+      def missing_entry_errors
+        [
+          KeyError,
+          (::Klenod::Build::ResolveError if defined?(::Klenod::Build::ResolveError))
+        ].compact
       end
 
       def handle_404(request)

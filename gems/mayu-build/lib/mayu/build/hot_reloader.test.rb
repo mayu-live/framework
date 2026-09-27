@@ -209,6 +209,34 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
     end
   end
 
+  def test_updates_robots_txt
+    Dir.mktmpdir("mayu-klenod") do |root|
+      app_dir = File.join(root, "app")
+      robots_path = File.join(app_dir, "robots.txt")
+      FileUtils.mkdir_p(app_dir)
+      File.write(File.join(app_dir, "root.haml"), "%slot\n")
+      File.write(robots_path, "User-agent: *\n")
+
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      robots_txt = -> { provider.exports(provider.entry("robots.txt"))::Default }
+      assert_equal("User-agent: *\n", robots_txt.call)
+      app = FakeApp.new
+
+      Async do
+        task = reloader(provider, app_dir).start(app)
+
+        File.write(robots_path, "User-agent: *\nDisallow: /\n")
+        publish_update(provider, robots_path, graph_version: 1)
+        updated = app.updates.dequeue(timeout: 2)
+
+        assert(updated.success?)
+        assert_equal("User-agent: *\nDisallow: /\n", robots_txt.call)
+      ensure
+        task&.stop
+      end.wait
+    end
+  end
+
   def test_reports_a_parse_error_with_its_source_location
     provider = ReloadErrorProvider.new
     error =
