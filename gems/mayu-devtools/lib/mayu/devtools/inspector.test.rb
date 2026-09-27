@@ -64,6 +64,49 @@ class Mayu::Devtools::InspectorTest < Minitest::Test
     refute_includes(internal, "List")
   end
 
+  class Sourced < Mayu::Component::Base
+    def self.module_path = "/src/app/components/Sourced.haml"
+
+    def render
+      H[:p, "sourced"]
+    end
+  end
+
+  class Unresolved < Mayu::Component::Base
+    def self.module_path = "/elsewhere/Unresolved.haml"
+
+    def render
+      H[:p, "unresolved"]
+    end
+  end
+
+  class FakeProvider
+    def module_id_for(path)
+      raise KeyError, path unless path.start_with?("/src/")
+      "app:/#{path.delete_prefix("/src/app/")}"
+    end
+  end
+
+  def test_paths_are_klenod_module_ids_when_the_provider_knows_them
+    engine = build_engine(H[:body, H[Sourced], H[Unresolved]])
+    engine.module_provider = FakeProvider.new
+
+    tree = Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})
+
+    assert_equal("app:/components/Sourced.haml", find(tree) { it[:name] == "Sourced" }[:path])
+    assert_equal("/elsewhere/Unresolved.haml", find(tree) { it[:name] == "Unresolved" }[:path])
+    html = find(tree) { it[:name] == "Html" }
+    assert(html[:path].start_with?("(internal)::"))
+  end
+
+  def test_paths_stay_paths_without_a_provider
+    engine = build_engine(H[:body, H[Sourced]])
+
+    tree = Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})
+
+    assert_equal("/src/app/components/Sourced.haml", find(tree) { it[:name] == "Sourced" }[:path])
+  end
+
   def test_unknown_queries_are_answered_with_an_error
     engine = build_engine(H[:body])
 

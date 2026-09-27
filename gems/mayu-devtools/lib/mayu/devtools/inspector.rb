@@ -32,9 +32,11 @@ module Mayu
       def tree(engine)
         document = {id: engine.root.id, type: "document", name: "#document", children: []}
         nodes = {}.compare_by_identity
+        provider = engine.module_provider
+        module_ids = Hash.new { |ids, path| ids[path] = module_id(provider, path) }
 
         engine.traverse do |vnode|
-          node = serialize(vnode)
+          node = serialize(vnode, module_ids)
           next unless node
 
           nodes[vnode] = node
@@ -52,10 +54,10 @@ module Mayu
         end
       end
 
-      def serialize(vnode)
+      def serialize(vnode, module_ids)
         case vnode
         when VNodes::VComponent
-          component(vnode)
+          component(vnode, module_ids)
         when VNodes::VStateless
           stateless(vnode)
         when VNodes::VElement
@@ -63,11 +65,11 @@ module Mayu
         end
       end
 
-      def component(vnode)
+      def component(vnode, module_ids)
         instance = vnode.instance_variable_get(:@instance)
         klass = instance.class
         path = klass.module_path if klass.respond_to?(:module_path)
-        path = nil if path && path.empty?
+        path = (path && !path.empty?) ? module_ids[path] : nil
         name = klass.name&.split("::")&.last || path || "(anonymous)"
 
         {
@@ -93,6 +95,18 @@ module Mayu
           internal: false,
           children: []
         }
+      end
+
+      # The Klenod module id of a component's source file, such as
+      # app:/components/Header.haml, which is shorter than the absolute path.
+      # Mayu's own components, and paths the provider can't resolve, keep
+      # their path. Providers raise KeyError or their own resolve errors.
+      def module_id(provider, path)
+        return path if provider.nil? || path.start_with?("(internal)::")
+
+        provider.module_id_for(path).to_s
+      rescue
+        path
       end
 
       # MessagePack sends binary strings as bytes, which the browser can't
