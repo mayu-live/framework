@@ -22,6 +22,7 @@ import {
 } from "../page";
 import {
   componentTree,
+  elementLabel,
   findPath,
   isTree,
   ownerComponents,
@@ -292,7 +293,7 @@ export default function App({ connection }: { connection: Connection }) {
 }
 
 function displayName(node: TreeNode) {
-  return node.type === "component" ? node.name : `<${node.name}>`;
+  return node.type === "component" ? node.name : elementLabel(node);
 }
 
 // The outermost elements a node renders. The component view leaves elements
@@ -404,6 +405,20 @@ function Details({ node, owners }: { node: TreeNode; owners: TreeNode[] }) {
           <>
             <dt>Path</dt>
             <dd>{node.path}</dd>
+          </>
+        )}
+        {node.classes && node.classes.length > 0 && (
+          <>
+            <dt>Classes</dt>
+            <dd>
+              {node.classes.map((name) => (
+                <div key={name.rendered}>
+                  {name.source ? `.${name.source} → ` : ""}
+                  {name.scope ? "tag styles → " : ""}
+                  <span class="rendered-class">.{name.rendered}</span>
+                </div>
+              ))}
+            </dd>
           </>
         )}
         <dt>Id</dt>

@@ -152,3 +152,7 @@ body {
   overflow-wrap: anywhere;
   font-family: ui-monospace, Menlo, Consolas, monospace;
 }
+
+.rendered-class {
+  color: var(--muted);
+}

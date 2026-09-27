@@ -107,6 +107,56 @@ class Mayu::Devtools::InspectorTest < Minitest::Test
     assert_equal("/src/app/components/Sourced.haml", find(tree) { it[:name] == "Sourced" }[:path])
   end
 
+  # Stands in for the ClassNames Klenod generates for a component's styles.
+  class FakeClassNames
+    def initialize(classes) = @classes = classes
+
+    def each_pair(&) = @classes.each_pair(&)
+  end
+
+  class Card < Mayu::Component::Base
+    ClassNames = FakeClassNames.new({card: "Card_card_1", body: "Card_body_2 shared", __div: "Card_div_4"})
+
+    def render
+      H[:div, H[:slot], class: "Card_div_4 Card_card_1 literal"]
+    end
+  end
+
+  class Page < Mayu::Component::Base
+    ClassNames = FakeClassNames.new({title: "Page_title_3"})
+
+    def render
+      H[Card, H[:h1, "Hi", class: "Page_title_3"]]
+    end
+  end
+
+  def test_element_classes_are_named_as_in_the_source
+    engine = build_engine(H[:body, H[Page]])
+
+    tree = Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})
+    div = find(tree) { it[:name] == "div" }
+    h1 = find(tree) { it[:name] == "h1" }
+
+    assert_equal(
+      [
+        {source: nil, rendered: "Card_div_4", scope: true},
+        {source: "card", rendered: "Card_card_1", scope: false},
+        {source: nil, rendered: "literal", scope: false}
+      ],
+      div[:classes]
+    )
+    # Slotted content is written in Page, not in the Card that renders it.
+    assert_equal([{source: "title", rendered: "Page_title_3", scope: false}], h1[:classes])
+  end
+
+  def test_elements_without_classes_have_none
+    engine = build_engine(H[:body, H[List]])
+
+    tree = Mayu::Devtools::Inspector.new.call(engine, {type: "tree"})
+
+    assert_equal([], find(tree) { it[:name] == "ul" }[:classes])
+  end
+
   def test_unknown_queries_are_answered_with_an_error
     engine = build_engine(H[:body])
 

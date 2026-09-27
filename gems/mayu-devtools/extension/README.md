@@ -5,7 +5,8 @@ adds:
 
 - a **Mayu** panel with the component tree of the page, which refreshes as the
   page updates. Hovering a row highlights what it renders in the page, and
-  clicking it selects it in the Elements panel.
+  clicking it selects it in the Elements panel. Elements show their classes
+  as written in the source (`<a.title>`), not the generated ones.
 - a **Mayu** pane in the Elements panel's sidebar, showing the components that
   render the selected element. Selecting an element also selects its component
   in the Mayu panel.

@@ -12,8 +12,22 @@ export type TreeNode = {
   name: string;
   path?: string | null;
   internal?: boolean;
+  // Element classes: the name in the source, when the owning component's
+  // styles define it, and the class in the page. Scope classes are the ones
+  // Klenod adds for a component's tag selectors.
+  classes?: { source: string | null; rendered: string; scope?: boolean }[];
   children: TreeNode[];
 };
+
+// An element as the Elements panel shows it, with its classes named as in
+// the source: <a.title>.
+export function elementLabel(node: TreeNode) {
+  const classes = (node.classes ?? [])
+    .filter((name) => !name.scope)
+    .map((name) => `.${name.source ?? name.rendered}`)
+    .join("");
+  return `<${node.name}${classes}>`;
+}
 
 export function isTree(value: unknown): value is TreeNode {
   return (

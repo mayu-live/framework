@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   componentTree,
+  elementLabel,
   findPath,
   ownerComponents,
   topElements,
@@ -99,5 +100,24 @@ describe("topElements", () => {
     const ul = findPath(tree, "v5")!.at(-1)!;
 
     expect(topElements(ul).map((child) => child.id)).toEqual(["v5"]);
+  });
+});
+
+describe("elementLabel", () => {
+  it("names classes as in the source, and the rest as in the page", () => {
+    const link: TreeNode = {
+      ...node("a1", "element", "a"),
+      classes: [
+        { source: null, rendered: "Header_a_2", scope: true },
+        { source: "title", rendered: "Header_title_1" },
+        { source: null, rendered: "literal" },
+      ],
+    };
+
+    expect(elementLabel(link)).toBe("<a.title.literal>");
+  });
+
+  it("shows elements without classes by their tag", () => {
+    expect(elementLabel(node("p1", "element", "p"))).toBe("<p>");
   });
 });
