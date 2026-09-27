@@ -13,6 +13,8 @@
 // the hook and the bridge ignore each other's echoes and the page's own
 // messages.
 
+import type { BatchEntry } from "./batch";
+
 // The port the devtools connect to the background with.
 export const PORT_NAME = "mayu-devtools";
 
@@ -22,7 +24,7 @@ export const FROM_DEVTOOLS = "mayu-devtools:devtools";
 // Sent by the page.
 export type PageMessage =
   | { type: "detected" }
-  | { type: "batch" }
+  | { type: "batch"; entries: BatchEntry[] }
   | {
       type: "inspect-result";
       requestId: string;

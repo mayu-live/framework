@@ -14,7 +14,7 @@ export type DevtoolsApi = {
   node(id: string): Node | undefined;
   nodeId(node: Node): string | undefined;
   inspect(query: Record<string, unknown>): Promise<unknown>;
-  onBatch(listener: (batch: Batch) => void): () => void;
+  onBatch(listener: (batch: Batch, durationMs: number) => void): () => void;
 };
 
 export type DevtoolsHook = {
@@ -42,7 +42,7 @@ type Inspector = {
 const UNREPORTED_COMMANDS = new Set(["InspectResult", "Pong"]);
 
 export default class Devtools {
-  #listeners = new Set<(batch: Batch) => void>();
+  #listeners = new Set<(batch: Batch, durationMs: number) => void>();
 
   register(runtime: Inspectable, mayu: Inspector) {
     window.__MAYU_DEVTOOLS_HOOK__?.register({
@@ -57,9 +57,9 @@ export default class Devtools {
     });
   }
 
-  batchApplied(batch: Batch) {
+  batchApplied(batch: Batch, durationMs: number) {
     if (batch.every(([name]) => UNREPORTED_COMMANDS.has(name))) return;
 
-    for (const listener of this.#listeners) listener(batch);
+    for (const listener of this.#listeners) listener(batch, durationMs);
   }
 }

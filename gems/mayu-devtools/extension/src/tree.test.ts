@@ -6,6 +6,7 @@ import {
   findPath,
   ownerComponents,
   topElements,
+  updatedRows,
   type TreeNode,
 } from "./tree";
 
@@ -119,5 +120,27 @@ describe("elementLabel", () => {
 
   it("shows elements without classes by their tag", () => {
     expect(elementLabel(node("p1", "element", "p"))).toBe("<p>");
+  });
+});
+
+describe("updatedRows", () => {
+  it("flashes the closest shown component in the component view", () => {
+    expect(updatedRows(tree, ["v7", "v5"], { componentsOnly: true })).toEqual([
+      "v6",
+      "v4",
+    ]);
+  });
+
+  it("flashes the elements themselves in the full view", () => {
+    expect(
+      updatedRows(tree, ["v7", "missing"], { componentsOnly: false }),
+    ).toEqual(["v7"]);
+  });
+
+  it("skips internal components unless they are shown", () => {
+    expect(updatedRows(tree, ["v3"], { componentsOnly: true })).toEqual([]);
+    expect(
+      updatedRows(tree, ["v3"], { componentsOnly: true, internal: true }),
+    ).toEqual(["v2"]);
   });
 });

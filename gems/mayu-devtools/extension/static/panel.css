@@ -10,6 +10,7 @@
   --element: #881280;
   --error: #c00;
   --string: #c41a16;
+  --flash: rgba(255, 196, 0, 0.55);
   color-scheme: light;
 }
 
@@ -25,6 +26,7 @@
   --element: #5db0d7;
   --error: #f28b82;
   --string: #f28b54;
+  --flash: rgba(255, 196, 0, 0.35);
   color-scheme: dark;
 }
 
@@ -239,4 +241,72 @@ body {
 
 .handler-element {
   color: var(--element);
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text);
+  padding: 2px 8px;
+}
+
+.tabs button.active {
+  border-bottom-color: var(--component);
+}
+
+.row.flash-0 {
+  animation: flash-0 0.8s ease-out;
+}
+
+.row.flash-1 {
+  animation: flash-1 0.8s ease-out;
+}
+
+@keyframes flash-0 {
+  from {
+    background: var(--flash);
+  }
+}
+
+@keyframes flash-1 {
+  from {
+    background: var(--flash);
+  }
+}
+
+.log {
+  flex: 1;
+  overflow: auto;
+}
+
+.batch-log {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.batch-log th {
+  position: sticky;
+  top: 0;
+  background: var(--toolbar);
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.batch-log th,
+.batch-log td {
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.batch-log td.number {
+  text-align: right;
 }

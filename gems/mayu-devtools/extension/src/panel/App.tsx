@@ -27,8 +27,10 @@ import {
   isTree,
   ownerComponents,
   topElements,
+  updatedRows,
   type TreeNode,
 } from "../tree";
+import type { BatchEntry } from "../batch";
 import {
   isDetails,
   type Details as DetailsAnswer,
@@ -36,6 +38,7 @@ import {
   type Handler,
 } from "../values";
 import Entries from "./ValueView";
+import BatchLog from "./BatchLog";
 
 type Status =
   | { kind: "loading" }
@@ -49,6 +52,8 @@ const NAVIGATION_REFRESH_DELAY = 1000;
 // Revealing a node selects it in the Elements panel, which is reported back
 // as a selection. Ignore that echo for a moment.
 const REVEAL_ECHO_TIMEOUT = 500;
+// Batches the Batches tab keeps.
+const MAX_LOGGED_BATCHES = 200;
 
 export default function App({ connection }: { connection: Connection }) {
   const [status, setStatus] = useState<Status>({ kind: "loading" });
@@ -57,6 +62,12 @@ export default function App({ connection }: { connection: Connection }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [componentsOnly, setComponentsOnly] = useState(true);
   const [showInternal, setShowInternal] = useState(false);
+  const [tab, setTab] = useState<"tree" | "batches">("tree");
+  const [highlightUpdates, setHighlightUpdates] = useState(true);
+  // How many times each row has flashed: a changed count restarts the flash.
+  const [flashes, setFlashes] = useState<Record<string, number>>({});
+  const [batches, setBatches] = useState<BatchEntry[]>([]);
+  const [paused, setPaused] = useState(false);
   const generation = useRef(0);
   const revealing = useRef<string | null>(null);
   const scrolledToId = useRef<string | null>(null);
@@ -253,55 +264,138 @@ export default function App({ connection }: { connection: Connection }) {
       : selectedNode;
   const details = useDetails(connection, detailNode?.id ?? null);
 
+  // Flash the rows of what each batch changed, and keep a log of batches.
+  useEffect(
+    () =>
+      connection.subscribe((message) => {
+        if (message.type !== "batch") return;
+
+        if (!paused) {
+          setBatches((current) =>
+            [...[...message.entries].reverse(), ...current].slice(
+              0,
+              MAX_LOGGED_BATCHES,
+            ),
+          );
+        }
+
+        if (!highlightUpdates || !tree) return;
+        const rows = updatedRows(
+          tree,
+          message.entries.flatMap((entry) => entry.ids),
+          { componentsOnly, internal: showInternal },
+        );
+        if (rows.length === 0) return;
+        setFlashes((current) => {
+          const next = { ...current };
+          for (const id of rows) next[id] = (current[id] ?? 0) + 1;
+          return next;
+        });
+      }),
+    [connection, paused, highlightUpdates, tree, componentsOnly, showInternal],
+  );
+
   return (
     <div class="app">
       <header class="toolbar">
-        <label>
-          <input
-            type="checkbox"
-            checked={componentsOnly}
-            onChange={(event) => setComponentsOnly(event.currentTarget.checked)}
-          />
-          Components only
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={showInternal}
-            disabled={!componentsOnly}
-            onChange={(event) => setShowInternal(event.currentTarget.checked)}
-          />
-          Mayu internal components
-        </label>
-        <button type="button" onClick={() => void refresh()}>
-          Refresh
-        </button>
-      </header>
-      <main class="tree" role="tree" onMouseLeave={() => hover(null)}>
-        {status.kind === "ready" && shown ? (
-          shown.children.map((child) => (
-            <Row
-              key={child.id}
-              node={child}
-              depth={0}
-              collapsed={collapsed}
-              highlightedId={highlightedId}
-              onSelect={select}
-              onHover={hover}
-              onToggle={toggle}
-            />
-          ))
+        <nav class="tabs">
+          <button
+            type="button"
+            class={tab === "tree" ? "active" : ""}
+            onClick={() => setTab("tree")}
+          >
+            Components
+          </button>
+          <button
+            type="button"
+            class={tab === "batches" ? "active" : ""}
+            onClick={() => setTab("batches")}
+          >
+            Batches
+          </button>
+        </nav>
+        {tab === "tree" ? (
+          <>
+            <label>
+              <input
+                type="checkbox"
+                checked={componentsOnly}
+                onChange={(event) =>
+                  setComponentsOnly(event.currentTarget.checked)
+                }
+              />
+              Components only
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showInternal}
+                disabled={!componentsOnly}
+                onChange={(event) =>
+                  setShowInternal(event.currentTarget.checked)
+                }
+              />
+              Mayu internal components
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={highlightUpdates}
+                onChange={(event) =>
+                  setHighlightUpdates(event.currentTarget.checked)
+                }
+              />
+              Highlight updates
+            </label>
+            <button type="button" onClick={() => void refresh()}>
+              Refresh
+            </button>
+          </>
         ) : (
-          <StatusMessage status={status} />
+          <>
+            <button type="button" onClick={() => setPaused(!paused)}>
+              {paused ? "Resume" : "Pause"}
+            </button>
+            <button type="button" onClick={() => setBatches([])}>
+              Clear
+            </button>
+          </>
         )}
-      </main>
-      {tree && detailNode && (
-        <Details
-          node={detailNode}
-          owners={ownerComponents(tree, detailNode.id)}
-          details={details?.id === detailNode.id ? details : null}
-          onShowInElements={showInElements}
-        />
+      </header>
+      {tab === "tree" ? (
+        <>
+          <main class="tree" role="tree" onMouseLeave={() => hover(null)}>
+            {status.kind === "ready" && shown ? (
+              shown.children.map((child) => (
+                <Row
+                  key={child.id}
+                  node={child}
+                  depth={0}
+                  collapsed={collapsed}
+                  highlightedId={highlightedId}
+                  flashes={flashes}
+                  onSelect={select}
+                  onHover={hover}
+                  onToggle={toggle}
+                />
+              ))
+            ) : (
+              <StatusMessage status={status} />
+            )}
+          </main>
+          {tree && detailNode && (
+            <Details
+              node={detailNode}
+              owners={ownerComponents(tree, detailNode.id)}
+              details={details?.id === detailNode.id ? details : null}
+              onShowInElements={showInElements}
+            />
+          )}
+        </>
+      ) : (
+        <main class="log">
+          <BatchLog entries={batches} />
+        </main>
       )}
     </div>
   );
@@ -380,6 +474,7 @@ type RowProps = {
   depth: number;
   collapsed: Set<string>;
   highlightedId: string | null;
+  flashes: Record<string, number>;
   onSelect: (node: TreeNode) => void;
   onHover: (node: TreeNode) => void;
   onToggle: (id: string) => void;
@@ -390,12 +485,14 @@ function Row({
   depth,
   collapsed,
   highlightedId,
+  flashes,
   onSelect,
   onHover,
   onToggle,
 }: RowProps) {
   const expandable = node.children.length > 0;
   const expanded = expandable && !collapsed.has(node.id);
+  const flash = flashes[node.id];
 
   return (
     <>
@@ -405,6 +502,8 @@ function Row({
           node.type,
           node.internal && "internal",
           node.id === highlightedId && "selected",
+          // Two identical animations: switching restarts it.
+          flash !== undefined && `flash-${flash % 2}`,
         ]
           .filter(Boolean)
           .join(" ")}
@@ -436,6 +535,7 @@ function Row({
             depth={depth + 1}
             collapsed={collapsed}
             highlightedId={highlightedId}
+            flashes={flashes}
             onSelect={onSelect}
             onHover={onHover}
             onToggle={onToggle}

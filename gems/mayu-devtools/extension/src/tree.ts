@@ -82,3 +82,31 @@ export function topElements(node: TreeNode): TreeNode[] {
   if (node.type === "element") return [node];
   return node.children.flatMap(topElements);
 }
+
+// The rows to flash for DOM changes to the elements with the ids: the
+// elements themselves, or in the component view their closest shown
+// component.
+export function updatedRows(
+  tree: TreeNode,
+  ids: string[],
+  {
+    componentsOnly,
+    internal = false,
+  }: { componentsOnly: boolean; internal?: boolean },
+): string[] {
+  const rows = new Set<string>();
+
+  for (const id of ids) {
+    if (!componentsOnly) {
+      if (findPath(tree, id)) rows.add(id);
+      continue;
+    }
+
+    const owner = ownerComponents(tree, id).find(
+      (component) => internal || !component.internal,
+    );
+    if (owner) rows.add(owner.id);
+  }
+
+  return [...rows];
+}

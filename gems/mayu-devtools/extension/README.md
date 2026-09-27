@@ -9,7 +9,10 @@ adds:
   (`@count`), context (`@@theme`), instance variables and the events its
   methods handle, or an element's attributes and event handlers. _Show in
   Elements_ selects it in the Elements panel. Elements show their classes as
-  written in the source (`<a.title>`), not the generated ones.
+  written in the source (`<a.title>`), not the generated ones. With _Highlight
+  updates_, rows flash when the page changes what they render. The _Batches_
+  tab lists the batches of DOM changes the page applied, with their commands
+  and how long applying them took.
 - a **Mayu** pane in the Elements panel's sidebar, showing the components that
   render the selected element, the element's event handlers, and the props and
   state of its component. Selecting an element also selects its component in

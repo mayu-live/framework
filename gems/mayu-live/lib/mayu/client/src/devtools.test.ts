@@ -51,16 +51,22 @@ describe("Devtools", () => {
     const listener = vi.fn();
     const unsubscribe = api.onBatch(listener);
 
-    devtools.batchApplied([["InspectResult", "1", null]]);
-    devtools.batchApplied([
-      ["Pong", 1],
-      ["InspectResult", "2", null],
-    ]);
-    devtools.batchApplied([["SetTextContent", "v1", "hi"]]);
+    devtools.batchApplied([["InspectResult", "1", null]], 1);
+    devtools.batchApplied(
+      [
+        ["Pong", 1],
+        ["InspectResult", "2", null],
+      ],
+      1,
+    );
+    devtools.batchApplied([["SetTextContent", "v1", "hi"]], 2.5);
     unsubscribe();
-    devtools.batchApplied([["SetTextContent", "v1", "bye"]]);
+    devtools.batchApplied([["SetTextContent", "v1", "bye"]], 1);
 
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener).toHaveBeenCalledWith([["SetTextContent", "v1", "hi"]]);
+    expect(listener).toHaveBeenCalledWith(
+      [["SetTextContent", "v1", "hi"]],
+      2.5,
+    );
   });
 });

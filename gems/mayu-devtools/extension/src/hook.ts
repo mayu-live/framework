@@ -20,10 +20,14 @@ import {
   type DevtoolsMessage,
   type PageMessage,
 } from "./messages";
+import { summarizeBatch, type BatchEntry } from "./batch";
 import Highlighter from "./highlight";
 
-// Batches can come in fast, and the devtools refetch the tree after each one.
-const BATCH_DEBOUNCE = 100;
+// Batches can come in fast, and the devtools refetch the tree after each
+// message, so batches are reported together at most this often.
+const BATCH_INTERVAL = 100;
+// Batches kept while none are reported, such as in a hidden tab.
+const MAX_PENDING_BATCHES = 200;
 
 export type Hook = DevtoolsHook & {
   detected(): boolean;
@@ -35,6 +39,7 @@ export type Hook = DevtoolsHook & {
 
 let api: DevtoolsApi | null = null;
 let batchTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingBatches: BatchEntry[] = [];
 const highlighter = new Highlighter((id) => api?.node(id) ?? null);
 
 function post(message: PageMessage) {
@@ -52,12 +57,18 @@ const hook: Hook = {
     }
 
     api = registered;
-    api.onBatch(() => {
-      if (batchTimer !== null) clearTimeout(batchTimer);
+    api.onBatch((batch, durationMs) => {
+      const entry = summarizeBatch(batch, durationMs, Date.now());
+      entry.ids = elementIds(entry.ids);
+      pendingBatches.push(entry);
+      pendingBatches = pendingBatches.slice(-MAX_PENDING_BATCHES);
+
+      if (batchTimer !== null) return;
       batchTimer = setTimeout(() => {
         batchTimer = null;
-        post({ type: "batch" });
-      }, BATCH_DEBOUNCE);
+        post({ type: "batch", entries: pendingBatches });
+        pendingBatches = [];
+      }, BATCH_INTERVAL);
     });
     post({ type: "detected" });
   },
@@ -89,6 +100,23 @@ const hook: Hook = {
     highlighter.hide();
   },
 };
+
+// The devtools tree has elements but not text nodes, so a change to a text
+// node counts as a change to its element. Removed nodes are gone and keep
+// their id.
+function elementIds(ids: string[]) {
+  const result = new Set<string>();
+  for (const id of ids) {
+    const node = api?.node(id);
+    if (!node || node instanceof Element) {
+      result.add(id);
+    } else {
+      const element = hook.idForNode(node.parentNode);
+      if (element) result.add(element);
+    }
+  }
+  return [...result];
+}
 
 async function answer(message: DevtoolsMessage) {
   switch (message.type) {

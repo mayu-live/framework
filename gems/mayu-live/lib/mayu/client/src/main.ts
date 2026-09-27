@@ -32,7 +32,7 @@ export default function init(sessionId: string) {
       onBrowserAction: createBrowserActionHandler(mayu),
       onBatchApplied: (batch, durationMs) => {
         mayu.recordCommandApply(batch.length, durationMs);
-        devtools.batchApplied(batch);
+        devtools.batchApplied(batch, durationMs);
       },
       onInspectResult: (id, result) => mayu.resolveInspect(id, result),
     },
