@@ -13,13 +13,19 @@ import {
 } from "preact/hooks";
 
 import type Connection from "../connection";
-import { isDetected, reveal, selectedId as selectedIdInPage } from "../page";
+import {
+  hideHighlight,
+  highlight,
+  isDetected,
+  reveal,
+  selectedId as selectedIdInPage,
+} from "../page";
 import {
   componentTree,
   findPath,
-  firstElement,
   isTree,
   ownerComponents,
+  topElements,
   type TreeNode,
 } from "../tree";
 
@@ -158,8 +164,7 @@ export default function App({ connection }: { connection: Connection }) {
       if (!tree) return;
 
       // A component has no DOM node of its own; reveal its first element.
-      const full = findPath(tree, node.id)?.at(-1);
-      const element = full && firstElement(full);
+      const [element] = renderedElements(tree, node);
       if (!element) return;
 
       revealing.current = element.id;
@@ -170,6 +175,33 @@ export default function App({ connection }: { connection: Connection }) {
     },
     [tree],
   );
+
+  // Highlights what a row renders in the page, or nothing for null.
+  const hover = useCallback(
+    (node: TreeNode | null) => {
+      const elements = node && tree ? renderedElements(tree, node) : [];
+      const shown =
+        node && elements.length > 0
+          ? highlight(
+              elements.map((element) => element.id),
+              displayName(node),
+            )
+          : hideHighlight();
+      // The page may be gone, and then there is nothing to highlight.
+      shown.catch(() => undefined);
+    },
+    [tree],
+  );
+
+  // Hovering stops when the panel is hidden, without a mouseleave.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden) hover(null);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [hover]);
 
   const toggle = useCallback((id: string) => {
     setCollapsed((current) => {
@@ -210,7 +242,7 @@ export default function App({ connection }: { connection: Connection }) {
           Refresh
         </button>
       </header>
-      <main class="tree" role="tree">
+      <main class="tree" role="tree" onMouseLeave={() => hover(null)}>
         {status.kind === "ready" && shown ? (
           shown.children.map((child) => (
             <Row
@@ -220,6 +252,7 @@ export default function App({ connection }: { connection: Connection }) {
               collapsed={collapsed}
               highlightedId={highlightedId}
               onSelect={select}
+              onHover={hover}
               onToggle={toggle}
             />
           ))
@@ -235,6 +268,17 @@ export default function App({ connection }: { connection: Connection }) {
       )}
     </div>
   );
+}
+
+function displayName(node: TreeNode) {
+  return node.type === "component" ? node.name : `<${node.name}>`;
+}
+
+// The outermost elements a node renders. The component view leaves elements
+// out of the tree it shows, so look in the full tree.
+function renderedElements(tree: TreeNode, node: TreeNode) {
+  const full = findPath(tree, node.id)?.at(-1);
+  return full ? topElements(full) : [];
 }
 
 function StatusMessage({ status }: { status: Status }) {
@@ -263,6 +307,7 @@ type RowProps = {
   collapsed: Set<string>;
   highlightedId: string | null;
   onSelect: (node: TreeNode) => void;
+  onHover: (node: TreeNode) => void;
   onToggle: (id: string) => void;
 };
 
@@ -272,6 +317,7 @@ function Row({
   collapsed,
   highlightedId,
   onSelect,
+  onHover,
   onToggle,
 }: RowProps) {
   const expandable = node.children.length > 0;
@@ -294,6 +340,7 @@ function Row({
         data-id={node.id}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
         onClick={() => onSelect(node)}
+        onMouseEnter={() => onHover(node)}
       >
         <span
           class="toggle"
@@ -304,9 +351,7 @@ function Row({
         >
           {expandable ? (expanded ? "▾" : "▸") : ""}
         </span>
-        <span class="name">
-          {node.type === "component" ? node.name : `<${node.name}>`}
-        </span>
+        <span class="name">{displayName(node)}</span>
         {node.path && <span class="path">{node.path}</span>}
       </div>
       {expanded &&
@@ -318,6 +363,7 @@ function Row({
             collapsed={collapsed}
             highlightedId={highlightedId}
             onSelect={onSelect}
+            onHover={onHover}
             onToggle={onToggle}
           />
         ))}
@@ -332,7 +378,7 @@ function Details({ node, owners }: { node: TreeNode; owners: TreeNode[] }) {
     <footer class="details">
       <dl>
         <dt>{node.type === "component" ? "Component" : "Element"}</dt>
-        <dd>{node.type === "component" ? node.name : `<${node.name}>`}</dd>
+        <dd>{displayName(node)}</dd>
         {node.path && (
           <>
             <dt>Path</dt>

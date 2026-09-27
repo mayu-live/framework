@@ -31,6 +31,17 @@ export function selectedId() {
   return evalInPage<string | null>(`${HOOK}?.idForNode($0) ?? null`);
 }
 
+// Highlights the DOM nodes with the vnode ids in the page.
+export function highlight(ids: string[], label: string) {
+  return evalInPage<void>(
+    `${HOOK}?.highlight(${JSON.stringify(ids)}, ${JSON.stringify(label)})`,
+  );
+}
+
+export function hideHighlight() {
+  return evalInPage<void>(`${HOOK}?.hideHighlight()`);
+}
+
 // Selects the DOM node with the vnode id in the Elements panel.
 export function reveal(id: string) {
   const node = `${HOOK}?.node(${JSON.stringify(id)})`;

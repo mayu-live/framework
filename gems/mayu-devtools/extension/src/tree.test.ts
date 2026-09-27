@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   componentTree,
   findPath,
-  firstElement,
   ownerComponents,
+  topElements,
   type TreeNode,
 } from "./tree";
 
@@ -85,8 +85,19 @@ describe("componentTree", () => {
   });
 });
 
-describe("firstElement", () => {
-  it("finds the first element a component renders", () => {
-    expect(firstElement(findPath(tree, "v4")!.at(-1)!)?.id).toBe("v5");
+describe("topElements", () => {
+  it("finds the outermost elements a component renders", () => {
+    const fragment = node("c", "component", "Fragment", [
+      node("a", "element", "p", [node("x", "element", "span")]),
+      node("inner", "component", "Inner", [node("b", "element", "hr")]),
+    ]);
+
+    expect(topElements(fragment).map((child) => child.id)).toEqual(["a", "b"]);
+  });
+
+  it("returns an element itself", () => {
+    const ul = findPath(tree, "v5")!.at(-1)!;
+
+    expect(topElements(ul).map((child) => child.id)).toEqual(["v5"]);
   });
 });

@@ -61,15 +61,10 @@ export function componentTree(
   return { ...root, children: children(root) };
 }
 
-// The first element a node renders, which is where revealing a component in
-// the Elements panel goes.
-export function firstElement(node: TreeNode): TreeNode | null {
-  if (node.type === "element") return node;
-
-  for (const child of node.children) {
-    const element = firstElement(child);
-    if (element) return element;
-  }
-
-  return null;
+// The outermost elements a node renders: the node itself for an element.
+// Revealing a component in the Elements panel goes to the first of them, and
+// highlighting it covers them all.
+export function topElements(node: TreeNode): TreeNode[] {
+  if (node.type === "element") return [node];
+  return node.children.flatMap(topElements);
 }

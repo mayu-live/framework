@@ -4,8 +4,8 @@ A browser devtools extension for Mayu Live apps, for Chrome and Firefox. It
 adds:
 
 - a **Mayu** panel with the component tree of the page, which refreshes as the
-  page updates. Clicking a component or element selects it in the Elements
-  panel.
+  page updates. Hovering a row highlights what it renders in the page, and
+  clicking it selects it in the Elements panel.
 - a **Mayu** pane in the Elements panel's sidebar, showing the components that
   render the selected element. Selecting an element also selects its component
   in the Mayu panel.

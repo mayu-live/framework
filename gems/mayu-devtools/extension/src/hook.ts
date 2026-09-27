@@ -20,6 +20,7 @@ import {
   type DevtoolsMessage,
   type PageMessage,
 } from "./messages";
+import Highlighter from "./highlight";
 
 // Batches can come in fast, and the devtools refetch the tree after each one.
 const BATCH_DEBOUNCE = 100;
@@ -28,10 +29,13 @@ export type Hook = DevtoolsHook & {
   detected(): boolean;
   node(id: string): Node | null;
   idForNode(node: Node | null): string | null;
+  highlight(ids: string[], label: string): void;
+  hideHighlight(): void;
 };
 
 let api: DevtoolsApi | null = null;
 let batchTimer: ReturnType<typeof setTimeout> | null = null;
+const highlighter = new Highlighter((id) => api?.node(id) ?? null);
 
 function post(message: PageMessage) {
   window.postMessage({ ...message, source: FROM_PAGE }, "*");
@@ -74,6 +78,15 @@ const hook: Hook = {
       if (id) return id;
     }
     return null;
+  },
+
+  // Draws boxes over the DOM nodes with the ids, labeled with the label.
+  highlight(ids, label) {
+    highlighter.show(ids, label);
+  },
+
+  hideHighlight() {
+    highlighter.hide();
   },
 };
 
