@@ -51,12 +51,21 @@ export default function App({ connection }: { connection: Connection }) {
   const [showInternal, setShowInternal] = useState(false);
   const generation = useRef(0);
   const revealing = useRef<string | null>(null);
+  const scrolledToId = useRef<string | null>(null);
+  const treeJSON = useRef("null");
 
   const refresh = useCallback(async () => {
     const current = ++generation.current;
     const settle = (next: Status, nextTree: TreeNode | null = null) => {
       if (current !== generation.current) return;
-      setStatus(next);
+      // Most batches don't change the tree, such as the class changes of an
+      // animation. Keeping the same objects then leaves the panel alone.
+      setStatus((previous) =>
+        JSON.stringify(previous) === JSON.stringify(next) ? previous : next,
+      );
+      const json = JSON.stringify(nextTree);
+      if (json === treeJSON.current) return;
+      treeJSON.current = json;
       setTree(nextTree);
     };
 
@@ -97,6 +106,7 @@ export default function App({ connection }: { connection: Connection }) {
     const onNavigated = () => {
       generation.current++;
       setStatus({ kind: "loading" });
+      treeJSON.current = "null";
       setTree(null);
       setSelectedId(null);
       if (timer !== null) clearTimeout(timer);
@@ -140,11 +150,22 @@ export default function App({ connection }: { connection: Connection }) {
     return owner?.id ?? null;
   }, [tree, shown, selectedId, componentsOnly, showInternal]);
 
-  // Expand the rows above the selection and scroll it into view.
+  // Expand the rows above the selection and scroll it into view, once per
+  // selection. Doing it again when the tree updates would pull the tree back
+  // to the selection while scrolling it.
   useEffect(() => {
-    if (!shown || !highlightedId) return;
+    if (!shown || !highlightedId) {
+      scrolledToId.current = null;
+      return;
+    }
+    if (scrolledToId.current === highlightedId) return;
 
-    const ancestors = (findPath(shown, highlightedId) ?? []).slice(0, -1);
+    const path = findPath(shown, highlightedId);
+    // Not in the tree yet; try again when it updates.
+    if (!path) return;
+    scrolledToId.current = highlightedId;
+
+    const ancestors = path.slice(0, -1);
     setCollapsed((current) => {
       if (!ancestors.some((node) => current.has(node.id))) return current;
       const next = new Set(current);
@@ -236,7 +257,7 @@ export default function App({ connection }: { connection: Connection }) {
             disabled={!componentsOnly}
             onChange={(event) => setShowInternal(event.currentTarget.checked)}
           />
-          Mayu's own components
+          Mayu internal components
         </label>
         <button type="button" onClick={() => void refresh()}>
           Refresh
