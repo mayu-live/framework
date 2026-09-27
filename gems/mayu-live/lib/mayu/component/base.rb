@@ -11,11 +11,13 @@ require_relative "../runtime/h"
 require_relative "css_units"
 require_relative "fetch"
 require_relative "browser"
+require_relative "../not_found"
 
 module Mayu
   module Component
     class Base
       H = Mayu::Runtime::H
+      NotFound = Mayu::NotFound
 
       using CSSUnits::Refinements
       include Fetch::Helper

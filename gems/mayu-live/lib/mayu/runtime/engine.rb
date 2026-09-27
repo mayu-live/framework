@@ -45,6 +45,11 @@ module Mayu
       # Seconds the updater waits after each pass, or nil to run as soon as
       # there is work. Set while the page is hidden.
       attr_accessor :update_interval
+      # Called when a component raises Mayu::NotFound in a live page. Returns
+      # the descriptor for the closest not-found view, or nil to treat the
+      # NotFound like any other render error. Set by the session after the
+      # engine is built or restored, since a Method cannot be marshalled.
+      attr_accessor :not_found_handler
       alias_method :render_exceptions?, :render_exceptions
 
       def initialize(
@@ -64,6 +69,7 @@ module Mayu
         @vnode_id_sequence = 0
         @output_queue = Async::Queue.new
         @update_interval = nil
+        @not_found_handler = nil
         @force_render = 0
         initialize_render_gate
         @updater = VNodes::Updater.new(@output_queue)
@@ -112,6 +118,7 @@ module Mayu
         @render_exceptions = true if @render_exceptions.nil?
         @output_queue = Async::Queue.new
         @update_interval = nil
+        @not_found_handler = nil
         @force_render = 0
         initialize_render_gate
         @updater = VNodes::Updater.new(@output_queue)
@@ -155,6 +162,10 @@ module Mayu
 
       def replace_route_assets(stylesheets:, scripts:)
         @root.replace_route_assets(stylesheets:, scripts:)
+      end
+
+      def not_found_descriptor
+        @not_found_handler&.call
       end
 
       def start

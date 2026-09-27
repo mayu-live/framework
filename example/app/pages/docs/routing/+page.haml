@@ -42,6 +42,29 @@
     * `/about`
     * `/`
 
+    ## Not found
+
+    A `+not-found.haml` file is rendered when no page matches a path. The
+    closest one wins: `app/pages/posts/+not-found.haml` handles `/posts/nope`,
+    and `app/pages/+not-found.haml` handles everything else.
+
+    A page that matches but has nothing to show can raise `NotFound` while it
+    renders. The closest `+not-found.haml` for the current path takes over,
+    and the first request responds with status 404:
+
+    ```haml
+    :ruby
+      Post = import("/models/Post")
+
+    - post = Post.find($params[:id])
+    - raise NotFound unless post
+
+    %h1= post.title
+    ```
+
+    `NotFound` is navigation rather than an error, so error boundaries do not
+    see it and nothing is logged. A `+error.haml` file handles other exceptions.
+
     ## Route handlers
 
     A `+route.rb` file handles HTTP requests for its directory. Public methods

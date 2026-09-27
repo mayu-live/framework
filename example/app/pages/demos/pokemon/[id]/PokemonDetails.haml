@@ -38,6 +38,7 @@
     @pokemon = nil
     @species = nil
     @error = nil
+    @missing = false
     @shiny = false
   end
 
@@ -50,9 +51,13 @@
     load($id) if prev_props[:id] != $id
   end
 
+  # The entry is fetched after the first render, so a missing Pokémon can't
+  # be raised here. It is remembered and raised from the next render instead,
+  # which swaps in the closest +not-found view.
   def load(id)
     res = fetch("https://pokeapi.co/api/v2/pokemon/#{id}/")
-    raise "There is no Pokémon with number #{id}." unless res.ok?
+    return @missing = true if res.status == 404
+    raise "Could not load Pokémon #{id}: #{res.status}" unless res.ok?
     pokemon = res.json(symbolize_names: true)
 
     # Genus and Pokédex text live on the species. The entry is still useful
@@ -64,6 +69,7 @@
       @pokemon = pokemon
       @species = species
       @error = nil
+      @missing = false
       @shiny = false
     end
   rescue => e
@@ -312,6 +318,8 @@
     place-items: center;
     min-height: 20rem;
   }
+
+- raise NotFound if @missing
 
 - return if @error
   %p Error: #{@error}

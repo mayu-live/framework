@@ -713,6 +713,113 @@ class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
     end
   end
 
+  class NotFoundProbe < Mayu::Component::Base
+    def self.module_path = "/tests/not_found"
+
+    def initialize
+      @missing = false
+    end
+
+    def go_missing
+      @missing = true
+      rerender!
+    end
+
+    def render
+      raise NotFound if @missing
+      H[:div, "found"]
+    end
+  end
+
+  class NotFoundBoundary < Mayu::Component::Base
+    class << self
+      attr_accessor :handled_errors
+    end
+
+    def handle_error(error)
+      self.class.handled_errors << error
+      @failed = true
+      true
+    end
+
+    def render
+      return H[:div, "boundary fallback"] if @failed
+      H[NotFoundProbe]
+    end
+  end
+
+  class NotFoundView < Mayu::Component::Base
+    def render
+      H[:h1, "not found view"]
+    end
+  end
+
+  def test_not_found_replaces_the_document_and_skips_error_boundaries
+    NotFoundBoundary.handled_errors = []
+    descriptor = H[:body, H[NotFoundBoundary]]
+
+    run_engine(descriptor) do |engine|
+      engine.not_found_handler = -> { H[:body, H[NotFoundView]] }
+      component = find_component(engine.root, NotFoundProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.go_missing
+
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      patches = unwrap_commands(batch)
+
+      refute(patches.any? { it.is_a?(Mayu::Runtime::Commands::RenderError) })
+      assert_empty(NotFoundBoundary.handled_errors)
+
+      html = render_html(engine.root)
+      assert_includes(html, "<h1>not found view</h1>")
+      refute_includes(html, "found</div>")
+      refute_includes(html, "boundary fallback")
+    end
+  end
+
+  def test_not_found_without_a_handler_is_an_ordinary_render_error
+    NotFoundBoundary.handled_errors = []
+    descriptor = H[:body, H[NotFoundBoundary]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, NotFoundProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.go_missing
+
+      Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+
+      assert_equal(1, NotFoundBoundary.handled_errors.size)
+      assert_kind_of(Mayu::NotFound, NotFoundBoundary.handled_errors.first)
+      assert_includes(render_html(engine.root), "boundary fallback")
+    end
+  end
+
+  def test_not_found_falls_back_to_the_overlay_when_the_handler_declines
+    descriptor = H[:body, H[NotFoundProbe]]
+
+    run_engine(descriptor) do |engine|
+      engine.not_found_handler = -> {}
+      component = find_component(engine.root, NotFoundProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.go_missing
+
+      patches =
+        dequeue_until(engine) do |batch|
+          batch.any? { it.is_a?(Mayu::Runtime::Commands::RenderError) }
+        end
+
+      refute_nil(patches)
+      render_error = patches.find { it.is_a?(Mayu::Runtime::Commands::RenderError) }
+      assert_equal("Mayu::NotFound", render_error.type)
+    end
+  end
+
   def test_unhandled_render_error_uses_an_injected_module_provider
     descriptor = H[:body, H[RenderErrorProbe]]
     provider =

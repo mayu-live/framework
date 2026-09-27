@@ -112,6 +112,11 @@ The server renders HTML for the initial request, then keeps a per-browser sessio
   updates already collected for the same batch are preserved.
 - Unhandled errors are always logged. `server.render_exceptions` controls
   whether the server also sends a `RenderError` command for the browser overlay.
+- `Mayu::NotFound` (available as `NotFound` in components) is not an error:
+  a component raising it while rendering replaces the document with the
+  closest `+not-found` view for the current path. Boundaries are skipped and
+  nothing is logged. A `NotFound` raised by the not-found view itself, or when
+  the app has no such view, is handled like any other render error.
 
 ## Components (`gems/mayu-live/lib/mayu/component`)
 
@@ -159,6 +164,11 @@ ordered CSS and JavaScript assets for the route. Mayu passes the descriptor and
 asset URLs to its existing VDOM/runtime engine. Route-resolution failures use
 the nearest Klenod `+error` view; initial and live VDOM failures retain Mayu's
 error-boundary/render-error-command behavior.
+A component that raises `Mayu::NotFound` renders the nearest `+not-found`
+view instead: on the first request the session swaps the page before the
+response is written and answers with 404, and in a live session the VDOM asks
+the session for the not-found descriptor through `Engine#not_found_handler`
+and swaps it in within the same update batch.
 
 ### Development and production
 

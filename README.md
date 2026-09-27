@@ -397,6 +397,10 @@ This would create the following routes:
 | `/posts/:id/` | `app/pages/posts/[id]/+page.haml` | `app/pages/+layout.haml` `app/pages/posts/+layout.haml` |
 | `/*`          | `app/pages/+not-found.haml`       | `app/pages/+layout.haml`                                |
 
+A page can also `raise NotFound` while rendering, for example when the record
+for `:id` does not exist. The closest `+not-found.haml` is rendered with status
+404, as if the route had not matched.
+
 For a real-world example, check out
 [`example/app/pages/`](https://github.com/mayu-live/framework/tree/main/example/app/pages).
 

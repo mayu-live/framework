@@ -126,8 +126,11 @@ module Mayu
       begin
         @engine = build_engine(descriptor)
       rescue Runtime::VNodes::VComponent::UnhandledRenderError => failure
-        @engine = build_engine(error_page_for(failure))
+        fallback =
+          failure.error.is_a?(NotFound) ? not_found_page : error_page_for(failure)
+        @engine = build_engine(fallback)
       end
+      @engine.not_found_handler = method(:live_not_found_descriptor)
 
       @last_ping = Async::Clock.now
       @incoming_events = Async::Queue.new
@@ -175,6 +178,36 @@ module Mayu
       )
     end
 
+    # A component raised NotFound for the current path. The closest
+    # +not-found view takes over with status 404, like an unmatched route.
+    def not_found_page
+      provider = module_provider
+      resolved_page =
+        provider && Klenod::Router.new(provider).not_found(@request_info.path)
+      return apply_resolved_page(resolved_page) if resolved_page
+
+      missing_page(@request_info.path)
+    end
+
+    # The VDOM asks for this when a component raises NotFound in a live page.
+    # Returns nil while the not-found view is already showing, so a NotFound
+    # raised by that view is handled as the render error it is.
+    def live_not_found_descriptor
+      return nil if @route_status == 404
+
+      descriptor = not_found_page
+      @engine.replace_route_assets(
+        stylesheets: route_stylesheets,
+        scripts: route_scripts
+      )
+      descriptor
+    end
+
+    def missing_page(path)
+      @route_status = 404
+      ErrorPage.build("Could not find page for #{path}")
+    end
+
     def init_js_path
       "#{@environment.runtime_init_js_path}##{@id}"
     end
@@ -184,6 +217,7 @@ module Mayu
       @engine.metrics = environment.metrics if @engine.respond_to?(:metrics=)
       @engine.module_provider = module_provider
       @engine.render_exceptions = environment.config.server.render_exceptions?
+      @engine.not_found_handler = method(:live_not_found_descriptor)
       self
     end
 
@@ -426,13 +460,13 @@ module Mayu
 
     def resolve_route(path)
       provider = module_provider
-      return ErrorPage.build("Could not find page for #{path}") unless provider
+      return missing_page(path) unless provider
 
       router = Klenod::Router.new(provider)
       resolved_page = router.resolve(path)
       return apply_resolved_page(resolved_page) if resolved_page
 
-      ErrorPage.build("Could not find page for #{path}")
+      missing_page(path)
     rescue => error
       Console.logger.error(self, error)
       resolved_page = router.error(path, error:)

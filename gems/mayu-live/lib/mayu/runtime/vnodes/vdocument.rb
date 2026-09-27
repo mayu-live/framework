@@ -11,6 +11,7 @@ require_relative "base"
 require_relative "command_collector"
 require_relative "vcomponent"
 require_relative "../render_error"
+require_relative "../../not_found"
 require_relative "internal_components/html"
 require_relative "internal_components/head"
 
@@ -309,6 +310,17 @@ module Mayu
         end
 
         def resolve_render_error(collector, failure, checkpoint)
+          if failure.error.is_a?(Mayu::NotFound)
+            case render_not_found(collector, checkpoint)
+            in true
+              return true
+            in VComponent::UnhandledRenderError => not_found_failure
+              failure = not_found_failure
+            in false
+              nil
+            end
+          end
+
           boundary = failure.component.parent&.closest(VComponent)
 
           while boundary
@@ -339,6 +351,24 @@ module Mayu
 
           emit_render_error(collector, failure.error, failure.component)
           false
+        end
+
+        # A component raised NotFound. The whole document is replaced with the
+        # closest not-found view, skipping error boundaries: it is navigation,
+        # not a failure. Returns false when there is no view to show, so the
+        # NotFound is handled like any other render error, or the failure of
+        # the not-found view itself when that one does not render either.
+        def render_not_found(collector, checkpoint)
+          descriptor = @engine.not_found_descriptor
+          return false unless descriptor
+
+          collector.rollback(checkpoint)
+          @descriptor = descriptor
+          @html.update(collector, init_html)
+          true
+        rescue VComponent::UnhandledRenderError => not_found_failure
+          collector.rollback(checkpoint)
+          not_found_failure
         end
 
         def emit_render_error(collector, error, component_vnode)

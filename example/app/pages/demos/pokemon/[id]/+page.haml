@@ -65,24 +65,22 @@
     transform: translateX(2px);
   }
 
+- raise NotFound unless $params[:id].match?(/\A\d+\z/)
+- id = $params[:id].to_i
+
 %article
-  = if $params[:id].match?(/\A\d+\z/)
-    - id = $params[:id].to_i
+  %nav(aria-label="Pokédex navigation")
+    %a(href="/demos/pokemon") ← All Pokémon
+    .steps
+      = if id > 1 && id != FIRST_FORM
+        %a.step.prev(rel="prev"){href: "/demos/pokemon/#{id - 1}"}
+          ←
+          %img(alt="" width=40 height=40){src: format(SPRITE_URL, id - 1)}
+          = number(id - 1)
+      = if id != LAST_SPECIES
+        %a.step.next(rel="next"){href: "/demos/pokemon/#{id + 1}"}
+          = number(id + 1)
+          %img(alt="" width=40 height=40){src: format(SPRITE_URL, id + 1)}
+          →
 
-    %nav(aria-label="Pokédex navigation")
-      %a(href="/demos/pokemon") ← All Pokémon
-      .steps
-        = if id > 1 && id != FIRST_FORM
-          %a.step.prev(rel="prev"){href: "/demos/pokemon/#{id - 1}"}
-            ←
-            %img(alt="" width=40 height=40){src: format(SPRITE_URL, id - 1)}
-            = number(id - 1)
-        = if id != LAST_SPECIES
-          %a.step.next(rel="next"){href: "/demos/pokemon/#{id + 1}"}
-            = number(id + 1)
-            %img(alt="" width=40 height=40){src: format(SPRITE_URL, id + 1)}
-            →
-
-    %PokemonDetails(id=id)
-  = else
-    %p “#{$params[:id]}” is not a Pokédex number.
+  %PokemonDetails(id=id)
