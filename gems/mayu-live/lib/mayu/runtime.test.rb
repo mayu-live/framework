@@ -92,13 +92,10 @@ class Mayu::Runtime::Test < Minitest::Test
     end
 
     def handle_toggle
-      puts "\e[3;34mTOGGLING\e[0m"
       update!(@enabled = !@enabled)
     end
 
     def render
-      puts "\e[3;34mRENDERING\e[0m"
-
       [
         (
           if @enabled

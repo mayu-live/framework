@@ -54,7 +54,7 @@ module Mayu
         end
 
         def print_header
-          puts "\e[1;95mMayu v#{Mayu::VERSION}\e[0m"
+          output.puts "\e[1;95mMayu v#{Mayu::VERSION}\e[0m"
         end
       end
 

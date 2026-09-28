@@ -18,6 +18,9 @@ unless ENV["BUNDLE_WITHOUT"].to_s.split(":").include?("test")
     Minitest::TestTask.create(name) do |t|
       GEMS.each { |gem_name| t.libs << "gems/#{gem_name}/lib" }
       t.warning = false
+      # Tests that expect errors would otherwise print them. Tests that check
+      # log output build their own logger. CONSOLE_OUTPUT=Default restores it.
+      t.test_prelude = %(ENV["CONSOLE_OUTPUT"] ||= "Null")
       t.test_globs = globs
     end
     Rake::Task[name].comment = description

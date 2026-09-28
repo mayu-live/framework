@@ -227,7 +227,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
        "TEST_DRAIN_DELAY" => delay.to_s, "TEST_DRAIN_TIMEOUT" => timeout.to_s,
        "TEST_STARTUP_DELAY" => startup_delay.to_s, "TEST_METRICS" => metrics.to_s,
        "TEST_TRANSFER_FAILURE" => transfer_failure,
-       "CONSOLE_LEVEL" => "info"},
+       "CONSOLE_LEVEL" => "info", "CONSOLE_OUTPUT" => nil},
       RbConfig.ruby, "-W0", "-rbundler/setup", FIXTURE, @root,
       pgroup: true, out: File.join(@root, "server.log"), err: [:child, :out]
     )
