@@ -21,7 +21,14 @@ adds:
   the Mayu panel.
 
 Devtools only work against `mayu dev`, which installs the server side
-(`Mayu::Devtools` in this gem).
+(`Mayu::Devtools` in this gem) when the app's Gemfile includes
+`mayu-devtools`:
+
+```ruby
+group :development do
+  gem "mayu-devtools"
+end
+```
 
 ## Building
 

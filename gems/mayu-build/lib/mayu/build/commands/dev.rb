@@ -16,8 +16,9 @@ module Mayu
         def call
           require "mayu/configuration"
           require "mayu/server"
-          require "mayu/devtools"
           require_relative "../../build"
+
+          devtools = load_devtools
 
           Mayu::Configuration.with(:development) do |config|
             Mayu::Server.new(
@@ -27,7 +28,7 @@ module Mayu
                 provider =
                   Mayu::Build::Configuration.new(root: config.root).development_provider
                 environment = Mayu::Environment.new(config, module_provider: provider, metrics:)
-                Mayu::Devtools.install(environment)
+                devtools&.install(environment)
                 if config.server.hmr?
                   reloader =
                     Mayu::Build::HotReloader.new(
@@ -40,6 +41,20 @@ module Mayu
               end
             ).run
           end
+        end
+
+        private
+
+        # Devtools are optional: apps that want them add mayu-devtools to
+        # their Gemfile.
+        def load_devtools
+          require "mayu/devtools"
+          Mayu::Devtools
+        rescue LoadError => error
+          raise unless error.path == "mayu/devtools"
+
+          Console.logger.info(self, "Add mayu-devtools to your Gemfile to use the Mayu devtools.")
+          nil
         end
       end
     end

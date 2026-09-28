@@ -37,7 +37,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "mayu-live", "= #{Mayu::VERSION}"
-  spec.add_dependency "mayu-devtools", "= #{Mayu::VERSION}"
 
   # Klenod platform: compiling, watching, testing, and editor support.
   spec.add_dependency "klenod-build", "= 0.0.27"

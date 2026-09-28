@@ -8,7 +8,6 @@ PATH
       klenod-plugin-javascript (= 0.0.27)
       klenod-test (= 0.0.27)
       localhost (~> 1.7)
-      mayu-devtools (= 0.0.6)
       mayu-live (= 0.0.6)
       minitest (~> 6.0)
       nokolexbor (~> 0.8)
