@@ -11,7 +11,7 @@ PATH
       mayu-devtools (= 0.0.6)
       mayu-live (= 0.0.6)
       minitest (~> 6.0)
-      oga (~> 3.4)
+      nokolexbor (~> 0.8)
       reline (~> 0.6)
       rouge (~> 4.7)
       samovar (~> 2.5)
@@ -38,8 +38,6 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    ansi (1.6.0)
-    ast (2.4.3)
     async (2.46.0)
       console (~> 1.29)
       fiber-annotation
@@ -165,10 +163,11 @@ GEM
       drb (~> 2.0)
       prism (~> 1.5)
     msgpack (1.8.5)
+    nokolexbor (0.8.0-aarch64-linux)
+    nokolexbor (0.8.0-arm64-darwin)
+    nokolexbor (0.8.0-x86_64-darwin)
+    nokolexbor (0.8.0-x86_64-linux)
     observer (0.1.2)
-    oga (3.5)
-      ast
-      ruby-ll (~> 2.2)
     openssl (4.0.2)
     parslet (2.0.0)
     pkg-config (1.6.5)
@@ -199,9 +198,6 @@ GEM
       pkg-config (~> 1.4)
     rouge (4.7.0)
     ruby-coverage (0.1.3)
-    ruby-ll (2.2.0)
-      ansi
-      ast
     samovar (2.5.1)
       console (~> 1.0)
     syntax_tree (6.3.0)
@@ -241,8 +237,6 @@ DEPENDENCIES
   rouge (~> 4.7)
 
 CHECKSUMS
-  ansi (1.6.0) sha256=ac9ea0c0ea8d32fb4e271348e609963ac78882f34b73836c2a02b3622e666658
-  ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
   async (2.46.0) sha256=34f984733dbf63a997376346451ec995e858cacc3105e86ccfeaf8877b4f490b
   async-container (0.30.0) sha256=36bf679b38f8704f949d18812cd650b95be84b8c87bb65e83c6e89decf478cf6
   async-http (0.103.0) sha256=137e3d5d419f7d72d5fa33cf04f30232e79c57b690025a650b8f9e48ece8bc41
@@ -301,8 +295,11 @@ CHECKSUMS
   mime-types-data (3.2026.0701) sha256=cd8811e1fb89d836499ba0582368a10ee74cef929ba956d1d5ddca045e6a730f
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   msgpack (1.8.5) sha256=97419eaa7b35dfe3e462c0e6c1a3dfdcbfc8756605c09e46e4c6daef127517ba
+  nokolexbor (0.8.0-aarch64-linux) sha256=6c514beeed469f0cf6aec92829f98ae7a17aacb977917ee12f76de1c19fd66fc
+  nokolexbor (0.8.0-arm64-darwin) sha256=bf450ff93f8564325f70988c23bca7ddd2d68b1e34543ed2c7806b994a6ab6d5
+  nokolexbor (0.8.0-x86_64-darwin) sha256=38b04e7bf077b41dfd7cc210deaed39a154ce408f7f4c2b41d2190720db3c135
+  nokolexbor (0.8.0-x86_64-linux) sha256=ee6ab8b313a5748101dd6f726d1d3b240243b99beefe2d2b1e122b5fdf61c04c
   observer (0.1.2) sha256=d8a3107131ba661138d748e7be3dbafc0d82e732fffba9fccb3d7829880950ac
-  oga (3.5) sha256=2b65fe1dd192c01079f93748a04a7a8011369e4c99ea1c7e73f4a037e3229353
   openssl (4.0.2) sha256=1037ad2868ae58df9ad917891c0c0f9815a1172f6846d4bcdd508e4c2ee747c2
   parslet (2.0.0) sha256=d45130695d39b43d7e6a91f4d2ec66b388a8d822bae38de9b4de9a5fbde1f606
   pkg-config (1.6.5) sha256=33f9f81c5322983d22b439b8b672f27777b406fea23bfec74ff14bbeb42ec733
@@ -324,7 +321,6 @@ CHECKSUMS
   rmagick (7.1.4) sha256=581e109ed816dd423b9e9ca0706046b55ea44e4fbe0122f39ee2db9249345c08
   rouge (4.7.0) sha256=dba5896715c0325c362e895460a6d350803dbf6427454f49a47500f3193ea739
   ruby-coverage (0.1.3) sha256=5ac56578c600544e672ebd2b631e4bd43309f9c42a1d0db3ab912ed34f81cf20
-  ruby-ll (2.2.0) sha256=f8811ae1dfc77d6d95033a615aacb6ab8e93fb9f421fefe75107b077dc9ab588
   samovar (2.5.1) sha256=8a9fc41eb8868084f0321eb41678c485cfbc7d282fb306c0be67c3284b1d2394
   syntax_tree (6.3.0) sha256=56e25a9692c798ec94c5442fe94c5e94af76bef91edc8bb02052cbdecf35f13d
   syntax_tree-haml (4.0.3) sha256=dcf676677dc28b0f4b908dd414c0e75721fbd6261a2d0f07b378246059196359

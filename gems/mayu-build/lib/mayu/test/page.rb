@@ -6,6 +6,7 @@ module Mayu
       include QueryMethods
 
       DEFAULT_SETTLE_TIMEOUT = 1.0
+      DOCUMENT_TYPE_NODE = 10
 
       class NodeNotFoundError < StandardError
       end
@@ -21,12 +22,12 @@ module Mayu
           include QueryMethods
 
           def name = node.name
-          def [](attr) = node.get(attr.to_s)
+          def [](attr) = node[attr.to_s]
 
           def attributes
-            return {} unless node.respond_to?(:attributes)
+            return {} unless node.element?
 
-            node.attributes.map { [it.name, it.value] }.to_h
+            node.attrs
           end
 
           def text = node.text
@@ -34,7 +35,7 @@ module Mayu
 
           def traverse(&)
             yield self
-            node.each_node { |child| yield self.class.new(page, child) }
+            Page.descendants(node).each { |child| yield self.class.new(page, child) }
           end
 
           def at_xpath(query)
@@ -45,7 +46,7 @@ module Mayu
           def find(&)
             return self if yield node
 
-            node.each_node do |child|
+            Page.descendants(node).each do |child|
               return self.class.new(page, child) if yield child
             end
             nil
@@ -62,7 +63,7 @@ module Mayu
           end
 
           def input(value)
-            node.set("value", value.to_s) if node.is_a?(Oga::XML::Element)
+            node["value"] = value.to_s if node.element?
             page.fire_event(:input, self, currentTarget: {value: value.to_s})
             self
           end
@@ -91,14 +92,15 @@ module Mayu
         @settle_timeout = settle_timeout
         @nodes = {}
         @listener_bindings = {}
-        @doc = Oga.parse_html(@engine.render)
+        @doc = Nokolexbor::HTML(@engine.render)
+        unwrap_implied_body(@engine.dom_id_tree)
         @commands = []
         setup_tree(@doc, @engine.dom_id_tree)
         @engine.listener_commands.each { |command| apply_command(command) }
       end
 
       def fragment = @doc
-      def html = @doc.to_xml
+      def html = @doc.to_html
 
       def start
         @task ||=
@@ -221,6 +223,12 @@ module Mayu
         settle
       end
 
+      # Every node below `node` in document order, like the DOM's
+      # TreeWalker. Nokolexbor's own `traverse` visits children first.
+      def self.descendants(node)
+        node.children.flat_map { [it, *descendants(it)] }
+      end
+
       def self.format_html(source)
         theme = Rouge::Themes::Gruvbox.dark!
         formatter = Rouge::Formatters::Terminal256.new(theme)
@@ -264,49 +272,49 @@ module Mayu
           @listener_bindings.clear
           setup_tree(@doc, id_tree)
         in Mayu::Runtime::Commands::CreateTree[html:, tree:]
-          nodes = Oga.parse_html(html).children
+          nodes = parse_tree_roots(html)
           nodes.zip(tree).each { |node, id_node| setup_tree(node, id_node) }
         in Mayu::Runtime::Commands::CreateElement[id:, type:]
-          @nodes[id] = Oga::XML::Element.new(name: type.to_s)
+          @nodes[id] = @doc.create_element(type.to_s)
         in Mayu::Runtime::Commands::CreateTextNode[id:, content:]
-          @nodes[id] = Oga::XML::Text.new(text: content.to_s)
+          @nodes[id] = Nokolexbor::Text.new(content.to_s, @doc)
         in Mayu::Runtime::Commands::CreateComment[id:, content:]
-          @nodes[id] = Oga::XML::Comment.new(text: content.to_s)
+          @nodes[id] = Nokolexbor::Comment.new(content.to_s, @doc)
         in Mayu::Runtime::Commands::SetTextContent[id:, content:]
-          fetch_node!(id).text = content.to_s
+          fetch_node!(id).content = content.to_s
         in Mayu::Runtime::Commands::ReplaceData[id:, offset:, count:, data:]
           node = fetch_node!(id)
-          node.text = node.text.dup.tap { it[offset, count] = data }
+          node.content = node.content.dup.tap { it[offset, count] = data }
         in Mayu::Runtime::Commands::InsertData[id:, offset:, data:]
           node = fetch_node!(id)
-          node.text = node.text.dup.insert(offset, data)
+          node.content = node.content.dup.insert(offset, data)
         in Mayu::Runtime::Commands::DeleteData[id:, offset:, count:]
           node = fetch_node!(id)
-          node.text = node.text.dup.tap { it.slice!(offset, count) }
+          node.content = node.content.dup.tap { it.slice!(offset, count) }
         in Mayu::Runtime::Commands::SetAttribute[id:, name:, value:]
-          fetch_node!(id).set(normalize_attribute_name(name), value.to_s)
+          fetch_node!(id)[normalize_attribute_name(name)] = value.to_s
         in Mayu::Runtime::Commands::RemoveAttribute[id:, name:]
-          fetch_node!(id).unset(normalize_attribute_name(name))
+          fetch_node!(id).remove_attribute(normalize_attribute_name(name))
         in Mayu::Runtime::Commands::SetListener[id:, name:, listener_id:]
           @listener_bindings[[id, name.to_s]] = listener_id
         in Mayu::Runtime::Commands::RemoveListener[id:, name:, listener_id:]
           key = [id, name.to_s]
           @listener_bindings.delete(key) if @listener_bindings[key] == listener_id
         in Mayu::Runtime::Commands::SetClassName[id:, class_name:]
-          fetch_node!(id).set("class", class_name.to_s)
+          fetch_node!(id)["class"] = class_name.to_s
         in Mayu::Runtime::Commands::AddClass[id:, classes:]
           node = fetch_node!(id)
-          node.set("class", (node.get("class").to_s.split | classes).join(" "))
+          node["class"] = (node["class"].to_s.split | classes).join(" ")
         in Mayu::Runtime::Commands::RemoveClass[id:, classes:]
           node = fetch_node!(id)
-          node.set("class", (node.get("class").to_s.split - classes).join(" "))
+          node["class"] = (node["class"].to_s.split - classes).join(" ")
         in Mayu::Runtime::Commands::SetCSSProperty[id:, name:, value:]
           set_css_property(fetch_node!(id), name, value)
         in Mayu::Runtime::Commands::RemoveCSSProperty[id:, name:]
           set_css_property(fetch_node!(id), name, nil)
         in Mayu::Runtime::Commands::ReplaceChildren[id:, child_ids:]
           node = fetch_node!(id)
-          node.children = Oga::XML::NodeSet.new(child_ids.map { fetch_node!(it) })
+          node.children = Nokolexbor::NodeSet.new(@doc, child_ids.map { fetch_node!(it) })
         in Mayu::Runtime::Commands::RemoveNode[id:]
           remove_node(id)
         else
@@ -322,27 +330,50 @@ module Mayu
 
       def set_css_property(node, name, value)
         styles =
-          node.get("style").to_s.split(";").filter_map do |declaration|
+          node["style"].to_s.split(";").filter_map do |declaration|
             key, current = declaration.split(":", 2).map(&:strip)
             [key, current] unless key.to_s.empty?
           end.to_h
         value.nil? ? styles.delete(name.to_s) : styles[name.to_s] = value.to_s
-        node.set("style", styles.map { |key, current| "#{key}:#{current}" }.join(";"))
+        node["style"] = styles.map { |key, current| "#{key}:#{current}" }.join(";")
       end
 
       def setup_tree(dom_node, id_node)
         return unless dom_node && id_node
 
-        if dom_node.is_a?(Oga::XML::Element) &&
-            dom_node.name != id_node.name.downcase
+        if dom_node.element? && !dom_node.name.casecmp?(id_node.name)
           raise "#{id_node.id} should be #{id_node.name.inspect}, but found #{dom_node.name.inspect}"
         end
 
         @nodes[id_node.id] = dom_node
-        dom_node.children.reject { it.is_a?(Oga::XML::Document) }
-          .reject { it.is_a?(Oga::XML::Text) && it.text == "\n" }
+        dom_node.children.reject { it.node_type == DOCUMENT_TYPE_NODE }
+          .reject { it.text? && it.text == "\n" }
           .zip(id_node.children || [])
           .each { |dom_child, id_child| setup_tree(dom_child, id_child) }
+      end
+
+      # Like the browser, the HTML parser puts content that follows <head>
+      # into an implied <body>. Components rendered without a <body> would
+      # then no longer line up with their id tree, so undo that.
+      def unwrap_implied_body(id_tree)
+        html = @doc.at_css("html")
+        body = html&.children&.find { it.element? && it.name == "body" }
+        return unless body
+
+        html_id_node = id_tree.children&.find { it.name.casecmp?("html") }
+        return if html_id_node&.children&.any? { it.name.casecmp?("body") }
+
+        body.children.each { body.add_previous_sibling(it) }
+        body.remove
+      end
+
+      # Mirrors createTreeRootNodes in the client runtime: a <template>
+      # parses any element, such as <tr>, without a surrounding context.
+      def parse_tree_roots(html)
+        template = @doc.fragment("<template>#{html}</template>").children.first
+        template.children.first.children.reject do
+          it.node_type == DOCUMENT_TYPE_NODE
+        end
       end
 
       def remove_node(id)
@@ -350,8 +381,8 @@ module Mayu
         return unless node
 
         removed_ids = [id]
-        node.each_node do |child|
-          pair = @nodes.find { |_node_id, candidate| candidate.equal?(child) }
+        Page.descendants(node).each do |child|
+          pair = @nodes.find { |_node_id, candidate| candidate == child }
           if pair
             removed_ids << pair.first
             @nodes.delete(pair.first)

@@ -16,22 +16,21 @@ module Mayu
       end
 
       def role(node)
-        explicit = node.get("role").to_s.split.first
+        explicit = node["role"].to_s.split.first
         return explicit unless explicit.to_s.empty?
 
         native_role(node)
       end
 
       def name(node, seen = Set.new)
-        added = seen.add?(node.object_id)
+        added = seen.add?(node)
         return "" unless added
 
-        aria_label = node.get("aria-label")
+        aria_label = node["aria-label"]
         return normalize(aria_label) unless aria_label.nil?
 
         labelled_by =
-          node
-            .get("aria-labelledby")
+          node["aria-labelledby"]
             .to_s
             .split
             .filter_map do |id|
@@ -44,22 +43,22 @@ module Mayu
         return normalize(labels.join(" ")) unless labels.empty?
 
         if node.name == "img" || input_type(node) == "image"
-          return normalize(node.get("alt"))
+          return normalize(node["alt"])
         end
         if node.name == "input" && BUTTON_INPUT_TYPES.include?(input_type(node))
-          return normalize(node.get("value") || input_type(node).capitalize)
+          return normalize(node["value"] || input_type(node).capitalize)
         end
 
         visible_text(node)
       ensure
-        seen.delete(node.object_id) if added
+        seen.delete(node) if added
       end
 
       def hidden?(node)
         current = node
-        while current.is_a?(Oga::XML::Element)
-          return true if current.attribute("hidden")
-          return true if current.get("aria-hidden").to_s.casecmp?("true")
+        while current&.element?
+          return true if current.key?("hidden")
+          return true if current["aria-hidden"].to_s.casecmp?("true")
           if current.name == "input" && input_type(current) == "hidden"
             return true
           end
@@ -72,9 +71,9 @@ module Mayu
       def visible_text(node)
         text =
           node.children.filter_map do |child|
-            if child.is_a?(Oga::XML::Text)
+            if child.text?
               child.text
-            elsif child.is_a?(Oga::XML::Element) && !hidden?(child) &&
+            elsif child.element? && !hidden?(child) &&
                 !%w[script style template].include?(child.name)
               visible_text(child)
             end
@@ -93,7 +92,7 @@ module Mayu
       def native_role(node)
         case node.name
         when "a", "area"
-          "link" if node.attribute("href")
+          "link" if node.key?("href")
         when "button", "summary"
           "button"
         when "h1", "h2", "h3", "h4", "h5", "h6"
@@ -107,7 +106,7 @@ module Mayu
         when "textarea"
           "textbox"
         when "select"
-          if node.attribute("multiple") || node.get("size").to_i > 1
+          if node.key?("multiple") || node["size"].to_i > 1
             "listbox"
           else
             "combobox"
@@ -115,7 +114,7 @@ module Mayu
         when "option"
           "option"
         when "img"
-          "img" unless node.get("alt") == ""
+          "img" unless node["alt"] == ""
         when "progress"
           "progressbar"
         when "meter"
@@ -135,7 +134,7 @@ module Mayu
         when "tr"
           "row"
         when "th"
-          (node.get("scope") == "row") ? "rowheader" : "columnheader"
+          (node["scope"] == "row") ? "rowheader" : "columnheader"
         when "td"
           "cell"
         end
@@ -153,30 +152,30 @@ module Mayu
       end
 
       def input_type(node)
-        (node.name == "input") ? (node.get("type") || "text").downcase : nil
+        (node.name == "input") ? (node["type"] || "text").downcase : nil
       end
 
       def labels_for(node)
         return [] unless LABELABLE_TAGS.include?(node.name)
 
         labels = []
-        id = node.get("id")
+        id = node["id"]
         unless id.to_s.empty?
           labels.concat(
             document.css("label").select do |label|
-              label.get("for") == id && !hidden?(label)
+              label["for"] == id && !hidden?(label)
             end
           )
         end
 
         current = node.parent
         while current
-          if current.is_a?(Oga::XML::Element) && current.name == "label" &&
+          if current.element? && current.name == "label" &&
               !hidden?(current)
             labels << current
             break
           end
-          current = current.respond_to?(:parent) ? current.parent : nil
+          current = current.parent
         end
         labels.uniq
       end
@@ -267,7 +266,7 @@ module Mayu
           matches,
           candidates: name ? candidates : matches
         ) do |node|
-          %(role=#{role.inspect}, name=#{accessibility.name(node).inspect}, #{node.to_xml})
+          %(role=#{role.inspect}, name=#{accessibility.name(node).inspect}, #{node.to_html})
         end
       end
 
@@ -331,7 +330,7 @@ module Mayu
       private
 
       def elements
-        container.css("*").select { it.is_a?(Oga::XML::Element) }
+        container.css("*").select(&:element?)
       end
 
       def accessibility
@@ -371,7 +370,7 @@ module Mayu
       end
 
       def wrap(value)
-        if value.is_a?(Array) || value.is_a?(Oga::XML::NodeSet)
+        if value.is_a?(Array) || value.is_a?(Nokolexbor::NodeSet)
           value.map { Page::Node.new(page, it) }
         else
           Page::Node.new(page, value)
@@ -397,7 +396,7 @@ module Mayu
         unless candidates.empty?
           lines << "" << "Candidates:"
           candidates.each_with_index do |node, index|
-            description = block_given? ? yield(node) : node.to_xml
+            description = block_given? ? yield(node) : node.to_html
             lines << "  #{index + 1}. #{description}"
           end
         end
@@ -410,9 +409,9 @@ module Mayu
       end
 
       def contains?(target)
-        return true if container.equal?(target)
+        return true if container == target
 
-        container.each_node.any? { it.equal?(target) }
+        Page.descendants(container).any? { it == target }
       end
     end
   end

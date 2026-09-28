@@ -57,5 +57,5 @@ Gem::Specification.new do |spec|
 
   # Mayu::Test, the application test API
   spec.add_dependency "minitest", "~> 6.0"
-  spec.add_dependency "oga", "~> 3.4"
+  spec.add_dependency "nokolexbor", "~> 0.8"
 end

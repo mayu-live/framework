@@ -8,7 +8,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require "async"
-require "oga"
+require "nokolexbor"
 require "rouge"
 
 require "mayu/runtime"

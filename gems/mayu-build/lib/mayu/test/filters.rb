@@ -12,14 +12,14 @@ module Mayu
           def match?(node)
             case name
             when "#text"
-              return false unless node.is_a?(Oga::XML::Text)
+              return false unless node.text?
             when "#comment"
-              return false unless node.is_a?(Oga::XML::Comment)
+              return false unless node.comment?
             else
-              return false unless node.is_a?(Oga::XML::Element)
+              return false unless node.element?
               return false unless name === node.name
               return false unless attributes.all? do |attr, value|
-                value === node.get(attr.to_s)
+                value === node[attr.to_s]
               end
             end
 
