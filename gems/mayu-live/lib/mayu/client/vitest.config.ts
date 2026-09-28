@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
 
-// Custom elements import their template as a string, the way the rollup build
+// Custom elements import their template as a string, the way the rolldown build
 // serves it. Without this vite tries to parse the .html file as JavaScript.
 function htmlAsString() {
   return {

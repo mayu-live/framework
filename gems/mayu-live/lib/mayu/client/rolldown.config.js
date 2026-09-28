@@ -1,11 +1,5 @@
-import typescript from "@rollup/plugin-typescript";
-import resolve from "@rollup/plugin-node-resolve";
-import commonjs from "@rollup/plugin-commonjs";
-import terser from "@rollup/plugin-terser";
-import del from "rollup-plugin-delete";
-// import { visualizer } from "rollup-plugin-visualizer";
+import { defineConfig } from "rolldown";
 import { minify } from "html-minifier-terser";
-import { nodeResolve } from "@rollup/plugin-node-resolve";
 
 function entriesJSON() {
   return {
@@ -37,32 +31,29 @@ function minifyHTML(minifyOptions = {}) {
       return {
         code: `export default ${JSON.stringify(minified)};`,
         map: { mappings: "" },
+        moduleType: "js",
       };
     },
   };
 }
 
-export default {
+export default defineConfig({
   input: ["src/init.ts"],
   output: {
     dir: "dist/",
+    cleanDir: true,
     format: "esm",
     entryFileNames: "[name]-[hash].js",
-    chunkFileNames: "[name]-[hash].js",
+    // Custom elements are loaded on demand from their own directory.
+    chunkFileNames: (chunk) =>
+      chunk.facadeModuleId?.includes("custom-elements")
+        ? "custom-elements/[name]-[hash].js"
+        : "[name]-[hash].js",
     assetFileNames: "[name]-[hash][extname]",
     sourcemap: true,
-    manualChunks(id) {
-      if (id.includes("custom-elements")) {
-        return "custom-elements/" + id.split("/").slice(-1)[0].split(".")[0];
-      }
-    },
+    minify: true,
   },
   plugins: [
-    del({ targets: "dist/*" }),
-    typescript(),
-    nodeResolve(),
-    commonjs(),
-    resolve(),
     minifyHTML({
       removeComments: true,
       collapseWhitespace: true,
@@ -71,11 +62,6 @@ export default {
       minifyJS: true,
       minifyCSS: true,
     }),
-    terser(),
     entriesJSON(),
-    // visualizer({
-    //   gzipSize: true,
-    //   brotliSize: true,
-    // }),
   ],
-};
+});

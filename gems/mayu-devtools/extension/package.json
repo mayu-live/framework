@@ -7,17 +7,14 @@
   "type": "module",
   "description": "Chrome and Firefox devtools for Mayu Live",
   "scripts": {
-    "build": "rollup -c rollup.config.js && node scripts/package.js",
-    "watch": "rollup -c rollup.config.js --watch --watch.onEnd 'node scripts/package.js'",
+    "build": "rolldown -c rolldown.config.js && node scripts/package.js",
+    "watch": "rolldown -c rolldown.config.js --watch",
     "test": "vitest run",
     "typecheck": "tsc -p ."
   },
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-typescript": "^12.1.2",
     "@types/chrome": "^0.3.0",
-    "rollup": "^4.36.0",
-    "rollup-plugin-delete": "^3.0.1",
+    "rolldown": "^1.2.11",
     "tslib": "^2.8.1",
     "typescript": "^5.8.2",
     "vitest": "^3.2.0"

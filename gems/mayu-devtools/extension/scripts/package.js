@@ -1,4 +1,4 @@
-// Assembles an unpacked extension for each browser from the rollup output
+// Assembles an unpacked extension for each browser from the rolldown output
 // and the static files: dist/chrome and dist/firefox.
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";

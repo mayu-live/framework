@@ -15,26 +15,20 @@
   "homepage": "https://github.com/mayu-live/prototype#readme",
   "scripts": {
     "watch": "npm run build -- --watch",
-    "build": "rollup -c rollup.config.js",
-    "build:production": "npm run build -- --compact",
+    "build": "rolldown -c rolldown.config.js",
+    "build:production": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {},
   "devDependencies": {
     "@msgpack/msgpack": "^3.1.1",
-    "@rollup/plugin-commonjs": "^28.0.3",
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.1.2",
     "@types/serviceworker": "^0.0.126",
     "html-minifier-terser": "^7.2.0",
+    "jsdom": "^26.0.0",
     "morphdom": "^2.7.4",
     "msgpackr": "^1.11.2",
-    "rollup": "^4.36.0",
-    "rollup-plugin-delete": "^3.0.1",
+    "rolldown": "^1.2.11",
     "typescript": "^5.8.2",
-    "vitest": "^3.2.0",
-    "jsdom": "^26.0.0"
+    "vitest": "^3.2.0"
   }
 }
