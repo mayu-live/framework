@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   componentTree,
-  elementLabel,
+  nodeLabel,
   findPath,
   ownerComponents,
   topElements,
@@ -104,7 +104,7 @@ describe("topElements", () => {
   });
 });
 
-describe("elementLabel", () => {
+describe("nodeLabel", () => {
   it("names classes as in the source, and the rest as in the page", () => {
     const link: TreeNode = {
       ...node("a1", "element", "a"),
@@ -115,11 +115,28 @@ describe("elementLabel", () => {
       ],
     };
 
-    expect(elementLabel(link)).toBe("<a.title.literal>");
+    expect(nodeLabel(link)).toBe("%a.title.literal");
   });
 
   it("shows elements without classes by their tag", () => {
-    expect(elementLabel(node("p1", "element", "p"))).toBe("<p>");
+    expect(nodeLabel(node("p1", "element", "p"))).toBe("%p");
+  });
+
+  it("leaves out the tag of a div with classes", () => {
+    const grid: TreeNode = {
+      ...node("d1", "element", "div"),
+      classes: [{ source: "footer-grid", rendered: "Footer_footer-grid_1" }],
+    };
+
+    expect(nodeLabel(grid)).toBe(".footer-grid");
+    expect(nodeLabel(node("d2", "element", "div"))).toBe("%div");
+  });
+
+  it("shows components as tags", () => {
+    expect(nodeLabel(node("c1", "component", "TodoApp"))).toBe("%TodoApp");
+    expect(nodeLabel(node("c2", "component", "(anonymous)"))).toBe(
+      "(anonymous)",
+    );
   });
 });
 

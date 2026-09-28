@@ -22,7 +22,7 @@ import {
 } from "../page";
 import {
   componentTree,
-  elementLabel,
+  nodeLabel,
   findPath,
   isTree,
   ownerComponents,
@@ -230,7 +230,7 @@ export default function App({ connection }: { connection: Connection }) {
         node && elements.length > 0
           ? highlight(
               elements.map((element) => element.id),
-              displayName(node),
+              nodeLabel(node),
             )
           : hideHighlight();
       // The page may be gone, and then there is nothing to highlight.
@@ -450,10 +450,6 @@ function useDetails(connection: Connection, id: string | null) {
   return details;
 }
 
-function displayName(node: TreeNode) {
-  return node.type === "component" ? node.name : elementLabel(node);
-}
-
 // The outermost elements a node renders. The component view leaves elements
 // out of the tree it shows, so look in the full tree.
 function renderedElements(tree: TreeNode, node: TreeNode) {
@@ -536,7 +532,7 @@ function Row({
         >
           {expandable ? (expanded ? "▾" : "▸") : ""}
         </span>
-        <span class="name">{displayName(node)}</span>
+        <span class="name">{nodeLabel(node)}</span>
         {node.path && <span class="path">{node.path}</span>}
       </div>
       {expanded &&
@@ -578,7 +574,7 @@ function Details({ node, owners, details, onShowInElements }: DetailsProps) {
       </button>
       <dl>
         <dt>{node.type === "component" ? "Component" : "Element"}</dt>
-        <dd>{displayName(node)}</dd>
+        <dd>{nodeLabel(node)}</dd>
         {node.path && (
           <>
             <dt>Path</dt>

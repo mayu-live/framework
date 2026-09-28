@@ -19,14 +19,23 @@ export type TreeNode = {
   children: TreeNode[];
 };
 
-// An element as the Elements panel shows it, with its classes named as in
-// the source: <a.title>.
-export function elementLabel(node: TreeNode) {
+// A node as it would be written in Haml: %TodoApp, %a.title, and .grid for
+// a div with classes. Classes are named as in the source.
+export function nodeLabel(node: TreeNode) {
+  if (node.type === "document") return node.name;
+
+  if (node.type === "component") {
+    // Placeholders like (anonymous) and file paths aren't tags.
+    return /^[A-Za-z_]\w*$/.test(node.name) ? `%${node.name}` : node.name;
+  }
+
   const classes = (node.classes ?? [])
     .filter((name) => !name.scope)
     .map((name) => `.${name.source ?? name.rendered}`)
     .join("");
-  return `<${node.name}${classes}>`;
+
+  if (node.name === "div" && classes) return classes;
+  return `%${node.name}${classes}`;
 }
 
 export function isTree(value: unknown): value is TreeNode {
