@@ -19,14 +19,14 @@ RUN npm ci
 COPY gems/mayu-live/lib/mayu/client gems/mayu-live/lib/mayu/client
 RUN npm run build
 
-# Packages both gems the way a release does, then unpacks them where the
+# Packages the gems the way a release does, then unpacks them where the
 # example's Gemfile looks for its path gems. The app therefore installs
 # exactly the files a published gem carries.
 FROM ruby:4.0.7-alpine3.24 AS gems
 WORKDIR /src
 COPY gems gems
 COPY --from=client /src/gems/mayu-live/lib/mayu/client/dist gems/mayu-live/lib/mayu/client/dist
-RUN set -e; for name in mayu-live mayu-build; do \
+RUN set -e; for name in mayu-live mayu-build mayu-devtools; do \
       (cd "gems/${name}" && gem build "${name}.gemspec" --output "/tmp/${name}.gem"); \
       gem unpack "/tmp/${name}.gem" --target /gems; \
     done
