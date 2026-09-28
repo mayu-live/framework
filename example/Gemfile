@@ -5,6 +5,7 @@ source "https://rubygems.org"
 path "../gems" do
   gem "mayu-live"
   gem "mayu-build", groups: [:development, :test]
+  gem "mayu-devtools", groups: [:development, :test]
 end
 
 # Pokemon page filter uses fuzzy matching.

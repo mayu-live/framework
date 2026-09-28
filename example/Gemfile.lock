@@ -226,6 +226,7 @@ DEPENDENCIES
   fuzzy_match
   kramdown-parser-gfm (~> 1.1)
   mayu-build!
+  mayu-devtools!
   mayu-live!
   rouge (~> 4.7)
 
