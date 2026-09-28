@@ -1,14 +1,14 @@
 PATH
   remote: gems/mayu-build
   specs:
-    mayu-build (0.0.6)
+    mayu-build (0.1.0.pre0)
       klenod-build (= 0.0.27)
       klenod-lsp (= 0.0.27)
       klenod-plugin-css (= 0.0.27)
       klenod-plugin-javascript (= 0.0.27)
       klenod-test (= 0.0.27)
       localhost (~> 1.7)
-      mayu-live (= 0.0.6)
+      mayu-live (= 0.1.0.pre0)
       minitest (~> 6.0)
       nokolexbor (~> 0.8)
       reline (~> 0.6)
@@ -19,13 +19,13 @@ PATH
 PATH
   remote: gems/mayu-devtools
   specs:
-    mayu-devtools (0.0.6)
-      mayu-live (= 0.0.6)
+    mayu-devtools (0.1.0.pre0)
+      mayu-live (= 0.1.0.pre0)
 
 PATH
   remote: gems/mayu-live
   specs:
-    mayu-live (0.0.6)
+    mayu-live (0.1.0.pre0)
       async (~> 2.42)
       async-container (~> 0.30.0)
       async-http (>= 0.95.1, < 0.104.0)

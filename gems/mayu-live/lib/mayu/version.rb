@@ -8,5 +8,5 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 module Mayu
-  VERSION = "0.0.6"
+  VERSION = "0.1.0.pre0"
 end

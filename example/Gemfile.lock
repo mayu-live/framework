@@ -1,23 +1,23 @@
 PATH
   remote: ../gems
   specs:
-    mayu-build (0.0.6)
+    mayu-build (0.1.0.pre0)
       klenod-build (= 0.0.27)
       klenod-lsp (= 0.0.27)
       klenod-plugin-css (= 0.0.27)
       klenod-plugin-javascript (= 0.0.27)
       klenod-test (= 0.0.27)
       localhost (~> 1.7)
-      mayu-live (= 0.0.6)
+      mayu-live (= 0.1.0.pre0)
       minitest (~> 6.0)
       nokolexbor (~> 0.8)
       reline (~> 0.6)
       rouge (~> 4.7)
       samovar (~> 2.5)
       terminal-table (~> 4.0)
-    mayu-devtools (0.0.6)
-      mayu-live (= 0.0.6)
-    mayu-live (0.0.6)
+    mayu-devtools (0.1.0.pre0)
+      mayu-live (= 0.1.0.pre0)
+    mayu-live (0.1.0.pre0)
       async (~> 2.42)
       async-container (~> 0.30.0)
       async-http (>= 0.95.1, < 0.104.0)
@@ -281,9 +281,9 @@ CHECKSUMS
   listen (3.10.0) sha256=c6e182db62143aeccc2e1960033bebe7445309c7272061979bb098d03760c9d2
   localhost (1.8.0) sha256=df7ea825b4f64949c588c17efac86bc47ddc4460d723778abe933b71759b2701
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
-  mayu-build (0.0.6)
-  mayu-devtools (0.0.6)
-  mayu-live (0.0.6)
+  mayu-build (0.1.0.pre0)
+  mayu-devtools (0.1.0.pre0)
+  mayu-live (0.1.0.pre0)
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2026.0701) sha256=cd8811e1fb89d836499ba0582368a10ee74cef929ba956d1d5ddca045e6a730f
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
