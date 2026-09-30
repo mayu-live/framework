@@ -3,6 +3,9 @@
 
   ALLOWED_EXTENSIONS = %w[.rb .css .haml .txt .svg]
 
+%head
+  %title File tree
+
 - segments = Array($params[:paths]).map { URI.decode_uri_component(_1) }
 - full_path = File.expand_path(segments.join("/"), "/")
 - root = Dir.pwd

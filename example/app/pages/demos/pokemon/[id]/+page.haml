@@ -65,6 +65,9 @@
     transform: translateX(2px);
   }
 
+%head
+  %title Pokémon
+
 - raise NotFound unless $params[:id].match?(/\A\d+\z/)
 - id = $params[:id].to_i
 
