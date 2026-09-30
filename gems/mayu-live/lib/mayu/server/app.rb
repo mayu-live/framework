@@ -401,14 +401,24 @@ module Mayu
         state = request.read.to_s
         return text_response(503, "Server is stopping") if @stopping
 
-        session =
+        transfer =
           Session::TransferState
             .decrypt(@environment.marshaller, state)
             .authenticate!(
               session_id:,
               session_token: @cookies.get_token_cookie_value(request)
             )
-            .resume(@environment)
+
+        # Components that can not be restored start over on their own, so
+        # this only fails when the session as a whole can not be loaded, such
+        # as after a change to the transfer format. The client then starts a
+        # new session right away instead of retrying the same state.
+        begin
+          session = transfer.resume(@environment)
+        rescue => error
+          Console.logger.error(self, "Could not restore transferred session #{session_id}", error)
+          return error_response(422, "SESSION_RESTORE_FAILED")
+        end
 
         if @stopping
           session.stop

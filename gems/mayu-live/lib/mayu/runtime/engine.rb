@@ -16,6 +16,7 @@ require_relative "vnodes/updater"
 require_relative "vnodes/command_collector"
 require_relative "commands"
 require_relative "marshalling"
+require_relative "restore_report"
 require_relative "state_update_warning_event"
 
 module Mayu
@@ -36,7 +37,10 @@ module Mayu
         :metrics,
         :update_budget,
         :module_provider,
-        :render_exceptions
+        :render_exceptions,
+        # What happened to each component when this engine was restored
+        # from a transfer. Nil for an engine that was not.
+        :restore_report
       attr_writer :metrics
       attr_writer :update_budget
       attr_writer :module_provider
@@ -123,6 +127,7 @@ module Mayu
         initialize_render_gate
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
+        @restore_report = RestoreReport.new
         @root.rehydrate(parent: nil, engine: self)
       end
 
@@ -171,6 +176,9 @@ module Mayu
       def start
         @updater.start(engine: self)
         @root.start
+        # Components that were started over after a transfer render against
+        # the restored tree, which is what the browser shows.
+        @restore_report&.vnodes_to_update&.each { enqueue_update(it) }
       end
 
       def stop

@@ -61,7 +61,17 @@ module Mayu
         false
       end
 
+      # Modules change while developing, so this reads the current record,
+      # building the module first if the graph has not seen it yet.
+      def module_digest(module_id)
+        entry(module_id).record.transformed_hash
+      end
+
       private
+
+      def namespace
+        source.graph.namespace
+      end
 
       def source_maps
         source.graph.mods

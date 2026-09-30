@@ -13,6 +13,7 @@ require_relative "base"
 require_relative "../marshalling"
 require_relative "../../component/state"
 require_relative "internal_components/base"
+require_relative "../unresolved_component"
 require_relative "vchildren"
 
 module Mayu
@@ -288,18 +289,23 @@ module Mayu
           @children.traverse(&block)
         end
 
+        # The state is a Marshal string of its own, so a restore can decide per
+        # component whether to load it: only when none of the modules it came
+        # from, the component's own and those of the objects in its state,
+        # have changed. `dependencies` maps each module id to its digest.
         def marshal_dump
-          [
-            super,
-            Marshalling.dump_value(@descriptor.type),
-            Marshalling.dump_value(@instance.marshal_dump),
-            @children,
-            @context
-          ]
+          component_ref = Marshalling.dump_value(@descriptor.type)
+          dependencies = {}
+          if component_ref.is_a?(Marshalling::ComponentRef) && component_ref.digest
+            dependencies[component_ref.filename] = component_ref.digest
+          end
+          state = Marshal.dump(Marshalling.dump_value(@instance.marshal_dump, dependencies:))
+
+          [super, component_ref, state, dependencies, @children, @context]
         end
 
         def marshal_load(a)
-          a => [base, component_marshaled, component_state, children, context]
+          a => [base, component_marshaled, state, dependencies, children, context]
           super(base)
           component_class =
             Marshalling.load_value(
@@ -319,8 +325,8 @@ module Mayu
             @descriptor.children.freeze
           )
           @instance.instance_variable_set(:@__vnode_id, @id)
-          @instance.send(:marshal_load, Marshalling.load_value(component_state))
-          @instance.instance_variable_get(:@__state)&.bind(@instance)
+          # Loaded or replaced in rehydrate, once context and parents exist.
+          @restore = {state:, dependencies:}
           @mount_task = nil
           @mount_started = false
           @replacing_instance = false
@@ -332,6 +338,7 @@ module Mayu
           super
 
           @context.node = self
+          restore_instance if @restore
           @instance.instance_variable_set(:@__context, @context)
           @instance.instance_variable_get(:@__state)&.bind(@instance)
           @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
@@ -350,6 +357,47 @@ module Mayu
         end
 
         private
+
+        # Restores the transferred state when the code it came from is
+        # unchanged. Otherwise, or when the state can not be loaded, starts the
+        # component over with its current props and context, and reports why,
+        # so it renders again once the engine starts.
+        def restore_instance
+          restore = @restore
+          @restore = nil
+          report = @engine.restore_report
+
+          if @descriptor.type == UnresolvedComponent
+            report.unresolved!(self, component_label, @descriptor.props[:__unresolved])
+            return
+          end
+
+          if (reason = changed_dependency(restore[:dependencies]))
+            reinitialize_instance(reason)
+          else
+            @instance.send(:marshal_load, Marshalling.load_value(Marshal.load(restore[:state])))
+            @instance.instance_variable_get(:@__state)&.bind(@instance)
+            report.restored!
+          end
+        rescue => error
+          reinitialize_instance("#{error.class}: #{error.message}")
+        end
+
+        def changed_dependency(dependencies)
+          resolver = Fiber[Marshalling::COMPONENT_RESOLVER_KEY]
+          return unless resolver.respond_to?(:module_digest)
+
+          dependencies.each do |module_id, digest|
+            return "#{module_id} changed" unless resolver.module_digest(module_id) == digest
+          end
+
+          nil
+        end
+
+        def reinitialize_instance(reason)
+          @instance = build_instance(@descriptor.type, @descriptor)
+          @engine.restore_report.reinitialized!(self, component_label, reason)
+        end
 
         def build_initial_children
           recovering = false

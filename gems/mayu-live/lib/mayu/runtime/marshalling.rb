@@ -13,22 +13,32 @@ module Mayu
     # Prepares values for Marshal, so component state and props survive
     # session transfers and hot reloads.
     #
-    # Hot reload evaluates a module again, so its constants name new classes
-    # while existing state still holds instances of the old ones, and Marshal
-    # refuses to write an object whose class name now means another class.
-    # Instances of such replaced classes are written as an ObjectRef with their
-    # class name and data instead, and rebuilt from the current class when
-    # loaded. Replaced objects are found in hashes, arrays, component state and
-    # each other, not inside other objects.
+    # Classes defined in app modules can not be written by their Ruby name:
+    # production evaluates modules in an anonymous namespace, and hot reload
+    # replaces classes while state still holds instances of the old ones. With
+    # a resolver (see with_component_resolver), their instances are written as
+    # an ObjectRef: a ClassRef naming the module and the constant path inside
+    # it, plus the object's data. Loading rebuilds them from whatever class
+    # that reference names now. Such objects are found in hashes, arrays,
+    # component state and each other, not inside other objects.
     module Marshalling
-      ComponentRef = Data.define(:filename, :class_name, :klass)
+      ComponentRef =
+        Data.define(:filename, :class_name, :klass, :digest) do
+          def initialize(filename:, class_name:, klass:, digest: nil)
+            super
+          end
+        end
+      # A class defined in an app module, with the digest of that module's
+      # code when the reference was written.
+      ClassRef = Data.define(:module_id, :constant_path, :digest)
       # Mutable, so it can be recorded before its payload is dumped, and
-      # references between replaced objects keep pointing at each other.
-      ObjectRef = Struct.new(:class_name, :kind, :payload)
+      # objects that refer to each other keep doing so.
+      ObjectRef = Struct.new(:class_ref, :kind, :payload)
       COMPONENT_RESOLVER_KEY = :mayu_component_resolver
-      # Where Klenod evaluates app modules in development, the only place
-      # classes are replaced.
-      RELOADABLE_NAMESPACE = "Mayu::ModuleNamespace::"
+
+      # The state of one dump: an ObjectRef per object, a ClassRef (or nil)
+      # per class, and the digest of every module the value refers to.
+      Dump = Struct.new(:refs, :class_refs, :dependencies)
 
       def self.with_component_resolver(resolver)
         previous = Fiber[COMPONENT_RESOLVER_KEY]
@@ -38,16 +48,17 @@ module Mayu
         Fiber[COMPONENT_RESOLVER_KEY] = previous
       end
 
-      def self.dump_value(value)
-        dump(value, {}.compare_by_identity)
+      # Pass a hash as `dependencies` to collect `module_id => digest` for
+      # every app module whose classes the value contains.
+      def self.dump_value(value, dependencies: {})
+        dump(value, Dump.new({}.compare_by_identity, {}.compare_by_identity, dependencies))
       end
 
       def self.load_value(value, fallback_class: nil)
         load(value, {}.compare_by_identity, fallback_class:)
       end
 
-      # `refs` maps each replaced object to its ObjectRef.
-      def self.dump(value, refs)
+      def self.dump(value, context)
         # Klenod evaluates module exports inside anonymous modules. Its SVG
         # imports are metadata objects from one of those modules, which Ruby
         # cannot marshal even though an element only needs their URL. Keep the
@@ -56,17 +67,18 @@ module Mayu
 
         case value
         in Hash
-          value.transform_values { dump(it, refs) }
+          value.transform_values { dump(it, context) }
         in Array
-          value.map { dump(it, refs) }
+          value.map { dump(it, context) }
         in Proc | Async::Task
           nil
         in Class
           dump_component_class(value)
         in Mayu::Component::State
-          Mayu::Component::State.new(values: dump(value.marshal_dump, refs))
+          Mayu::Component::State.new(values: dump(value.marshal_dump, context))
         else
-          replaced_class?(value.class) ? dump_object(value, refs) : value
+          class_ref = class_ref_for(value.class, context)
+          class_ref ? dump_object(value, class_ref, context) : value
         end
       end
 
@@ -88,20 +100,27 @@ module Mayu
         end
       end
 
-      def self.replaced_class?(klass)
-        name = klass.name
-        return false unless name&.start_with?(RELOADABLE_NAMESPACE)
+      # A ClassRef for a class defined in an app module, or nil for any other
+      # class or without a resolver. Records the module as a dependency.
+      def self.class_ref_for(klass, context)
+        return context.class_refs[klass] if context.class_refs.key?(klass)
 
-        !Object.const_get(name).equal?(klass)
-      rescue NameError
-        # The class is gone. Marshal reports it, as it would without this.
-        false
+        resolver = Fiber[COMPONENT_RESOLVER_KEY]
+        reference = resolver.class_reference(klass) if resolver.respond_to?(:class_reference)
+        class_ref =
+          if reference
+            module_id, constant_path = reference
+            ClassRef.new(module_id, constant_path, resolver.module_digest(module_id))
+          end
+        context.dependencies[class_ref.module_id] = class_ref.digest if class_ref
+        context.class_refs[klass] = class_ref
       end
 
-      def self.dump_object(value, refs)
+      def self.dump_object(value, class_ref, context)
+        refs = context.refs
         return refs[value] if refs.key?(value)
 
-        ref = refs[value] = ObjectRef.new(value.class.name)
+        ref = refs[value] = ObjectRef.new(class_ref)
         ref.kind, payload =
           case value
           in Data
@@ -116,14 +135,14 @@ module Mayu
               [:ivars, ivars]
             end
           end
-        ref.payload = dump(payload, refs)
+        ref.payload = dump(payload, context)
         ref
       end
 
       def self.load_object(ref, objects)
         return objects[ref] if objects.key?(ref)
 
-        klass = Object.const_get(ref.class_name)
+        klass = resolve_class_ref(ref.class_ref)
 
         case ref.kind
         in :data
@@ -140,6 +159,15 @@ module Mayu
           load(ref.payload, objects).each { object.instance_variable_set(_1, _2) }
           object
         end
+      end
+
+      def self.resolve_class_ref(class_ref)
+        resolver = Fiber[COMPONENT_RESOLVER_KEY]
+        unless resolver.respond_to?(:resolve_class)
+          raise "No resolver for #{class_ref.constant_path} in #{class_ref.module_id}"
+        end
+
+        resolver.resolve_class(class_ref.module_id, class_ref.constant_path)
       end
 
       def self.dump_component_class(value)

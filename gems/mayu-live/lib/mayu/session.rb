@@ -228,6 +228,7 @@ module Mayu
       @engine.module_provider = module_provider
       @engine.render_exceptions = environment.config.server.render_exceptions?
       @engine.not_found_handler = method(:live_not_found_descriptor)
+      log_restore_report
       self
     end
 
@@ -365,6 +366,25 @@ module Mayu
     end
 
     private
+
+    # Says which components a transfer could not restore and why, so lost
+    # state after a deploy can be traced to the code that changed.
+    def log_restore_report
+      report = @engine.restore_report if @engine.respond_to?(:restore_report)
+      return unless report
+
+      report.reinitialized.each do |entry|
+        Console.logger.warn(self, "Session #{@id}: started #{entry.component} over after transfer: #{entry.reason}")
+      end
+      report.unresolved.each do |entry|
+        Console.logger.warn(self, "Session #{@id}: replaced #{entry.component} after transfer: #{entry.reason}")
+      end
+      Console.logger.info(
+        self,
+        "Session #{@id}: restored #{report.restored} components, " \
+          "started #{report.reinitialized.size} over, replaced #{report.unresolved.size}"
+      )
+    end
 
     def handle_reload_result(update)
       if update.success?

@@ -42,15 +42,23 @@ module Mayu
             ]
           end
 
+          # A component whose class or props can not be loaded any more, after
+          # a deploy removed or changed it, becomes an UnresolvedComponent
+          # instead of failing the whole session.
           def marshal_load(a)
             type, key, slot, children, props = a
-            initialize(
-              type: Marshalling.load_value(type),
-              key:,
-              slot:,
-              children:,
-              props: Marshalling.load_value(props)
-            )
+
+            begin
+              loaded_type = Marshalling.load_value(type)
+              loaded_props = Marshalling.load_value(props)
+            rescue => error
+              raise unless type.is_a?(Marshalling::ComponentRef)
+
+              loaded_type = UnresolvedComponent
+              loaded_props = {__unresolved: "#{error.class}: #{error.message}"}
+            end
+
+            initialize(type: loaded_type, key:, slot:, children:, props: loaded_props)
           end
         end
 

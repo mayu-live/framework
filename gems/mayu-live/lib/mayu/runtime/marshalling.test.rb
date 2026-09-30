@@ -12,6 +12,7 @@ require "async"
 
 require_relative "../component/base"
 require_relative "marshalling"
+require_relative "../klenod/provider"
 
 class Mayu::Runtime::Marshalling::Test < Minitest::Test
   Marshalling = Mayu::Runtime::Marshalling
@@ -117,23 +118,29 @@ class Mayu::Runtime::Marshalling::Test < Minitest::Test
     end.wait
   end
 
-  # Hot reload evaluates a module again, so its constants name new classes
-  # while state still holds instances of the old ones. These tests stand in
-  # for a module under Mayu::ModuleNamespace and replace its classes.
-  module Mayu::ModuleNamespace
-    module MarshallingTest
+  # Stands in for a module provider: classes are registered under a module id
+  # and constant path, the way Klenod exports them.
+  class AppResolver
+    attr_reader :digests
+
+    def initialize(classes, digests: Hash.new("digest"))
+      @classes = classes
+      @digests = digests
     end
-  end
 
-  Reloaded = Mayu::ModuleNamespace::MarshallingTest
+    def class_reference(klass)
+      @classes.key(klass)
+    end
 
-  def reload(name, klass)
-    Reloaded.send(:remove_const, name) if Reloaded.const_defined?(name, false)
-    Reloaded.const_set(name, klass)
-  end
+    def resolve_class(module_id, constant_path)
+      @classes.fetch([module_id, constant_path])
+    end
 
-  def round_trip(value)
-    Marshalling.load_value(Marshal.load(Marshal.dump(Marshalling.dump_value(value))))
+    def module_digest(module_id)
+      @digests[module_id]
+    end
+
+    def dump_component_class(_) = nil
   end
 
   def card_class
@@ -142,59 +149,102 @@ class Mayu::Runtime::Marshalling::Test < Minitest::Test
     end
   end
 
-  def test_instances_of_replaced_classes_are_rebuilt_from_the_current_class
-    card = reload(:Card, card_class).new
+  def app(**classes)
+    AppResolver.new(classes.to_h { |name, klass| [["app:/models.rb", name.to_s], klass] })
+  end
+
+  # Dumps with one resolver and loads with another, the way a session moves
+  # to another process, maybe running newer code.
+  def transfer(value, from:, to:)
+    dumped = Marshalling.with_component_resolver(from) { Marshal.dump(Marshalling.dump_value(value)) }
+    Marshalling.with_component_resolver(to) { Marshalling.load_value(Marshal.load(dumped)) }
+  end
+
+  def test_instances_of_app_classes_are_rebuilt_from_the_class_their_reference_names
+    old_card = card_class
+    card = old_card.new
     card.title = "A"
-    current = reload(:Card, card_class)
+    new_card = card_class
 
-    assert_raises(TypeError) { Marshal.dump(card) }
+    loaded = transfer({card:}, from: app("Kanban::Card": old_card), to: app("Kanban::Card": new_card))[:card]
 
-    loaded = round_trip({card:})[:card]
-    assert_instance_of(current, loaded)
+    assert_instance_of(new_card, loaded)
     assert_equal("A", loaded.title)
   end
 
-  def test_data_instances_of_replaced_classes_are_rebuilt
-    item = reload(:Item, Data.define(:id, :done)).new(id: 1, done: true)
-    current = reload(:Item, Data.define(:id, :done))
+  def test_instances_of_anonymous_classes_can_be_transferred
+    klass = card_class
+    card = klass.new
+    assert_raises(TypeError) { Marshal.dump(card) }
 
-    assert_equal(current.new(id: 1, done: true), round_trip([item]).first)
+    loaded = transfer([card], from: app("Kanban::Card": klass), to: app("Kanban::Card": klass))
+
+    assert_instance_of(klass, loaded.first)
   end
 
-  def test_replaced_objects_keep_their_references_to_each_other
-    a = reload(:Card, card_class).new
-    b = a.class.new
+  def test_data_instances_are_rebuilt
+    item = Data.define(:id, :done)
+    current = Data.define(:id, :done)
+
+    loaded = transfer([item.new(id: 1, done: true)], from: app(Item: item), to: app(Item: current))
+
+    assert_equal(current.new(id: 1, done: true), loaded.first)
+  end
+
+  def test_objects_keep_their_references_to_each_other
+    klass = card_class
+    a = klass.new
+    b = klass.new
     a.other = b
     b.other = a
-    reload(:Card, card_class)
 
-    loaded = round_trip({a:, b:})
+    loaded = transfer({a:, b:}, from: app(Card: klass), to: app(Card: card_class))
+
     assert_same(loaded[:b], loaded[:a].other)
     assert_same(loaded[:a], loaded[:b].other)
   end
 
   def test_state_values_are_rebuilt
-    card = reload(:Card, card_class).new
+    klass = card_class
+    card = klass.new
     card.title = "A"
-    current = reload(:Card, card_class)
+    current = card_class
 
-    state = round_trip(Mayu::Component::State.new(values: {card:}))
+    state = transfer(Mayu::Component::State.new(values: {card:}), from: app(Card: klass), to: app(Card: current))
+
     assert_instance_of(current, state[:card])
     assert_equal("A", state[:card].title)
   end
 
-  def test_instances_of_current_classes_are_left_alone
-    card = reload(:Card, card_class).new
+  def test_dumping_collects_the_modules_a_value_depends_on
+    resolver = app(Card: card_class)
+    resolver.digests["app:/models.rb"] = "abc"
+    dependencies = {}
 
-    assert_same(card, Marshalling.dump_value([card]).first)
+    Marshalling.with_component_resolver(resolver) do
+      Marshalling.dump_value({cards: [resolver.resolve_class("app:/models.rb", "Card").new]}, dependencies:)
+    end
+
+    assert_equal({"app:/models.rb" => "abc"}, dependencies)
   end
 
   class Outside
   end
 
-  def test_classes_outside_the_module_namespace_are_left_alone
+  def test_other_classes_are_left_alone
     outside = Outside.new
 
-    assert_same(outside, Marshalling.dump_value([outside]).first)
+    Marshalling.with_component_resolver(app(Card: card_class)) do
+      assert_same(outside, Marshalling.dump_value([outside]).first)
+    end
+  end
+
+  def test_a_class_that_no_longer_resolves_fails_the_load
+    klass = card_class
+    missing = Class.new(AppResolver) { def resolve_class(*) = raise(Mayu::Klenod::UnresolvedClass, "gone") }
+
+    assert_raises(Mayu::Klenod::UnresolvedClass) do
+      transfer([klass.new], from: app(Card: klass), to: missing.new({}))
+    end
   end
 end

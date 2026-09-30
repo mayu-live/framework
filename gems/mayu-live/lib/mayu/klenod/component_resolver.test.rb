@@ -52,6 +52,37 @@ class Mayu::Klenod::ComponentResolverTest < Minitest::Test
     assert_equal(ReloadedComponent, resolver.resolve_component_ref(reference))
   end
 
+  module Exports
+    module Cards
+      class Card < Mayu::Component::Base
+      end
+    end
+  end
+
+  ModuleProvider =
+    Data.define do
+      def class_reference(klass)
+        ["app:/cards.haml", "Cards::Card"] if klass == Exports::Cards::Card
+      end
+
+      def module_digest(module_id) = "digest of #{module_id}"
+
+      def entry(reference) = reference
+
+      def exports(_reference) = Exports
+    end
+
+  def test_references_carry_the_module_digest_and_resolve_nested_classes
+    resolver = Mayu::Klenod::ComponentResolver.new(ModuleProvider.new)
+
+    reference = resolver.dump_component_class(Exports::Cards::Card)
+
+    assert_equal("app:/cards.haml", reference.filename)
+    assert_equal("Cards::Card", reference.class_name)
+    assert_equal("digest of app:/cards.haml", reference.digest)
+    assert_equal(Exports::Cards::Card, resolver.resolve_component_ref(reference))
+  end
+
   private
 
   def provider

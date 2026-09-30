@@ -38,6 +38,7 @@ describe("session-recovery", () => {
     expect(shouldResetSession(new Error("TOKEN_COOKIE_NOT_SET"))).toBe(true);
     expect(shouldResetSession(new Error("SESSION_CIPHER_ERROR"))).toBe(true);
     expect(shouldResetSession(new Error("SESSION_EXPIRED"))).toBe(true);
+    expect(shouldResetSession({ code: "SESSION_RESTORE_FAILED" })).toBe(true);
     expect(
       shouldResetSession(
         Object.assign(new Error("expired"), { code: "SESSION_EXPIRED" }),

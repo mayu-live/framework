@@ -1,7 +1,13 @@
 # frozen_string_literal: true
 
+require "digest"
+
 module Mayu
   module Klenod
+    # A class that a transferred session refers to is no longer there.
+    class UnresolvedClass < StandardError
+    end
+
     class Provider
       attr_reader :source, :assets_dir
 
@@ -36,6 +42,43 @@ module Mayu
 
       def component_resolver
         @component_resolver ||= ComponentResolver.new(self)
+      end
+
+      # Klenod evaluates each module as `Mod_<hash of its id>::Exports` in a
+      # namespace, which is anonymous in production. The hash depends only on
+      # the module id, so a class is identified across processes and deploys
+      # by its module id and its constant path inside Exports.
+      MOD_CONSTANT = /\AMod_\h{24}\z/
+
+      # `[module_id, constant_path]` for a class defined in one of the
+      # provider's modules, or nil for any other class.
+      def class_reference(klass)
+        segments = klass.name&.split("::")
+        return unless segments
+
+        index = segments.index { MOD_CONSTANT.match?(it) }
+        return unless index && segments[index + 1] == "Exports"
+
+        constant_path = segments.drop(index + 2)
+        return if constant_path.empty?
+
+        mod = namespace.const_get(segments[index], false)
+        [mod.path.to_s, constant_path.join("::")]
+      rescue NameError
+        nil
+      end
+
+      def resolve_class(module_id, constant_path)
+        exports(entry(module_id)).const_get(constant_path)
+      rescue => error
+        raise UnresolvedClass,
+          "Could not resolve #{constant_path} in #{module_id}: #{error.message}"
+      end
+
+      # A digest of a module's code, the same in every build of the same
+      # source, so a transferred session can tell whether a module changed.
+      def module_digest(module_id)
+        Digest::SHA256.hexdigest(source.modules.fetch(module_id).source)
       end
 
       def asset_references_for_module(reference, **options)
@@ -113,6 +156,10 @@ module Mayu
 
       private
 
+      def namespace
+        source.namespace
+      end
+
       def source_maps
         source.modules
       end
@@ -171,6 +218,11 @@ module Mayu
       # modules and answer their first request without evaluating anything.
       def preload
         source.preload
+      end
+
+      # A bundle never changes, so each module's digest is computed once.
+      def module_digest(module_id)
+        (@module_digests ||= {})[module_id] ||= super
       end
 
       def module_id_for(reference)

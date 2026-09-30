@@ -385,6 +385,27 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("Server is stopping", response.read)
   end
 
+  def test_a_transfer_that_can_not_be_restored_asks_the_client_to_start_over
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(:@environment, Struct.new(:marshaller).new(nil))
+    cookies = Object.new
+    cookies.define_singleton_method(:get_token_cookie_value) { |_request| "token" }
+    app.instance_variable_set(:@cookies, cookies)
+    request = Object.new
+    request.define_singleton_method(:read) { "state" }
+    transfer = Object.new
+    transfer.define_singleton_method(:authenticate!) { |**| self }
+    transfer.define_singleton_method(:resume) { |_environment| raise ArgumentError, "undefined class" }
+
+    response =
+      Mayu::Session::TransferState.stub(:decrypt, transfer) do
+        app.send(:handle_session_transfer, request, "session")
+      end
+
+    assert_equal(422, response.status)
+    assert_includes(response.read, "SESSION_RESTORE_FAILED")
+  end
+
   def test_session_events_are_acknowledged_with_an_empty_204
     Async do
       app = Mayu::Server::App.allocate
