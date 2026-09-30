@@ -216,4 +216,21 @@ describe("serializeEvent", () => {
       value: "save",
     });
   });
+
+  it("serializes the detail of custom events", () => {
+    const element = document.createElement("div");
+    document.body.append(element);
+
+    const payload = captureSerializedEvent(
+      element,
+      "kanban-move",
+      new CustomEvent("kanban-move", {
+        bubbles: true,
+        detail: { kind: "card", id: 1, toIndex: 2 },
+      }),
+    );
+
+    expect(payload.type).toBe("CustomEvent");
+    expect(payload.detail).toEqual({ kind: "card", id: 1, toIndex: 2 });
+  });
 });

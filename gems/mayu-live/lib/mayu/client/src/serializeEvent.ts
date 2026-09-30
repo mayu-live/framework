@@ -79,6 +79,12 @@ export default function serializeEvent(e: Event) {
     }
   }
 
+  // Custom elements talk to the server by dispatching events. Their detail
+  // is sent as is, so it should hold plain data.
+  if (e instanceof CustomEvent && e.detail !== undefined) {
+    payload.detail = e.detail;
+  }
+
   return payload;
 }
 
