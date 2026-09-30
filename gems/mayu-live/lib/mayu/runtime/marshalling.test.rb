@@ -116,4 +116,85 @@ class Mayu::Runtime::Marshalling::Test < Minitest::Test
       assert_equal([nil], dumped[:nested])
     end.wait
   end
+
+  # Hot reload evaluates a module again, so its constants name new classes
+  # while state still holds instances of the old ones. These tests stand in
+  # for a module under Mayu::ModuleNamespace and replace its classes.
+  module Mayu::ModuleNamespace
+    module MarshallingTest
+    end
+  end
+
+  Reloaded = Mayu::ModuleNamespace::MarshallingTest
+
+  def reload(name, klass)
+    Reloaded.send(:remove_const, name) if Reloaded.const_defined?(name, false)
+    Reloaded.const_set(name, klass)
+  end
+
+  def round_trip(value)
+    Marshalling.load_value(Marshal.load(Marshal.dump(Marshalling.dump_value(value))))
+  end
+
+  def card_class
+    Class.new do
+      attr_accessor :title, :other
+    end
+  end
+
+  def test_instances_of_replaced_classes_are_rebuilt_from_the_current_class
+    card = reload(:Card, card_class).new
+    card.title = "A"
+    current = reload(:Card, card_class)
+
+    assert_raises(TypeError) { Marshal.dump(card) }
+
+    loaded = round_trip({card:})[:card]
+    assert_instance_of(current, loaded)
+    assert_equal("A", loaded.title)
+  end
+
+  def test_data_instances_of_replaced_classes_are_rebuilt
+    item = reload(:Item, Data.define(:id, :done)).new(id: 1, done: true)
+    current = reload(:Item, Data.define(:id, :done))
+
+    assert_equal(current.new(id: 1, done: true), round_trip([item]).first)
+  end
+
+  def test_replaced_objects_keep_their_references_to_each_other
+    a = reload(:Card, card_class).new
+    b = a.class.new
+    a.other = b
+    b.other = a
+    reload(:Card, card_class)
+
+    loaded = round_trip({a:, b:})
+    assert_same(loaded[:b], loaded[:a].other)
+    assert_same(loaded[:a], loaded[:b].other)
+  end
+
+  def test_state_values_are_rebuilt
+    card = reload(:Card, card_class).new
+    card.title = "A"
+    current = reload(:Card, card_class)
+
+    state = round_trip(Mayu::Component::State.new(values: {card:}))
+    assert_instance_of(current, state[:card])
+    assert_equal("A", state[:card].title)
+  end
+
+  def test_instances_of_current_classes_are_left_alone
+    card = reload(:Card, card_class).new
+
+    assert_same(card, Marshalling.dump_value([card]).first)
+  end
+
+  class Outside
+  end
+
+  def test_classes_outside_the_module_namespace_are_left_alone
+    outside = Outside.new
+
+    assert_same(outside, Marshalling.dump_value([outside]).first)
+  end
 end
