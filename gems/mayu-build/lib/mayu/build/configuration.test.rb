@@ -142,7 +142,6 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
         :ruby
           def initialize
             @count = 1
-            @@section = "profile"
           end
 
         %p= "#{$title}:#{@@section}:#{@count}"
@@ -152,10 +151,7 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
       component_class = provider.exports(provider.entry("card.haml"))::Default
       component = component_class.allocate
       component.instance_variable_set(:@__props, {title: "Ada"}.freeze)
-      component.instance_variable_set(
-        :@__context,
-        Mayu::Runtime::VNodes::VComponent::Context.new
-      )
+      component.instance_variable_set(:@__context, {section: "profile"}.freeze)
       component.instance_variable_set(
         :@__state,
         Mayu::Component::State.new(component)

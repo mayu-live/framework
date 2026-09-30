@@ -14,14 +14,13 @@ module Mayu
   module Runtime
     module VNodes
       class VContext < Base
+        # Components below read these through VComponent::Context.
+        attr_reader :values
+
         def initialize(descriptor, parent:, engine:)
           super
           @values = @descriptor.values
-          @context = @parent.closest(VComponent)&.context
-          @children =
-            with_context do
-              VChildren.new(@descriptor.children, parent: self, engine: @engine)
-            end
+          @children = VChildren.new(@descriptor.children, parent: self, engine: @engine)
         end
 
         def update(collector, descriptor = nil)
@@ -33,14 +32,12 @@ module Mayu
             @values = @descriptor.values
           end
 
-          with_context do
-            if values_changed
-              @engine.force_render do
-                @children.update(collector, @descriptor.children)
-              end
-            else
+          if values_changed
+            @engine.force_render do
               @children.update(collector, @descriptor.children)
             end
+          else
+            @children.update(collector, @descriptor.children)
           end
         end
 
@@ -61,11 +58,11 @@ module Mayu
         end
 
         def write_html(out)
-          with_context { @children.write_html(out) }
+          @children.write_html(out)
         end
 
         def write_html_with_id_tree(out, ids)
-          with_context { @children.write_html_with_id_tree(out, ids) }
+          @children.write_html_with_id_tree(out, ids)
         end
 
         def collect_id_tree(ids)
@@ -90,20 +87,11 @@ module Mayu
           super(base)
           @children = children
           @values = @descriptor.values
-          @context = nil
         end
 
         def rehydrate(parent:, engine:, **)
           super
-          @context = @parent.closest(VComponent)&.context
           @children.rehydrate(parent: self, engine: engine, **)
-        end
-
-        private
-
-        def with_context
-          return yield unless @context
-          @context.with(@values) { yield }
         end
       end
     end

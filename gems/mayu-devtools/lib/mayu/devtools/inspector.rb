@@ -143,19 +143,12 @@ module Mayu
         result
       end
 
-      # The values a component can read from its context, with inner values
-      # shadowing outer ones. H.context only sets its values while rendering,
-      # so they are read from the context vnodes above the component.
-      # Components' own `@@name =` assignments stay in their context.
+      # The values a component can read from its context: those of the
+      # context vnodes above it, with inner values shadowing outer ones.
       def context_values(vnode)
         levels = []
         while vnode
-          case vnode
-          when VNodes::VContext
-            levels.unshift(vnode.descriptor.values)
-          when VNodes::VComponent
-            levels.unshift(vnode.context.marshal_dump.first)
-          end
+          levels.unshift(vnode.values) if vnode.is_a?(VNodes::VContext)
           vnode = vnode.parent
         end
         levels.reduce({}, :merge)

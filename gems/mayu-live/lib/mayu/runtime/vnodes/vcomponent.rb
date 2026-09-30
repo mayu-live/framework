@@ -30,55 +30,51 @@ module Mayu
           end
         end
 
+        # A component's read-only view of the values provided above it with
+        # H.context, read as `@@name`. Values are looked up in the tree when
+        # read, so they are the same during rendering and afterwards, for
+        # example in event handlers.
         class Context
-          def initialize(parent: nil)
-            @vars = {}
-            @parent = parent
+          class ReadOnlyError < StandardError
           end
 
-          attr_reader :parent
+          def initialize(node)
+            @node = node
+          end
+
+          attr_writer :node
 
           def [](var)
-            @vars.fetch(var) { @parent[var] if parent }
-          end
+            node = @node&.parent
 
-          def []=(var, value)
-            @vars[var] = value
-          end
-
-          def with(values)
-            previous = {}
-            values.each do |key, value|
-              previous[key] = @vars.key?(key) ? @vars[key] : :__missing__
-              @vars[key] = value
-            end
-
-            yield
-          ensure
-            previous.each do |key, value|
-              if value == :__missing__
-                @vars.delete(key)
-              else
-                @vars[key] = value
+            while node
+              if node.is_a?(VContext) && node.values.key?(var)
+                return node.values[var]
               end
+
+              node = node.parent
             end
           end
 
-          def marshal_dump
-            [@vars]
+          def []=(var, _value)
+            raise ReadOnlyError,
+              "Context is read-only. Provide @@#{var} to a subtree with H.context(#{var}: value) { ... }."
           end
 
-          def marshal_load(a)
-            @vars = a.first
-            @parent = nil
+          # The node is set again by VComponent#rehydrate.
+          def marshal_dump
+            []
+          end
+
+          def marshal_load(_)
+            @node = nil
           end
         end
 
         def initialize(descriptor, parent:, engine:)
           super
 
-          parent_context = @parent.closest(self.class)&.context
-          @context = Context.new(parent: parent_context)
+          @context = Context.new(self)
 
           @instance = build_instance(@descriptor.type, @descriptor)
           bind_initial_runtime(@instance)
@@ -335,8 +331,7 @@ module Mayu
         def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
           super
 
-          parent_context = @parent&.closest(self.class)&.context
-          @context.instance_variable_set(:@parent, parent_context)
+          @context.node = self
           @instance.instance_variable_set(:@__context, @context)
           @instance.instance_variable_get(:@__state)&.bind(@instance)
           @instance.instance_variable_set(:@__props, @descriptor.props.freeze)
