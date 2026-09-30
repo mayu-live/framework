@@ -284,10 +284,22 @@ module Mayu
         response(
           200,
           file.encoded_content.content,
-          "cache-control": ASSET_CACHE_CONTROL,
+          "cache-control": script_cache_control(request.path),
           **file.headers,
           **origin_header(request)
         )
+      end
+
+      # The initializer reads its session id from the fragment of its URL. A
+      # browser reuses a cached module together with the URL it first loaded
+      # it from, so after a reload the page would resume the previous session.
+      # The initializer is tiny, so it is never cached.
+      def script_cache_control(path)
+        if path == @environment.runtime_init_js_path
+          "no-store"
+        else
+          ASSET_CACHE_CONTROL
+        end
       end
 
       def handle_asset(request)

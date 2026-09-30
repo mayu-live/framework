@@ -340,22 +340,37 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("file not found", response.body.join)
   end
 
-  def test_serves_the_hashed_client_initializer_with_immutable_caching
+  RuntimeEnvironment = Data.define(:runtime_init_js_path)
+
+  def script_response(path)
     Dir.mktmpdir("mayu-client") do |root|
       File.write(File.join(root, "init-abc123.js"), "export default null\n")
+      File.write(File.join(root, "main-def456.js"), "export default null\n")
       app = Mayu::Server::App.allocate
       app.instance_variable_set(:@client_files, Mayu::Server::StaticFiles.new(root))
-      app.instance_variable_set(:@environment, Environment.new(nil))
+      app.instance_variable_set(:@environment, RuntimeEnvironment.new("/.mayu/runtime/init-abc123.js"))
 
-      response =
-        app.send(:handle_script, Request.new("GET", "/.mayu/runtime/init-abc123.js", {}, ""))
-
-      assert_equal(200, response.status)
-      headers = response.headers.to_a.to_h
-      assert_includes(Array(headers.fetch(:"content-type")), "text/javascript")
-      assert_includes(Array(headers.fetch(:"cache-control")), Mayu::Server::App::ASSET_CACHE_CONTROL)
-      assert_equal("export default null\n", Brotli.inflate(response.body.join))
+      app.send(:handle_script, Request.new("GET", path, {}, ""))
     end
+  end
+
+  # The initializer reads the session id from its URL's fragment, which a
+  # cached module would keep from an earlier page.
+  def test_serves_the_client_initializer_uncached
+    response = script_response("/.mayu/runtime/init-abc123.js")
+
+    assert_equal(200, response.status)
+    headers = response.headers.to_a.to_h
+    assert_includes(Array(headers.fetch(:"content-type")), "text/javascript")
+    assert_includes(Array(headers.fetch(:"cache-control")), "no-store")
+    assert_equal("export default null\n", Brotli.inflate(response.body.join))
+  end
+
+  def test_serves_other_runtime_scripts_with_immutable_caching
+    response = script_response("/.mayu/runtime/main-def456.js")
+
+    headers = response.headers.to_a.to_h
+    assert_includes(Array(headers.fetch(:"cache-control")), Mayu::Server::App::ASSET_CACHE_CONTROL)
   end
 
   def test_link_header_keeps_klenod_asset_urls_absolute
