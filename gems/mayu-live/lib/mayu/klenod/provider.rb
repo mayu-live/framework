@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
-require "digest"
-
 module Mayu
+  # Where Klenod evaluates app modules, in development and production, so
+  # their classes have names that Ruby can resolve.
+  module ModuleNamespace
+  end
+
   module Klenod
     # A class that a transferred session refers to is no longer there.
     class UnresolvedClass < StandardError
@@ -78,7 +81,7 @@ module Mayu
       # A digest of a module's code, the same in every build of the same
       # source, so a transferred session can tell whether a module changed.
       def module_digest(module_id)
-        Digest::SHA256.hexdigest(source.modules.fetch(module_id).source)
+        source.modules.fetch(module_id).transformed_hash
       end
 
       def asset_references_for_module(reference, **options)
@@ -207,10 +210,11 @@ module Mayu
     # it must stay loadable with klenod-runtime and klenod-rack alone.
     class RuntimeProvider < Provider
       def self.load(bundle_path, source_root:, assets_dir:)
-        new(
-          ::Klenod::Runtime.load_bundle(bundle_path, source_root:),
-          assets_dir:
-        )
+        # Klenod evaluates a loaded bundle in an anonymous module by default.
+        # Use the named namespace instead, so app classes can be referred to
+        # by name.
+        bundle = ::Klenod::Runtime.load_bundle(bundle_path, source_root:, namespace: ModuleNamespace)
+        new(bundle, assets_dir:)
       end
 
       # Evaluates every module in the bundle. The production server does this
@@ -218,11 +222,6 @@ module Mayu
       # modules and answer their first request without evaluating anything.
       def preload
         source.preload
-      end
-
-      # A bundle never changes, so each module's digest is computed once.
-      def module_digest(module_id)
-        (@module_digests ||= {})[module_id] ||= super
       end
 
       def module_id_for(reference)

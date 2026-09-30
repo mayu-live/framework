@@ -22,7 +22,8 @@ class Mayu::Klenod::ProviderTest < Minitest::Test
     with_bundle(MODELS) do |provider|
       board = provider.exports("models")::Kanban::Board
 
-      assert_match(/\A#<Module:0x\h+>::Mod_\h{24}::Exports::Kanban::Board\z/, board.name)
+      assert_match(/\AMayu::ModuleNamespace::Mod_\h{24}::Exports::Kanban::Board\z/, board.name)
+      assert_same(board, Object.const_get(board.name))
       assert_equal(["app:/models.rb", "Kanban::Board"], provider.class_reference(board))
       assert_same(board, provider.resolve_class("app:/models.rb", "Kanban::Board"))
     end

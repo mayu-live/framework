@@ -14,9 +14,6 @@ require_relative "build/update_logger"
 require_relative "build/hot_reloader"
 
 module Mayu
-  module ModuleNamespace
-  end
-
   # Everything that needs klenod-build: compiling and watching app sources,
   # producing bundles, and the tooling around them. Nothing under `Mayu::Build`
   # may be required by the production server.
