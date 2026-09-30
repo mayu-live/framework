@@ -59,9 +59,9 @@
     %Heading(level=3) Responsive variants
     %p
       Listing widths generates one resized file per width. The
-      %code Image
+      %code<> Image
       component puts them in
-      %code srcset
+      %code<> srcset
       so the browser downloads the smallest one that fits.
     %HighlightedCodeBlock(language="ruby")
       = %(Responsive = import("./mayu-dolphin.jpeg?width=320,640,960&format=webp&quality=75"))
@@ -88,11 +88,11 @@
     %Heading(level=3) Format fallback
     %p
       With several formats, the variants are grouped by type into
-      %code= "<source>"
+      %code<>= "<source>"
       elements inside a
-      %code= "<picture>"
+      %code<>= "<picture>"
       element. The first format becomes the fallback
-      %code= "<img>"
+      %code<>= "<img>"
       for browsers without WebP support.
     %HighlightedCodeBlock(language="ruby")
       = %(Fallback = import("./mayu-dolphin2.jpeg?width=480,960&format=jpeg,webp&quality=80"))
