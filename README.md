@@ -688,6 +688,28 @@ encrypted transfer payload remains valid. Transfers are best effort: the server
 waits for HTTP output, not browser acknowledgments. A replacement server needs
 the same secret and a compatible application bundle to resume the state.
 
+### Process hooks
+
+An optional `mayu.rb` next to `mayu.toml` can hook into the server's process
+lifecycle, for resources such as database connections that forked workers must
+not share. `mayu start` and `mayu dev` load it once in the parent process:
+
+```ruby
+Mayu.setup do |setup|
+  # After the bundle is loaded, before workers fork, on start and on restart.
+  setup.before_fork { DB.disconnect }
+
+  # In each worker, with its environment. An `on_start` hook may return
+  # something responding to `stop`, which runs when the worker drains.
+  setup.on_worker do |environment|
+    environment.on_start { Listener.start }
+  end
+end
+```
+
+`mayu.rb` is plain Ruby and is not hot reloaded; restart the server after
+changing it.
+
 # Contributing
 
 Bug reports and pull requests are welcome on GitHub at

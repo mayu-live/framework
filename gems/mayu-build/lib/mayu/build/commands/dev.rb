@@ -16,20 +16,25 @@ module Mayu
         def call
           require "mayu/configuration"
           require "mayu/server"
+          require "mayu/setup"
           require_relative "../../build"
 
           devtools = load_devtools
 
           Mayu::Configuration.with(:development) do |config|
+            setup = Mayu::Setup.load(config.root)
+
             Mayu::Server.new(
               config:,
               worker_count: 1,
               framed_logs: true,
+              before_fork: -> { setup.run_before_fork },
               load_environment: ->(metrics:) do
                 provider =
                   Mayu::Build::Configuration.new(root: config.root).development_provider
                 environment = Mayu::Environment.new(config, module_provider: provider, metrics:)
                 devtools&.install(environment)
+                setup.run_on_worker(environment)
                 if config.server.hmr?
                   reloader =
                     Mayu::Build::HotReloader.new(

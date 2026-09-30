@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "klenod/test"
+require "mayu/setup"
 
 require_relative "../build"
 require_relative "../test/minitest_adapter"
@@ -37,6 +38,9 @@ module Mayu
       end
 
       def execute(context, test_paths)
+        # Tests need the same globals as the server, such as a database
+        # connection, but no server process hooks.
+        @setup ||= Mayu::Setup.load(root)
         provider = DevelopmentProvider.new(context)
         adapter = Test::MinitestAdapter.new(output:, module_provider: provider)
         loaded = true

@@ -147,11 +147,13 @@ module Mayu
 
       require_relative "configuration"
       require_relative "server"
+      require_relative "setup"
 
       Configuration.with(:production) do |config|
         bundle_path = File.expand_path(filename)
         assets_dir = File.expand_path(assets_dir)
         source_root = File.expand_path(source_root)
+        setup = Setup.load(config.root)
 
         # The bundle is loaded and evaluated once, in the controller before
         # it forks. The workers share the evaluated modules copy-on-write
@@ -162,9 +164,12 @@ module Mayu
           config:,
           before_fork: -> do
             provider = preload_bundle(config, bundle_path, source_root:, assets_dir:)
+            setup.run_before_fork
           end,
           load_environment: ->(metrics:) do
-            Environment.new(config, module_provider: provider, metrics:)
+            environment = Environment.new(config, module_provider: provider, metrics:)
+            setup.run_on_worker(environment)
+            environment
           end
         ).run
       end
