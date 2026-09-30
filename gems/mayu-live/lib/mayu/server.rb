@@ -19,6 +19,7 @@ require_relative "runtime/render_error_formatter"
 require_relative "runtime/state_update_warning_formatter"
 require_relative "session/event_formatter"
 require_relative "server/listen_event_formatter"
+require_relative "server/framed_terminal_output"
 require_relative "server/controller"
 
 module Mayu
@@ -28,8 +29,11 @@ module Mayu
     # goes in it, so the server itself never knows whether it is running a
     # prebuilt bundle or a live build. `before_fork` runs in the controller
     # before the workers are forked, for work every worker can share.
-    def initialize(config:, load_environment:, worker_count: nil, before_fork: nil)
+    # `framed_logs` draws log entries on a terminal behind a severity-coloured
+    # bar; the dev server turns it on.
+    def initialize(config:, load_environment:, worker_count: nil, before_fork: nil, framed_logs: false)
       @config = config
+      @framed_logs = framed_logs
       @load_environment = load_environment
       @before_fork = before_fork
       @worker_count = worker_count
@@ -37,7 +41,7 @@ module Mayu
     end
 
     def run
-      install_log_file
+      install_logger
       quiet_container_logs
 
       Console.logger.info(self, event: ListenEvent.new(:server, url: @uri))
@@ -99,26 +103,36 @@ module Mayu
       end
     end
 
-    # Logs go to the terminal as before and, when `log_file` is configured,
-    # to that file as plain text as well. `Console.logger=` is fiber-local, so
-    # this runs before the reactor starts and before workers fork; every task
-    # and worker process inherits the logger from here.
-    def install_log_file
-      path = @config.log_file
-      return unless path
+    # Logs go to the terminal, behind a bar when `framed_logs` is on, and, when
+    # `log_file` is configured, to that file as plain text as well.
+    # `Console.logger=` is fiber-local, so this runs before the reactor starts
+    # and before workers fork; every task and worker process inherits the
+    # logger from here.
+    def install_logger
+      return unless @config.log_file || framed_terminal?
 
-      FileUtils.mkdir_p(File.dirname(path))
-      file = File.open(path, "a")
-      file.sync = true
+      output = terminal_output
 
-      Console.logger =
-        Console::Logger.new(
-          Console::Output::Split[
-            Console::Output::Default.new($stderr),
-            Console::Output::Text.new(file)
-          ],
-          level: Console::Logger.default_log_level
-        )
+      if (path = @config.log_file)
+        FileUtils.mkdir_p(File.dirname(path))
+        file = File.open(path, "a")
+        file.sync = true
+        output = Console::Output::Split[output, Console::Output::Text.new(file)]
+      end
+
+      Console.logger = Console::Logger.new(output, level: Console::Logger.default_log_level)
+    end
+
+    def framed_terminal? = @framed_logs && $stderr.tty?
+
+    # The framed output keeps the verbosity Console's default logger has, so
+    # dev logs look the same apart from the bar.
+    def terminal_output
+      if framed_terminal?
+        FramedTerminalOutput.new($stderr, verbose: Console::Config::DEFAULT.verbose?)
+      else
+        Console::Output::Default.new($stderr)
+      end
     end
 
     # Built here rather than in `initialize` so a missing localhost gem is

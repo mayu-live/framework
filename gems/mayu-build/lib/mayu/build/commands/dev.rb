@@ -24,6 +24,7 @@ module Mayu
             Mayu::Server.new(
               config:,
               worker_count: 1,
+              framed_logs: true,
               load_environment: ->(metrics:) do
                 provider =
                   Mayu::Build::Configuration.new(root: config.root).development_provider
