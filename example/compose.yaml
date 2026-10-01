@@ -1,0 +1,16 @@
+# Postgres for the database demo. Start it with `podman compose up -d`
+# (or `docker compose up -d`), then see .env.example.
+services:
+  postgres:
+    image: docker.io/library/postgres:18-alpine
+    environment:
+      POSTGRES_USER: mayu_example
+      POSTGRES_PASSWORD: mayu_example
+      POSTGRES_DB: mayu_example
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres:/var/lib/postgresql
+
+volumes:
+  postgres:
