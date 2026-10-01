@@ -17,13 +17,19 @@ module Mayu
           Script = InternalComponents::Script
 
           def render
-            H[:__head, *fixed_tags, *user_tags, *asset_tags]
+            H[:__head, *fixed_tags, *title_tag, *user_tags, *asset_tags]
           end
 
           private
 
           def fixed_tags
             [H[:meta, charset: "utf-8"]]
+          end
+
+          def title_tag
+            return [] unless (title = @__props[:title])
+
+            [H[:title, title, key: "title"]]
           end
 
           def asset_tags
@@ -114,7 +120,8 @@ module Mayu
             in Descriptors::Element[type: :meta, props: {property:}]
               "meta-property-#{property}"
             in Descriptors::Element[type: :title]
-              "title"
+              # Rendered by #title_tag, after templates are applied.
+              nil
             in Descriptors::Element[type: :link, key:]
               "link-key-#{key}"
             in Descriptors::Element[type: :link]

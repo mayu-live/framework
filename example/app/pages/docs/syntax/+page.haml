@@ -137,3 +137,41 @@
       %p Loading…
     %pre= $data
     ```
+
+    ## Head and title
+
+    Put `%title`, `%meta` and `%link` inside `%head`, anywhere in a
+    component. Mayu moves them into the document's `<head>`.
+
+    ```haml
+    %head
+      %title Hello
+    ```
+
+    A `%title` with a `template` attribute wraps every title below it
+    in the tree, such as the titles of pages rendered inside a layout.
+    Its own text is used when nothing below sets a title.
+    Nested templates are applied from the innermost out.
+
+    ```haml
+    -# root.haml
+    %head
+      %title(template="%s | Acme") Acme
+    -# pages/blog/+layout.haml
+    %head
+      %title(template="%s | Blog") Blog
+    -# pages/blog/[slug]/+page.haml
+    %head
+      %title Hello
+    ```
+
+    The page above gets the title `Hello | Blog | Acme`,
+    the blog layout alone gives `Blog | Acme`,
+    and any other page without a title gives `Acme`.
+
+    Add `absolute` to use a title as is, without any templates.
+
+    ```haml
+    %head
+      %title(absolute) Hello
+    ```

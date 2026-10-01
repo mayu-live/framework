@@ -19,6 +19,20 @@ module Mayu
 
         def children = @descriptor.children
 
+        def title
+          Array(children).flatten.find do |child|
+            child in Descriptors::Element[type: :title]
+          end
+        end
+
+        # The children list this head was rendered in. A title template
+        # applies to titles in heads anywhere below it.
+        def scope = @parent&.parent
+
+        def depth = ancestors.count
+
+        def within?(node) = !node.nil? && ancestors.include?(node)
+
         # Only a change in content is worth a head flush. A parent that
         # re-renders hands every head node a fresh descriptor, usually with
         # the same title and tags as before.
@@ -54,6 +68,10 @@ module Mayu
         end
 
         private
+
+        def ancestors
+          Enumerator.produce(@parent, &:parent).take_while(&:itself)
+        end
 
         def add_to_document
           closest(VDocument)&.add_head(self)

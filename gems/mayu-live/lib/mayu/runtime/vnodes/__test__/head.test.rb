@@ -142,6 +142,88 @@ class Mayu::Runtime::VNodes::HeadTest < Minitest::Test
     assert_match("<title>Other</title>", render_html(engine.root))
   end
 
+  class TemplateLayout < Mayu::Component::Base
+    def render
+      [
+        H[:head, H[:title, @__props[:default], template: @__props[:template]]],
+        H[:main, H[:slot]]
+      ]
+    end
+  end
+
+  def acme(*children)
+    H[TemplateLayout, *children, default: "Acme", template: "%s | Acme"]
+  end
+
+  def blog(*children)
+    H[TemplateLayout, *children, default: "Blog", template: "%s | Blog"]
+  end
+
+  def render_title(descriptor)
+    engine = Mayu::Runtime::Engine.new(H[:body, descriptor], metrics: NullMetrics.new)
+    html = render_html(engine.root)
+    assert_equal(1, html.scan("<title>").length, html)
+    html[%r{<title>(.*?)</title>}, 1]
+  end
+
+  def test_title_template_wraps_a_nested_title
+    assert_equal("Hello | Acme", render_title(acme(H[TitleProbe, title: "Hello"])))
+  end
+
+  def test_title_template_default_without_a_nested_title
+    assert_equal("Acme", render_title(acme(H[:p, "content"])))
+  end
+
+  def test_nested_title_templates_compose
+    assert_equal("Hello | Blog | Acme", render_title(acme(blog(H[TitleProbe, title: "Hello"]))))
+    assert_equal("Blog | Acme", render_title(acme(blog(H[:p, "content"]))))
+  end
+
+  class AbsoluteTitleProbe < Mayu::Component::Base
+    def render
+      H[:head, H[:title, "Hello", absolute: true]]
+    end
+  end
+
+  def test_absolute_title_ignores_templates
+    engine = Mayu::Runtime::Engine.new(H[:body, acme(blog(H[AbsoluteTitleProbe]))], metrics: NullMetrics.new)
+    html = render_html(engine.root)
+
+    assert_match("<title>Hello</title>", html)
+    refute_match("absolute", html)
+  end
+
+  def test_title_template_does_not_apply_to_a_sibling_subtree
+    descriptor = H[:div, H[:div, blog], H[:div, H[TitleProbe, title: "Hello"]]]
+
+    assert_equal("Hello", render_title(descriptor))
+  end
+
+  def test_title_template_keeps_percent_signs
+    descriptor =
+      H[TemplateLayout, H[TitleProbe, title: "100% \\1"], default: "A", template: "%s | 50%"]
+
+    assert_equal("100% \\1 | 50%", render_title(descriptor))
+  end
+
+  def test_title_template_attribute_is_not_rendered
+    engine = Mayu::Runtime::Engine.new(H[:body, acme], metrics: NullMetrics.new)
+
+    refute_match("template", render_html(engine.root))
+  end
+
+  def test_changing_a_templated_title_renders_the_change
+    engine = Mayu::Runtime::Engine.new(H[:body, acme(H[TitleProbe, title: "One"])], metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+    engine.flush_head(collector)
+
+    engine.update(H[:body, acme(H[TitleProbe, title: "Two"])])
+
+    assert(engine.head_dirty?)
+    engine.flush_head(collector)
+    assert_match("<title>Two | Acme</title>", render_html(engine.root))
+  end
+
   def test_route_stylesheets_are_rendered_without_component_discovery
     engine =
       Mayu::Runtime::Engine.new(

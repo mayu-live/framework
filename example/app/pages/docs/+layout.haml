@@ -41,6 +41,9 @@
     path.split("/").reject(&:empty?)
   end
 
+%head
+  %title(template="%s – Docs") Documentation
+
 %PageLayout
   %UnderConstruction(slot="after_heading" path=$path)
   %slot

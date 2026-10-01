@@ -9,6 +9,7 @@
 require "async/queue"
 require_relative "base"
 require_relative "command_collector"
+require_relative "title_resolver"
 require_relative "vcomponent"
 require_relative "../render_error"
 require_relative "../../not_found"
@@ -414,6 +415,7 @@ module Mayu
             styles: @styles,
             scripts: @scripts,
             custom_elements: @custom_elements,
+            title: TitleResolver.call(@head),
             descriptors: @head.map(&:children).flatten.compact
           ]
         end
