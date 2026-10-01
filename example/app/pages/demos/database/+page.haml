@@ -2,6 +2,7 @@
   Heading = import("/components/Layout/Heading")
   Card = import("/components/UI/Card")
   Todo = import("/models/Todo")
+  DatabaseSetup = import("/components/Database/Setup")
 
   def initialize
     @todos = []
@@ -65,22 +66,14 @@
             %p{class: { done: todo.done }}= todo.title
             %button(onclick=handle_delete title="Delete"){name: todo.id} ×
   = else
-    %Card.todos
-      .setup
-        %p This demo needs Postgres. From the example directory:
-        %pre
-          :plain
-            podman compose up -d
-            cp .env.example .env.local
-            bin/db migrate
-        %p Then restart the server.
+    %DatabaseSetup
 
 :css
   .todos {
     overflow: hidden;
   }
 
-  form, .setup {
+  form {
     padding: 1.25rem;
   }
 
