@@ -49,6 +49,8 @@ class Mayu::SessionTest < Minitest::Test
 
     def runtime_init_js_path = "/.mayu/runtime/init-testhash.js"
 
+    def development? = false
+
     def initialize(module_provider: nil, render_exceptions: true)
       @config = FakeConfig.new(render_exceptions:)
       @router = FakeRouter.new

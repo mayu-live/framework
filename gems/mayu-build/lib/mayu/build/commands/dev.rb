@@ -32,7 +32,7 @@ module Mayu
               load_environment: ->(metrics:) do
                 provider =
                   Mayu::Build::Configuration.new(root: config.root).development_provider
-                environment = Mayu::Environment.new(config, module_provider: provider, metrics:)
+                environment = Mayu::Environment.new(config, module_provider: provider, metrics:, development: true)
                 devtools&.install(environment)
                 setup.run_on_worker(environment)
                 if config.server.hmr?

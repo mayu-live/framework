@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require_relative "base"
+require_relative "../dom_nesting_validation"
 
 module Mayu
   module Runtime
@@ -14,6 +15,7 @@ module Mayu
       class VHead < Base
         def initialize(descriptor, parent:, engine:)
           super
+          validate_nesting if @engine&.validate_dom_nesting?
           add_to_document
         end
 
@@ -39,7 +41,10 @@ module Mayu
         def update(_command_collector, descriptor)
           changed = @descriptor != descriptor
           @descriptor = descriptor
-          closest(VDocument)&.mark_head_dirty if changed
+          return unless changed
+
+          validate_nesting if @engine&.validate_dom_nesting?
+          closest(VDocument)&.mark_head_dirty
         end
 
         def write_html(_out)
@@ -68,6 +73,29 @@ module Mayu
         end
 
         private
+
+        # The tags inside a head never become elements of their own here, so
+        # they are checked against <head> directly.
+        def validate_nesting
+          head = DOMNestingValidation::AncestorInfo::EMPTY.update(:head)
+          path = [*tree_path, {name: "head"}]
+          Array(children).flatten.each { validate_descriptor(it, head, path) }
+        end
+
+        def validate_descriptor(descriptor, ancestor_info, path)
+          return unless descriptor in Descriptors::Element[type: Symbol => tag]
+
+          path = [*path, {name: tag.to_s}]
+
+          if (message, invalid_tag = DOMNestingValidation.check(tag, ancestor_info))
+            @engine.warn_dom_nesting(closest(VComponent), message, tree_path: path, invalid_tag:)
+          end
+
+          ancestor_info = ancestor_info.update(tag)
+          Array(descriptor.children).flatten.each do |child|
+            validate_descriptor(child, ancestor_info, path)
+          end
+        end
 
         def ancestors
           Enumerator.produce(@parent, &:parent).take_while(&:itself)

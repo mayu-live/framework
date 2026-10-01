@@ -153,6 +153,7 @@ module Mayu
         metrics: @environment.metrics,
         module_provider:,
         render_exceptions: @environment.config.server.render_exceptions?,
+        validate_dom_nesting: @environment.development?,
         stylesheets: route_stylesheets,
         scripts: route_scripts
       )
@@ -227,6 +228,7 @@ module Mayu
       @engine.metrics = environment.metrics if @engine.respond_to?(:metrics=)
       @engine.module_provider = module_provider
       @engine.render_exceptions = environment.config.server.render_exceptions?
+      @engine.validate_dom_nesting = environment.development?
       @engine.not_found_handler = method(:live_not_found_descriptor)
       log_restore_report
       self

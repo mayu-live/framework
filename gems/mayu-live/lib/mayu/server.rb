@@ -17,6 +17,7 @@ require "fileutils"
 # the worker, so its formatter is loaded here, before the server logs.
 require_relative "runtime/render_error_formatter"
 require_relative "runtime/state_update_warning_formatter"
+require_relative "runtime/dom_nesting_warning_formatter"
 require_relative "session/event_formatter"
 require_relative "server/listen_event_formatter"
 require_relative "server/framed_terminal_output"

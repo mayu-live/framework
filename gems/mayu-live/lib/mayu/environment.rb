@@ -48,8 +48,12 @@ module Mayu
       filename
     end
 
-    def initialize(config, module_provider:, metrics: nil)
+    # Set by `mayu dev`. Turns on checks that only help while developing.
+    def development? = @development
+
+    def initialize(config, module_provider:, metrics: nil, development: false)
       @config = config
+      @development = development
       @app_dir = File.join(config.root, Klenod::SOURCE_DIR)
       @client_path = File.join(__dir__, "client", "dist")
 

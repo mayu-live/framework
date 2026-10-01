@@ -18,6 +18,7 @@ require_relative "commands"
 require_relative "marshalling"
 require_relative "restore_report"
 require_relative "state_update_warning_event"
+require_relative "dom_nesting_warning_event"
 
 module Mayu
   module Runtime
@@ -45,6 +46,9 @@ module Mayu
       attr_writer :update_budget
       attr_writer :module_provider
       attr_writer :render_exceptions
+      # Development only. Elements check their nesting as they are created.
+      attr_accessor :validate_dom_nesting
+      alias_method :validate_dom_nesting?, :validate_dom_nesting
 
       # Seconds the updater waits after each pass, or nil to run as soon as
       # there is work. Set while the page is hidden.
@@ -62,6 +66,7 @@ module Mayu
         update_budget: 30,
         module_provider: nil,
         render_exceptions: true,
+        validate_dom_nesting: false,
         stylesheets: [],
         scripts: []
       )
@@ -70,6 +75,7 @@ module Mayu
         @update_budget = update_budget
         @module_provider = module_provider
         @render_exceptions = render_exceptions
+        @validate_dom_nesting = validate_dom_nesting
         @vnode_id_sequence = 0
         @output_queue = Async::Queue.new
         @update_interval = nil
@@ -120,6 +126,7 @@ module Mayu
           @vnode_id_sequence = 0
         end
         @render_exceptions = true if @render_exceptions.nil?
+        @validate_dom_nesting = false
         @output_queue = Async::Queue.new
         @update_interval = nil
         @not_found_handler = nil
@@ -283,6 +290,23 @@ module Mayu
           )
         Console.logger.warn(component, event:)
         true
+      end
+
+      # Logs each message once per component, since a component renders the
+      # same elements every time.
+      def warn_dom_nesting(component, message, tree_path: [], invalid_tag: nil)
+        @dom_nesting_warnings ||= Set.new
+        return unless @dom_nesting_warnings.add?([component, message])
+
+        event =
+          DOMNestingWarningEvent.for(
+            component&.tree_path&.last,
+            message:,
+            tree_path:,
+            invalid_tag:,
+            provider: module_provider
+          )
+        Console.logger.warn(component || self, event:)
       end
 
       def callback(id, payload)

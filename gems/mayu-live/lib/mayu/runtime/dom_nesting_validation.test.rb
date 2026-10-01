@@ -65,6 +65,18 @@ class Mayu::Runtime::DOMNestingValidation::Test < Minitest::Test
     assert_equal(<<~MSG.strip, get_warnings(:svg, :foreignObject, :body))
       In HTML, <body> can not be a child of <foreignObject>.
     MSG
+
+    assert_equal(<<~MSG.strip, get_warnings(:head, :title, :span))
+      In HTML, <span> can not be a child of <title>.
+    MSG
+
+    assert_equal(<<~MSG.strip, get_warnings(:div, :textarea, :b))
+      In HTML, <b> can not be a child of <textarea>.
+    MSG
+
+    assert_equal(<<~MSG.strip, get_warnings(:head, :div))
+      In HTML, <div> can not be a child of <head>.
+    MSG
   end
 
   private

@@ -9,6 +9,7 @@
 require_relative "base"
 require_relative "../dom"
 require_relative "../commands"
+require_relative "../dom_nesting_validation"
 require_relative "vattributes"
 require_relative "vchildren"
 
@@ -18,6 +19,7 @@ module Mayu
       class VElement < Base
         def initialize(descriptor, parent:, engine:)
           super
+          validate_nesting if @engine&.validate_dom_nesting?
           @children =
             VChildren.new(@descriptor.children, parent: self, engine: @engine)
           @attributes =
@@ -163,6 +165,38 @@ module Mayu
 
         def node_name
           @node_name ||= tag_name.upcase.freeze
+        end
+
+        # What DOMNestingValidation knows about this element and its element
+        # ancestors. Nil inside the document head, whose tags VHead checks
+        # where they were written.
+        def nesting_info
+          return @nesting_info if defined?(@nesting_info)
+
+          @nesting_info =
+            if @descriptor.type == :__head
+              nil
+            elsif (parent = parent_element)
+              parent.nesting_info&.update(nesting_tag)
+            else
+              DOMNestingValidation::AncestorInfo::EMPTY.update(nesting_tag)
+            end
+        end
+
+        private
+
+        def validate_nesting
+          return unless (ancestor_info = parent_element&.nesting_info)
+          return unless (message, invalid_tag = DOMNestingValidation.check(nesting_tag, ancestor_info))
+
+          @engine.warn_dom_nesting(closest(VComponent), message, tree_path:, invalid_tag:)
+        end
+
+        def parent_element = @parent&.closest(VElement)
+
+        def nesting_tag
+          type = @descriptor.type
+          type.is_a?(Symbol) ? type : tag_name.to_sym
         end
       end
     end

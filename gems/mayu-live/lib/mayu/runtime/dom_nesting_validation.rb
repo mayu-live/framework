@@ -208,6 +208,12 @@ module Mayu
       end
 
       def self.validate(child_tag, ancestor_info = AncestorInfo::EMPTY)
+        check(child_tag, ancestor_info)&.first
+      end
+
+      # Like .validate, and also returns the tag of the parent or ancestor
+      # that the child can not be placed in, as [message, tag].
+      def self.check(child_tag, ancestor_info = AncestorInfo::EMPTY)
         parent_tag = ancestor_info.current
 
         invalid_parent =
@@ -225,31 +231,38 @@ module Mayu
 
         return nil unless invalid_parent_or_ancestor
 
-        if invalid_parent
-          info = ""
+        message =
+          if invalid_parent
+            info = ""
 
-          if parent_tag == :table && child_tag == :tr
-            info +=
-              " Add a <tbody>, <thead> or <tfoot> to your code to match the browser."
+            if parent_tag == :table && child_tag == :tr
+              info +=
+                " Add a <tbody>, <thead> or <tfoot> to your code to match the browser."
+            end
+
+            format(
+              "In HTML, <%s> can not be a child of <%s>.%s",
+              child_tag,
+              invalid_parent,
+              info
+            )
+          else
+            format(
+              "In HTML, <%s> can not be a descendant of <%s>.",
+              child_tag,
+              invalid_ancestor
+            )
           end
 
-          format(
-            "In HTML, <%s> can not be a child of <%s>.%s",
-            child_tag,
-            invalid_parent,
-            info
-          )
-        else
-          format(
-            "In HTML, <%s> can not be a descendant of <%s>.",
-            child_tag,
-            invalid_ancestor
-          )
-        end
+        [message, invalid_parent_or_ancestor]
       end
 
       def self.valid_parent_child?(parent, child)
         case parent
+        in :title | :textarea | :script | :style
+          # Text-only elements. The browser parses any markup inside them as
+          # text, and Mayu renders only the text children of a %title.
+          false
         in :select
           child in :hr | :option | :optgroup
         in :optgroup
