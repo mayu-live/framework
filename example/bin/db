@@ -1,0 +1,71 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "rubygems"
+require "bundler/setup"
+require "dotenv"
+
+Dir.chdir(File.expand_path("..", __dir__))
+# Same files as `mayu dev`; production sets DATABASE_URL in the environment.
+Dotenv.load(".env", ".env.local")
+
+require_relative "../db/database"
+
+USAGE = <<~TEXT
+  Usage: bin/db COMMAND
+
+    migrate [VERSION]  Migrate to the latest version, or to VERSION
+    rollback           Undo the latest migration
+    new NAME           Create the next migration in db/migrations
+    console            Start IRB with DB connected
+TEXT
+
+def connect
+  unless Database.enabled?
+    abort <<~TEXT
+      DATABASE_URL is not set. Start Postgres with `podman compose up -d`,
+      then copy .env.example to .env.local.
+    TEXT
+  end
+
+  Database.connect
+end
+
+def current_version(db)
+  db.tables.include?(:schema_info) ? db[:schema_info].get(:version).to_i : 0
+end
+
+command, *args = ARGV
+
+case command
+when "migrate"
+  db = connect
+  target = args.first&.then { Integer(it) }
+  Sequel::Migrator.run(db, Database::MIGRATIONS_DIR, target:)
+  puts "Migrated to version #{current_version(db)}"
+when "rollback"
+  db = connect
+  target = [current_version(db) - 1, 0].max
+  Sequel::Migrator.run(db, Database::MIGRATIONS_DIR, target:)
+  puts "Rolled back to version #{target}"
+when "new"
+  name = args.first or abort(USAGE)
+  versions = Dir[File.join(Database::MIGRATIONS_DIR, "*.rb")].map { File.basename(it).to_i }
+  filename = format("%03d_%s.rb", (versions.max || 0) + 1, name.gsub(/\W+/, "_").downcase)
+  path = File.join(Database::MIGRATIONS_DIR, filename)
+  File.write(path, <<~RUBY)
+    # frozen_string_literal: true
+
+    Sequel.migration do
+      change do
+      end
+    end
+  RUBY
+  puts "Created #{path}"
+when "console"
+  DB = connect
+  require "irb"
+  IRB.start
+else
+  abort USAGE
+end

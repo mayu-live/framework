@@ -1,0 +1,127 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Card = import("/components/UI/Card")
+  Todo = import("/models/Todo")
+  DatabaseSetup = import("/components/Database/Setup")
+
+  def initialize
+    @todos = []
+    @form_key = "form-0"
+  end
+
+  # Every tab and every worker reloads when Postgres announces a change on
+  # the `todos` channel, including changes made outside the app.
+  def mount
+    return unless Database.enabled?
+
+    reload_todos
+    Database.listen("todos") { reload_todos }
+  end
+
+  def handle_submit(e)
+    e => { target: { formData: { title: String => title } } }
+
+    title = title.strip
+    Todo.create(title:) unless title.empty?
+    @form_key = @form_key.succ
+  end
+
+  def handle_check(e)
+    e => { currentTarget: { name: id, checked: done } }
+
+    Todo[Integer(id)]&.update(done:)
+  end
+
+  def handle_delete(e)
+    e => { currentTarget: { name: id } }
+
+    Todo[Integer(id)]&.destroy
+  end
+
+  private
+
+  def reload_todos
+    @todos = Todo.order(:id).all
+  end
+
+%head
+  %title Database
+
+%article
+  %Heading(level=2) Shared todos
+  %p
+    These todos are stored in Postgres. A trigger sends a
+    %code<> NOTIFY
+    on every change, and each page listens for it, so open this page in two
+    tabs and watch them follow each other.
+
+  = if Database.enabled?
+    %Card.todos
+      %form(onsubmit=handle_submit autocomplete="off")[@form_key]
+        %input(type="text" required name="title" placeholder="What needs to be done?" value="")
+      %ul
+        = @todos.map do |todo|
+          %li[todo.id]
+            %input(type="checkbox" onchange=handle_check){name: todo.id, checked: todo.done}
+            %p{class: { done: todo.done }}= todo.title
+            %button(onclick=handle_delete title="Delete"){name: todo.id} ×
+  = else
+    %DatabaseSetup
+
+:css
+  .todos {
+    overflow: hidden;
+  }
+
+  form {
+    padding: 1.25rem;
+  }
+
+  form {
+    border-bottom: 1px solid var(--border);
+  }
+
+  input[type="text"] {
+    display: block;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.875rem;
+    margin: 0;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  li p {
+    margin: 0;
+  }
+
+  .done {
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+
+  button {
+    border: 0;
+    background: transparent;
+    color: var(--red);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }

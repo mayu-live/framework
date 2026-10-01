@@ -708,7 +708,8 @@ end
 ```
 
 `mayu.rb` is plain Ruby and is not hot reloaded; restart the server after
-changing it.
+changing it. The example app uses it to connect Sequel and Postgres
+`LISTEN`/`NOTIFY`; see `example/mayu.rb` and `example/db/`.
 
 # Contributing
 

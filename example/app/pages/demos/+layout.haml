@@ -15,6 +15,8 @@
     "/demos/images" => "Images",
     "/demos/svg" => "SVGs",
     "/demos/todo" => "Todo app",
+    "/demos/kanban" => "Kanban board",
+    "/demos/database" => "Shared todos",
     "/demos/exceptions" => "Exceptions",
     "/demos/life" => "Game of life",
     "/demos/snake" => "Snake",
@@ -68,6 +70,8 @@
         %MenuItem{href: "/demos/llm-chat", active: $path == "/demos/llm-chat"} LLM chat
         %MenuItem{href: "/demos/tree", active: $path == "/demos/tree"} App tree
         %MenuItem{href: "/demos/todo", active: $path == "/demos/todo"} Todo app
+        %MenuItem{href: "/demos/kanban", active: $path.start_with?("/demos/kanban")} Kanban board
+        %MenuItem{href: "/demos/database", active: $path == "/demos/database"} Shared todos
     %Details(open summary="Games")
       %Menu
         %MenuItem{href: "/demos/life", active: $path == "/demos/life"} Game of life
