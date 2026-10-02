@@ -81,6 +81,59 @@ describe("Mayu callbacks", () => {
     mayu.dispose();
   });
 
+  it("lets command invoker buttons keep their default action", () => {
+    const mayu = new Mayu({ autoPing: false });
+    mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+    const button = document.createElement("button");
+    button.setAttribute("commandfor", "dialog");
+    button.setAttribute("command", "show-modal");
+    button.addEventListener("click", (event) =>
+      mayu.callback(event, "listener"),
+    );
+    document.body.append(button);
+
+    const event = new MouseEvent("click", { cancelable: true });
+    button.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    mayu.dispose();
+  });
+
+  describe("submitting a form", () => {
+    function submit(method: string, submitterMethod?: string) {
+      const mayu = new Mayu({ autoPing: false });
+      mayu.setWriter({ write: vi.fn(async () => undefined) } as any);
+      const form = document.createElement("form");
+      form.setAttribute("method", method);
+      const submitter = document.createElement("button");
+      if (submitterMethod)
+        submitter.setAttribute("formmethod", submitterMethod);
+      form.append(submitter);
+      form.addEventListener("submit", (event) =>
+        mayu.callback(event, "listener"),
+      );
+      document.body.append(form);
+
+      const event = new SubmitEvent("submit", { cancelable: true, submitter });
+      form.dispatchEvent(event);
+      mayu.dispose();
+      return event;
+    }
+
+    it("lets a dialog form close its dialog", () => {
+      expect(submit("dialog").defaultPrevented).toBe(false);
+    });
+
+    it("lets a submitter with formmethod=dialog close its dialog", () => {
+      expect(submit("post", "dialog").defaultPrevented).toBe(false);
+    });
+
+    it("prevents other submissions", () => {
+      expect(submit("post").defaultPrevented).toBe(true);
+      expect(submit("dialog", "post").defaultPrevented).toBe(true);
+    });
+  });
+
   it("does not throttle discrete events", async () => {
     const mayu = new Mayu({ autoPing: false });
     const write = vi.fn(async (_message: ClientEvent) => undefined);

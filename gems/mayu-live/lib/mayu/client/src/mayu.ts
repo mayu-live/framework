@@ -201,9 +201,9 @@ export default class Mayu {
   }
 
   callback(event: Event, id: string) {
-    // The default action of a popover invoker button is to show or hide its
-    // popover. That is pure browser UI, so let it run alongside the callback.
-    if (!isPopoverInvokerClick(event)) event.preventDefault();
+    // Some default actions are pure browser UI, such as showing a popover or
+    // closing a dialog, so they run alongside the callback.
+    if (!keepsDefaultAction(event)) event.preventDefault();
 
     const serializedEvent = serializeEvent(event);
 
@@ -453,10 +453,33 @@ function createPingWorker(): { worker: Worker; url: string | null } | null {
   }
 }
 
-function isPopoverInvokerClick(event: Event) {
-  return (
-    event.type === "click" &&
-    event.currentTarget instanceof HTMLButtonElement &&
-    event.currentTarget.hasAttribute("popovertarget")
-  );
+// Clicks on popover and command invoker buttons (popovertarget, commandfor)
+// show, hide or close their targets, and submitting a form with
+// method="dialog" closes its dialog. None of them navigate.
+function keepsDefaultAction(event: Event) {
+  if (event.type === "click") {
+    const button = event.currentTarget;
+    return (
+      button instanceof HTMLButtonElement &&
+      (button.hasAttribute("popovertarget") ||
+        button.hasAttribute("commandfor"))
+    );
+  }
+
+  if (event.type === "submit") {
+    return submitMethod(event) === "dialog";
+  }
+
+  return false;
+}
+
+function submitMethod(event: Event) {
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement)) return null;
+
+  const submitter = (event as SubmitEvent).submitter;
+  const method =
+    submitter?.getAttribute("formmethod") ?? form.getAttribute("method");
+
+  return method?.toLowerCase() ?? null;
 }
