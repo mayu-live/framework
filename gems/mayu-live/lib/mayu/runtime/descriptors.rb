@@ -12,10 +12,13 @@ require_relative "marshalling"
 module Mayu
   module Runtime
     module Descriptors
+      # `ref` is taken out of the props like `key`, so it is never rendered
+      # as an attribute or passed to a component. It doesn't affect same?:
+      # moving a ref to another element doesn't replace the element.
       Element =
-        Data.define(:type, :key, :slot, :children, :props) do
-          def self.[](type, *children, key: nil, slot: nil, **props)
-            new(type, key, slot&.to_sym, Children[children], props)
+        Data.define(:type, :key, :slot, :children, :props, :ref) do
+          def self.[](type, *children, key: nil, slot: nil, ref: nil, **props)
+            new(type, key, slot&.to_sym, Children[children], props, ref)
           end
 
           def same?(other)
@@ -38,15 +41,17 @@ module Mayu
               key,
               slot,
               children,
-              Marshalling.dump_value(props)
+              Marshalling.dump_value(props),
+              ref
             ]
           end
 
           # A component whose class or props can not be loaded any more, after
           # a deploy removed or changed it, becomes an UnresolvedComponent
-          # instead of failing the whole session.
+          # instead of failing the whole session. Dumps from before refs have
+          # five fields, and load with no ref.
           def marshal_load(a)
-            type, key, slot, children, props = a
+            type, key, slot, children, props, ref = a
 
             begin
               loaded_type = Marshalling.load_value(type)
@@ -58,7 +63,7 @@ module Mayu
               loaded_props = {__unresolved: "#{error.class}: #{error.message}"}
             end
 
-            initialize(type: loaded_type, key:, slot:, children:, props: loaded_props)
+            initialize(type: loaded_type, key:, slot:, children:, props: loaded_props, ref:)
           end
         end
 

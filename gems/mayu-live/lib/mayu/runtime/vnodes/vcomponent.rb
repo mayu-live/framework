@@ -11,6 +11,7 @@ require "async/barrier"
 
 require_relative "base"
 require_relative "../marshalling"
+require_relative "../ref"
 require_relative "../../component/state"
 require_relative "internal_components/base"
 require_relative "../unresolved_component"
@@ -84,6 +85,8 @@ module Mayu
           @replacing_instance = false
           @handling_render_error = false
           @rerender_requested_during_error = false
+          # Attached in #start, since subtrees built here may be discarded.
+          @ref = @descriptor.ref
 
           @children = build_initial_children
         end
@@ -93,9 +96,16 @@ module Mayu
 
         attr_reader :context
 
+        # What `ref.current` returns for this component. A hot reload
+        # replaces @instance, and the ref follows.
+        def ref_value = @instance
+
         def start
           return if @task
 
+          # Before the task starts, so a parent's mount sees its children's
+          # refs.
+          @ref = @engine.attach_ref(@ref, self) if @ref
           @task = parent_task&.async do |task|
             @task = task
             @instance.instance_variable_set(:@__vnode_task, task)
@@ -118,6 +128,7 @@ module Mayu
         def stop
           return unless @task
           @children.stop
+          @engine.detach_ref(@ref, self) if @ref
           # stop_instance_work forgets the queue, so read it first.
           queue = @instance.instance_variable_get(:@__vnode_queue)
           stop_instance_work(@instance)
@@ -195,6 +206,7 @@ module Mayu
               :@__props,
               @descriptor.props.freeze
             )
+            update_ref(@descriptor.ref)
           end
 
           return if skip_render
@@ -339,11 +351,13 @@ module Mayu
           @replacing_instance = false
           @handling_render_error = false
           @rerender_requested_during_error = false
+          @ref = nil
         end
 
         def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
           super
 
+          @ref = engine.canonical_ref(@descriptor.ref) if @descriptor.ref
           @context.node = self
           restore_instance if @restore
           @instance.instance_variable_set(:@__context, @context)
@@ -365,6 +379,14 @@ module Mayu
 
         private
 
+        def update_ref(ref)
+          return if ref == @ref
+
+          @engine.detach_ref(@ref, self) if @ref && @task
+          @ref = ref
+          @ref = @engine.attach_ref(@ref, self) if @ref && @task
+        end
+
         # Restores the transferred state when the code it came from is
         # unchanged. Otherwise, or when the state can not be loaded, starts the
         # component over with its current props and context, and reports why,
@@ -382,7 +404,14 @@ module Mayu
           if (reason = changed_dependency(restore[:dependencies]))
             reinitialize_instance(reason)
           else
-            @instance.send(:marshal_load, Marshalling.load_value(Marshal.load(restore[:state])))
+            # The rendered tree holds its own copies of the refs in the state.
+            # Both are replaced with one Ref per id, see Engine#canonical_ref.
+            state =
+              Marshal.load(
+                restore[:state],
+                ->(object) { object.is_a?(Runtime::Ref) ? @engine.canonical_ref(object) : object }
+              )
+            @instance.send(:marshal_load, Marshalling.load_value(state))
             @instance.instance_variable_get(:@__state)&.bind(@instance)
             report.restored!
           end

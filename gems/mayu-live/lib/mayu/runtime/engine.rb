@@ -16,6 +16,7 @@ require_relative "vnodes/updater"
 require_relative "vnodes/command_collector"
 require_relative "commands"
 require_relative "marshalling"
+require_relative "ref"
 require_relative "restore_report"
 require_relative "state_update_warning_event"
 require_relative "dom_nesting_warning_event"
@@ -85,6 +86,7 @@ module Mayu
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
         @pending_custom_elements = Set.new
+        @refs = {}
         @root =
           VNodes::VDocument.new(
             descriptor,
@@ -134,6 +136,7 @@ module Mayu
         initialize_render_gate
         @updater = VNodes::Updater.new(@output_queue)
         @dirty_elements = Set.new
+        @refs = {}
         @restore_report = RestoreReport.new
         @root.rehydrate(parent: nil, engine: self)
       end
@@ -186,6 +189,9 @@ module Mayu
         # Components that were started over after a transfer render against
         # the restored tree, which is what the browser shows.
         @restore_report&.vnodes_to_update&.each { enqueue_update(it) }
+        # Refs restored from state that nothing rendered are not needed to
+        # match copies any more.
+        @refs.select! { |_id, ref| ref.attached? }
       end
 
       def stop
@@ -387,11 +393,37 @@ module Mayu
         left_identity && left_identity == component_identity(right.type)
       end
 
+      # The copies of attached refs in the migrated state are swapped for the
+      # refs themselves, so the new instance can use them right away.
       def migrate_component_state(state)
         with_component_resolver do
           dumped = Marshalling.dump_value(state)
-          Marshalling.load_value(Marshal.load(Marshal.dump(dumped)))
+          loaded =
+            Marshal.load(
+              Marshal.dump(dumped),
+              ->(object) { object.is_a?(Ref) ? @refs.fetch(object.id, object) : object }
+            )
+          Marshalling.load_value(loaded)
         end
+      end
+
+      # The one Ref for `ref`'s id. A restore loads the rendered tree and each
+      # component's state separately, and every copy of a ref they contain is
+      # replaced with the first one loaded, so they all point at the same
+      # target.
+      def canonical_ref(ref)
+        @refs[ref.id] ||= ref
+      end
+
+      def attach_ref(ref, node)
+        ref = canonical_ref(ref)
+        ref.__attach(node)
+        ref
+      end
+
+      def detach_ref(ref, node)
+        ref.__detach(node)
+        @refs.delete(ref.id) unless ref.attached?
       end
 
       def rebind_component_instance(vnode_id, instance)
@@ -421,13 +453,13 @@ module Mayu
       # Browser actions reach the client after the DOM updates that were
       # queued before them.
       def browser_action(name, args)
-        command = Commands::BrowserAction[name, args]
+        enqueue_after_updates(Commands::BrowserAction[name, args])
+      end
 
-        if @updater&.task
-          @updater.enqueue(VNodes::Updater::Command.new(command))
-        else
-          enqueue_command(command)
-        end
+      # Calls a method on the element with this DOM id, through
+      # `ref.current`, after the DOM updates queued before it.
+      def element_call(id, method, args)
+        enqueue_after_updates(Commands::ElementCall[id, method, args])
       end
 
       def enqueue_command(command)
@@ -447,6 +479,14 @@ module Mayu
       end
 
       private
+
+      def enqueue_after_updates(command)
+        if @updater&.task
+          @updater.enqueue(VNodes::Updater::Command.new(command))
+        else
+          enqueue_command(command)
+        end
+      end
 
       def initialize_render_gate
         @render_depth = 0

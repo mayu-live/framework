@@ -8,6 +8,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require_relative "../runtime/h"
+require_relative "../runtime/ref"
 require_relative "css_units"
 require_relative "fetch"
 require_relative "browser"
@@ -17,6 +18,7 @@ module Mayu
   module Component
     class Base
       H = Mayu::Runtime::H
+      Ref = Mayu::Runtime::Ref
       NotFound = Mayu::NotFound
 
       using CSSUnits::Refinements

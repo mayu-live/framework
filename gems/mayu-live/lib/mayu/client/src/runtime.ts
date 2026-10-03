@@ -4,6 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import { callElementMethod } from "./element-calls";
 import { updatePing } from "./ping";
 import { setTransferState } from "./transfer";
 import withViewTransition, { type ViewTransitionRoot } from "./view-transition";
@@ -529,6 +530,10 @@ const CommandHandlers = {
   },
   BrowserAction(this: NodeSet, name: string, args: unknown[]) {
     this.browserAction(name, args);
+  },
+  // A node removed by an earlier command is reported, not an error.
+  ElementCall(this: NodeSet, id: string, method: string, args: unknown[]) {
+    callElementMethod(this.findNode(id), method, args ?? []);
   },
   InspectResult(this: NodeSet, id: string, result: unknown) {
     this.inspectResult(id, result);

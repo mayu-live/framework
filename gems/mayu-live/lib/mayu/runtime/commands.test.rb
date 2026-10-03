@@ -19,6 +19,16 @@ class Mayu::Runtime::CommandsTest < Minitest::Test
     )
   end
 
+  def test_element_call_serializes_its_node_method_and_arguments
+    command =
+      Mayu::Runtime::Commands::ElementCall["v1a", "focus", [{preventScroll: true}]]
+
+    assert_equal(
+      ["ElementCall", "v1a", "focus", [{"preventScroll" => true}]],
+      MessagePack.unpack(MessagePack.pack(command))
+    )
+  end
+
   def test_batch_serializes_as_a_top_level_command_array
     batch =
       Mayu::Runtime::Batch[

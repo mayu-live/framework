@@ -87,11 +87,16 @@ module Mayu
 
       attr_reader :commands
 
+      # The methods called through `ref.current`, in order, as
+      # {node:, method:, args:}. The page has no DOM to call them on.
+      attr_reader :element_calls
+
       def initialize(engine, settle_timeout: DEFAULT_SETTLE_TIMEOUT)
         @engine = engine
         @settle_timeout = settle_timeout
         @nodes = {}
         @listener_bindings = {}
+        @element_calls = []
         @doc = Nokolexbor::HTML(@engine.render)
         unwrap_implied_body(@engine.dom_id_tree)
         @commands = []
@@ -317,6 +322,8 @@ module Mayu
           node.children = Nokolexbor::NodeSet.new(@doc, child_ids.map { fetch_node!(it) })
         in Mayu::Runtime::Commands::RemoveNode[id:]
           remove_node(id)
+        in Mayu::Runtime::Commands::ElementCall[id:, method:, args:]
+          @element_calls << {node: @nodes[id], method:, args:}
         else
           nil
         end

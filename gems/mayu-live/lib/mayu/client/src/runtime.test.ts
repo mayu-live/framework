@@ -89,6 +89,34 @@ describe("runtime listeners", () => {
     expect(onInspectResult).toHaveBeenCalledWith("1", { type: "tree" });
   });
 
+  it("calls element methods by node id", async () => {
+    document.body.innerHTML = "<button>Go</button>";
+    const runtime = new Runtime(vi.fn(), { commandErrorPolicy: "throw" });
+    const button = document.querySelector("button")!;
+    const focus = vi.spyOn(button, "focus");
+
+    await runtime.applyBatch([
+      ["Initialize", tree()],
+      ["ElementCall", "button", "focus", []],
+    ]);
+
+    expect(focus).toHaveBeenCalledOnce();
+  });
+
+  it("reports an element call on a missing node without failing the batch", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    document.body.innerHTML = "<button>Go</button>";
+    const runtime = new Runtime(vi.fn(), { commandErrorPolicy: "throw" });
+
+    await expect(
+      runtime.applyBatch([
+        ["Initialize", tree()],
+        ["ElementCall", "gone", "focus", []],
+      ]),
+    ).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalledOnce();
+  });
+
   it("clears listeners before applying a reconnect bootstrap", async () => {
     document.body.innerHTML = "<button>Go</button>";
     const onEvent = vi.fn();

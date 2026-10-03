@@ -25,6 +25,11 @@ def test_manages_todos
     screen.get_all_by_role(:listitem).map { it.get_by_css("p").text }
   )
   assert_equal("2 items left", screen.get_by_text("2 items left").text)
+  # Each submit clears the form and puts the cursor back in the input.
+  assert_equal(
+    %w[reset focus reset focus],
+    screen.element_calls.map { it[:method] }
+  )
 
   write_test = screen.get_by_text("Write a test")
   checkbox = write_test.at_xpath("../input[@type='checkbox']")

@@ -26,6 +26,22 @@ class Mayu::Test::Test < Mayu::Test::Case
     end
   end
 
+  class FocusProbe < Mayu::Component::Base
+    def initialize
+      @input_ref = Ref.new
+    end
+
+    def focus_input = @input_ref.current.focus
+
+    def render
+      H[
+        :section,
+        H[:input, ref: @input_ref, "aria-label": "Name"],
+        H[:button, "Focus", onclick: H.callback(self, :focus_input)]
+      ]
+    end
+  end
+
   class InputMirror < Mayu::Component::Base
     def initialize
       @value = ""
@@ -197,6 +213,18 @@ class Mayu::Test::Test < Mayu::Test::Case
     screen.get_by_role(:button, name: "Increment").click
 
     assert_equal("1", screen.get_by_role(:status).text)
+  end
+
+  def test_element_calls_are_recorded_with_their_node
+    screen = render(FocusProbe)
+
+    screen.get_by_role(:button, name: "Focus").click
+
+    assert_equal(1, screen.element_calls.size)
+    call = screen.element_calls.first
+    assert_equal("focus", call[:method])
+    assert_equal([], call[:args])
+    assert_equal(screen.get_by_role(:textbox, name: "Name").node, call[:node])
   end
 
   def test_input_and_type_settle_component_updates

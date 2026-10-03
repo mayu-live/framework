@@ -8,6 +8,7 @@
 
 require_relative "base"
 require_relative "../dom"
+require_relative "../ref"
 require_relative "../commands"
 require_relative "../dom_nesting_validation"
 require_relative "vattributes"
@@ -24,6 +25,9 @@ module Mayu
             VChildren.new(@descriptor.children, parent: self, engine: @engine)
           @attributes =
             VAttributes.new(@descriptor, parent: self, engine: @engine)
+          # Attached in #start, since subtrees built here may be discarded.
+          @ref = @descriptor.ref
+          @started = false
         end
 
         def update(collector, descriptor = nil)
@@ -32,16 +36,26 @@ module Mayu
           return if descriptor.equal?(@descriptor) && !@engine&.force_render?
 
           @descriptor = descriptor
+          update_ref(@descriptor.ref)
           @attributes.update(collector, @descriptor)
           @children.update(collector, @descriptor.children)
         end
 
         def start
+          @started = true
+          @ref = @engine.attach_ref(@ref, self) if @ref
           @children.start
         end
 
         def stop
           @children.stop
+          @engine.detach_ref(@ref, self) if @ref
+          @started = false
+        end
+
+        # What `ref.current` returns for this element.
+        def ref_value
+          @handle ||= ElementHandle.new(self)
         end
 
         def insert
@@ -143,10 +157,13 @@ module Mayu
           @children = children
           @attributes = attributes
           @children_dirty = children_dirty
+          @ref = nil
+          @started = false
         end
 
         def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
           super
+          @ref = engine.canonical_ref(@descriptor.ref) if @descriptor.ref
           @attributes.rehydrate(parent: self, engine: engine)
           @children.rehydrate(
             parent: self,
@@ -184,6 +201,14 @@ module Mayu
         end
 
         private
+
+        def update_ref(ref)
+          return if ref == @ref
+
+          @engine.detach_ref(@ref, self) if @ref && @started
+          @ref = ref
+          @ref = @engine.attach_ref(@ref, self) if @ref && @started
+        end
 
         def validate_nesting
           return unless (ancestor_info = parent_element&.nesting_info)

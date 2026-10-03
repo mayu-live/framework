@@ -6,7 +6,7 @@
     @text = ""
     @submitted = []
     @handled = 0
-    @form_key = "form-0"
+    @form_ref = Ref.new
   end
 
   def handle_input(e)
@@ -18,8 +18,8 @@
     text = e.dig(:currentTarget, :formData, :text).to_s.strip
     @submitted = [text, *@submitted].first(5) unless text.empty?
     @text = ""
-    # A new key recreates the form, which clears the input.
-    @form_key = @form_key.succ
+    # Resetting the form clears the input.
+    @form_ref.current&.reset
   end
 
 %Card
@@ -29,7 +29,7 @@
       Input events are throttled too, but a submit always waits for the
       input events before it. Type fast and press Enter: the whole text is
       submitted and the field is cleared.
-    %form.form(onsubmit=handle_submit)[@form_key]
+    %form.form(ref=@form_ref onsubmit=handle_submit)
       %input.input(name="text" oninput=handle_input autocomplete="off" placeholder="Type something")
       %Button(type="submit") Submit
     %dl.stats

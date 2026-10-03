@@ -97,6 +97,9 @@ module Mayu
       RegisterCustomElement = CommandData.define(:name, :path)
       # Runs a built-in browser action, such as navigate or alert.
       BrowserAction = CommandData.define(:name, :args)
+      # Calls a method on an element, through `ref.current`. The method is
+      # the snake_case name that client/src/element-calls.ts maps.
+      ElementCall = CommandData.define(:id, :method, :args)
       InspectResult = CommandData.define(:request_id, :result)
 
       RenderError =

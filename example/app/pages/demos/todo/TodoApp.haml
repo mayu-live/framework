@@ -13,7 +13,8 @@
     @items = []
     @editing = nil
     @filter = "all"
-    @form_key = "form-0"
+    @form_ref = Ref.new
+    @input_ref = Ref.new
   end
 
   def handle_submit(e)
@@ -24,7 +25,8 @@
       *@items
     ]
 
-    @form_key = @form_key.succ
+    @form_ref.current&.reset
+    @input_ref.current&.focus
     @editing = nil
   end
 
@@ -138,9 +140,9 @@
 
 %Card.todo-app
   %header
-    %form.add-todo-form(onsubmit=handle_submit autocomplete="off")[@form_key]
+    %form.add-todo-form(ref=@form_ref onsubmit=handle_submit autocomplete="off")
       %input(type="checkbox" onchange=handle_toggle_all){**toggle_checkbox_state}
-      %input(type="text" required autofocus name="new_todo" placeholder="What needs to be done?" value="")
+      %input(ref=@input_ref type="text" required autofocus name="new_todo" placeholder="What needs to be done?" value="")
   %ul
     = get_filtered_items.map do |item|
       %li[item.id]
