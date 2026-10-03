@@ -1,0 +1,25 @@
+:ruby
+  Card = import("/components/UI/Card")
+
+%Card
+  :markdown
+    This demo needs Postgres. From the `example/` directory:
+
+    ```sh
+      podman compose up -d
+      cp .env.example .env.local
+      bin/db migrate
+    ```
+
+    Then restart the server.
+
+:css
+  Card {
+    padding: 1.25rem;
+    display: grid;
+    gap: 1.25rem;
+
+    & > * {
+      margin: 0;
+    }
+  }

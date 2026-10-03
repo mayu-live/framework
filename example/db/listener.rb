@@ -79,7 +79,9 @@ module Database
         ensure
           connection.close
         end
-      rescue PG::Error => error
+      # Any error, not only PG::Error: if this task ended, every `subscribe`
+      # would wait forever.
+      rescue => error
         Console.logger.warn(self, "Lost the LISTEN connection, reconnecting", error)
         sleep RECONNECT_SECONDS
       end

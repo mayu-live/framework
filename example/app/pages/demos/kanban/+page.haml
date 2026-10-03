@@ -1,0 +1,191 @@
+:ruby
+  Card = import("/components/UI/Card")
+  DatabaseSetup = import("/components/Database/Setup")
+  KanbanActions = import("/lib/KanbanActions")
+  Spinner = import("/components/UI/Spinner/Spinner")
+
+  def initialize
+    @boards = []
+    @form_ref = Ref.new
+  end
+
+  # Every change to any board is announced on kanban_boards, so the counts
+  # stay current while the page is open.
+  def mount
+    return unless Database.enabled?
+
+    reload_boards
+    Database.listen("kanban_boards") { reload_boards }
+  end
+
+  def reload_boards
+    @loading = true
+    @boards = KanbanActions.board_summaries
+  ensure
+    @loading = false
+  end
+
+  def handle_create(e)
+    e => { target: { formData: { name: String => name } } }
+
+    name = name.strip
+    return if name.empty?
+
+    board = KanbanActions.create_board(name, @@visitor)
+    @form_ref.current&.reset
+    browser.navigate("/demos/kanban/#{board.id}")
+  end
+
+  # Called by the Delete button in the confirmation dialog. The dialog opens
+  # and closes without JavaScript: the × button opens it with
+  # command="show-modal", and its form's method="dialog" closes it.
+  def handle_delete(e)
+    e => { currentTarget: { value: } }
+
+    KanbanActions.delete_board(Integer(value))
+  end
+
+  def pluralize(count, word)
+    "#{count} #{count == 1 ? word : "#{word}s"}"
+  end
+
+%head
+  %title Kanban Demo
+
+%article
+  %p
+    A board shared by everyone who opens it. Open a board in two windows,
+    drag a card in one, and watch the other follow. Only the newest
+    #{KanbanActions::MAX_BOARDS} boards are kept.
+
+  = if Database.enabled?
+    %Card.boards
+      %form(ref=@form_ref onsubmit=handle_create autocomplete="off")
+        %input(type="text" required name="name" placeholder="New board name" value=""){maxlength: KanbanActions::MAX_LENGTH}
+        %button(type="submit") Create board
+      %ul
+        = if @loading
+          %li.loading
+            %Spinner<
+        = @boards.map do |board|
+          %li[board[:id]]
+            %a{href: "/demos/kanban/#{board[:id]}"}= board[:name]
+            %span.counts= "#{pluralize(board[:column_count], "column")}, #{pluralize(board[:card_count], "card")}"
+            %button.delete(command="show-modal" title="Delete board"){commandfor: "delete-board-#{board[:id]}"} ×
+            %dialog.confirm{id: "delete-board-#{board[:id]}"}
+              %p
+                = "Delete "
+                %strong= board[:name]
+                = " and its #{pluralize(board[:card_count], "card")} for everyone?"
+              %form.actions(method="dialog")
+                %button.cancel(autofocus) Cancel
+                %button.danger(onclick=handle_delete){value: board[:id]} Delete
+  = else
+    %DatabaseSetup
+
+:css
+  .boards {
+    overflow: hidden;
+  }
+
+  form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  input[type="text"] {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    font: inherit;
+    font-weight: 700;
+    color: white;
+    background: var(--accent);
+    border: 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    position: relative;
+    min-height: 5rem;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 1rem;
+    margin: 0;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    font-size: 2em;
+  }
+
+  .counts {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .delete {
+    padding: 0 0.5rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--red);
+    background: transparent;
+  }
+
+  .confirm {
+    max-width: min(28rem, calc(100vw - 2rem));
+    padding: 1.25rem;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    &::backdrop {
+      background: rgb(0 0 0 / 40%);
+    }
+
+    p {
+      margin: 0 0 1.25rem;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0;
+    border: 0;
+  }
+
+  .cancel {
+    color: var(--text);
+    background: transparent;
+    border: 1px solid var(--border-strong);
+  }
+
+  .danger {
+    background: var(--red);
+  }

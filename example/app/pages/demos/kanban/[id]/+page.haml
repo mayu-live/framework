@@ -1,0 +1,430 @@
+:ruby
+  DatabaseSetup = import("/components/Database/Setup")
+  KanbanActions = import("/lib/KanbanActions")
+  KanbanBoard = import("/pages/demos/kanban/KanbanBoard.tsx")
+
+  FLASH_SECONDS = 4
+
+  FLASH_MESSAGES = {
+    "created" => "added this card",
+    "moved" => "moved this card",
+    "renamed" => "renamed this card"
+  }.freeze
+
+  def initialize
+    @board = nil
+    @activities = []
+    @flash = nil
+    @conflict = nil
+    @editing = nil
+    @column_form_ref = Ref.new
+    # One per column, since each column has its own add-card form.
+    @card_form_refs = {}
+    reload if Database.enabled? && board_id
+  end
+
+  # Every change to this board, by anyone in any window or server process,
+  # is announced on the board's channel once it is committed.
+  def mount
+    return unless Database.enabled? && @board
+
+    Database.listen("kanban_board_#{board_id}") do |payload|
+      reload
+      activity_id = JSON.parse(payload)["activity_id"]
+      show_flash(activity_id) if activity_id
+    end
+  end
+
+  # The custom element sends the drop as a kanbanmove event, whose detail
+  # arrives here as a hash.
+  def handle_move(e)
+    e => { detail: { kind:, id:, lockVersion: lock_version, toIndex: to_index } }
+
+    change do
+      case kind
+      in "card"
+        to_column_id = e.dig(:detail, :toColumnId)
+        KanbanActions.move_card(id, to_column_id, to_index, lock_version, @@visitor)
+      in "column"
+        KanbanActions.move_column(id, to_index, lock_version, @@visitor)
+      end
+    end
+  end
+
+  def handle_add_card(e)
+    e => { target: { formData: { column_id:, title: } } }
+
+    title = title.strip
+    return if title.empty?
+
+    change { KanbanActions.add_card(Integer(column_id), title, @@visitor) }
+    @card_form_refs[Integer(column_id)]&.current&.reset
+  end
+
+  def handle_add_column(e)
+    e => { target: { formData: { name: } } }
+
+    name = name.strip
+    return if name.empty?
+
+    change { KanbanActions.add_column(board_id, name, @@visitor) }
+    @column_form_ref.current&.reset
+  end
+
+  # Editing keeps the version and text from when it started, so a change
+  # someone else makes meanwhile is a conflict instead of being overwritten.
+  def handle_edit(e)
+    e => { currentTarget: { dataset: { edit:, lockVersion: lock_version, value: } } }
+
+    @editing = {key: edit, lock_version: Integer(lock_version), value:}
+  end
+
+  # A form that was already submitted can submit again before it is removed.
+  def handle_rename_card(e)
+    e => { target: { formData: { id:, title: } } }
+    editing = @editing or return
+    @editing = nil
+
+    title = title.strip
+    change { KanbanActions.rename_card(Integer(id), title, editing[:lock_version], @@visitor) } unless title.empty?
+  end
+
+  def handle_rename_column(e)
+    e => { target: { formData: { id:, name: } } }
+    editing = @editing or return
+    @editing = nil
+
+    name = name.strip
+    change { KanbanActions.rename_column(Integer(id), name, editing[:lock_version], @@visitor) } unless name.empty?
+  end
+
+  def handle_delete_card(e)
+    change { KanbanActions.delete_card(Integer(e.dig(:currentTarget, :value)), @@visitor) }
+  end
+
+  def handle_delete_column(e)
+    change { KanbanActions.delete_column(Integer(e.dig(:currentTarget, :value)), @@visitor) }
+  end
+
+  def handle_dismiss_conflict
+    @conflict = nil
+  end
+
+  private
+
+  def board_id
+    Integer($params[:id], exception: false)
+  end
+
+  # Applies a change and shows the result right away, without waiting for
+  # this board's notification, which then finds nothing new. A conflict is
+  # shown, and the board shows what the other person did.
+  def change
+    yield
+    @conflict = nil
+  rescue KanbanActions::Conflict => error
+    @conflict = error.message
+  ensure
+    reload
+  end
+
+  def reload
+    @board = KanbanActions.load_board(board_id)
+    @activities = @board ? KanbanActions.recent_activities(board_id) : []
+  end
+
+  # Highlights the card someone else just changed, in their color.
+  def show_flash(activity_id)
+    activity = @activities.find { it.id == activity_id }
+    return unless activity&.card_id && FLASH_MESSAGES.key?(activity.action)
+    return if activity.actor_name == @@visitor[:name]
+
+    @flash = {
+      id: activity.id,
+      card_id: activity.card_id,
+      name: activity.actor_name,
+      color: activity.actor_color,
+      message: FLASH_MESSAGES.fetch(activity.action)
+    }
+
+    Async do
+      sleep FLASH_SECONDS
+      @flash = nil if @flash&.fetch(:id) == activity.id
+    end
+  end
+
+  def editing?(key)
+    @editing&.fetch(:key) == key
+  end
+
+  def flash_for(card)
+    @flash if @flash&.fetch(:card_id) == card.id
+  end
+
+  def card_form_ref(column_id)
+    @card_form_refs[column_id] ||= Ref.new
+  end
+
+%head
+  %title Kanban Board
+
+- raise NotFound unless board_id
+
+= if !Database.enabled?
+  %DatabaseSetup
+= elsif !@board
+  %p
+    This board does not exist, or someone deleted it.
+    %a(href="/demos/kanban") Back to the boards
+= else
+  %nav.toolbar
+    %a(href="/demos/kanban") ← All boards
+    %h3= @board.name
+
+  = if @conflict
+    .conflict(role="alert")
+      %p= @conflict
+      %button(onclick=handle_dismiss_conflict) Dismiss
+
+  .layout
+    %KanbanBoard.board(onkanbanmove=handle_move)
+      = @board.columns.map do |column|
+        %section.column[column.id]{data: {kanban_column: column.id, lock_version: column.lock_version}}
+          %header.column-header{data: {kanban_handle: "column"}, title: "Drag to move the column"}
+            = if editing?("column-#{column.id}")
+              %form.rename(onsubmit=handle_rename_column autocomplete="off")
+                %input(type="hidden" name="id"){value: column.id}
+                %input(type="text" name="name" required autofocus){value: @editing[:value], maxlength: KanbanActions::MAX_LENGTH}
+            = else
+              %h4(ondblclick=handle_edit){data: {edit: "column-#{column.id}", lock_version: column.lock_version, value: column.name, kanban_title: ""}}= column.name
+            %span.count= column.cards.size
+            %button.delete(onclick=handle_delete_column title="Delete column"){value: column.id} ×
+
+          %ol.cards
+            = column.cards.map do |card|
+              - flash = flash_for(card)
+              %li.card[card.id]{tabindex: 0, class: {flashing: flash}, style: {__flash_color: flash&.fetch(:color)}, data: {kanban_card: card.id, lock_version: card.lock_version}}
+                = if editing?("card-#{card.id}")
+                  %form.rename(onsubmit=handle_rename_card autocomplete="off")
+                    %input(type="hidden" name="id"){value: card.id}
+                    %input(type="text" name="title" required autofocus){value: @editing[:value], maxlength: KanbanActions::MAX_LENGTH}
+                = else
+                  %p.title(ondblclick=handle_edit){data: {edit: "card-#{card.id}", lock_version: card.lock_version, value: card.title, kanban_title: ""}}= card.title
+                %button.delete(onclick=handle_delete_card title="Delete card"){value: card.id} ×
+                = if flash
+                  %p.flash-note #{flash[:name]} #{flash[:message]}
+
+          %form.add-card(onsubmit=handle_add_card autocomplete="off"){ref: card_form_ref(column.id)}
+            %input(type="hidden" name="column_id"){value: column.id}
+            %input(type="text" name="title" required placeholder="Add a card" value=""){maxlength: KanbanActions::MAX_LENGTH}
+
+      %form.add-column(ref=@column_form_ref onsubmit=handle_add_column autocomplete="off")
+        %input(type="text" name="name" required placeholder="Add a column" value=""){maxlength: KanbanActions::MAX_LENGTH}
+
+    %aside.activity
+      %h4 Activity
+      %ol
+        = @activities.map do |activity|
+          %li[activity.id]
+            %span.actor{style: {__actor_color: activity.actor_color}}= activity.actor_name
+            = activity.message
+
+:css
+  .toolbar {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    h3 {
+      margin: 0;
+    }
+  }
+
+  .conflict {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    background: color-mix(in oklab, var(--red) 15%, var(--surface-raised));
+    border: 1px solid var(--red);
+    border-radius: var(--radius-sm);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .board {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .column {
+    flex: 0 0 15rem;
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    &[data-dragging] {
+      opacity: 0.4;
+    }
+  }
+
+  .column-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+
+    h4 {
+      margin: 0;
+      font-size: 0.9375rem;
+    }
+  }
+
+  .count {
+    min-width: 1.5rem;
+    padding: 0 0.375rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    background: var(--surface-raised);
+    border-radius: 999px;
+  }
+
+  .cards {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  .card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.625rem 0.5rem 0.625rem 0.75rem;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--text) 10%, transparent);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    transition: box-shadow 300ms ease, border-color 300ms ease;
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    &[data-dragging] {
+      opacity: 0.4;
+    }
+
+    &.flashing {
+      border-color: var(--flash-color);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--flash-color) 35%, transparent);
+    }
+  }
+
+  .title {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .flash-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--flash-color);
+  }
+
+  .delete {
+    padding: 0 0.25rem;
+    font-size: 1.125rem;
+    line-height: 1;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--red);
+    }
+  }
+
+  input[type="text"] {
+    width: 100%;
+    min-height: 2.25rem;
+    padding: 0.375rem 0.625rem;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  .add-column {
+    flex: 0 0 15rem;
+  }
+
+  .activity {
+    padding: 0.75rem 1rem;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    h4 {
+      margin: 0 0 0.5rem;
+    }
+
+    ol {
+      display: grid;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 0.875rem;
+    }
+
+    li {
+      margin: 0;
+    }
+  }
+
+  .actor {
+    margin-right: 0.25rem;
+    font-weight: 700;
+    color: var(--actor-color);
+  }
