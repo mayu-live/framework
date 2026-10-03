@@ -39,6 +39,13 @@ module Mayu
 
         PendingContinuousCall = Struct.new(:queue, :payload, :completion)
 
+        # A handler call waiting in its component's queue. A component that
+        # stops cancels the calls it never ran, see VComponent#stop.
+        ListenerCall = Data.define(:run, :cancellation) do
+          def call = run.call
+          def cancel = cancellation.call
+        end
+
         def initialize(
           descriptor,
           parent:,
@@ -177,7 +184,7 @@ module Mayu
           pending&.completion = completion
           queued_at =
             Process.clock_gettime(Process::CLOCK_MONOTONIC, :float_millisecond)
-          call =
+          run =
             lambda do
               if pending
                 @pending_continuous_calls.delete(id) if @pending_continuous_calls[id].equal?(pending)
@@ -202,11 +209,17 @@ module Mayu
             ensure
               completion.enqueue(true)
             end
+          cancellation =
+            lambda do
+              @pending_continuous_calls.delete(id) if pending && @pending_continuous_calls[id].equal?(pending)
+              completion.enqueue(true)
+            end
+          call = ListenerCall.new(run:, cancellation:)
 
           if task && queue
             queue.enqueue(call)
           elsif task
-            task.async(&call)
+            task.async { call.call }
           else
             call.call
           end

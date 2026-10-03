@@ -118,8 +118,15 @@ module Mayu
         def stop
           return unless @task
           @children.stop
+          # stop_instance_work forgets the queue, so read it first.
+          queue = @instance.instance_variable_get(:@__vnode_queue)
           stop_instance_work(@instance)
-          if (queue = @instance.instance_variable_get(:@__vnode_queue))
+          if queue
+            # Handler calls that never ran are cancelled, so callers waiting
+            # for them are released.
+            while (work = queue.dequeue(timeout: 0))
+              work.cancel if work.respond_to?(:cancel)
+            end
             queue.enqueue(:__stop__)
           end
           @task.stop

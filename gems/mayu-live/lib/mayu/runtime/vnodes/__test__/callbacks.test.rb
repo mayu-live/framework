@@ -392,6 +392,34 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  def test_stopping_a_component_releases_callers_of_calls_it_never_ran
+    SlowHandlerProbe.gate = Async::Queue.new
+    SlowHandlerProbe.received = []
+
+    run_engine(H[:body, H[SlowHandlerProbe]]) do |engine|
+      component = find_component(engine.root, SlowHandlerProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.instance_variable_get(:@__vnode_queue) }
+      listener = nil
+      find_element(engine.root, :div).each_listener do |name, candidate|
+        listener = candidate if name == "click"
+      end
+
+      # The first call blocks in its handler and the second waits behind it.
+      running = engine.callback(listener.id, {eventType: "click", n: 1})
+      wait_until { SlowHandlerProbe.received.any? }
+      queued = engine.callback(listener.id, {eventType: "click", n: 2})
+
+      component.stop
+
+      Async::Task.current.with_timeout(0.5) do
+        running.dequeue
+        queued.dequeue
+      end
+      assert_equal([1], SlowHandlerProbe.received)
+    end
+  end
+
   private
 
   # Sends four events while the handler is blocked on the first one, then
