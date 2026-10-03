@@ -144,10 +144,13 @@ module Mayu
           dirty_elements.each { |element| index_listener_element(element) }
         end
 
-        def call_listener(id, payload)
+        # With a settle_id, the client is answered with CallbackComplete or
+        # CallbackFailed once the handler has returned or will never run.
+        def call_listener(id, payload, settle_id: nil)
           listener =
             @listeners.fetch(id) do
               Console.logger.debug(self, "Ignoring stale listener #{id}")
+              @engine.settle_callback(settle_id, false) if settle_id
               return
             end
           if (callback = listener.callback)
@@ -166,9 +169,10 @@ module Mayu
 
           # While a continuous event waits behind a running handler, newer
           # events of the same listener replace its payload instead of
-          # queueing up, so the handler runs next with the latest one.
+          # queueing up, so the handler runs next with the latest one. A call
+          # the client waits for is never merged away.
           pending = nil
-          if task && queue &&
+          if task && queue && !settle_id &&
               CONTINUOUS_EVENT_TYPES.include?(payload[:eventType])
             queued = @pending_continuous_calls[id]
             if queued&.queue.equal?(queue)
@@ -186,6 +190,8 @@ module Mayu
             Process.clock_gettime(Process::CLOCK_MONOTONIC, :float_millisecond)
           run =
             lambda do
+              ok = false
+
               if pending
                 @pending_continuous_calls.delete(id) if @pending_continuous_calls[id].equal?(pending)
                 payload = pending.payload
@@ -199,19 +205,23 @@ module Mayu
                   ) - queued_at,
                   labels:
                 )
-                metrics.update_summary(
+                ok = metrics.update_summary(
                   metrics.callback_handler_duration_ms,
                   labels:
                 ) { call_listener_safely(-> { listener.call(payload) }, listener) }
               else
-                call_listener_safely(-> { listener.call(payload) }, listener)
+                ok = call_listener_safely(-> { listener.call(payload) }, listener)
               end
             ensure
+              # Queued after the updates from the handler's state changes,
+              # so the client gets the answer after their patches.
+              @engine.settle_callback(settle_id, ok) if settle_id
               completion.enqueue(true)
             end
           cancellation =
             lambda do
               @pending_continuous_calls.delete(id) if pending && @pending_continuous_calls[id].equal?(pending)
+              @engine.settle_callback(settle_id, false) if settle_id
               completion.enqueue(true)
             end
           call = ListenerCall.new(run:, cancellation:)
@@ -458,8 +468,10 @@ module Mayu
           )
         end
 
+        # Returns whether the handler returned without raising.
         def call_listener_safely(call, listener)
           call.call
+          true
         rescue => e
           component = listener.callback&.component
           component_vnode = find_component_vnode(component)
@@ -468,6 +480,7 @@ module Mayu
           if command && @engine.render_exceptions?
             @engine.enqueue_command(command)
           end
+          false
         end
 
         def find_component_vnode(component)

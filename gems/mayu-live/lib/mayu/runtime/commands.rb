@@ -94,6 +94,9 @@ module Mayu
       ReloadSucceeded = CommandData.define
       NavigationComplete = CommandData.define(:id)
       NavigationFailed = CommandData.define(:id)
+      # Answer a callback that carried a settle id, once its handler returned.
+      CallbackComplete = CommandData.define(:id)
+      CallbackFailed = CommandData.define(:id)
       RegisterCustomElement = CommandData.define(:name, :path)
       # Runs a built-in browser action, such as navigate or alert.
       BrowserAction = CommandData.define(:name, :args)

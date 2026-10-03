@@ -25,6 +25,8 @@ type RuntimeOptions = {
   onBrowserAction?: BrowserActionHandler;
   onBatchApplied?: (batch: Batch, durationMs: number) => void;
   onInspectResult?: (id: string, result: unknown) => void;
+  onCallbackComplete?: (id: string) => void;
+  onCallbackFailed?: (id: string) => void;
 };
 
 export type BrowserActionHandler = (name: string, args: unknown[]) => void;
@@ -43,6 +45,8 @@ export default class Runtime {
       onBrowserAction,
       onBatchApplied,
       onInspectResult,
+      onCallbackComplete,
+      onCallbackFailed,
     }: RuntimeOptions = {},
   ) {
     this.#nodeSet = new NodeSet(
@@ -52,6 +56,8 @@ export default class Runtime {
       onNavigationFailed,
       onBrowserAction,
       onInspectResult,
+      onCallbackComplete,
+      onCallbackFailed,
     );
     this.#commandErrorPolicy = commandErrorPolicy;
     this.#onBatchApplied = onBatchApplied;
@@ -101,6 +107,8 @@ class NodeSet {
   #onNavigationFailed?: (id: string) => void;
   #onBrowserAction?: BrowserActionHandler;
   #onInspectResult?: (id: string, result: unknown) => void;
+  #onCallbackComplete?: (id: string) => void;
+  #onCallbackFailed?: (id: string) => void;
   readonly commandErrorPolicy: CommandErrorPolicy;
 
   constructor(
@@ -110,6 +118,8 @@ class NodeSet {
     onNavigationFailed?: (id: string) => void,
     onBrowserAction?: BrowserActionHandler,
     onInspectResult?: (id: string, result: unknown) => void,
+    onCallbackComplete?: (id: string) => void,
+    onCallbackFailed?: (id: string) => void,
   ) {
     this.#onEvent = onEvent;
     this.commandErrorPolicy = commandErrorPolicy;
@@ -117,6 +127,8 @@ class NodeSet {
     this.#onNavigationFailed = onNavigationFailed;
     this.#onBrowserAction = onBrowserAction;
     this.#onInspectResult = onInspectResult;
+    this.#onCallbackComplete = onCallbackComplete;
+    this.#onCallbackFailed = onCallbackFailed;
   }
 
   clear() {
@@ -247,6 +259,14 @@ class NodeSet {
 
   inspectResult(id: string, result: unknown) {
     this.#onInspectResult?.(id, result);
+  }
+
+  completeCallback(id: string) {
+    this.#onCallbackComplete?.(id);
+  }
+
+  failCallback(id: string) {
+    this.#onCallbackFailed?.(id);
   }
 }
 
@@ -537,6 +557,12 @@ const CommandHandlers = {
   },
   InspectResult(this: NodeSet, id: string, result: unknown) {
     this.inspectResult(id, result);
+  },
+  CallbackComplete(this: NodeSet, id: string) {
+    this.completeCallback(id);
+  },
+  CallbackFailed(this: NodeSet, id: string) {
+    this.failCallback(id);
   },
   async ViewTransition(
     this: NodeSet,

@@ -74,6 +74,14 @@ class Mayu::SessionTest < Minitest::Test
       enqueue_command(Mayu::Runtime::Commands::Pong[timestamp])
     end
 
+    def callbacks
+      @callbacks ||= []
+    end
+
+    def callback(id, payload, settle_id: nil)
+      callbacks << [id, payload, settle_id]
+    end
+
     def commands
       @batches.flat_map(&:commands)
     end
@@ -210,6 +218,59 @@ class Mayu::SessionTest < Minitest::Test
     )
   end
 
+  def test_callback_message_parses_a_settle_id
+    event =
+      Mayu::Session::Events.parse(
+        ["Callback", "listener", {type: "click"}, 123, "s1"]
+      )
+
+    assert_equal("s1", event.settle_id)
+    assert_nil(event.client_command_apply_metrics)
+  end
+
+  def test_callback_message_parses_a_settle_id_with_telemetry
+    event =
+      Mayu::Session::Events.parse(
+        [
+          "Callback",
+          "listener",
+          {type: "click"},
+          123,
+          "s1",
+          {batches: 1, commands: 2, duration_ms: 0.5}
+        ]
+      )
+
+    assert_equal("s1", event.settle_id)
+    assert_equal(1, event.client_command_apply_metrics.batches)
+  end
+
+  def test_callback_message_without_settle_id_has_none
+    event =
+      Mayu::Session::Events.parse(
+        [
+          "Callback",
+          "listener",
+          {type: "click"},
+          123,
+          {batches: 1, commands: 2, duration_ms: 0.5}
+        ]
+      )
+
+    assert_nil(event.settle_id)
+    assert_equal(2, event.client_command_apply_metrics.commands)
+  end
+
+  def test_callback_message_rejects_invalid_settle_ids
+    ["", "x" * 33, 5].each do |settle_id|
+      assert_raises(Mayu::Session::Events::InvalidEventError) do
+        Mayu::Session::Events.parse(
+          ["Callback", "listener", {type: "click"}, 123, settle_id]
+        )
+      end
+    end
+  end
+
   def test_visibility_message_parses_to_a_typed_event
     event = Mayu::Session::Events.parse(["Visibility", true, 5])
 
@@ -255,6 +316,21 @@ class Mayu::SessionTest < Minitest::Test
 
     session.send(:handle_event, Mayu::Session::Events::VisibilityEvent[false, 2])
     assert_nil(fake_engine.update_interval)
+  end
+
+  def test_callback_events_pass_their_settle_id_to_the_engine
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(
+      :handle_event,
+      Mayu::Session::Events::CallbackEvent["listener", {type: "click"}, 1, settle_id: "s1"]
+    )
+
+    assert_equal([["listener", {type: "click"}, "s1"]], fake_engine.callbacks)
   end
 
   def test_inspect_message_parses_to_a_typed_event

@@ -40,6 +40,25 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  # Renders between two state changes, like a handler waiting on a database.
+  class SettleProbe < Mayu::Component::Base
+    def initialize
+      @step = 0
+    end
+
+    def render
+      H[:button, "Step #{@step}", onclick: H.callback(self, :handle_click)]
+    end
+
+    def handle_click
+      @step = 1
+      rerender!
+      Async::Task.current.sleep(0.05)
+      @step = 2
+      rerender!
+    end
+  end
+
   class InvalidCallbackProbe < Mayu::Component::Base
     def handle_click(_first, _second)
     end
@@ -420,7 +439,133 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  def test_settled_callback_is_answered_after_the_patches_of_its_final_state
+    run_engine(H[:body, H[SettleProbe]]) do |engine|
+      listener = wait_for_listener(engine, SettleProbe)
+
+      engine.callback(listener.id, {}, settle_id: "s1")
+
+      commands = commands_until_settled(engine)
+      texts = commands.grep(Mayu::Runtime::Commands::SetTextContent).map(&:content)
+      complete =
+        commands.index { it.is_a?(Mayu::Runtime::Commands::CallbackComplete) }
+      final_text =
+        commands.index do
+          it.is_a?(Mayu::Runtime::Commands::SetTextContent) &&
+          it.content == "Step 2"
+        end
+
+      assert_equal(["Step 1", "Step 2"], texts)
+      assert_operator(final_text, :<, complete)
+      assert_equal("s1", commands[complete].id)
+    end
+  end
+
+  def test_raising_callback_is_answered_with_callback_failed
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[CallbackErrorProbe]],
+        metrics: NullMetrics.new,
+        render_exceptions: false
+      )
+
+    run_engine_instance(engine) do
+      listener = engine.root.instance_variable_get(:@listeners).values.first
+      engine.callback(listener.id, {}, settle_id: "s1")
+
+      commands = commands_until_settled(engine)
+
+      assert_equal(
+        [Mayu::Runtime::Commands::CallbackFailed["s1"]],
+        commands.select { settle_command?(it) }
+      )
+    end
+  end
+
+  def test_stale_listener_is_answered_with_callback_failed
+    run_engine(H[:body, H[CallbackProbe]]) do |engine|
+      engine.callback("stale", {}, settle_id: "s1")
+
+      assert_equal(
+        [Mayu::Runtime::Commands::CallbackFailed["s1"]],
+        commands_until_settled(engine).select { settle_command?(it) }
+      )
+    end
+  end
+
+  def test_callback_without_settle_id_is_not_answered
+    run_engine(H[:body, H[CallbackProbe]]) do |engine|
+      listener = wait_for_listener(engine, CallbackProbe)
+
+      engine.callback(listener.id, {})
+
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      refute(unwrap_commands(batch).any? { settle_command?(it) })
+      assert_no_patches(engine)
+    end
+  end
+
+  def test_callbacks_of_a_stopped_component_fail
+    SlowHandlerProbe.gate = Async::Queue.new
+    SlowHandlerProbe.received = []
+
+    run_engine(H[:body, H[SlowHandlerProbe]]) do |engine|
+      component = find_component(engine.root, SlowHandlerProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.instance_variable_get(:@__vnode_queue) }
+      listener = nil
+      find_element(engine.root, :div).each_listener do |name, candidate|
+        listener = candidate if name == "click"
+      end
+
+      # The first call blocks in its handler and the second waits behind it.
+      engine.callback(listener.id, {eventType: "click", n: 1}, settle_id: "running")
+      wait_until { SlowHandlerProbe.received.any? }
+      engine.callback(listener.id, {eventType: "click", n: 2}, settle_id: "queued")
+
+      component.stop
+
+      settled = []
+      until settled.size == 2
+        settled.concat(commands_until_settled(engine).select { settle_command?(it) })
+      end
+
+      assert_equal(
+        [
+          Mayu::Runtime::Commands::CallbackFailed["queued"],
+          Mayu::Runtime::Commands::CallbackFailed["running"]
+        ].sort_by(&:id),
+        settled.sort_by(&:id)
+      )
+      assert_equal([1], SlowHandlerProbe.received)
+    end
+  end
+
   private
+
+  def wait_for_listener(engine, component_class)
+    instance =
+      find_component(engine.root, component_class).instance_variable_get(:@instance)
+    listeners = engine.root.instance_variable_get(:@listeners)
+    wait_until { listeners.any? && instance.respond_to?(:rerender!) }
+    listeners.values.first
+  end
+
+  def settle_command?(command)
+    command.is_a?(Mayu::Runtime::Commands::CallbackComplete) ||
+      command.is_a?(Mayu::Runtime::Commands::CallbackFailed)
+  end
+
+  # The commands of every batch up to the one that answers a callback.
+  def commands_until_settled(engine, max_batches: 5)
+    commands = []
+    max_batches.times do
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+      commands.concat(unwrap_commands(batch))
+      return commands if commands.any? { settle_command?(it) }
+    end
+    flunk("No CallbackComplete or CallbackFailed in #{max_batches} batches")
+  end
 
   # Sends four events while the handler is blocked on the first one, then
   # lets every handler run and returns the payloads they received.

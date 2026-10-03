@@ -19,6 +19,14 @@ export type ClientEvent =
       telemetry?: CommandApplyTelemetry,
     ]
   | [
+      name: "Callback",
+      listenerId: string,
+      event: Record<string, unknown>,
+      ping: number,
+      settleId: string,
+      telemetry?: CommandApplyTelemetry,
+    ]
+  | [
       name: "Navigate",
       id: string,
       href: string,

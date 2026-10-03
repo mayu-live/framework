@@ -96,3 +96,29 @@
     instead of adding one.
 
     `browser.alert(message)` shows a browser alert.
+
+    ## Waiting for a handler from a custom element
+
+    A custom element that dispatches an event to the page can wait for
+    the Mayu handlers it reached with `settled` from `/lib/settled.ts`,
+    which `mayu init` adds to new apps.
+
+    ```ts
+    import { settled } from "/lib/settled.ts";
+
+    const event = new CustomEvent("move", { bubbles: true, detail });
+    this.dispatchEvent(event);
+    await settled(event);
+    ```
+
+    The promise resolves once every handler has returned and the updates
+    it made are applied, even when the handler changed nothing. It
+    resolves with no value, since an event can reach several handlers;
+    handlers show their results by rendering. It resolves right away if
+    no handler received the event, and rejects if a handler raised, its
+    component went away, or the connection dropped.
+
+    Continuous events such as `input`, `pointermove` and `scroll` are
+    throttled and merged, so `settled` doesn't wait for them. Work a
+    handler starts with `Async` and leaves running isn't waited for
+    either.

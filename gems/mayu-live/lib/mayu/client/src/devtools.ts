@@ -39,7 +39,12 @@ type Inspector = {
 // Commands that don't change the page: answers to pings and to devtools' own
 // queries. Reporting InspectResult would make a devtools that refreshes after
 // each batch loop forever.
-const UNREPORTED_COMMANDS = new Set(["InspectResult", "Pong"]);
+const UNREPORTED_COMMANDS = new Set([
+  "InspectResult",
+  "Pong",
+  "CallbackComplete",
+  "CallbackFailed",
+]);
 
 export default class Devtools {
   #listeners = new Set<(batch: Batch, durationMs: number) => void>();

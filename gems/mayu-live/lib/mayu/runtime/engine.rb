@@ -315,8 +315,21 @@ module Mayu
         Console.logger.warn(component || self, event:)
       end
 
-      def callback(id, payload)
-        @root.call_listener(id, payload)
+      def callback(id, payload, settle_id: nil)
+        @root.call_listener(id, payload, settle_id:)
+      end
+
+      # Answers a callback that carried a settle id. Like browser actions, the
+      # answer follows the DOM updates queued before it, so it reaches the
+      # client after the patches from the handler's final state.
+      def settle_callback(settle_id, ok)
+        enqueue_after_updates(
+          if ok
+            Commands::CallbackComplete[settle_id]
+          else
+            Commands::CallbackFailed[settle_id]
+          end
+        )
       end
 
       def add_custom_element(custom_element)

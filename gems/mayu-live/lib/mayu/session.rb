@@ -26,10 +26,12 @@ module Mayu
 
       ClientCommandApplyMetrics = Data.define(:batches, :commands, :duration_ms)
 
+      # A callback with a settle id is answered with CallbackComplete or
+      # CallbackFailed once its handler has returned.
       CallbackEvent =
-        Data.define(:id, :payload, :ping, :client_command_apply_metrics) do
-          def self.[](id, payload, ping, metrics = nil)
-            new(id, payload, ping, metrics)
+        Data.define(:id, :payload, :ping, :client_command_apply_metrics, :settle_id) do
+          def self.[](id, payload, ping, metrics = nil, settle_id: nil)
+            new(id, payload, ping, metrics, settle_id)
           end
         end
       NavigateEvent =
@@ -61,7 +63,11 @@ module Mayu
         case message
         in ["Callback", String => id, Hash => event, Numeric => ping] unless id.empty?
           CallbackEvent[id, event, ping]
-        in ["Callback", String => id, Hash => event, Numeric => ping, telemetry] unless id.empty?
+        in ["Callback", String => id, Hash => event, Numeric => ping, String => settle_id] unless id.empty? || invalid_settle_id?(settle_id)
+          CallbackEvent[id, event, ping, settle_id:]
+        in ["Callback", String => id, Hash => event, Numeric => ping, String => settle_id, telemetry] unless id.empty? || invalid_settle_id?(settle_id)
+          CallbackEvent[id, event, ping, parse_client_command_apply_metrics(telemetry), settle_id:]
+        in ["Callback", String => id, Hash => event, Numeric => ping, Hash => telemetry] unless id.empty?
           CallbackEvent[id, event, ping, parse_client_command_apply_metrics(telemetry)]
         in ["Navigate", String => id, String => href, Numeric => ping] unless id.empty?
           NavigateEvent[id, href, ping]
@@ -98,6 +104,12 @@ module Mayu
         end
       end
       private_class_method :parse_client_command_apply_metrics
+
+      # Settle ids are short client-chosen strings, echoed back as they are.
+      def self.invalid_settle_id?(settle_id)
+        settle_id.empty? || settle_id.bytesize > 32
+      end
+      private_class_method :invalid_settle_id?
     end
 
     RequestInfo =
@@ -433,8 +445,8 @@ module Mayu
         nil
       in Events::VisibilityEvent[hidden:]
         @engine.update_interval = hidden ? HIDDEN_UPDATE_INTERVAL_SECONDS : nil
-      in Events::CallbackEvent[id:, payload:]
-        @engine.callback(id, payload)
+      in Events::CallbackEvent[id:, payload:, settle_id:]
+        @engine.callback(id, payload, settle_id:)
       in Events::InspectEvent[id:, query:]
         @engine.enqueue_command(
           Runtime::Commands::InspectResult[id, inspect_engine(query)]

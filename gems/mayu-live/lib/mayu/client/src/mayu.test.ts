@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Mayu from "./mayu";
 import type { ClientEvent } from "./protocol";
+import { settled } from "./settled";
 
 class FakeNavigation extends EventTarget {
   navigate = vi.fn();
@@ -299,6 +300,153 @@ describe("Mayu callbacks", () => {
       ["input-listener", "ab"],
       ["submit-listener", undefined],
     ]);
+    mayu.dispose();
+  });
+});
+
+describe("Mayu callback settlement", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+    vi.restoreAllMocks();
+  });
+
+  // A connected Mayu whose callbacks are sent by `element`'s listeners.
+  function setup() {
+    const mayu = new Mayu({ autoPing: false });
+    const write = vi.fn(async (_message: ClientEvent) => undefined);
+    mayu.setWriter({ write } as any);
+    const settleIds = () =>
+      write.mock.calls
+        .map(([message]) => message)
+        .filter((message) => message[0] === "Callback")
+        .map((message) => message[4] as string | undefined);
+    return { mayu, write, settleIds };
+  }
+
+  function listen(mayu: Mayu, element: Element, type: string, id: string) {
+    element.addEventListener(type, (event) => mayu.callback(event, id));
+  }
+
+  it("sends a settle id with discrete events but not continuous ones", async () => {
+    vi.useFakeTimers();
+    const { mayu, settleIds } = setup();
+    const input = document.createElement("input");
+    listen(mayu, input, "input", "input-listener");
+    listen(mayu, input, "change", "change-listener");
+    document.body.append(input);
+
+    input.dispatchEvent(new Event("input"));
+    input.dispatchEvent(new Event("change"));
+    await vi.runAllTimersAsync();
+
+    expect(settleIds()).toEqual([undefined, "1"]);
+    mayu.dispose();
+    vi.useRealTimers();
+  });
+
+  it("resolves once the server completes the callback", async () => {
+    const { mayu, settleIds } = setup();
+    const button = document.createElement("button");
+    listen(mayu, button, "click", "listener");
+    document.body.append(button);
+
+    const event = new MouseEvent("click", { cancelable: true });
+    button.dispatchEvent(event);
+    await Promise.resolve();
+    let done = false;
+    const promise = settled(event).then(() => (done = true));
+
+    await Promise.resolve();
+    expect(done).toBe(false);
+    mayu.completeCallback(settleIds()[0]!);
+    await promise;
+    expect(done).toBe(true);
+    mayu.dispose();
+  });
+
+  it("rejects when the server reports failure", async () => {
+    const { mayu, settleIds } = setup();
+    const button = document.createElement("button");
+    listen(mayu, button, "click", "listener");
+    document.body.append(button);
+
+    const event = new MouseEvent("click", { cancelable: true });
+    button.dispatchEvent(event);
+    await Promise.resolve();
+    mayu.failCallback(settleIds()[0]!);
+
+    await expect(settled(event)).rejects.toThrow("Callback failed");
+    mayu.dispose();
+  });
+
+  it("waits for every Mayu handler the event reached", async () => {
+    const { mayu, settleIds } = setup();
+    const parent = document.createElement("div");
+    const child = document.createElement("button");
+    parent.append(child);
+    listen(mayu, child, "click", "child");
+    listen(mayu, parent, "click", "parent");
+    document.body.append(parent);
+
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+    child.dispatchEvent(event);
+    await Promise.resolve();
+    let done = false;
+    const promise = settled(event).then(() => (done = true));
+
+    mayu.completeCallback(settleIds()[0]!);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(done).toBe(false);
+    mayu.completeCallback(settleIds()[1]!);
+    await promise;
+    mayu.dispose();
+  });
+
+  it("resolves right away for events no Mayu handler received", async () => {
+    await expect(settled(new Event("click"))).resolves.toBeUndefined();
+  });
+
+  it("rejects pending callbacks when the transport goes away", async () => {
+    const { mayu } = setup();
+    const button = document.createElement("button");
+    listen(mayu, button, "click", "listener");
+    document.body.append(button);
+
+    const event = new MouseEvent("click", { cancelable: true });
+    button.dispatchEvent(event);
+    mayu.clearWriter();
+
+    await expect(settled(event)).rejects.toThrow(
+      "Callback transport unavailable",
+    );
+    mayu.dispose();
+  });
+
+  it("rejects pending callbacks when disposed", async () => {
+    const { mayu } = setup();
+    const button = document.createElement("button");
+    listen(mayu, button, "click", "listener");
+    document.body.append(button);
+
+    const event = new MouseEvent("click", { cancelable: true });
+    button.dispatchEvent(event);
+    mayu.dispose();
+
+    await expect(settled(event)).rejects.toThrow("Mayu was disposed");
+  });
+
+  it("rejects when the callback can't be sent", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const mayu = new Mayu({ autoPing: false });
+    const button = document.createElement("button");
+    listen(mayu, button, "click", "listener");
+    document.body.append(button);
+
+    const event = new MouseEvent("click", { cancelable: true });
+    button.dispatchEvent(event);
+
+    await expect(settled(event)).rejects.toThrow("Callback not sent");
     mayu.dispose();
   });
 });

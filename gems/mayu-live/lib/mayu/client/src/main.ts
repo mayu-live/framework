@@ -35,6 +35,8 @@ export default function init(sessionId: string) {
         devtools.batchApplied(batch, durationMs);
       },
       onInspectResult: (id, result) => mayu.resolveInspect(id, result),
+      onCallbackComplete: (id) => mayu.completeCallback(id),
+      onCallbackFailed: (id) => mayu.failCallback(id),
     },
   );
   devtools.register(runtime, mayu);

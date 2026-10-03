@@ -2,6 +2,7 @@ import serializeEvent from "./serializeEvent.js";
 import { NAVIGATION_PROGRESS_DELAY, PING_INTERVAL } from "./constants";
 import { updateNavigationProgress } from "./ping";
 import Throttle from "./throttle";
+import { attachSettlement } from "./settled";
 import type { ClientEvent, CommandApplyTelemetry } from "./protocol";
 
 const CONTINUOUS_EVENTS = new Set([
@@ -62,6 +63,13 @@ type OutboundEvent =
       event: Record<string, unknown>,
       ping: number,
     ]
+  | [
+      name: "Callback",
+      listenerId: string,
+      event: Record<string, unknown>,
+      ping: number,
+      settleId: string,
+    ]
   | [name: "Navigate", id: string, href: string, ping: number]
   | [name: "Ping", ping: number]
   | [name: "Visibility", hidden: boolean, ping: number]
@@ -76,6 +84,11 @@ type PendingInspect = {
 // Events are dropped rather than replayed across disconnects, so an inspect
 // request may never be answered.
 const INSPECT_TIMEOUT = 5000;
+
+type PendingCallback = {
+  resolve: () => void;
+  reject: (error: Error) => void;
+};
 
 function browserNavigation(): NavigationLike | undefined {
   return (globalThis as typeof globalThis & { navigation?: NavigationLike })
@@ -93,6 +106,8 @@ export default class Mayu {
   #activeNavigationId: string | null = null;
   #inspectSequence = 0;
   #pendingInspects = new Map<string, PendingInspect>();
+  #callbackSequence = 0;
+  #pendingCallbacks = new Map<string, PendingCallback>();
   #commandApplyTelemetry: CommandApplyTelemetry = {
     batches: 0,
     commands: 0,
@@ -131,6 +146,7 @@ export default class Mayu {
     this.#pingScheduler?.stop();
     this.#pingScheduler = null;
     this.#rejectPendingNavigations(new Error("Mayu was disposed"));
+    this.#rejectPendingCallbacks(new Error("Mayu was disposed"));
     for (const id of this.#pendingInspects.keys()) {
       this.#settleInspect(id, undefined, new Error("Mayu was disposed"));
     }
@@ -155,6 +171,8 @@ export default class Mayu {
     this.#rejectPendingNavigations(
       new Error("Navigation callback transport unavailable"),
     );
+    // Events are not replayed after a reconnect, so these are never answered.
+    this.#rejectPendingCallbacks(new Error("Callback transport unavailable"));
   }
 
   recordCommandApply(commands: number, durationMs: number) {
@@ -207,17 +225,63 @@ export default class Mayu {
 
     const serializedEvent = serializeEvent(event);
 
-    const write = () => {
-      void this.#write(["Callback", id, serializedEvent, performance.now()]);
-    };
-
+    // Continuous events are throttled and merged, so they are not tracked.
     if (CONTINUOUS_EVENTS.has(event.type)) {
-      this.#throttle.call(`${event.type}:${id}`, write);
+      this.#throttle.call(`${event.type}:${id}`, () => {
+        void this.#write(["Callback", id, serializedEvent, performance.now()]);
+      });
+      return;
+    }
+
+    // Send held back continuous events first, so that an input value
+    // reaches the server before the submit that follows it.
+    this.#throttle.flush();
+
+    // The server answers with CallbackComplete or CallbackFailed once the
+    // handler has returned, after the updates it made.
+    const settleId = `${++this.#callbackSequence}`;
+    const promise = new Promise<void>((resolve, reject) => {
+      this.#pendingCallbacks.set(settleId, { resolve, reject });
+    });
+    attachSettlement(event, promise);
+
+    void this.#write([
+      "Callback",
+      id,
+      serializedEvent,
+      performance.now(),
+      settleId,
+    ]).then((wrote) => {
+      if (!wrote) {
+        this.#settleCallback(settleId, new Error("Callback not sent"));
+      }
+    });
+  }
+
+  completeCallback(id: string) {
+    this.#settleCallback(id);
+  }
+
+  failCallback(id: string) {
+    this.#settleCallback(id, new Error("Callback failed"));
+  }
+
+  #settleCallback(id: string, error?: Error) {
+    const pending = this.#pendingCallbacks.get(id);
+    if (!pending) return;
+
+    this.#pendingCallbacks.delete(id);
+
+    if (error) {
+      pending.reject(error);
     } else {
-      // Send held back continuous events first, so that an input value
-      // reaches the server before the submit that follows it.
-      this.#throttle.flush();
-      write();
+      pending.resolve();
+    }
+  }
+
+  #rejectPendingCallbacks(error: Error) {
+    for (const id of this.#pendingCallbacks.keys()) {
+      this.#settleCallback(id, error);
     }
   }
 

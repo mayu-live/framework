@@ -59,6 +59,13 @@ describe("Devtools", () => {
       ],
       1,
     );
+    devtools.batchApplied(
+      [
+        ["CallbackComplete", "1"],
+        ["CallbackFailed", "2"],
+      ],
+      1,
+    );
     devtools.batchApplied([["SetTextContent", "v1", "hi"]], 2.5);
     unsubscribe();
     devtools.batchApplied([["SetTextContent", "v1", "bye"]], 1);

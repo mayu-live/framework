@@ -89,6 +89,23 @@ describe("runtime listeners", () => {
     expect(onInspectResult).toHaveBeenCalledWith("1", { type: "tree" });
   });
 
+  it("passes callback answers on", async () => {
+    const onCallbackComplete = vi.fn();
+    const onCallbackFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), {
+      onCallbackComplete,
+      onCallbackFailed,
+    });
+
+    await runtime.applyBatch([
+      ["CallbackComplete", "1"],
+      ["CallbackFailed", "2"],
+    ]);
+
+    expect(onCallbackComplete).toHaveBeenCalledWith("1");
+    expect(onCallbackFailed).toHaveBeenCalledWith("2");
+  });
+
   it("calls element methods by node id", async () => {
     document.body.innerHTML = "<button>Go</button>";
     const runtime = new Runtime(vi.fn(), { commandErrorPolicy: "throw" });
