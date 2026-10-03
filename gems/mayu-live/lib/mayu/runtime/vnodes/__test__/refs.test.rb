@@ -206,6 +206,25 @@ class Mayu::Runtime::VNodes::RefsTest < Minitest::Test
     end
   end
 
+  # A component whose code changed starts over with new refs. It mounts
+  # once it has rendered them, not against the restored children.
+  def test_a_component_that_starts_over_on_restore_mounts_after_rendering
+    InputProbe.current_in_mount = nil
+    engine =
+      Mayu::Runtime::Engine.new(H[:body, H[InputProbe]], metrics: NullMetrics.new, module_provider: Deploy.new("v1"))
+    restored =
+      Mayu::Runtime::Engine.restore(engine.dump, metrics: NullMetrics.new, module_provider: Deploy.new("v2"))
+    refute_empty(restored.restore_report.reinitialized)
+
+    run_engine_instance(restored) do
+      wait_until { InputProbe.current_in_mount }
+
+      probe = instance(restored, InputProbe)
+      assert_same(probe.input_ref.current, InputProbe.current_in_mount)
+      assert_same(probe.input_ref, find_element(restored.root, :input).instance_variable_get(:@ref))
+    end
+  end
+
   def test_migrated_state_keeps_the_attached_refs
     run_engine(H[:body, H[InputProbe]]) do |engine|
       probe = instance(engine, InputProbe)
@@ -248,19 +267,24 @@ class Mayu::Runtime::VNodes::RefsTest < Minitest::Test
   end
 
   # Lets an engine with these test components be dumped and restored, like
-  # the module provider of a deploy.
+  # the module provider of a deploy. A deploy with another digest has
+  # changed the components' code.
   class Deploy
     MODULES = {"app:/input_probe.haml" => InputProbe}.freeze
+
+    def initialize(digest = "v1")
+      @digest = digest
+    end
 
     def component_resolver = self
 
     def assets_for_module(*, **) = []
 
-    def module_digest(_module_id) = "v1"
+    def module_digest(_module_id) = @digest
 
     def dump_component_class(klass)
       module_id = MODULES.key(klass) or return
-      Mayu::Runtime::Marshalling::ComponentRef.new(module_id, klass.name.split("::").last, nil, "v1")
+      Mayu::Runtime::Marshalling::ComponentRef.new(module_id, klass.name.split("::").last, nil, @digest)
     end
 
     def resolve_component_ref(reference) = MODULES.fetch(reference.filename)

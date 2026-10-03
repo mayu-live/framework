@@ -85,6 +85,7 @@ module Mayu
           @replacing_instance = false
           @handling_render_error = false
           @rerender_requested_during_error = false
+          @mount_after_render = false
           # Attached in #start, since subtrees built here may be discarded.
           @ref = @descriptor.ref
 
@@ -114,7 +115,12 @@ module Mayu
             bind_runtime(@instance, task, queue)
 
             @children.start
-            start_mount(@instance)
+            if @mount_after_render
+              # Mounts once it has rendered, see #reinitialize_instance.
+              @engine.enqueue_update(self)
+            else
+              start_mount(@instance)
+            end
 
             loop do
               work = queue.dequeue
@@ -226,6 +232,11 @@ module Mayu
             raise
           rescue => error
             raise UnhandledRenderError.new(error, self)
+          end
+
+          if @mount_after_render && @task
+            @mount_after_render = false
+            start_mount(@instance)
           end
 
           start_did_update(@instance, previous_props) if previous_props
@@ -348,6 +359,7 @@ module Mayu
           @restore = {state:, dependencies:}
           @mount_task = nil
           @mount_started = false
+          @mount_after_render = false
           @replacing_instance = false
           @handling_render_error = false
           @rerender_requested_during_error = false
@@ -430,8 +442,12 @@ module Mayu
           nil
         end
 
+        # The new instance hasn't rendered: the restored children are from
+        # the old one, and so are their refs. Mounting waits for its first
+        # render, like a component that is mounted for the first time.
         def reinitialize_instance(reason)
           @instance = build_instance(@descriptor.type, @descriptor)
+          @mount_after_render = true
           @engine.restore_report.reinitialized!(self, component_label, reason)
         end
 

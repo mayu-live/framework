@@ -17,7 +17,7 @@
       end
 
       def mount
-        @input_ref.current&.focus
+        @input_ref.current.focus
       end
 
       def handle_submit(event)
@@ -73,10 +73,10 @@
 
     `current` is `nil` until the element or component starts, which is
     after the browser has connected, and again once it is removed. During
-    server rendering it is always `nil`. A component's own `mount` runs
-    after its children's refs are set, but use `&.` in `mount` anyway: a
-    component that starts over after a deploy mounts before it renders
-    again.
+    server rendering it is always `nil`. A component mounts after it has
+    rendered, so in `mount` the refs of everything it rendered are set.
+    An element that is rendered conditionally can still be missing, so
+    use `&.` for those.
 
     Keep the `Ref` in state, not `ref.current`. The ref follows the element
     when it is rendered again, replaced by a new key, or the session moves
