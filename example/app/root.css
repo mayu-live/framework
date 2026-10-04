@@ -124,7 +124,7 @@
 
   --main-background: var(--surface);
   --main-color: var(--text);
-  --main-link-color: var(--accent);
+  --main-link-color: var(--link-color);
 
   --breadcrumbs-background: transparent;
   --breadcrumbs-color: var(--text-muted);
@@ -139,7 +139,17 @@
   --slightly-darker: var(--border);
   --slightly-brighter: light-dark(oklch(100% 0 0 / 60%), oklch(100% 0 0 / 12%));
 
-  --link-color: var(--accent);
+  /* The accent, but with more contrast against the page: darker in light
+     mode, brighter in dark mode. */
+  --link-color: light-dark(
+    oklch(50% 0.18 var(--hue-pink)),
+    oklch(74% 0.12 var(--hue-pink))
+  );
+  /* Hovered and pressed links go one step further. */
+  --link-hover-color: light-dark(
+    oklch(40% 0.17 var(--hue-pink)),
+    oklch(84% 0.09 var(--hue-pink))
+  );
   --thin-border: 1px solid var(--border);
   --radius: 0.625rem;
   --radius-sm: 0.375rem;
@@ -200,4 +210,16 @@ body {
 
 ::view-transition-group(root) {
   animation-duration: 200ms;
+}
+
+/* Default link style. :where() keeps it at zero specificity, so any
+   component that styles its own links wins. */
+:where(:global(a):any-link) {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+:where(:global(a):any-link:is(:hover, :active)) {
+  color: var(--link-hover-color);
+  text-decoration: underline;
 }
