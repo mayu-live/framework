@@ -1,0 +1,14 @@
+div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+  justify-content: end;
+}
+
+p {
+  margin: 0;
+  flex-basis: 100%;
+  font-size: 1.5em;
+  font-variant-numeric: tabular-nums;
+}

@@ -282,11 +282,11 @@
 
 
     font-size: clamp(0.5em, 3.0vw, 1em);
-  }
 
-  .calculator:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 4px;
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+    }
   }
 
   .display {
@@ -312,11 +312,11 @@
     line-height: 1.15;
     font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
-  }
 
-  output.large { font-size: 3.5em; }
-  output.medium { font-size: 2.5em; }
-  output.small { font-size: 1.75em; }
+    &.large { font-size: 3.5em; }
+    &.medium { font-size: 2.5em; }
+    &.small { font-size: 1.75em; }
+  }
 
   .keypad {
     display: grid;

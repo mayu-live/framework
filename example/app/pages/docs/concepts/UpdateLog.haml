@@ -1,7 +1,7 @@
 :ruby
   CodeBlock = import("/components/Markdown/CodeBlock")
 
-  INDENT = " " * 14
+  INDENT = " " * 4
   PIPE = [:pipe, "│"]
 
   # Each line is a list of plain strings and [class_name, text] pairs.
@@ -11,20 +11,20 @@
       [:subject, "Mayu::Build::UpdateLogger"], " ",
       [:meta, "[oid=0x1340] [ec=0x1348] [pid=49710] [#{Time.now}]"]
     ],
-    [PIPE, " ", [:title, "Update #43 completed"], " ", [:meta, "(7.3ms)"]],
-    [PIPE, "   changed files:"],
-    [PIPE, "     ", [:changed, "~"], " components/Form/Button.haml"],
-    [PIPE, "   reloaded:"],
-    [PIPE, "     ", [:changed, "~"], " app:/components/Form/Button.haml"],
-    [PIPE, "   reevaluated:"],
-    [PIPE, "     ", [:reevaluated, "*"], " app:/pages/docs/concepts/HamlExample.haml"],
-    [PIPE, "     ", [:reevaluated, "*"], " app:/pages/docs/concepts/+page.haml"],
-    [PIPE, "     ", [:reevaluated, "*"], " virtual:/router.rb"],
-    [PIPE, "   assets:"],
-    [PIPE, "     ", [:added, "+ /components_Form_Button_haml_inline_0_css.8da258a9ecfe67ec.css"]],
-    [PIPE, "     ", [:added, "+ /components_Form_Button_haml_inline_0_css.d2def4628ee5d299.css.map"]],
-    [PIPE, "     ", [:removed, "- /components_Form_Button_haml_inline_0_css.89c275abb6e4c961.css"]],
-    [PIPE, "     ", [:removed, "- /components_Form_Button_haml_inline_0_css.56f3c77102879a44.css.map"]]
+    [INDENT, PIPE, " ", [:title, "Update #43 completed"], " ", [:meta, "(7.3ms)"]],
+    [INDENT, PIPE, "   changed files:"],
+    [INDENT, PIPE, "     ", [:changed, "~"], " components/Form/Button.haml"],
+    [INDENT, PIPE, "   reloaded:"],
+    [INDENT, PIPE, "     ", [:changed, "~"], " app:/components/Form/Button.haml"],
+    [INDENT, PIPE, "   reevaluated:"],
+    [INDENT, PIPE, "     ", [:reevaluated, "*"], " app:/pages/docs/concepts/HamlExample.haml"],
+    [INDENT, PIPE, "     ", [:reevaluated, "*"], " app:/pages/docs/concepts/+page.haml"],
+    [INDENT, PIPE, "     ", [:reevaluated, "*"], " virtual:/router.rb"],
+    [INDENT, PIPE, "   assets:"],
+    [INDENT, PIPE, "     ", [:added, "+ /components_Form_Button_haml_inline_0_css.8da258a9ecfe67ec.css"]],
+    [INDENT, PIPE, "     ", [:added, "+ /components_Form_Button_haml_inline_0_css.d2def4628ee5d299.css.map"]],
+    [INDENT, PIPE, "     ", [:removed, "- /components_Form_Button_haml_inline_0_css.89c275abb6e4c961.css"]],
+    [INDENT, PIPE, "     ", [:removed, "- /components_Form_Button_haml_inline_0_css.56f3c77102879a44.css.map"]],
   ].freeze
 
   def render_segment(segment)
@@ -50,7 +50,7 @@
     font-family: var(--font-mono);
     color: rgb(98% 95% 78%);
     white-space: pre;
-    line-height: 1.25;
+    line-height: 1.30;
     font-size: clamp(0.5rem, 2vw, 1rem)
   }
 
