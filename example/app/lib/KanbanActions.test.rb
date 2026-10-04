@@ -59,7 +59,7 @@ def test_a_stale_version_is_a_conflict
     KanbanActions.add_card(todo.id, "A", ALICE)
     card = Kanban::Card.first(title: "A")
 
-    KanbanActions.rename_card(card.id, "A2", card.lock_version, ALICE)
+    KanbanActions.update_card(card.id, card.lock_version, ALICE, title: "A2", description: "")
 
     error = assert_raises(KanbanActions::Conflict) do
       KanbanActions.move_card(card.id, doing.id, 0, card.lock_version, BOB)
@@ -112,7 +112,7 @@ def test_a_board_keeps_only_its_newest_activities
 
     KanbanActions::KEEP_ACTIVITIES.times do
       card.refresh
-      KanbanActions.rename_card(card.id, "A#{it}", card.lock_version, ALICE)
+      KanbanActions.update_card(card.id, card.lock_version, ALICE, title: "A#{it}", description: "")
     end
 
     activities = Kanban::Activity.where(board_id: board.id)
@@ -157,5 +157,43 @@ def test_a_full_board_refuses_new_columns
 
     assert_raises(KanbanActions::Conflict) { KanbanActions.add_column(board.id, "One more", ALICE) }
     assert_equal(KanbanActions::MAX_COLUMNS, columns_of(board).size)
+  end
+end
+
+def test_editing_a_card_records_whether_it_was_renamed
+  with_board do |board|
+    todo, = columns_of(board)
+    KanbanActions.add_card(todo.id, "A", ALICE, description: "First")
+    card = Kanban::Card.first(column_id: todo.id)
+    last_action = -> { Kanban::Activity.where(board_id: board.id).reverse(:id).get(:action) }
+
+    KanbanActions.update_card(card.id, card.lock_version, BOB, title: "A", description: "Second")
+    assert_equal("edited", last_action.call)
+
+    card.refresh
+    KanbanActions.update_card(card.id, card.lock_version, BOB, title: "B", description: "Second")
+    assert_equal("renamed", last_action.call)
+    assert_equal(["B", "Second"], card.refresh.values.values_at(:title, :description))
+  end
+end
+
+def test_long_descriptions_are_cut_off
+  with_board do |board|
+    todo, = columns_of(board)
+    KanbanActions.add_card(todo.id, "A", ALICE, description: "x" * 2000)
+
+    assert_equal(KanbanActions::MAX_DESCRIPTION_LENGTH, Kanban::Card.first(column_id: todo.id).description.length)
+  end
+end
+
+def test_only_an_empty_column_can_be_deleted
+  with_board do |board|
+    todo, doing, done = columns_of(board)
+    KanbanActions.add_card(todo.id, "A", ALICE)
+
+    assert_raises(KanbanActions::Conflict) { KanbanActions.delete_column(todo.id, ALICE) }
+
+    KanbanActions.delete_column(doing.id, ALICE)
+    assert_equal([[todo.id, 0], [done.id, 1]], columns_of(board).map { [it.id, it.position] })
   end
 end

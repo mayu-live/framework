@@ -1,0 +1,17 @@
+:ruby
+  # A button that opens a Dialog. Pure HTML, no JS. It also publishes the
+  # anchor name --dialog-<id>, which an anchored Dialog positions itself by.
+  #
+  #   %DialogButton(dialog="confirm" title="Delete") ×
+  #   %Dialog(id="confirm" anchored)
+  #     ...
+
+%button{
+  type: "button",
+  command: "show-modal",
+  commandfor: $dialog,
+  title: $title,
+  class: $class,
+  style: { anchor_name: "--dialog-#{$dialog}" }
+}
+  %slot

@@ -16,6 +16,7 @@ module KanbanActions
 
   # Longer names and titles are cut off. Inputs should set maxlength to match.
   MAX_LENGTH = 100
+  MAX_DESCRIPTION_LENGTH = 500
 
   # Limits that keep the public demo's tables small. Creating a board deletes
   # the oldest boards beyond MAX_BOARDS, and each board keeps only its newest
@@ -86,8 +87,9 @@ module KanbanActions
     end
   end
 
-  def add_card(column_id, title, actor)
+  def add_card(column_id, title, actor, description: "")
     title = limit(title)
+    description = limit(description, MAX_DESCRIPTION_LENGTH)
     board_id = find_column(column_id).board_id
 
     db.transaction do
@@ -97,21 +99,31 @@ module KanbanActions
       position = Kanban::Card.where(column_id:).count
       raise Conflict, full_column_message(column) if position >= MAX_CARDS
 
-      card = Kanban::Card.create(column_id:, title:, position:)
+      card = Kanban::Card.create(column_id:, title:, description:, position:)
       record(column.board_id, actor, "created", "added “#{title}” to #{column.name}", card:)
     end
   end
 
-  def rename_card(card_id, title, lock_version, actor)
+  # Changes the title and description of a card, if it is still the version
+  # the edit started from.
+  def update_card(card_id, lock_version, actor, title:, description:)
     title = limit(title)
+    description = limit(description, MAX_DESCRIPTION_LENGTH)
     board_id = board_id_for_card(card_id)
 
     db.transaction do
       lock_board(board_id)
       card = current_card(card_id, lock_version)
       old_title = card.title
-      card.update(title:)
-      record(board_id, actor, "renamed", "renamed “#{old_title}” to “#{title}”", card:)
+      next if title == old_title && description == card.description
+
+      card.update(title:, description:)
+
+      if title == old_title
+        record(board_id, actor, "edited", "edited “#{title}”", card:)
+      else
+        record(board_id, actor, "renamed", "renamed “#{old_title}” to “#{title}”", card:)
+      end
     end
   end
 
@@ -194,6 +206,10 @@ module KanbanActions
     db.transaction do
       lock_board(board_id)
       column = Kanban::Column.with_pk(column_id) or next
+      if Kanban::Card.where(column_id:).any?
+        raise Conflict, "Move or delete the cards in #{column.name} first."
+      end
+
       close_gap(Kanban::Column.where(board_id:), column.position)
       column.destroy
       record(board_id, actor, "column_deleted", "deleted the column #{column.name}")
@@ -222,7 +238,7 @@ module KanbanActions
 
   def db = Kanban::Board.db
 
-  def limit(text) = text[0, MAX_LENGTH]
+  def limit(text, length = MAX_LENGTH) = text[0, length]
 
   def lock_board(board_id)
     Kanban::Board.for_update.with_pk(board_id) or

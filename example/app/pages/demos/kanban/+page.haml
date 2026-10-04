@@ -1,6 +1,8 @@
 :ruby
   Card = import("/components/UI/Card")
   DatabaseSetup = import("/components/Database/Setup")
+  Dialog = import("/components/UI/Dialog")
+  DialogButton = import("/components/UI/DialogButton")
   KanbanActions = import("/lib/KanbanActions")
   Spinner = import("/components/UI/Spinner/Spinner")
 
@@ -36,13 +38,14 @@
     browser.navigate("/demos/kanban/#{board.id}")
   end
 
-  # Called by the Delete button in the confirmation dialog. The dialog opens
-  # and closes without JavaScript: the × button opens it with
-  # command="show-modal", and its form's method="dialog" closes it.
+  # Called when the confirmation dialog is submitted. The dialog opens and
+  # closes without JavaScript: the × DialogButton opens it below itself,
+  # Cancel closes it with command="close", and its form's method="dialog"
+  # closes it on submit.
   def handle_delete(e)
-    e => { currentTarget: { value: } }
+    e => { target: { formData: { id: } } }
 
-    KanbanActions.delete_board(Integer(value))
+    KanbanActions.delete_board(Integer(id))
   end
 
   def pluralize(count, word)
@@ -71,15 +74,16 @@
           %li[board[:id]]
             %a{href: "/demos/kanban/#{board[:id]}"}= board[:name]
             %span.counts= "#{pluralize(board[:column_count], "column")}, #{pluralize(board[:card_count], "card")}"
-            %button.delete(command="show-modal" title="Delete board"){commandfor: "delete-board-#{board[:id]}"} ×
-            %dialog.confirm{id: "delete-board-#{board[:id]}"}
+            %DialogButton.delete(title="Delete board"){dialog: "delete-board-#{board[:id]}"} ×
+            %Dialog.confirm{id: "delete-board-#{board[:id]}", anchored: true}
               %p
                 = "Delete "
                 %strong= board[:name]
                 = " and its #{pluralize(board[:card_count], "card")} for everyone?"
-              %form.actions(method="dialog")
-                %button.cancel(autofocus) Cancel
-                %button.danger(onclick=handle_delete){value: board[:id]} Delete
+              %form.actions(method="dialog" onsubmit=handle_delete)
+                %input(type="hidden" name="id"){value: board[:id]}
+                %button.cancel(type="button" command="close" autofocus){commandfor: "delete-board-#{board[:id]}"} Cancel
+                %button.danger Delete
   = else
     %DatabaseSetup
 
@@ -148,28 +152,27 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* DialogButton renders the button, so the button rule above misses it. */
   .delete {
     padding: 0 0.5rem;
+    font: inherit;
+    font-weight: 700;
     font-size: 1.5rem;
     line-height: 1;
     color: var(--red);
     background: transparent;
+    border: 0;
+    cursor: pointer;
   }
 
   .confirm {
-    max-width: min(28rem, calc(100vw - 2rem));
-    padding: 1.25rem;
-    color: var(--text);
-    background: var(--surface-raised);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-
-    &::backdrop {
-      background: rgb(0 0 0 / 40%);
-    }
-
     p {
       margin: 0 0 1.25rem;
+    }
+
+    button {
+      padding: 0.25rem 0.625rem;
+      font-size: 0.875rem;
     }
   }
 

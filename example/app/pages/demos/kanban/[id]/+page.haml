@@ -1,14 +1,19 @@
 :ruby
+  Card = import("/components/UI/Card")
+  Dialog = import("/components/UI/Dialog")
+  DialogButton = import("/components/UI/DialogButton")
   DatabaseSetup = import("/components/Database/Setup")
   KanbanActions = import("/lib/KanbanActions")
   KanbanBoard = import("/pages/demos/kanban/KanbanBoard.tsx")
+  IntlTime = import("/components/IntlTime.tsx")
 
   FLASH_SECONDS = 4
 
   FLASH_MESSAGES = {
     "created" => "added this card",
     "moved" => "moved this card",
-    "renamed" => "renamed this card"
+    "renamed" => "renamed this card",
+    "edited" => "edited this card"
   }.freeze
 
   def initialize
@@ -52,12 +57,12 @@
   end
 
   def handle_add_card(e)
-    e => { target: { formData: { column_id:, title: } } }
+    e => { target: { formData: { column_id:, title:, description: } } }
 
     title = title.strip
     return if title.empty?
 
-    change { KanbanActions.add_card(Integer(column_id), title, @@visitor) }
+    change { KanbanActions.add_card(Integer(column_id), title, @@visitor, description: description.strip) }
     @card_form_refs[Integer(column_id)]&.current&.reset
   end
 
@@ -79,16 +84,22 @@
     @editing = {key: edit, lock_version: Integer(lock_version), value:}
   end
 
-  # A form that was already submitted can submit again before it is removed.
-  def handle_rename_card(e)
-    e => { target: { formData: { id:, title: } } }
-    editing = @editing or return
-    @editing = nil
+  # The edit dialog sends the version the card had when the dialog was
+  # rendered, so a change someone else commits first is a conflict instead of
+  # being overwritten. The form is keyed by that version, so it refills with
+  # the other person's change if the card changes before it is submitted.
+  def handle_update_card(e)
+    e => { target: { formData: { id:, lock_version:, title:, description: } } }
 
     title = title.strip
-    change { KanbanActions.rename_card(Integer(id), title, editing[:lock_version], @@visitor) } unless title.empty?
+    return if title.empty?
+
+    change do
+      KanbanActions.update_card(Integer(id), Integer(lock_version), @@visitor, title:, description: description.strip)
+    end
   end
 
+  # A form that was already submitted can submit again before it is removed.
   def handle_rename_column(e)
     e => { target: { formData: { id:, name: } } }
     editing = @editing or return
@@ -103,7 +114,9 @@
   end
 
   def handle_delete_column(e)
-    change { KanbanActions.delete_column(Integer(e.dig(:currentTarget, :value)), @@visitor) }
+    e => { target: { formData: { id: } } }
+
+    change { KanbanActions.delete_column(Integer(id), @@visitor) }
   end
 
   def handle_dismiss_conflict
@@ -170,24 +183,26 @@
 
 - raise NotFound unless board_id
 
-= if !Database.enabled?
+- return unless Database.enabled?
   %DatabaseSetup
-= elsif !@board
+
+- return unless @board
   %p
     This board does not exist, or someone deleted it.
-    %a(href="/demos/kanban") Back to the boards
-= else
-  %nav.toolbar
-    %a(href="/demos/kanban") ← All boards
-    %h3= @board.name
+    %a(href="/demos/kanban")< Back to the boards
 
-  = if @conflict
-    .conflict(role="alert")
-      %p= @conflict
-      %button(onclick=handle_dismiss_conflict) Dismiss
+%nav.toolbar
+  %a(href="/demos/kanban") ← All boards
+  %h3= @board.name
 
-  .layout
-    %KanbanBoard.board(onkanbanmove=handle_move)
+= if @conflict
+  .conflict(role="alert")
+    %p= @conflict
+    %button(onclick=handle_dismiss_conflict) Dismiss
+
+.layout
+  %Card
+    %KanbanBoard(onkanbanmove=handle_move)
       = @board.columns.map do |column|
         %section.column[column.id]{data: {kanban_column: column.id, lock_version: column.lock_version}}
           %header.column-header{data: {kanban_handle: "column"}, title: "Drag to move the column"}
@@ -198,36 +213,88 @@
             = else
               %h4(ondblclick=handle_edit){data: {edit: "column-#{column.id}", lock_version: column.lock_version, value: column.name, kanban_title: ""}}= column.name
             %span.count= column.cards.size
-            %button.delete(onclick=handle_delete_column title="Delete column"){value: column.id} ×
+            %DialogButton.icon(title="Add card"){dialog: "add-card-#{column.id}"} +
+            = if column.cards.empty?
+              %DialogButton.delete(title="Delete column"){dialog: "delete-column-#{column.id}"} ×
 
           %ol.cards
             = column.cards.map do |card|
               - flash = flash_for(card)
               %li.card[card.id]{tabindex: 0, class: {flashing: flash}, style: {__flash_color: flash&.fetch(:color)}, data: {kanban_card: card.id, lock_version: card.lock_version}}
-                = if editing?("card-#{card.id}")
-                  %form.rename(onsubmit=handle_rename_card autocomplete="off")
-                    %input(type="hidden" name="id"){value: card.id}
-                    %input(type="text" name="title" required autofocus){value: @editing[:value], maxlength: KanbanActions::MAX_LENGTH}
-                = else
-                  %p.title(ondblclick=handle_edit){data: {edit: "card-#{card.id}", lock_version: card.lock_version, value: card.title, kanban_title: ""}}= card.title
-                %button.delete(onclick=handle_delete_card title="Delete card"){value: card.id} ×
+                .card-body
+                  %p.title{data: {kanban_title: ""}}= card.title
+                  = unless card.description.empty?
+                    %p.description= card.description
+                .card-actions
+                  %DialogButton.icon(title="Edit card"){dialog: "edit-card-#{card.id}"} ✎
+                  %button.delete(onclick=handle_delete_card title="Delete card"){value: card.id} ×
                 = if flash
                   %p.flash-note #{flash[:name]} #{flash[:message]}
 
-          %form.add-card(onsubmit=handle_add_card autocomplete="off"){ref: card_form_ref(column.id)}
-            %input(type="hidden" name="column_id"){value: column.id}
-            %input(type="text" name="title" required placeholder="Add a card" value=""){maxlength: KanbanActions::MAX_LENGTH}
+      %DialogButton.add-column(dialog="add-column") + Add column
 
-      %form.add-column(ref=@column_form_ref onsubmit=handle_add_column autocomplete="off")
-        %input(type="text" name="name" required placeholder="Add a column" value=""){maxlength: KanbanActions::MAX_LENGTH}
+    -# The dialogs are outside KanbanBoard, so its drag and keyboard handling
+    -# never sees events from them. Each form has method="dialog": submitting
+    -# it closes the dialog in the browser and calls its handler, which
+    -# resets the form through its ref.
+    %Dialog(id="add-column")
+      %form(ref=@column_form_ref method="dialog" onsubmit=handle_add_column autocomplete="off")
+        %h4 Add a column
+        %label
+          Name
+          %input(type="text" name="name" required){maxlength: KanbanActions::MAX_LENGTH}
+        .actions
+          %button.cancel(type="button" command="close" commandfor="add-column") Cancel
+          %button.primary Add column
 
-    %aside.activity
-      %h4 Activity
-      %ol
-        = @activities.map do |activity|
-          %li[activity.id]
-            %span.actor{style: {__actor_color: activity.actor_color}}= activity.actor_name
-            = activity.message
+    = @board.columns.map do |column|
+      %Dialog[column.id]{id: "add-card-#{column.id}"}
+        %form(method="dialog" onsubmit=handle_add_card autocomplete="off"){ref: card_form_ref(column.id)}
+          %h4= "Add a card to #{column.name}"
+          %input(type="hidden" name="column_id"){value: column.id}
+          %label
+            Title
+            %input(type="text" name="title" required){maxlength: KanbanActions::MAX_LENGTH}
+          %label
+            Description
+            %textarea(name="description" rows=3){maxlength: KanbanActions::MAX_DESCRIPTION_LENGTH}
+          .actions
+            %button.cancel(type="button" command="close"){commandfor: "add-card-#{column.id}"} Cancel
+            %button.primary Add card
+
+    = @board.columns.map do |column|
+      %Dialog.confirm[column.id]{id: "delete-column-#{column.id}", anchored: true}
+        %form(method="dialog" onsubmit=handle_delete_column)
+          %p= "Delete the column #{column.name}?"
+          %input(type="hidden" name="id"){value: column.id}
+          .actions
+            %button.cancel(type="button" command="close" autofocus){commandfor: "delete-column-#{column.id}"} Cancel
+            %button.danger Delete
+
+    = @board.columns.flat_map(&:cards).map do |card|
+      %Dialog[card.id]{id: "edit-card-#{card.id}"}
+        %form(method="dialog" onsubmit=handle_update_card autocomplete="off")[card.lock_version]
+          %h4 Edit card
+          %input(type="hidden" name="id"){value: card.id}
+          %input(type="hidden" name="lock_version"){value: card.lock_version}
+          %label
+            Title
+            %input(type="text" name="title" required){value: card.title, maxlength: KanbanActions::MAX_LENGTH}
+          %label
+            Description
+            %textarea(name="description" rows=3){maxlength: KanbanActions::MAX_DESCRIPTION_LENGTH}= card.description
+          .actions
+            %button.cancel(type="button" command="close"){commandfor: "edit-card-#{card.id}"} Cancel
+            %button.primary Save
+
+  %aside.activity
+    %h4 Activity
+    %ol
+      = @activities.map do |activity|
+        %li[activity.id]
+          %IntlTime.time{time: activity.created_at.iso8601, time_style: "short"}
+          %span.actor{style: {__actor_color: activity.actor_color}}= activity.actor_name
+          = activity.message
 
 :css
   .toolbar {
@@ -264,7 +331,11 @@
     gap: 1rem;
   }
 
-  .board {
+  Card {
+    padding: 1rem;
+  }
+
+  KanbanBoard {
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
@@ -287,14 +358,18 @@
   }
 
   .column-header {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
+    display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.25rem 0.25rem 0.25rem 0.5rem;
     cursor: grab;
     touch-action: none;
     user-select: none;
+
+    & > :first-child {
+      flex: 1;
+      min-width: 0;
+    }
 
     h4 {
       margin: 0;
@@ -357,8 +432,26 @@
     }
   }
 
+  .card-body {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .card-actions {
+    display: flex;
+  }
+
   .title {
     margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .description {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    white-space: pre-line;
     overflow-wrap: anywhere;
   }
 
@@ -384,6 +477,98 @@
     }
   }
 
+  .icon {
+    padding: 0 0.25rem;
+    font-size: 1.125rem;
+    line-height: 1;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+
+  Dialog {
+    width: min(28rem, calc(100vw - 2rem));
+
+    form {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    h4,
+    p {
+      margin: 0;
+    }
+
+    label {
+      display: grid;
+      gap: 0.25rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+  }
+
+  textarea {
+    width: 100%;
+    padding: 0.375rem 0.625rem;
+    font: inherit;
+    font-weight: normal;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+
+    button {
+      padding: 0.5rem 1rem;
+      font: inherit;
+      font-weight: 700;
+      border: 0;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+  }
+
+  /* A confirmation fits its question and points at its button. */
+  .confirm {
+    width: auto;
+
+    form {
+      gap: 1.25rem;
+    }
+
+    .actions button {
+      padding: 0.25rem 0.625rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  .cancel {
+    color: var(--text);
+    background: transparent;
+    outline: 1px solid var(--border-strong);
+  }
+
+  .primary {
+    color: white;
+    background: var(--accent);
+  }
+
+  .danger {
+    color: white;
+    background: var(--red);
+  }
+
   input[type="text"] {
     width: 100%;
     min-height: 2.25rem;
@@ -396,7 +581,22 @@
   }
 
   .add-column {
-    flex: 0 0 15rem;
+    flex: none;
+    padding: 0.375rem 0.75rem;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
   }
 
   .activity {
@@ -421,6 +621,12 @@
     li {
       margin: 0;
     }
+  }
+
+  .time {
+    margin-right: 0.5rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
   }
 
   .actor {
