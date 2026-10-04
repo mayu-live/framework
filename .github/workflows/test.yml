@@ -11,7 +11,7 @@ on:
 
 jobs:
   javascript:
-    # This job typechecks and builds the JS.
+    # This job typechecks, tests and builds the JS.
     name: Test JavaScript
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +24,9 @@ jobs:
       - name: Typecheck
         run: |
           npm run typecheck -w gems/mayu-live/lib/mayu/client -w gems/mayu-devtools/extension
+      - name: Test
+        run: |
+          npm run test -w gems/mayu-live/lib/mayu/client -w gems/mayu-devtools/extension
       - name: Build
         run: |
           npm run build:production -w gems/mayu-live/lib/mayu/client
