@@ -44,9 +44,8 @@ module Mayu
       ROBOTS_TXT_ENTRY = "robots.txt"
       ROBOTS_TXT_CACHE_CONTROL = "public, max-age=#{60 * 60}"
 
-      ASSET_CACHE_CONTROL_HEADER = {
-        "cache-control": ASSET_CACHE_CONTROL
-      }.freeze
+      FAVICON_ENTRY = "virtual:mayu/favicon"
+      FAVICON_CACHE_CONTROL = "public, max-age=#{60 * 60}"
 
       def initialize(environment)
         @environment = environment
@@ -72,7 +71,7 @@ module Mayu
         # puts "\e[3;33m #{request.method} #{request.path} \e[0m"
 
         case request
-        in path: "/favicon.ico"
+        in {path: "/favicon.ico", method: "GET" | "HEAD"}
           handle_favicon(request)
         in {path: "/robots.txt", method: "GET" | "HEAD"}
           handle_robots_txt(request)
@@ -322,11 +321,27 @@ module Mayu
       end
 
       def handle_favicon(request)
-        send_file(
-          File.read(File.join(@environment.app_dir, "favicon.png")),
-          "image/png",
-          {**origin_header(request), **ASSET_CACHE_CONTROL_HEADER}
-        )
+        provider = @environment.module_provider
+        return handle_404(request) unless provider
+
+        # Read the export on every request so dev serves hot-reloaded edits.
+        favicon = provider.exports(provider.entry(FAVICON_ENTRY))::Default
+        return handle_404(request) unless favicon
+
+        etag = %("#{favicon.fetch(:etag)}")
+        headers = {
+          **origin_header(request),
+          "cache-control": FAVICON_CACHE_CONTROL,
+          etag:
+        }
+
+        if request.headers["if-none-match"]&.weak_match?(etag)
+          return response(304, **headers)
+        end
+
+        send_file(favicon.fetch(:body), "image/x-icon", headers)
+      rescue *missing_entry_errors
+        handle_404(request)
       end
 
       def handle_robots_txt(request)

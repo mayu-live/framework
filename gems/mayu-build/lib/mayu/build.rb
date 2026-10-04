@@ -8,6 +8,7 @@ require "klenod/test"
 
 require "mayu/klenod"
 require_relative "build/development_provider"
+require_relative "build/favicon_plugin"
 require_relative "build/configuration"
 require_relative "build/error_report"
 require_relative "build/update_logger"

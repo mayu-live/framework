@@ -57,6 +57,26 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_build_bundles_the_favicon
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      bytes = "\x00\x00\x01\x00\xFF".b
+      File.binwrite(File.join(root, "app", "favicon.ico"), bytes)
+
+      configuration =
+        Mayu::Build::Configuration.new(
+          root:,
+          entrypoints: ["virtual:mayu/favicon"],
+          output: ".mayu/app.bundle"
+        )
+      configuration.build
+      runtime = configuration.runtime_provider
+
+      favicon = runtime.exports(runtime.entry("virtual:mayu/favicon"))::Default
+      assert_equal(bytes, favicon.fetch(:body))
+    end
+  end
+
   def test_build_succeeds_without_robots_txt
     Dir.mktmpdir("mayu-klenod") do |root|
       FileUtils.mkdir_p(File.join(root, "app"))

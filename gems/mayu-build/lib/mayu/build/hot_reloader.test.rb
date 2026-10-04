@@ -237,6 +237,33 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
     end
   end
 
+  def test_picks_up_a_favicon_added_after_start
+    Dir.mktmpdir("mayu-klenod") do |root|
+      app_dir = File.join(root, "app")
+      favicon_path = File.join(app_dir, "favicon.ico")
+      FileUtils.mkdir_p(app_dir)
+      File.write(File.join(app_dir, "root.haml"), "%slot\n")
+
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      favicon = -> { provider.exports(provider.entry("virtual:mayu/favicon"))::Default }
+      assert_nil(favicon.call)
+      app = FakeApp.new
+
+      Async do
+        task = reloader(provider, app_dir).start(app)
+
+        File.binwrite(favicon_path, "\x00\x00\x01\x00".b)
+        publish_update(provider, favicon_path, graph_version: 1)
+        updated = app.updates.dequeue(timeout: 2)
+
+        assert(updated.success?)
+        assert_equal("\x00\x00\x01\x00".b, favicon.call.fetch(:body))
+      ensure
+        task&.stop
+      end.wait
+    end
+  end
+
   def test_reports_a_parse_error_with_its_source_location
     provider = ReloadErrorProvider.new
     error =

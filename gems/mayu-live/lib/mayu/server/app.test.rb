@@ -340,6 +340,64 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("file not found", response.body.join)
   end
 
+  class FaviconProvider
+    def initialize(favicon) = @favicon = favicon
+
+    def entry(name) = name
+
+    def exports(entry)
+      raise KeyError unless entry == Mayu::Server::App::FAVICON_ENTRY
+
+      exports = Module.new
+      exports.const_set(:Default, @favicon)
+      exports
+    end
+  end
+
+  FAVICON = {body: "\x00\x00\x01\x00".b, etag: "abc123"}.freeze
+
+  def test_serves_the_favicon_from_the_module_provider
+    response = favicon_response(FaviconProvider.new(FAVICON))
+
+    assert_equal(200, response.status)
+    headers = response.headers.to_a.to_h
+    assert_equal("image/x-icon", headers.fetch(:"content-type"))
+    assert_equal(
+      Mayu::Server::App::FAVICON_CACHE_CONTROL,
+      headers.fetch(:"cache-control")
+    )
+    assert_equal(%("abc123"), headers.fetch(:etag))
+    assert_equal(FAVICON.fetch(:body), response.body.join)
+  end
+
+  def test_favicon_is_a_304_when_the_etag_matches
+    response =
+      favicon_response(
+        FaviconProvider.new(FAVICON),
+        headers: Protocol::HTTP::Headers[[["if-none-match", %(W/"abc123")]]]
+      )
+
+    assert_equal(304, response.status)
+    assert_equal(%("abc123"), response.headers.to_a.to_h.fetch(:etag))
+    assert_empty(response.body)
+  end
+
+  def test_favicon_is_sent_again_when_the_etag_is_stale
+    response =
+      favicon_response(
+        FaviconProvider.new(FAVICON),
+        headers: Protocol::HTTP::Headers[[["if-none-match", %("old")]]]
+      )
+
+    assert_equal(200, response.status)
+  end
+
+  def test_favicon_is_a_404_when_the_app_has_none
+    response = favicon_response(FaviconProvider.new(nil))
+
+    assert_equal(404, response.status)
+  end
+
   RuntimeEnvironment = Data.define(:runtime_init_js_path)
 
   def script_response(path)
@@ -531,6 +589,12 @@ class Mayu::Server::AppTest < Minitest::Test
     app = Mayu::Server::App.allocate
     app.instance_variable_set(:@environment, Environment.new(provider))
     app.call(Request.new("GET", "/robots.txt", {}, ""))
+  end
+
+  def favicon_response(provider, headers: Protocol::HTTP::Headers.new)
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(:@environment, Environment.new(provider))
+    app.call(Request.new("GET", "/favicon.ico", headers, ""))
   end
 
   def provider
