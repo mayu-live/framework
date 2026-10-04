@@ -1,13 +1,13 @@
 :ruby
-  Icon = import("/app/components/UI/Icon")
-  Logo = svg("./logo.svg")
-  Title = svg("./title.svg")
+  Icon = import("/components/UI/Icon/Icon")
+  Logo = import("./logo.svg")
+  ThemeSwitcher = import("./ThemeSwitcher")
 
 %header
   %h1
     %a.title(href="/" title="Start page")
-      %img.logo(src=Logo)
-      %img.title-text(src=Title)
+      %img.logo(src=Logo width=Logo.width.round height=Logo.height.round alt="")
+      %span.wordmark mayu
   %nav
     %menu
       %li
@@ -18,80 +18,97 @@
           Docs
       %li
         %a(href="https://github.com/mayu-live/framework" target="_blank")
+          %Icon(name="github")
           GitHub
-          %Icon(name="up-right-from-square")
+      %li.switcher
+        %ThemeSwitcher
 
 :css
   header {
     grid-row: 1;
     grid-column: 1;
     align-self: start;
-    z-index: 1;
-
-    /*
+    z-index: 2;
     position: sticky;
     top: 0;
-    */
 
+    font-size: clamp(0.8rem, 3.5vw, 1rem);
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 1rem;
-    padding: .5em 2em;
+    gap: 1em;
+    /* Fixed height so sticky elements below can line up exactly under it. */
+    height: var(--header-height);
+    padding: 0 1.5em;
     background: var(--header-background);
-    border-bottom: var(--thin-border);
-    backdrop-filter: brightness(50%) blur(.5rem);
-    box-shadow: 0 0 5em #1b2b5f;
+    border-bottom: 1px solid var(--chrome-border);
+    box-shadow: var(--shadow-bar);
+    backdrop-filter: blur(1rem) saturate(140%);
+    color: var(--chrome-color);
   }
 
   menu {
     font-family: var(--font-heading);
+    font-weight: 500;
     list-style-type: none;
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 1.5em;
+    gap: .25em;
     margin: 0;
     padding: 0;
+
+    a:any-link {
+      display: inline-flex;
+      place-items: center;
+      white-space: nowrap;
+      gap: 0.5em;
+      padding: .4em;
+      text-decoration: none;
+      color: var(--header-link-color);
+      transition: color 120ms;
+
+      &:is(:active, :hover, :focus-visible) {
+        color: var(--header-link-hover-color);
+      }
+    }
+  }
+
+  .switcher {
+    margin-left: .75em;
   }
 
   h1 {
-    font-weight: bold;
     font-size: 1em;
     padding: 0;
     margin: 0;
-    color: #b8346c;
     display: flex;
-    filter:
-      drop-shadow(0 0 2px #fff)
-      drop-shadow(0 0 1px #fff);
-  }
-
-  menu a:any-link {
-    display: inline-flex;
-    align-items: center;
-    white-space: nowrap;
-    gap: 0.5em;
-    text-decoration: none;
-    color: var(--header-link-color);
-  }
-
-  menu a:is(:active, :hover) {
-    text-decoration: underline;
-    color: var(--header-link-hover-color);
   }
 
   .title {
     display: grid;
-    grid-template-columns: 1fr auto;
-    gap: .75em;
-    align-items: end;
+    grid-template-columns: auto auto;
+    gap: .5em;
+    align-items: center;
+    text-decoration: none;
   }
 
   .logo {
-    max-height: 2.5em;
+    height: 2.25em;
+    width: auto;
+    filter: drop-shadow(0 1px 2px oklch(0% 0 0 / 40%));
   }
 
-  .title-text {
-    max-height: 2em;
+  .wordmark {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.8em;
+    letter-spacing: -0.02em;
+    color: var(--pink-soft);
+    transition: color 120ms;
+    text-box: trim-both ex alphabetic;
+  }
+
+  .title:hover .wordmark {
+    color: #fff;
   }

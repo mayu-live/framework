@@ -1,5 +1,4 @@
 :ruby
-  require "mayu/version"
   Badge = import("./Footer/Badge")
 
   BADGES = [
@@ -17,7 +16,7 @@
       src: "https://img.shields.io/github/v/release/mayu-live/framework?sort=semver",
     }, {
       href: "https://github.com/mayu-live/framework/blob/main/COPYING",
-      alt: "License: AGPL-3.0",
+      alt: "License: MPL-2.0",
       src: "https://img.shields.io/github/license/mayu-live/framework",
     }, {
       href: "https://status.mayu.live/",
@@ -42,7 +41,20 @@
     %dt Ruby
     %dd #{::RUBY_VERSION}
     %dt YJIT
-    %dd #{RubyVM::YJIT.enabled? ? "enabled" : "disabled"}
+    %dd
+      = if defined?(RubyVM::YJIT)
+        = RubyVM::YJIT.enabled? ? "enabled" : "disabled"
+      = else
+        = "Unsupported"
+    %dt ZJIT
+    %dd
+      = if defined?(RubyVM::ZJIT)
+        = RubyVM::ZJIT.enabled? ? "enabled" : "disabled"
+      = else
+        = "Unsupported"
+    = if fly_region = ENV["FLY_REGION"]
+      %dt FLY_REGION
+      %dd= fly_region
 
   %p.badges
     = BADGES.map do |badge|
@@ -51,8 +63,17 @@
 :css
   footer {
     background: var(--footer-background);
-    border-top: var(--thin-border);
-    padding: 1em 2em;
+    border-top: 1px solid var(--chrome-border);
+    padding: 2rem 1.5rem 2.5rem;
+    font-size: .875rem;
+    color: var(--footer-color);
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+  }
+
+  footer > * {
+    margin: 0;
   }
 
   .badges {
@@ -60,35 +81,39 @@
     flex-wrap: wrap;
     flex-direction: row;
     gap: 0.5em;
+    opacity: .85;
   }
 
-  a:link,
-  a:visited {
-    color: #fff;
-    opacity: 0.8;
-    transition: opacity 0.2s;
+  a:any-link {
+    color: var(--pink-soft);
+    text-decoration: none;
+    transition: color 0.2s;
   }
 
-  a:active,
-  a:hover {
+  a:is(:active, :hover) {
     text-decoration: underline;
     color: #fff;
-    opacity: 1;
   }
 
   .versions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem 0;
+    font-family: var(--font-mono);
+    font-size: .8rem;
+
     & :is(dt, dd) {
-      display: inline-block;
+      display: inline;
       margin: 0;
       padding: 0;
     }
 
     & dt {
-      font-weight: bold;
+      color: var(--chrome-color);
       margin-right: .5ch;
     }
 
     & dd {
-      margin-right: 1em;
+      margin-right: 1.25rem;
     }
   }

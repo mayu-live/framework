@@ -1,0 +1,21 @@
+:ruby
+  require "pp"
+  Heading = import("/components/Layout/Heading")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+  ImportedJSON = import("./data.json")
+
+%head
+  %title Importing JSON
+
+%article
+  %Heading(level=2) Importing JSON
+
+  %p This page imports a JSON file into Ruby.
+
+  %p As Ruby:
+  %HighlightedCodeBlock(language="ruby")
+    = ImportedJSON.pretty_inspect
+
+  %p As JSON:
+  %HighlightedCodeBlock(language="json")
+    = JSON.pretty_generate(ImportedJSON)

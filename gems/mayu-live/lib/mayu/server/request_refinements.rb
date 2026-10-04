@@ -1,0 +1,38 @@
+# frozen_string_literal: true
+
+#
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+module Mayu
+  class Server
+    module RequestRefinements
+      refine Async::HTTP::Protocol::HTTP1::Request do
+        def deconstruct_keys(keys)
+          keys.each_with_object({}) do |key, obj|
+            var = "@#{key}"
+
+            if instance_variable_defined?(var)
+              obj[key] = instance_variable_get(var)
+            end
+          end
+        end
+      end
+
+      refine Async::HTTP::Protocol::HTTP2::Request do
+        def deconstruct_keys(keys)
+          keys.each_with_object({}) do |key, obj|
+            var = "@#{key}"
+
+            if instance_variable_defined?(var)
+              obj[key] = instance_variable_get(var)
+            end
+          end
+        end
+      end
+    end
+  end
+end

@@ -1,0 +1,49 @@
+:ruby
+  # Modern formats first; the browser picks the first <source> it supports.
+  PREFERRED_TYPES = ["image/avif", "image/webp"]
+
+  def srcset(variants)
+    variants.map { "#{it.src} #{it.descriptor}" }.join(", ")
+  end
+
+  def source_rank(type)
+    PREFERRED_TYPES.index(type) || PREFERRED_TYPES.size
+  end
+
+:ruby
+  loading = $lazy && "lazy"
+  decoding = $decoding || "async"
+
+  unless $alt
+    Console.logger.warn(self, "Missing alt-attribute!")
+  end
+
+  inline_style = $blur && $image.placeholder && {
+    background_image: "url(#{$image.placeholder})",
+  }
+
+  variants_by_type = $image.variants.group_by(&:content_type)
+  fallback_variants = variants_by_type.delete($image.content_type) || []
+  sources = variants_by_type.sort_by { |type, _| source_rank(type) }
+  sizes = $sizes || $image.sizes
+
+%picture
+  = sources.map do |type, variants|
+    %source[type]{type:, srcset: srcset(variants), sizes:}
+  %img(class=$class style=inline_style loading=loading decoding=decoding alt=$alt){
+    src: $image.src,
+    srcset: fallback_variants.empty? ? nil : srcset(fallback_variants),
+    sizes: fallback_variants.empty? ? nil : sizes,
+    width: $image.width,
+    height: $image.height,
+  }
+
+:css
+  img {
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+    font-style: italic;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }

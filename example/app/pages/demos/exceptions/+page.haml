@@ -1,0 +1,27 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  CallbackException = import("./CallbackException")
+  ErrorBoundaryExample = import("./ErrorBoundaryExample")
+  UnhandledRenderException = import("./UnhandledRenderException")
+
+%head
+  %title Exceptions
+
+%article
+  %Heading(level=2) Exceptions
+  %p
+    Callback errors and render errors follow different paths. Callback errors
+    are reported by the runtime, while render errors can be recovered by the
+    nearest parent error boundary. Without a boundary, a render error reaches
+    the document and is reported like a callback error.
+
+  .examples
+    %CallbackException
+    %ErrorBoundaryExample
+    %UnhandledRenderException
+
+:css
+  .examples {
+    display: grid;
+    gap: 1.5rem;
+  }

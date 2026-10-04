@@ -1,0 +1,137 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Link = import("/components/UI/Link")
+  CodePopover = import("/components/UI/CodePopover")
+  Clock = import("/components/Clock")
+  Calculator = import("/components/Calculator/Calculator")
+  Counter = import("./Counter")
+  Section = import("./Section")
+
+  COUNTER_SOURCE = File.read(File.join(__dir__, "Counter.haml"))
+  CALCULATOR_SOURCE = File.read(File.expand_path("../components/Calculator/Calculator.haml", __dir__))
+  CLOCK_SOURCE = File.read(File.expand_path("../components/Clock.haml", __dir__))
+
+%Section
+  %header
+    %Heading#live(level=2) Live from the server
+    %p.lead
+      = "Everything on this page was rendered on the server at #{Time.now.utc.strftime("%H:%M:%S UTC")}. The only JavaScript in the browser is a small runtime that patches the DOM whenever state changes on the server."
+
+  .grid
+    .demo
+      .info
+        %h3 A counter
+        %p
+          The buttons call Ruby methods.
+          %br
+          The new count is streamed back as a DOM patch.
+        %CodePopover(summary="Show source"
+          title="Counter.haml"
+          language="haml"
+          defer
+          fallback_href="https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml"
+        )= COUNTER_SOURCE
+      %Counter(initial_count=7)
+
+    .demo
+      .info
+        %h3 A calculator
+        %p
+          This calculator is implemented in Ruby.
+          %br
+          Calculations are server-side.
+        %CodePopover(summary="Show source"
+          title="Calculator.haml"
+          language="haml"
+          defer
+          fallback_href="https://github.com/mayu-live/framework/blob/main/example/app/components/Calculator/Calculator.haml"
+        )= CALCULATOR_SOURCE
+      %Calculator
+
+    .demo
+      .info
+        %h3 A clock
+        %p
+          This is a server-side analog clock.
+        %CodePopover(summary="Show source"
+          title="Clock.haml"
+          language="haml"
+          defer
+          fallback_href="https://github.com/mayu-live/framework/blob/main/example/app/components/Clock.haml"
+        )= CLOCK_SOURCE
+      %Clock.clock(gradient)
+
+:css
+  Section {
+    background: linear-gradient(
+      160deg in oklab,
+      light-dark(color-mix(in oklab, var(--lime) 18%, var(--surface)), color-mix(in oklab, var(--lime) 7%, var(--surface))),
+      light-dark(color-mix(in oklab, var(--sun) 14%, var(--surface)), color-mix(in oklab, var(--sun) 5%, var(--surface)))
+    );
+  }
+
+  header {
+    max-width: 44rem;
+    margin-bottom: 2.5rem;
+  }
+
+  Heading {
+    margin: 0 0 .5rem;
+  }
+
+  .lead {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+  }
+
+  .grid {
+    display: grid;
+    gap: 4.5rem;
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .demo {
+    gap: 1.5rem;
+    min-width: 0;
+    display: grid;
+    align-items: center;
+    grid-template-columns: 1fr;
+
+    @media (width > 44rem) {
+      grid-template-columns: 1fr 1fr;
+
+      &:nth-child(even) .info {
+        order: 1;
+      }
+    }
+  }
+
+  .info {
+    display: grid;
+    gap: 1em;
+    text-align: center;
+
+    & p {
+      margin: 0;
+      color: var(--text-muted);
+      text-wrap: pretty;
+      text-wrap: balance;
+    }
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 2rem;
+  }
+
+  .clock {
+    font-size: 0;
+    --stroke: oklch(28% 0.08 var(--hue-navy));
+    --face-start: oklch(92% 0.08 85);
+    --face-end: oklch(72% 0.17 40);
+    width: min(100%, 18rem);
+    margin: 1.5rem auto;
+    filter: drop-shadow(0 16px 32px oklch(66% 0.16 40 / 35%));
+  }

@@ -1,0 +1,137 @@
+:ruby
+  require "kramdown"
+  require "kramdown-parser-gfm"
+  HighlightedCodeBlock = import("./UI/HighlightedCodeBlock")
+
+  SYMBOLS = {
+    lsquo: "‘",
+    ldquo: "“",
+    rsquo: "’",
+    rdquo: "”",
+    hellip: "…",
+  }
+
+  def visit_node(node)
+    case node
+    in type: :root, children:
+      visit_nodes(children)
+    in type: :header, children:, options: { level: }
+      build(:header, :"h#{level}", *visit_nodes(children), level:)
+    in type: :text | :blank, value:
+      value
+    in type: :smart_quote | :typographic_sym, value:
+      SYMBOLS.fetch(value) { "&#{value};" }
+    in type: :a, attr:, children:
+      attrs = attr.transform_keys(&:to_sym)
+      attrs[:target] = "_blank" if attrs[:href].to_s.match(/\A(?:[a-z]+:)\/\//)
+
+      build(:a, :a, *visit_nodes(children), **attrs) do
+        H[:a, *visit_nodes(children), **attrs]
+      end
+    in type: :codeblock, value:, options: { lang: }
+      H[HighlightedCodeBlock, value, language: lang, **HamlHelper.merge_props(self.class, class: :code_block)]
+    in type: :codeblock, value:
+      H[HighlightedCodeBlock, value, **HamlHelper.merge_props(self.class, class: :code_block)]
+    in type: :br
+      H[:br]
+    in type: :hr
+      build(:hr, :hr)
+    in type: :codespan, value:
+      build(:code, :code, value.strip, class: :inline_code)
+    in type: :p, children:
+      build(:p, :p, *visit_nodes(children))
+    in type:, children:
+      build(type, type, *visit_nodes(children))
+    in type:
+      Console.logger.error(self, "Unsupported node", JSON.pretty_generate(node))
+      H[:pre, "Unsupported node:\n\n#{JSON.pretty_generate(node)}", **HamlHelper.merge_props(self.class, class: :unsupported)]
+    end
+  end
+
+  def visit_nodes(nodes)
+    nodes.map { visit_node(_1) }
+  end
+
+  def build(type, default, *children, **props, &block)
+    if elems = $elems
+      return H[elems[type], *children, **props] if elems[type]
+    end
+
+    return yield if block_given?
+
+    H[default, *children, **HamlHelper.merge_props(self.class, {class: :"__#{default}"})]
+  end
+
+.markdown{class: $class}
+  = visit_node(Kramdown::Document.new(Array(__children).join, input: "GFM", hard_wrap: false).to_hash_ast)
+
+:css
+  .code_block {
+    margin: 1em 0;
+  }
+
+  .markdown {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .unsupported {
+    font-family: var(--font-mono);
+    color: red;
+  }
+
+  .inline_code {
+    padding: .25em;
+    background: var(--surface-sunken);
+    border: var(--thin-border);
+    border-radius: 4px;
+  }
+
+  li > p {
+    margin: .25em 0;
+  }
+
+  hr {
+    border: 0;
+    border-top: var(--thin-border);
+    margin: 1em 0;
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    inline-size: max-content;
+    max-inline-size: 100%;
+    margin: 0.75em 0;
+    font-size: 0.95em;
+    background: var(--surface-raised);
+    border: var(--thin-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  td {
+    padding: 0.45em 0.65em;
+    border-inline-end: var(--thin-border);
+    border-block-end: var(--thin-border);
+    vertical-align: top;
+  }
+
+  tr > td:last-child {
+    border-inline-end: 0;
+  }
+
+  tbody > tr:last-child > td {
+    border-block-end: 0;
+  }
+
+  thead td {
+    font-weight: 700;
+    color: var(--text);
+    background: var(--surface-sunken);
+    white-space: nowrap;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: color-mix(in oklch, var(--surface-sunken) 45%, transparent);
+  }

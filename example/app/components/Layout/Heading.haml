@@ -4,25 +4,26 @@
 :ruby
   level = $level.to_i.clamp(1, 6)
   tag = :"h#{level}"
-  classname = styles[:h, tag, styles[:class]]
 
-  Mayu::VDOM::H[
+  return H[
     tag,
-    *children,
-    **mayu.merge_props(
-      props.except(:level),
+    H.slot(self),
+    **HamlHelper.merge_props(
+      self.class,
+      $*.except(:level),
+      { class: [:h, tag] },
       { class: $class },
-      { class: classname },
     )
   ]
 :css
   .h {
-    font-weight: 300;
-    line-height: 1.25em;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
   }
-  .h1 { font-size: 3em; }
-  .h2 { font-size: 2.5em; }
-  .h3 { font-size: 2.25em; }
-  .h4 { font-size: 2em; }
-  .h5 { font-size: 1.5em; }
+  .h1 { font-size: 2.5em; }
+  .h2 { font-size: 2em; }
+  .h3 { font-size: 1.5em; }
+  .h4 { font-size: 1.25em; }
+  .h5 { font-size: 1.1em; }
   .h6 { font-size: 1em; }

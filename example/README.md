@@ -1,23 +1,44 @@
-# example
+# [mayu.live](https://mayu.live/)
 
-## setup
+## Setup
 
-    bundle install
+Install dependencies
 
-## dev
+```bash
+bundle install
+```
 
-start dev server
+## Development
 
-    bin/mayu dev
+Start the development server
 
-## build
+```bash
+bin/mayu dev
+```
 
-builds a production bundle
+## Test
 
-    bin/mayu build
+Run the component tests once:
 
-## serve
+```bash
+bin/mayu test --run
+```
 
-loads a production bundle
+Use `bin/mayu test` to keep watching and rerun affected tests.
 
-    bin/mayu serve
+## Build
+
+Builds the Klenod runtime bundle and production assets.
+
+```bash
+bin/mayu build
+```
+
+## Start
+
+Set `MAYU_SECRET_KEY`, then load the production bundle and start the server in
+production mode.
+
+```bash
+bin/mayu start
+```

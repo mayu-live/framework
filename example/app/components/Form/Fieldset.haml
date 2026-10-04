@@ -1,11 +1,18 @@
 :css
   fieldset {
     border: var(--thin-border);
-    border-radius: 2px;
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5em;
-    font-size: 0.9em;
+    gap: 0.25em;
+  }
+
+  legend {
+    padding: 0 0.4em;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+    font-weight: 500;
   }
 
 %fieldset

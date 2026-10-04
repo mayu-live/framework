@@ -1,0 +1,35 @@
+:ruby
+  Spinner = import("/components/UI/Spinner/Spinner")
+  Link = import("/components/UI/Link")
+  Quiz = import("./Quiz")
+
+  def initialize
+    @pokemon = nil
+    @error = nil
+  end
+
+  def mount
+    # The first 1025 entries are the species, without alternate forms.
+    res = fetch("https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0")
+
+    @pokemon =
+      res.json(symbolize_names: true).fetch(:results).map do |result|
+        { id: result[:url].split("/").last.to_i, name: result[:name] }
+      end
+  rescue => e
+    @error = e.message
+  end
+
+%head
+  %title Pokémon quiz
+
+%article
+  %p
+    %Link(href="/demos/pokemon") ← Back to the Pokédex
+
+  = if @error
+    %p Error: #{@error}
+  = elsif @pokemon
+    %Quiz(pokemon=@pokemon)
+  = else
+    %Spinner

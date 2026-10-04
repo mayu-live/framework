@@ -1,0 +1,13 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+
+  def t(_key)
+    "TODO: Implement me"
+  end
+
+%head
+  %title i18n
+
+%article
+  %Heading(level=2)= t(:title)
+  %slot

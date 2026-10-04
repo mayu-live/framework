@@ -1,0 +1,302 @@
+<style>
+  :host {
+    --panel-bg: #0f1117;
+    --panel-border: #232834;
+    --panel-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    --text: #e6e8ef;
+    --muted: #9aa3b2;
+    --dim: #5f6878;
+    --accent: #ff4d6d;
+    --line: #2a3140;
+    --code-bg: #121621;
+    --highlight: #2c1219;
+    --highlight-text: #ffe2e8;
+    --badge-bg: #2b0f15;
+    --badge-text: #ff99ab;
+    --hint: #7fd1ff;
+    /* The tree path uses the terminal's colours: magenta tags, yellow
+       components, dim module paths. The values are read by inline styles on
+       the slotted lines, which the shadow stylesheet cannot reach. */
+    --tree-tag: #e39ad0;
+    --tree-tag-sigil: #b565a7;
+    --tree-component: #f5c542;
+    --tree-component-sigil: #c99a2e;
+    --tree-path: #9aa3b2;
+    font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+    color: var(--text);
+  }
+
+  dialog {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: min(94vw, 1100px);
+    max-height: 88vh;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--panel-shadow);
+    z-index: 10001;
+    font-size: 0.84rem;
+    line-height: 1.4;
+  }
+
+  dialog::backdrop {
+    background: rgba(8, 10, 15, 0.7);
+    backdrop-filter: blur(6px);
+  }
+
+  /* The header names the error: class, location and message. Everything
+     below it is detail and scrolls as one page. */
+  header {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem 0.85rem;
+    background: linear-gradient(135deg, #1b0f17, #1c1324 55%, #141722);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .location {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+
+  .exception-class {
+    flex: 0 0 auto;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    font-size: 0.74em;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  h1 {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.94em;
+    font-weight: 600;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1.25em;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #fff;
+    /* Build errors report multi-line messages. */
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .close {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 0.18rem 0.45rem;
+    font: inherit;
+    font-size: 0.88em;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+
+  .close:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  /* The details read top to bottom like the terminal report. Only this
+     element scrolls vertically; wide content scrolls sideways in place. */
+  .report {
+    display: grid;
+    gap: 1.25rem;
+    padding: 1rem 1rem 1.1rem;
+    overflow-y: auto;
+  }
+
+  section {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  section[hidden] {
+    display: none;
+  }
+
+  h3 {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    margin: 0;
+    font-size: 0.72em;
+    font-weight: 500;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Frames through Mayu are hidden until asked for, like the server log
+     which only counts them. */
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 1.05em;
+    cursor: pointer;
+  }
+
+  .toggle input {
+    margin: 0;
+    accent-color: var(--accent);
+  }
+
+  .toggle[hidden] {
+    display: none;
+  }
+
+  :host(:not([show-framework-frames])) ::slotted(.trace-item.is-framework) {
+    display: none;
+  }
+
+  ul,
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-width: 0;
+    overflow-x: auto;
+    font-size: 0.92em;
+    line-height: 1.5;
+  }
+
+  ol {
+    padding: 0.35rem 0;
+    background: var(--code-bg);
+    border-radius: 8px;
+  }
+
+  ::slotted(.tree-item),
+  ::slotted(.trace-item),
+  ::slotted(.hint-item),
+  ::slotted(.source-line),
+  ::slotted(.source-caret) {
+    font-size: inherit;
+    line-height: inherit;
+    white-space: pre;
+  }
+
+  ::slotted(.hint-item) {
+    padding: 0.05rem 0.6rem;
+    border-left: 2px solid var(--hint);
+    color: var(--hint);
+    white-space: pre-wrap;
+  }
+
+  /* Source lines carry their own gutter; the failing one is tinted and
+     marked at the left edge. */
+  ::slotted(.source-line) {
+    padding: 0 0.75rem;
+    color: #d7dbe6;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::slotted(.source-line.is-interesting) {
+    background: var(--highlight);
+    box-shadow: inset 3px 0 0 var(--accent);
+    color: var(--highlight-text);
+  }
+
+  /* Points at the offending column of the line above it. */
+  ::slotted(.source-caret) {
+    padding: 0 0.75rem;
+    background: var(--highlight);
+    box-shadow: inset 3px 0 0 var(--accent);
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* One line per component, indented by its depth; runs of plain elements
+     share a line, like the server log. */
+  ::slotted(.tree-item) {
+    padding-left: calc(var(--depth, 0) * 1.2em);
+    color: var(--text);
+  }
+
+  ::slotted(.trace-item) {
+    padding: 0.05rem 0.5rem;
+    color: var(--text);
+  }
+
+  ::slotted(.trace-item.is-framework) {
+    color: var(--dim);
+  }
+
+  ::slotted(.trace-item.is-interesting) {
+    background: var(--highlight);
+    box-shadow: inset 3px 0 0 var(--accent);
+    color: var(--highlight-text);
+  }
+</style>
+<dialog>
+  <header>
+    <div class="location">
+      <span class="exception-class">
+        <slot name="exception-class">Runtime Error</slot>
+      </span>
+      <h1><slot name="filename"></slot></h1>
+      <button class="close" data-action="close">Close</button>
+    </div>
+    <h2><slot name="message"></slot></h2>
+  </header>
+  <div class="report">
+    <section data-section>
+      <ul>
+        <slot name="hints"></slot>
+      </ul>
+    </section>
+    <section data-section>
+      <h3>Source</h3>
+      <ol>
+        <slot name="source"></slot>
+      </ol>
+    </section>
+    <section data-section>
+      <h3>Component path</h3>
+      <ul>
+        <slot name="tree-path"></slot>
+      </ul>
+    </section>
+    <section data-section>
+      <h3>
+        Backtrace
+        <label class="toggle" data-framework-toggle hidden>
+          <input type="checkbox" data-action="toggle-framework-frames" />
+          <span data-framework-count></span>
+        </label>
+      </h3>
+      <ul>
+        <slot name="backtrace"></slot>
+      </ul>
+    </section>
+  </div>
+</dialog>

@@ -1,30 +1,31 @@
 :ruby
-  def self.get_initial_state(initial_count: 0, **) = {
-    count: initial_count
-  }
+  def initialize
+    @count = $initial_count || 0
+  end
 
-  def handle_reset(_event)
-    update(count: 0)
+  def handle_reset
+    @count = 0
   end
 
   def handle_increment(_event)
-    update do |count:|
-      { count: count + 1 }
-    end
+    @count += 1
   end
 
   def handle_decrement(_event)
-    update do |count:|
-      { count: count - 1 }
-    end
+    @count -= 1
   end
 
 %div
-  %p Count: #{state[:count]}
-  %button(onclick=handle_decrement) Decrement
-  %button(onclick=handle_reset) Reset
-  %button(onclick=handle_increment) Increment
+  %p Count: #{@count}
+  .buttons
+    %button(onclick=handle_decrement) Decrement
+    %button(onclick=handle_reset) Reset
+    %button(onclick=handle_increment) Increment
 
 :css
   p { margin-top: 0; }
-  button { margin-right: .5em; }
+
+  .buttons {
+    display: flex;
+    gap: 1em;
+  }

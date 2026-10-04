@@ -1,0 +1,45 @@
+:ruby
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+
+  ALLOWED_EXTENSIONS = %w[.rb .css .haml .txt .svg]
+
+%head
+  %title File tree
+
+- segments = Array($params[:paths]).map { URI.decode_uri_component(_1) }
+- full_path = File.expand_path(segments.join("/"), "/")
+- root = Dir.pwd
+
+- return unless full_path.start_with?("/app/")
+  %p #{full_path} is not valid
+
+- absolute_path = File.join(root, full_path)
+- basename = File.basename(full_path)
+
+- return unless File.file?(absolute_path)
+  %p #{basename} is not a file
+
+- extname = File.extname(basename)
+- return unless ALLOWED_EXTENSIONS.include?(extname)
+  %p
+    %code>= full_path
+    is not a
+    %code<= ALLOWED_EXTENSIONS.join("/")
+    \-file
+
+- source = File.read(absolute_path)
+- language = extname.delete_prefix(".")
+
+%article
+  %HighlightedCodeBlock.code(language=language filename=full_path)= source
+
+:css
+  article {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .code {
+    max-height: 100%;
+  }

@@ -1,0 +1,100 @@
+# frozen_string_literal: true
+
+#
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require "async"
+require "async/queue"
+require "klenod/build/watcher"
+
+require "mayu/hot_reload"
+require_relative "error_report"
+require_relative "update_logger"
+
+module Mayu
+  module Build
+    # Watches the app's sources, applies each change to the development
+    # provider, and hands the outcome to the App as a HotReload::Update so it
+    # can notify its sessions.
+    class HotReloader
+      def initialize(provider:, source_dir:, root_entry: "root.haml", logger: nil)
+        @provider = provider
+        @source_dir = source_dir
+        @root_entry = root_entry
+        @logger = logger || UpdateLogger.new(source_dir:, provider:)
+      end
+
+      # Starts watching and returns the task doing it. Stopping the task stops
+      # the file watcher.
+      def start(app)
+        context = @provider.context
+        root_entry = @provider.entry(@root_entry)
+        events = Async::Queue.new
+        context.on_update { |event| events.enqueue(event) }
+
+        watcher = ::Klenod::Build::Watcher.new(source_dir: @source_dir, context:)
+
+        Async do
+          watcher.start
+
+          loop do
+            event = events.dequeue
+            app.notify_hmr_update(to_update(apply(event, root_entry)))
+          end
+        ensure
+          events.close
+          watcher.stop
+        end
+      end
+
+      # Backtraces are rewritten to source paths before anything reports them,
+      # so the terminal and the browser overlay show the same frames.
+      #
+      # Anything escaping here would break out of the watcher loop and stop hot
+      # reloading for the rest of the process, so report the failure as an
+      # update instead and let sessions render it.
+      def apply(event, root_entry)
+        start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        update = @provider.apply_update(event, entry: root_entry)
+        update.each_error { |_module_id, error| rewrite_backtrace(error) }
+        @logger.log(update:, duration: elapsed_since(start_time))
+        update
+      rescue StandardError, ScriptError => e
+        rewrite_backtrace(e)
+        Console.logger.error(self, e)
+        ::Klenod::Build::AppliedUpdate.new(event, nil, nil, nil, [[nil, e]].freeze)
+      end
+
+      def to_update(applied)
+        return HotReload::Update.success if applied.success?
+
+        errors =
+          applied.each_error.map do |module_id, error|
+            ErrorReport.from(error, module_id:, provider: @provider)
+          end
+        HotReload::Update.failure(errors)
+      end
+
+      private
+
+      def rewrite_backtrace(error)
+        return unless error.is_a?(Exception)
+
+        @provider.rewrite_exception(error)
+      rescue => rewrite_error
+        Console.logger.warn(
+          self,
+          "Could not rewrite reload error backtrace: #{rewrite_error.message}"
+        )
+      end
+
+      def elapsed_since(start_time)
+        Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
+      end
+    end
+  end
+end

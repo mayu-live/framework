@@ -1,0 +1,65 @@
+# frozen_string_literal: true
+
+#
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require "prometheus/client/formats/text"
+
+require_relative "../server/listen_event"
+
+module Mayu
+  module Metrics
+    class Server
+      def self.run(listen:)
+      end
+
+      def initialize(listen:, registry: Prometheus::Client.registry)
+        @registry = registry
+
+        @server =
+          Async::HTTP::Server.new(
+            self,
+            Async::HTTP::Endpoint.new(URI.parse(listen)),
+            protocol: Async::HTTP::Protocol::HTTP11
+          )
+      end
+
+      def run
+        Console.logger.info(
+          self,
+          event: Mayu::Server::ListenEvent.new(:metrics, url: @server.endpoint.url)
+        )
+        @server.run
+      end
+
+      def call(request)
+        case request.path
+        in "/" | "/metrics"
+          render_metrics
+        else
+          render_404
+        end
+      end
+
+      private
+
+      def render_metrics
+        body = Prometheus::Client::Formats::Text.marshal(@registry)
+
+        Protocol::HTTP::Response[200, {"content-type": "text/plain"}, [body]]
+      end
+
+      def render_404
+        Protocol::HTTP::Response[
+          404,
+          {"content-type": "text/plain"},
+          ["Not found"]
+        ]
+      end
+    end
+  end
+end

@@ -28,7 +28,7 @@ module Mayu
           impl = Class.new(Mayu::Component::Base)
           impl.class_eval(result.output, file, line)
 
-          if css = result.css
+          if (css = result.css)
             classnames =
               Resources::Types::Stylesheet::ClassNames.new(css.classes)
             impl.instance_exec(classnames) do |classnames|

@@ -1,0 +1,124 @@
+%head
+  %title Callbacks
+
+%article
+  :markdown
+    # Callbacks
+
+    The first `:ruby`-filter block will be evaluted in
+    the class scope of the component, which inherits
+    [`Mayu::Component::Base`](https://github.com/mayu-live/framework/blob/main/lib/mayu/component/base.rb).
+
+    This is where you:
+
+    * Import components or other resources
+    * Define the initial state
+    * Define lifecycle methods
+    * Define callback handlers
+
+    Attributes starting with `on` will automatically be bound to handlers.
+    Handlers may accept no arguments, one event argument, or keyword-rest
+    arguments. Mayu installs these handlers after the browser connects; it does
+    not emit inline JavaScript into the server-rendered HTML.
+
+    ```haml
+    :ruby
+      def handle_click(event)
+        Console.logger.info(self, event)
+      end
+    %div
+      %p Hello world
+      %button(onclick=handle_click) Click me
+    ```
+
+    The above code will be transformed into the following Ruby code.
+
+    ```ruby
+    def handle_click(e)
+      Console.logger.info(self, e)
+    end
+    public def render
+      Mayu::Runtime::H[
+        :button,
+        "Click me",
+        onclick: Mayu::Runtime::H.callback(self, :handle_click)
+      ]
+    end
+    ```
+
+    Here is the equivalent React implementation.
+    Note that it is a class component.
+    Mayu components are classes and don't need hooks because it's
+    so easy to make a stateful class component.
+
+    ```jsx
+    export default class MyComponent extends React.Component {
+      constructor(props) {
+        super(props)
+        this.handleClick = this.handleClick.bind(this)
+      }
+
+      handleClick(e) {
+        console.log("MyComponent", e)
+      }
+
+      render() {
+        return (
+          <button onClick={this.handleClick}>
+            Click me
+          </button>
+        )
+      }
+    }
+    ```
+
+    ## Browser actions
+
+    A handler can ask the browser to do something with `browser`.
+    Actions run after the DOM updates from the same handler.
+
+    ```haml
+    :ruby
+      def handle_set_per_page(event)
+        event => { target: { value: } }
+        browser.navigate("?per_page=\#{value}", replace: true)
+      end
+
+      def handle_greet
+        browser.alert("Hello world")
+      end
+    ```
+
+    `browser.navigate(href, replace: false)` navigates like a link click,
+    so the route renders again with the new `$query` and `$params`.
+    Relative hrefs such as `?page=2` resolve against the current URL.
+    Pass `replace: true` to replace the current history entry
+    instead of adding one.
+
+    `browser.alert(message)` shows a browser alert.
+
+    ## Waiting for a handler from a custom element
+
+    A custom element that dispatches an event to the page can wait for
+    the Mayu handlers it reached with `settled` from `/lib/settled.ts`,
+    which `mayu init` adds to new apps.
+
+    ```ts
+    import { settled } from "/lib/settled.ts";
+
+    const event = new CustomEvent("move", { bubbles: true, detail });
+    this.dispatchEvent(event);
+    await settled(event);
+    ```
+
+    The promise resolves once every handler has returned and the updates
+    it made are applied, even when the handler changed nothing. It
+    resolves with no value, since an event can reach several handlers;
+    handlers show their results by rendering. It resolves right away if
+    no handler received the event, and rejects if a handler raised, its
+    component went away, or the connection dropped.
+
+    Continuous events such as `input`, `pointermove` and `scroll` are
+    throttled and merged, so `settled` doesn't wait for them. Work a
+    handler starts with `Async` and leaves running isn't waited for
+    either.

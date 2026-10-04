@@ -5,7 +5,7 @@ require "minitest"
 require_relative "../test_helper"
 
 $LOAD_PATH.unshift(File.join(__dir__, ".."))
-$LOAD_PATH.unshift(File.join(__dir__, "..", "lib"))
+$LOAD_PATH.unshift(File.join(__dir__, "..", "gems", "mayu-live", "lib"))
 
 ARGV.each do
   require File.expand_path(_1, Dir.pwd)

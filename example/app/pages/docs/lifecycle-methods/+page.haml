@@ -1,0 +1,94 @@
+:ruby
+  Card = import("/components/UI/Card")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+  Example = import("./Example")
+
+%head
+  %title Lifecycle methods
+
+%article
+  :markdown
+    # Lifecycle methods
+
+    There are a few lifecycle methods that can be useful.
+
+  %HighlightedCodeBlock(language="haml")
+    = File.read(File.join(__dir__, "Example.haml"))
+  %Card
+    %Example
+  :markdown
+    ## List of lifecycle methods
+
+    **`def self.get_initial_state(**props)`**
+
+    Called when initializing the component.
+
+    It has to return a Hash with the initial state.
+
+    **`def mount`**
+
+    Called when the component gets mounted.
+
+    This is a good place to start async task or periodic updates.
+    All tasks will be stopped when the component unmounts.
+
+    ```haml
+    :ruby
+      def mount
+        loop do
+          @time = Time.now.to_s
+          sleep 1
+        end
+      end
+    %p= @time
+    ```
+
+    This component will update the current time every second.
+
+    **`def unmount`**
+
+    Called after the component has been unmounted.
+
+    **`def should_update?(next_props)`**
+
+    Return `false` to skip rendering for a parent-driven prop update.
+    The hook sees current props and receives the incoming props; incoming props
+    are committed even when rendering is skipped. By default it returns `true`.
+
+    Local state updates, explicit rerenders, changes to children or slots,
+    context changes, and hot reloads always render.
+
+    Usually you don't need to override the default behavior.
+
+    Should return `true` or `false`.
+
+    **`def did_update(prev_props)`**
+
+    Called after a parent-driven prop update has rendered, with the props
+    from before the update. The new props are already in place.
+
+    Like `mount`, it runs in its own task, so it can fetch data and update
+    state. It is not called for local state updates, so state written from
+    the hook does not call it again.
+
+    ```haml
+    :ruby
+      def mount = load($id)
+
+      def did_update(prev_props)
+        load($id) if prev_props[:id] != $id
+      end
+    ```
+
+    **`def self.get_derived_state_from_props(props, state)`**
+
+    Should return `nil` or new state.
+
+    [React documentation: getDerivedStateFromProps](https://reactjs.org/docs/react-component.html#static-getderivedstatefromprops)
+
+:css
+  Card {
+    margin: 1em;
+    margin-top: 2em;
+    padding: 1em;
+  }

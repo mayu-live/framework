@@ -1,0 +1,43 @@
+# frozen_string_literal: true
+
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+module Mayu
+  module Runtime
+    module VNodes
+      class CommandCollector
+        attr_reader :commands
+
+        def initialize
+          @commands = []
+        end
+
+        def <<(command)
+          @commands << command
+        end
+
+        def checkpoint
+          @commands.length
+        end
+
+        def rollback(checkpoint)
+          @commands.slice!(checkpoint..)
+        end
+      end
+
+      class NullCommandCollector
+        def <<(_command)
+        end
+
+        def checkpoint = 0
+
+        def rollback(_checkpoint)
+        end
+      end
+    end
+  end
+end

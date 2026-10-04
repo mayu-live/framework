@@ -1,0 +1,35 @@
+# frozen_string_literal: true
+
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require_relative "velement"
+
+module Mayu
+  module Runtime
+    module VNodes
+      class VBody < VElement
+        H = Mayu::Runtime::H
+
+        def initialize(descriptor, parent:, engine:)
+          super(inject_mayu_ping(descriptor), parent:, engine:)
+        end
+
+        def update(collector, descriptor)
+          super(collector, inject_mayu_ping(descriptor))
+        end
+
+        private
+
+        def inject_mayu_ping(descriptor)
+          descriptor.with(
+            children: [*descriptor.children, H[:mayu_ping, ping: "N/A"]]
+          )
+        end
+      end
+    end
+  end
+end

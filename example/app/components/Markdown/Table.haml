@@ -1,0 +1,43 @@
+%table{**$*}
+  %slot
+
+:css
+  table {
+    width: 100%;
+    margin: 1.5em 0;
+    border: var(--thin-border);
+    border-spacing: 0;
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    overflow: hidden;
+
+    :where(:global(th), :global(td)) {
+      padding: .75em 1em;
+      text-align: left;
+      vertical-align: top;
+      border-inline-end: var(--thin-border);
+      border-block-end: var(--thin-border);
+    }
+
+    :is(:global(th), :global(thead) :global(td)) {
+      font-weight: 700;
+      color: var(--text);
+      background: var(--surface-sunken);
+    }
+
+    :where(:global(th), :global(td)):first-child {
+      width: 32%;
+    }
+
+    :global(tr) > :where(:global(th), :global(td)):last-child {
+      border-inline-end: 0;
+    }
+
+    :global(tbody) > :global(tr):last-child > :global(td) {
+      border-block-end: 0;
+    }
+
+    :global(tbody) :global(tr):nth-child(even) :global(td) {
+      background: color-mix(in oklch, var(--surface-sunken) 45%, transparent);
+    }
+  }

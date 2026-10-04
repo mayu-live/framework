@@ -1,55 +1,63 @@
 :ruby
-  Fieldset = import("/app/components/Form/Fieldset")
-  Button = import("/app/components/Form/Button")
+  # Page numbers to show, with :gap where pages are left out. The first and
+  # last page are always included, and a gap never hides a single page.
+  def pagination_items(page:, total_pages:, window_size: 5)
+    return (1..total_pages).to_a if total_pages <= window_size + 2
 
-  def pagination_window(current_page:, total_pages:, window_size: 5)
-    half_window_size = (window_size - 1) / 2
-    first = current_page - half_window_size.ceil
-    last = current_page + half_window_size.floor
+    first = (page - window_size / 2).clamp(2, total_pages - window_size)
+    last = first + window_size - 1
 
-    case
-    when first < 1
-      1..[total_pages, window_size].min
-    when last >= total_pages
-      [total_pages + first - last, 1].max..total_pages
-    else
-      first..last
-    end
+    before = (first == 3) ? [2] : (first > 3) ? [:gap] : []
+    after = (last == total_pages - 2) ? [total_pages - 1] : (last < total_pages - 2) ? [:gap] : []
+
+    [1, *before, *first..last, *after, total_pages]
+  end
+
+  def href(page)
+    "?" + URI.encode_www_form({**$link_params, page:, per_page: $per_page}.compact)
   end
 
 :ruby
-  prev_page_link = $page > 1 && "?page=#{$page.pred}"
-  next_page_link = $page <= $total_pages && "?page=#{$page.succ}"
-
-  pages =
-    pagination_window(
-      current_page: $page,
-      total_pages: $total_pages.succ,
+  items =
+    pagination_items(
+      page: $page,
+      total_pages: $total_pages,
       window_size: $window_size || 5,
     )
 
-%Fieldset
-  %legend
-    Page #{$page} of #{$total_pages.succ}, showing #{$per_page} per page
+  first_index = ($page - 1) * $per_page + 1
+  last_index = [$page * $per_page, $total].min
 
-  .wrap
-    %nav.buttons(aria-label="pagination")
-      %a.button(href=prev_page_link rel="prev")
-        Previous page
+%nav(aria-label="Pagination")
+  %p.summary
+    = if $total.zero?
+      Nothing to show
+    = else
+      Showing #{first_index}–#{last_index} of #{$total}
 
-      %ul.pages
-        = pages.map do |page|
-          %li[page]
-            %a.page{
-              href: "?page=#{page}",
-              aria: { current: $page == page && "page" }
-            }= page
+  %ul.pages
+    %li
+      = if $page > 1
+        %a.step{href: href($page - 1), rel: "prev"} ← Previous
+      = else
+        %span.step(aria-disabled="true") ← Previous
+    = items.each_with_index.map do |item, index|
+      = if item == :gap
+        %li.gap["gap-#{index}"] …
+      = else
+        %li[item]
+          %a.page{
+            href: href(item),
+            aria: { current: $page == item && "page" }
+          }= item
+    %li
+      = if $page < $total_pages
+        %a.step{href: href($page + 1), rel: "next"} Next →
+      = else
+        %span.step(aria-disabled="true") Next →
 
-      %a.button(href=next_page_link rel="prev")
-        Next page
-
-    .per-page
-      Per page:
-      %select(value=$per_page on_change=$on_change_per_page)<
-        = [20, 40, 80].map do |value|
-          %option[value](value=value)= value
+  %label.per-page
+    Per page
+    %select(value=$per_page onchange=$on_change_per_page)
+      = $per_page_options.map do |value|
+        %option[value](value=value)= value

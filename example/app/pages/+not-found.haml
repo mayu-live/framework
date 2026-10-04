@@ -1,0 +1,17 @@
+:ruby
+  MaxWidth = import("/components/Layout/MaxWidth")
+  Heading = import("/components/Layout/Heading")
+  Link = import("/components/UI/Link")
+
+.center
+  %Heading(level=2)
+    Page not found!
+  %p
+    %Link(href="/")
+      Go to the start page
+
+:css
+  .center {
+    margin-inline: auto;
+    text-align: center;
+  }

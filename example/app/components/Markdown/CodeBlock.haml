@@ -1,0 +1,21 @@
+.card{**$*}
+  %pre
+    %slot
+
+:css
+  .card {
+    display: grid;
+    background: light-dark(var(--deep-purple), var(--surface-sunken));
+    border: var(--thin-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    margin: .5em;
+    overflow: auto;
+    scrollbar-width: thin;
+    font-size: .9em;
+  }
+
+  pre {
+    margin: 0;
+    padding: .5em;
+  }

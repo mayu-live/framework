@@ -1,0 +1,96 @@
+:ruby
+  CodeBlock = import("/components/Markdown/CodeBlock")
+
+  INDENT = " " * 4
+  PIPE = [:pipe, "│"]
+
+  # Each line is a list of plain strings and [class_name, text] pairs.
+  LINES = [
+    [
+      [:info, "info:"], " ",
+      [:subject, "Mayu::Build::UpdateLogger"], " ",
+      [:meta, "[oid=0x1340] [ec=0x1348] [pid=49710] [#{Time.now}]"]
+    ],
+    [INDENT, PIPE, " ", [:title, "Update #43 completed"], " ", [:meta, "(7.3ms)"]],
+    [INDENT, PIPE, "   changed files:"],
+    [INDENT, PIPE, "     ", [:changed, "~"], " components/Form/Button.haml"],
+    [INDENT, PIPE, "   reloaded:"],
+    [INDENT, PIPE, "     ", [:changed, "~"], " app:/components/Form/Button.haml"],
+    [INDENT, PIPE, "   reevaluated:"],
+    [INDENT, PIPE, "     ", [:reevaluated, "*"], " app:/pages/docs/concepts/HamlExample.haml"],
+    [INDENT, PIPE, "     ", [:reevaluated, "*"], " app:/pages/docs/concepts/+page.haml"],
+    [INDENT, PIPE, "     ", [:reevaluated, "*"], " virtual:/router.rb"],
+    [INDENT, PIPE, "   assets:"],
+    [INDENT, PIPE, "     ", [:added, "+ /components_Form_Button_haml_inline_0_css.8da258a9ecfe67ec.css"]],
+    [INDENT, PIPE, "     ", [:added, "+ /components_Form_Button_haml_inline_0_css.d2def4628ee5d299.css.map"]],
+    [INDENT, PIPE, "     ", [:removed, "- /components_Form_Button_haml_inline_0_css.89c275abb6e4c961.css"]],
+    [INDENT, PIPE, "     ", [:removed, "- /components_Form_Button_haml_inline_0_css.56f3c77102879a44.css.map"]],
+  ].freeze
+
+  def render_segment(segment)
+    return segment if segment.is_a?(String)
+
+    class_name, text = segment
+    H[:span, text, class: ClassNames.fetch(class_name)]
+  end
+
+  def children
+    LINES.map do |line|
+      H[:span, *line.map { render_segment(_1) }, class: ClassNames.fetch(:line)]
+    end
+  end
+
+%CodeBlock
+  %code= children
+
+:css
+  code {
+    display: block;
+    margin: 1em;
+    font-family: var(--font-mono);
+    color: rgb(98% 95% 78%);
+    white-space: pre;
+    line-height: 1.30;
+    font-size: clamp(0.5rem, 2vw, 1rem)
+  }
+
+  .line {
+    display: block;
+  }
+
+  .time,
+  .info,
+  .pipe {
+    color: oklch(78% 0.12 100);
+  }
+
+  .subject {
+    color: oklch(94% 0.03 90);
+    font-weight: bold;
+  }
+
+  .meta {
+    color: oklch(62% 0.01 90);
+  }
+
+  .title {
+    color: oklch(86% 0.15 100);
+    font-weight: bold;
+  }
+
+  .changed {
+    color: oklch(78% 0.14 75);
+  }
+
+  .reevaluated {
+    color: oklch(90% 0.16 95);
+    font-weight: bold;
+  }
+
+  .added {
+    color: oklch(75% 0.14 115);
+  }
+
+  .removed {
+    color: oklch(62% 0.2 30);
+  }

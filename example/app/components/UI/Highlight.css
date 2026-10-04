@@ -7,16 +7,18 @@
 .highlight {
   padding: 0;
   margin: 1em;
-  font-size: 0.9em;
   display: block;
-  font-family: var(--font-mono), monospace;
-  font-size: 1.1em;
+  font-family: var(--font-mono);
+  font-size: 1em;
   white-space: pre;
-  font-weight: 200;
+  font-weight: 400;
+  color: rgb(var(--color));
 }
 .highlight > * {
   color: rgb(var(--color));
-  text-shadow: 0 0 2px #000, 0 0 0.75em rgb(var(--color) / 50%);
+  text-shadow:
+    0 0 2px #000,
+    0 0 0.75em rgb(var(--color) / 50%);
 }
 .highlight,
 .highlight .w {
@@ -24,7 +26,7 @@
 }
 .highlight .err {
   --color: 98% 29% 20%;
-  background---color: 16% 16% 16%;
+  --background-color: 16% 16% 16%;
   font-weight: bold;
 }
 .highlight .c,
@@ -53,11 +55,11 @@
 }
 .highlight .gi {
   --color: 72% 73% 15%;
-  background---color: 16% 16% 16%;
+  --background-color: 16% 16% 16%;
 }
 .highlight .gd {
   --color: 98% 29% 20%;
-  background---color: 16% 16% 16%;
+  --background-color: 16% 16% 16%;
 }
 .highlight .gh {
   --color: 72% 73% 15%;

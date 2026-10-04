@@ -1,0 +1,96 @@
+:ruby
+  PageLayout = import("/components/Layout/FullWidthPageWithMenu")
+  Heading = import("/components/Layout/Heading")
+  Menu = import("/components/Layout/Menu")
+  MenuItem = import("/components/Layout/MenuItem")
+  Details = import("./Details")
+  Breadcrumbs = import("/components/UI/Breadcrumbs/Breadcrumbs")
+  UnderConstruction = import("/components/UnderConstruction")
+
+  LINKS = {
+    "/docs" => "Documentation",
+    "/docs/getting-started" => "Getting started",
+    "/docs/why-mayu" => "Why Mayu?",
+    "/docs/concepts" => "Concepts",
+    "/docs/components" => "Components",
+    "/docs/reusing-components" => "Reusing components",
+    "/docs/stylesheets" => "Stylesheets",
+    "/docs/callbacks" => "Callbacks",
+    "/docs/lifecycle-methods" => "Lifecycle methods",
+    "/docs/refs" => "Refs",
+    "/docs/state" => "State",
+    "/docs/routing" => "Routing",
+    "/docs/data-fetching" => "Data fetching",
+    "/docs/images" => "Images",
+    "/docs/syntax" => "Syntax guide",
+    "/docs/deployment" => "Deployment",
+    "/docs/faq" => "Frequently asked questions",
+  }
+
+  private
+
+  def breadcrumb_links
+    splat = split_path($path)
+
+    LINKS.select {
+      s = split_path(_1)
+      s == splat.slice(0, s.length)
+    }
+  end
+
+  def split_path(path)
+    path.split("/").reject(&:empty?)
+  end
+
+%head
+  %title(template="%s – Docs") Documentation
+
+%PageLayout
+  %UnderConstruction(slot="after_heading" path=$path)
+  %slot
+
+  %Breadcrumbs(slot="breadcrumbs" links=breadcrumb_links)
+
+  %div(slot="menu")
+    %Details(open summary="Intro")
+      %Menu
+        %MenuItem{href: "/docs", active: $path == "/docs"} Introduction
+        %MenuItem{href: "/docs/getting-started", active: $path == "/docs/getting-started"} Getting started
+        %MenuItem{href: "/docs/why-mayu", active: $path == "/docs/why-mayu"} Why Mayu?
+        %MenuItem{href: "/docs/concepts", active: $path == "/docs/concepts"} Concepts
+    %Details(open summary="Components")
+      %Menu
+        %MenuItem{href: "/docs/components", active: $path == "/docs/components"} Components
+        %MenuItem{href: "/docs/reusing-components", active: $path == "/docs/reusing-components"} Reusing components
+        %MenuItem{href: "/docs/stylesheets", active: $path == "/docs/stylesheets"} Stylesheets
+        %MenuItem{href: "/docs/callbacks", active: $path == "/docs/callbacks"} Callbacks
+        %MenuItem{href: "/docs/lifecycle-methods", active: $path == "/docs/lifecycle-methods"} Lifecycle methods
+        %MenuItem{href: "/docs/refs", active: $path == "/docs/refs"} Refs
+        %MenuItem{href: "/docs/state", active: $path == "/docs/state"} State
+        %MenuItem{href: "/docs/routing", active: $path == "/docs/routing"} Routing
+        %MenuItem{href: "/docs/data-fetching", active: $path == "/docs/data-fetching"} Data fetching
+        %MenuItem{href: "/docs/images", active: $path == "/docs/images"} Images
+        %MenuItem{href: "/docs/syntax", active: $path == "/docs/syntax"} Syntax guide
+    %Details(open summary="Other")
+      %Menu
+        %MenuItem{href: "/docs/deployment", active: $path == "/docs/deployment"} Deployment
+        %MenuItem{href: "/docs/faq", active: $path == "/docs/faq"} Frequently asked questions
+:css
+  .layout {
+    display: grid;
+    height: 100%;
+    grid-template-columns: 15em auto;
+    overflow: hidden;
+  }
+
+  .under-construction {
+    font-size: .8em;
+    display: inline-flex;
+    align-items: center;
+    gap: 1em;
+    margin: 1em;
+  }
+
+  Icon {
+    font-size: 2em;
+  }

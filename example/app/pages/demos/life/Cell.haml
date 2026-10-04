@@ -1,56 +1,40 @@
 :ruby
-  def should_update?(next_props, _next_state)
-    case
-    when $alive != next_props[:alive]
-      true
-    when $x != next_props[:x]
-      true
-    when $y != next_props[:y]
-      true
-    else
-      false
-    end
+  def handle_context_menu
   end
 
-- props => x:, y:, alive:, ondraw:, **rest
+  def should_update?(next_props)
+    $* != next_props
+  end
+
+- $* => x:, y:, alive:, ondraw:, **rest
 - value = "#{x} #{y}"
 
 %button{
   **rest,
   value:,
   class: { alive: },
-  oncontextmenu: "event.preventDefault()",
-  onmousedown: ondraw,
-  onmouseenter: ondraw,
+  oncontextmenu: handle_context_menu,
+  onmousedown: $ondraw,
+  onmouseenter: $ondraw,
 }
 
 :css
-  @keyframes alive {
-    0% { background-color: hsl(0deg 50% 50%); }
-    33% { background-color: hsl(120deg 50% 50%); }
-    66% { background-color: hsl(240deg 50% 60%); }
-    100% { background-color: hsl(360deg 50% 50%); }
-  }
-
   button {
     border: 0;
+    padding: 0;
     aspect-ratio: 1;
     flex: 1;
+    background-color: light-dark(oklch(97% 0.008 250), oklch(17% 0.018 250));
   }
 
-  button { background-color: #fff; }
-  button:hover { background-color: var(--material-color-gray-500); }
+  button:hover { background-color: light-dark(oklch(88% 0.035 155), oklch(29% 0.05 155)); }
 
   .alive {
-    background-color: #000;
-    animation-duration: 2s;
-    animation-name: alive;
-    animation-iteration-count: infinite;
-    animation-timing-function: linear;
+    background-color: light-dark(oklch(46% 0.13 155), oklch(66% 0.13 155));
   }
 
   .alive:hover {
-    filter: brightness(150%);
+    filter: brightness(112%);
   }
 
-  button:active:hover { background-color: #000; }
+  button:active:hover { background-color: light-dark(oklch(38% 0.13 155), oklch(58% 0.13 155)); }

@@ -1,0 +1,150 @@
+# frozen_string_literal: true
+
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require_relative "warning_filter"
+
+require "toml"
+
+module Mayu
+  module Configuration
+    DOTENV_FILES = {development: %w[.env .env.local], production: %w[.env]}
+
+    class ConfigNotFound < StandardError
+    end
+
+    class EnvironmentNotDefined < StandardError
+    end
+
+    class EnvironmentVariableNotDefined < StandardError
+    end
+
+    def self.convert_env(value)
+      if (var = value[/\A\$(.*)/, 1])
+        ENV.fetch(var) do
+          raise EnvironmentVariableNotDefined,
+            "Environment variable not defined: $#{var}"
+        end
+      else
+        value
+      end
+    end
+
+    # `log_file` is optional. When set, the server writes its logs to that file
+    # (relative to the config root) in addition to the terminal.
+    Config =
+      Data.define(:root, :secret_key, :server, :metrics, :log_file) do
+        def initialize(log_file: nil, **) = super
+
+        def self.parse(root, config)
+          new(
+            root:,
+            secret_key: Configuration.convert_env(config.fetch("secret_key")),
+            server: ServerConfig.parse(config.fetch("server")),
+            metrics: MetricsConfig.parse(config.fetch("metrics")),
+            log_file: parse_log_file(root, config["log_file"])
+          )
+        end
+
+        def self.parse_log_file(root, value)
+          return nil if value.nil?
+
+          File.expand_path(Configuration.convert_env(value), root)
+        end
+      end
+
+    ServerConfig =
+      Data.define(
+        :listen,
+        :hmr?,
+        :render_exceptions?,
+        :self_signed_cert?,
+        :h2c?,
+        :generate_assets?,
+        :session_timeout_seconds,
+        :transfer_timeout_seconds,
+        :shutdown_timeout_seconds,
+        :cookie_timeout_seconds
+      ) do
+        def self.parse(config)
+          shutdown_timeout = Float(config.fetch("shutdown_timeout_seconds", 10))
+          unless shutdown_timeout.finite? && shutdown_timeout.positive?
+            raise ArgumentError, "shutdown_timeout_seconds must be a positive finite number"
+          end
+
+          new(
+            listen:
+              Configuration.convert_env(
+                config.fetch("listen", "https://localhost:9292")
+              ),
+            hmr?: config.fetch("hmr", false),
+            render_exceptions?: config.fetch("render_exceptions", false),
+            self_signed_cert?: config.fetch("self_signed_cert", false),
+            h2c?: config.fetch("h2c", false),
+            generate_assets?: config.fetch("generate_assets", false),
+            session_timeout_seconds:
+              config.fetch("session_timeout_seconds", 10).to_i,
+            transfer_timeout_seconds:
+              config.fetch("transfer_timeout_seconds", 10).to_i,
+            shutdown_timeout_seconds: shutdown_timeout,
+            cookie_timeout_seconds:
+              config.fetch("cookie_timeout_seconds", 10).to_i
+          )
+        end
+      end
+
+    MetricsConfig =
+      Data.define(:enabled?, :listen) do
+        def self.parse(config)
+          new(
+            enabled?: config.fetch("enabled", true),
+            listen: config.fetch("listen", "http://localhost:9091")
+          )
+        end
+      end
+
+    def self.load(filename, env)
+      filename
+        .then { File.read(it) }
+        .then { TOML.load(it) }
+        .fetch(env.to_s) do
+          raise EnvironmentNotDefined,
+            "Could not find environment #{env} in #{filename}"
+        end
+        .then { Config.parse(Dir.pwd, it) }
+    end
+
+    def self.with(env, &)
+      path = find
+
+      raise ConfigNotFound, "Could not find mayu.toml in #{Dir.pwd}" unless path
+
+      root, filename = File.split(path)
+
+      Dir.chdir(root) do
+        if (dotenv_files = DOTENV_FILES[env])
+          require "dotenv"
+          Dotenv.load(*dotenv_files)
+        end
+
+        yield self.load(filename, env)
+      end
+    end
+
+    def self.find(filename = "mayu.toml", dir = Dir.pwd)
+      path = File.join(dir, filename)
+
+      if File.exist?(path)
+        path
+      else
+        parent = File.dirname(dir)
+        return if parent == dir
+        find(filename, parent)
+      end
+    end
+  end
+end

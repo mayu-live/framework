@@ -1,0 +1,12 @@
+/*.mayu-bundle
+/vendor
+/.mayu
+/Dockerfile
+/dist
+/tmp
+/fly.toml
+
+*.ipc
+.DS_store
+
+*.env*

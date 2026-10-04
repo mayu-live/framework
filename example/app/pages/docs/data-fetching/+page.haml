@@ -1,0 +1,38 @@
+:ruby
+  Details = import("/components/UI/Details")
+  HighlightedCodeBlock = import("/components/UI/HighlightedCodeBlock")
+  Pokemon = import("./Pokemon")
+
+%head
+  %title Data fetching
+
+%article
+  :markdown
+    # Data fetching
+
+    This example shows how data can be fetched with
+    loading state and error handling.
+
+  %HighlightedCodeBlock(language="haml")
+    = File.read(File.join(__dir__, "Pokemon.haml"))
+
+  :markdown
+    This component can be used like this:
+
+    ```haml
+    :ruby
+      Pokemon = import("./Pokemon")
+    %Pokemon(id=123)
+    ```
+
+  %Details(lazy summary="Demo")
+    .grid
+      .scroll
+        %Pokemon(id=123)
+
+:css
+  .grid { display: grid; }
+  .scroll {
+    overflow: auto;
+    max-height: 30em;
+  }

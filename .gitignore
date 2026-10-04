@@ -3,3 +3,4 @@ node_modules
 *.gem
 lib/mayu/vdom/profile.html
 profile/
+mayu-vnode-update.json

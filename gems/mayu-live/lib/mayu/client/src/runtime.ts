@@ -1,0 +1,798 @@
+// Copyright Andrés Alin <andreas.alin@gmail.com>
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+import { callElementMethod } from "./element-calls";
+import { updatePing } from "./ping";
+import { setTransferState } from "./transfer";
+import withViewTransition, { type ViewTransitionRoot } from "./view-transition";
+import type { Batch, CommandErrorPolicy } from "./protocol";
+
+type IdNode = {
+  id: string;
+  name: string;
+  children: IdNode[];
+};
+
+export const COMMAND_ERROR_POLICY: CommandErrorPolicy = "continue";
+
+type RuntimeOptions = {
+  commandErrorPolicy?: CommandErrorPolicy;
+  onNavigationComplete?: (id: string) => void;
+  onNavigationFailed?: (id: string) => void;
+  onBrowserAction?: BrowserActionHandler;
+  onBatchApplied?: (batch: Batch, durationMs: number) => void;
+  onInspectResult?: (id: string, result: unknown) => void;
+  onCallbackComplete?: (id: string) => void;
+  onCallbackFailed?: (id: string) => void;
+};
+
+export type BrowserActionHandler = (name: string, args: unknown[]) => void;
+
+export default class Runtime {
+  #nodeSet: NodeSet;
+  #commandErrorPolicy: CommandErrorPolicy;
+  #onBatchApplied?: (batch: Batch, durationMs: number) => void;
+
+  constructor(
+    onEvent: (event: Event, listenerId: string) => void,
+    {
+      commandErrorPolicy = COMMAND_ERROR_POLICY,
+      onNavigationComplete,
+      onNavigationFailed,
+      onBrowserAction,
+      onBatchApplied,
+      onInspectResult,
+      onCallbackComplete,
+      onCallbackFailed,
+    }: RuntimeOptions = {},
+  ) {
+    this.#nodeSet = new NodeSet(
+      onEvent,
+      commandErrorPolicy,
+      onNavigationComplete,
+      onNavigationFailed,
+      onBrowserAction,
+      onInspectResult,
+      onCallbackComplete,
+      onCallbackFailed,
+    );
+    this.#commandErrorPolicy = commandErrorPolicy;
+    this.#onBatchApplied = onBatchApplied;
+  }
+
+  async applyBatch(batch: Batch) {
+    const startedAt = performance.now();
+    try {
+      await applyCommands(this.#nodeSet, batch, this.#commandErrorPolicy);
+    } finally {
+      this.#onBatchApplied?.(batch, performance.now() - startedAt);
+    }
+  }
+
+  // The DOM node with the given ID, for devtools.
+  node(id: string): Node | undefined {
+    return this.#nodeSet.findNode(id);
+  }
+
+  // The ID of a DOM node, for devtools.
+  nodeId(node: Node): string | undefined {
+    return this.#nodeSet.getNodeInfo(node)?.id;
+  }
+}
+
+type NodeInfo = {
+  id: string;
+  childIds: string[];
+};
+
+function initNodeInfo(id: string, childIds: string[] = []): NodeInfo {
+  return {
+    id,
+    childIds,
+  };
+}
+
+class NodeSet {
+  #nodes: Record<string, Node> = {};
+  #nodeInfo = new WeakMap<Node, NodeInfo>();
+  #listeners = new Map<
+    Element,
+    Map<string, { id: string; callback: EventListener }>
+  >();
+  #onEvent: (event: Event, listenerId: string) => void;
+  #onNavigationComplete?: (id: string) => void;
+  #onNavigationFailed?: (id: string) => void;
+  #onBrowserAction?: BrowserActionHandler;
+  #onInspectResult?: (id: string, result: unknown) => void;
+  #onCallbackComplete?: (id: string) => void;
+  #onCallbackFailed?: (id: string) => void;
+  readonly commandErrorPolicy: CommandErrorPolicy;
+
+  constructor(
+    onEvent: (event: Event, listenerId: string) => void,
+    commandErrorPolicy: CommandErrorPolicy = COMMAND_ERROR_POLICY,
+    onNavigationComplete?: (id: string) => void,
+    onNavigationFailed?: (id: string) => void,
+    onBrowserAction?: BrowserActionHandler,
+    onInspectResult?: (id: string, result: unknown) => void,
+    onCallbackComplete?: (id: string) => void,
+    onCallbackFailed?: (id: string) => void,
+  ) {
+    this.#onEvent = onEvent;
+    this.commandErrorPolicy = commandErrorPolicy;
+    this.#onNavigationComplete = onNavigationComplete;
+    this.#onNavigationFailed = onNavigationFailed;
+    this.#onBrowserAction = onBrowserAction;
+    this.#onInspectResult = onInspectResult;
+    this.#onCallbackComplete = onCallbackComplete;
+    this.#onCallbackFailed = onCallbackFailed;
+  }
+
+  clear() {
+    for (const [element, listeners] of this.#listeners) {
+      for (const [name, listener] of listeners) {
+        element.removeEventListener(name, listener.callback);
+      }
+    }
+    this.#listeners.clear();
+    this.#nodes = {};
+  }
+
+  setListener(id: string, name: string, listenerId: string) {
+    const element = this.getElement(id);
+    let listeners = this.#listeners.get(element);
+    if (!listeners) {
+      listeners = new Map();
+      this.#listeners.set(element, listeners);
+    }
+
+    const current = listeners.get(name);
+    if (current?.id === listenerId) return;
+    if (current) element.removeEventListener(name, current.callback);
+
+    const callback: EventListener = (event) => this.#onEvent(event, listenerId);
+    element.addEventListener(name, callback);
+    listeners.set(name, { id: listenerId, callback });
+  }
+
+  removeListener(id: string, name: string, listenerId: string) {
+    const element = this.getElement(id);
+    const listeners = this.#listeners.get(element);
+    const current = listeners?.get(name);
+    if (!current || current.id !== listenerId) return;
+
+    element.removeEventListener(name, current.callback);
+    listeners!.delete(name);
+    if (listeners!.size === 0) this.#listeners.delete(element);
+  }
+
+  removeListeners(node: Node) {
+    if (!(node instanceof Element)) return;
+    const listeners = this.#listeners.get(node);
+    if (!listeners) return;
+    for (const [name, listener] of listeners) {
+      node.removeEventListener(name, listener.callback);
+    }
+    this.#listeners.delete(node);
+  }
+
+  deleteNode(id: string) {
+    const node = this.#nodes[id];
+    if (!node) return;
+    // console.debug(`%cDeleting ${id}`, "color: #c00; font-weight: bold; font-size: 1.5em;", node)
+    delete this.#nodes[id];
+    const nodeInfo = this.getNodeInfo(node);
+    this.removeListeners(node);
+    this.#nodeInfo.delete(node);
+    if (nodeInfo) {
+      nodeInfo.childIds.forEach((childId) => this.deleteNode(childId));
+    }
+  }
+
+  setNode(id: string, node: Node) {
+    this.#nodes[id] = node;
+    const nodeInfo = initNodeInfo(id);
+    this.#nodeInfo.set(node, nodeInfo);
+    return nodeInfo;
+  }
+
+  getNode(id: string) {
+    const node = this.#nodes[id];
+
+    if (!node) {
+      throw new Error(`Node not found: ${id}`);
+    }
+
+    return node;
+  }
+
+  findNode(id: string): Node | undefined {
+    return this.#nodes[id];
+  }
+
+  getNodeInfo(node: Node) {
+    return this.#nodeInfo.get(node);
+  }
+
+  getNodes(ids: string[]) {
+    return ids.map((id) => this.getNode(id));
+  }
+
+  getElement(id: string) {
+    const node = this.getNode(id);
+
+    if (node instanceof HTMLElement) {
+      return node;
+    }
+
+    if (node instanceof SVGElement) {
+      return node;
+    }
+
+    throw new Error(`Node ${id} is not an Element`);
+  }
+
+  getCharacterData(id: string) {
+    const node = this.getNode(id);
+
+    if (node instanceof CharacterData) {
+      return node;
+    }
+
+    throw new Error(`Node ${id} is not a CharacterData`);
+  }
+
+  completeNavigation(id: string) {
+    this.#onNavigationComplete?.(id);
+  }
+
+  failNavigation(id: string) {
+    this.#onNavigationFailed?.(id);
+  }
+
+  browserAction(name: string, args: unknown[]) {
+    this.#onBrowserAction?.(name, args);
+  }
+
+  inspectResult(id: string, result: unknown) {
+    this.#onInspectResult?.(id, result);
+  }
+
+  completeCallback(id: string) {
+    this.#onCallbackComplete?.(id);
+  }
+
+  failCallback(id: string) {
+    this.#onCallbackFailed?.(id);
+  }
+}
+
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const SVG_TAGS = new Set([
+  "svg",
+  "g",
+  "path",
+  "rect",
+  "text",
+  "tspan",
+  "textpath",
+  "circle",
+  "line",
+  "polyline",
+  "polygon",
+  "ellipse",
+  "defs",
+  "marker",
+  "symbol",
+  "use",
+  "image",
+  "pattern",
+  "clippath",
+  "mask",
+  "filter",
+  "lineargradient",
+  "radialgradient",
+  "stop",
+  "foreignobject",
+  "animate",
+  "animatemotion",
+  "animatetransform",
+  "mpath",
+  "set",
+]);
+
+function createDomElement(type: string): Element {
+  const tag = type.toLowerCase();
+  if (SVG_TAGS.has(tag)) {
+    return document.createElementNS(SVG_NAMESPACE, type);
+  }
+
+  return document.createElement(type);
+}
+
+function createTreeRootNodes(html: string, trees: IdNode[]): Node[] {
+  const isSvgRoot = trees.every((tree) =>
+    SVG_TAGS.has(tree.name.toLowerCase()),
+  );
+  const wrappedHtml = isSvgRoot
+    ? `<svg xmlns="${SVG_NAMESPACE}">${html}</svg>`
+    : html;
+
+  const template = document
+    .createRange()
+    .createContextualFragment(
+      `<template>${wrappedHtml}</template>`,
+    ).firstElementChild!;
+  const content = (template as HTMLTemplateElement).content;
+
+  if (!isSvgRoot) {
+    const roots = Array.from(content.childNodes).filter(
+      (child) => child.nodeType !== Node.DOCUMENT_TYPE_NODE,
+    );
+    if (roots.length !== trees.length) {
+      throw new Error(
+        `CreateTree: expected ${trees.length} root nodes, got ${roots.length}`,
+      );
+    }
+    return roots;
+  }
+
+  const svgWrapper = content.firstElementChild;
+  if (!svgWrapper) throw new Error("CreateTree: missing svg wrapper");
+
+  const svgChildren = Array.from(svgWrapper.childNodes).filter((child) => {
+    if (child.nodeType === Node.DOCUMENT_TYPE_NODE) return false;
+    if (
+      child.nodeType === Node.TEXT_NODE &&
+      (child.textContent == null || child.textContent.trim() === "")
+    ) {
+      return false;
+    }
+    return true;
+  });
+  if (svgChildren.length !== trees.length) {
+    throw new Error(
+      `CreateTree: expected ${trees.length} SVG root nodes, got ${svgChildren.length}`,
+    );
+  }
+  return svgChildren;
+}
+
+function debugTree(node: IdNode, level = 0): string {
+  return [
+    ["  ".repeat(level), node.name, " (", node.id, ")"].join(""),
+    ...(node.children || []).map((child) => debugTree(child, level + 1)),
+  ]
+    .flat()
+    .join("\n");
+}
+
+function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
+  if (!domNode) return;
+
+  if (domNode.nodeName.toUpperCase() !== idNode.name.toUpperCase()) {
+    console.error(
+      `Node ${idNode.id} should be ${idNode.name}, but found ${domNode.nodeName}`,
+    );
+  }
+
+  const nodeInfo = nodeSet.setNode(idNode.id, domNode);
+
+  if (!idNode.children) return;
+
+  const childNodes = Array.from(domNode.childNodes).filter(
+    (child) => child.nodeType !== Node.DOCUMENT_TYPE_NODE,
+  );
+
+  nodeInfo.childIds = idNode.children.map((child) => child.id);
+
+  idNode.children.forEach((child, i) => {
+    setupTree(nodeSet, childNodes[i], child);
+  });
+}
+
+declare global {
+  interface ObjectConstructor {
+    groupBy<Item, Key extends PropertyKey>(
+      items: Iterable<Item>,
+      keySelector: (item: Item, index: number) => Key,
+    ): Record<Key, Item[]>;
+  }
+
+  interface MapConstructor {
+    groupBy<Item, Key>(
+      items: Iterable<Item>,
+      keySelector: (item: Item, index: number) => Key,
+    ): Map<Key, Item[]>;
+  }
+}
+
+function updateHead(
+  nodeSet: NodeSet,
+  element: Element,
+  nodeInfo: NodeInfo,
+  newChildIds: string[],
+) {
+  const oldChildIds = nodeInfo.childIds;
+
+  const existingNodes = new Map();
+
+  oldChildIds.forEach((id, i) => {
+    existingNodes.set(id, element.childNodes[i]);
+  });
+
+  newChildIds.forEach((id) => {
+    existingNodes.set(id, nodeSet.getNode(id));
+  });
+
+  // Remove nodes that are no longer needed
+  oldChildIds.forEach((id) => {
+    if (newChildIds.includes(id)) return;
+    if (!existingNodes.has(id)) return;
+    const nodeToRemove = existingNodes.get(id);
+    if (!nodeToRemove) return;
+    element.removeChild(nodeToRemove);
+    existingNodes.delete(id); // Ensure to remove from the map as well
+    nodeSet.deleteNode(id);
+  });
+
+  // Insert or move nodes to match the newChildIds order
+  let lastInsertedNode: Element | null = null;
+  newChildIds.forEach((id, index) => {
+    let node = existingNodes.get(id) as Element;
+
+    if (node) {
+      // If the node exists but is not in the correct order, move it
+      if (lastInsertedNode && lastInsertedNode.nextSibling !== node) {
+        element.insertBefore(node, lastInsertedNode.nextSibling);
+      }
+    } else {
+      // If the node doesn't exist, insert it
+      node = nodeSet.getNode(id) as Element; // Assuming nodeSet.getNode(id) returns an Element or Node
+
+      if (node) {
+        // If lastInsertedNode is null, insert as the first child or before the first existing node in newChildIds found in the head
+        if (!lastInsertedNode) {
+          const nextExistingNode =
+            newChildIds
+              .slice(index + 1)
+              .find((nextId) => existingNodes.get(nextId)) ?? null;
+          const nextNode =
+            (nextExistingNode
+              ? existingNodes.get(nextExistingNode)
+              : element.firstChild) || null;
+          element.insertBefore(node, nextNode);
+        } else {
+          element.insertBefore(node, lastInsertedNode.nextSibling);
+        }
+        existingNodes.set(id, node); // Add to the map for future look-ups
+      }
+    }
+    lastInsertedNode = node;
+  });
+
+  nodeInfo.childIds = newChildIds;
+}
+
+type MoveBeforeElement = Element & {
+  moveBefore: (node: Element | CharacterData, child: Node | null) => void;
+};
+
+function canMoveBefore(element: Element): element is MoveBeforeElement {
+  return typeof (element as MoveBeforeElement).moveBefore === "function";
+}
+
+function replaceChildrenWithMoves(
+  element: MoveBeforeElement,
+  children: Node[],
+) {
+  let cursor = element.firstChild;
+
+  for (const child of children) {
+    if (child === cursor) {
+      cursor = cursor.nextSibling;
+      continue;
+    }
+
+    if (child.parentNode === element) {
+      // moveBefore preserves state that insertBefore loses when moving an
+      // already-connected node, such as focus, transitions, and iframe loads.
+      element.moveBefore!(child as Element | CharacterData, cursor);
+    } else {
+      // New children are disconnected, which moveBefore intentionally rejects.
+      element.insertBefore(child, cursor);
+    }
+
+    cursor = child.nextSibling;
+  }
+
+  // Keep ReplaceChildren's contract: discard any untracked DOM children too.
+  while (cursor) {
+    const next = cursor.nextSibling;
+    element.removeChild(cursor);
+    cursor = next;
+  }
+}
+
+async function applyCommands(
+  nodeSet: NodeSet,
+  batch: Batch,
+  errorPolicy: CommandErrorPolicy,
+) {
+  for (const [index, command] of batch.entries()) {
+    const [name, ...args] = command;
+
+    const handler = CommandHandlers[
+      name as keyof typeof CommandHandlers
+    ] as any;
+
+    try {
+      if (!handler) throw new Error(`Unknown command: ${name}`);
+
+      const result = handler.apply(nodeSet, args as any);
+      if (result instanceof Promise) await result;
+    } catch (error) {
+      console.error(`Command ${index} (${name}) failed`, error);
+      if (errorPolicy === "throw") throw error;
+    }
+  }
+}
+
+const CommandHandlers = {
+  NavigationComplete(this: NodeSet, id: string) {
+    this.completeNavigation(id);
+  },
+  NavigationFailed(this: NodeSet, id: string) {
+    this.failNavigation(id);
+  },
+  BrowserAction(this: NodeSet, name: string, args: unknown[]) {
+    this.browserAction(name, args);
+  },
+  // A node removed by an earlier command is reported, not an error.
+  ElementCall(this: NodeSet, id: string, method: string, args: unknown[]) {
+    callElementMethod(this.findNode(id), method, args ?? []);
+  },
+  InspectResult(this: NodeSet, id: string, result: unknown) {
+    this.inspectResult(id, result);
+  },
+  CallbackComplete(this: NodeSet, id: string) {
+    this.completeCallback(id);
+  },
+  CallbackFailed(this: NodeSet, id: string) {
+    this.failCallback(id);
+  },
+  async ViewTransition(
+    this: NodeSet,
+    batch: Batch,
+    types: string[] = [],
+    scope?: string,
+  ) {
+    const transitionRoot = (
+      scope ? document.getElementById(scope) : document
+    ) as ViewTransitionRoot | null;
+    return withViewTransition(
+      transitionRoot,
+      () => applyCommands(this, batch, this.commandErrorPolicy),
+      types,
+    );
+  },
+
+  Initialize(this: NodeSet, tree: IdNode) {
+    console.debug(`%c${debugTree(tree)}`, "color: #6cf;");
+
+    this.clear();
+    setupTree(this, document, tree);
+  },
+  CreateTree(this: NodeSet, html: string, trees: IdNode[]) {
+    const roots = createTreeRootNodes(html, trees);
+    trees.forEach((tree, index) => setupTree(this, roots[index], tree));
+  },
+  CreateElement(this: NodeSet, id: string, type: string) {
+    this.setNode(id, createDomElement(type));
+  },
+  CreateTextNode(this: NodeSet, id: string, content: string) {
+    this.setNode(id, document.createTextNode(content));
+  },
+  CreateComment(this: NodeSet, id: string, content: string) {
+    this.setNode(id, document.createComment(content));
+  },
+  RemoveNode(this: NodeSet, id: string) {
+    this.deleteNode(id);
+  },
+  SetClassName(this: NodeSet, id: string, value: string) {
+    (this.getElement(id) as HTMLElement).className = value;
+  },
+  AddClass(this: NodeSet, id: string, classes: string[]) {
+    (this.getElement(id) as HTMLElement).classList.add(...classes);
+  },
+  RemoveClass(this: NodeSet, id: string, classes: string[]) {
+    (this.getElement(id) as HTMLElement).classList.remove(...classes);
+  },
+  SetAttribute(this: NodeSet, id: string, name: string, value: string) {
+    const element = this.getElement(id);
+
+    if (name === "open") {
+      if (element instanceof HTMLDialogElement) {
+        element.showModal();
+      }
+    }
+
+    if (element instanceof HTMLInputElement) {
+      switch (name) {
+        case "value": {
+          element.value = value;
+          break;
+        }
+        case "checked": {
+          element.checked = true;
+          break;
+        }
+        case "indeterminate": {
+          element.indeterminate = true;
+          return;
+        }
+      }
+    }
+
+    if (name === "initial_value") {
+      name = "value";
+    } else {
+      name = name.replaceAll(/_/g, "-");
+    }
+
+    element.setAttribute(name, value);
+  },
+  RemoveAttribute(this: NodeSet, id: string, name: string) {
+    const element = this.getElement(id);
+
+    if (name === "open") {
+      if (element instanceof HTMLDialogElement) {
+        element.open = false;
+        element.close();
+      }
+    }
+
+    if (element instanceof HTMLInputElement) {
+      switch (name) {
+        case "value": {
+          element.value = "";
+          break;
+        }
+        case "checked": {
+          element.checked = false;
+          break;
+        }
+        case "indeterminate": {
+          element.indeterminate = false;
+          return;
+        }
+      }
+    }
+
+    if (name === "initial_value") {
+      name = "value";
+    } else {
+      name = name.replaceAll(/_/g, "-");
+    }
+
+    element.removeAttribute(name);
+  },
+  SetListener(this: NodeSet, id: string, name: string, listenerId: string) {
+    this.setListener(id, name, listenerId);
+  },
+  RemoveListener(this: NodeSet, id: string, name: string, listenerId: string) {
+    this.removeListener(id, name, listenerId);
+  },
+  SetCSSProperty(this: NodeSet, id: string, name: string, value: string) {
+    this.getElement(id).style.setProperty(name, value);
+  },
+  RemoveCSSProperty(this: NodeSet, id: string, name: string) {
+    this.getElement(id).style.removeProperty(name);
+  },
+  SetTextContent(this: NodeSet, id: string, content: string) {
+    this.getCharacterData(id).data = content;
+  },
+  ReplaceChildren(this: NodeSet, id: string, childIds: string[]) {
+    const element = this.getElement(id);
+    const nodeInfo = this.getNodeInfo(element);
+
+    if (nodeInfo) {
+      if (element.nodeName === "HEAD") {
+        updateHead(this, element, nodeInfo, childIds);
+        return;
+      }
+
+      nodeInfo.childIds.forEach((id) => {
+        if (!childIds.includes(id)) {
+          this.deleteNode(id);
+        }
+      });
+    }
+
+    const children = this.getNodes(childIds);
+
+    if (canMoveBefore(element)) {
+      replaceChildrenWithMoves(element, children);
+    } else {
+      // Safari does not yet support moveBefore. Keep the previous, fully
+      // compatible behavior there.
+      element.replaceChildren(...children);
+    }
+
+    if (nodeInfo) nodeInfo.childIds = childIds;
+
+    whenIdle(() => {
+      handleAutofocus(element);
+    });
+  },
+  Transfer(this: NodeSet, state: Blob) {
+    console.log("Transfer", state);
+    setTransferState(state);
+  },
+  Pong(this: NodeSet, timestamp: number) {
+    updatePing(performance.now() - timestamp);
+  },
+  // The overlay and its custom element are only fetched when an error
+  // actually arrives. A production server never sends one, so a production
+  // page never loads them.
+  async RenderError(
+    this: NodeSet,
+    file: string,
+    type: string,
+    message: string,
+    backtrace: string[],
+    source: string | null,
+    treePath: { name: string; path?: string }[],
+    line: number | null,
+    column: number | null,
+    hints: string[],
+  ) {
+    const { default: renderError } = await import("./renderError");
+    await renderError(
+      file,
+      type,
+      message,
+      backtrace,
+      source,
+      treePath,
+      line,
+      column,
+      hints,
+    );
+  },
+  ReloadSucceeded(this: NodeSet) {
+    document.querySelectorAll("mayu-exception").forEach((e) => e.remove());
+  },
+  RegisterCustomElement(name: string, path: string) {
+    if (customElements.get(name)) return;
+
+    // Klenod appends customElements.define to every custom element module,
+    // so importing the module is what registers the element.
+    void import(path);
+  },
+} as const;
+
+// Safari has no requestIdleCallback.
+function whenIdle(callback: () => void) {
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(callback);
+  } else {
+    setTimeout(callback, 0);
+  }
+}
+
+// Any focusable element can carry autofocus: inputs, textareas, selects,
+// buttons and contenteditable elements alike.
+function handleAutofocus(node: Node) {
+  if (node instanceof HTMLElement && node.autofocus) {
+    node.focus();
+    return;
+  }
+
+  for (const child of node.childNodes) {
+    handleAutofocus(child);
+  }
+}

@@ -5,6 +5,10 @@
 
   a {
     display: block;
+    padding: .35em .75em;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    transition: color 120ms, background 120ms;
   }
 
   a:any-link {
@@ -12,11 +16,16 @@
     text-decoration: none;
   }
 
-  a:active,
-  a:hover {
-    text-decoration: underline;
+  a:is(:active, :hover, :focus-visible) {
+    color: var(--text);
+    background: var(--border);
+  }
+
+  a[aria-current="page"] {
+    color: var(--accent);
+    background: var(--accent-soft);
   }
 
 %li
-  %a{href: $href}
+  %a{href: $href, aria: { current: $active ? "page" : nil }}
     %slot

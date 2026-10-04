@@ -1,0 +1,17 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  SnakeGame = import("./SnakeGame")
+
+%head
+  %title Snake
+
+%article
+  %Heading(level=2) Snake
+  %p
+    Arrow keys or WASD to steer. Space toggles pause. Click the grid first to focus keyboard controls.
+  %SnakeGame
+
+:css
+  article {
+    max-width: 42rem;
+  }

@@ -2,41 +2,106 @@ name: Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
 
 jobs:
   javascript:
-    # This job only builds the JS,
-    # there are no tests yet.
+    # This job typechecks, tests and builds the JS.
     name: Test JavaScript
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           cache: npm
-          node-version: '19.3.0'
+          node-version: "26"
       - run: npm ci
+      - name: Typecheck
+        run: |
+          npm run typecheck -w gems/mayu-live/lib/mayu/client -w gems/mayu-devtools/extension
+      - name: Test
+        run: |
+          npm run test -w gems/mayu-live/lib/mayu/client -w gems/mayu-devtools/extension
       - name: Build
         run: |
-          npm run build:production -w lib/mayu/client
+          npm run build:production -w gems/mayu-live/lib/mayu/client
   ruby:
     name: Test Ruby
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmagickwand-dev
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3.0"
+          ruby-version: "4.0.7"
           bundler-cache: true
-      - name: Check types
-        run: bundle exec srb tc
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+      - run: npm ci
       - name: Run tests
         run: bundle exec rake test
-      - uses: actions/upload-artifact@v4
+        env:
+          # console picks its XTerm output when GITHUB_ACTIONS is set, which
+          # crashes on the StringIO that capture_io swaps in for $stderr.
+          CONSOLE_OUTPUT: Text
+
+  performance:
+    name: Performance
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmagickwand-dev
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          name: profile
-          path: profile/
+          ruby-version: "4.0.7"
+          bundler-cache: true
+      - name: Benchmark workloads
+        run: |
+          mkdir -p artifacts/performance
+          MAYU_PROFILE=0 MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 \
+            MAYU_PROFILE_RESULT=artifacts/performance/reconciliation.json \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/reconciliation_profile.rb
+          MAYU_PROFILE=0 MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 \
+            MAYU_WORKLOAD=attributes MAYU_PROFILE_RESULT=artifacts/performance/attributes.json \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
+          MAYU_PROFILE=0 MAYU_PROFILE_ITERATIONS=200 MAYU_PROFILE_WARMUP=50 \
+            MAYU_WORKLOAD=subtree MAYU_PROFILE_RESULT=artifacts/performance/subtree.json \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
+      - name: Write performance summary
+        run: |
+          bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/performance_summary.rb \
+            artifacts/performance/reconciliation.json \
+            artifacts/performance/attributes.json \
+            artifacts/performance/subtree.json \
+            > artifacts/performance/summary.md
+          cat artifacts/performance/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Capture Firefox profiles
+        run: |
+          MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/reconciliation_profile.rb
+          mv mayu-vnode-reconciliation.json artifacts/performance/reconciliation-profile.json
+          MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 MAYU_WORKLOAD=attributes \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
+          mv mayu-vnode-attributes.json artifacts/performance/attributes-profile.json
+          MAYU_PROFILE_ITERATIONS=1000 MAYU_PROFILE_WARMUP=200 MAYU_WORKLOAD=subtree \
+            bundle exec ruby gems/mayu-live/lib/mayu/runtime/vnodes/__test__/workload_profile.rb
+          mv mayu-vnode-subtree.json artifacts/performance/subtree-profile.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: performance-${{ github.sha }}
+          path: artifacts/performance/
+          if-no-files-found: error
+          retention-days: 14

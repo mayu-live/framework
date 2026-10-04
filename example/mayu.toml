@@ -1,57 +1,42 @@
-[dev]
+[development]
   secret_key = "dev"
 
-  [dev.server]
-    scheme = "https"
-    host = "localhost"
-    port = 9292
+  [development.server]
+    listen = "https://localhost:9292"
+    self_signed_cert = true
 
-    count = 1
-    hot_swap = true
+    hmr = true
 
     render_exceptions = true
-    self_signed_cert = true
 
     generate_assets = true
 
-  [dev.metrics]
+    session_timeout_seconds = 15
+    transfer_timeout_seconds = 10
+    cookie_timeout_seconds = 60
+
+  [development.metrics]
     enabled = true
+    listen = "http://localhost:9091"
 
-[devbundle]
-  secret_key = "dev"
-  use_bundle = true
+[production]
+  secret_key = "$MAYU_SECRET_KEY"
 
-  [devbundle.server]
-    scheme = "https"
-    host = "localhost"
-    port = 9292
-    render_exceptions = true
-    self_signed_cert = true
+  [production.server]
+    listen = "http://0.0.0.0:3333"
+    self_signed_cert = false
+    h2c = true
 
-    hot_swap = false
+    hmr = false
 
-    count = 4
-    forks = 2
+    render_exceptions = false
 
-  [devbundle.metrics]
+    generate_assets = false
+
+    session_timeout_seconds = 15
+    transfer_timeout_seconds = 10
+    cookie_timeout_seconds = 60
+
+  [production.metrics]
     enabled = true
-    port = 9091
-    host = "0.0.0.0"
-
-[prod]
-  use_bundle = true
-
-  [prod.server]
-    scheme = "http"
-    host = "0.0.0.0"
-    port = 3000
-
-    hot_swap = false
-
-    count = 2
-    forks = 1
-
-  [prod.metrics]
-    enabled = true
-    port = 9091
-    host = "0.0.0.0"
+    listen = "http://0.0.0.0:9091"

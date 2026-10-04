@@ -1,0 +1,16 @@
+:ruby
+  Intro = import("./Intro")
+  HighlightsSection = import("./HighlightsSection")
+  LiveSection = import("./LiveSection")
+  FeatureSection = import("./FeatureSection")
+
+.page
+  %Intro
+  %HighlightsSection
+  %LiveSection
+  %FeatureSection
+
+:css
+  .page {
+    display: grid;
+  }

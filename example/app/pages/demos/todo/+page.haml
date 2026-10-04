@@ -1,0 +1,16 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Link = import("/components/UI/Link")
+  TodoApp = import("./TodoApp")
+
+%head
+  %title Todo App
+
+%article
+  %Heading(level=2) Todo App
+  %p
+    This is an implementation of the classic
+    %Link(href="https://todomvc.com/" target="_blank")< TodoMVC app
+    \.
+    Double-click to edit a todo.
+  %TodoApp

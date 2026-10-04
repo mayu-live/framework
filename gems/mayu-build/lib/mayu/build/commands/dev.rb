@@ -1,0 +1,68 @@
+# frozen_string_literal: true
+
+#
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+module Mayu
+  module Build
+    module Commands
+      class Dev < Samovar::Command
+        self.description = "Start the development server"
+
+        def call
+          require "mayu/configuration"
+          require "mayu/server"
+          require "mayu/setup"
+          require_relative "../../build"
+
+          devtools = load_devtools
+
+          Mayu::Configuration.with(:development) do |config|
+            setup = Mayu::Setup.load(config.root)
+
+            Mayu::Server.new(
+              config:,
+              worker_count: 1,
+              framed_logs: true,
+              before_fork: -> { setup.run_before_fork },
+              load_environment: ->(metrics:) do
+                provider =
+                  Mayu::Build::Configuration.new(root: config.root).development_provider
+                environment = Mayu::Environment.new(config, module_provider: provider, metrics:, development: true)
+                devtools&.install(environment)
+                setup.run_on_worker(environment)
+                if config.server.hmr?
+                  reloader =
+                    Mayu::Build::HotReloader.new(
+                      provider:,
+                      source_dir: environment.app_dir
+                    )
+                  environment.on_start { |app| reloader.start(app) }
+                end
+                environment
+              end
+            ).run
+          end
+        end
+
+        private
+
+        # Devtools are optional: apps that want them add mayu-devtools to
+        # their Gemfile.
+        def load_devtools
+          require "mayu/devtools"
+          Mayu::Devtools
+        rescue LoadError => error
+          raise unless error.path == "mayu/devtools"
+
+          Console.logger.info(self, "Add mayu-devtools to your Gemfile to use the Mayu devtools.")
+          nil
+        end
+      end
+    end
+  end
+end

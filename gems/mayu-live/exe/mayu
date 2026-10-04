@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+
+require "mayu/cli"
+
+result = Mayu::CLI.call(ARGV)
+exit result if result.is_a?(Integer)

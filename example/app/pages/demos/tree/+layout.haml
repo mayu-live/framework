@@ -1,0 +1,78 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Card = import("/components/UI/Card")
+  Directory = import("./Directory")
+
+  BASE_PATH = "/demos/tree/"
+
+  # The tree highlights this file and opens the directories above it.
+  def selected_path
+    return unless $path.start_with?(BASE_PATH)
+
+    URI.decode_uri_component($path.delete_prefix(BASE_PATH))
+  end
+
+- root = File.expand_path("../../../..", __dir__)
+
+%article
+  %header
+    %Heading(level=2) App tree
+
+    %p
+      This page shows the file structure of the example app.
+      %a(href="https://github.com/mayu-live/framework/tree/main/example/app")<
+  .grid
+    .column
+      .scroll.tree
+        = H.context(selected_path:) do
+          %Directory{initial_open: true, root:, path: "app"}
+    .column
+      .scroll
+        %slot
+          %p Please choose a file
+
+:css
+  article {
+    display: flex;
+    flex-direction: column;
+    container-type: inline-size;
+    min-height: 100%;
+  }
+
+  .grid {
+    flex: 1;
+    display: grid;
+    gap: 1em;
+    min-height: 80svh;
+  }
+
+  .tree {
+    padding: 2em;
+    background: var(--surface-sunken);
+    border: 2px solid var(--border);
+    border-radius: 2px;
+    list-style-type: none;
+    font-size: .8em;
+    user-select: none;
+    overflow: auto;
+  }
+
+  .column {
+    position: relative;
+  }
+
+  .scroll {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+  }
+
+  @container (width > 50em) {
+    .grid {
+      grid-template-columns: 16em auto;
+    }
+
+    .column {
+      min-height: 10em;
+    }
+  }

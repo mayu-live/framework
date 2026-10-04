@@ -1,0 +1,29 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Hr = import("/components/UI/Hr")
+  Tabs = import("/components/UI/Tabs")
+  LogInForm = import("./LogInForm")
+  Elements = import("./Elements")
+  TransferList = import("./TransferList")
+
+%head
+  %title Form demo
+
+%article
+  %Heading(level=2) Form demo
+
+  %p
+    These examples show how form elements can be used.
+  %p
+    The tabs load lazily on mouseenter.
+
+  %Tabs
+    %div(slot="Log in form")
+      %Heading(level=3) Log in form
+      %LogInForm
+    %div(slot="Elements")
+      %Heading(level=3) Elements
+      %Elements
+    %div(slot="Transfer list")
+      %Heading(level=3) Transfer list
+      %TransferList

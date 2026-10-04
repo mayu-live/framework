@@ -1,0 +1,84 @@
+%head
+  %title Refs
+
+%article
+  :markdown
+    # Refs
+
+    A ref lets a component do something to an element it rendered, such as
+    clear a form or move the cursor into an input, like a React ref.
+    Create a `Ref` in the state and pass it as the `ref` attribute:
+
+    ```haml
+    :ruby
+      def initialize
+        @form_ref = Ref.new
+        @input_ref = Ref.new
+      end
+
+      def mount
+        @input_ref.current.focus
+      end
+
+      def handle_submit(event)
+        event => { target: { formData: { title: } } }
+        Todo.add(title)
+        @form_ref.current.reset
+        @input_ref.current.focus
+      end
+
+    %form(ref=@form_ref onsubmit=handle_submit)
+      %input(ref=@input_ref name="title")
+      %button(type="submit") Add
+    ```
+
+    `ref.current` is a handle for the element. Each of its methods calls
+    the DOM method of the same name in the browser. The calls run after the
+    DOM updates from the same handler, so `reset` sees the form as it was
+    just rendered. They return `nil`: there is no way yet to read a value
+    back from the browser, so read values from the event as usual.
+
+    ## Element methods
+
+    * `focus(prevent_scroll: nil, focus_visible: nil)`
+    * `blur`
+    * `click`
+    * `select`
+    * `reset`
+    * `request_submit`
+    * `scroll_into_view(behavior: nil, block: nil, inline: nil)`
+    * `set_selection_range(start, finish, direction = nil)`
+    * `show_modal`, `show` and `close(return_value = nil)`, for dialogs
+    * `show_popover`, `hide_popover` and `toggle_popover(force = nil)`
+
+    ## Component refs
+
+    A ref on a component points at the component instance, so a parent
+    can call its methods:
+
+    ```haml
+    :ruby
+      def initialize
+        @player_ref = Ref.new
+      end
+
+      def handle_stop
+        @player_ref.current.stop
+      end
+
+    %Player(ref=@player_ref)
+    ```
+
+    ## When `current` is set
+
+    `current` is `nil` until the element or component starts, which is
+    after the browser has connected, and again once it is removed. During
+    server rendering it is always `nil`. A component mounts after it has
+    rendered, so in `mount` the refs of everything it rendered are set.
+    An element that is rendered conditionally can still be missing, so
+    use `&.` for those.
+
+    Keep the `Ref` in state, not `ref.current`. The ref follows the element
+    when it is rendered again, replaced by a new key, or the session moves
+    to another server; a stored handle would point at an element that may
+    be gone. A ref points at one thing at a time: render it on one element.

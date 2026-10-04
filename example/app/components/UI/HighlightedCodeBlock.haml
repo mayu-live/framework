@@ -1,0 +1,52 @@
+:ruby
+  Highlight = import("./Highlight")
+
+- highlight_props = $*.except(:language, :flush, :filename, :class)
+- highlight_style = {margin: 0} if $flush
+
+.card{ class: [$class, $flush && :flush] }
+  = if $filename
+    .filename= $filename
+  %pre
+    %Highlight(language=$language style=highlight_style){**highlight_props}
+      %slot
+
+:css
+  /* The card clips and the pre scrolls, so the filename stays visible
+     when a caller limits the height. */
+  .card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: light-dark(var(--deep-purple), var(--surface-sunken));
+    border: var(--thin-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    font-size: .9em;
+  }
+
+  .card.flush {
+    min-width: 0;
+    max-height: 80svh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .filename {
+    flex: none;
+    padding: .5em 1em;
+    border-bottom: 1px solid var(--chrome-border);
+    color: rgb(98% 95% 78% / 60%);
+    font-family: var(--font-mono);
+  }
+
+  pre {
+    flex: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 1em;
+    overflow: auto;
+    scrollbar-width: thin;
+  }

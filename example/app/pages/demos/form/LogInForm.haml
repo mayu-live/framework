@@ -1,31 +1,30 @@
 :ruby
-  Fieldset = import("/app/components/Form/Fieldset")
-  Details = import("/app/components/UI/Details")
-  YouTubeVideo = import("/app/components/UI/YouTubeVideo")
-  Link = import("/app/components/UI/Link")
+  Fieldset = import("/components/Form/Fieldset")
+  Input = import("/components/Form/Input")
+  Button = import("/components/Form/Button")
 
-  def self.get_initial_state(**props) = {
-    user: nil
-  }
+  User = Data.define(:email, :password)
+
+  def initialize
+    @user = nil
+  end
 
   def handle_submit(e)
     e => { target: { formData: { email:, password: } } }
 
-    update(user: { email:, password: })
+    @user = User[email, password]
   end
 
   def handle_log_out
-    update(user: nil)
+    @user = nil
   end
 
-- state => user:
-
-- return if user
+- return if @user
   %div
     %p
-      Logged in as #{user[:email]}.
+      Logged in as #{@user.email}.
     %div
-      %button{on_click: handler(:handle_log_out)}
+      %Button(onclick=handle_log_out)
         Log out
 
 %div
@@ -42,22 +41,13 @@
       This is a fake form. Don't enter any real credentials.
       Any combination of email and password will work.
 
-    %form.form{on_submit: handler(:handle_submit)}
-      .formGroup
-        %label.label
-          %span Email
-        %input.input(name="email" type="email" required placeholder="Please enter your email address" autocomplete="off")
-      .formGroup
-        %label.label
-          %span Password
-        %input.input(name="password" type="password" required pattern=".{8,}" placeholder="Enter password (8+ characters)" autocomplete="off")
-
+    %form.form(onsubmit=handle_submit)
+      %Input(name="email" type="email" label="Email" required autocomplete="off")
+      %Input(name="password" type="password" label="Password (8+ characters)" required pattern=".{8,}" autocomplete="off")
       %div
-        %button.button(type="submit") Submit
+        %Button(type="submit") Log in
 
-  %p
-    This is based on the following YouTube video by
-    %Link(href="https://www.youtube.com/kepowob" target="_blank")< Kevin Powell
-    , who has a great channel about HTML and CSS. Check it out!
-  %Details(summary="Video: How is this possible with CSS only?!")
-    %YouTubeVideo(video_id="g-Y31Iswr2M")
+:css
+  .form {
+    max-width: 24rem;
+  }

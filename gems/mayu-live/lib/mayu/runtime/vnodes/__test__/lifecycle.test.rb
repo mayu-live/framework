@@ -1,0 +1,506 @@
+#!/usr/bin/env -S ruby -rbundler/setup
+# frozen_string_literal: true
+
+require "console"
+
+require_relative "test_helpers"
+
+class Mayu::Runtime::VNodes::LifecycleTest < Minitest::Test
+  include Mayu::Runtime::VNodes::TestHelpers
+
+  class MountProbe < Mayu::Component::Base
+    attr_reader :mounted, :unmounted
+
+    def mount
+      @mounted = true
+    end
+
+    def unmount
+      @unmounted = true
+    end
+
+    def render
+      H[:div, "probe"]
+    end
+  end
+
+  class TaskProbe < Mayu::Component::Base
+    def initialize
+      @mount_task = nil
+      @listener_task = nil
+    end
+
+    def mount
+      @mount_task = Async::Task.current
+    end
+
+    def handle_click
+      @listener_task = Async::Task.current
+      rerender!
+    end
+
+    def render
+      H[:button, "Click", onclick: H.callback(self, :handle_click)]
+    end
+
+    attr_reader :mount_task, :listener_task
+  end
+
+  class DynamicMountProbe < Mayu::Component::Base
+    attr_reader :mounted
+
+    def mount
+      @mounted = true
+    end
+
+    def render
+      H[:div, "dynamic"]
+    end
+  end
+
+  class ParentToggleProbe < Mayu::Component::Base
+    def initialize
+      @show = false
+    end
+
+    def show!
+      @show = true
+      rerender!
+    end
+
+    def render
+      @show ? H[:section, H[DynamicMountProbe]] : H[:section]
+    end
+  end
+
+  class UnmountProbe < Mayu::Component::Base
+    attr_reader :unmounted
+
+    def unmount
+      @unmounted = true
+    end
+
+    def render
+      H[:div, "gone"]
+    end
+  end
+
+  class ParentRemoveProbe < Mayu::Component::Base
+    def initialize
+      @show = true
+    end
+
+    def hide!
+      @show = false
+      rerender!
+    end
+
+    def render
+      @show ? H[:section, H[UnmountProbe]] : H[:section]
+    end
+  end
+
+  class GrandchildUnmountProbe < Mayu::Component::Base
+    attr_reader :unmounted
+
+    def unmount
+      @unmounted = true
+    end
+
+    def render
+      H[:span, "grandchild"]
+    end
+  end
+
+  class NestedRemoveProbe < Mayu::Component::Base
+    def render
+      H[:div, H[GrandchildUnmountProbe]]
+    end
+  end
+
+  class ParentNestedRemoveProbe < Mayu::Component::Base
+    def initialize
+      @show = true
+    end
+
+    def hide!
+      @show = false
+      rerender!
+    end
+
+    def render
+      @show ? H[:section, H[NestedRemoveProbe]] : H[:section]
+    end
+  end
+
+  class DoubleRerenderProbe < Mayu::Component::Base
+    attr_reader :renders
+
+    def initialize
+      @renders = 0
+      @a = 0
+      @b = 0
+    end
+
+    def mount
+      @a = 1
+      rerender!
+      @b = 2
+      rerender!
+    end
+
+    def render
+      @renders += 1
+      H[:div, "#{@a}-#{@b}"]
+    end
+  end
+
+  class DoubleRerenderCallbackProbe < Mayu::Component::Base
+    attr_reader :renders
+
+    def initialize
+      @renders = 0
+      @a = 0
+      @b = 0
+    end
+
+    def trigger
+      @a = 3
+      rerender!
+      @b = 4
+      rerender!
+    end
+
+    def render
+      @renders += 1
+      H[:button, "#{@a}-#{@b}", onclick: H.callback(self, :trigger)]
+    end
+  end
+
+  class RenderStateMutationProbe < Mayu::Component::Base
+    attr_reader :renders
+
+    def initialize
+      @renders = 0
+    end
+
+    def render
+      @renders += 1
+      @__state[:count] = @__state[:count].to_i + 1
+      @__state[:count] = @__state[:count].to_i + 1
+      H[:div, @__state[:count].to_s]
+    end
+  end
+
+  class ConcurrentRenderStateMutationProbe < Mayu::Component::Base
+    attr_reader :renders, :render_started, :release_render
+
+    def initialize
+      @renders = 0
+      @block_render = false
+      @render_started = Async::Queue.new
+      @release_render = Async::Queue.new
+    end
+
+    def block_next_render!
+      @block_render = true
+    end
+
+    def write_count(value)
+      @__state[:count] = value
+    end
+
+    def count
+      @__state[:count]
+    end
+
+    def render
+      @renders += 1
+      if @block_render
+        @block_render = false
+        @render_started.enqueue(true)
+        @release_render.dequeue
+      end
+      H[:div, @__state[:count].to_i.to_s]
+    end
+  end
+
+  class SerializedCallbackProbe < Mayu::Component::Base
+    attr_reader :calls
+
+    def initialize
+      @calls = []
+      @release = Async::Queue.new
+    end
+
+    def trigger(event)
+      index = event.fetch(:index)
+      @calls << [:start, index]
+      @release.dequeue if index == 1
+      @calls << [:finish, index]
+    end
+
+    def release
+      @release.enqueue(true)
+    end
+
+    def render
+      H[:button, "Trigger", onclick: H.callback(self, :trigger)]
+    end
+  end
+
+  def test_component_start_stop_and_rerender
+    descriptor = H[:body, H[MountProbe]]
+
+    engine = Mayu::Runtime::Engine.new(descriptor, metrics: NullMetrics.new)
+    document = engine.root
+
+    instance = nil
+
+    run_engine(descriptor) do |engine|
+      document = engine.root
+      component = find_component(document, MountProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.mounted }
+
+      assert(instance.mounted)
+
+      instance.rerender!
+
+      assert_no_patches(engine)
+    end
+
+    assert(instance.unmounted)
+  end
+
+  def test_component_task_and_listener_task
+    descriptor = H[:body, H[TaskProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, TaskProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.respond_to?(:rerender!) }
+
+      task = instance.instance_variable_get(:@__vnode_task)
+      refute_nil(task)
+
+      wait_until { instance.mount_task }
+      refute_nil(instance.mount_task)
+      refute_equal(task, instance.mount_task)
+
+      document = engine.root
+      collector = Mayu::Runtime::VNodes::CommandCollector.new
+      document.update(collector, descriptor)
+
+      wait_until { document.instance_variable_get(:@listeners).any? }
+      listener = document.instance_variable_get(:@listeners).values.first
+      refute_nil(listener)
+
+      engine.callback(listener.id, {})
+      assert_no_patches(engine)
+
+      wait_until { instance.listener_task }
+      refute_nil(instance.listener_task)
+      assert_equal(task, instance.listener_task)
+    end
+  end
+
+  def test_new_component_started_after_insert
+    descriptor = H[:body, H[ParentToggleProbe]]
+
+    run_engine(descriptor) do |engine|
+      parent = find_component(engine.root, ParentToggleProbe)
+      parent_instance = parent.instance_variable_get(:@instance)
+
+      wait_until { parent_instance.instance_variable_get(:@__vnode_task) }
+      parent_instance.show!
+
+      dynamic = nil
+      wait_until do
+        dynamic = find_component(engine.root, DynamicMountProbe)
+        dynamic
+      end
+
+      dynamic_instance = dynamic.instance_variable_get(:@instance)
+      wait_until { dynamic_instance.mounted }
+
+      assert(dynamic_instance.mounted)
+    end
+  end
+
+  def test_component_unmounted_after_remove
+    descriptor = H[:body, H[ParentRemoveProbe]]
+
+    run_engine(descriptor) do |engine|
+      parent = find_component(engine.root, ParentRemoveProbe)
+      parent_instance = parent.instance_variable_get(:@instance)
+
+      wait_until { parent_instance.instance_variable_get(:@__vnode_task) }
+
+      child = find_component(engine.root, UnmountProbe)
+      child_instance = child.instance_variable_get(:@instance)
+
+      parent_instance.hide!
+
+      wait_until { child_instance.unmounted }
+      assert(child_instance.unmounted)
+    end
+  end
+
+  def test_nested_children_unmounted_after_remove
+    descriptor = H[:body, H[ParentNestedRemoveProbe]]
+
+    run_engine(descriptor) do |engine|
+      parent = find_component(engine.root, ParentNestedRemoveProbe)
+      parent_instance = parent.instance_variable_get(:@instance)
+
+      wait_until { parent_instance.instance_variable_get(:@__vnode_task) }
+
+      grandchild = find_component(engine.root, GrandchildUnmountProbe)
+      grandchild_instance = grandchild.instance_variable_get(:@instance)
+      span = find_element(engine.root, :span)
+      refute_nil(span)
+
+      parent_instance.hide!
+
+      wait_until { grandchild_instance.unmounted }
+      assert(grandchild_instance.unmounted)
+      wait_until { grandchild.removed? && span.removed? }
+      assert(grandchild.removed?)
+      assert(span.removed?)
+    end
+  end
+
+  def test_multiple_rerender_calls_coalesce_in_same_tick
+    descriptor = H[:body, H[DoubleRerenderProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, DoubleRerenderProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.renders >= 2 }
+      assert_equal(2, instance.renders)
+
+      Async::Task.current.sleep(0.05)
+      assert_equal(2, instance.renders)
+    end
+  end
+
+  def test_state_updates_during_render_do_not_schedule_another_render
+    events = []
+    logger = Object.new
+    logger.define_singleton_method(:warn) do |_subject, event: nil, **|
+      events << event
+    end
+    Async do
+      previous_logger = Console.logger
+      Console.logger = logger
+      engine = Mayu::Runtime::Engine.new(
+        H[:body, H[RenderStateMutationProbe]],
+        metrics: NullMetrics.new
+      )
+      engine.start
+      component = find_component(engine.root, RenderStateMutationProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      Async::Task.current.sleep(0.05)
+
+      assert_equal(1, instance.renders)
+      assert_match(/>2<\/div>/, render_html(engine.root))
+      assert_equal(1, events.length)
+      event = events.first
+      assert_instance_of(Mayu::Runtime::StateUpdateWarningEvent, event)
+      assert_match(/lifecycle\.test\.rb:\d+/, event.to_hash[:location])
+    ensure
+      engine&.stop
+      Console.logger = previous_logger
+    end
+      .wait
+  end
+
+  def test_state_writes_from_other_fibers_wait_for_the_active_render
+    descriptor = H[:body, H[ConcurrentRenderStateMutationProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, ConcurrentRenderStateMutationProbe)
+      instance = component.instance_variable_get(:@instance)
+      instance.block_next_render!
+      instance.send(:rerender!)
+
+      instance.render_started.dequeue
+      assert_equal(1, engine.instance_variable_get(:@render_depth))
+      writer_complete = false
+      Async::Task.current.async do
+        instance.write_count(1)
+        writer_complete = true
+      end
+
+      Async::Task.current.sleep(0)
+      assert_nil(instance.count)
+      refute(writer_complete)
+
+      instance.release_render.enqueue(true)
+      wait_until { writer_complete && instance.renders == 3 }
+
+      assert_equal(1, instance.count)
+      assert_match(/>1<\/div>/, render_html(engine.root))
+    end
+  end
+
+  def test_multiple_rerender_calls_in_callback_coalesce
+    descriptor = H[:body, H[DoubleRerenderCallbackProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, DoubleRerenderCallbackProbe)
+      instance = component.instance_variable_get(:@instance)
+
+      wait_until { instance.renders >= 1 }
+      assert_equal(1, instance.renders)
+
+      document = engine.root
+      collector = Mayu::Runtime::VNodes::CommandCollector.new
+      document.update(collector, descriptor)
+
+      wait_until { document.instance_variable_get(:@listeners).any? }
+      listener = document.instance_variable_get(:@listeners).values.first
+      refute_nil(listener)
+      wait_until { instance.respond_to?(:rerender!) }
+      assert_equal(1, instance.renders)
+
+      engine.callback(listener.id, {})
+
+      wait_until { instance.renders >= 2 }
+      assert_equal(2, instance.renders)
+
+      Async::Task.current.sleep(0.05)
+      assert_equal(2, instance.renders)
+    end
+  end
+
+  def test_callbacks_for_the_same_component_run_in_arrival_order
+    descriptor = H[:body, H[SerializedCallbackProbe]]
+
+    run_engine(descriptor) do |engine|
+      component = find_component(engine.root, SerializedCallbackProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.respond_to?(:rerender!) }
+      listener = engine.root.instance_variable_get(:@listeners).values.first
+
+      first = engine.callback(listener.id, {index: 1})
+      wait_until { instance.calls == [[:start, 1]] }
+      second = engine.callback(listener.id, {index: 2})
+      Async::Task.current.sleep(0.01)
+      assert_equal([[:start, 1]], instance.calls)
+
+      instance.release
+      first.dequeue
+      second.dequeue
+      assert_equal(
+        [[:start, 1], [:finish, 1], [:start, 2], [:finish, 2]],
+        instance.calls
+      )
+    end
+  end
+end

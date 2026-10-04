@@ -1,0 +1,62 @@
+:ruby
+  # Lets the visitor pick system, light or dark. The chosen theme is owned by
+  # root.haml, which provides @@theme and the @@set_theme callback via context.
+  PopoverButton = import("/components/UI/PopoverButton")
+
+  THEMES = [
+    { value: "system", label: "System", icon: "\u{1F313}" },
+    { value: "light", label: "Light", icon: "\u{2600}\u{FE0F}" },
+    { value: "dark", label: "Dark", icon: "\u{1F319}" },
+  ].freeze
+
+:ruby
+  current = THEMES.find { _1[:value] == @@theme } || THEMES.first
+
+%PopoverButton{id: "theme-menu", title: "Choose theme", popover_class: ClassNames[:popover]}
+  %span.icon(slot="button" aria-hidden="true")= current[:icon]
+
+  = THEMES.map do |theme|
+    - selected = theme[:value] == current[:value]
+    %button[theme[:value]]{
+      type: "button",
+      value: theme[:value],
+      onclick: @@set_theme,
+      popovertarget: "theme-menu",
+      popovertargetaction: "hide",
+      aria: { current: selected ? "true" : nil },
+    }
+      %span.icon(aria-hidden="true")= theme[:icon]
+      %span= theme[:label]
+
+:css
+  .icon {
+    display: grid;
+    place-items: center;
+    min-width: 1em;
+    line-height: 1;
+  }
+
+  .popover button {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    appearance: none;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    border-radius: calc(var(--radius) - 0.125rem);
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .popover button:hover,
+  .popover button:focus-visible,
+  .popover button[aria-current="true"] {
+    color: var(--accent);
+    background: color-mix(in oklab, var(--accent) 12%, transparent);
+  }

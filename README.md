@@ -3,7 +3,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/mayu-live/framework/.github/workflows/test.yml?branch=main&label=Tests&style=flat-square)](https://github.com/mayu-live/framework/actions/workflows/test.yml)
 [![Release](https://img.shields.io/github/v/release/mayu-live/framework?sort=semver&style=flat-square)](https://github.com/mayu-live/framework/releases)
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/w/mayu-live/framework/main?style=flat-square)](https://github.com/mayu-live/framework/commits)
-[![License AGPL-3.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING) ![Status: Experimental](https://img.shields.io/badge/status-experimental-critical?style=flat-square)
+[![License MPL-2.0](https://img.shields.io/github/license/mayu-live/framework?style=flat-square)](https://github.com/mayu-live/framework/blob/main/COPYING) ![Status: Experimental](https://img.shields.io/badge/status-experimental-critical?style=flat-square)
 
 [Documentation](https://mayu.live/docs)
 
@@ -69,7 +69,6 @@ having to configure anything!
   - [Server](#server)
     - [Development server](#development-server)
     - [Production server](#production-server)
-  - [Static typing](#static-typing)
 - [Contributing](#contributing)
 
 # Getting started
@@ -85,7 +84,20 @@ in the project root.
 [libwebp](https://chromium.googlesource.com/webm/libwebp) are
 also required for resizing images.
 
-Install Ruby dependencies:
+Mayu ships as two gems. `mayu-live` runs a built app and is all production
+needs. `mayu-build` adds the development server, hot reloading, `mayu build`,
+`mayu test`, and the language server, so it goes in your Gemfile's development
+group:
+
+```ruby
+gem "mayu-live"
+
+group :development, :test do
+  gem "mayu-build"
+end
+```
+
+Both gems live in this repository under `gems/`. Install Ruby dependencies:
 
     bundle install
 
@@ -107,7 +119,10 @@ Now, open https://localhost:9292/ in your browser.
 
 HTTP/2 requires HTTPS to work, therefore in development mode,
 Mayu will use the [localhost](https://github.com/socketry/localhost) gem
-to generate a self-signed certificate for localhost.
+to generate a self-signed certificate for localhost. That gem comes with
+`mayu-build`. A production server that runs on `mayu-live` alone must either
+turn off `self_signed_cert` and let a proxy terminate TLS, or add the
+`localhost` gem to its Gemfile.
 
 Depending on your system/browser you might need to do one of the following:
 
@@ -142,7 +157,20 @@ Depending on your system/browser you might need to do one of the following:
 
 ## Run the tests
 
+Run the framework test suite from the repository root:
+
     rake test
+
+`rake test:live` and `rake test:build` run one gem's suite. Both run with both
+gems on the load path; the runtime boundary test in `mayu-live` proves that
+rendering a built app never loads `mayu-build` or klenod-build.
+
+Run application tests from the application directory:
+
+    bin/mayu test --run
+
+Without `--run`, `mayu test` watches the application and reruns affected tests.
+Application tests are colocated with their components as `*.test.rb` files.
 
 # Features
 
@@ -163,12 +191,18 @@ and private APIs directly in your callback handlers.
 Mayu detects changes in components and sends instructions
 on how to patch the DOM to the browser using the
 [Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
-[Client stream implementation](https://github.com/mayu-live/framework/blob/main/lib/mayu/client/src/stream.ts).
+[Client stream implementation](https://github.com/mayu-live/framework/blob/main/gems/mayu-live/lib/mayu/client/src/stream.ts).
 
-Callbacks are regular `POST`-requests to
-`/__mayu/session/#{session_id}/#{callback_id}`,
-where the body contains the
-[serialized event data](https://github.com/mayu-live/framework/blob/main/lib/mayu/client/src/serializeEvent.ts).
+Callbacks and navigation events are sent as framed MessagePack tuples over an
+authenticated `PATCH` stream. Larger events are independently compressed with
+`deflate-raw`; browsers without request-stream support send the same frames in
+individual requests. The server dispatches callbacks to the owning component
+and streams the resulting command batches back to the browser. Events are
+at-most-once and are not replayed after a disconnect.
+
+Server responses are MessagePack batches. A batch is an ordered array of
+compact command tuples such as `["SetTextContent", id, text]`; one updater
+flush produces one batch, even when it contains only one command.
 
 ## 100% async
 
@@ -340,31 +374,60 @@ app
 ├── root.haml
 ├── root.css
 └── pages
-    ├── page.haml
-    ├── layout.haml
+    ├── +page.haml
+    ├── +layout.haml
     ├── layout.css
     ├── about
-    │   ├── page.haml
+    │   ├── +page.haml
     │   └── page.css
     └── posts
-        ├── page.haml
-        ├── layout.haml
-        └── :id
-            └── page.haml
+        ├── +page.haml
+        ├── +layout.haml
+        └── [id]
+            └── +page.haml
 ```
 
 This would create the following routes:
 
-| **path**      | **component**                    | **layouts**                                           |
-| ------------- | -------------------------------- | ----------------------------------------------------- |
-| `/`           | `app/pages/page.haml`            | `app/pages/layout.haml`                               |
-| `/about/`     | `app/pages/about/page.haml`      | `app/pages/layout.haml`                               |
-| `/posts/`     | `app/pages/posts/page.haml`      | `app/pages/layout.haml` `app/pages/posts/layout.haml` |
-| `/posts/:id/` | `app/pages/posts/[id]/page.haml` | `app/pages/layout.haml` `app/pages/posts/layout.haml` |
-| `/*`          | `app/pages/404.haml`             | `app/pages/layout.haml`                               |
+| **path**      | **component**                     | **layouts**                                             |
+| ------------- | --------------------------------- | ------------------------------------------------------- |
+| `/`           | `app/pages/+page.haml`            | `app/pages/+layout.haml`                                |
+| `/about/`     | `app/pages/about/+page.haml`      | `app/pages/+layout.haml`                                |
+| `/posts/`     | `app/pages/posts/+page.haml`      | `app/pages/+layout.haml` `app/pages/posts/+layout.haml` |
+| `/posts/:id/` | `app/pages/posts/[id]/+page.haml` | `app/pages/+layout.haml` `app/pages/posts/+layout.haml` |
+| `/*`          | `app/pages/+not-found.haml`       | `app/pages/+layout.haml`                                |
+
+A page can also `raise NotFound` while rendering, for example when the record
+for `:id` does not exist. The closest `+not-found.haml` is rendered with status
+404, as if the route had not matched.
 
 For a real-world example, check out
 [`example/app/pages/`](https://github.com/mayu-live/framework/tree/main/example/app/pages).
+
+### Klenod configuration
+
+For applications upgrading from Mayu's former module system, see
+[the Klenod migration guide](MIGRATION.md).
+
+Mayu configures Klenod itself: `app` is the source directory and `app/pages`
+holds the routes. A route such as `/about` is defined by
+`app/pages/about/+page.haml`. There is no separate Klenod configuration file.
+
+### Route handlers
+
+Use `+route.rb` beside (or instead of) a page to handle HTTP requests. Its
+public methods are named after HTTP verbs and receive a `Mayu::Route::Request`.
+They return `[status, headers, body]`:
+
+```ruby
+# app/pages/api/health/+route.rb
+def GET(_request)
+  [200, { "content-type" => "application/json" }, '{"status":"ok"}']
+end
+```
+
+For a route that has both `+page.haml` and `+route.rb`, browser-style HTML
+requests render the page while non-HTML requests use the handler.
 
 ## Hot reloading
 
@@ -375,6 +438,51 @@ types of files.
 
 Components and styles update immediately in the browser as you edit files.
 No browser refresh needed.
+
+### Editor support
+
+`bin/mayu lsp` starts a [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
+server over stdin/stdout. It locates the app by searching upwards for
+`mayu.toml` from the current directory, or from a directory given as an
+argument (`bin/mayu lsp path/to/app`) for editors that start it elsewhere. It
+analyzes `.haml` files under the app directory with the same Klenod plugins as
+the dev server, so editor diagnostics match build errors. It reports Haml and Ruby syntax errors and unresolved imports, and
+provides go to definition, hover, and completion for `import("...")` and
+`%Component` tags. It never evaluates application code.
+
+Point your editor's LSP client at the command for the `haml` file type.
+
+Neovim:
+
+```lua
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "haml",
+  callback = function()
+    vim.lsp.start({
+      name = "mayu",
+      cmd = { "bin/mayu", "lsp" },
+      root_dir = vim.fs.root(0, { "mayu.toml" }),
+    })
+  end,
+})
+```
+
+Helix (`languages.toml`):
+
+```toml
+[language-server.mayu]
+command = "bin/mayu"
+args = ["lsp"]
+
+[[language]]
+name = "haml"
+language-servers = ["mayu"]
+```
+
+Zed only starts language servers registered by extensions, so use the small
+extension in [`editors/zed`](editors/zed/README.md).
+
+The server logs to stderr, which editors show in their language server log.
 
 ## Production mode
 
@@ -426,6 +534,8 @@ Second page load with Slow 3G throttling (cache):
 ## Realtime metrics
 
 Mayu exposes a [Prometheus](https://prometheus.io/)-endpoint for metrics so you can see how your app performs.
+See [Reading Mayu metrics](docs/metrics/README.md) for the metric glossary and
+an importable Grafana overview dashboard.
 
 Screenshots from [Grafana on Fly.io](https://fly.io/docs/reference/metrics/#managed-grafana-preview).
 
@@ -444,84 +554,26 @@ Look at this example:
 
 [`./example/app/pages/Counter.haml`](https://github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml)
 
-That above code will be transformed into something like this:
+Klenod transforms it into a Mayu component class. Imports, scoped companion
+CSS, `ClassNames`, source maps, and emitted assets are all Klenod concerns;
+Mayu receives the resulting component descriptor and renders it through its
+existing VDOM runtime. The exact generated Ruby is intentionally an
+implementation detail. To inspect it for an application, run:
 
-```ruby
-# frozen_string_literal: true
-Self =
-  setup_component(
-    assets: ["0tyaKLqdvUGGcwZkdPOdMiMoMZoO74sMmtyRTuksjaQ=.css"],
-    styles: {
-      __Card: "example/app/pages/Counter_Card?7d89edff",
-      __article: "example/app/pages/Counter_article?7d89edff",
-      __output: "example/app/pages/Counter_output?7d89edff",
-      __button: "example/app/pages/Counter_button?7d89edff",
-    },
-  )
-begin
-  Card = import("/app/components/UI/Card")
-  def self.get_initial_state(initial_value: 0, **) = { count: initial_value }
-  def decrement_disabled = state[:count].zero?
-  def handle_decrement
-    update do |state|
-      count = [0, state[:count] - 1].max
-      { count: }
-    end
-  end
-  def handle_increment
-    update do |state|
-      count = state[:count] + 1
-      { count: }
-    end
-  end
-end
-public def render
-  Mayu::VDOM::H[
-    Card,
-    Mayu::VDOM::H[
-      :article,
-      Mayu::VDOM::H[
-        :button,
-        "－",
-        **mayu.merge_props(
-          { class: :__button },
-          { title: "Decrement" },
-          {
-            onclick: mayu.handler(:handle_decrement),
-            disabled: decrement_disabled,
-          },
-        )
-      ],
-      Mayu::VDOM::H[
-        :output,
-        state[:count],
-        **mayu.merge_props({ class: :__output })
-      ],
-      Mayu::VDOM::H[
-        :button,
-        "＋",
-        **mayu.merge_props(
-          { class: :__button },
-          { title: "Increment" },
-          { onclick: mayu.handler(:handle_increment) },
-        )
-      ],
-      **mayu.merge_props({ class: :__article })
-    ],
-    **mayu.merge_props({ class: :__Card }, { class: :card })
-  ]
-end
+```bash
+bin/mayu transform app/pages/Counter.haml
 ```
 
-[Check out more examples in the tests](https://github.com/mayu-live/framework/blob/main/lib/mayu/resources/transformers/haml.test.rb)
+[The Klenod-backed Haml integration tests](https://github.com/mayu-live/framework/blob/main/gems/mayu-build/lib/mayu/build/configuration.test.rb)
+cover the Mayu-specific component behavior.
 
 # Implementation notes
 
 ## Tests
 
-Tests are located in the `lib/`-directory next to their implementation.
-So for `lib/mayu/state.rb` the test would be located in
-`lib/mayu/state.test.rb`.
+Tests live next to their implementation under each gem's `lib/` directory.
+So for `gems/mayu-live/lib/mayu/session.rb` the test is
+`gems/mayu-live/lib/mayu/session.test.rb`.
 
 This pattern is quite common in JavaScript
 ([Jest does this](https://jestjs.io/docs/configuration#testmatch-arraystring)),
@@ -530,11 +582,37 @@ rather than to have a separate tree for tests.
 
 It's also preferred to test things on a higher level, and only write unit
 tests for specific edge cases and trickier situations.
-[Sorbet](https://sorbet.org/) is pretty good at finding errors.
-If the higher level tests pass, then everything works as expected.
 
 The example app could also be considered to be a test.
 It should always work and be updated to use the latest features.
+`example/Dockerfile` builds it the way a deployed app would be built: it
+packages both gems, installs the app from them, runs `mayu build` with
+`mayu-build`, and starts the result on `mayu-live` alone. Build it from the
+repository root:
+
+    podman build -f example/Dockerfile -t mayu-example .
+    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret mayu-example
+
+Mayu applications can also colocate `*.test.rb` files with components. The
+test module is evaluated by Klenod and receives Mayu's test helpers:
+
+```ruby
+Button = import("./Button.haml")
+
+def test_clicking_the_button_updates_it
+  screen = render(Button)
+
+  screen.get_by_role(:button, name: "Click me!").click
+
+  assert_equal("Clicked!", screen.get_by_role(:button).text)
+end
+```
+
+`render` creates a live, server-side component tree. Queries such as
+`get_by_role`, `get_by_text`, and `get_by_css` return nodes that can be clicked
+or given input without starting a browser. Updates settle before an interaction
+returns. Full-page tests that resolve routes and create sessions are not yet
+part of this API.
 
 ## Virtual DOM
 
@@ -550,7 +628,7 @@ The child diffing algorithm is quite inefficient. I have tried to implement
 the algorithm in snabbdom/preact/million several times, but they rely
 on DOM-operations for ordering (`node.insertBefore`) and the algorithm has
 to take care of that and make sure that the order is exactly the same in the
-VDOM as in the DOM after all patch operations have been applied.
+VDOM as in the DOM after all command operations have been applied.
 
 The child diffing algorithm makes a few unnecessary moves, and there's lots of
 room for improvement, but at least the order is correct.
@@ -565,29 +643,72 @@ in the project root.
 For development you probably want these settings:
 
 ```toml
-[dev.server]
-count = 1
-hot_swap = true
+[development.server]
+hmr = true
 self_signed_cert = true
+generate_assets = true
 ```
 
 ### Production
 
-The production server depends on the output from a build step that
-parses all inputs and generates static files.
+The production server loads the Klenod bundle and assets produced by
+`bin/mayu build`. Start it with `bin/mayu start` after setting
+`MAYU_SECRET_KEY`. Only `mayu-live` is needed for this: install with
+`BUNDLE_WITHOUT=development:test` and `mayu-build` and klenod-build stay out
+of the image. `mayu start --assets-dir` and `--source-root` point it at the
+assets and sources when they are not in their default places. With
+`self_signed_cert = true` the server also needs the `localhost` gem, which
+`mayu init` adds to the Gemfile.
 
 ```toml
-[dev.server]
-hot_swap = false
-self_signed_cert = false
+[production.server]
+hmr = false
+self_signed_cert = true
+generate_assets = false
+shutdown_timeout_seconds = 10
 ```
 
-## Static typing
+Production runs one forked HTTP worker per processor by default, using
+`Async::Container.processor_count`. Set `ASYNC_CONTAINER_PROCESSOR_COUNT` to
+override the worker count; development always runs one worker. Worker counts
+are not configured in `mayu.toml`, and `WEB_CONCURRENCY` is not used.
 
-Most files are strictly typed with [Sorbet](https://sorbet.org/).
+The first SIGINT or SIGTERM to the server controller stops admission and drains
+connected sessions by transferring their state to clients. All transfers and
+HTTP output flushing share `shutdown_timeout_seconds` (default 10 seconds).
+Workers that exceed this deadline abort unfinished transfers and receive five
+additional seconds for cleanup before the controller kills them. A second
+SIGINT or SIGTERM to the controller immediately kills remaining children.
+One Ctrl+C delivered to the entire process group still requests graceful shutdown.
 
-Some aren't strictly typed yet, but the goal is to enable
-strict typechecking everywhere.
+Configure the deployment's termination timeout above the drain timeout plus
+five seconds; the generated Fly configuration allows 20 seconds for the default
+10-second drain. `transfer_timeout_seconds` separately controls how long an
+encrypted transfer payload remains valid. Transfers are best effort: the server
+waits for HTTP output, not browser acknowledgments. A replacement server needs
+the same secret and a compatible application bundle to resume the state.
+
+### Process hooks
+
+An optional `mayu.rb` next to `mayu.toml` can hook into the server's process
+lifecycle, for resources such as database connections that forked workers must
+not share. `mayu start` and `mayu dev` load it once in the parent process:
+
+```ruby
+Mayu.setup do |setup|
+  # After the bundle is loaded, before workers fork, on start and on restart.
+  setup.before_fork { DB.disconnect }
+
+  # In each worker, with its environment. An `on_start` hook may return
+  # something responding to `stop`, which runs when the worker drains.
+  setup.on_worker do |environment|
+    environment.on_start { Listener.start }
+  end
+end
+```
+
+`mayu.rb` is plain Ruby and is not hot reloaded; restart the server after
+changing it.
 
 # Contributing
 

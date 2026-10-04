@@ -1,0 +1,1062 @@
+#!/usr/bin/env -S ruby -rbundler/setup
+# frozen_string_literal: true
+
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require "minitest/autorun"
+require "fileutils"
+require "stringio"
+require "tmpdir"
+
+require_relative "session"
+require_relative "runtime/state_update_warning_formatter"
+require "mayu/build"
+require_relative "encrypted_marshal"
+require_relative "session/transfer_state"
+require_relative "server/event_stream"
+require "mayu/test"
+
+class Mayu::SessionTest < Minitest::Test
+  class FakeServerConfig
+    def initialize(render_exceptions: true)
+      @render_exceptions = render_exceptions
+    end
+
+    def render_exceptions? = @render_exceptions
+  end
+
+  class FakeConfig
+    attr_reader :server
+
+    def initialize(render_exceptions: true)
+      @server = FakeServerConfig.new(render_exceptions:)
+    end
+  end
+
+  class FakeRouter
+    def match(_path)
+      nil
+    end
+  end
+
+  class FakeEnvironment
+    attr_reader :config, :router, :metrics, :marshaller
+    attr_accessor :module_provider, :inspector
+
+    def runtime_init_js_path = "/.mayu/runtime/init-testhash.js"
+
+    def development? = false
+
+    def initialize(module_provider: nil, render_exceptions: true)
+      @config = FakeConfig.new(render_exceptions:)
+      @router = FakeRouter.new
+      @metrics = Mayu::Test::FakeMetrics.new
+      @marshaller = nil
+      @module_provider = module_provider
+    end
+  end
+
+  class FakeEngine
+    attr_reader :batches, :refreshed_descriptor, :stylesheets
+    attr_accessor :update_interval
+
+    def initialize(render_exceptions: true)
+      @batches = []
+      @render_exceptions = render_exceptions
+      @update_interval = nil
+    end
+
+    def ping(timestamp)
+      enqueue_command(Mayu::Runtime::Commands::Pong[timestamp])
+    end
+
+    def callbacks
+      @callbacks ||= []
+    end
+
+    def callback(id, payload, settle_id: nil)
+      callbacks << [id, payload, settle_id]
+    end
+
+    def commands
+      @batches.flat_map(&:commands)
+    end
+
+    def enqueue_command(command)
+      enqueue_batch(Mayu::Runtime::Batch[[command]])
+    end
+
+    def enqueue_batch(batch)
+      @batches << batch
+    end
+
+    def render_exceptions? = @render_exceptions
+
+    def refresh(descriptor)
+      @refreshed_descriptor = descriptor
+    end
+
+    def replace_route_assets(stylesheets:, scripts:)
+      @stylesheets = stylesheets
+    end
+  end
+
+  def test_session_uses_runtime_engine
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    engine = session.instance_variable_get(:@engine)
+
+    assert_instance_of(Mayu::Runtime::Engine, engine)
+
+    html = session.render
+    assert_includes(html, "Error: Could not find page")
+  end
+
+  def test_session_start_stop
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+
+    Async do
+      session.start
+      assert(session.running?)
+      session.stop
+    end.wait
+
+    refute(session.running?)
+  end
+
+  # The server stops a session from two ensure blocks when its stream is
+  # cancelled. The second stop must not interrupt the cleanup of the first,
+  # or the session stays running and component tasks leak.
+  def test_stopping_twice_finishes_the_cleanup
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: true)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    session.render
+
+    Async do |task|
+      session.start
+      task.sleep(0.05)
+
+      session.stop
+      session.stop
+      session.wait
+
+      refute(session.running?)
+      refute(task.children?, "session tasks outlived the session")
+    end.wait
+  end
+
+  def test_events_can_be_queued_before_the_session_starts
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    session.enqueue_event(Mayu::Session::Events::PingEvent[123])
+
+    Async do
+      session.start
+      batch = Async::Task.current.with_timeout(0.5) { session.dequeue_batch }
+      assert_equal([Mayu::Runtime::Commands::Pong[123]], batch.commands)
+    ensure
+      session.stop
+    end.wait
+  end
+
+  def test_invalid_event_messages_are_rejected
+    assert_raises(Mayu::Session::Events::InvalidEventError) do
+      Mayu::Session::Events.parse(["Callback", "", {}, 1])
+    end
+  end
+
+  def test_legacy_json_event_objects_are_rejected
+    assert_raises(Mayu::Session::Events::InvalidEventError) do
+      Mayu::Session::Events.parse({type: "ping", ping: 1})
+    end
+  end
+
+  def test_callback_message_parses_to_one_typed_event
+    event =
+      Mayu::Session::Events.parse(
+        ["Callback", "listener", {type: "click"}, 123]
+      )
+
+    assert_equal(
+      Mayu::Session::Events::CallbackEvent[
+        "listener",
+        {type: "click"},
+        123
+      ],
+      event
+    )
+  end
+
+  def test_callback_message_parses_a_settle_id
+    event =
+      Mayu::Session::Events.parse(
+        ["Callback", "listener", {type: "click"}, 123, "s1"]
+      )
+
+    assert_equal("s1", event.settle_id)
+    assert_nil(event.client_command_apply_metrics)
+  end
+
+  def test_callback_message_parses_a_settle_id_with_telemetry
+    event =
+      Mayu::Session::Events.parse(
+        [
+          "Callback",
+          "listener",
+          {type: "click"},
+          123,
+          "s1",
+          {batches: 1, commands: 2, duration_ms: 0.5}
+        ]
+      )
+
+    assert_equal("s1", event.settle_id)
+    assert_equal(1, event.client_command_apply_metrics.batches)
+  end
+
+  def test_callback_message_without_settle_id_has_none
+    event =
+      Mayu::Session::Events.parse(
+        [
+          "Callback",
+          "listener",
+          {type: "click"},
+          123,
+          {batches: 1, commands: 2, duration_ms: 0.5}
+        ]
+      )
+
+    assert_nil(event.settle_id)
+    assert_equal(2, event.client_command_apply_metrics.commands)
+  end
+
+  def test_callback_message_rejects_invalid_settle_ids
+    ["", "x" * 33, 5].each do |settle_id|
+      assert_raises(Mayu::Session::Events::InvalidEventError) do
+        Mayu::Session::Events.parse(
+          ["Callback", "listener", {type: "click"}, 123, settle_id]
+        )
+      end
+    end
+  end
+
+  def test_visibility_message_parses_to_a_typed_event
+    event = Mayu::Session::Events.parse(["Visibility", true, 5])
+
+    assert_equal(Mayu::Session::Events::VisibilityEvent[true, 5], event)
+  end
+
+  def test_ping_message_parses_client_command_apply_telemetry
+    event =
+      Mayu::Session::Events.parse(
+        [
+          "Ping",
+          123,
+          {batches: 2, commands: 5, duration_ms: 3.25}
+        ]
+      )
+
+    assert_equal(
+      Mayu::Session::Events::PingEvent[
+        123,
+        Mayu::Session::Events::ClientCommandApplyMetrics[2, 5, 3.25]
+      ],
+      event
+    )
+  end
+
+  def test_invalid_client_command_apply_telemetry_is_rejected
+    assert_raises(Mayu::Session::Events::InvalidEventError) do
+      Mayu::Session::Events.parse(
+        ["Ping", 123, {batches: 2, commands: 1, duration_ms: 3.25}]
+      )
+    end
+  end
+
+  def test_a_hidden_tab_slows_the_engine_down_and_a_visible_one_restores_it
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(:handle_event, Mayu::Session::Events::VisibilityEvent[true, 1])
+    assert_equal(Mayu::Session::HIDDEN_UPDATE_INTERVAL_SECONDS, fake_engine.update_interval)
+
+    session.send(:handle_event, Mayu::Session::Events::VisibilityEvent[false, 2])
+    assert_nil(fake_engine.update_interval)
+  end
+
+  def test_callback_events_pass_their_settle_id_to_the_engine
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(
+      :handle_event,
+      Mayu::Session::Events::CallbackEvent["listener", {type: "click"}, 1, settle_id: "s1"]
+    )
+
+    assert_equal([["listener", {type: "click"}, "s1"]], fake_engine.callbacks)
+  end
+
+  def test_inspect_message_parses_to_a_typed_event
+    event = Mayu::Session::Events.parse(["Inspect", "req-1", {type: "tree"}, 5])
+
+    assert_equal(
+      Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 5],
+      event
+    )
+  end
+
+  def test_inspect_answers_with_the_environment_inspector
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+    env.inspector = ->(engine, query) { {engine: engine.class.name, type: query[:type]} }
+
+    session.send(:handle_event, Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 1])
+
+    assert_equal(
+      [Mayu::Runtime::Commands::InspectResult["req-1", {engine: FakeEngine.name, type: "tree"}]],
+      fake_engine.commands
+    )
+  end
+
+  def test_inspect_keeps_the_session_alive_without_a_pong
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+    session.instance_variable_set(:@last_ping, Async::Clock.now - 60)
+
+    session.send(:handle_event, Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 1])
+
+    refute(session.timed_out?)
+    assert_empty(fake_engine.commands.grep(Mayu::Runtime::Commands::Pong))
+  end
+
+  def test_other_events_are_answered_with_a_pong
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(:handle_event, Mayu::Session::Events::PingEvent[42])
+
+    assert_equal([Mayu::Runtime::Commands::Pong[42]], fake_engine.commands)
+  end
+
+  def test_inspect_answers_nil_without_an_inspector
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(:handle_event, Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 1])
+
+    assert_equal([Mayu::Runtime::Commands::InspectResult["req-1", nil]], fake_engine.commands)
+  end
+
+  def test_inspect_reports_inspector_errors_in_the_result
+    env = FakeEnvironment.new
+    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+    env.inspector = ->(_engine, _query) { raise ArgumentError, "bad query" }
+
+    previous_logger = Console.logger
+    Console.logger = Console::Logger.new(Console::Output::Null.new)
+    begin
+      session.send(:handle_event, Mayu::Session::Events::InspectEvent["req-1", {}, 1])
+    ensure
+      Console.logger = previous_logger
+    end
+
+    assert_equal(
+      [Mayu::Runtime::Commands::InspectResult["req-1", {error: "ArgumentError: bad query"}]],
+      fake_engine.commands
+    )
+  end
+
+  def test_receive_message_queues_exactly_one_event
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    queue = session.instance_variable_get(:@incoming_events)
+
+    session.receive_message(["Navigate", "nav-1", "/next", 123])
+
+    Async do
+      event = Async::Task.current.with_timeout(0.5) { queue.dequeue }
+      assert_equal(
+        Mayu::Session::Events::NavigateEvent["nav-1", "/next", 123],
+        event
+      )
+      assert(queue.empty?)
+    end.wait
+  end
+
+  def test_session_renders_the_example_through_klenod
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    html = session.render
+
+    assert_equal(200, session.route_status)
+    assert_includes(html, "<!DOCTYPE html>")
+    assert_includes(html, "/.mayu/assets/")
+    refute_includes(html, "Mayu.callback(event,")
+    refute_includes(html, "data-mayu-on")
+    refute_empty(session.listener_commands)
+  end
+
+  def test_homepage_source_popovers_load_after_the_live_session_starts
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: true)
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+
+    initial_html = session.render
+    assert_includes(initial_html, "/.mayu/runtime/init-testhash.js##{session.id}")
+    assert_includes(initial_html, "Source is loading.")
+    assert_includes(initial_html, "github.com/mayu-live/framework/blob/main/example/app/pages/Counter.haml")
+    refute_includes(initial_html, "handle_increment")
+    refute_includes(initial_html, "handle_clear")
+
+    Async do
+      session.start
+      Async::Task.current.with_timeout(1) do
+        until session.render.include?("handle_increment") &&
+            session.render.include?("handle_clear")
+          Async::Task.current.sleep(0.01)
+        end
+      end
+      assert_includes(session.render, "handle_increment")
+      assert_includes(session.render, "handle_clear")
+    ensure
+      session.stop
+    end.wait
+  end
+
+  def test_session_renders_klenod_slots
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/form",
+        headers: {},
+        http2: false
+      )
+
+    html =
+      Mayu::Session.new(environment: env, request_info: request_info).render
+
+    assert_includes(html, "Form demo")
+    assert_includes(html, "Pokémon")
+  end
+
+  def test_session_renders_the_exception_examples
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/exceptions",
+        headers: {},
+        http2: false
+      )
+
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    html = session.render
+
+    assert_includes(html, "Callback exception")
+    assert_includes(html, "Render exception")
+    assert_includes(html, "The child is rendering normally")
+    refute_empty(session.listener_commands)
+  end
+
+  def test_session_renders_the_life_demo
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/life",
+        headers: {},
+        http2: false
+      )
+
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    html = session.render
+
+    assert_includes(html, "Game of life")
+    refute_includes(html, "Mayu.callback")
+    refute_empty(session.listener_commands)
+  end
+
+  class TransferEngine
+    attr_reader :calls, :batches
+
+    def initialize
+      @calls = []
+      @batches = []
+    end
+
+    def stop
+      @calls << :stop
+    end
+
+    def finish_updates!
+      @calls << :finish_updates!
+      enqueue_batch(Mayu::Runtime::Batch[[Mayu::Runtime::Commands::SetTextContent["v1", "done"]]])
+    end
+
+    def enqueue_command(command)
+      enqueue_batch(Mayu::Runtime::Batch[[command]])
+    end
+
+    def enqueue_batch(batch)
+      @batches << batch
+    end
+  end
+
+  def test_transfer_sends_the_remaining_updates_before_the_state
+    env = FakeEnvironment.new
+    env.instance_variable_set(
+      :@marshaller,
+      Mayu::EncryptedMarshal.new("transfer-test-secret")
+    )
+    request_info =
+      Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    session = Mayu::Session.new(environment: env, request_info:)
+    engine = TransferEngine.new
+    session.instance_variable_set(:@engine, engine)
+
+    session.transfer!
+
+    assert_equal(%i[stop finish_updates!], engine.calls)
+    assert_equal(
+      [
+        Mayu::Runtime::Commands::SetTextContent,
+        Mayu::Runtime::Commands::Transfer
+      ],
+      engine.batches.flat_map(&:commands).map(&:class)
+    )
+  end
+
+  def test_encrypted_transfer_restores_klenod_component_references
+    root = File.expand_path("../../../../example", __dir__)
+    marshaller = Mayu::EncryptedMarshal.new("transfer-test-secret")
+    source_environment =
+      FakeEnvironment.new(
+        module_provider:
+          Mayu::Build::Configuration.new(root:).development_provider
+      )
+    source_environment.instance_variable_set(:@marshaller, marshaller)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/form",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: source_environment, request_info:)
+
+    encrypted =
+      Mayu::Session::TransferState.from_session(session).encrypt(marshaller)
+    target_environment =
+      FakeEnvironment.new(
+        module_provider:
+          Mayu::Build::Configuration.new(root:).development_provider,
+        render_exceptions: false
+      )
+    target_environment.instance_variable_set(:@marshaller, marshaller)
+    restored =
+      Mayu::Session::TransferState.decrypt(marshaller, encrypted).resume(
+        target_environment
+      )
+
+    assert_equal(session.id, restored.id)
+    assert_includes(restored.render, "Form demo")
+    assert_equal(target_environment.module_provider, restored.module_provider)
+
+    engine = restored.instance_variable_get(:@engine)
+    refute(engine.render_exceptions?)
+    Async do
+      engine.start
+      listener =
+        engine
+          .root
+          .instance_variable_get(:@listeners)
+          .values
+          .find { it.callback&.method_name == :handle_load }
+
+      refute_nil(listener)
+      engine.callback(listener.id, {target: {value: "Elements"}})
+      batch = Async::Task.current.with_timeout(0.5) { engine.dequeue_batch }
+
+      refute_nil(batch)
+    ensure
+      engine.stop
+    end.wait
+  end
+
+  def test_session_renders_klenod_jsx_custom_elements
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/custom-elements",
+        headers: {},
+        http2: false
+      )
+
+    html =
+      Mayu::Session.new(environment: env, request_info: request_info).render
+
+    assert_match(
+      %r{<klenod-pages-demos-custom-elements-customelement-tsx-[a-z0-9]+},
+      html
+    )
+    assert_includes(html, "Custom elements")
+  end
+
+  def test_session_renders_example_optional_catch_all_route_segments
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/segments/alpha/beta",
+        headers: {},
+        http2: false
+      )
+
+    html = Mayu::Session.new(environment: env, request_info:).render
+
+    assert_includes(html, "Route segments")
+    assert_includes(html, "Segments: alpha / beta")
+  end
+
+  def test_session_renders_silent_haml_demo_route
+    provider =
+      Mayu::Build::Configuration.new(
+        root: File.expand_path("../../../../example", __dir__)
+      ).development_provider
+    env = FakeEnvironment.new(module_provider: provider)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/demos/silent-haml",
+        headers: {},
+        http2: false
+      )
+
+    output = StringIO.new
+    previous_logger = Console.logger
+    Console.logger = Console::Logger.new(Console::Output::Text.new(output))
+    page = File.expand_path("../../../../example/app/pages/demos/silent-haml/+page.haml", __dir__)
+    setup_line = File.readlines(page, chomp: true).index("- @setup_runs += 1") + 1
+
+    html = Mayu::Session.new(environment: env, request_info:).render
+
+    assert_includes(html, "Silent Haml control flow")
+    assert_includes(html, "The if branch")
+    assert_includes(html, "Alpha selected")
+    assert_includes(html, "alpha-1")
+    assert_includes(html, "Stopped early")
+    assert_match(/<span[^>]*>A<\/span>/, html)
+    assert_match(/<span[^>]*>B<\/span>/, html)
+    refute_match(/<span[^>]*>C<\/span>/, html)
+    refute_match(/<p[^>]*>The else branch<\/p>/, html)
+    assert_includes(
+      output.string,
+      "State update during render at app:/pages/demos/silent-haml/+page.haml:#{setup_line}"
+    )
+    assert_includes(output.string, "> %3d: - @setup_runs += 1" % setup_line)
+  ensure
+    Console.logger = previous_logger
+  end
+
+  def test_session_renders_the_klenod_error_view_after_page_resolution_failure
+    Dir.mktmpdir("mayu-klenod-error") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(pages)
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(pages, "+page.rb"), "raise \"boom\"\n")
+      File.write(File.join(pages, "+error.haml"), "%p= $error.message\n")
+
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info =
+        Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_equal(500, session.route_status)
+      assert_includes(session.render, "boom")
+    end
+  end
+
+  def test_a_page_that_fails_to_render_falls_back_to_the_error_page
+    with_failing_page(error_page: true) do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_equal(500, session.route_status)
+      assert_includes(session.render, "render boom")
+      overlay = session.startup_commands.first
+      assert_kind_of(Mayu::Runtime::Commands::RenderError, overlay)
+      assert_equal("render boom", overlay.message)
+    end
+  end
+
+  def test_the_overlay_is_only_queued_when_exceptions_are_rendered
+    with_failing_page(error_page: true) do |provider|
+      env = FakeEnvironment.new(module_provider: provider, render_exceptions: false)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_includes(session.render, "render boom")
+      assert_empty(session.startup_commands)
+    end
+  end
+
+  def test_without_an_error_page_development_shows_the_failure
+    with_failing_page(error_page: false) do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      html = session.render
+
+      assert_equal(500, session.route_status)
+      assert_includes(html, "RuntimeError: render boom")
+      assert_includes(html, "pages/+page.haml")
+      refute_includes(html, "vendor/bundle")
+      assert_kind_of(Mayu::Runtime::Commands::RenderError, session.startup_commands.first)
+    end
+  end
+
+  def test_a_hot_reload_that_fixes_the_page_renders_it_in_the_same_session
+    with_failing_page(error_page: false) do |provider, root|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      assert_includes(session.render, "render boom")
+
+      page = File.join(root, "app", "pages", "+page.haml")
+      File.write(page, "%p Fixed page\n")
+      provider.context.invalidate_paths([page])
+      session.send(:handle_reload_result, Mayu::HotReload::Update.success)
+
+      html = session.render
+      assert_includes(html, "Fixed page")
+      refute_includes(html, "render boom")
+    end
+  end
+
+  def test_without_an_error_page_production_shows_a_generic_page
+    with_failing_page(error_page: false) do |provider|
+      env = FakeEnvironment.new(module_provider: provider, render_exceptions: false)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      html = session.render
+
+      assert_equal(500, session.route_status)
+      assert_includes(html, "Something went wrong")
+      refute_includes(html, "render boom")
+      assert_empty(session.startup_commands)
+    end
+  end
+
+  def test_a_page_that_raises_not_found_renders_the_not_found_view_with_404
+    with_not_found_page do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/things/abc", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      html = session.render
+
+      assert_equal(404, session.route_status)
+      assert_includes(html, "No such thing: /things/abc")
+      refute_includes(html, "the thing")
+      assert_empty(session.startup_commands)
+    end
+  end
+
+  def test_not_found_picks_the_closest_view_for_the_path
+    with_not_found_page(root_view: true) do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/things/abc", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_equal(404, session.route_status)
+      assert_includes(session.render, "No such thing")
+      refute_includes(session.render, "Nothing here")
+    end
+  end
+
+  def test_not_found_without_a_view_shows_the_missing_page_with_404
+    with_not_found_page(things_view: false) do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/things/abc", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_equal(404, session.route_status)
+      assert_includes(session.render, "Could not find page for /things/abc")
+      assert_empty(session.startup_commands)
+    end
+  end
+
+  def test_an_unmatched_route_without_a_not_found_view_is_a_404
+    with_not_found_page(things_view: false) do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/nowhere", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+
+      assert_equal(404, session.route_status)
+      assert_includes(session.render, "Could not find page for /nowhere")
+    end
+  end
+
+  def test_not_found_raised_after_a_navigation_renders_the_not_found_view
+    with_not_found_page do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+
+      session = Mayu::Session.new(environment: env, request_info: request_info)
+      assert_equal(200, session.route_status)
+      assert_includes(session.render, "Start page")
+
+      session.send(
+        :handle_event,
+        Mayu::Session::Events::NavigateEvent["nav-1", "/things/abc", 123]
+      )
+
+      html = session.render
+      assert_equal(404, session.route_status)
+      assert_includes(html, "No such thing: /things/abc")
+      refute_includes(html, "Start page")
+      refute_includes(html, "the thing")
+    end
+  end
+
+  def test_reload_success_emits_reload_succeeded_command
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.send(:handle_reload_result, Mayu::HotReload::Update.success)
+
+    assert(fake_engine.refreshed_descriptor)
+    command =
+      fake_engine.commands.find do |candidate|
+        candidate.is_a?(Mayu::Runtime::Commands::ReloadSucceeded)
+      end
+
+    refute_nil(command)
+  end
+
+  def test_reload_failure_emits_render_error_batch
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    update = Mayu::HotReload::Update.failure([broken_haml_report])
+
+    session.send(:handle_reload_result, update)
+
+    assert_equal(1, fake_engine.batches.length)
+    command = fake_engine.commands.first
+    assert_instance_of(Mayu::Runtime::Commands::RenderError, command)
+    assert_equal("app:/broken.haml", command.file)
+    assert_equal("Haml parse error", command.type)
+    assert_equal("unexpected token", command.message)
+    assert_equal("%p\n%p= )\n", command.source)
+    assert_equal(2, command.line)
+    assert_equal(4, command.column)
+    assert_equal(["Close the parenthesis"], command.hints)
+    assert_equal(["app:/broken.haml:2"], command.backtrace)
+    # A build error has no component tree to walk.
+    assert_empty(command.tree_path)
+  end
+
+  def test_reload_error_overlay_can_be_disabled
+    env = FakeEnvironment.new(render_exceptions: false)
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new(render_exceptions: false)
+    session.instance_variable_set(:@engine, fake_engine)
+
+    update = Mayu::HotReload::Update.failure([broken_haml_report])
+
+    session.send(:handle_reload_result, update)
+
+    assert_empty(fake_engine.batches)
+  end
+
+  def test_notify_hmr_update_is_ignored_until_the_session_runs
+    env = FakeEnvironment.new
+    request_info =
+      Mayu::Session::RequestInfo.new(
+        path: "/missing",
+        headers: {},
+        http2: false
+      )
+    session = Mayu::Session.new(environment: env, request_info: request_info)
+    fake_engine = FakeEngine.new
+    session.instance_variable_set(:@engine, fake_engine)
+
+    session.notify_hmr_update(Mayu::HotReload::Update.success)
+
+    assert_nil(fake_engine.refreshed_descriptor)
+    assert_empty(fake_engine.batches)
+  end
+
+  private
+
+  def broken_haml_report
+    Mayu::HotReload::ErrorReport.new(
+      type: "Haml parse error",
+      detail: "unexpected token",
+      file: "app:/broken.haml",
+      line: 2,
+      column: 4,
+      source: "%p\n%p= )\n",
+      hints: ["Close the parenthesis"],
+      backtrace: ["app:/broken.haml:2"]
+    )
+  end
+
+  private
+
+  # A page that loads fine but raises while rendering.
+  def with_failing_page(error_page:)
+    Dir.mktmpdir("mayu-klenod-render-error") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(pages)
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(pages, "+page.haml"), "%p= raise \"render boom\"\n")
+      File.write(File.join(pages, "+error.haml"), "%p= $error.message\n") if error_page
+
+      yield Mayu::Build::Configuration.new(root:).development_provider, root
+    end
+  end
+
+  # A start page, a dynamic page under /things that raises NotFound for
+  # anything but "1", and not-found views to fall back to.
+  def with_not_found_page(things_view: true, root_view: false)
+    Dir.mktmpdir("mayu-klenod-not-found") do |root|
+      pages = File.join(root, "app", "pages")
+      things = File.join(pages, "things", "[id]")
+      FileUtils.mkdir_p(things)
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(pages, "+page.haml"), "%p Start page\n")
+      File.write(
+        File.join(things, "+page.haml"),
+        "- raise NotFound unless $params[:id] == \"1\"\n%p the thing\n"
+      )
+      if things_view
+        File.write(
+          File.join(pages, "things", "+not-found.haml"),
+          "%p No such thing: \#{$path}\n"
+        )
+      end
+      File.write(File.join(pages, "+not-found.haml"), "%p Nothing here\n") if root_view
+
+      yield Mayu::Build::Configuration.new(root:).development_provider, root
+    end
+  end
+end

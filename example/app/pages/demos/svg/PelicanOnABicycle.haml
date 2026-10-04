@@ -1,0 +1,339 @@
+:ruby
+  Button = import("/components/Form/Button")
+
+  REAR_HUB = [110, 220]
+  FRONT_HUB = [290, 220]
+  WHEEL_RADIUS = 40
+  SPOKES = 12
+
+  # The animations are SMIL elements (<animate>, <animateTransform>), so the
+  # browser plays them without any further updates from the server. The legs
+  # follow the pedals, so their keyframes are calculated here, one per frame
+  # of a crank revolution.
+  PEDAL_SECONDS = 1.2
+  FRAMES = 24
+
+  CRANK = [190, 225]
+  CRANK_LENGTH = 22
+  # The near pedal starts forward and down, the far pedal opposite it.
+  CRANK_START = Math.atan2(13, 18)
+
+  NEAR_HIP = [190, 132]
+  FAR_HIP = [182, 130]
+  THIGH = 55
+  SHIN = 62
+
+  # The body bobs twice per crank revolution, once per pedal stroke.
+  BOB = 1.5
+
+  # Ground tufts repeat this often, and scroll by at the speed of the tires.
+  TUFT_SPACING = 60
+  GROUND_SPEED = 2 * Math::PI * WHEEL_RADIUS / PEDAL_SECONDS
+
+  def initialize
+    @playing = true
+    id = SecureRandom.alphanumeric(8)
+    @sky_id = "pelican-sky-#{id}"
+    @body_id = "pelican-body-#{id}"
+    @beak_id = "pelican-beak-#{id}"
+  end
+
+  def spokes(cx, cy)
+    SPOKES.times.map do |i|
+      angle = i * Math::PI * 2 / SPOKES
+      x = (cx + Math.cos(angle) * (WHEEL_RADIUS - 3)).round(2)
+      y = (cy + Math.sin(angle) * (WHEEL_RADIUS - 3)).round(2)
+      "M #{cx} #{cy} L #{x} #{y}"
+    end.join(" ")
+  end
+
+  def handle_toggle_playing
+    @playing = !@playing
+  end
+
+  def duration = "#{PEDAL_SECONDS}s"
+
+  def tufts_duration = "#{(TUFT_SPACING / GROUND_SPEED).round(3)}s"
+
+  # One extra tuft past the right edge scrolls in as the first one scrolls out.
+  def tufts_path
+    (0..(400 / TUFT_SPACING + 1)).map do |i|
+      x = i * TUFT_SPACING + 20
+      "M #{x} 282 L #{x + 3} 274 M #{x + 5} 282 L #{x + 9} 276"
+    end.join(" ")
+  end
+
+  # Crank angles for each keyframe. The last one equals the first, so the
+  # animation loops without a jump.
+  def angles
+    (0..FRAMES).map { _1 * Math::PI * 2 / FRAMES }
+  end
+
+  def keyframes(&) = angles.map(&).join(";")
+
+  def bob(angle) = -BOB * Math.sin(angle * 2).abs
+
+  def pedal(angle)
+    [
+      CRANK[0] + Math.cos(CRANK_START + angle) * CRANK_LENGTH,
+      CRANK[1] + Math.sin(CRANK_START + angle) * CRANK_LENGTH,
+    ]
+  end
+
+  # Two-bone inverse kinematics: the knee is where a circle around the hip
+  # (the thigh) meets a circle around the foot (the shin). Of the two
+  # solutions, this picks the one with the knee pointing forward.
+  def knee(hip, foot)
+    dx = foot[0] - hip[0]
+    dy = foot[1] - hip[1]
+    distance = Math.hypot(dx, dy).clamp((THIGH - SHIN).abs + 0.01, THIGH + SHIN - 0.01)
+    bend = Math.acos((THIGH**2 + distance**2 - SHIN**2) / (2.0 * THIGH * distance))
+    angle = Math.atan2(dy, dx) - bend
+    [hip[0] + Math.cos(angle) * THIGH, hip[1] + Math.sin(angle) * THIGH]
+  end
+
+  def point(x, y) = format("%.1f %.1f", x, y)
+
+  def leg_path(hip, angle)
+    hip = [hip[0], hip[1] + bob(angle)]
+    foot = pedal(angle)
+    "M #{point(*hip)} L #{point(*knee(hip, foot))} L #{point(*foot)}"
+  end
+
+  def crank_path(angle) = "M #{point(*CRANK)} L #{point(*pedal(angle))}"
+
+  def foot_path(angle)
+    x, y = pedal(angle)
+    "M #{point(x - 10, y)} L #{point(x + 14, y - 4)} L #{point(x + 12, y + 5)} Z"
+  end
+
+:css
+  .scene {
+    display: grid;
+    justify-items: center;
+    gap: 1rem;
+  }
+
+  .pelican {
+    display: block;
+    width: min(100%, 36rem);
+    height: auto;
+    margin-inline: auto;
+    border-radius: var(--radius-sm);
+  }
+
+  .outline {
+    stroke: #2b2140;
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .tire {
+    fill: none;
+    stroke: #2b2140;
+    stroke-width: 7;
+  }
+
+  .rim {
+    fill: none;
+    stroke: #c9c3d6;
+    stroke-width: 2;
+  }
+
+  .spokes {
+    fill: none;
+    stroke: #c9c3d6;
+    stroke-width: 1;
+  }
+
+  .hub {
+    fill: #2b2140;
+  }
+
+  .tube {
+    fill: none;
+    stroke: #e5484d;
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .chain {
+    fill: none;
+    stroke: #2b2140;
+    stroke-width: 1.5;
+    stroke-dasharray: 2 1.5;
+  }
+
+  .crank {
+    fill: none;
+    stroke: #2b2140;
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+
+  .tufts {
+    fill: none;
+    stroke: #5aa954;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .leg {
+    fill: none;
+    stroke: #f08c2e;
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .leg.far {
+    stroke: #c96a1a;
+  }
+
+  .feather {
+    fill: none;
+    stroke: #8a84a0;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .speed {
+    fill: none;
+    stroke: light-dark(#ffffff, #8f9bd6);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+.scene
+  %svg.pelican(viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A pelican riding a bicycle")
+    %defs
+      %linearGradient(id=@sky_id x1="0" y1="0" x2="0" y2="1")
+        %stop(offset="0%"){style: { stop_color: "light-dark(#9fd4ff, #1c2152)" }}
+        %stop(offset="100%"){style: { stop_color: "light-dark(#fff1d6, #4a3a6e)" }}
+      %radialGradient(id=@body_id cx="40%" cy="30%" r="80%")
+        %stop(offset="0%" stop-color="#ffffff")
+        %stop(offset="100%" stop-color="#dcd8e6")
+      %linearGradient(id=@beak_id x1="0" y1="0" x2="1" y2="0")
+        %stop(offset="0%" stop-color="#ffb347")
+        %stop(offset="100%" stop-color="#f57c20")
+
+    -# Scenery
+    %rect(width="400" height="300"){fill: "url(##{@sky_id})"}
+    %circle(cx="62" cy="58" r="26" fill="#ffd166")
+    -# Clouds drift across the sky and wrap around. The negative begin times
+    -# put them in their starting positions from the first frame.
+    %g(fill="#ffffff" opacity="0.85")
+      %g
+        - if @playing
+          %animateTransform(attributeName="transform" type="translate" from="300 0" to="-220 0" dur="26s" begin="-15s" repeatCount="indefinite")
+        %ellipse(cx="150" cy="44" rx="26" ry="10")
+        %ellipse(cx="170" cy="38" rx="18" ry="11")
+      %g
+        - if @playing
+          %animateTransform(attributeName="transform" type="translate" from="100 0" to="-420 0" dur="26s" begin="-5s" repeatCount="indefinite")
+        %ellipse(cx="352" cy="118" rx="22" ry="8")
+        %ellipse(cx="368" cy="112" rx="14" ry="9")
+    %rect(y="262" width="400" height="38" fill="#7cc576")
+    %rect(y="262" width="400" height="4" fill="#5aa954")
+    %path.tufts{d: tufts_path}
+      - if @playing
+        %animateTransform(attributeName="transform" type="translate" from="0 0" dur=tufts_duration repeatCount="indefinite"){to: "#{-TUFT_SPACING} 0"}
+    %ellipse(cx="200" cy="266" rx="130" ry="6" fill="#2b2140" opacity="0.18")
+    %path.speed(d="M 20 170 L 52 170 M 34 190 L 60 190 M 14 210 L 50 210")
+      - if @playing
+        %animateTransform(attributeName="transform" type="translate" values="8 0;-8 0" dur="0.6s" repeatCount="indefinite")
+      - if @playing
+        %animate(attributeName="opacity" values="0;0.9;0" dur="0.6s" repeatCount="indefinite")
+
+    -# The far leg goes behind the bicycle
+    - far = Math::PI
+    %path.crank{d: crank_path(far)}
+      - if @playing
+        %animate(attributeName="d" dur=duration repeatCount="indefinite"){values: keyframes { crank_path(_1 + far) }}
+    %path.leg.far{d: leg_path(FAR_HIP, far)}
+      - if @playing
+        %animate(attributeName="d" dur=duration repeatCount="indefinite"){values: keyframes { leg_path(FAR_HIP, _1 + far) }}
+    %path.outline{d: foot_path(far), fill: "#c96a1a"}
+      - if @playing
+        %animate(attributeName="d" dur=duration repeatCount="indefinite"){values: keyframes { foot_path(_1 + far) }}
+
+    -# Wheels
+    %g
+      = [REAR_HUB, FRONT_HUB].map do |(cx, cy)|
+        %g
+          %circle.tire(cx=cx cy=cy r=WHEEL_RADIUS)
+          %circle.rim(cx=cx cy=cy){r: WHEEL_RADIUS - 5}
+          %path.spokes{d: spokes(cx, cy)}
+            - if @playing
+              %animateTransform(attributeName="transform" type="rotate" dur=duration repeatCount="indefinite"){from: "0 #{cx} #{cy}", to: "360 #{cx} #{cy}"}
+          %circle.hub(cx=cx cy=cy r="4")
+
+    -# Drivetrain
+    %path.chain(d="M 110 214 L 190 212 M 110 226 L 190 238")
+    %circle(cx="110" cy="220" r="7" fill="none" stroke="#2b2140" stroke-width="2")
+
+    -# Frame
+    %path.tube(d="M 110 220 L 190 225 L 171 152 L 110 220 M 173 161 L 262 152 L 190 225")
+    %path.tube(d="M 263 146 L 268 170 Q 280 195 290 220" stroke-width="6")
+    %path(d="M 264 148 L 262 130 Q 256 124 244 128" fill="none" stroke="#2b2140" stroke-width="4" stroke-linecap="round")
+    %path(d="M 244 128 L 238 131" stroke="#2b2140" stroke-width="7" stroke-linecap="round")
+    %path.outline(d="M 150 147 C 160 140 182 140 190 145 C 186 152 162 154 150 147 Z" fill="#2b2140")
+    %circle(cx="190" cy="225" r="13" fill="none" stroke="#2b2140" stroke-width="3")
+    %circle(cx="190" cy="225" r="4" fill="#2b2140")
+
+    -# Pelican
+    %g
+      - if @playing
+        %animateTransform(attributeName="transform" type="translate" dur=duration repeatCount="indefinite"){values: keyframes { "0 #{bob(_1).round(2)}" }}
+
+      -# Tail feathers
+      %path.outline(d="M 146 100 L 116 88 L 126 102 L 112 112 L 146 114 Z" fill="#dcd8e6")
+
+      -# Neck
+      %path.outline(d="M 196 86 C 214 74 202 58 212 42 L 238 48 C 228 62 234 80 216 96 Z"){fill: "url(##{@body_id})"}
+      %path(d="M 199 84 C 212 76 206 62 214 46 L 234 50 C 226 64 230 78 214 92 Z" fill="#ffffff")
+
+      -# The body covers the base of the neck
+      %path.outline(d="M 140 102 C 138 72 188 58 214 78 C 236 94 228 134 192 140 C 160 146 142 130 140 102 Z"){fill: "url(##{@body_id})"}
+
+      -# Head
+      %circle.outline(cx="226" cy="42" r="18"){fill: "url(##{@body_id})"}
+      %path.feather(d="M 216 25 C 212 16 206 16 202 20 M 222 24 C 222 14 216 10 212 12")
+
+      -# Pouch, then the upper beak on top of it
+      %path.outline(d="M 240 52 L 306 63 C 300 82 270 90 252 80 C 244 74 238 64 240 52 Z" fill="#ffc97a")
+      %path(d="M 252 66 C 266 72 282 72 296 68" fill="none" stroke="#f0a34a" stroke-width="1.5" stroke-linecap="round")
+      %path.outline(d="M 238 38 C 268 40 300 48 322 58 C 326 62 322 68 316 66 L 306 63 L 240 54 Z"){fill: "url(##{@beak_id})"}
+
+      -# Face
+      %ellipse(cx="222" cy="52" rx="5" ry="3" fill="#ff9aa2" opacity="0.8")
+      -# Blink by squashing the eye for a moment every few seconds
+      %ellipse(cx="230" cy="38" rx="6" ry="6" fill="#ffffff" stroke="#2b2140" stroke-width="1.5")
+        - if @playing
+          %animate(attributeName="ry" values="6;6;0.6;6" keyTimes="0;0.92;0.96;1" dur="4s" repeatCount="indefinite")
+      %ellipse(cx="231.5" cy="38.5" rx="3" ry="3" fill="#2b2140")
+        - if @playing
+          %animate(attributeName="ry" values="3;3;0.3;3" keyTimes="0;0.92;0.96;1" dur="4s" repeatCount="indefinite")
+      %circle(cx="232.5" cy="37" r="1" fill="#ffffff")
+        - if @playing
+          %animate(attributeName="opacity" values="1;1;0;1" keyTimes="0;0.92;0.96;1" dur="4s" repeatCount="indefinite")
+
+      -# Wing reaching forward to the handlebar
+      %path.outline(d="M 168 86 C 198 80 226 100 244 122 C 248 128 242 134 236 130 C 214 120 186 122 164 112 C 154 104 156 90 168 86 Z" fill="#c9c3d6")
+      %path.feather(d="M 176 100 C 196 100 214 108 230 122 M 170 108 C 190 110 206 114 222 124")
+
+    -# The near leg goes in front of everything
+    %path.leg{d: leg_path(NEAR_HIP, 0)}
+      - if @playing
+        %animate(attributeName="d" dur=duration repeatCount="indefinite"){values: keyframes { leg_path(NEAR_HIP, _1) }}
+    %path.crank{d: crank_path(0)}
+      - if @playing
+        %animate(attributeName="d" dur=duration repeatCount="indefinite"){values: keyframes { crank_path(_1) }}
+    %path.outline{d: foot_path(0), fill: "#f08c2e"}
+      - if @playing
+        %animate(attributeName="d" dur=duration repeatCount="indefinite"){values: keyframes { foot_path(_1) }}
+
+  %Button(onclick=handle_toggle_playing)
+    = @playing ? "Pause" : "Play"

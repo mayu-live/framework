@@ -1,6 +1,6 @@
 :ruby
-  Icon = import("/app/components/UI/Icon")
-  Link = import("/app/components/UI/Link")
+  Icon = import("/components/UI/Icon/Icon")
+  Link = import("/components/UI/Link")
   Name = import("./Name")
 
   def icon
@@ -16,18 +16,19 @@
     end
   end
 
-  def should_update?(_next_props, _next_state) = false
+  def selected? = @@selected_path == $path
+
+  def should_update?(next_props) = $* != next_props
 
 :css
-  h4 {
-    display: inline-flex;
-    align-items: center;
-    gap: .5em;
+  .selected {
+    margin-inline: -.25em;
+    padding-inline: .25em;
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
   }
 
-:ruby
-  props => path:
-  href = "?file=#{path}"
-
-%Name(icon=icon)
-  %Link(href=href)= File.basename(path)
+%Name(icon=icon){class: selected? && :selected}
+  %Link{href: File.join("/demos/tree", $path), aria_current: selected? && "page"}
+    = File.basename($path)

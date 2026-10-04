@@ -1,0 +1,229 @@
+# frozen_string_literal: true
+
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require_relative "base"
+require_relative "../dom"
+require_relative "../ref"
+require_relative "../commands"
+require_relative "../dom_nesting_validation"
+require_relative "vattributes"
+require_relative "vchildren"
+
+module Mayu
+  module Runtime
+    module VNodes
+      class VElement < Base
+        def initialize(descriptor, parent:, engine:)
+          super
+          validate_nesting if @engine&.validate_dom_nesting?
+          @children =
+            VChildren.new(@descriptor.children, parent: self, engine: @engine)
+          @attributes =
+            VAttributes.new(@descriptor, parent: self, engine: @engine)
+          # Attached in #start, since subtrees built here may be discarded.
+          @ref = @descriptor.ref
+          @started = false
+        end
+
+        def update(collector, descriptor = nil)
+          return unless descriptor
+          # Same object, same attributes and children; see VComponent#unchanged?.
+          return if descriptor.equal?(@descriptor) && !@engine&.force_render?
+
+          @descriptor = descriptor
+          update_ref(@descriptor.ref)
+          @attributes.update(collector, @descriptor)
+          @children.update(collector, @descriptor.children)
+        end
+
+        def start
+          @started = true
+          @ref = @engine.attach_ref(@ref, self) if @ref
+          @children.start
+        end
+
+        def stop
+          @children.stop
+          @engine.detach_ref(@ref, self) if @ref
+          @started = false
+        end
+
+        # What `ref.current` returns for this element.
+        def ref_value
+          @handle ||= ElementHandle.new(self)
+        end
+
+        def insert
+          @children.insert
+        end
+
+        def remove
+          mark_listeners_dirty
+          @children.remove
+        end
+
+        def each_listener(&block)
+          @attributes.each_listener(&block)
+        end
+
+        def mark_listeners_dirty
+          @engine&.register_dirty_listener_element(self)
+        end
+
+        def emit_listeners(collector)
+          each_listener do |name, listener|
+            collector << Commands::SetListener[dom_id, name, listener.id]
+          end
+        end
+
+        def write_html(out)
+          tag_name = self.tag_name
+
+          if Mayu::Runtime::DOM::VOID_ELEMENTS.include?(tag_name)
+            out << "<#{tag_name}"
+            @attributes.write_html(out)
+            out << ">"
+            return
+          end
+
+          out << "<#{tag_name}"
+          @attributes.write_html(out)
+          out << ">"
+          @children.write_html(out)
+          out << "</#{tag_name}>"
+        end
+
+        def write_html_with_id_tree(out, ids)
+          tag_name = self.tag_name
+          children = []
+
+          out << "<#{tag_name}"
+          @attributes.write_html(out)
+          out << ">"
+
+          unless Mayu::Runtime::DOM::VOID_ELEMENTS.include?(tag_name)
+            @children.write_html_with_id_tree(out, children)
+            out << "</#{tag_name}>"
+          end
+
+          ids << DOM::IdNode[dom_id, node_name, children]
+        end
+
+        def dom_id
+          @id
+        end
+
+        def collect_id_tree(ids)
+          children = []
+          @children.collect_id_tree(children)
+          ids << DOM::IdNode[dom_id, node_name, children]
+        end
+
+        def tree_path
+          [*@parent&.tree_path, {name: tag_name}].compact
+        end
+
+        def mark_children_dirty
+          return if @children_dirty
+          @children_dirty = true
+          @engine.register_dirty_element(self)
+        end
+
+        def emit_replace_children(collector)
+          return unless @children_dirty
+          child_ids = @children.dom_id_list
+          metrics.replace_children_ids_total.increment(labels: {tag_name:})
+          collector << Commands::ReplaceChildren[dom_id, child_ids]
+          @children_dirty = false
+        end
+
+        def traverse(&block)
+          yield self
+          @children.traverse(&block)
+        end
+
+        def marshal_dump
+          [super, @children, @attributes, @children_dirty]
+        end
+
+        def marshal_load(a)
+          a => [base, children, attributes, children_dirty]
+          super(base)
+          @children = children
+          @attributes = attributes
+          @children_dirty = children_dirty
+          @ref = nil
+          @started = false
+        end
+
+        def rehydrate(parent:, engine:, document: nil, component_map: nil, **)
+          super
+          @ref = engine.canonical_ref(@descriptor.ref) if @descriptor.ref
+          @attributes.rehydrate(parent: self, engine: engine)
+          @children.rehydrate(
+            parent: self,
+            engine: engine,
+            document:,
+            component_map:
+          )
+          @attributes.rehydrate_listeners(component_map)
+        end
+
+        # A vnode never changes type, so the name is computed once. It is
+        # used on every render and every id tree walk.
+        def tag_name
+          @tag_name ||= @descriptor.type.to_s.downcase.delete_prefix("__").tr("_", "-").freeze
+        end
+
+        def node_name
+          @node_name ||= tag_name.upcase.freeze
+        end
+
+        # What DOMNestingValidation knows about this element and its element
+        # ancestors. Nil inside the document head, whose tags VHead checks
+        # where they were written.
+        def nesting_info
+          return @nesting_info if defined?(@nesting_info)
+
+          @nesting_info =
+            if @descriptor.type == :__head
+              nil
+            elsif (parent = parent_element)
+              parent.nesting_info&.update(nesting_tag)
+            else
+              DOMNestingValidation::AncestorInfo::EMPTY.update(nesting_tag)
+            end
+        end
+
+        private
+
+        def update_ref(ref)
+          return if ref == @ref
+
+          @engine.detach_ref(@ref, self) if @ref && @started
+          @ref = ref
+          @ref = @engine.attach_ref(@ref, self) if @ref && @started
+        end
+
+        def validate_nesting
+          return unless (ancestor_info = parent_element&.nesting_info)
+          return unless (message, invalid_tag = DOMNestingValidation.check(nesting_tag, ancestor_info))
+
+          @engine.warn_dom_nesting(closest(VComponent), message, tree_path:, invalid_tag:)
+        end
+
+        def parent_element = @parent&.closest(VElement)
+
+        def nesting_tag
+          type = @descriptor.type
+          type.is_a?(Symbol) ? type : tag_name.to_sym
+        end
+      end
+    end
+  end
+end

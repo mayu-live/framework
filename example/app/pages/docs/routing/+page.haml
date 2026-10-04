@@ -1,0 +1,84 @@
+%head
+  %title Routing
+
+%article
+  :markdown
+    # Routing
+
+    Routing is path based and inspired by
+    [Next.js](https://beta.nextjs.org/docs/routing/fundamentals).
+
+    Here's the basic structure of a potential blog application:
+
+    * `app/`
+      * `root.css`
+      * `root.haml`
+      * `components/`
+        * `Layout/`
+          * `Footer.haml`
+          * `Header.haml`
+          * `Layout.haml`
+          * `Page.haml`
+        * `UI/`
+          * `Button.haml`
+          * `Heading.haml`
+          * `Hr.haml`
+          * `Link.haml`
+      * `pages/`
+        * `about/`
+          * `+page.haml`
+        * `posts/`
+          * `[id]/`
+            * `+page.haml`
+          * `+page.haml`
+          * `+layout.haml`
+        * `+page.haml`
+        * `+layout.haml`
+
+    `app/root.haml` contains the `<html>` tag, and all pages are wrapped in
+    the layouts of their parent directories.
+
+    This tree would generate the following routes:
+
+    * `/posts/:id`
+    * `/posts`
+    * `/about`
+    * `/`
+
+    ## Not found
+
+    A `+not-found.haml` file is rendered when no page matches a path. The
+    closest one wins: `app/pages/posts/+not-found.haml` handles `/posts/nope`,
+    and `app/pages/+not-found.haml` handles everything else.
+
+    A page that matches but has nothing to show can raise `NotFound` while it
+    renders. The closest `+not-found.haml` for the current path takes over,
+    and the first request responds with status 404:
+
+    ```haml
+    :ruby
+      Post = import("/models/Post")
+
+    - post = Post.find($params[:id])
+    - raise NotFound unless post
+
+    %h1= post.title
+    ```
+
+    `NotFound` is navigation rather than an error, so error boundaries do not
+    see it and nothing is logged. A `+error.haml` file handles other exceptions.
+
+    ## Route handlers
+
+    A `+route.rb` file handles HTTP requests for its directory. Public methods
+    are named after HTTP verbs and return `[status, headers, body]`:
+
+    ```ruby
+    # app/pages/api/health/+route.rb
+    def GET(_request)
+      [200, {"content-type" => "application/json"}, '{"status":"ok"}']
+    end
+    ```
+
+    A route can have both `+page.haml` and `+route.rb`. Browser HTML requests
+    render the page; non-HTML requests are handled by the route handler.

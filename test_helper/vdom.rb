@@ -22,7 +22,7 @@ module Mayu
 
           environment = Mayu::Environment.new(config, TestHelper.metrics)
 
-          environment.instance_eval <<~RUBY
+          environment.instance_eval <<~RUBY, __FILE__, __LINE__ + 1
             # sig {params(path: String).returns(Mayu::VDOM::Descriptor)}
             def load_root(path, headers: {})
               Mayu::VDOM::H[:div]

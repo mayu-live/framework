@@ -1,24 +1,18 @@
 :ruby
-  Fieldset = import("/app/components/Form/Fieldset")
-  Button = import("/app/components/Form/Button")
-  Input = import("/app/components/Form/Input")
-  Select = import("/app/components/Form/Select")
-  Checkbox = import("/app/components/Form/Checkbox")
+  Fieldset = import("/components/Form/Fieldset")
+  Button = import("/components/Form/Button")
+  Input = import("/components/Form/Input")
+  Select = import("/components/Form/Select")
+  Checkbox = import("/components/Form/Checkbox")
 
 %Fieldset
   %legend Hello world
-  %div
-    %Input(type="text" label="Foobar")
-  %div
-    %Input(type="text" label="Required text field" required)
-  %div
-    %Input(type="number" label="Number")
-  %div
-    %Select(label="Select" value=2)
-      %option(value=1) Pink Floyd
-      %option(value=2) Yes
-      %option(value=3) Can
-  %div
-    %Checkbox(label="Foobar")
-  %div
-    %Button Submit
+  %Input(type="text" label="Foobar")
+  %Input(type="text" label="Required text field" required)
+  %Input(type="number" label="Number")
+  %Select(label="Select" value=2)
+    %option(value=1) Pink Floyd
+    %option(value=2) Yes
+    %option(value=3) Can
+  %Checkbox(label="Foobar")
+  %Button Submit

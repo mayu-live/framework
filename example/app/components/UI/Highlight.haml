@@ -1,54 +1,53 @@
 :ruby
   ::Kernel.require("rouge")
 
-  def get_tokens
-    lexer&.lex(children.join)
+  SUPPORTED_LEXERS = {
+    "css" => Rouge::Lexers::CSS,
+    "haml" => Rouge::Lexers::Haml,
+    "html" => Rouge::Lexers::HTML,
+    "javascript" => Rouge::Lexers::Javascript,
+    "js" => Rouge::Lexers::Javascript,
+    "json" => Rouge::Lexers::JSON,
+    "jsx" => Rouge::Lexers::JSX,
+    "rb" => Rouge::Lexers::Ruby,
+    "ruby" => Rouge::Lexers::Ruby,
+    "sh" => Rouge::Lexers::Shell,
+    "shell" => Rouge::Lexers::Shell,
+    "svg" => Rouge::Lexers::XML,
+    "tsx" => Rouge::Lexers::TSX,
+    "typescript" => Rouge::Lexers::Typescript,
+    "ts" => Rouge::Lexers::Typescript
+  }.freeze
+  HIGHLIGHT_CACHE = {}
+
+  def language
+    $language || $class.to_s.split.find { _1.start_with?("language-") }&.delete_prefix("language-")
   end
 
-  def lexer
-    return unless $language
-    case $language.to_sym
-    when :haml
-      Rouge::Lexers::Haml.new
-    when :shell
-      Rouge::Lexers::Shell.new
-    when :jsx
-      Rouge::Lexers::JSX.new
-    when :ruby
-      Rouge::Lexers::Ruby.new
-    when :html
-      Rouge::Lexers::HTML.new
-    when :css
-      Rouge::Lexers::CSS.new
-    when :json
-      Rouge::Lexers::JSON.new
-    end
+  def highlighted_children
+    lexer = SUPPORTED_LEXERS[language]
+    return @__children.descriptors unless lexer
+
+    source = @__children.descriptors.join
+    HIGHLIGHT_CACHE[[language, source]] ||= lexer.lex(source).map do |token, value|
+      token_class = token.shortname&.to_sym
+      next value unless token_class && ClassNames.key?(token_class)
+
+      H[:span, value, class: ClassNames[token_class]]
+    end.freeze
   end
+
+= if language
+  %code.highlight{**$*.except(:language)}
+    = highlighted_children
+= else
+  %code.inline{**$*.except(:language)}
+    %slot
 
 :css
-  .container {
-    display: grid;
+  .inline {
+    padding: .25em;
+    background: var(--surface-sunken);
+    border: var(--thin-border);
+    border-radius: 4px;
   }
-
-  .card {
-    display: grid;
-    background: var(--deep-purple);
-    border-radius: 2px;
-    box-shadow: rgba(50, 50, 93, 0.55) 0px 13px 27px -5px, rgba(0, 0, 0, 0.9) 0px 8px 16px -8px;
-    margin: 1em;
-    overflow-y: auto;
-  }
-
-= if tokens = get_tokens
-  .container
-    .card
-      %code.highlight
-        = tokens.map do |token, str|
-          = if str == " " && !token.shortname
-            &nbsp;
-          = else
-            %span{class: token.shortname.to_sym}= str
-= else
-  .container
-    .card
-      %code.highlight= children.join

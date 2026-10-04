@@ -39,9 +39,9 @@ module Mayu
         def render_document(html)
           Nokogiri::HTML5::DocumentFragment
             .parse(html)
-            .tap { validate_doc(_1, html) }
-            .tap { remove_css_hashes(_1) }
-            .tap { remove_mayu_id(_1) }
+            .tap { validate_doc(it, html) }
+            .tap { remove_css_hashes(it) }
+            .tap { remove_mayu_id(it) }
         end
 
         sig do

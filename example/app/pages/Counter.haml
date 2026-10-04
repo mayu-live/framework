@@ -1,84 +1,81 @@
 :ruby
-  Card = import("/app/components/UI/Card")
+  Card = import("/components/UI/Card")
 
-  def self.get_initial_state(initial_count: 0, **) = {
-    count: initial_count
-  }
-
-  def decrement_disabled = state[:count].zero?
-
-  def handle_decrement
-    update do |state|
-      count = [0, state[:count] - 1].max
-      { count: }
-    end
+  def initialize
+    @count = $initial_count
   end
 
-  def handle_increment
-    update do |state|
-      count = state[:count] + 1
-      { count: }
-    end
-  end
+  def decrement_disabled =
+    @count.zero?
+
+  def handle_decrement =
+    @count = (@count - 1).clamp(0, Float::INFINITY)
+
+  def handle_increment =
+    @count += 1
 
 %Card
-  %article
-    %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled) －
-    %output= state[:count]
-    %button(title="Increment" onclick=handle_increment) ＋
+  %button(title="Decrement" onclick=handle_decrement disabled=decrement_disabled) －
+  %output= @count
+  %button(title="Increment" onclick=handle_increment) ＋
 
 :css
   Card {
-    margin: 4em auto;
-    max-width: 10em;
-    --card-background: #fffc;
-  }
+    margin: 0 auto;
+    font-size: 1.5rem;
+    background: var(--surface-sunken);
 
-  article {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     padding: 1em;
     align-items: center;
+    justify-content: space-between;
     user-select: none;
   }
 
   output {
-    flex-basis: 3em;
-    font-size: 1.2em;
+    min-width: 4ch;
+    font-size: 1.5em;
     text-align: center;
   }
 
   button {
-    flex: 1;
+    --transition-length: 200ms;
+
+    display: block;
+    font-size: 2em;
+    font-weight: bold;
+    width: 1em;
+    line-height: 1;
     padding: 0;
     margin: 0;
     aspect-ratio: 1;
-    transform: scale(1);
-    background: var(--green);
+    scale: 1;
+    background: var(--button-background);
+    color: var(--button-text);
     border: 0;
-    border-radius: 100%;
+    border-radius: 100vw;
     box-shadow: rgba(0, 0, 0, 0.34) 0px 2px 4px;
-    font-weight: bold;
-    color: #fff;
     cursor: pointer;
-    --transition-length: 100ms;
+
     transition:
       filter var(--transition-length),
       box-shadow var(--transition-length),
-      transform var(--transition-length);
-  }
+      scale var(--transition-length);
 
-  button:hover {
-    filter: brightness(110%);
-    transform: scale(1.2);
-  }
+    &:hover {
+      filter: brightness(110%);
+      scale: 1.2;
+    }
 
-  button:active {
-    filter: brightness(80%);
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
-  }
+    &:active {
+      filter: brightness(80%);
+      box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
+    }
 
-  button:disabled {
-    filter: grayscale(100%);
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 2px 4px;
+    &:disabled {
+      filter: grayscale(100%);
+      scale: 1;
+      cursor: not--allowed;
+    }
   }
-

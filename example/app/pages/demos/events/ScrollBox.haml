@@ -1,0 +1,64 @@
+:ruby
+  Card = import("/components/UI/Card")
+
+  ITEMS = (1..100).map { "Item #{it}" }.freeze
+
+  def initialize
+    @scroll_top = 0
+    @progress = 0
+    @handled = 0
+  end
+
+  def handle_scroll(e)
+    e => { currentTarget: { scrollTop:, scrollHeight:, clientHeight: } }
+
+    @scroll_top = scrollTop.round
+    scrollable = scrollHeight - clientHeight
+    @progress = scrollable.positive? ? scrollTop.fdiv(scrollable) : 0
+    @handled += 1
+  end
+
+%Card
+  .body
+    %h3 Scroll
+    %p
+      Scroll events are sent the same way. The payload includes the scroll
+      position of the element.
+    %progress.progress(max="1" value=@progress)
+    %ul.list(onscroll=handle_scroll)
+      = ITEMS.map do |item|
+        %li[item]= item
+    %dl.stats
+      %dt Scroll top
+      %dd= @scroll_top
+      %dt Handled
+      %dd= @handled
+
+:css
+  .body {
+    padding: 1em;
+  }
+
+  .progress {
+    width: 100%;
+  }
+
+  .list {
+    height: 12rem;
+    overflow: auto;
+    margin: 0;
+    padding: 0 1em;
+    border-radius: var(--radius-sm);
+    background: var(--surface-sunken, var(--slightly-darker));
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25em 1em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  dd {
+    margin: 0;
+  }

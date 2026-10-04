@@ -1,0 +1,24 @@
+:ruby
+  Header = import('/components/Layout/Header')
+  Footer = import('/components/Layout/Footer')
+
+%Header
+%main
+  %slot
+%Footer
+
+:css
+  main {
+    grid-column: 1;
+
+    /* The start page hero slides under the header. */
+    &:has([data-intro]) {
+      grid-row: 1 / 3;
+    }
+
+    height: 100%;
+    z-index: 0;
+    background: var(--main-background);
+    color: var(--main-color);
+    --link-color: var(--main-link-color);
+  }

@@ -1,49 +1,65 @@
 :ruby
-  Icon = import("/app/components/UI/Icon")
+  Icon = import("/components/UI/Icon/Icon")
   Name = import("./Name")
   FileEntry = import("./FileEntry")
 
-  def self.get_initial_state(initial_open: false, **) = {
-    open: initial_open,
-    entries: nil,
-  }
-
-  def mount
-    if state[:open]
-      update(entries: load_entries)
-    end
+  def initialize
+    @open = $initial_open || contains_selected_path?
+    @entries = @open && load_entries
   end
 
-  def should_update?(next_props, next_state)
-    state[:open] != next_state[:open]
+  def mount
+    if @open
+      @entries = load_entries
+    end
   end
 
   def handle_toggle
-    update do |state|
-      open = !state[:open]
-      entries = state[:entries] || (open && load_entries)
-      { open:, entries: }
-    end
+    @open = !@open
+    @entries ||= @open && load_entries
   end
 
   private
 
-  def load_entries
-    props => { root:, path: }
+  def contains_selected_path?
+    @@selected_path.to_s.start_with?("#{$path}/")
+  end
 
+  def load_entries
     entries =
       Dir
-        .entries(File.join(root, path))
-        .difference(%w[. ..])
+        .children(File.join($root, $path))
         .sort
-        .map { File.join(path, _1) }
-        .group_by { File.directory?(File.join(root, _1)) }
+        .difference([".claude", ".DS_Store"])
+        .map { File.join($path, _1) }
+        .group_by { File.directory?(File.join($root, _1)) }
 
     {
       directories: entries[true] || [],
       files: entries[false] || [],
     }
   end
+
+:ruby
+  icon = @open ? "folder-open" : "folder"
+  basename = File.basename($path)
+
+%div
+  %Name(icon=icon color="var(--blue)")
+    %button(type="button" onclick=handle_toggle)
+      = basename
+      \/
+
+  = if @open
+    = if @entries
+      %ul
+        = @entries[:directories]&.map do |path|
+          %li[path]
+            %Self(root=$root path=path)
+        = @entries[:files]&.map do |path|
+          %li[path]
+            %FileEntry(root=$root path=path)
+
 :css
   li {
     margin: 0;
@@ -65,20 +81,3 @@
     text-decoration: underline;
     cursor: pointer;
   }
-:ruby
-  icon = state[:open] ? "folder-open" : "folder"
-
-%div
-  %Name(icon=icon color="var(--blue)")
-    %button(type="button" onclick=handle_toggle)
-      #{File.basename($path)}/
-
-  = if state[:open]
-    = if entries = state[:entries]
-      %ul
-        = entries[:directories]&.map do |path|
-          %li[path]
-            %Self(root=$root path=path)
-        = entries[:files]&.map do |path|
-          %li[path]
-            %FileEntry(root=$root path=path)

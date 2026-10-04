@@ -1,75 +1,81 @@
-.wrap {
+nav {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1em;
-  padding: 1em;
-  margin: 1em;
-  background: #fff;
-  border: var(--thin-border);
-  border-radius: 2px;
-  background: var(--material-color-light-blue-50);
+  justify-content: space-between;
+  gap: 0.5em 1.5em;
+  margin: 1em 0;
 }
 
-.buttons {
-  display: flex;
-  flex-direction: row;
-  gap: 0.5em;
-  align-items: center;
-  align-content: space-between;
-  flex: 1;
-  border-radius: 2px;
-}
-
-.button[href]:any-link {
-  text-decoration: none;
-  color: var(--blue);
-}
-
-.button[href]:active,
-.button[href]:hover {
-  text-decoration: underline;
-}
-
-.per-page {
-  flex: 0;
-  white-space: nowrap;
+.summary {
+  margin: 0;
+  color: var(--text-muted);
 }
 
 .pages {
-  flex: 1;
   list-style-type: none;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25em;
   padding: 0;
   margin: 0;
-  flex-direction: row;
-  justify-content: space-around;
-  gap: 0.5em;
+}
+
+.gap {
+  width: 2em;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.page,
+.step {
+  display: inline-block;
+  padding: 0.4em 0.6em;
+  border-radius: var(--radius-sm);
+  transition: background 150ms;
 }
 
 .page {
-  padding: 0.5em;
-  display: inline-block;
-  width: 2em;
+  min-width: 2.25em;
   text-align: center;
 }
 
-.page:link,
-.page:visited {
-  text-decoration: none;
-  color: var(--blue);
+a.page,
+a.step {
+  &:any-link {
+    text-decoration: none;
+    color: var(--blue);
+  }
+
+  &:is(:active, :hover) {
+    background: var(--blue-bright);
+  }
 }
 
-.page:active,
-.page:hover {
-  color: var(--blue);
-  font-weight: bold;
-  text-decoration: underline;
+.step[aria-disabled] {
+  color: var(--text-muted);
+  opacity: 0.5;
 }
 
-.page[aria-current="page"] {
+a.page[aria-current="page"] {
   background: var(--blue);
-  color: var(--bright);
+  color: white;
   font-weight: bold;
-  border-radius: 2px;
+}
+
+.per-page {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  white-space: nowrap;
+}
+
+select {
+  font: inherit;
+  padding: 0.3em 0.5em;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
 }

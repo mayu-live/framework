@@ -1,0 +1,41 @@
+# frozen_string_literal: true
+
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require_relative "base"
+require_relative "../commands"
+
+module Mayu
+  module Runtime
+    module VNodes
+      class VRawText < Base
+        def update(collector, descriptor = nil)
+          return unless descriptor
+          return if @descriptor.to_s == descriptor.to_s
+          @descriptor = descriptor
+          collector << Commands::SetTextContent[@id, @descriptor.to_s]
+        end
+
+        def write_html(out)
+          out << @descriptor.to_s
+        end
+
+        def dom_id
+          @id
+        end
+
+        def collect_id_tree(ids)
+          ids << Mayu::Runtime::DOM::IdNode[dom_id, "#text"]
+        end
+
+        def traverse(&block)
+          yield self
+        end
+      end
+    end
+  end
+end

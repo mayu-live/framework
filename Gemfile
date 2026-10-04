@@ -2,24 +2,25 @@
 
 source "https://rubygems.org"
 
-gemspec
-
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), "vendor", "patches"))
+gemspec path: "gems/mayu-live"
+gemspec path: "gems/mayu-devtools"
+gemspec path: "gems/mayu-build"
 
 group :development do
   gem "guard", require: false
   gem "localhost", require: false
   gem "minitest", require: false
+  gem "rake", require: false
+  gem "minitest-mock", require: false
   gem "minitest-reporters", require: false
-  gem "prettier", require: false
+  gem "minitest-focus", require: false
+  gem "standard", ">= 1.35.1", require: false
   gem "rexml", require: false
   gem "ruby-prof", require: false
-  gem "sorbet", require: false
-  gem "tapioca", require: false
-  gem "nokogiri", require: false
   gem "benchmark", require: false
+  gem "vernier", require: false
+  gem "irb", require: false
+
+  gem "readline", require: false
+  gem "reline", require: false
 end
-
-gem "fuzzy_match"
-
-gem "reline", "~> 0.4.2"

@@ -1,0 +1,87 @@
+# frozen_string_literal: true
+
+# Copyright Andrés Alin <andreas.alin@gmail.com>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+require_relative "base"
+require_relative "vchildren"
+
+module Mayu
+  module Runtime
+    module VNodes
+      class VStateless < Base
+        def initialize(descriptor, parent:, engine:)
+          super
+          @children = VChildren.new(rerender, parent: self, engine: @engine)
+        end
+
+        def update(collector, descriptor = nil)
+          return unless descriptor
+          @descriptor = descriptor
+          @children.update(collector, rerender)
+        end
+
+        def start
+          @children.start
+        end
+
+        def stop
+          @children.stop
+        end
+
+        def insert
+          @children.insert
+        end
+
+        def remove
+          @children.remove
+        end
+
+        def write_html(out)
+          @children.write_html(out)
+        end
+
+        def write_html_with_id_tree(out, ids)
+          @children.write_html_with_id_tree(out, ids)
+        end
+
+        def collect_id_tree(ids)
+          @children.collect_id_tree(ids)
+        end
+
+        def collect_dom_ids(ids)
+          @children.collect_dom_ids(ids)
+        end
+
+        def traverse(&block)
+          yield self
+          @children.traverse(&block)
+        end
+
+        def marshal_dump
+          [super, @children]
+        end
+
+        def marshal_load(a)
+          a => [base, children]
+          super(base)
+          @children = children
+        end
+
+        def rehydrate(parent:, engine:, **)
+          super
+          @children.rehydrate(parent: self, engine: engine, **)
+        end
+
+        private
+
+        def rerender
+          @descriptor.type.call(**@descriptor.props)
+        end
+      end
+    end
+  end
+end
