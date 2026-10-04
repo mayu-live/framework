@@ -11,7 +11,7 @@
     "test:watch": "npm -w gems/mayu-live/lib/mayu/client run test:watch",
     "format": "bundle exec standardrb --fix && npm run prettier",
     "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,md,html,css,json,yaml,yml}'",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
     "gems/mayu-devtools/extension"
   ],
   "devDependencies": {
-    "husky": "^8.0.2",
+    "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.6"
   },

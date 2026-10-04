@@ -372,7 +372,7 @@ export default function App({ connection }: { connection: Connection }) {
       </header>
       {tab === "tree" ? (
         <>
-          <main class="tree" role="tree" onMouseLeave={() => hover(null)}>
+          <div class="tree" role="tree" onMouseLeave={() => hover(null)}>
             {status.kind === "ready" && shown ? (
               shown.children.map((child) => (
                 <Row
@@ -390,7 +390,7 @@ export default function App({ connection }: { connection: Connection }) {
             ) : (
               <StatusMessage status={status} />
             )}
-          </main>
+          </div>
           {tree && detailNode && (
             <Details
               node={detailNode}

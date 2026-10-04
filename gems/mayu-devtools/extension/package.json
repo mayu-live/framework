@@ -16,10 +16,10 @@
     "@types/chrome": "^0.3.0",
     "rolldown": "^1.2.11",
     "tslib": "^2.8.1",
-    "typescript": "^5.8.2",
-    "vitest": "^4.1.11"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   },
   "dependencies": {
-    "preact": "^10.29.8"
+    "preact": "^11.0.0"
   }
 }
