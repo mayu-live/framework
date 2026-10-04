@@ -27,7 +27,7 @@ function createExtensionCodec() {
       throw new Error("Not implemented");
     },
     decode(buffer) {
-      return new Blob([buffer], { type: SESSION_MIME_TYPE });
+      return new Blob([buffer.slice()], { type: SESSION_MIME_TYPE });
     },
   });
 

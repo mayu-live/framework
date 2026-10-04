@@ -7,7 +7,9 @@ export const CLIENT_EVENT_FRAME_HEADER_BYTES = 5;
 export const CLIENT_EVENT_ENCODING_RAW = 0;
 export const CLIENT_EVENT_ENCODING_DEFLATE_RAW = 1;
 
-async function deflateRaw(input: Uint8Array): Promise<Uint8Array> {
+async function deflateRaw(
+  input: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array<ArrayBuffer>> {
   const compression = new CompressionStream("deflate-raw");
   const output = new Response(compression.readable).arrayBuffer();
   const writer = compression.writable.getWriter();
@@ -18,7 +20,7 @@ async function deflateRaw(input: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await output);
 }
 
-function frame(encoding: number, payload: Uint8Array): Uint8Array {
+function frame(encoding: number, payload: Uint8Array): Uint8Array<ArrayBuffer> {
   const framed = new Uint8Array(
     CLIENT_EVENT_FRAME_HEADER_BYTES + payload.byteLength,
   );
@@ -34,7 +36,7 @@ function frame(encoding: number, payload: Uint8Array): Uint8Array {
 export async function encodeClientEvent(
   event: ClientEvent,
   compressionThreshold = CLIENT_EVENT_COMPRESSION_THRESHOLD,
-): Promise<Uint8Array> {
+): Promise<Uint8Array<ArrayBuffer>> {
   const encoded = encode(event);
   if (encoded.byteLength < compressionThreshold) {
     return frame(CLIENT_EVENT_ENCODING_RAW, encoded);
@@ -49,7 +51,7 @@ export async function encodeClientEvent(
 
 export class ClientEventEncoderStream extends TransformStream<
   ClientEvent,
-  Uint8Array
+  Uint8Array<ArrayBuffer>
 > {
   constructor(compressionThreshold = CLIENT_EVENT_COMPRESSION_THRESHOLD) {
     super({

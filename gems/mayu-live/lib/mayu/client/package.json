@@ -18,7 +18,8 @@
     "build": "rolldown -c rolldown.config.js",
     "build:production": "npm run build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc -p ."
   },
   "devDependencies": {
     "@msgpack/msgpack": "^3.1.1",

@@ -9,7 +9,9 @@ import {
 } from "./client-event-codec";
 import type { ClientEvent } from "./protocol";
 
-async function inflateRaw(input: Uint8Array): Promise<Uint8Array> {
+async function inflateRaw(
+  input: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array<ArrayBuffer>> {
   const decompression = new DecompressionStream("deflate-raw");
   const output = new Response(decompression.readable).arrayBuffer();
   const writer = decompression.writable.getWriter();
@@ -20,7 +22,7 @@ async function inflateRaw(input: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(await output);
 }
 
-function unframe(frame: Uint8Array) {
+function unframe(frame: Uint8Array<ArrayBuffer>) {
   const view = new DataView(frame.buffer, frame.byteOffset, frame.byteLength);
   const encoding = view.getUint8(0);
   const length = view.getUint32(1);

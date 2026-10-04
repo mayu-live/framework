@@ -174,7 +174,7 @@ function isAbortError(error: unknown): boolean {
 }
 
 export type CallbackStreamConnection = {
-  writable: WritableStream<Uint8Array>;
+  writable: WritableStream<Uint8Array<ArrayBuffer>>;
   failure: Promise<never> | null;
 };
 
@@ -187,7 +187,10 @@ export function initCallbackStream(
     return initCallbackStreamFetchFallback(endpoint, signal);
   }
 
-  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+  const { readable, writable } = new TransformStream<
+    Uint8Array<ArrayBuffer>,
+    Uint8Array<ArrayBuffer>
+  >();
 
   const failure = fetch(endpoint, {
     method: CALLBACK_STREAM_METHOD,
@@ -219,7 +222,7 @@ function initCallbackStreamFetchFallback(
   signal?: AbortSignal,
 ) {
   return {
-    writable: new WritableStream<Uint8Array>({
+    writable: new WritableStream<Uint8Array<ArrayBuffer>>({
       async write(body) {
         try {
           const res = await fetch(endpoint, {
