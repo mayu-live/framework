@@ -41,7 +41,8 @@
   end
 
   # The custom element sends the drop as a kanbanmove event, whose detail
-  # arrives here as a hash.
+  # arrives here as a hash. It shows the move until this handler has
+  # returned and the updates it made are applied.
   def handle_move(e)
     e => { detail: { kind:, id:, lockVersion: lock_version, toIndex: to_index } }
 

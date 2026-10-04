@@ -5,6 +5,13 @@
 // in its shadow root. On drop it dispatches a "kanbanmove" event whose detail
 // the page handles in Ruby, and the server renders the result for everyone.
 //
+// Until the server has handled a drop, the move shows optimistically: the
+// item is hidden and an inert copy of it stands at its new place. The server
+// does not know about the copy, so the patch that reorders the list removes
+// it. Once the page's handler has returned and its updates are applied, even
+// when the move changed nothing or was a conflict, `settled` resolves and the
+// item shows again wherever the server put it.
+//
 // The markup it expects:
 //
 //   [data-kanban-column=<id>][data-lock-version=<n>]    a column
@@ -14,6 +21,8 @@
 //       [data-kanban-card=<id>][data-lock-version=<n>]  its cards, in order
 //
 // Cards can also be moved with Alt+Arrow keys while focused.
+
+import { settled } from "/lib/settled.ts";
 
 type Kind = "card" | "column";
 
@@ -37,6 +46,14 @@ type Drag = {
   target: { toIndex: number; toColumnId?: number } | null;
 };
 
+// A move the server has not handled yet. `copy` shows the item where it was
+// dropped while `source` is hidden.
+type PendingMove = {
+  source: HTMLElement;
+  copy: HTMLElement;
+  focused: boolean;
+};
+
 // Pixels the pointer has to move before a press becomes a drag, so clicks
 // and double-clicks on cards still work.
 const DRAG_THRESHOLD = 4;
@@ -44,9 +61,6 @@ const DRAG_THRESHOLD = 4;
 // scrolls it.
 const SCROLL_EDGE = 48;
 const SCROLL_STEP = 12;
-// How long a dropped item stays dimmed if the server sends no update, for
-// example because the move changed nothing.
-const SETTLE_TIMEOUT = 1500;
 
 const INTERACTIVE = "button, input, textarea, select, a, form";
 
@@ -90,8 +104,7 @@ export default class KanbanBoard extends HTMLElement {
   #drag: Drag | null = null;
   #ghost: HTMLElement;
   #indicator: HTMLElement;
-  #settle: MutationObserver | null = null;
-  #settleTimer = 0;
+  #pending: PendingMove[] = [];
 
   constructor() {
     super();
@@ -128,7 +141,7 @@ export default class KanbanBoard extends HTMLElement {
     this.removeEventListener("pointercancel", this.#cancel);
     this.removeEventListener("keydown", this.#onKeyDown);
     this.#cancel();
-    this.#stopSettling();
+    for (const move of [...this.#pending]) this.#settle(move);
   }
 
   #onPointerDown = (event: PointerEvent) => {
@@ -384,37 +397,77 @@ export default class KanbanBoard extends HTMLElement {
       ...target,
     };
 
-    // The item stays dimmed until the server's update arrives.
-    source.setAttribute("data-dragging", "");
-    this.#settleAfterUpdate(source);
-    this.dispatchEvent(
-      new CustomEvent("kanbanmove", { bubbles: true, detail }),
-    );
+    const move = this.#showMove(kind, source, target);
+    const event = new CustomEvent("kanbanmove", { bubbles: true, detail });
+    this.dispatchEvent(event);
+    if (!move) return;
+
+    const settle = () => this.#settle(move);
+    settled(event).then(settle, settle);
   }
 
-  #settleAfterUpdate(source: HTMLElement) {
-    this.#stopSettling();
+  // Hides the item and puts an inert copy of it where it was dropped.
+  #showMove(
+    kind: Kind,
+    source: HTMLElement,
+    target: { toIndex: number; toColumnId?: number },
+  ): PendingMove | null {
+    source.removeAttribute("data-dragging");
 
-    const settle = () => {
-      this.#stopSettling();
-      source.removeAttribute("data-dragging");
-    };
+    let siblings: HTMLElement[];
+    let parent: HTMLElement | null;
+    if (kind === "card") {
+      const column = this.#columns().find(
+        (column) => id(column) === target.toColumnId,
+      );
+      if (!column) return null;
+      siblings = this.#cards(column);
+      parent = this.#cardList(column);
+    } else {
+      siblings = this.#columns();
+      parent = this;
+    }
+    if (!parent) return null;
 
-    this.#settle = new MutationObserver(settle);
-    this.#settle.observe(this, { childList: true, subtree: true });
-    this.#settleTimer = window.setTimeout(settle, SETTLE_TIMEOUT);
+    const copy = source.cloneNode(true) as HTMLElement;
+    copy.removeAttribute("data-kanban-card");
+    copy.removeAttribute("data-kanban-column");
+    copy.inert = true;
+
+    const others = siblings.filter((sibling) => sibling !== source);
+    const before = others[target.toIndex];
+    if (before) before.before(copy);
+    else if (others.length > 0) others[others.length - 1].after(copy);
+    else parent.append(copy);
+
+    const focused = source.contains(document.activeElement);
+    source.style.display = "none";
+
+    const move = { source, copy, focused };
+    this.#pending.push(move);
+    return move;
   }
 
-  #stopSettling() {
-    this.#settle?.disconnect();
-    this.#settle = null;
-    window.clearTimeout(this.#settleTimer);
+  // Removes the move's copy and shows its item again, where the server has
+  // put it by now.
+  #settle(move: PendingMove) {
+    const index = this.#pending.indexOf(move);
+    if (index === -1) return;
+
+    this.#pending.splice(index, 1);
+    move.copy.remove();
+    move.source.style.removeProperty("display");
+    if (move.focused && move.source.isConnected) move.source.focus();
+  }
+
+  #isMoving(element: HTMLElement) {
+    return this.#pending.some((move) => move.source === element);
   }
 
   #columns() {
     return Array.from(
       this.querySelectorAll<HTMLElement>("[data-kanban-column]"),
-    );
+    ).filter((column) => !this.#isMoving(column));
   }
 
   #cardList(column: HTMLElement) {
@@ -424,7 +477,7 @@ export default class KanbanBoard extends HTMLElement {
   #cards(column: HTMLElement) {
     return Array.from(
       column.querySelectorAll<HTMLElement>("[data-kanban-card]"),
-    );
+    ).filter((card) => !this.#isMoving(card));
   }
 }
 
