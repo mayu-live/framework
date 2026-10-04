@@ -9,7 +9,9 @@
 //
 //   [data-kanban-column=<id>][data-lock-version=<n>]    a column
 //     [data-kanban-handle="column"]                     where to grab it
-//     [data-kanban-card=<id>][data-lock-version=<n>]    its cards, in order
+//     [data-kanban-cards]                               its card list, which
+//                                                       may scroll
+//       [data-kanban-card=<id>][data-lock-version=<n>]  its cards, in order
 //
 // Cards can also be moved with Alt+Arrow keys while focused.
 
@@ -38,7 +40,8 @@ type Drag = {
 // Pixels the pointer has to move before a press becomes a drag, so clicks
 // and double-clicks on cards still work.
 const DRAG_THRESHOLD = 4;
-// How close to the edge of the board, in pixels, dragging scrolls it.
+// How close to the edge of the board or a card list, in pixels, dragging
+// scrolls it.
 const SCROLL_EDGE = 48;
 const SCROLL_STEP = 12;
 // How long a dropped item stays dimmed if the server sends no update, for
@@ -175,7 +178,7 @@ export default class KanbanBoard extends HTMLElement {
 
     event.preventDefault();
     this.#moveGhost(drag, event.clientX, event.clientY);
-    this.#autoScroll(event.clientX);
+    this.#autoScroll(drag, event.clientX, event.clientY);
     drag.target =
       drag.kind === "card"
         ? this.#cardTarget(drag, event.clientX, event.clientY)
@@ -301,6 +304,14 @@ export default class KanbanBoard extends HTMLElement {
       lineY = cards[cards.length - 1].getBoundingClientRect().bottom + 4;
     }
 
+    // The card it lands next to can be scrolled out of view, so keep the line
+    // inside the visible part of the list.
+    const list = this.#cardList(column);
+    if (list) {
+      const listRect = list.getBoundingClientRect();
+      lineY = Math.min(Math.max(lineY, listRect.top + 2), listRect.bottom - 2);
+    }
+
     this.#showIndicator(headerRect.left, lineY - 2, headerRect.width, 4);
     return { toColumnId: id(column), toIndex };
   }
@@ -338,10 +349,23 @@ export default class KanbanBoard extends HTMLElement {
     this.#indicator.hidden = true;
   }
 
-  #autoScroll(x: number) {
+  // Scrolls the board sideways, and while dragging a card, the card list of
+  // the column under the pointer, so cards scrolled out of view can be
+  // reached.
+  #autoScroll(drag: Drag, x: number, y: number) {
     const rect = this.getBoundingClientRect();
     if (x < rect.left + SCROLL_EDGE) this.scrollLeft -= SCROLL_STEP;
     else if (x > rect.right - SCROLL_EDGE) this.scrollLeft += SCROLL_STEP;
+
+    if (drag.kind !== "card") return;
+
+    const column = closestByX(this.#columns(), x);
+    const list = column && this.#cardList(column);
+    if (!list) return;
+
+    const listRect = list.getBoundingClientRect();
+    if (y < listRect.top + SCROLL_EDGE) list.scrollTop -= SCROLL_STEP;
+    else if (y > listRect.bottom - SCROLL_EDGE) list.scrollTop += SCROLL_STEP;
   }
 
   #dispatchMove(
@@ -391,6 +415,10 @@ export default class KanbanBoard extends HTMLElement {
     return Array.from(
       this.querySelectorAll<HTMLElement>("[data-kanban-column]"),
     );
+  }
+
+  #cardList(column: HTMLElement) {
+    return column.querySelector<HTMLElement>("[data-kanban-cards]");
   }
 
   #cards(column: HTMLElement) {

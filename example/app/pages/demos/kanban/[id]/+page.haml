@@ -217,7 +217,7 @@
             = if column.cards.empty?
               %DialogButton.delete(title="Delete column"){dialog: "delete-column-#{column.id}"} ×
 
-          %ol.cards
+          %ol.cards{data: {kanban_cards: ""}}
             = column.cards.map do |card|
               - flash = flash_for(card)
               %li.card[card.id]{tabindex: 0, class: {flashing: flash}, style: {__flash_color: flash&.fetch(:color)}, data: {kanban_card: card.id, lock_version: card.lock_version}}
@@ -331,26 +331,36 @@
     gap: 1rem;
   }
 
+  /* The board sits in the darkest surface. In dark mode the columns are
+     lighter panels and the cards sit back into them, like a dark kanban app;
+     in light mode white cards sit on grey columns. */
   Card {
-    padding: 1rem;
+    --card-background: var(--surface-sunken);
+    --kanban-column-surface: light-dark(var(--surface), var(--surface-raised));
+    --kanban-card-surface: light-dark(var(--surface-raised), var(--surface));
+    padding: 0.5rem;
+    border-radius: 0.5rem;
   }
 
+  /* A fixed height, so long columns scroll on their own instead of the page. */
   KanbanBoard {
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
+    align-items: stretch;
+    gap: 0.5rem;
+    height: clamp(22rem, calc(100svh - 18rem), 44rem);
     overflow-x: auto;
-    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 
   .column {
-    flex: 0 0 15rem;
+    flex: 0 0 min(16rem, 80vw);
     display: grid;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background: var(--surface-sunken);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+    background: var(--kanban-column-surface);
+    border: var(--thin-border);
+    border-radius: var(--radius-sm);
 
     &[data-dragging] {
       opacity: 0.4;
@@ -360,8 +370,9 @@
   .column-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+    gap: 0.375rem;
+    padding: 0.5rem 0.375rem 0.5rem 0.75rem;
+    border-bottom: var(--thin-border);
     cursor: grab;
     touch-action: none;
     user-select: none;
@@ -373,53 +384,55 @@
 
     h4 {
       margin: 0;
+      overflow: hidden;
+      font-family: var(--font-heading);
       font-size: 0.9375rem;
+      font-weight: 600;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
   }
 
   .count {
-    min-width: 1.5rem;
-    padding: 0 0.375rem;
-    text-align: center;
     color: var(--text-muted);
     font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
-    background: var(--surface-raised);
-    border-radius: 999px;
   }
 
   .cards {
     display: grid;
-    gap: 0.5rem;
+    align-content: start;
+    gap: 0.375rem;
     margin: 0;
-    padding: 0;
+    padding: 0.375rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     list-style: none;
-
-    &:empty {
-      display: none;
-    }
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
 
   .card {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: start;
     gap: 0.25rem;
     margin: 0;
-    padding: 0.625rem 0.5rem 0.625rem 0.75rem;
-    background: var(--surface-raised);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    box-shadow: 0 1px 2px color-mix(in oklab, var(--text) 10%, transparent);
+    padding: 0.5rem 0.625rem;
+    background: var(--kanban-card-surface);
+    border: var(--thin-border);
+    border-radius: 4px;
     cursor: grab;
     touch-action: none;
     user-select: none;
     transition: box-shadow 300ms ease, border-color 300ms ease;
 
+    &:hover {
+      border-color: var(--border-strong);
+    }
+
     &:focus-visible {
       outline: 2px solid var(--accent);
-      outline-offset: 2px;
+      outline-offset: 1px;
     }
 
     &[data-dragging] {
@@ -434,25 +447,61 @@
 
   .card-body {
     display: grid;
-    gap: 0.25rem;
+    gap: 0.125rem;
     min-width: 0;
   }
 
   .card-actions {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
     display: flex;
+    background: var(--kanban-card-surface);
+    border-radius: 3px;
+    box-shadow: -0.5rem 0 0.5rem -0.125rem var(--kanban-card-surface);
+  }
+
+  /* With a pointer, the card actions wait until the card is hovered or
+     focused, and cover the end of the title while shown. Touch screens
+     always show them, so the card leaves room for them. */
+  @media (hover: hover) {
+    .card-actions {
+      opacity: 0;
+      transition: opacity 100ms ease;
+    }
+
+    .card:hover .card-actions,
+    .card:focus-visible .card-actions,
+    .card:focus-within .card-actions {
+      opacity: 1;
+    }
+  }
+
+  @media (hover: none) {
+    .card {
+      padding-right: 3.25rem;
+    }
   }
 
   .title {
     margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.35;
     overflow-wrap: anywhere;
   }
 
   .description {
+    display: -webkit-box;
     margin: 0;
+    overflow: hidden;
     font-size: 0.8125rem;
+    line-height: 1.4;
     color: var(--text-muted);
     white-space: pre-line;
     overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 
   .flash-note {
@@ -582,6 +631,7 @@
 
   .add-column {
     flex: none;
+    align-self: start;
     padding: 0.375rem 0.75rem;
     font: inherit;
     font-size: 0.875rem;
@@ -603,7 +653,7 @@
     padding: 0.75rem 1rem;
     background: var(--surface-sunken);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: 0.5rem;
 
     h4 {
       margin: 0 0 0.5rem;
