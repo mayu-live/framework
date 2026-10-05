@@ -19,6 +19,7 @@ require_relative "commands/routes"
 require_relative "commands/graph"
 require_relative "commands/transform"
 require_relative "commands/lsp"
+require_relative "commands/check"
 
 module Mayu
   module Build
@@ -36,7 +37,8 @@ module Mayu
             "routes" => Commands::Routes,
             "graph" => Commands::Graph,
             "transform" => Commands::Transform,
-            "lsp" => Commands::Lsp
+            "lsp" => Commands::Lsp,
+            "check" => Commands::Check
           }
 
         def call

@@ -24,6 +24,7 @@
 - `rake build` runs the client production build and packages the gems into `pkg/`.
 - `cd example && bundle install && bin/mayu dev` starts the example app at `https://localhost:9292/`.
 - `bin/mayu lsp` starts the language server (stdio) for editors; it finds the app via `mayu.toml`.
+- `bin/mayu check [paths...]` prints the language server's diagnostics for the whole app and exits 1 when there are any.
 
 ## Coding Style & Naming Conventions
 
