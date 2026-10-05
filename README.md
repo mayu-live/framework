@@ -452,6 +452,16 @@ provides go to definition, hover, and completion for `import("...")` and
 
 Point your editor's LSP client at the command for the `haml` file type.
 
+`bin/mayu check` reports the same diagnostics for every Ruby, Haml, and CSS
+file in the app, like a linter. Pass files or directories to check only those.
+It exits with status 1 when it finds anything:
+
+```
+app/pages/+page.haml:4:3: warning: Card is imported but never used
+app/pages/+page.haml:9:12: error: Could not resolve "./Missing"
+1 error, 1 warning, 42 files checked.
+```
+
 Neovim:
 
 ```lua
