@@ -29,7 +29,7 @@ class Mayu::Build::Commands::CheckTest < Minitest::Test
       status = Dir.chdir(File.join(root, "app")) { Mayu::Build::Commands::Check.new([], output:).call }
 
       assert_equal(1, status)
-      assert_match(%r{^pages/broken\.haml:2:\d+: error: .*/components/Missing}, output.string)
+      assert_match(%r{^pages/broken\.haml\n  2:\d+  error  .*/components/Missing}, output.string)
       assert_match(/^1 error, 2 files checked\.$/, output.string)
     end
   end
