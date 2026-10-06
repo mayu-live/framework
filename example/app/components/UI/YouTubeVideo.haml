@@ -1,28 +1,36 @@
 :ruby
-  def initialize
+  def src
+    url = "https://www.youtube.com/embed/#{URI.encode_uri_component($video_id)}"
+    query = query_params
+    query.empty? ? url : "#{url}?#{query}"
   end
-:ruby
-  query_params = URI.encode_www_form({
-    autoplay: $autoplay && 1,
-    list: $list,
-    listType: $list_type,
-    controls: ($controls == false) && 0,
-    origin: $origin,
-    fs: ($fs == false) && 0,
-    hl: $hl,
-    loop: $loop && 1,
-  }.select { _2 })
+
+  def query_params
+    URI.encode_www_form({
+      autoplay: $autoplay && 1,
+      list: $list,
+      listType: $list_type,
+      controls: ($controls == false) && 0,
+      origin: $origin,
+      fs: ($fs == false) && 0,
+      hl: $hl,
+      loop: $loop && 1,
+      # YouTube only loops a single video when it is also its own playlist.
+      playlist: ($loop && !$list) && $video_id,
+    }.select { _2 })
+  end
+
 %iframe(allowfullscreen class=$class){
   allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
-  frameborder: 0,
   loading: "lazy",
   title: $title || "YouTube video player",
-  src: "https://www.youtube.com/embed/#{$video_id}?#{query_params}",
+  src: src,
 }
 :css
   iframe {
     display: block;
     aspect-ratio: 16 / 9;
+    border: 0;
     border-radius: 10px;
     contain: paint;
   }
