@@ -2,7 +2,8 @@
 
 A Zed extension that runs `mayu lsp` for `.haml` files. Zed only starts
 language servers registered by extensions, so this one registers a `mayu`
-server for the `Haml` language.
+server for the `Haml` language (and `HAML`, the name used by the
+tree-sitter-haml fork's Zed extension).
 
 ## Install
 

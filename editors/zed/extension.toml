@@ -7,7 +7,8 @@ description = "Language server for Mayu projects"
 repository = "https://github.com/mayu-live/framework"
 
 # The Haml language is provided by the Haml extension (davidcornu/zed-haml),
-# so install that extension too.
+# so install that extension too. "HAML" is the language name used by the
+# tree-sitter-haml fork's Zed extension (aalin/tree-sitter-haml).
 [language_servers.mayu]
 name = "Mayu"
-languages = ["Haml"]
+languages = ["Haml", "HAML"]
