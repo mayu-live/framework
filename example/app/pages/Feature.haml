@@ -27,7 +27,7 @@
   = ITEMS.map.with_index do |item, index|
     %li[index]{class: { active: index == @index }}
       %Icon.icon{ name: item[:icon] }
-      .text
+      %div
         %h3= item[:title]
         %p= item[:text]
 

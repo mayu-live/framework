@@ -148,38 +148,37 @@
     @snake = new_snake
   end
 
-.snake-game
-  .controls
-    %Button(onclick=handle_toggle_running disabled=@game_over){
-      color: @running ? "var(--red)" : "var(--green)"
-    }
-      = @running ? "Pause" : "Start"
-    %Button(onclick=handle_reset) Reset
-    .fps
-      %label(for="snake-fps") Speed
-      %input(id="snake-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
-      %output= @fps
-
-  %p
-    Score:
-    %strong<= @score
-
-  - snake_map = @snake.each_with_object({}) { |(x, y), memo| memo["#{x},#{y}"] = true }
-  - head_x, head_y = @snake.first
-  - food_x, food_y = @food || [-1, -1]
-
-  .grid(tabindex=0 onkeydown=handle_keydown){
-    style: { __grid_cols: GRID_WIDTH, __grid_rows: GRID_HEIGHT }
+.controls
+  %Button(onclick=handle_toggle_running disabled=@game_over){
+    color: @running ? "var(--red)" : "var(--green)"
   }
-    = GRID_HEIGHT.times.map do |y|
-      = GRID_WIDTH.times.map do |x|
-        - key = "#{x}.#{y}"
-        - is_head = (x == head_x && y == head_y)
-        - is_snake = snake_map["#{x},#{y}"]
-        - is_food = (x == food_x && y == food_y)
-        %Cell[key]{snake: is_snake, head: is_head, food: is_food}
-    = if @game_over
-      %p.game-over Game over
+    = @running ? "Pause" : "Start"
+  %Button(onclick=handle_reset) Reset
+  .fps
+    %label(for="snake-fps") Speed
+    %input(id="snake-fps" type="range" min=MIN_FPS max=MAX_FPS step=1 oninput=handle_change_fps){value: @fps}
+    %output= @fps
+
+%p
+  Score:
+  %strong<= @score
+
+- snake_map = @snake.each_with_object({}) { |(x, y), memo| memo["#{x},#{y}"] = true }
+- head_x, head_y = @snake.first
+- food_x, food_y = @food || [-1, -1]
+
+.grid(tabindex=0 onkeydown=handle_keydown){
+  style: { __grid_cols: GRID_WIDTH, __grid_rows: GRID_HEIGHT }
+}
+  = GRID_HEIGHT.times.map do |y|
+    = GRID_WIDTH.times.map do |x|
+      - key = "#{x}.#{y}"
+      - is_head = (x == head_x && y == head_y)
+      - is_snake = snake_map["#{x},#{y}"]
+      - is_food = (x == food_x && y == food_y)
+      %Cell[key]{snake: is_snake, head: is_head, food: is_food}
+  = if @game_over
+    %p.game-over Game over
 
 :css
   .controls {

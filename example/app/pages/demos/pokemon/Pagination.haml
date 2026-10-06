@@ -41,6 +41,7 @@
         %a.step{href: href($page - 1), rel: "prev"} ← Previous
       = else
         %span.step(aria-disabled="true") ← Previous
+
     = items.each_with_index.map do |item, index|
       = if item == :gap
         %li.gap["gap-#{index}"] …
@@ -50,6 +51,7 @@
             href: href(item),
             aria: { current: $page == item && "page" }
           }= item
+
     %li
       = if $page < $total_pages
         %a.step{href: href($page + 1), rel: "next"} Next →

@@ -65,7 +65,7 @@
     = @keys.each_with_index.map do |key, index|
       - video = VIDEOS_BY_ID.fetch(key)
       .video[key]{style: { view_transition_name: "video-#{key}" }}
-        %YouTubeVideo[key]{video_id: video.id, title: video.title }
+        %YouTubeVideo[key](video-id=video.id title=video.title)
         %Button.icon-button{
           onclick: handle_move_up,
           value: key,
