@@ -368,7 +368,6 @@ module Mayu
 
         @nodes[id_node.id] = dom_node
         dom_node.children.reject { it.node_type == DOCUMENT_TYPE_NODE }
-          .reject { it.text? && it.text == "\n" }
           .zip(id_node.children || [])
           .each { |dom_child, id_child| setup_tree(dom_child, id_child) }
       end

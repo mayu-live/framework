@@ -343,6 +343,12 @@ class Mayu::Test::Test < Mayu::Test::Case
     end
   end
 
+  def test_renders_newline_text_between_elements
+    screen = render(H[:code, H[:span, "a"], "\n", H[:span, "b"]])
+
+    assert_equal("a\nb", screen.at_xpath("//code").text)
+  end
+
   def test_settle_raises_errors_from_mount
     error = assert_raises(RuntimeError) { render(MountCrash) }
 
