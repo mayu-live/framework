@@ -26,7 +26,6 @@ RUN bin/mayu build
 FROM base AS final
 COPY .fly /fly
 COPY --from=install /app /app
-ENV PORT 3000
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
 
 ENTRYPOINT ["/fly/entrypoint.sh"]

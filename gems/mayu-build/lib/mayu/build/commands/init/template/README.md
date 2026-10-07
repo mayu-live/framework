@@ -38,6 +38,30 @@ Set `MAYU_SECRET_KEY`, then start the production server:
 bin/mayu start
 ```
 
+The production server listens on `http://0.0.0.0:3333` with `h2c = true`. It
+expects a proxy in front that terminates TLS and speaks HTTP/2 to it, as Fly.io
+does. Browsers only use HTTP/2 over TLS, and Mayu needs HTTP/2, so you can't
+open that address directly in a browser.
+
+### Run the container locally
+
+To try the production image with Docker or Podman, let the server terminate
+TLS itself with a self-signed certificate:
+
+1. Uncomment `gem "localhost"` in `Gemfile` and run `bundle install`.
+2. In the `[production.server]` section of `mayu.toml`, set
+   `listen = "https://0.0.0.0:3333"` and `self_signed_cert = true`.
+3. Build and run the image:
+
+   ```bash
+   podman build -t my-app .
+   podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret my-app
+   ```
+
+4. Open [`https://localhost:3333`](https://localhost:3333).
+
+Revert these changes before deploying to Fly.io.
+
 ## Learn more
 
 Find the documentation on [mayu.live/docs](https://mayu.live/docs).
