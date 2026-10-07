@@ -144,6 +144,14 @@ class Mayu::Runtime::VNodes::RefsTest < Minitest::Test
     refute(child.instance_variable_get(:@__props).key?(:ref))
   end
 
+  def test_a_ref_that_is_not_a_ref_raises_a_clear_error
+    error = assert_raises(ArgumentError) { H[:span, ref: "main"] }
+    assert_includes(error.message, "`ref` must be a Ref")
+    assert_includes(error.message, %(got "main"))
+
+    assert_raises(ArgumentError) { H[Child, ref: "main"] }
+  end
+
   def test_a_component_ref_is_its_instance_and_set_before_the_parent_mounts
     Parent.child_in_mount = nil
 

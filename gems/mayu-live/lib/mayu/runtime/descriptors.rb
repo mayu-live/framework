@@ -8,6 +8,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require_relative "marshalling"
+require_relative "ref"
 
 module Mayu
   module Runtime
@@ -18,6 +19,13 @@ module Mayu
       Element =
         Data.define(:type, :key, :slot, :children, :props, :ref) do
           def self.[](type, *children, key: nil, slot: nil, ref: nil, **props)
+            unless ref.nil? || ref.is_a?(Ref)
+              raise ArgumentError,
+                "`ref` must be a Ref (create one with Ref.new), got #{ref.inspect}. " \
+                "Like in React, `ref` is reserved and is not passed on as a prop; " \
+                "use another name for the prop."
+            end
+
             new(type, key, slot&.to_sym, Children[children], props, ref)
           end
 
