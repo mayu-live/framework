@@ -17,6 +17,12 @@ module Mayu
         end
       end
 
+      # A component that raised after the last settle still fails the test.
+      def after_teardown
+        super
+        test_pages.each(&:raise_component_error)
+      end
+
       private
 
       def test_pages

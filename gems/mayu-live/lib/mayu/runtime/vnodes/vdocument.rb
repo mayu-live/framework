@@ -476,6 +476,7 @@ module Mayu
           component = listener.callback&.component
           component_vnode = find_component_vnode(component)
           tree_path = component_vnode ? component_vnode.tree_path : []
+          @engine.component_error(e, component_vnode)
           command = render_error_command(e, component, tree_path) if component
           if command && @engine.render_exceptions?
             @engine.enqueue_command(command)

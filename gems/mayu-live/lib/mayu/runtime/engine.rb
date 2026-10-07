@@ -59,6 +59,10 @@ module Mayu
       # NotFound like any other render error. Set by the session after the
       # engine is built or restored, since a Method cannot be marshalled.
       attr_accessor :not_found_handler
+      # Called with the error and the component vnode when a component's
+      # task, mount, did_update or event handler raises. The error is still
+      # logged or shown as before; tests set this to fail the test.
+      attr_accessor :component_error_handler
       alias_method :render_exceptions?, :render_exceptions
 
       def initialize(
@@ -81,6 +85,7 @@ module Mayu
         @output_queue = Async::Queue.new
         @update_interval = nil
         @not_found_handler = nil
+        @component_error_handler = nil
         @force_render = 0
         initialize_render_gate
         @updater = VNodes::Updater.new(@output_queue)
@@ -132,6 +137,7 @@ module Mayu
         @output_queue = Async::Queue.new
         @update_interval = nil
         @not_found_handler = nil
+        @component_error_handler = nil
         @force_render = 0
         initialize_render_gate
         @updater = VNodes::Updater.new(@output_queue)
@@ -181,6 +187,10 @@ module Mayu
 
       def not_found_descriptor
         @not_found_handler&.call
+      end
+
+      def component_error(error, vnode)
+        @component_error_handler&.call(error, vnode)
       end
 
       def start

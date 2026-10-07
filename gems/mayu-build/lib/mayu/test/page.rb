@@ -97,6 +97,10 @@ module Mayu
         @nodes = {}
         @listener_bindings = {}
         @element_calls = []
+        # Errors raised in component tasks and event handlers, raised again
+        # by #settle so the test fails where they happened.
+        @component_errors = []
+        @engine.component_error_handler = ->(error, _vnode) { @component_errors << error }
         @doc = Nokolexbor::HTML(@engine.render)
         unwrap_implied_body(@engine.dom_id_tree)
         @commands = []
@@ -135,10 +139,18 @@ module Mayu
 
       def settle
         Async::Task.current.with_timeout(@settle_timeout) { @engine.synchronize }
+        raise_component_error
         self
       rescue Async::TimeoutError
+        raise_component_error
         raise SettleTimeoutError,
           "Mayu page did not settle within #{@settle_timeout}s\n\n#{html}"
+      end
+
+      # Raises the first component error that has not been raised yet.
+      def raise_component_error
+        error = @component_errors.shift
+        raise error if error
       end
 
       def step
@@ -217,8 +229,10 @@ module Mayu
           completion&.dequeue
           @engine.synchronize
         end
+        raise_component_error
         self
       rescue Async::TimeoutError
+        raise_component_error
         raise SettleTimeoutError,
           "Mayu callback #{id.inspect} did not settle within #{@settle_timeout}s\n\n#{html}"
       end

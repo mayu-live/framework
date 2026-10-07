@@ -139,6 +139,31 @@ class Mayu::Test::Test < Mayu::Test::Case
     end
   end
 
+  class MountCrash < Mayu::Component::Base
+    def mount
+      raise "mount failed"
+    end
+
+    def render = H[:p, "Mounted"]
+  end
+
+  class LateMountCrash < Mayu::Component::Base
+    def mount
+      sleep 0.01
+      raise "late mount failed"
+    end
+
+    def render = H[:p, "Mounted"]
+  end
+
+  class ClickCrash < Mayu::Component::Base
+    def crash
+      raise "click failed"
+    end
+
+    def render = H[:button, "Crash", onclick: H.callback(self, :crash)]
+  end
+
   def test_queries_roles_text_css_and_scoped_content
     screen =
       render(
@@ -316,5 +341,28 @@ class Mayu::Test::Test < Mayu::Test::Case
     render(H[:p, "Hello"]) do |screen|
       assert_equal("Hello", screen.get_by_text("Hello").text)
     end
+  end
+
+  def test_settle_raises_errors_from_mount
+    error = assert_raises(RuntimeError) { render(MountCrash) }
+
+    assert_equal("mount failed", error.message)
+  end
+
+  def test_raise_component_error_raises_errors_after_settle
+    screen = render(LateMountCrash)
+    sleep 0.05
+
+    error = assert_raises(RuntimeError) { screen.raise_component_error }
+    assert_equal("late mount failed", error.message)
+  end
+
+  def test_click_raises_errors_from_handlers
+    screen = render(ClickCrash)
+
+    error = assert_raises(RuntimeError) do
+      screen.get_by_role(:button, name: "Crash").click
+    end
+    assert_equal("click failed", error.message)
   end
 end

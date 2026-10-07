@@ -128,6 +128,9 @@ module Mayu
               Async::Task.current.yield while @replacing_instance
               work.call
             end
+          rescue => error
+            @engine.component_error(error, self)
+            raise
           end
         end
 
@@ -250,7 +253,12 @@ module Mayu
           return unless @task
           return unless instance.respond_to?(:did_update)
 
-          @task.async { instance.did_update(previous_props) }
+          @task.async do
+            instance.did_update(previous_props)
+          rescue => error
+            @engine.component_error(error, self)
+            raise
+          end
         end
 
         # The same descriptor object means the same props and children. State
@@ -626,6 +634,9 @@ module Mayu
               }
             )
             instance.mount
+          rescue => error
+            @engine.component_error(error, self)
+            raise
           end
         end
 
