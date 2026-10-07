@@ -85,7 +85,7 @@
   # Use ordinary instance data: Haml state assignments would queue renders.
   # This derived table is rebuilt after restoration and when dimensions change.
   def neighbor_positions
-    cached = instance_variable_get(:"@neighbor_positions")
+    cached = instance_variable_get(:@neighbor_positions)
     return cached[2] if cached && cached[0] == @width && cached[1] == @height
 
     width = @width
@@ -102,18 +102,18 @@
         row + left, row + right,
         below + left, below + x, below + right].freeze
     end.freeze
-    instance_variable_set(:"@neighbor_positions", [width, height, positions].freeze)
+    instance_variable_set(:@neighbor_positions, [width, height, positions].freeze)
     positions
   end
 
   public
 
   def marshal_dump
-    super.reject { |ivar, _| ivar == :"@neighbor_positions" }
+    super.reject { |ivar, _| ivar == :@neighbor_positions }
   end
 
   def marshal_load(ivars)
-    instance_variable_set(:"@neighbor_positions", nil)
+    instance_variable_set(:@neighbor_positions, nil)
     super
   end
 

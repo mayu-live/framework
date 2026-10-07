@@ -1,0 +1,42 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+
+  COLORS = %w[#e5484d #f76b15 #d5a100 #46a758 #12a594 #0090ff #6e56cf #d6409f].freeze
+
+  # Every browser window gets its own anonymous visitor. It lives in this
+  # layout's state on the server, so it stays the same while navigating
+  # between boards, and a new window is a new visitor.
+  def initialize
+    @visitor = {name: "User#{rand(100..999)}", color: COLORS.sample}
+  end
+
+%div
+  %header
+    %Heading(level=2) Kanban
+    %p.visitor
+      You are
+      %span.name{style: {__color: @visitor[:color]}}<= @visitor[:name]
+  = H.context(visitor: @visitor) do
+    %slot
+
+:css
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+  }
+
+  .visitor {
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  .name {
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    color: white;
+    font-weight: 700;
+    background: var(--color);
+  }

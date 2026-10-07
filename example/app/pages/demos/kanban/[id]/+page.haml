@@ -1,0 +1,687 @@
+:ruby
+  Card = import("/components/UI/Card")
+  Dialog = import("/components/UI/Dialog")
+  DialogButton = import("/components/UI/DialogButton")
+  DatabaseSetup = import("/components/Database/Setup")
+  KanbanActions = import("/lib/KanbanActions")
+  KanbanBoard = import("/pages/demos/kanban/KanbanBoard.tsx")
+  IntlTime = import("/components/IntlTime.tsx")
+
+  FLASH_SECONDS = 4
+
+  FLASH_MESSAGES = {
+    "created" => "added this card",
+    "moved" => "moved this card",
+    "renamed" => "renamed this card",
+    "edited" => "edited this card"
+  }.freeze
+
+  def initialize
+    @board = nil
+    @activities = []
+    @flash = nil
+    @conflict = nil
+    @editing = nil
+    @column_form_ref = Ref.new
+    # One per column, since each column has its own add-card form.
+    @card_form_refs = {}
+    reload if Database.enabled? && board_id
+  end
+
+  # Every change to this board, by anyone in any window or server process,
+  # is announced on the board's channel once it is committed.
+  def mount
+    return unless Database.enabled? && @board
+
+    Database.listen("kanban_board_#{board_id}") do |payload|
+      reload
+      activity_id = JSON.parse(payload)["activity_id"]
+      show_flash(activity_id) if activity_id
+    end
+  end
+
+  # The custom element sends the drop as a kanbanmove event, whose detail
+  # arrives here as a hash. It shows the move until this handler has
+  # returned and the updates it made are applied.
+  def handle_move(e)
+    e => { detail: { kind:, id:, lockVersion: lock_version, toIndex: to_index } }
+
+    change do
+      case kind
+      in "card"
+        to_column_id = e.dig(:detail, :toColumnId)
+        KanbanActions.move_card(id, to_column_id, to_index, lock_version, @@visitor)
+      in "column"
+        KanbanActions.move_column(id, to_index, lock_version, @@visitor)
+      end
+    end
+  end
+
+  def handle_add_card(e)
+    e => { target: { formData: { column_id:, title:, description: } } }
+
+    title = title.strip
+    return if title.empty?
+
+    change { KanbanActions.add_card(Integer(column_id), title, @@visitor, description: description.strip) }
+    @card_form_refs[Integer(column_id)]&.current&.reset
+  end
+
+  def handle_add_column(e)
+    e => { target: { formData: { name: } } }
+
+    name = name.strip
+    return if name.empty?
+
+    change { KanbanActions.add_column(board_id, name, @@visitor) }
+    @column_form_ref.current&.reset
+  end
+
+  # Editing keeps the version and text from when it started, so a change
+  # someone else makes meanwhile is a conflict instead of being overwritten.
+  def handle_edit(e)
+    e => { currentTarget: { dataset: { edit:, lockVersion: lock_version, value: } } }
+
+    @editing = {key: edit, lock_version: Integer(lock_version), value:}
+  end
+
+  # The edit dialog sends the version the card had when the dialog was
+  # rendered, so a change someone else commits first is a conflict instead of
+  # being overwritten. The form is keyed by that version, so it refills with
+  # the other person's change if the card changes before it is submitted.
+  def handle_update_card(e)
+    e => { target: { formData: { id:, lock_version:, title:, description: } } }
+
+    title = title.strip
+    return if title.empty?
+
+    change do
+      KanbanActions.update_card(Integer(id), Integer(lock_version), @@visitor, title:, description: description.strip)
+    end
+  end
+
+  # A form that was already submitted can submit again before it is removed.
+  def handle_rename_column(e)
+    e => { target: { formData: { id:, name: } } }
+    editing = @editing or return
+    @editing = nil
+
+    name = name.strip
+    change { KanbanActions.rename_column(Integer(id), name, editing[:lock_version], @@visitor) } unless name.empty?
+  end
+
+  def handle_delete_card(e)
+    change { KanbanActions.delete_card(Integer(e.dig(:currentTarget, :value)), @@visitor) }
+  end
+
+  def handle_delete_column(e)
+    e => { target: { formData: { id: } } }
+
+    change { KanbanActions.delete_column(Integer(id), @@visitor) }
+  end
+
+  def handle_dismiss_conflict
+    @conflict = nil
+  end
+
+  private
+
+  def board_id
+    Integer($params[:id], exception: false)
+  end
+
+  # Applies a change and shows the result right away, without waiting for
+  # this board's notification, which then finds nothing new. A conflict is
+  # shown, and the board shows what the other person did.
+  def change
+    yield
+    @conflict = nil
+  rescue KanbanActions::Conflict => error
+    @conflict = error.message
+  ensure
+    reload
+  end
+
+  def reload
+    @board = KanbanActions.load_board(board_id)
+    @activities = @board ? KanbanActions.recent_activities(board_id) : []
+  end
+
+  # Highlights the card someone else just changed, in their color.
+  def show_flash(activity_id)
+    activity = @activities.find { it.id == activity_id }
+    return unless activity&.card_id && FLASH_MESSAGES.key?(activity.action)
+    return if activity.actor_name == @@visitor[:name]
+
+    @flash = {
+      id: activity.id,
+      card_id: activity.card_id,
+      name: activity.actor_name,
+      color: activity.actor_color,
+      message: FLASH_MESSAGES.fetch(activity.action)
+    }
+
+    Async do
+      sleep FLASH_SECONDS
+      @flash = nil if @flash&.fetch(:id) == activity.id
+    end
+  end
+
+  def editing?(key)
+    @editing&.fetch(:key) == key
+  end
+
+  def flash_for(card)
+    @flash if @flash&.fetch(:card_id) == card.id
+  end
+
+  def card_form_ref(column_id)
+    @card_form_refs[column_id] ||= Ref.new
+  end
+
+%head
+  %title Kanban Board
+
+- raise NotFound unless board_id
+
+- return unless Database.enabled?
+  %DatabaseSetup
+
+- return unless @board
+  %p
+    This board does not exist, or someone deleted it.
+    %a(href="/demos/kanban")< Back to the boards
+
+%nav.toolbar
+  %a(href="/demos/kanban") ← All boards
+  %h3= @board.name
+
+= if @conflict
+  .conflict(role="alert")
+    %p= @conflict
+    %button(onclick=handle_dismiss_conflict) Dismiss
+
+.layout
+  %Card
+    %KanbanBoard(onkanbanmove=handle_move)
+      = @board.columns.map do |column|
+        %section.column[column.id]{data: {kanban_column: column.id, lock_version: column.lock_version}}
+          %header.column-header{data: {kanban_handle: "column"}, title: "Drag to move the column"}
+            = if editing?("column-#{column.id}")
+              %form.rename(onsubmit=handle_rename_column autocomplete="off")
+                %input(type="hidden" name="id"){value: column.id}
+                %input(type="text" name="name" required autofocus){value: @editing[:value], maxlength: KanbanActions::MAX_LENGTH}
+            = else
+              %h4(ondblclick=handle_edit){data: {edit: "column-#{column.id}", lock_version: column.lock_version, value: column.name, kanban_title: ""}}= column.name
+            %span.count= column.cards.size
+            %DialogButton.icon(title="Add card"){dialog: "add-card-#{column.id}"} +
+            = if column.cards.empty?
+              %DialogButton.delete(title="Delete column"){dialog: "delete-column-#{column.id}"} ×
+
+          %ol.cards{data: {kanban_cards: ""}}
+            = column.cards.map do |card|
+              - flash = flash_for(card)
+              %li.card[card.id]{tabindex: 0, class: {flashing: flash}, style: {__flash_color: flash&.fetch(:color)}, data: {kanban_card: card.id, lock_version: card.lock_version}}
+                .card-body
+                  %p.title{data: {kanban_title: ""}}= card.title
+                  = unless card.description.empty?
+                    %p.description= card.description
+                .card-actions
+                  %DialogButton.icon(title="Edit card"){dialog: "edit-card-#{card.id}"} ✎
+                  %button.delete(onclick=handle_delete_card title="Delete card"){value: card.id} ×
+                = if flash
+                  %p.flash-note #{flash[:name]} #{flash[:message]}
+
+      %DialogButton.add-column(dialog="add-column") + Add column
+
+    -# The dialogs are outside KanbanBoard, so its drag and keyboard handling
+    -# never sees events from them. Each form has method="dialog": submitting
+    -# it closes the dialog in the browser and calls its handler, which
+    -# resets the form through its ref.
+    %Dialog(id="add-column")
+      %form(ref=@column_form_ref method="dialog" onsubmit=handle_add_column autocomplete="off")
+        %h4 Add a column
+        %label
+          Name
+          %input(type="text" name="name" required){maxlength: KanbanActions::MAX_LENGTH}
+        .actions
+          %button.cancel(type="button" command="close" commandfor="add-column") Cancel
+          %button.primary Add column
+
+    = @board.columns.map do |column|
+      %Dialog[column.id]{id: "add-card-#{column.id}"}
+        %form(method="dialog" onsubmit=handle_add_card autocomplete="off"){ref: card_form_ref(column.id)}
+          %h4= "Add a card to #{column.name}"
+          %input(type="hidden" name="column_id"){value: column.id}
+          %label
+            Title
+            %input(type="text" name="title" required){maxlength: KanbanActions::MAX_LENGTH}
+          %label
+            Description
+            %textarea(name="description" rows=3){maxlength: KanbanActions::MAX_DESCRIPTION_LENGTH}
+          .actions
+            %button.cancel(type="button" command="close"){commandfor: "add-card-#{column.id}"} Cancel
+            %button.primary Add card
+
+    = @board.columns.map do |column|
+      %Dialog.confirm[column.id]{id: "delete-column-#{column.id}", anchored: true}
+        %form(method="dialog" onsubmit=handle_delete_column)
+          %p= "Delete the column #{column.name}?"
+          %input(type="hidden" name="id"){value: column.id}
+          .actions
+            %button.cancel(type="button" command="close" autofocus){commandfor: "delete-column-#{column.id}"} Cancel
+            %button.danger Delete
+
+    = @board.columns.flat_map(&:cards).map do |card|
+      %Dialog[card.id]{id: "edit-card-#{card.id}"}
+        %form(method="dialog" onsubmit=handle_update_card autocomplete="off")[card.lock_version]
+          %h4 Edit card
+          %input(type="hidden" name="id"){value: card.id}
+          %input(type="hidden" name="lock_version"){value: card.lock_version}
+          %label
+            Title
+            %input(type="text" name="title" required){value: card.title, maxlength: KanbanActions::MAX_LENGTH}
+          %label
+            Description
+            %textarea(name="description" rows=3){maxlength: KanbanActions::MAX_DESCRIPTION_LENGTH}= card.description
+          .actions
+            %button.cancel(type="button" command="close"){commandfor: "edit-card-#{card.id}"} Cancel
+            %button.primary Save
+
+  %aside.activity
+    %h4 Activity
+    %ol
+      = @activities.map do |activity|
+        %li[activity.id]
+          %IntlTime.time{time: activity.created_at.iso8601, time_style: "short"}
+          %span.actor{style: {__actor_color: activity.actor_color}}= activity.actor_name
+          = activity.message
+
+:css
+  .toolbar {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    h3 {
+      margin: 0;
+    }
+  }
+
+  .conflict {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    background: color-mix(in oklab, var(--red) 15%, var(--surface-raised));
+    border: 1px solid var(--red);
+    border-radius: var(--radius-sm);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  /* The board sits in the darkest surface. In dark mode the columns are
+     lighter panels and the cards sit back into them, like a dark kanban app;
+     in light mode white cards sit on grey columns. */
+  Card {
+    --card-background: var(--surface-sunken);
+    --kanban-column-surface: light-dark(var(--surface), var(--surface-raised));
+    --kanban-card-surface: light-dark(var(--surface-raised), var(--surface));
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+  }
+
+  /* A fixed height, so long columns scroll on their own instead of the page. */
+  KanbanBoard {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+    height: clamp(22rem, calc(100svh - 18rem), 44rem);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  .column {
+    flex: 0 0 min(16rem, 80vw);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+    background: var(--kanban-column-surface);
+    border: var(--thin-border);
+    border-radius: var(--radius-sm);
+
+    &[data-dragging] {
+      opacity: 0.4;
+    }
+  }
+
+  .column-header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.375rem 0.5rem 0.75rem;
+    border-bottom: var(--thin-border);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+
+    & > :first-child {
+      flex: 1;
+      min-width: 0;
+    }
+
+    h4 {
+      margin: 0;
+      overflow: hidden;
+      font-family: var(--font-heading);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .count {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cards {
+    display: grid;
+    align-content: start;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0.375rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    list-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  .card {
+    position: relative;
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.5rem 0.625rem;
+    background: var(--kanban-card-surface);
+    border: var(--thin-border);
+    border-radius: 4px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    transition: box-shadow 300ms ease, border-color 300ms ease;
+
+    &:hover {
+      border-color: var(--border-strong);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    &[data-dragging] {
+      opacity: 0.4;
+    }
+
+    &.flashing {
+      border-color: var(--flash-color);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--flash-color) 35%, transparent);
+    }
+  }
+
+  .card-body {
+    display: grid;
+    gap: 0.125rem;
+    min-width: 0;
+  }
+
+  .card-actions {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    display: flex;
+    background: var(--kanban-card-surface);
+    border-radius: 3px;
+    box-shadow: -0.5rem 0 0.5rem -0.125rem var(--kanban-card-surface);
+  }
+
+  /* With a pointer, the card actions wait until the card is hovered or
+     focused, and cover the end of the title while shown. Touch screens
+     always show them, so the card leaves room for them. */
+  @media (hover: hover) {
+    .card-actions {
+      opacity: 0;
+      transition: opacity 100ms ease;
+    }
+
+    .card:hover .card-actions,
+    .card:focus-visible .card-actions,
+    .card:focus-within .card-actions {
+      opacity: 1;
+    }
+  }
+
+  @media (hover: none) {
+    .card {
+      padding-right: 3.25rem;
+    }
+  }
+
+  .title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .description {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .flash-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--flash-color);
+  }
+
+  .delete {
+    padding: 0 0.25rem;
+    font-size: 1.125rem;
+    line-height: 1;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--red);
+    }
+  }
+
+  .icon {
+    padding: 0 0.25rem;
+    font-size: 1.125rem;
+    line-height: 1;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+
+  Dialog {
+    width: min(28rem, calc(100vw - 2rem));
+
+    form {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    h4,
+    p {
+      margin: 0;
+    }
+
+    label {
+      display: grid;
+      gap: 0.25rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+  }
+
+  textarea {
+    width: 100%;
+    padding: 0.375rem 0.625rem;
+    font: inherit;
+    font-weight: normal;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+
+    button {
+      padding: 0.5rem 1rem;
+      font: inherit;
+      font-weight: 700;
+      border: 0;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+  }
+
+  /* A confirmation fits its question and points at its button. */
+  .confirm {
+    width: auto;
+
+    form {
+      gap: 1.25rem;
+    }
+
+    .actions button {
+      padding: 0.25rem 0.625rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  .cancel {
+    color: var(--text);
+    background: transparent;
+    outline: 1px solid var(--border-strong);
+  }
+
+  .primary {
+    color: white;
+    background: var(--accent);
+  }
+
+  .danger {
+    color: white;
+    background: var(--red);
+  }
+
+  input[type="text"] {
+    width: 100%;
+    min-height: 2.25rem;
+    padding: 0.375rem 0.625rem;
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  .add-column {
+    flex: none;
+    align-self: start;
+    padding: 0.375rem 0.75rem;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+  }
+
+  .activity {
+    padding: 0.75rem 1rem;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+
+    h4 {
+      margin: 0 0 0.5rem;
+    }
+
+    ol {
+      display: grid;
+      gap: 0.5rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: 0.875rem;
+    }
+
+    li {
+      margin: 0;
+    }
+  }
+
+  .time {
+    margin-right: 0.5rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .actor {
+    margin-right: 0.25rem;
+    font-weight: 700;
+    color: var(--actor-color);
+  }
