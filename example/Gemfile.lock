@@ -2,11 +2,11 @@ PATH
   remote: ../gems
   specs:
     mayu-build (0.1.0.pre0)
-      klenod-build (= 0.0.31)
-      klenod-lsp (= 0.0.31)
-      klenod-plugin-css (= 0.0.31)
-      klenod-plugin-javascript (= 0.0.31)
-      klenod-test (= 0.0.31)
+      klenod-build (= 0.0.32)
+      klenod-lsp (= 0.0.32)
+      klenod-plugin-css (= 0.0.32)
+      klenod-plugin-javascript (= 0.0.32)
+      klenod-test (= 0.0.32)
       localhost (~> 1.7)
       mayu-live (= 0.1.0.pre0)
       minitest (~> 6.0)
@@ -25,8 +25,8 @@ PATH
       base64 (~> 0.3)
       brotli (~> 0.8)
       dotenv (~> 3.2)
-      klenod-rack (= 0.0.31)
-      klenod-runtime (= 0.0.31)
+      klenod-rack (= 0.0.32)
+      klenod-runtime (= 0.0.32)
       mime-types (~> 3.7)
       msgpack (~> 1.8)
       prometheus-client (~> 4.2.4)
@@ -97,14 +97,14 @@ GEM
     io-stream (0.14.0)
       openssl (>= 3.3)
     json (3.0.2)
-    klenod-build (0.0.31)
+    klenod-build (0.0.32)
       async (~> 2.42)
       async-http (>= 0.95.1, < 0.106.0)
       base64 (~> 0.3)
       brotli (~> 0.8)
       haml (~> 7.2)
       image_size (~> 3.6)
-      klenod-runtime (= 0.0.31)
+      klenod-runtime (= 0.0.32)
       kramdown (~> 2.5)
       kramdown-parser-gfm (~> 1.1)
       listen (~> 3.10)
@@ -114,33 +114,33 @@ GEM
       samovar (~> 2.5)
       toml-rb (~> 6.0)
       tsort (~> 0.2.0)
-    klenod-lsp (0.0.31)
-      klenod-build (= 0.0.31)
+    klenod-lsp (0.0.32)
+      klenod-build (= 0.0.32)
       language_server-protocol (~> 3.17)
-    klenod-plugin-css (0.0.31-aarch64-linux-gnu)
-      klenod-build (= 0.0.31)
-    klenod-plugin-css (0.0.31-arm64-darwin)
-      klenod-build (= 0.0.31)
-    klenod-plugin-css (0.0.31-x86_64-darwin)
-      klenod-build (= 0.0.31)
-    klenod-plugin-css (0.0.31-x86_64-linux-gnu)
-      klenod-build (= 0.0.31)
-    klenod-plugin-javascript (0.0.31-aarch64-linux-gnu)
-      klenod-build (= 0.0.31)
-    klenod-plugin-javascript (0.0.31-arm64-darwin)
-      klenod-build (= 0.0.31)
-    klenod-plugin-javascript (0.0.31-x86_64-darwin)
-      klenod-build (= 0.0.31)
-    klenod-plugin-javascript (0.0.31-x86_64-linux-gnu)
-      klenod-build (= 0.0.31)
-    klenod-rack (0.0.31)
+    klenod-plugin-css (0.0.32-aarch64-linux-gnu)
+      klenod-build (= 0.0.32)
+    klenod-plugin-css (0.0.32-arm64-darwin)
+      klenod-build (= 0.0.32)
+    klenod-plugin-css (0.0.32-x86_64-darwin)
+      klenod-build (= 0.0.32)
+    klenod-plugin-css (0.0.32-x86_64-linux-gnu)
+      klenod-build (= 0.0.32)
+    klenod-plugin-javascript (0.0.32-aarch64-linux-gnu)
+      klenod-build (= 0.0.32)
+    klenod-plugin-javascript (0.0.32-arm64-darwin)
+      klenod-build (= 0.0.32)
+    klenod-plugin-javascript (0.0.32-x86_64-darwin)
+      klenod-build (= 0.0.32)
+    klenod-plugin-javascript (0.0.32-x86_64-linux-gnu)
+      klenod-build (= 0.0.32)
+    klenod-rack (0.0.32)
       http-accept (~> 2.2)
-      klenod-runtime (= 0.0.31)
-    klenod-runtime (0.0.31)
-    klenod-test (0.0.31)
+      klenod-runtime (= 0.0.32)
+    klenod-runtime (0.0.32)
+    klenod-test (0.0.32)
       async-process (~> 1.4)
       covered (~> 0.30)
-      klenod-build (= 0.0.31)
+      klenod-build (= 0.0.32)
     kramdown (2.5.2)
       rexml (>= 3.4.4)
     kramdown-parser-gfm (1.1.0)
@@ -257,19 +257,19 @@ CHECKSUMS
   io-event (1.22.1) sha256=0dd054cefe4a29f1b8286604f332c14f3208d75f54902961e91e94d45e5e1600
   io-stream (0.14.0) sha256=07d9b13ea2066ccbbc761fff8d69ad5a31e47561d31e02cc271f3ed9c1a8f1cd
   json (3.0.2) sha256=8e6d7e7b11384c21230430cef90b71f14849a34a1f4452796670f7c981bd19df
-  klenod-build (0.0.31) sha256=4e953f7c76a8566deb4bd73c874ed9af70e3d6ff664b390bcf3aa3191641da72
-  klenod-lsp (0.0.31) sha256=31385378a3f71afea8ac2d679243e703acb78c0d80aee0bf391406fa6a2d1c2e
-  klenod-plugin-css (0.0.31-aarch64-linux-gnu) sha256=73f6839d3d73766b97e97b50111ef5cc556057a2a86f77b62bb10c2c40207f3f
-  klenod-plugin-css (0.0.31-arm64-darwin) sha256=76c4fcdb1f2d784ad60206e5a7a04e2e56d4ed3ebd4d808544ecb43ffd42b30a
-  klenod-plugin-css (0.0.31-x86_64-darwin) sha256=09f89f23a5c926928c25bccbec70000fe200afdc202819730bb4ff43b68f5956
-  klenod-plugin-css (0.0.31-x86_64-linux-gnu) sha256=6069483ea7dc922f5a0e2cb59011c2ae50f0c9bceb1e5ea2c277138fb76417a7
-  klenod-plugin-javascript (0.0.31-aarch64-linux-gnu) sha256=3a67cbc076b7ce918c7412c02cd9e8b527d2600ea476057825917852a6bfa9a6
-  klenod-plugin-javascript (0.0.31-arm64-darwin) sha256=f946965efaabfa9024367ed94ed79663a90a695784863def8b083179cf498312
-  klenod-plugin-javascript (0.0.31-x86_64-darwin) sha256=0bee53d4b9e1656356d8ec3391052f63c36a2230293dffb7874e2a0b4d50b61d
-  klenod-plugin-javascript (0.0.31-x86_64-linux-gnu) sha256=7b66891c49397791882cb882f1ec620396769b6050723d57152211f022c2ead9
-  klenod-rack (0.0.31) sha256=b85fb499e69b928636d2887c8304a34ecb8090a8300b9678e13e22ffff91fdca
-  klenod-runtime (0.0.31) sha256=7f38ca5ca15d79bdb2eaa508bd708eee8698cfe669f26ca5e6bd5a66fa46b7b2
-  klenod-test (0.0.31) sha256=1dcac9fdb26c0823445ee9c76b02430489dba08bffe90cf1a5fb2c85815ff39b
+  klenod-build (0.0.32) sha256=03c0625d03dc0f1b0434ba1e2fa3484c76f0a9dce00c03d277789223e31bb45c
+  klenod-lsp (0.0.32) sha256=c83455fb620d4671ca9a9896789475bd2463873ba5223f38ee4637f8a95865be
+  klenod-plugin-css (0.0.32-aarch64-linux-gnu) sha256=c249e421adc244c85531a0e7f5bda9698d39f41d558f94b2ffdab88fd504b6ec
+  klenod-plugin-css (0.0.32-arm64-darwin) sha256=2155e3494472a8d6db834a742063322e6efa0e64dcfb14e9ff2c387a421923eb
+  klenod-plugin-css (0.0.32-x86_64-darwin) sha256=b386038d7fbf586869d05f3328dffe45d42c9c99adbb21bfef14c129e58932bd
+  klenod-plugin-css (0.0.32-x86_64-linux-gnu) sha256=d4e43fba305c5e143e6f7ce7706f64f51df43587667e585df7dcfe652dc72c3d
+  klenod-plugin-javascript (0.0.32-aarch64-linux-gnu) sha256=e396f3f7b31347b402e57f2892e9e3f2dffa90fb8fbcd379cc8101188e287f87
+  klenod-plugin-javascript (0.0.32-arm64-darwin) sha256=9ffd4532b636eace23346d1083c21033bdc9e538d6fc00bb20ff0249bcacf1a6
+  klenod-plugin-javascript (0.0.32-x86_64-darwin) sha256=10e62eb685c50737322e655a3248d7ed279f2b0d3828e47e8a7f26d51aa9c581
+  klenod-plugin-javascript (0.0.32-x86_64-linux-gnu) sha256=55fab27d78f7eb378517cb557ddc671a371c97a79a07c4bc19c8913ed5e63ef6
+  klenod-rack (0.0.32) sha256=d82894e664ff8180abf3f5048aec5b638124b291c51fba9758d9194a00800e1a
+  klenod-runtime (0.0.32) sha256=253497ec5c974fa27abe0e0f6abefee4697ed1270582c1686ce84296a9062d3d
+  klenod-test (0.0.32) sha256=c448d907dc4cfd72b16ecdff2e810bcac111f52da713ea0cbdf8bf66e68467ea
   kramdown (2.5.2) sha256=1ba542204c66b6f9111ff00dcc26075b95b220b07f2905d8261740c82f7f02fa
   kramdown-parser-gfm (1.1.0) sha256=fb39745516427d2988543bf01fc4cf0ab1149476382393e0e9c48592f6581729
   language_server-protocol (3.17.0.6) sha256=5ef2c0c138f8267e1bc631d3328347d354f96724b0af22f2c79516120443b7f0
