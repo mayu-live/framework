@@ -38,4 +38,35 @@ class Mayu::Build::Commands::RoutesTest < Minitest::Test
       ENV["NO_COLOR"] = previous_no_color
     end
   end
+
+  def test_shows_catch_all_and_optional_catch_all_segments
+    Dir.mktmpdir("mayu-routes-catch-all") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(File.join(pages, "files", "[...path]"))
+      FileUtils.mkdir_p(File.join(pages, "tree", "[ref]", "[[...path]]"))
+      File.write(File.join(pages, "files", "[...path]", "+page.haml"), "%p File\n")
+      File.write(File.join(pages, "tree", "[ref]", "[[...path]]", "+page.haml"), "%p Tree\n")
+      File.write(
+        File.join(root, "mayu.toml"),
+        <<~TOML
+          [development]
+          secret_key = "dev"
+
+          [development.server]
+
+          [development.metrics]
+        TOML
+      )
+
+      previous_no_color = ENV["NO_COLOR"]
+      ENV["NO_COLOR"] = "1"
+      output = Dir.chdir(root) { capture_io { Mayu::Build::Commands::Routes.new([]).call }.first }
+
+      assert_includes(output, "/files/*path ")
+      assert_includes(output, "/tree/:ref(/*path) ")
+      assert_includes(output, "GET /tree/:ref(/*path) (page)")
+    ensure
+      ENV["NO_COLOR"] = previous_no_color
+    end
+  end
 end

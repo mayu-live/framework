@@ -54,13 +54,13 @@ module Mayu
         def route_rows_for(route)
           rows = []
           if route.page_module_id
-            rows << ["GET", route.path, route.slot_layout_module_id ? "slot" : "page", module_path(route.page_module_id), route]
+            rows << ["GET", display_path(route), route.slot_layout_module_id ? "slot" : "page", module_path(route.page_module_id), route]
           end
           return rows unless route.handler_module_id
 
           methods = route_methods(route.handler_module_id)
           methods = ["-"] if methods.empty?
-          rows.concat(methods.map { |method| [method, route.path, "handler", module_path(route.handler_module_id), route] })
+          rows.concat(methods.map { |method| [method, display_path(route), "handler", module_path(route.handler_module_id), route] })
         end
 
         def print_table(rows)
@@ -170,7 +170,18 @@ module Mayu
         end
 
         def route_heading(route)
-          "#{color(:method, route_methods_for_display(route).join(","))} #{color(:path, route.path)} #{color(:type, "(#{route_type(route)})")}"
+          "#{color(:method, route_methods_for_display(route).join(","))} #{color(:path, display_path(route))} #{color(:type, "(#{route_type(route)})")}"
+        end
+
+        # Klenod leaves an optional catch-all out of the route path. Show it
+        # like an optional segment in Rails, so `[[...parts]]` reads
+        # `(/*parts)`.
+        def display_path(route)
+          optional = route.segments.find { it.kind == :optional_catch_all }
+          return route.path unless optional
+
+          base = (route.path == "/") ? "" : route.path
+          "#{base}(/*#{optional.param_name})"
         end
 
         def route_methods_for_display(route)
