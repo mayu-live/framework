@@ -9,6 +9,9 @@ module Mayu
       ResolvedPage =
         Data.define(:descriptor, :status, :module_ids, :stylesheets, :scripts)
 
+      class InvalidEncoding < StandardError
+      end
+
       def initialize(
         provider,
         root_entry: "root.haml",
@@ -89,11 +92,38 @@ module Mayu
         )
       end
 
+      # Klenod returns params as they appear in the URL. They are decoded
+      # here, so `[name]` gets "a b" for "a%20b" and `[...path]` gets each
+      # segment decoded. A path that does not decode to valid UTF-8 matches
+      # nothing.
       public def match(path)
-        router.match(URI.parse(path).path)
+        match = router.match(URI.parse(path).path)
+        return unless match
+
+        match = match.with(params: decode_params(match.params))
+        return match unless match.respond_to?(:slots)
+
+        match.with(
+          slots: match.slots.transform_values { it.with(params: decode_params(it.params)) }
+        )
+      rescue InvalidEncoding
+        nil
       end
 
       private
+
+      def decode_params(params)
+        params.transform_values do |value|
+          value.is_a?(Array) ? value.map { decode_segment(it) } : decode_segment(value)
+        end
+      end
+
+      def decode_segment(segment)
+        decoded = URI.decode_uri_component(segment)
+        raise InvalidEncoding unless decoded.valid_encoding?
+
+        decoded
+      end
 
       def router
         # Klenod replaces the virtual router export when route files are added

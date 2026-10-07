@@ -237,6 +237,39 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     end
   end
 
+  def test_decodes_dynamic_and_catch_all_params
+    Dir.mktmpdir("mayu-klenod-router-decode") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(File.join(pages, "users", "[name]"))
+      FileUtils.mkdir_p(File.join(pages, "files", "[...path]"))
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(pages, "users", "[name]", "+page.haml"), "%p User\n")
+      File.write(File.join(pages, "files", "[...path]", "+page.haml"), "%p File\n")
+
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      router = Mayu::Klenod::Router.new(provider)
+
+      assert_equal({name: "Ada Lovelace"}, router.match("/users/Ada%20Lovelace").params)
+      assert_equal({name: "feature/x"}, router.match("/users/feature%2Fx").params)
+      assert_equal(
+        {path: ["a b", "café", "%"]},
+        router.match("/files/a%20b/caf%C3%A9/%25").params
+      )
+      assert_nil(router.match("/users/%FF"))
+    end
+  end
+
+  def test_decodes_slot_params
+    slot_match =
+      SlotMatch.new(Modal, {mode: "a%20b"}, SlotRoute.new("app:/pages/@modal/+page.haml", []), nil)
+    match = Match.new(Page, [], {id: "4%202"}, Route.new("app:/pages/+page.haml", []), {modal: slot_match})
+
+    decoded = router(match:).match("/")
+
+    assert_equal({id: "4 2"}, decoded.params)
+    assert_equal({mode: "a b"}, decoded.slots.fetch(:modal).params)
+  end
+
   def test_collects_route_css_in_root_layout_and_page_order
     Dir.mktmpdir("mayu-klenod-router-assets") do |root|
       pages = File.join(root, "app", "pages")

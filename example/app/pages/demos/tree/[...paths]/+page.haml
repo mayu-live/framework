@@ -6,7 +6,7 @@
 %head
   %title File tree
 
-- segments = Array($params[:paths]).map { URI.decode_uri_component(_1) }
+- segments = Array($params[:paths])
 - full_path = File.expand_path(segments.join("/"), "/")
 - root = Dir.pwd
 
