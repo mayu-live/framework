@@ -36,7 +36,7 @@ kill_timeout = "20s"
     interval = "15s"
     timeout = "5s"
     method = "GET"
-    path = "/"
+    path = "/api/health"
 
 [[vm]]
   memory = "512mb"
