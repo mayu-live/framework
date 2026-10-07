@@ -12,6 +12,26 @@ class Mayu::Runtime::VNodes::RenderingTest < Minitest::Test
     end
   end
 
+  class MaybeProbe < Mayu::Component::Base
+    def render
+      return unless @__props[:show]
+      H[:p, "Visible"]
+    end
+  end
+
+  def test_nil_render_on_update_removes_previous_output
+    engine =
+      Mayu::Runtime::Engine.new(
+        H[:body, H[MaybeProbe, show: true]],
+        metrics: NullMetrics.new
+      )
+    assert_includes(render_html(engine.root), "<p>Visible</p>")
+
+    engine.update(H[:body, H[MaybeProbe, show: nil]])
+
+    refute_includes(render_html(engine.root), "Visible")
+  end
+
   def test_write_html
     descriptor =
       H[

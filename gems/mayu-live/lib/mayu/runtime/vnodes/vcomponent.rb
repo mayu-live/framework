@@ -655,7 +655,11 @@ module Mayu
               labels: {
                 component: component_label(instance)
               }
-            ) { instance.render }
+            ) do
+              # A bare early return (`- return unless x` in Haml) yields nil;
+              # treat it as "render nothing" so stale children are removed.
+              instance.render || []
+            end
           end
         end
 
