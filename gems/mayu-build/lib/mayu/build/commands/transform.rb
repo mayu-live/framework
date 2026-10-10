@@ -41,10 +41,14 @@ module Mayu
 
         def transform_with_klenod(configuration, path, line_numbers:, colors:)
           source_path = Pathname.new(path).expand_path
-          relative_path =
-            source_path.relative_path_from(
-              Pathname.new(configuration.source_path)
-            ).to_s
+          source_root = Pathname.new(configuration.source_path)
+
+          unless source_path.ascend.include?(source_root)
+            raise ArgumentError,
+              "#{path} must be inside #{configuration.source_path}"
+          end
+
+          relative_path = source_path.relative_path_from(source_root).to_s
           record = configuration.context.entry(relative_path).record
           formatter = CodeFormatter.new(line_numbers:, colors:)
           lexer =
@@ -74,9 +78,6 @@ module Mayu
           record.assets.each do |asset|
             puts "#{asset.output_path} #{asset.content_type}"
           end
-        rescue ArgumentError
-          raise ArgumentError,
-            "#{path} must be inside #{configuration.source_path}"
         end
 
         class CodeFormatter
