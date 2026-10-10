@@ -54,7 +54,15 @@ module Mayu
             )
 
           puts "\e[1;3mInput:\e[0;2m #{relative_path}\e[0m"
-          puts formatter.format(File.read(source_path).strip, lexer)
+
+          source = File.read(source_path)
+
+          if source.valid_encoding?
+            puts formatter.format(source, lexer)
+          else
+            puts "\e[34mInput is binary, not shown.\e[0m"
+          end
+
           puts "\e[1;3mOutput:\e[0m"
           puts formatter.format(
             record.transformed_source.strip,
