@@ -284,7 +284,9 @@ module Mayu
                 ((value == false) ? nil : value)
               end
             elsif key == :class
-              normalize_class_names(value)
+              # A class list is a set in the DOM, so a name given twice,
+              # such as by `class: "a"` on an element with `.a`, is one class.
+              normalize_class_names(value).uniq
             elsif key.start_with?("on")
               ((value == false) ? nil : value)
             else

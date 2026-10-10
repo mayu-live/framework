@@ -77,7 +77,7 @@ class Mayu::Runtime::VNodes::RenderingTest < Minitest::Test
     refute_includes(render_html(engine.root), "<body style=")
   end
 
-  def test_normalizes_nested_class_names
+  def test_normalizes_nested_and_repeated_class_names
     engine =
       Mayu::Runtime::Engine.new(
         H[
@@ -93,7 +93,7 @@ class Mayu::Runtime::VNodes::RenderingTest < Minitest::Test
 
     assert_includes(
       render_html(engine.root),
-      '<p class="button primary large icon button">Classes</p>'
+      '<p class="button primary large icon">Classes</p>'
     )
   end
 

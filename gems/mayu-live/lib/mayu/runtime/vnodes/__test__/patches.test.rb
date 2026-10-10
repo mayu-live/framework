@@ -409,6 +409,22 @@ class Mayu::Runtime::VNodes::PatchesTest < Minitest::Test
     )
   end
 
+  def test_repeated_class_names_are_one_class
+    initial = H[:body, H[:p, "Hello", class: "a a b"]]
+    updated = H[:body, H[:p, "Hello", class: ["a", "b", "a"]]]
+    engine = Mayu::Runtime::Engine.new(initial, metrics: NullMetrics.new)
+    collector = Mayu::Runtime::VNodes::CommandCollector.new
+
+    engine.root.update(collector, updated)
+
+    refute(
+      collector.commands.any? do |command|
+        command.is_a?(Mayu::Runtime::Commands::AddClass) ||
+          command.is_a?(Mayu::Runtime::Commands::RemoveClass)
+      end
+    )
+  end
+
   def test_nested_class_values_emit_token_level_patches
     initial = H[:body, H[:p, "Hello", class: [:button, ["primary large"]]]]
     updated = H[:body, H[:p, "Hello", class: [[:button], "large selected"]]]
