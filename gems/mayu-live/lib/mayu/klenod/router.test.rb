@@ -78,10 +78,11 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     assert_empty(resolved.scripts)
 
     assert_equal(Root, descriptor.type)
-    assert_equal("/posts/42?draft=true", descriptor.props[:path])
+    assert_equal("/posts/42", descriptor.props[:path])
 
     layout = descriptor.children.descriptors.fetch(0)
     assert_equal(Layout, layout.type)
+    assert_equal("/posts/42", layout.props[:path])
     assert_equal({id: "42"}, layout.props[:params])
     assert_equal({"draft" => "true"}, layout.props[:query])
     assert_equal("true", layout.props[:query][:draft])
@@ -91,6 +92,8 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     assert_equal({id: "42"}, page.props[:params])
     assert_equal({"draft" => "true"}, page.props[:query])
     assert_equal("true", page.props[:query].fetch(:draft))
+    assert_equal("/posts/42", page.props[:path])
+    refute(page.props.key?(:status))
   end
 
   def test_returns_nil_when_klenod_has_no_page_route
@@ -120,6 +123,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     assert_equal(Modal, modal.type)
     assert_equal({mode: "compose"}, modal.props[:params])
     assert_equal({"tab" => "overview"}, modal.props[:query])
+    assert_equal("/dashboard", modal.props[:path])
     assert_equal(
       %w[
         app:/root.haml
@@ -144,9 +148,15 @@ class Mayu::Klenod::RouterTest < Minitest::Test
         404
       )
 
-    resolved = router(match: nil, not_found:).resolve("/missing")
+    resolved = router(match: nil, not_found:).resolve("/missing?from=nav")
+    layout = resolved.descriptor.children.descriptors.fetch(0)
+    page = layout.children.descriptors.fetch(0)
 
     assert_equal(404, resolved.status)
+    assert_equal("/missing", layout.props[:path])
+    assert_equal("/missing", page.props[:path])
+    assert_equal({"from" => "nav"}, page.props[:query])
+    assert_equal(404, page.props[:status])
     assert_equal("app:/pages/+not-found.haml", resolved.module_ids.last)
   end
 
@@ -167,7 +177,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     page = layout.children.descriptors.fetch(0)
 
     assert_equal(500, resolved.status)
-    assert_equal("/posts/42?draft=true", page.props[:path])
+    assert_equal("/posts/42", page.props[:path])
     assert_equal(500, page.props[:status])
     assert_same(exception, page.props[:error])
     assert_equal({"draft" => "true"}, page.props[:query])

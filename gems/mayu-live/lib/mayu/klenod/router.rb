@@ -27,41 +27,36 @@ module Mayu
       def resolve(path)
         uri = URI.parse(path)
         match = match(path)
-        return resolved_page_for(match, path, uri) if match
+        return resolved_page_for(match, uri) if match
 
         not_found(path)
       end
 
       def not_found(path)
         uri = URI.parse(path)
-        resolved_page_for(
-          router.not_found(uri.path),
-          path,
-          uri,
-          props: {
-            path:,
-            status: 404
-          }
-        )
+        resolved_page_for(router.not_found(uri.path), uri, props: {status: 404})
       end
 
       def error(path, error: nil)
         uri = URI.parse(path)
         resolved_page_for(
           router.error(uri.path),
-          path,
           uri,
-          props: {path:, status: 500, error:}.compact
+          props: {status: 500, error:}.compact
         )
       end
 
       private
 
-      def resolved_page_for(match, path, uri, props: {})
+      # Pages, layouts and slot pages all get `params`, `query` and `path`,
+      # the URL path without the query string. Not-found and error pages
+      # also get `status`, and error pages `error`.
+      def resolved_page_for(match, uri, props: {})
         return unless match&.page
         query = QueryParams.parse(uri.query)
+        path = uri.path
 
-        page = Runtime::H[match.page, params: match.params, query:, **props]
+        page = Runtime::H[match.page, params: match.params, query:, path:, **props]
 
         layouts = [
           [root_component, @root_entry],
@@ -75,7 +70,7 @@ module Mayu
               Runtime::H[
                 layout,
                 child,
-                *slot_descriptors_for(match, module_id, query:),
+                *slot_descriptors_for(match, module_id, query:, path:),
                 params: match.params,
                 query:,
                 path:
@@ -149,7 +144,7 @@ module Mayu
         ].compact.map { @provider.module_id_for(it).to_s }
       end
 
-      def slot_descriptors_for(match, layout_module_id, query:)
+      def slot_descriptors_for(match, layout_module_id, query:, path:)
         return [] unless match.respond_to?(:slots)
 
         match
@@ -162,7 +157,8 @@ module Mayu
               slot_match.page,
               slot: name,
               params: slot_match.params,
-              query:
+              query:,
+              path:
             ]
           end
       end
