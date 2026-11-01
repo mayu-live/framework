@@ -655,7 +655,7 @@ packages both gems, installs the app from them, runs `mayu build` with
 repository root:
 
     podman build -f example/Dockerfile -t mayu-example .
-    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret mayu-example
+    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret -e MAYU_PUBLIC_ORIGIN=http://localhost:3333 mayu-example
 
 Mayu applications can also colocate `*.test.rb` files with components. The
 test module is evaluated by Klenod and receives Mayu's test helpers:

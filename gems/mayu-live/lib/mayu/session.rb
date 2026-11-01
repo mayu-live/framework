@@ -525,6 +525,8 @@ module Mayu
           raise
         end
       end
+    rescue Rejected => rejection
+      Console.logger.debug(self, rejection)
     rescue => e
       Console.logger.error(self, e)
     end

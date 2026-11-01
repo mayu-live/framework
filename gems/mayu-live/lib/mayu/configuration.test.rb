@@ -94,6 +94,24 @@ class Mayu::Configuration::Test < Minitest::Test
     assert_match(/staging/, error.message)
   end
 
+  def test_example_fly_deployment_uses_its_external_https_origin_over_h2c
+    root = File.expand_path("../../../../example", __dir__)
+    fly = TOML.load(File.read(File.join(root, "fly.toml")))
+    public_origin = fly.fetch("env").fetch("MAYU_PUBLIC_ORIGIN")
+    previous_origin = ENV["MAYU_PUBLIC_ORIGIN"]
+    ENV["MAYU_PUBLIC_ORIGIN"] = public_origin
+    server = Mayu::Configuration::ServerConfig.parse(
+      TOML.load(File.read(File.join(root, "mayu.toml"))).fetch("production").fetch("server")
+    )
+    request = Struct.new(:scheme, :authority, :headers).new("http", "internal.example:3333", {"origin" => public_origin})
+    expected = Mayu::RequestOrigin.resolve(request, public_origin: server.public_origin)
+    assert_equal "https", Mayu::RequestOrigin.parse(expected).first
+    assert_equal public_origin, expected
+    assert Mayu::RequestOrigin.allowed?(request, expected_origin: expected)
+  ensure
+    ENV["MAYU_PUBLIC_ORIGIN"] = previous_origin
+  end
+
   def test_configuration_missing_env_var
     filename = File.join(__dir__, "__test__", "configuration", "test.toml")
 
