@@ -407,11 +407,15 @@ module Mayu
           raise TypeError, "prepare_session must return a context hash, Session::Preparation, or a response"
         end
         session =
-          Session.new(
-            request_info: Session::RequestInfo.from_request(request, origin:),
-            environment: @environment,
-            context: preparation.context
-          ) { |info| @environment.authorize_session!(info, request:, phase: :start) }
+          begin
+            Session.new(
+              request_info: Session::RequestInfo.from_request(request, origin:),
+              environment: @environment,
+              context: preparation.context
+            ) { |info| @environment.authorize_session!(info, request:, phase: :start) }
+          rescue Session::Rejected => rejection
+            return rejected_session_start_response(request, preparation, rejection)
+          end
 
         if @stopping
           session.stop
@@ -434,6 +438,21 @@ module Mayu
           **@cookies.set_token_cookie_header(session),
           link: link_header(session)
         )
+        preparation.headers.each { |name, value| result.headers.add(name.to_s, value) }
+        result
+      end
+
+      def rejected_session_start_response(request, preparation, rejection)
+        headers = {"cache-control" => "no-store", "vary" => "Accept"}
+        result = if browser_navigation?(request)
+          if rejection.location
+            response(303, **headers, location: rejection.location)
+          else
+            text_response(403, "Forbidden", **headers)
+          end
+        else
+          json_response(403, {code: "APPLICATION_SESSION_REJECTED", location: rejection.location}, **headers)
+        end
         preparation.headers.each { |name, value| result.headers.add(name.to_s, value) }
         result
       end

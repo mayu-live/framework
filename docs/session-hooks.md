@@ -104,9 +104,14 @@ wins; subsequent calls return false. Invalidated sessions reject queued and
 future work and cannot transfer. Their terminal result stays in the worker's
 store until normal expiry so reconnects receive the same rejection.
 
-Before streaming, rejection returns HTTP 403 with code
+On an initial browser navigation, rejection returns a 303 redirect when a
+`location` is provided, otherwise a plain 403 response. Preparation headers,
+including cookies, are preserved, and no session is stored. Non-browser page
+requests retain the JSON 403 response.
+
+For transport requests before streaming, rejection returns HTTP 403 with code
 `APPLICATION_SESSION_REJECTED` and an optional `location`. Established streams
-receive terminal `SessionInvalidated`. Both paths stop browser retries and pings,
+receive terminal `SessionInvalidated`. Both transport paths stop browser retries and pings,
 clear transfer state, and reject pending callback and navigation promises. A
 location causes a full document navigation with history replacement. Otherwise
 the page remains visible with an expired-session notice and a Reload button.
@@ -234,7 +239,9 @@ proxy discovery and the native address:
 It accepts an environment-variable reference such as `"$MAYU_PUBLIC_ORIGIN"` and
 must contain one HTTP(S) origin without credentials, query, fragment, or a
 non-root path. Leave it unset when serving multiple public origins. There is no
-required `MAYU_PUBLIC_ORIGIN` environment variable.
+required `MAYU_PUBLIC_ORIGIN` environment variable in the framework. The example
+app explicitly references it in production and supplies it in `fly.toml` so its
+fixed-domain deployment does not depend on the h2c backend scheme.
 
 ### Webhooks and externally authenticated APIs
 
@@ -262,7 +269,9 @@ switch and no additional CSRF cookie or form token to manage.
 wraps every request, including public handlers, assets, and session transports.
 The first registered wrapper is outermost. Each wrapper may return a response
 directly or call `next_app.call(request)` once. Add headers before the returned
-response is committed:
+response is committed. The wrapper's scope does not extend to stream-body work
+or component callbacks running in the session task; per-request database or
+`Current` state set by a wrapper is not a callback execution context.
 
 ```ruby
 environment.around_request do |request, next_app|

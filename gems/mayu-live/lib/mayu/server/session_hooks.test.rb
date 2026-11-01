@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "minitest/mock"
 require "protocol/http/request"
 require "async/http/protocol"
 require_relative "app"
@@ -153,8 +154,69 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
     @environment.authorize_session { |*| false }
     @environment.define_singleton_method(:module_provider) { raise "must not resolve" }
     # Enter the selected page directly: public routing has already selected it.
-    assert_raises(Mayu::Session::Rejected) { @app.send(:handle_session_start, request) }
+    response = @app.send(:handle_session_start, request("GET", "/", {"accept" => "text/html"}))
+    assert_equal 403, response.status
+    assert_equal "Forbidden", response.read
     assert_empty @sessions.instance_variable_get(:@sessions)
+  end
+
+  def test_rejected_browser_navigation_redirects_and_preserves_preparation_headers
+    cookies = ["identity=; Path=/; Max-Age=0", "other=; Path=/; Max-Age=0"]
+    @environment.prepare_session do |_|
+      Mayu::Session::Preparation.new(headers: cookies.map { ["set-cookie", it] })
+    end
+    @environment.authorize_session { |_| raise Mayu::Session::Rejected.new(location: "/login") }
+    %w[GET POST].each do |method|
+      response = @app.call(request(method, "/", {"accept" => "text/html"}))
+      assert_equal 303, response.status
+      assert_equal "/login", response.headers["location"]
+      assert_equal cookies, response.headers.to_h.fetch("set-cookie")
+      assert_equal "no-store", response.headers["cache-control"].to_s
+      assert_nil response.headers["x-mayu-session-id"]
+      assert_empty @sessions.instance_variable_get(:@sessions)
+    end
+  end
+
+  def test_rejected_browser_navigation_without_destination_returns_plain_forbidden
+    @environment.prepare_session do |_|
+      Mayu::Session::Preparation.new(headers: [["set-cookie", "identity=; Path=/; Max-Age=0"]])
+    end
+    @environment.authorize_session { |_| false }
+    response = @app.call(request("GET", "/", {"accept" => "text/html"}))
+    assert_equal 403, response.status
+    assert_equal "Forbidden", response.read
+    assert_includes response.headers["content-type"].to_s, "text/plain"
+    assert_nil response.headers["location"]
+    assert_equal ["identity=; Path=/; Max-Age=0"], response.headers.to_h.fetch("set-cookie")
+    assert_empty @sessions.instance_variable_get(:@sessions)
+  end
+
+  def test_rejected_non_browser_page_keeps_json_response_and_preparation_headers
+    @environment.prepare_session do |_|
+      Mayu::Session::Preparation.new(headers: [["set-cookie", "identity=; Path=/; Max-Age=0"]])
+    end
+    @environment.authorize_session { |_| raise Mayu::Session::Rejected.new(location: "/login") }
+    response = @app.call(request("GET", "/", {"accept" => "application/json"}))
+    assert_equal 403, response.status
+    assert_equal({"code" => "APPLICATION_SESSION_REJECTED", "location" => "/login"}, JSON.parse(response.read))
+    assert_equal ["identity=; Path=/; Max-Age=0"], response.headers.to_h.fetch("set-cookie")
+    assert_empty @sessions.instance_variable_get(:@sessions)
+  end
+
+  def test_events_queued_before_invalidation_do_not_log_errors
+    session = new_session
+    session.invalidate!
+    errors = []
+    Console.logger.stub(:error, ->(*arguments) { errors << arguments }) do
+      [Mayu::Session::Events::PingEvent[1],
+        Mayu::Session::Events::CallbackEvent["listener", {}, 1],
+        Mayu::Session::Events::NavigateEvent["n1", "/private", 1]].each do |event|
+        session.send(:handle_event, event)
+      end
+    end
+    assert_empty errors
+    assert_equal "/", session.info.path
+    assert_equal [Mayu::Runtime::Commands::SessionInvalidated[nil]], session.dequeue_batch.commands
   end
 
   def test_reconnect_denial_is_terminal_and_persists_in_the_store
