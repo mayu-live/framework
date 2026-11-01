@@ -114,10 +114,15 @@ module Mayu
     end
 
     RequestInfo =
-      Data.define(:path, :headers, :http2) do
-        def self.from_request(request)
+      Data.define(:path, :headers, :http2, :origin) do
+        def initialize(path:, headers:, http2:, origin:)
+          super(path:, headers:, http2:, origin: RequestOrigin.normalize(origin))
+        end
+
+        def self.from_request(request, origin:)
           new(
             path: request.path,
+            origin:,
             headers: request.headers.to_h.freeze,
             http2: request.version == "HTTP/2"
           )
@@ -164,7 +169,9 @@ module Mayu
 
     def context = @engine ? @engine.session_context : @context
 
-    def info = Info.new(id: @id.freeze, path: @request_info.path.dup.freeze, context:)
+    def origin = @request_info.origin
+
+    def info = Info.new(id: @id.freeze, path: @request_info.path.dup.freeze, context:, origin:)
 
     def build_engine(descriptor)
       Runtime::Engine.new(
@@ -280,7 +287,7 @@ module Mayu
 
     def authorize_work(event)
       check_valid!
-      @environment.authorize_event!(info, event) if @environment.respond_to?(:authorize_event!)
+      @environment.authorize_session!(info, phase: :event, event:) if @environment.respond_to?(:authorize_session!)
       check_valid!
       true
     rescue Rejected => rejection
@@ -298,6 +305,7 @@ module Mayu
 
     def marshal_load(a)
       @id, @token, @engine, @last_ping, @request_info = a
+      @request_info = @request_info.with(origin: @request_info.origin)
       @incoming_events = Async::Queue.new
     end
 

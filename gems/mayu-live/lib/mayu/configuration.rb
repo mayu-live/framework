@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require_relative "warning_filter"
+require_relative "request_origin"
 
 require "toml"
 
@@ -68,15 +69,34 @@ module Mayu
         :session_timeout_seconds,
         :transfer_timeout_seconds,
         :shutdown_timeout_seconds,
-        :cookie_timeout_seconds
+        :cookie_timeout_seconds,
+        :public_origin,
+        :trusted_proxies
       ) do
+        def initialize(public_origin: nil, trusted_proxies: [], **) = super
+
         def self.parse(config)
+          public_origin = config["public_origin"]
+          unless public_origin.nil?
+            unless public_origin.is_a?(String)
+              raise ArgumentError, "public_origin must be an HTTP(S) origin"
+            end
+            public_origin = Configuration.convert_env(public_origin)
+            public_origin = RequestOrigin.normalize(public_origin)
+          end
+          trusted_proxies = config.fetch("trusted_proxies", [])
+          unless trusted_proxies.is_a?(Array) && trusted_proxies.all? { it.is_a?(String) }
+            raise ArgumentError, "trusted_proxies must be an array of IP addresses or CIDRs"
+          end
+          trusted_proxies = trusted_proxies.map { IPAddr.new(it).native.freeze }.freeze
           shutdown_timeout = Float(config.fetch("shutdown_timeout_seconds", 10))
           unless shutdown_timeout.finite? && shutdown_timeout.positive?
             raise ArgumentError, "shutdown_timeout_seconds must be a positive finite number"
           end
 
           new(
+            public_origin:,
+            trusted_proxies:,
             listen:
               Configuration.convert_env(
                 config.fetch("listen", "https://localhost:9292")

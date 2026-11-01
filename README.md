@@ -286,6 +286,12 @@ Use an HTTP handler or document navigation when an operation must set cookies or
 return an HTTP redirect. Live updates cannot change headers or status on the
 original document response.
 
+Mayu protects session transports and unsafe HTTP requests against cross-origin
+requests by default and binds each session to its starting origin. Behind a
+reverse proxy, configure `server.trusted_proxies` and forwarded scheme/host
+headers. See [session hooks and request protection](docs/session-hooks.md)
+for session context, validity checks, and explicit webhook exemptions.
+
 ## Components
 
 Components are the building blocks of a Mayu application.

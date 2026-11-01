@@ -15,7 +15,7 @@ module Mayu
   class Session
     TransferState =
       Data.define(:id, :token, :state, :version, :info) do
-        def initialize(id:, token:, state:, version: 1, info: nil)
+        def initialize(id:, token:, state:, version: 2, info: nil)
           super
         end
 
@@ -23,7 +23,7 @@ module Mayu
           new(
             id: session.id,
             token: session.token,
-            version: 1,
+            version: 2,
             info: session.info,
             state:
               Runtime::Marshalling.with_component_resolver(
@@ -45,7 +45,7 @@ module Mayu
         def self.decrypt(marshaller, encrypted_state)
           marshaller.load(encrypted_state) => self => state
           if state.info.is_a?(Info)
-            state = state.with(info: Info.new(id: state.info.id, path: state.info.path, context: state.info.context))
+            state = state.with(info: Info.new(id: state.info.id, path: state.info.path, context: state.info.context, origin: state.info.origin))
           end
           state
         end
@@ -53,7 +53,8 @@ module Mayu
         def encrypt(marshaller) = marshaller.dump(self)
 
         def validate_metadata!
-          unless version == 1 && info.is_a?(Info) && info.id == id
+          unless version == 2 && info.is_a?(Info) && info.id == id &&
+              info.origin == RequestOrigin.normalize(info.origin)
             raise ArgumentError, "Unsupported session transfer metadata"
           end
           self
@@ -68,7 +69,11 @@ module Mayu
             :component_resolver
           )
           Runtime::Marshalling.with_component_resolver(resolver) do
-            Marshal.load(state).resume_transferred(environment)
+            session = Marshal.load(state)
+            unless session.origin == info.origin
+              raise ArgumentError, "Session origin does not match transfer metadata"
+            end
+            session.resume_transferred(environment)
           end
         end
       end
