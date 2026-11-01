@@ -1,16 +1,23 @@
 # frozen_string_literal: true
 
+require "protocol/http/response"
+require_relative "../request_origin"
+
 module Mayu
   class Session
     Preparation = Data.define(:context, :headers) do
+      def self.redirect(location, status: 303)
+        Protocol::HTTP::Response[status, {"location" => location}]
+      end
+
       def initialize(context: {}, headers: [])
         super
       end
     end
 
-    Info = Data.define(:id, :path, :context) do
-      def initialize(id:, path:, context:)
-        super(id: id.dup.freeze, path: path.dup.freeze, context: Context.snapshot(context))
+    Info = Data.define(:id, :path, :context, :origin) do
+      def initialize(id:, path:, context:, origin:)
+        super(id: id.dup.freeze, path: path.dup.freeze, context: Context.snapshot(context), origin: RequestOrigin.normalize(origin))
       end
     end
 

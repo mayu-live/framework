@@ -70,6 +70,9 @@ class Mayu::Server::AppTest < Minitest::Test
       def read = body
 
       def version = "HTTP/1.1"
+
+      def scheme = "https"
+      def authority = "app.example"
     end
 
   class StreamSession
@@ -179,6 +182,8 @@ class Mayu::Server::AppTest < Minitest::Test
   ErrorConfig = Data.define(:render_exceptions) do
     def server = self
     def render_exceptions? = render_exceptions
+    def public_origin = nil
+    def trusted_proxies = []
   end
   ErrorEnvironment = Data.define(:module_provider, :config) do
     def prepare_session_for(_) = Mayu::Session::Preparation.new
@@ -270,10 +275,16 @@ class Mayu::Server::AppTest < Minitest::Test
     def render = "<html></html>"
   end
   PageEnvironment = Data.define(:module_provider, :metrics) do
+    def config = self
+    def server = self
+    def public_origin = nil
+    def trusted_proxies = []
     def prepare_session_for(_) = Mayu::Session::Preparation.new
   end
   PageRequest =
     Data.define(:method, :path, :headers, :body, :version) do
+      def scheme = "https"
+      def authority = "app.example"
       def read = body
     end
 
@@ -516,7 +527,9 @@ class Mayu::Server::AppTest < Minitest::Test
       session.define_singleton_method(:wait) {}
       session.define_singleton_method(:check_valid!) {}
       session.define_singleton_method(:info) { nil }
+      session.define_singleton_method(:origin) { "https://app.example" }
       environment = Mayu::Environment.allocate
+      environment.instance_variable_set(:@config, Struct.new(:server).new(Mayu::Configuration::ServerConfig.parse({})))
       app.instance_variable_set(:@environment, environment)
       sessions = Object.new
       sessions.define_singleton_method(:authenticate!) { |_id, _token| session }
@@ -527,7 +540,7 @@ class Mayu::Server::AppTest < Minitest::Test
       app.instance_variable_set(:@cookies, cookies)
       body = Object.new
       body.define_singleton_method(:close) {}
-      request = Struct.new(:headers, :body).new({}, body)
+      request = Struct.new(:headers, :body, :scheme, :authority).new({}, body, "https", "app.example")
 
       response =
         Mayu::Server::EventStream.stub(:each_incoming_message, ->(_request) {}) do

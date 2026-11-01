@@ -168,7 +168,8 @@ export default class SessionConnection {
       } catch (error: unknown) {
         if (
           error instanceof StreamError &&
-          error.code === "APPLICATION_SESSION_REJECTED"
+          (error.code === "APPLICATION_SESSION_REJECTED" ||
+            error.code === "REQUEST_ORIGIN_REJECTED")
         ) {
           setTransferState(null);
           updateConnectionStatus("expired");
@@ -181,7 +182,11 @@ export default class SessionConnection {
             notice.setAttribute("role", "alert");
             notice.style.cssText =
               "position:fixed;bottom:1rem;left:1rem;padding:1rem;background:white;color:black;border:1px solid;z-index:2147483647";
-            notice.append("Your session has expired. ");
+            notice.append(
+              error.code === "REQUEST_ORIGIN_REJECTED"
+                ? "The server rejected this connection. "
+                : "Your session has expired. ",
+            );
             const reload = document.createElement("button");
             reload.textContent = "Reload";
             reload.onclick = () => window.location.reload();

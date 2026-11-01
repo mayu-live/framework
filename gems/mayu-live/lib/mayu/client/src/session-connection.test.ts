@@ -69,11 +69,12 @@ describe("session-connection", () => {
     vi.restoreAllMocks();
   });
 
-  it("stops retries and clears transfer state on terminal HTTP rejection", async () => {
+  it.each([
+    ["APPLICATION_SESSION_REJECTED", "session has expired"],
+    ["REQUEST_ORIGIN_REJECTED", "server rejected this connection"],
+  ])("stops retries and clears transfer state on %s", async (code, notice) => {
     setTransferState(new Blob(["old"]));
-    initInputStreamMock.mockRejectedValue(
-      new StreamError("Rejected", "APPLICATION_SESSION_REJECTED"),
-    );
+    initInputStreamMock.mockRejectedValue(new StreamError("Rejected", code));
     const mayu = { dispose: vi.fn(), clearWriter: vi.fn() };
     const sleep = vi.fn();
     await new SessionConnection({
@@ -88,7 +89,7 @@ describe("session-connection", () => {
     expect(resetSessionEntirelyMock).not.toHaveBeenCalled();
     expect(getTransferState()).toBeNull();
     expect(document.querySelector('[role="alert"]')?.textContent).toContain(
-      "session has expired",
+      notice,
     );
     document.querySelector('[role="alert"]')?.remove();
   });
@@ -119,6 +120,42 @@ describe("session-connection", () => {
     expect(initInputStreamMock).toHaveBeenCalledTimes(1);
     document.querySelector('[role="alert"]')?.remove();
   });
+
+  it.each(["streaming", "fallback"])(
+    "stops retries on an origin rejection from the %s callback transport",
+    async (mode) => {
+      initInputStreamMock.mockResolvedValue(new ReadableStream());
+      const error = new StreamError("Rejected", "REQUEST_ORIGIN_REJECTED");
+      initCallbackStreamMock.mockReturnValue({
+        writable: new WritableStream({
+          start(controller) {
+            if (mode === "fallback") controller.error(error);
+          },
+        }),
+        failure: mode === "streaming" ? Promise.reject(error) : null,
+      });
+      const mayu = {
+        dispose: vi.fn(),
+        clearWriter: vi.fn(),
+        setWriter: vi.fn(),
+      };
+      const sleep = vi.fn();
+      await new SessionConnection({
+        runtime: {} as any,
+        mayu: mayu as any,
+        endpoint: "/session",
+        sleep,
+      }).run();
+      expect(mayu.dispose).toHaveBeenCalledTimes(1);
+      expect(initInputStreamMock).toHaveBeenCalledTimes(1);
+      expect(sleep).not.toHaveBeenCalled();
+      expect(resetSessionEntirelyMock).not.toHaveBeenCalled();
+      expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+        "server rejected this connection",
+      );
+      document.querySelector('[role="alert"]')?.remove();
+    },
+  );
 
   it("falls back to retry sleep when session reset fails", async () => {
     const inputError = new Error("stream down");

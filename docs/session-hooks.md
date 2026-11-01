@@ -1,62 +1,61 @@
 # Session context and application hooks
 
-Register hooks in `mayu.rb`, inside `setup.on_worker`. Applications without
-hooks keep the default behavior.
+Most applications need two hooks: prepare the session's context, and check
+whether that session remains valid. Register them in `mayu.rb`, inside
+`setup.on_worker`:
 
 ```ruby
 Mayu.setup do |setup|
   setup.on_worker do |environment|
-    environment.around_request do |request, next_app|
-      response = next_app.call(request)
-      response.headers["referrer-policy"] = "strict-origin"
-      response
-    end
-
     environment.prepare_session do |request|
-      identity = Identity.prepare(request.headers)
-      Mayu::Session::Preparation.new(
-        context: {identity_id: identity.id},
-        headers: identity.response_headers # Array of [name, value] fields
-      )
+      identity = Identity.from_request(request)
+      {identity_id: identity.id}
     end
 
-    environment.authorize_session do |info, request, phase|
-      Identity.authorized?(info.context[:identity_id], request, phase)
-    end
-
-    environment.authorize_event do |info, event|
-      Identity.active?(info.context[:identity_id])
+    environment.authorize_session do |session|
+      Identity.active?(session.context[:identity_id])
     end
   end
 end
 ```
 
-The identity service in this example belongs to the application. It owns its
-cookie, origin, CSRF, resource-permission, and expiry policies.
+`Identity` belongs to the application. It owns authentication, application
+identity cookies, resource permissions, expiry policy, and durable revocation.
+Mayu owns browser request protection and session lifecycle checks. Both hooks
+are optional; request protection is enabled even when no hooks are registered.
 
-## Ordering and HTTP responses
+## Preparing a session
 
-`around_request` receives native Protocol HTTP request and response objects. It
-wraps every request, including public handlers, assets, and session transports.
-The first registered wrapper is outermost. Each wrapper may return a response
-directly or call `next_app.call(request)` once. Headers may be added to the
-returned response before it is committed.
+`prepare_session` receives the native Protocol HTTP request. Return a
+symbol-keyed context hash, or `Mayu::Session::Preparation` when you also need
+response headers:
 
-After initial page selection, `prepare_session` runs before route resolution
-constructs the component tree or a session is stored. Return
-`Mayu::Session::Preparation.new(context: {}, headers: [])` or a native
-`Protocol::HTTP::Response` to redirect or reject without creating a session.
-It does not run for ordinary route handlers, live navigation, or reconnections.
-The `:start` authorization follows preparation and precedes component creation.
+```ruby
+environment.prepare_session do |request|
+  identity = Identity.prepare(request.headers)
+  Mayu::Session::Preparation.new(
+    context: {identity_id: identity.id},
+    headers: identity.response_headers # Array of [name, value] fields
+  )
+end
+```
 
-Prepared response headers are appended to the document response. In particular,
-separate `set-cookie` fields preserve Mayu's transport cookie. Newly issued
-application context is available to the first component without modifying the
-incoming Cookie header.
+To redirect without creating a session, return
+`Mayu::Session::Preparation.redirect("/login")` (303 by default, with an optional
+`status:`). A native `Protocol::HTTP::Response` can also reject or redirect.
+
+Preparation runs after initial page selection, before route resolution creates
+the component tree or a session is stored. It does not run for ordinary HTTP
+handlers, live navigation, or reconnections. The first validity check follows
+preparation and precedes component creation.
+
+Prepared headers are appended to the document response. Separate `set-cookie`
+fields preserve Mayu's transport cookie. Newly issued context is available to
+the first component without modifying the incoming Cookie header.
 
 Once the document response or event stream has begun, application work cannot
-change its HTTP status or cookies. Use a document navigation for operations
-requiring an HTTP redirect or a new cookie; see `data-mayu-navigation="document"` links and
+change its HTTP status or cookies. Use a document navigation for an operation
+requiring a redirect or a new cookie; see `data-mayu-navigation="document"` and
 `browser.navigate(href, document: true)` in the main README.
 
 ## Immutable context
@@ -78,39 +77,32 @@ is excluded from its state dump. Restored components receive it before any
 initializer runs. A new document creates a new snapshot. There is no live
 context-refresh API.
 
-## Authorization and invalidation
+## Session validity and invalidation
 
-`authorize_session` receives read-only `Session::Info` (`id`, `path`, `context`),
-the current native request, and one of these phases:
-
-| Phase       | Invocation                                                                   |
-| ----------- | ---------------------------------------------------------------------------- |
-| `:start`    | After preparation, before component creation                                 |
-| `:resume`   | After Mayu token authentication, before opening a stream                     |
-| `:events`   | After Mayu token authentication, before reading event messages               |
-| `:transfer` | After transfer/token authentication, before deserializing the component tree |
-
-The encrypted transfer envelope includes versioned, authenticated session info.
-Legacy envelopes without it use `SESSION_RESTORE_FAILED` recovery.
-
-`authorize_event` receives session info and a parsed
-`Session::Events::CallbackEvent` or `NavigateEvent`. Callback checks run after
+`authorize_session` receives read-only `Session::Info` (`id`, `path`, `context`, `origin`).
+Mayu checks this policy before initial component creation, opening a stream,
+reading incoming event messages, restoring a transferred component tree, and
+executing each callback or live navigation. Callback checks run after
 continuous-event coalescing, with the final payload, immediately before handler
-invocation. Navigation checks run before route or component code. Payloads and
-paths remain untrusted input. Pings and visibility events do not invoke this
-hook.
+invocation. Pings and visibility events do not invoke the per-event check.
 
-Both authorization hooks must return exactly `true`. All other values reject.
-Raise `Mayu::Session::Rejected.new(location: "/login")` to choose a destination.
-Unexpected exceptions prevent the operation and follow ordinary error handling;
-they are not reported as expired credentials.
+Return exactly `true` to allow work. Every other value rejects the session.
+Raise `Mayu::Session::Rejected.new(location: "/login")` to choose a document
+navigation destination. Unexpected exceptions prevent the operation and follow
+ordinary error handling; they do not invalidate the session as expired.
 
-Call `session.invalidate!(location: nil)` to invalidate an instance, or
-`app.invalidate_session(id, location: nil)` from an `environment.on_start` service.
-The latter affects only the current worker. The first invalidation wins;
-subsequent calls return false. Invalidated sessions reject queued callbacks and
-future events and cannot be transferred. Their terminal result stays in the
-worker's store until normal expiry, so reconnects receive the same rejection.
+This is a session-validity policy: denying it terminates the whole session.
+Check resource permissions inside application operations, including any
+transaction-level checks. Denying access to one record should not ordinarily
+expire the session. There are no periodic validity checks for otherwise idle
+sessions, and an already-running operation is not rolled back.
+
+Call `session.invalidate!(location: nil)` on an instance, or
+`app.invalidate_session(id, location: nil)` from an `environment.on_start`
+service. The latter affects only the current worker. The first invalidation
+wins; subsequent calls return false. Invalidated sessions reject queued and
+future work and cannot transfer. Their terminal result stays in the worker's
+store until normal expiry so reconnects receive the same rejection.
 
 Before streaming, rejection returns HTTP 403 with code
 `APPLICATION_SESSION_REJECTED` and an optional `location`. Established streams
@@ -119,10 +111,166 @@ clear transfer state, and reject pending callback and navigation promises. A
 location causes a full document navigation with history replacement. Otherwise
 the page remains visible with an expired-session notice and a Reload button.
 Stream teardown occurs outside the callback fiber and lets the terminal batch
-flush. An already-running operation is not rolled back.
+flush.
 
-Applications still own transaction-level permission checks, background-task
-authorization, and durable revocation across workers.
+### Advanced validity metadata
+
+Policies can opt into any of these keyword arguments:
+
+```ruby
+environment.authorize_session do |session, request: nil, phase:, event: nil|
+  Identity.authorized?(session.context[:identity_id], request, phase, event)
+end
+```
+
+| Phase       | Invocation                                              |
+| ----------- | ------------------------------------------------------- |
+| `:start`    | After preparation, before component creation            |
+| `:resume`   | After token authentication, before opening a stream     |
+| `:events`   | After token authentication, before reading messages     |
+| `:transfer` | After transfer/token authentication, before restoration |
+| `:event`    | Immediately before a callback or live navigation        |
+
+For `:event`, `request` is nil and `event` is a parsed
+`Session::Events::CallbackEvent` or `NavigateEvent`. Other phases receive the
+current native request and a nil event. Event payloads and paths remain
+untrusted input. A policy that checks credentials on HTTP requests must also
+support event checks without a request.
+
+The encrypted transfer envelope includes authenticated, versioned session info
+and the session's origin. Legacy envelopes without an origin use
+`SESSION_RESTORE_FAILED` recovery.
+
+## Default browser request protection
+
+Mayu checks request origins on every session transport (including GET
+reconnects), and application requests other than GET, HEAD, and OPTIONS. Checks
+run before reading bodies, preparing sessions, authenticating transports, or
+invoking application handlers. Normal document GET navigation and assets remain
+accessible from external links. Applications must keep ordinary GET handlers
+free of state-changing operations.
+
+Protected requests follow these rules:
+
+- `Sec-Fetch-Site: cross-site` and `same-site` are rejected. Sibling subdomains
+  are not implicitly trusted.
+- A supplied Origin must be a single valid HTTP(S) origin matching the expected
+  scheme, host, and effective port. Null, empty, duplicate, and malformed values
+  are rejected.
+- Without Origin, `Sec-Fetch-Site: same-origin` is accepted. Otherwise a single
+  Referer with a matching origin is required. Missing evidence is rejected.
+
+Rejections return HTTP 403 with `REQUEST_ORIGIN_REJECTED` and
+`Cache-Control: no-store`. They do not invalidate an existing session. The
+browser stops connection retries and displays a Reload notice. Mayu does not
+support cross-origin credentialed session transports or reflect arbitrary
+origins into CORS response headers. The transport cookie retains `Secure`,
+`HttpOnly`, and `SameSite=Strict`.
+
+### Sessions and multiple domains
+
+Mayu captures each new document's destination origin automatically, before
+preparation or component initialization. It does not use the document's Origin
+or Referer to establish the destination: an initial GET may arrive from an
+external link.
+
+Read the immutable value through `Session#origin` or `Session::Info#origin`.
+Origins contain the scheme, lowercase hostname, and any nondefault port, without
+a trailing slash. They remain fixed through live navigation, HMR, fallback
+rendering, and encrypted worker transfer. Application context cannot replace
+this binding.
+
+One app can serve both `https://foo.local` and `https://bar.local`. A session
+created on foo must reconnect, submit events, and transfer through foo; a valid
+transport token does not allow using it through bar. The request's browser
+origin checks must also pass. Changing domains requires a new document session.
+An origin mismatch rejects only that request, leaving the legitimate session
+valid. Ordinary HTTP handlers use their own request destination for protection.
+
+### Reverse proxies
+
+Without proxy configuration, Mayu uses the native request's scheme and authority
+and ignores forwarded headers. When a proxy terminates HTTPS, configure its
+actual connection source addresses:
+
+```toml
+[production.server]
+  listen = "http://127.0.0.1:3333"
+  trusted_proxies = ["127.0.0.1/32", "::1/128"]
+```
+
+No proxy addresses are trusted by default. Entries may be IPv4/IPv6 addresses or
+CIDRs. Trust is based on the actual connection peer, never a header claiming to
+be the client or proxy.
+
+For requests from trusted proxies, Mayu requires exactly one
+`X-Forwarded-Proto` (`http` or `https`) and one `X-Forwarded-Host` (including any
+nonstandard external port). The proxy must overwrite client-supplied values,
+restrict which domains reach the app, and preserve browser Origin and Fetch
+Metadata headers. Missing, duplicate, malformed, and comma-separated forwarded
+values are rejected. Configure the final proxy to send a single external scheme
+and host; Mayu does not interpret forwarded chains, `Forwarded`, or
+`X-Forwarded-Port`.
+
+For example, an nginx proxy can overwrite both values with:
+
+```nginx
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-Host $http_host;
+```
+
+This example assumes nginx receives the public connection directly. If another
+proxy terminates TLS first, configure the final proxy to preserve the verified
+external scheme and host instead of its internal address.
+
+For a fixed-origin deployment, optional `server.public_origin` overrides both
+proxy discovery and the native address:
+
+```toml
+[production.server]
+  public_origin = "https://app.example"
+```
+
+It accepts an environment-variable reference such as `"$MAYU_PUBLIC_ORIGIN"` and
+must contain one HTTP(S) origin without credentials, query, fragment, or a
+non-root path. Leave it unset when serving multiple public origins. There is no
+required `MAYU_PUBLIC_ORIGIN` environment variable.
+
+### Webhooks and externally authenticated APIs
+
+A `+route.rb` can exempt explicit HTTP handler methods:
+
+```ruby
+csrf_exempt "POST"
+
+def POST(request)
+  Webhook.verify_signature!(request)
+  [204, {}, nil]
+end
+```
+
+Use uppercase POST, PUT, PATCH, or DELETE method names. Exemptions apply only to
+those methods on that handler, never to a colocated HTML page or an internal
+session transport. An exempt endpoint must perform its own signature or API
+authentication. Non-browser clients can also send a matching Origin to protected
+endpoints; an origin check is not authentication. There is no global disable
+switch and no additional CSRF cookie or form token to manage.
+
+## Advanced request middleware
+
+`around_request` receives native Protocol HTTP request and response objects and
+wraps every request, including public handlers, assets, and session transports.
+The first registered wrapper is outermost. Each wrapper may return a response
+directly or call `next_app.call(request)` once. Add headers before the returned
+response is committed:
+
+```ruby
+environment.around_request do |request, next_app|
+  response = next_app.call(request)
+  response.headers["referrer-policy"] = "strict-origin"
+  response
+end
+```
 
 ## HTTP header values
 

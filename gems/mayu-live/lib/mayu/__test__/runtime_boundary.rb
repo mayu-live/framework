@@ -25,7 +25,7 @@ config =
 environment =
   Mayu::Environment.load_klenod_with_config(config, bundle)
 request_info =
-  Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+  Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 session = Mayu::Session.new(environment:, request_info:)
 html = session.render
 

@@ -106,20 +106,19 @@ module Mayu
 
     def authorize_session(&block)
       @session_authorizer = block
-    end
-
-    def authorize_event(&block)
-      @event_authorizer = block
-    end
-
-    def authorize_session!(info, request, phase)
-      if @session_authorizer && @session_authorizer.call(info, request, phase) != true
-        raise Session::Rejected
+      parameters = block&.parameters || []
+      @session_authorizer_keywords = if parameters.any? { |type, _| type == :keyrest }
+        %i[request phase event]
+      else
+        parameters.filter_map { |type, name| name if %i[key keyreq].include?(type) }
       end
     end
 
-    def authorize_event!(info, event)
-      if @event_authorizer && @event_authorizer.call(info, event) != true
+    def authorize_session!(info, phase:, request: nil, event: nil)
+      return unless @session_authorizer
+
+      metadata = {request:, phase:, event:}.slice(*@session_authorizer_keywords)
+      if @session_authorizer.call(info, **metadata) != true
         raise Session::Rejected
       end
     end
@@ -133,7 +132,8 @@ module Mayu
     end
 
     def prepare_session_for(request)
-      @preparation_hook ? @preparation_hook.call(request) : Session::Preparation.new
+      result = @preparation_hook ? @preparation_hook.call(request) : {}
+      result.is_a?(Hash) ? Session::Preparation.new(context: result) : result
     end
 
     def wrap_request(request, &app)

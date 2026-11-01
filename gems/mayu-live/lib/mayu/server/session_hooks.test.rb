@@ -13,6 +13,8 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
     @environment.instance_variable_set(:@metrics, Mayu::Test::FakeMetrics.new)
     server_config = Object.new
     def server_config.render_exceptions? = false
+    def server_config.public_origin = nil
+    def server_config.trusted_proxies = []
     @environment.instance_variable_set(:@config, Struct.new(:server).new(server_config))
     @sessions = Mayu::Session::Store.new(metrics: @environment.metrics)
     @app = Mayu::Server::App.allocate
@@ -22,7 +24,9 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
   end
 
   def request(method = "GET", path = "/", headers = {}, body = nil)
-    Protocol::HTTP::Request[method, path, headers, body].tap do |req|
+    Protocol::HTTP::Request[method, path, {"sec-fetch-site" => "same-origin", **headers}, body].tap do |req|
+      req.scheme = "https"
+      req.authority = "app.example"
       req.version = "HTTP/2"
       def req.deconstruct_keys(keys) = keys.to_h { [it, public_send(it)] }
     end
@@ -52,10 +56,72 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
   end
 
   def test_preparation_redirect_creates_no_session
-    @environment.prepare_session { |_| Protocol::HTTP::Response[303, {"location" => "/login"}] }
+    @environment.prepare_session { |_| Mayu::Session::Preparation.redirect("/login") }
     result = @app.call(request)
     assert_equal 303, result.status
     assert_empty @sessions.instance_variable_get(:@sessions)
+  end
+
+  def test_hash_preparation_and_simple_validity_policy
+    @environment.prepare_session { |_| {account_id: 42} }
+    seen = nil
+    @environment.authorize_session(&->(info) {
+      seen = info.context
+      true
+    })
+    result = @app.call(request)
+    assert_equal 404, result.status
+    assert_equal({account_id: 42}, seen)
+    assert seen.frozen?
+  end
+
+  def test_origin_rejection_does_not_invalidate_an_existing_session
+    session = new_session
+    @sessions.store(session)
+    @environment.authorize_session { |*| flunk "must not authorize" }
+    result = @app.call(request("GET", "/.mayu/session/#{session.id}", {"origin" => "https://attacker.example"}))
+    assert_equal "REQUEST_ORIGIN_REJECTED", JSON.parse(result.read).fetch("code")
+    refute session.invalidated?
+    assert_same session, @sessions.authenticate!(session.id, session.token)
+  end
+
+  def test_external_get_navigation_can_prepare_a_new_page
+    @environment.prepare_session { |_| {account_id: 42} }
+    result = @app.call(request("GET", "/", {"sec-fetch-site" => "cross-site", "origin" => "https://other.example"}))
+    assert_equal 404, result.status
+    assert_includes result.headers["set-cookie"].to_s, "SameSite=Strict"
+  end
+
+  def test_event_transport_is_checked_before_reading_messages
+    session = new_session
+    @sessions.store(session)
+    req = request("PATCH", "/.mayu/session/#{session.id}", {"cookie" => "mayu-token=#{session.token}"})
+    def req.read = raise("must not read events")
+    @environment.authorize_session(&->(info, phase:, request:) {
+      assert_equal session.id, info.id
+      assert_equal :events, phase
+      assert_same req, request
+      false
+    })
+    result = @app.call(req)
+    assert_equal "APPLICATION_SESSION_REJECTED", JSON.parse(result.read).fetch("code")
+    assert session.invalidated?
+  end
+
+  def test_callback_validity_policy_receives_event_metadata
+    session = new_session
+    callback = Mayu::Session::Events::CallbackEvent["listener", {value: "final"}, 1, settle_id: "s1"]
+    @environment.authorize_session do |info, request:, phase:, event:|
+      assert_equal session.id, info.id
+      assert_nil request
+      assert_equal :event, phase
+      assert_same callback, event
+      true
+    end
+    assert session.authorize_work(callback)
+    @environment.authorize_session { |_| false }
+    refute session.authorize_work(callback)
+    assert session.invalidated?
   end
 
   def test_prepared_context_and_cookies_are_available_without_changing_request
@@ -66,8 +132,8 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
       ])
     end
     seen = nil
-    @environment.authorize_session do |info, req, phase|
-      seen = [info, req.headers.to_h, phase]
+    @environment.authorize_session do |info, request:, phase:, **|
+      seen = [info, request.headers.to_h, phase]
       true
     end
     req = request("GET", "/", {"accept" => "text/html", "cookie" => "old=value"})
@@ -143,7 +209,7 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
     marshaller = Mayu::EncryptedMarshal.new("test secret")
     @environment.instance_variable_set(:@marshaller, marshaller)
     transfer = Mayu::Session::TransferState.from_session(session)
-    @environment.authorize_session do |info, _req, phase|
+    @environment.authorize_session do |info, phase:, **|
       assert_equal :transfer, phase
       assert_equal session.id, info.id
       assert info.context.frozen?
@@ -175,7 +241,7 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
 
   def test_navigation_denial_prevents_route_resolution
     session = new_session
-    @environment.authorize_event { |_info, event| event.path != "/private" }
+    @environment.authorize_session { |_info, event:, **| event.path != "/private" }
     @environment.define_singleton_method(:module_provider) { raise "must not resolve" }
     session.send(:handle_event, Mayu::Session::Events::NavigateEvent["n1", "/private", 1])
     assert session.invalidated?
@@ -184,7 +250,7 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
 
   def test_navigation_authorizer_exception_fails_navigation_without_invalidation
     session = new_session
-    @environment.authorize_event { |*| raise "service unavailable" }
+    @environment.authorize_session { |*| raise "service unavailable" }
     session.send(:handle_event, Mayu::Session::Events::NavigateEvent["n1", "/private", 1])
     refute session.invalidated?
     commands = [session.dequeue_batch, session.dequeue_batch].flat_map(&:commands)
@@ -202,9 +268,113 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
     assert_equal "SESSION_RESTORE_FAILED", JSON.parse(result.read).fetch("code")
   end
 
+  def test_pages_on_different_domains_capture_separate_destination_origins
+    origins = []
+    @environment.prepare_session { |_| {origin: "https://context.example"} }
+    @environment.authorize_session do |info|
+      origins << info.origin
+      assert info.origin.frozen?
+      assert_equal "https://context.example", info.context[:origin]
+      true
+    end
+    %w[foo.local bar.local].each do |host|
+      req = request("GET", "/", {"accept" => "text/html", "origin" => "https://elsewhere.example", "sec-fetch-site" => "cross-site"})
+      req.authority = host
+      response = @app.call(req)
+      assert_equal 404, response.status
+      id = response.headers["x-mayu-session-id"].to_s
+      token = response.headers["set-cookie"].to_s[/mayu-token=(\w+)/, 1]
+      assert_equal "https://#{host}", @sessions.authenticate!(id, token).origin
+    end
+    assert_equal %w[https://foo.local https://bar.local], origins
+  end
+
+  def test_each_domain_can_resume_its_own_session
+    @app.define_singleton_method(:run_session_stream) { |_, _| Protocol::HTTP::Response[200] }
+    %w[foo.local bar.local].each do |host|
+      session = new_session(origin: "https://#{host}")
+      @sessions.store(session)
+      req = request("GET", "/.mayu/session/#{session.id}", {"origin" => "https://#{host}", "cookie" => "mayu-token=#{session.token}"})
+      req.authority = host
+      assert_equal 200, @app.call(req).status
+    end
+  end
+
+  def test_bound_origin_rejects_other_domains_schemes_and_ports_with_valid_tokens
+    session = new_session(origin: "https://foo.local")
+    @sessions.store(session)
+    @environment.authorize_session { |_| flunk "must not run application authorization" }
+    %w[GET PATCH].each do |method|
+      [["https", "bar.local"], ["http", "foo.local"], ["https", "foo.local:8443"]].each do |scheme, host|
+        req = request(method, "/.mayu/session/#{session.id}", {"origin" => "#{scheme}://#{host}", "cookie" => "mayu-token=#{session.token}"})
+        req.scheme = scheme
+        req.authority = host
+        def req.read = raise("must not read events")
+        result = @app.call(req)
+        assert_equal 403, result.status
+        assert_equal "REQUEST_ORIGIN_REJECTED", JSON.parse(result.read).fetch("code")
+        refute session.invalidated?
+      end
+    end
+  end
+
+  def test_cross_domain_transfer_is_rejected_before_component_deserialization
+    session = new_session(origin: "https://foo.local")
+    marshaller = Mayu::EncryptedMarshal.new("test secret")
+    @environment.instance_variable_set(:@marshaller, marshaller)
+    transfer = Mayu::Session::TransferState.from_session(session).with(state: "must not deserialize")
+    @environment.authorize_session { |_| flunk "must not run application authorization" }
+    req = request("POST", "/.mayu/session/#{session.id}", {"origin" => "https://bar.local", "cookie" => "mayu-token=#{session.token}"}, [transfer.encrypt(marshaller)])
+    req.authority = "bar.local"
+    response = @app.call(req)
+    assert_equal 403, response.status
+    assert_equal "REQUEST_ORIGIN_REJECTED", JSON.parse(response.read).fetch("code")
+    refute session.invalidated?
+  end
+
+  def test_same_origin_transfer_restores_the_original_binding
+    session = new_session(origin: "https://foo.local")
+    marshaller = Mayu::EncryptedMarshal.new("test secret")
+    @environment.instance_variable_set(:@marshaller, marshaller)
+    transfer = Mayu::Session::TransferState.from_session(session)
+    @app.define_singleton_method(:run_session_stream) { |_, _| Protocol::HTTP::Response[200] }
+    req = request("POST", "/.mayu/session/#{session.id}", {"origin" => "https://foo.local", "cookie" => "mayu-token=#{session.token}"}, [transfer.encrypt(marshaller)])
+    req.authority = "foo.local"
+    response = @app.call(req)
+    assert_equal 200, response.status
+    restored = @sessions.authenticate!(session.id, session.token)
+    assert_equal "https://foo.local", restored.origin
+    assert restored.origin.frozen?
+  end
+
+  def test_legacy_and_missing_metadata_transfers_require_a_new_session
+    session = new_session
+    marshaller = Mayu::EncryptedMarshal.new("test secret")
+    @environment.instance_variable_set(:@marshaller, marshaller)
+    transfer = Mayu::Session::TransferState.from_session(session)
+    [transfer.with(version: 1), transfer.with(info: nil)].each do |invalid|
+      response = @app.call(request("POST", "/.mayu/session/#{session.id}", {"cookie" => "mayu-token=#{session.token}"}, [invalid.encrypt(marshaller)]))
+      assert_equal 422, response.status
+      assert_equal "SESSION_RESTORE_FAILED", JSON.parse(response.read).fetch("code")
+    end
+  end
+
+  def test_restored_session_must_match_the_authenticated_origin_metadata
+    session = new_session(origin: "https://foo.local")
+    marshaller = Mayu::EncryptedMarshal.new("test secret")
+    @environment.instance_variable_set(:@marshaller, marshaller)
+    transfer = Mayu::Session::TransferState.from_session(session)
+    transfer = transfer.with(info: transfer.info.with(origin: "https://bar.local"))
+    req = request("POST", "/.mayu/session/#{session.id}", {"origin" => "https://bar.local", "cookie" => "mayu-token=#{session.token}"}, [transfer.encrypt(marshaller)])
+    req.authority = "bar.local"
+    response = @app.call(req)
+    assert_equal 422, response.status
+    assert_equal "SESSION_RESTORE_FAILED", JSON.parse(response.read).fetch("code")
+  end
+
   private
 
-  def new_session
-    Mayu::Session.new(environment: @environment, request_info: Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false), context: {account_id: 42})
+  def new_session(origin: "https://app.example")
+    Mayu::Session.new(environment: @environment, request_info: Mayu::Session::RequestInfo.new(origin:, path: "/", headers: {}, http2: false), context: {account_id: 42})
   end
 end

@@ -62,7 +62,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
           session_id = page.headers["x-mayu-session-id"]
           cookie = page.headers["set-cookie"].to_s.split(";").first
           page.read
-          stream = client.get("/.mayu/session/#{session_id}", {"cookie" => cookie})
+          stream = client.get("/.mayu/session/#{session_id}", {"cookie" => cookie, "sec-fetch-site" => "same-origin"})
           assert_equal(200, stream.status)
           streams[pid] = stream
         end
@@ -174,7 +174,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
         cookie = page.headers["set-cookie"].to_s.split(";").first
         page.read
         stalled_client = new_client(window: 0)
-        response = stalled_client.get("/.mayu/session/#{id}", {"cookie" => cookie})
+        response = stalled_client.get("/.mayu/session/#{id}", {"cookie" => cookie, "sec-fetch-site" => "same-origin"})
         assert_equal(200, response.status)
         Process.kill(:TERM, @pid)
         assert_parent_exits(timeout: 2)
@@ -207,7 +207,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
         id = page.headers["x-mayu-session-id"]
         cookie = page.headers["set-cookie"].to_s.split(";").first
         page.read
-        response = client.get("/.mayu/session/#{id}", {"cookie" => cookie})
+        response = client.get("/.mayu/session/#{id}", {"cookie" => cookie, "sec-fetch-site" => "same-origin"})
         Process.kill(:INT, @pid)
         patches = decode(response.read)
         assert_equal(["TransferFailed"], patches.last)
@@ -219,14 +219,54 @@ class Mayu::Server::ControllerTest < Minitest::Test
     refute_includes(logs, "Worker drain deadline expired")
   end
 
+  def test_two_public_domains_behind_a_trusted_proxy_keep_separate_sessions
+    start_server(trusted_proxy: true)
+    Async do |task|
+      client = new_client
+      streams = []
+      task.with_timeout(8) do
+        %w[foo.local bar.local].each do |host|
+          forwarded = {"x-forwarded-proto" => "https", "x-forwarded-host" => host}
+          page = client.get("/", {"accept" => "text/html", **forwarded})
+          assert_equal 200, page.status
+          id = page.headers["x-mayu-session-id"]
+          cookie = page.headers["set-cookie"].to_s.split(";").first
+          page.read
+          other = (host == "foo.local") ? "bar.local" : "foo.local"
+          headers = {
+            **forwarded,
+            "x-forwarded-host" => other,
+            "origin" => "https://#{other}", "cookie" => cookie
+          }
+          rejection = client.get("/.mayu/session/#{id}", headers)
+          assert_equal 403, rejection.status
+          assert_equal "REQUEST_ORIGIN_REJECTED", JSON.parse(rejection.read).fetch("code")
+
+          stream = client.get("/.mayu/session/#{id}", {**forwarded, "origin" => "https://#{host}", "cookie" => cookie})
+          streams << stream
+          assert_equal 200, stream.status
+        end
+        Process.kill(:INT, @pid)
+        streams.each do |response|
+          assert decode(response.read).any? { it.first == "Transfer" }
+        end
+      end
+    ensure
+      streams&.each(&:close)
+      client&.close
+    end.wait
+    assert_parent_exits(timeout: 4)
+  end
+
   private
 
-  def start_server(count: 1, delay: 0, timeout: 10, startup_delay: 0, ready: true, metrics: false, transfer_failure: nil)
+  def start_server(count: 1, delay: 0, timeout: 10, startup_delay: 0, ready: true, metrics: false, transfer_failure: nil, trusted_proxy: false)
     @pid = Process.spawn(
       {"ASYNC_CONTAINER_PROCESSOR_COUNT" => count.to_s, "WEB_CONCURRENCY" => "99",
        "TEST_DRAIN_DELAY" => delay.to_s, "TEST_DRAIN_TIMEOUT" => timeout.to_s,
        "TEST_STARTUP_DELAY" => startup_delay.to_s, "TEST_METRICS" => metrics.to_s,
        "TEST_TRANSFER_FAILURE" => transfer_failure,
+       "TEST_TRUSTED_PROXY" => trusted_proxy.to_s,
        "CONSOLE_LEVEL" => "info", "CONSOLE_OUTPUT" => nil},
       RbConfig.ruby, "-W0", "-rbundler/setup", FIXTURE, @root,
       pgroup: true, out: File.join(@root, "server.log"), err: [:child, :out]

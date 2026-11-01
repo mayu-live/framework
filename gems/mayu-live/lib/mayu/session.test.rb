@@ -108,11 +108,10 @@ class Mayu::SessionTest < Minitest::Test
   def test_session_uses_runtime_engine
     env = FakeEnvironment.new
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/missing",
         headers: {},
-        http2: false
-      )
+        http2: false)
 
     session = Mayu::Session.new(environment: env, request_info: request_info)
     engine = session.instance_variable_get(:@engine)
@@ -126,11 +125,10 @@ class Mayu::SessionTest < Minitest::Test
   def test_session_start_stop
     env = FakeEnvironment.new
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/missing",
         headers: {},
-        http2: false
-      )
+        http2: false)
 
     session = Mayu::Session.new(environment: env, request_info: request_info)
 
@@ -153,7 +151,7 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: true)
+      Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: true)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     session.render
 
@@ -173,11 +171,10 @@ class Mayu::SessionTest < Minitest::Test
   def test_events_can_be_queued_before_the_session_starts
     env = FakeEnvironment.new
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/missing",
         headers: {},
-        http2: false
-      )
+        http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     session.enqueue_event(Mayu::Session::Events::PingEvent[123])
 
@@ -306,7 +303,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_a_hidden_tab_slows_the_engine_down_and_a_visible_one_restores_it
     env = FakeEnvironment.new
-    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/missing", headers: {}, http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -320,7 +317,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_callback_events_pass_their_settle_id_to_the_engine
     env = FakeEnvironment.new
-    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/missing", headers: {}, http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -344,7 +341,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_inspect_answers_with_the_environment_inspector
     env = FakeEnvironment.new
-    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/missing", headers: {}, http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -360,7 +357,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_inspect_keeps_the_session_alive_without_a_pong
     env = FakeEnvironment.new
-    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/missing", headers: {}, http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -374,7 +371,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_other_events_are_answered_with_a_pong
     env = FakeEnvironment.new
-    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/missing", headers: {}, http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -386,7 +383,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_inspect_answers_nil_without_an_inspector
     env = FakeEnvironment.new
-    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/missing", headers: {}, http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -398,7 +395,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_inspect_reports_inspector_errors_in_the_result
     env = FakeEnvironment.new
-    request_info = Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/missing", headers: {}, http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -421,11 +418,10 @@ class Mayu::SessionTest < Minitest::Test
   def test_receive_message_queues_exactly_one_event
     env = FakeEnvironment.new
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/missing",
         headers: {},
-        http2: false
-      )
+        http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     queue = session.instance_variable_get(:@incoming_events)
 
@@ -448,7 +444,7 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 
     session = Mayu::Session.new(environment: env, request_info: request_info)
     html = session.render
@@ -468,7 +464,7 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: true)
+      Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: true)
     session = Mayu::Session.new(environment: env, request_info: request_info)
 
     initial_html = session.render
@@ -500,11 +496,10 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/demos/form",
         headers: {},
-        http2: false
-      )
+        http2: false)
 
     html =
       Mayu::Session.new(environment: env, request_info: request_info).render
@@ -520,11 +515,10 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/demos/exceptions",
         headers: {},
-        http2: false
-      )
+        http2: false)
 
     session = Mayu::Session.new(environment: env, request_info: request_info)
     html = session.render
@@ -542,11 +536,10 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/demos/life",
         headers: {},
-        http2: false
-      )
+        http2: false)
 
     session = Mayu::Session.new(environment: env, request_info: request_info)
     html = session.render
@@ -590,7 +583,7 @@ class Mayu::SessionTest < Minitest::Test
       Mayu::EncryptedMarshal.new("transfer-test-secret")
     )
     request_info =
-      Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+      Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/missing", headers: {}, http2: false)
     session = Mayu::Session.new(environment: env, request_info:)
     engine = TransferEngine.new
     session.instance_variable_set(:@engine, engine)
@@ -609,7 +602,7 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_invalidation_during_transfer_drain_prevents_serialization
     env = FakeEnvironment.new
-    session = Mayu::Session.new(environment: env, request_info: Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false))
+    session = Mayu::Session.new(environment: env, request_info: Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false))
     engine = TransferEngine.new
     session.instance_variable_set(:@engine, engine)
     engine.define_singleton_method(:finish_updates!) { session.invalidate! }
@@ -627,11 +620,10 @@ class Mayu::SessionTest < Minitest::Test
       )
     source_environment.instance_variable_set(:@marshaller, marshaller)
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/demos/form",
         headers: {},
-        http2: false
-      )
+        http2: false)
     session = Mayu::Session.new(environment: source_environment, request_info:, context: {account: {id: 42}})
 
     encrypted =
@@ -682,11 +674,10 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/demos/custom-elements",
         headers: {},
-        http2: false
-      )
+        http2: false)
 
     html =
       Mayu::Session.new(environment: env, request_info: request_info).render
@@ -705,11 +696,10 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/demos/segments/alpha/beta",
         headers: {},
-        http2: false
-      )
+        http2: false)
 
     html = Mayu::Session.new(environment: env, request_info:).render
 
@@ -724,11 +714,10 @@ class Mayu::SessionTest < Minitest::Test
       ).development_provider
     env = FakeEnvironment.new(module_provider: provider)
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/demos/silent-haml",
         headers: {},
-        http2: false
-      )
+        http2: false)
 
     output = StringIO.new
     previous_logger = Console.logger
@@ -767,7 +756,7 @@ class Mayu::SessionTest < Minitest::Test
       provider = Mayu::Build::Configuration.new(root:).development_provider
       env = FakeEnvironment.new(module_provider: provider)
       request_info =
-        Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+        Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
 
@@ -779,7 +768,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_a_page_that_fails_to_render_falls_back_to_the_error_page
     with_failing_page(error_page: true) do |provider|
       env = FakeEnvironment.new(module_provider: provider)
-      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
 
@@ -794,7 +783,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_the_overlay_is_only_queued_when_exceptions_are_rendered
     with_failing_page(error_page: true) do |provider|
       env = FakeEnvironment.new(module_provider: provider, render_exceptions: false)
-      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
 
@@ -806,7 +795,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_without_an_error_page_development_shows_the_failure
     with_failing_page(error_page: false) do |provider|
       env = FakeEnvironment.new(module_provider: provider)
-      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
       html = session.render
@@ -822,7 +811,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_a_hot_reload_that_fixes_the_page_renders_it_in_the_same_session
     with_failing_page(error_page: false) do |provider, root|
       env = FakeEnvironment.new(module_provider: provider)
-      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
       session = Mayu::Session.new(environment: env, request_info: request_info)
       assert_includes(session.render, "render boom")
 
@@ -840,7 +829,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_without_an_error_page_production_shows_a_generic_page
     with_failing_page(error_page: false) do |provider|
       env = FakeEnvironment.new(module_provider: provider, render_exceptions: false)
-      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
       html = session.render
@@ -855,7 +844,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_a_page_that_raises_not_found_renders_the_not_found_view_with_404
     with_not_found_page do |provider|
       env = FakeEnvironment.new(module_provider: provider)
-      request_info = Mayu::Session::RequestInfo.new(path: "/things/abc", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/things/abc", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
       html = session.render
@@ -870,7 +859,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_not_found_picks_the_closest_view_for_the_path
     with_not_found_page(root_view: true) do |provider|
       env = FakeEnvironment.new(module_provider: provider)
-      request_info = Mayu::Session::RequestInfo.new(path: "/things/abc", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/things/abc", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
 
@@ -883,7 +872,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_not_found_without_a_view_shows_the_missing_page_with_404
     with_not_found_page(things_view: false) do |provider|
       env = FakeEnvironment.new(module_provider: provider)
-      request_info = Mayu::Session::RequestInfo.new(path: "/things/abc", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/things/abc", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
 
@@ -896,7 +885,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_an_unmatched_route_without_a_not_found_view_is_a_404
     with_not_found_page(things_view: false) do |provider|
       env = FakeEnvironment.new(module_provider: provider)
-      request_info = Mayu::Session::RequestInfo.new(path: "/nowhere", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/nowhere", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
 
@@ -908,7 +897,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_not_found_raised_after_a_navigation_renders_the_not_found_view
     with_not_found_page do |provider|
       env = FakeEnvironment.new(module_provider: provider)
-      request_info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      request_info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 
       session = Mayu::Session.new(environment: env, request_info: request_info)
       assert_equal(200, session.route_status)
@@ -931,7 +920,7 @@ class Mayu::SessionTest < Minitest::Test
     [false, true].each do |nested|
       with_not_found_page(initialize_failure: true, nested: nested, root_view: true) do |provider|
         env = FakeEnvironment.new(module_provider: provider)
-        info = Mayu::Session::RequestInfo.new(path: "/things/missing", headers: {}, http2: false)
+        info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/things/missing", headers: {}, http2: false)
         session = Mayu::Session.new(environment: env, request_info: info)
         assert_equal(404, session.route_status)
         assert_includes(session.render, "No such thing")
@@ -948,7 +937,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_not_found_from_fallback_initialization_is_not_retried
     with_not_found_page(initialize_failure: true, fallback_failure: true) do |provider|
       env = FakeEnvironment.new(module_provider: provider)
-      info = Mayu::Session::RequestInfo.new(path: "/things/missing", headers: {}, http2: false)
+      info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/things/missing", headers: {}, http2: false)
       failure = assert_raises(Mayu::Runtime::VNodes::VComponent::UnhandledRenderError) do
         Mayu::Session.new(environment: env, request_info: info)
       end
@@ -970,7 +959,7 @@ class Mayu::SessionTest < Minitest::Test
       File.write(File.join(pages, "hybrid", "+page.haml"), "%p Hybrid page\n")
       provider = Mayu::Build::Configuration.new(root:).development_provider
       env = FakeEnvironment.new(module_provider: provider)
-      info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
       session = Mayu::Session.new(environment: env, request_info: info)
       engine = session.instance_variable_get(:@engine)
       commands = []
@@ -997,7 +986,7 @@ class Mayu::SessionTest < Minitest::Test
       File.write(File.join(root, "app", "root.haml"), '= H.context(account: "server-account") { H[:slot] }' + "\n")
       File.write(File.join(root, "app", "pages", "things", "+not-found.haml"), "%p= @@account\n")
       env = FakeEnvironment.new(module_provider: provider)
-      info = Mayu::Session::RequestInfo.new(path: "/things/missing", headers: {}, http2: false)
+      info = Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/things/missing", headers: {}, http2: false)
       session = Mayu::Session.new(environment: env, request_info: info)
       assert_equal(404, session.route_status)
       assert_includes(session.render, "<p>server-account</p>")
@@ -1007,11 +996,10 @@ class Mayu::SessionTest < Minitest::Test
   def test_reload_success_emits_reload_succeeded_command
     env = FakeEnvironment.new
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/missing",
         headers: {},
-        http2: false
-      )
+        http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -1030,11 +1018,10 @@ class Mayu::SessionTest < Minitest::Test
   def test_reload_failure_emits_render_error_batch
     env = FakeEnvironment.new
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/missing",
         headers: {},
-        http2: false
-      )
+        http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)
@@ -1061,11 +1048,10 @@ class Mayu::SessionTest < Minitest::Test
   def test_reload_error_overlay_can_be_disabled
     env = FakeEnvironment.new(render_exceptions: false)
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/missing",
         headers: {},
-        http2: false
-      )
+        http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new(render_exceptions: false)
     session.instance_variable_set(:@engine, fake_engine)
@@ -1080,11 +1066,10 @@ class Mayu::SessionTest < Minitest::Test
   def test_notify_hmr_update_is_ignored_until_the_session_runs
     env = FakeEnvironment.new
     request_info =
-      Mayu::Session::RequestInfo.new(
+      Mayu::Session::RequestInfo.new(origin: "https://app.example",
         path: "/missing",
         headers: {},
-        http2: false
-      )
+        http2: false)
     session = Mayu::Session.new(environment: env, request_info: request_info)
     fake_engine = FakeEngine.new
     session.instance_variable_set(:@engine, fake_engine)

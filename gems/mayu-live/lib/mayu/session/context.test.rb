@@ -48,8 +48,10 @@ class Mayu::Session::ContextTest < Minitest::Test
       server = Object.new
       def server.render_exceptions? = false
       environment.instance_variable_set(:@config, Struct.new(:server).new(server))
-      session = Mayu::Session.new(environment:, request_info: Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false), context: {label: "snapshot", secret: "hidden"})
+      session = Mayu::Session.new(environment:, request_info: Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false), context: {label: "snapshot", secret: "hidden"})
       assert_includes session.render, "snapshot:"
+      assert_equal "https://app.example", session.origin
+      assert session.origin.frozen?
       refute_includes session.render, "hidden"
       engine = session.instance_variable_get(:@engine)
       Async do
@@ -66,10 +68,12 @@ class Mayu::Session::ContextTest < Minitest::Test
           Async::Task.current.with_timeout(2) { engine.synchronize }
           assert_includes session.render, "snapshot:"
           assert_equal({label: "snapshot", secret: "hidden"}, session.context)
+          assert_equal "https://app.example", session.origin
         end
         session.send(:handle_reload_result, Mayu::HotReload::Update.success)
         Async::Task.current.with_timeout(2) { engine.synchronize }
         assert_includes session.render, "snapshot:"
+        assert_equal "https://app.example", session.origin
       ensure
         consumer&.stop
         session.stop
@@ -79,6 +83,9 @@ class Mayu::Session::ContextTest < Minitest::Test
       restored = Mayu::Session::TransferState.decrypt(marshaller, transfer.encrypt(marshaller)).resume(environment)
       assert_equal session.context, restored.context
       assert restored.context[:label].frozen?
+      assert_equal session.origin, restored.origin
+      assert restored.origin.frozen?
+      assert_equal session.origin, restored.info.origin
       assert_includes restored.render, "snapshot:"
     ensure
       restored&.stop
