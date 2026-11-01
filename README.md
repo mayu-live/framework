@@ -238,6 +238,29 @@ so when the user clicks the tab, the content is already loaded.
 
 [Tabs implementation](https://github.com/mayu-live/framework/blob/main/example/app/components/Layout/Tabs.haml)
 
+### Textarea values
+
+Use `initial_value:` for an editable textarea default:
+
+```haml
+%textarea{name: "description", initial_value: $description}
+```
+
+Text children also supply a default for compatibility. An empty value stays
+empty, including when submitted without editing. Changes to the default preserve
+user edits; resetting the form restores the latest default.
+
+Use `value:` when server changes should replace the current value:
+
+```haml
+%textarea{name: "preview", value: @preview}
+```
+
+A changed `value:` updates both the current value and reset default. An unchanged
+value preserves edits during unrelated renders. Removing `value:` retains the
+current value and releases server control. Choose one value source: `value:`,
+`initial_value:`, or nonempty text children. Textarea children must be text.
+
 ## Components
 
 Components are the building blocks of a Mayu application.

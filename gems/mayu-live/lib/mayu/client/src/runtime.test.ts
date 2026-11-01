@@ -610,3 +610,138 @@ describe("runtime command errors", () => {
     expect(updatePing).not.toHaveBeenCalled();
   });
 });
+
+describe("textarea values", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+    vi.restoreAllMocks();
+  });
+
+  async function textarea(content: string = "") {
+    document.body.innerHTML = `<form><textarea name="message">${content}</textarea></form>`;
+    const runtime = new Runtime(vi.fn(), { commandErrorPolicy: "throw" });
+    await runtime.applyBatch([
+      [
+        "Initialize",
+        {
+          id: "document",
+          name: "#document",
+          children: [
+            {
+              id: "html",
+              name: "HTML",
+              children: [
+                { id: "head", name: "HEAD", children: [] },
+                {
+                  id: "body",
+                  name: "BODY",
+                  children: [
+                    {
+                      id: "form",
+                      name: "FORM",
+                      children: [
+                        {
+                          id: "textarea",
+                          name: "TEXTAREA",
+                          children: [
+                            { id: "text", name: "#text", children: [] },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    ]);
+    return {
+      runtime,
+      field: document.querySelector("textarea")!,
+      form: document.querySelector("form")!,
+    };
+  }
+
+  it("adopts an empty text node and submits an empty string", async () => {
+    const { runtime, field, form } = await textarea();
+    expect(runtime.node("text")).toBe(field.firstChild);
+    expect(field.firstChild?.textContent).toBe("");
+    expect(new FormData(form).get("message")).toBe("");
+    await runtime.applyBatch([
+      ["SetAttribute", "textarea", "value", "hello"],
+      ["SetTextContent", "text", "hello"],
+    ]);
+    expect(field.value).toBe("hello");
+    await runtime.applyBatch([
+      ["SetAttribute", "textarea", "value", ""],
+      ["SetTextContent", "text", ""],
+    ]);
+    expect(new FormData(form).get("message")).toBe("");
+  });
+
+  it("updates controlled values after edits and resets to the latest default", async () => {
+    const { runtime, field, form } = await textarea("original");
+    const text = field.firstChild;
+    field.value = "edited";
+    await runtime.applyBatch([
+      ["SetAttribute", "textarea", "value", "server"],
+      ["SetTextContent", "text", "server"],
+    ]);
+    expect(field.value).toBe("server");
+    field.value = "another edit";
+    form.reset();
+    expect(field.value).toBe("server");
+    expect(field.firstChild).toBe(text);
+  });
+
+  it("preserves uncontrolled edits while updating the reset default", async () => {
+    const { runtime, field, form } = await textarea("original");
+    field.value = "edited";
+    await runtime.applyBatch([
+      ["SetAttribute", "textarea", "initial_value", "default"],
+      ["SetTextContent", "text", "default"],
+    ]);
+    expect(field.value).toBe("edited");
+    expect(new FormData(form).get("message")).toBe("edited");
+    form.reset();
+    expect(field.value).toBe("default");
+  });
+
+  it("retains the current value when control is removed", async () => {
+    const { runtime, field, form } = await textarea("original");
+    await runtime.applyBatch([
+      ["RemoveAttribute", "textarea", "value"],
+      ["SetTextContent", "text", ""],
+    ]);
+    expect(field.value).toBe("original");
+    form.reset();
+    expect(field.value).toBe("");
+  });
+
+  it("preserves intentional zero-width characters", async () => {
+    const { field, form } = await textarea("\u200b");
+    expect(field.value).toBe("\u200b");
+    expect(new FormData(form).get("message")).toBe("\u200b");
+  });
+
+  it("adopts empty textareas in newly created subtrees", async () => {
+    const runtime = new Runtime(vi.fn(), { commandErrorPolicy: "throw" });
+    await runtime.applyBatch([
+      [
+        "CreateTree",
+        "<textarea></textarea>",
+        [
+          {
+            id: "new",
+            name: "TEXTAREA",
+            children: [{ id: "new-text", name: "#text", children: [] }],
+          },
+        ],
+      ],
+      ["SetTextContent", "new-text", "inserted"],
+    ]);
+    expect((runtime.node("new") as HTMLTextAreaElement).value).toBe("inserted");
+  });
+});

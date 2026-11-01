@@ -383,6 +383,14 @@ function setupTree(nodeSet: NodeSet, domNode: Node, idNode: IdNode) {
 
   if (!idNode.children) return;
 
+  if (
+    domNode instanceof HTMLTextAreaElement &&
+    !domNode.firstChild &&
+    idNode.children.length === 1
+  ) {
+    domNode.appendChild(document.createTextNode(""));
+  }
+
   const childNodes = Array.from(domNode.childNodes).filter(
     (child) => child.nodeType !== Node.DOCUMENT_TYPE_NODE,
   );
@@ -620,6 +628,16 @@ const CommandHandlers = {
       }
     }
 
+    if (
+      element instanceof HTMLTextAreaElement &&
+      (name === "value" || name === "initial_value")
+    ) {
+      if (name === "value") element.value = value;
+      // The corresponding text-node patch updates the reset default without
+      // replacing the node adopted during hydration.
+      return;
+    }
+
     if (element instanceof HTMLInputElement) {
       switch (name) {
         case "value": {
@@ -653,6 +671,15 @@ const CommandHandlers = {
         element.open = false;
         element.close();
       }
+    }
+
+    if (
+      element instanceof HTMLTextAreaElement &&
+      (name === "value" || name === "initial_value")
+    ) {
+      // Mark the value dirty before its default text changes.
+      if (name === "value") element.value = element.value;
+      return;
     }
 
     if (element instanceof HTMLInputElement) {

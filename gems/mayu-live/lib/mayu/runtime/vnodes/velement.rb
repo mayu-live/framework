@@ -22,7 +22,7 @@ module Mayu
           super
           validate_nesting if @engine&.validate_dom_nesting?
           @children =
-            VChildren.new(@descriptor.children, parent: self, engine: @engine)
+            VChildren.new(element_children(@descriptor), parent: self, engine: @engine)
           @attributes =
             VAttributes.new(@descriptor, parent: self, engine: @engine)
           # Attached in #start, since subtrees built here may be discarded.
@@ -35,10 +35,11 @@ module Mayu
           # Same object, same attributes and children; see VComponent#unchanged?.
           return if descriptor.equal?(@descriptor) && !@engine&.force_render?
 
+          children = element_children(descriptor)
           @descriptor = descriptor
           update_ref(@descriptor.ref)
           @attributes.update(collector, @descriptor)
-          @children.update(collector, @descriptor.children)
+          @children.update(collector, children)
         end
 
         def start
@@ -201,6 +202,26 @@ module Mayu
         end
 
         private
+
+        # Textareas have one text node, including when their default is empty.
+        # The browser parses their content as text rather than child markup.
+        def element_children(descriptor)
+          return descriptor.children unless tag_name == "textarea"
+
+          children = descriptor.children.to_ary
+          unless children.all? { |child| child.is_a?(String) || child.is_a?(Numeric) || child.nil? || child == false }
+            raise ArgumentError, "Textarea children must be text"
+          end
+          text = children.reject { |child| child.nil? || child == false }.join
+          props = descriptor.props
+          if (props.key?(:value) && props.key?(:initial_value)) ||
+              ((props.key?(:value) || props.key?(:initial_value)) && !text.empty?)
+            raise ArgumentError, "Use only one of textarea value, initial_value, or text children"
+          end
+          text = props[:value].to_s if props.key?(:value)
+          text = props[:initial_value].to_s if props.key?(:initial_value)
+          Descriptors::Children[[text]]
+        end
 
         def update_ref(ref)
           return if ref == @ref

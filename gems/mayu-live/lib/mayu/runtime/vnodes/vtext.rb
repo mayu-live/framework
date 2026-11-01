@@ -25,6 +25,12 @@ module Mayu
 
         def write_html(out)
           content = @descriptor.to_s
+          if @parent.closest(VElement)&.tag_name == "textarea"
+            # HTML parsing consumes the first newline immediately after the tag.
+            out << "\n" if content.start_with?("\n")
+            out << CGI.escape_html(content)
+            return
+          end
           out << (
             content.empty? ? "&ZeroWidthSpace;" : CGI.escape_html(content)
           )

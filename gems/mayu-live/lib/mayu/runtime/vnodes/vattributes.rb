@@ -212,6 +212,7 @@ module Mayu
             .except(:slot)
             .each do |attr, value|
               next if value.nil?
+              next if @parent.tag_name == "textarea" && %i[value initial_value].include?(attr)
 
               if attr == :style && value.is_a?(Hash)
                 value = InlineStyle.stringify(value)
@@ -277,7 +278,9 @@ module Mayu
 
         def normalize_attributes(attrs)
           attrs.each_with_object({}) do |(key, value), obj|
-            obj[key] = if key == :style
+            obj[key] = if @parent.tag_name == "textarea" && %i[value initial_value].include?(key)
+              value.to_s
+            elsif key == :style
               if value.is_a?(Hash)
                 InlineStyle.compact(value)
               else
