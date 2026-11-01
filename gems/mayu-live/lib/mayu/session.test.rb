@@ -944,6 +944,41 @@ class Mayu::SessionTest < Minitest::Test
     end
   end
 
+  def test_live_navigation_to_a_handler_keeps_the_current_page_until_document_navigation
+    Dir.mktmpdir("mayu-handler-navigation") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(File.join(pages, "download"))
+      FileUtils.mkdir_p(File.join(pages, "hybrid"))
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(pages, "+page.haml"), "%p Start page\n")
+      handler = "def GET(request) = [200, {}, 'handler response']\n"
+      File.write(File.join(pages, "download", "+route.rb"), handler)
+      File.write(File.join(pages, "hybrid", "+route.rb"), handler)
+      File.write(File.join(pages, "hybrid", "+page.haml"), "%p Hybrid page\n")
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      env = FakeEnvironment.new(module_provider: provider)
+      info = Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false)
+      session = Mayu::Session.new(environment: env, request_info: info)
+      engine = session.instance_variable_get(:@engine)
+      commands = []
+      original = engine.method(:enqueue_command)
+      engine.define_singleton_method(:enqueue_command) do |command|
+        commands << command
+        original.call(command)
+      end
+
+      session.send(:handle_event, Mayu::Session::Events::NavigateEvent["download", "/download?format=pdf", 123])
+      assert_includes(commands, Mayu::Runtime::Commands::DocumentNavigation["download", "/download?format=pdf"])
+      assert_includes(session.render, "Start page")
+      assert_equal("/", session.instance_variable_get(:@request_info).path)
+      assert_equal(200, session.route_status)
+
+      session.send(:handle_event, Mayu::Session::Events::NavigateEvent["hybrid", "/hybrid", 123])
+      assert_includes(session.render, "Hybrid page")
+      assert_includes(commands, Mayu::Runtime::Commands::NavigationComplete["hybrid"])
+    end
+  end
+
   def test_initializer_not_found_keeps_layout_context
     with_not_found_page(initialize_failure: true) do |provider, root|
       File.write(File.join(root, "app", "root.haml"), '= H.context(account: "server-account") { H[:slot] }' + "\n")

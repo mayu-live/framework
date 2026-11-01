@@ -1,7 +1,7 @@
 import type { BrowserActionHandler } from "./runtime";
 
 type Navigator = {
-  navigate(href: string, pushState?: boolean): void;
+  navigate(href: string, pushState?: boolean, document?: boolean): void;
 };
 
 // Actions a component can run in the browser with `browser.<name>(...)`.
@@ -9,8 +9,9 @@ export function createBrowserActionHandler(
   navigator: Navigator,
 ): BrowserActionHandler {
   const actions: Record<string, (...args: any[]) => void> = {
-    navigate(href: string, replace: boolean) {
-      navigator.navigate(href, !replace);
+    navigate(href: string, replace: boolean, document: boolean = false) {
+      if (document) navigator.navigate(href, !replace, true);
+      else navigator.navigate(href, !replace);
     },
     alert(message: string) {
       // alert() blocks, so wait until the DOM updates from the same batch

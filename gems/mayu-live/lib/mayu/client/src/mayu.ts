@@ -21,6 +21,7 @@ type MayuOptions = {
 };
 
 type NavigationLike = EventTarget & {
+  transition?: { finished: Promise<unknown> } | null;
   navigate(
     url: string,
     options?: { history?: "push" | "replace"; info?: unknown },
@@ -36,6 +37,7 @@ type NavigateEventLike = Event & {
   info?: unknown;
   navigationType: string;
   signal: AbortSignal;
+  sourceElement?: Element | null;
   intercept(options: {
     handler: () => Promise<void>;
     focusReset?: "after-transition" | "manual";
@@ -54,6 +56,7 @@ type PendingNavigation = {
   shown: boolean;
   signal: AbortSignal;
   abortListener: () => void;
+  documentHref?: string;
 };
 
 type OutboundEvent =
@@ -285,7 +288,30 @@ export default class Mayu {
     }
   }
 
-  navigate(href: string, pushState: boolean = true) {
+  #documentNavigationHref: string | null = null;
+
+  navigate(href: string, pushState: boolean = true, document: boolean = false) {
+    if (document) {
+      const target = new URL(href, location.href);
+      this.#documentNavigationHref = target.href;
+      if (
+        target.origin === location.origin &&
+        target.pathname === location.pathname &&
+        target.search === location.search
+      ) {
+        // A fragment on the current resource makes assign/replace stay in
+        // this document. Give this entry a temporary URL first, then replace
+        // it with an HTTP navigation. Reload would also replace the document
+        // associated with earlier live-navigation entries, breaking Back.
+        const temporary = new URL(target);
+        temporary.searchParams.append("__mayu_document_navigation", "");
+        if (pushState) history.pushState(history.state, "", temporary.href);
+        else history.replaceState(history.state, "", temporary.href);
+        location.replace(target.href);
+      } else if (pushState) location.assign(href);
+      else location.replace(href);
+      return;
+    }
     const navigation = browserNavigation();
     if (navigation) {
       navigation.navigate(href, {
@@ -295,7 +321,8 @@ export default class Mayu {
       return;
     }
 
-    window.location.assign(href);
+    if (pushState) location.assign(href);
+    else location.replace(href);
   }
 
   completeNavigation(id: string) {
@@ -306,8 +333,20 @@ export default class Mayu {
     this.#settleNavigation(id, new Error("Navigation failed"));
   }
 
+  documentNavigation(id: string, href: string) {
+    const pending = this.#pendingNavigations.get(id);
+    if (!pending) return;
+    pending.documentHref = href;
+    this.#settleNavigation(id);
+  }
+
   #handleNavigation(event: NavigateEventLike) {
+    if (event.destination.url === this.#documentNavigationHref) {
+      this.#documentNavigationHref = null;
+      return;
+    }
     if (
+      documentNavigationSource(event.sourceElement) ||
       !event.canIntercept ||
       event.hashChange ||
       event.downloadRequest !== null ||
@@ -337,6 +376,25 @@ export default class Mayu {
         const wrote = await this.#sendNavigation(id, url.pathname + url.search);
         if (!wrote) this.failNavigation(id);
         await pending.promise;
+        if (pending.documentHref !== undefined) {
+          const target = new URL(pending.documentHref, url);
+          target.hash = url.hash;
+          // Finish the intercepted history entry before replacing it with a
+          // real HTTP request. Waiting here would deadlock the transition.
+          const finished =
+            browserNavigation()?.transition?.finished ?? Promise.resolve();
+          void finished.then(
+            () => {
+              if (
+                !event.signal.aborted &&
+                id === `${this.#navigationSequence}`
+              ) {
+                this.navigate(target.href, false, true);
+              }
+            },
+            () => undefined,
+          );
+        }
       },
       ...(inPlace ? ({ focusReset: "manual", scroll: "manual" } as const) : {}),
     });
@@ -546,4 +604,20 @@ function submitMethod(event: Event) {
     submitter?.getAttribute("formmethod") ?? form.getAttribute("method");
 
   return method?.toLowerCase() ?? null;
+}
+
+// sourceElement can be a link, a form, or a form-associated submit button.
+function documentNavigationSource(source?: Element | null): boolean {
+  if (!source) return false;
+  const submitter = source.closest("button, input");
+  const form =
+    submitter instanceof HTMLButtonElement ||
+    submitter instanceof HTMLInputElement
+      ? submitter.form
+      : source.closest("form");
+  const mode =
+    submitter?.getAttribute("data-mayu-navigation") ??
+    form?.getAttribute("data-mayu-navigation") ??
+    source.closest("a")?.getAttribute("data-mayu-navigation");
+  return mode === "document";
 }

@@ -19,13 +19,16 @@ module Mayu
       # Navigates like a link click, so the route is resolved again with the
       # new $query and $params. Relative hrefs such as "?page=2" resolve
       # against the current URL. `replace: true` replaces the current history
-      # entry instead of adding one.
-      def navigate(href, replace: false)
+      # entry instead of adding one. `document: true` requests a new document,
+      # allowing HTTP handlers, redirects and cookies to take effect.
+      def navigate(href, replace: false, document: false)
         unless href.is_a?(String)
           raise ArgumentError, "Expected href to be a String, got #{href.class}"
         end
 
-        @action.call("navigate", [href, replace ? true : false])
+        args = [href, replace ? true : false]
+        args << true if document
+        @action.call("navigate", args)
       end
 
       def alert(message)

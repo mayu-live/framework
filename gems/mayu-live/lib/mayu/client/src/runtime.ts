@@ -22,6 +22,7 @@ type RuntimeOptions = {
   commandErrorPolicy?: CommandErrorPolicy;
   onNavigationComplete?: (id: string) => void;
   onNavigationFailed?: (id: string) => void;
+  onDocumentNavigation?: (id: string, href: string) => void;
   onBrowserAction?: BrowserActionHandler;
   onBatchApplied?: (batch: Batch, durationMs: number) => void;
   onInspectResult?: (id: string, result: unknown) => void;
@@ -47,6 +48,7 @@ export default class Runtime {
       onInspectResult,
       onCallbackComplete,
       onCallbackFailed,
+      onDocumentNavigation,
     }: RuntimeOptions = {},
   ) {
     this.#nodeSet = new NodeSet(
@@ -58,6 +60,7 @@ export default class Runtime {
       onInspectResult,
       onCallbackComplete,
       onCallbackFailed,
+      onDocumentNavigation,
     );
     this.#commandErrorPolicy = commandErrorPolicy;
     this.#onBatchApplied = onBatchApplied;
@@ -109,6 +112,7 @@ class NodeSet {
   #onInspectResult?: (id: string, result: unknown) => void;
   #onCallbackComplete?: (id: string) => void;
   #onCallbackFailed?: (id: string) => void;
+  #onDocumentNavigation?: (id: string, href: string) => void;
   readonly commandErrorPolicy: CommandErrorPolicy;
 
   constructor(
@@ -120,6 +124,7 @@ class NodeSet {
     onInspectResult?: (id: string, result: unknown) => void,
     onCallbackComplete?: (id: string) => void,
     onCallbackFailed?: (id: string) => void,
+    onDocumentNavigation?: (id: string, href: string) => void,
   ) {
     this.#onEvent = onEvent;
     this.commandErrorPolicy = commandErrorPolicy;
@@ -129,6 +134,7 @@ class NodeSet {
     this.#onInspectResult = onInspectResult;
     this.#onCallbackComplete = onCallbackComplete;
     this.#onCallbackFailed = onCallbackFailed;
+    this.#onDocumentNavigation = onDocumentNavigation;
   }
 
   clear() {
@@ -251,6 +257,10 @@ class NodeSet {
 
   failNavigation(id: string) {
     this.#onNavigationFailed?.(id);
+  }
+
+  documentNavigation(id: string, href: string) {
+    this.#onDocumentNavigation?.(id, href);
   }
 
   browserAction(name: string, args: unknown[]) {
@@ -588,6 +598,9 @@ const CommandHandlers = {
     );
   },
 
+  DocumentNavigation(this: NodeSet, id: string, href: string) {
+    this.documentNavigation(id, href);
+  },
   Initialize(this: NodeSet, tree: IdNode) {
     console.debug(`%c${debugTree(tree)}`, "color: #6cf;");
 

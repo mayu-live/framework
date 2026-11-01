@@ -261,6 +261,31 @@ value preserves edits during unrelated renders. Removing `value:` retains the
 current value and releases server control. Choose one value source: `value:`,
 `initial_value:`, or nonempty text children. Textarea children must be text.
 
+### Document navigation
+
+Same-origin links normally navigate within the live session. To make a real HTTP
+request, use `data-mayu-navigation="document"`:
+
+```haml
+%a{href: "/export?format=csv", data: {mayu_navigation: "document"}} Export
+%form{method: "get", action: "/export", data: {mayu_navigation: "document"}}
+  %button{type: "submit"} Export
+```
+
+The same attribute on a submit button overrides its form; `"live"` opts that
+button back into live navigation. Components can also call
+`browser.navigate("/export", document: true)` and add `replace: true` to replace
+the current history entry.
+
+A live GET navigation to a handler-only route automatically becomes a document
+request, preserving its query and fragment. Routes with both a page and a handler
+continue rendering the page live. POST submissions and downloads retain native
+browser navigation; Mayu never replays mutations to perform this fallback.
+
+Use an HTTP handler or document navigation when an operation must set cookies or
+return an HTTP redirect. Live updates cannot change headers or status on the
+original document response.
+
 ## Components
 
 Components are the building blocks of a Mayu application.

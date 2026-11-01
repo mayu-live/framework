@@ -27,6 +27,12 @@ describe("browser actions", () => {
     expect(navigator.navigate).toHaveBeenCalledWith("?per_page=40", false);
   });
 
+  it("forwards document navigation", () => {
+    const navigator = { navigate: vi.fn() };
+    createBrowserActionHandler(navigator)("navigate", ["/handler", true, true]);
+    expect(navigator.navigate).toHaveBeenCalledWith("/handler", false, true);
+  });
+
   it("shows an alert after the next frame", () => {
     vi.useFakeTimers();
     vi.stubGlobal("requestAnimationFrame", (callback: () => void) =>

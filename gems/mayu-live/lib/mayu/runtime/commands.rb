@@ -94,6 +94,7 @@ module Mayu
       ReloadSucceeded = CommandData.define
       NavigationComplete = CommandData.define(:id)
       NavigationFailed = CommandData.define(:id)
+      DocumentNavigation = CommandData.define(:id, :href)
       # Answer a callback that carried a settle id, once its handler returned.
       CallbackComplete = CommandData.define(:id)
       CallbackFailed = CommandData.define(:id)

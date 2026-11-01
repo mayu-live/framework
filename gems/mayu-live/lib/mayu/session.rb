@@ -457,6 +457,12 @@ module Mayu
         @environment.metrics.navigations_total.increment
 
         begin
+          match = module_provider && Klenod::Router.new(module_provider).match(path)
+          if match&.handler && !match.page
+            @engine.enqueue_command(Runtime::Commands::DocumentNavigation[id, path])
+            return
+          end
+
           @request_info = @request_info.with(path:)
           descriptor = resolve_route(path)
           @engine.replace_route_assets(

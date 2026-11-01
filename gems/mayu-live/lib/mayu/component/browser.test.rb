@@ -23,6 +23,11 @@ class Mayu::Component::BrowserTest < Minitest::Test
     assert_equal([["navigate", ["/demos", true]]], @actions)
   end
 
+  def test_navigate_can_request_a_document
+    @browser.navigate("/handler", document: true, replace: true)
+    assert_equal([["navigate", ["/handler", true, true]]], @actions)
+  end
+
   def test_navigate_requires_a_string_href
     assert_raises(ArgumentError) { @browser.navigate(:demos) }
     assert_empty(@actions)

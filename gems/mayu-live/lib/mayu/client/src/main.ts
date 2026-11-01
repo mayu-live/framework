@@ -29,6 +29,7 @@ export default function init(sessionId: string) {
     {
       onNavigationComplete: (id) => mayu.completeNavigation(id),
       onNavigationFailed: (id) => mayu.failNavigation(id),
+      onDocumentNavigation: (id, href) => mayu.documentNavigation(id, href),
       onBrowserAction: createBrowserActionHandler(mayu),
       onBatchApplied: (batch, durationMs) => {
         mayu.recordCommandApply(batch.length, durationMs);

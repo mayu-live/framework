@@ -745,3 +745,12 @@ describe("textarea values", () => {
     expect((runtime.node("new") as HTMLTextAreaElement).value).toBe("inserted");
   });
 });
+
+describe("document navigation results", () => {
+  it("forwards the navigation id and destination", async () => {
+    const onDocumentNavigation = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onDocumentNavigation });
+    await runtime.applyBatch([["DocumentNavigation", "nav-1", "/handler?q=1"]]);
+    expect(onDocumentNavigation).toHaveBeenCalledWith("nav-1", "/handler?q=1");
+  });
+});
