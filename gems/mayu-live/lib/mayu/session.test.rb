@@ -607,6 +607,16 @@ class Mayu::SessionTest < Minitest::Test
     )
   end
 
+  def test_invalidation_during_transfer_drain_prevents_serialization
+    env = FakeEnvironment.new
+    session = Mayu::Session.new(environment: env, request_info: Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false))
+    engine = TransferEngine.new
+    session.instance_variable_set(:@engine, engine)
+    engine.define_singleton_method(:finish_updates!) { session.invalidate! }
+    assert_raises(Mayu::Session::Rejected) { session.transfer! }
+    assert_equal [Mayu::Runtime::Commands::SessionInvalidated[nil]], engine.batches.flat_map(&:commands)
+  end
+
   def test_encrypted_transfer_restores_klenod_component_references
     root = File.expand_path("../../../../example", __dir__)
     marshaller = Mayu::EncryptedMarshal.new("transfer-test-secret")
