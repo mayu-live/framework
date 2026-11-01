@@ -8,6 +8,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require_relative "runtime"
+require_relative "session/context"
 require_relative "session/event"
 require_relative "session/token"
 require_relative "session/error_page"
@@ -131,11 +132,12 @@ module Mayu
     attr_reader :id, :route_status, :startup_commands
     attr_reader :token
 
-    def initialize(environment:, request_info:)
+    def initialize(environment:, request_info:, context: {})
       @id = SecureRandom.alphanumeric(32)
       @token = Token.generate
       @environment = environment
       @request_info = request_info
+      @context = Context.snapshot(context)
 
       Console.logger.info(
         self,
@@ -158,9 +160,14 @@ module Mayu
       @incoming_events = Async::Queue.new
     end
 
+    def context = @engine ? @engine.session_context : @context
+
+    def info = Info.new(id: @id.freeze, path: @request_info.path.dup.freeze, context:)
+
     def build_engine(descriptor)
       Runtime::Engine.new(
         descriptor,
+        session_context: @context,
         runtime_js: @request_info.http2 && init_js_path,
         metrics: @environment.metrics,
         module_provider:,

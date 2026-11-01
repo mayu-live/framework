@@ -164,7 +164,7 @@ class Mayu::Server::AppTest < Minitest::Test
     )
 
     response =
-      app.call(
+      app.dispatch(
         Request.new("GET", "/api", {"accept" => "application/json"}, "")
       )
 
@@ -180,7 +180,9 @@ class Mayu::Server::AppTest < Minitest::Test
     def server = self
     def render_exceptions? = render_exceptions
   end
-  ErrorEnvironment = Data.define(:module_provider, :config)
+  ErrorEnvironment = Data.define(:module_provider, :config) do
+    def prepare_session_for(_) = Mayu::Session::Preparation.new
+  end
 
   # Only reached when the error page itself fails to render.
   def test_a_render_error_that_escapes_the_session_is_an_html_500
@@ -198,7 +200,7 @@ class Mayu::Server::AppTest < Minitest::Test
     request = Request.new("GET", "/", {"accept" => "text/html"}, "")
 
     response =
-      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.call(request) }
+      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.dispatch(request) }
 
     assert_equal(500, response.status)
     body = response.body.join
@@ -210,7 +212,7 @@ class Mayu::Server::AppTest < Minitest::Test
       ErrorEnvironment.new(nil, ErrorConfig.new(false))
     )
     response =
-      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.call(request) }
+      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.dispatch(request) }
 
     assert_equal(500, response.status)
     assert_equal("Internal Server Error", response.body.join)
@@ -231,7 +233,7 @@ class Mayu::Server::AppTest < Minitest::Test
       ErrorEnvironment.new(BuildErrorProvider.new, ErrorConfig.new(true))
     )
 
-    response = app.call(Request.new("GET", "/", {"accept" => "text/html"}, ""))
+    response = app.dispatch(Request.new("GET", "/", {"accept" => "text/html"}, ""))
 
     assert_equal(500, response.status)
     assert_equal("Haml parse error: Invalid attribute list", response.body.join)
@@ -245,7 +247,7 @@ class Mayu::Server::AppTest < Minitest::Test
     )
 
     response =
-      app.call(Request.new("GET", "/", {"accept" => "application/json"}, ""))
+      app.dispatch(Request.new("GET", "/", {"accept" => "application/json"}, ""))
 
     assert_equal(500, response.status)
     assert_includes(response.body.join, "INTERNAL_SERVER_ERROR")
@@ -258,7 +260,7 @@ class Mayu::Server::AppTest < Minitest::Test
       ErrorEnvironment.new(BuildErrorProvider.new, ErrorConfig.new(false))
     )
 
-    response = app.call(Request.new("GET", "/", {"accept" => "text/html"}, ""))
+    response = app.dispatch(Request.new("GET", "/", {"accept" => "text/html"}, ""))
 
     assert_equal(500, response.status)
     refute_includes(response.body.join, "Invalid attribute list")
@@ -267,7 +269,9 @@ class Mayu::Server::AppTest < Minitest::Test
   PageSession = Data.define(:id, :styles, :route_status) do
     def render = "<html></html>"
   end
-  PageEnvironment = Data.define(:module_provider, :metrics)
+  PageEnvironment = Data.define(:module_provider, :metrics) do
+    def prepare_session_for(_) = Mayu::Session::Preparation.new
+  end
   PageRequest =
     Data.define(:method, :path, :headers, :body, :version) do
       def read = body
@@ -324,7 +328,7 @@ class Mayu::Server::AppTest < Minitest::Test
     request = Request.new("GET", "/users/%FF", {"accept" => "text/html"}, "")
     response =
       Mayu::Session.stub(:new, ->(**) { flunk "started a session" }) do
-        app.call(request)
+        app.dispatch(request)
       end
 
     assert_equal(400, response.status)
@@ -606,7 +610,7 @@ class Mayu::Server::AppTest < Minitest::Test
 
     session = PageSession.new("page-session", [], route_status)
     request = PageRequest.new("GET", path, {"accept" => accept}, "", "HTTP/2")
-    response = Mayu::Session.stub(:new, ->(**) { session }) { app.call(request) }
+    response = Mayu::Session.stub(:new, ->(**) { session }) { app.dispatch(request) }
 
     [stored, response]
   end
@@ -614,13 +618,13 @@ class Mayu::Server::AppTest < Minitest::Test
   def robots_txt_response(provider)
     app = Mayu::Server::App.allocate
     app.instance_variable_set(:@environment, Environment.new(provider))
-    app.call(Request.new("GET", "/robots.txt", {}, ""))
+    app.dispatch(Request.new("GET", "/robots.txt", {}, ""))
   end
 
   def favicon_response(provider, headers: Protocol::HTTP::Headers.new)
     app = Mayu::Server::App.allocate
     app.instance_variable_set(:@environment, Environment.new(provider))
-    app.call(Request.new("GET", "/favicon.ico", headers, ""))
+    app.dispatch(Request.new("GET", "/favicon.ico", headers, ""))
   end
 
   def provider
