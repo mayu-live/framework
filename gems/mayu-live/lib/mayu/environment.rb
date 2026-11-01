@@ -10,6 +10,7 @@
 require_relative "encrypted_marshal"
 require_relative "configuration"
 require_relative "component"
+require_relative "session/context"
 require_relative "metrics"
 require_relative "utils"
 require_relative "klenod"
@@ -101,6 +102,26 @@ module Mayu
         load_klenod_provider(config, bundle_path, source_root:, assets_dir:)
 
       new(config, module_provider:, metrics:)
+    end
+
+    def authorize_session(&block)
+      @session_authorizer = block
+    end
+
+    def authorize_event(&block)
+      @event_authorizer = block
+    end
+
+    def authorize_session!(info, request, phase)
+      if @session_authorizer && @session_authorizer.call(info, request, phase) != true
+        raise Session::Rejected
+      end
+    end
+
+    def authorize_event!(info, event)
+      if @event_authorizer && @event_authorizer.call(info, event) != true
+        raise Session::Rejected
+      end
     end
 
     def around_request(&block)

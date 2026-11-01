@@ -144,6 +144,8 @@ module Mayu
         event: Event.new(:initializing, session_id: @id, path: @request_info.path)
       )
 
+      yield info if block_given?
+
       @startup_commands = []
       descriptor = resolve_route(@request_info.path)
 
@@ -262,6 +264,30 @@ module Mayu
       provider.component_resolver if provider&.respond_to?(:component_resolver)
     end
 
+    def invalidated? = !!@rejection
+
+    def check_valid!
+      raise @rejection if @rejection
+    end
+
+    def invalidate!(location: nil)
+      return false if invalidated?
+
+      @rejection = Rejected.new(location:)
+      @engine.enqueue_command(Runtime::Commands::SessionInvalidated[location])
+      true
+    end
+
+    def authorize_work(event)
+      check_valid!
+      @environment.authorize_event!(info, event) if @environment.respond_to?(:authorize_event!)
+      check_valid!
+      true
+    rescue Rejected => rejection
+      invalidate!(location: rejection.location)
+      false
+    end
+
     def valid_token?(token)
       Session::Token.equal?(@token, token)
     end
@@ -281,6 +307,7 @@ module Mayu
     end
 
     def enqueue_event(event)
+      check_valid!
       if @transferring
         raise Events::EventRejectedError, "Session is transferring"
       end
@@ -358,6 +385,7 @@ module Mayu
     end
 
     def transfer!
+      check_valid!
       @transferring = true
       running_task = @task
       stop
@@ -383,7 +411,7 @@ module Mayu
     # Re-resolves the route so the page picks up new module exports, or shows
     # the build errors in the overlay.
     def notify_hmr_update(update)
-      handle_reload_result(update) if running?
+      handle_reload_result(update) if running? && !invalidated?
     end
 
     private
@@ -438,6 +466,7 @@ module Mayu
     end
 
     def handle_event(event)
+      check_valid!
       if event.is_a?(Events::InspectEvent)
         # Devtools queries keep the session alive like any event, but aren't
         # answered with a Pong: the page would show them as pings.
@@ -453,7 +482,9 @@ module Mayu
       in Events::VisibilityEvent[hidden:]
         @engine.update_interval = hidden ? HIDDEN_UPDATE_INTERVAL_SECONDS : nil
       in Events::CallbackEvent[id:, payload:, settle_id:]
-        @engine.callback(id, payload, settle_id:)
+        @engine.callback(id, payload, settle_id:, execution_guard: lambda do |final_payload|
+          authorize_work(event.with(payload: final_payload))
+        end)
       in Events::InspectEvent[id:, query:]
         @engine.enqueue_command(
           Runtime::Commands::InspectResult[id, inspect_engine(query)]
@@ -464,6 +495,7 @@ module Mayu
         @environment.metrics.navigations_total.increment
 
         begin
+          return unless authorize_work(event)
           match = module_provider && Klenod::Router.new(module_provider).match(path)
           if match&.handler && !match.page
             @engine.enqueue_command(Runtime::Commands::DocumentNavigation[id, path])

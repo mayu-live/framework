@@ -30,6 +30,7 @@ vi.mock("./stream.js", () => ({
     constructor(
       message: string,
       public code: string | null = null,
+      public location: string | null = null,
     ) {
       super(message);
     }
@@ -52,6 +53,7 @@ vi.mock("./ping", () => ({
 }));
 
 import SessionConnection from "./session-connection";
+import { StreamError } from "./stream.js";
 import { getTransferState, setTransferState } from "./transfer";
 
 describe("session-connection", () => {
@@ -65,6 +67,57 @@ describe("session-connection", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("stops retries and clears transfer state on terminal HTTP rejection", async () => {
+    setTransferState(new Blob(["old"]));
+    initInputStreamMock.mockRejectedValue(
+      new StreamError("Rejected", "APPLICATION_SESSION_REJECTED"),
+    );
+    const mayu = { dispose: vi.fn(), clearWriter: vi.fn() };
+    const sleep = vi.fn();
+    await new SessionConnection({
+      runtime: {} as any,
+      mayu: mayu as any,
+      endpoint: "/session",
+      sleep,
+    }).run();
+    expect(mayu.dispose).toHaveBeenCalledTimes(1);
+    expect(initInputStreamMock).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+    expect(resetSessionEntirelyMock).not.toHaveBeenCalled();
+    expect(getTransferState()).toBeNull();
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+      "session has expired",
+    );
+    document.querySelector('[role="alert"]')?.remove();
+  });
+
+  it("stops an established stream on SessionInvalidated", async () => {
+    initInputStreamMock.mockResolvedValue(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(encode([["SessionInvalidated", null]]));
+          controller.close();
+        },
+      }),
+    );
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    const mayu = { dispose: vi.fn(), clearWriter: vi.fn(), setWriter: vi.fn() };
+    const sleep = vi.fn();
+    await new SessionConnection({
+      runtime: { applyBatch: vi.fn() } as any,
+      mayu: mayu as any,
+      endpoint: "/session",
+      sleep,
+    }).run();
+    expect(mayu.dispose).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+    expect(initInputStreamMock).toHaveBeenCalledTimes(1);
+    document.querySelector('[role="alert"]')?.remove();
   });
 
   it("falls back to retry sleep when session reset fails", async () => {

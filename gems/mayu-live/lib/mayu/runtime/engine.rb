@@ -332,8 +332,8 @@ module Mayu
         Console.logger.warn(component || self, event:)
       end
 
-      def callback(id, payload, settle_id: nil)
-        @root.call_listener(id, payload, settle_id:)
+      def callback(id, payload, settle_id: nil, execution_guard: nil)
+        @root.call_listener(id, payload, settle_id:, execution_guard:)
       end
 
       # Answers a callback that carried a settle id. Like browser actions, the

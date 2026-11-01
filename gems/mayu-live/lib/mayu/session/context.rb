@@ -8,7 +8,20 @@ module Mayu
       end
     end
 
-    Info = Data.define(:id, :path, :context)
+    Info = Data.define(:id, :path, :context) do
+      def initialize(id:, path:, context:)
+        super(id: id.dup.freeze, path: path.dup.freeze, context: Context.snapshot(context))
+      end
+    end
+
+    class Rejected < StandardError
+      attr_reader :location
+
+      def initialize(location: nil)
+        @location = location&.dup&.freeze
+        super("Application session rejected")
+      end
+    end
 
     module Context
       def self.snapshot(value)

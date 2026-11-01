@@ -71,6 +71,14 @@ module Mayu
         @sessions.clear
       end
 
+      def check_valid!(id)
+        @sessions[id]&.check_valid!
+      end
+
+      def invalidate(id, location: nil)
+        @sessions[id]&.invalidate!(location:) || false
+      end
+
       def delete(session_id)
         @sessions.delete(session_id)
       end

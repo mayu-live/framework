@@ -98,6 +98,8 @@ module Mayu
         else
           handle_404(request)
         end
+      rescue Session::Rejected => rejection
+        json_response(403, {code: "APPLICATION_SESSION_REJECTED", location: rejection.location}, **origin_header(request))
       rescue Session::Errors::SessionNotFoundError
         error_response(403, "SESSION_NOT_FOUND", **origin_header(request))
       rescue Session::Errors::SessionIdMismatchError
@@ -178,6 +180,10 @@ module Mayu
         begin_shutdown
         @sessions.transfer_all
         @body_barrier.wait
+      end
+
+      def invalidate_session(id, location: nil)
+        @sessions.invalidate(id, location:)
       end
 
       def stream_count
@@ -395,7 +401,7 @@ module Mayu
             request_info: Session::RequestInfo.from_request(request),
             environment: @environment,
             context: preparation.context
-          )
+          ) { |info| @environment.authorize_session!(info, request, :start) }
 
         if @stopping
           session.stop
@@ -418,7 +424,7 @@ module Mayu
           **@cookies.set_token_cookie_header(session),
           link: link_header(session)
         )
-        preparation.headers.each { |name, value| result.headers.add(name, value) }
+        preparation.headers.each { |name, value| result.headers.add(name.to_s, value) }
         result
       end
 
@@ -445,18 +451,30 @@ module Mayu
         state = request.read.to_s
         return text_response(503, "Server is stopping") if @stopping
 
-        transfer =
-          Session::TransferState
-            .decrypt(@environment.marshaller, state)
-            .authenticate!(
-              session_id:,
-              session_token: @cookies.get_token_cookie_value(request)
-            )
+        begin
+          transfer =
+            Session::TransferState
+              .decrypt(@environment.marshaller, state)
+              .authenticate!(
+                session_id:,
+                session_token: @cookies.get_token_cookie_value(request)
+              )
+        rescue TypeError, ArgumentError, NoMatchingPatternError
+          return error_response(422, "SESSION_RESTORE_FAILED")
+        end
 
         # Components that can not be restored start over on their own, so
         # this only fails when the session as a whole can not be loaded, such
         # as after a change to the transfer format. The client then starts a
         # new session right away instead of retrying the same state.
+        begin
+          transfer.validate_metadata!
+        rescue => error
+          Console.logger.error(self, error)
+          return error_response(422, "SESSION_RESTORE_FAILED")
+        end
+        @sessions.check_valid!(session_id)
+        @environment.authorize_session!(transfer.info, request, :transfer)
         begin
           session = transfer.resume(@environment)
         rescue => error
@@ -491,12 +509,23 @@ module Mayu
             @cookies.get_token_cookie_value(request)
           )
 
+        authorize_transport!(session, request, :resume)
+
         Console.logger.info(
           self,
           event: Mayu::Session::Event.new(:resuming, session_id: session.id)
         )
 
         run_session_stream(request, session)
+      end
+
+      def authorize_transport!(session, request, phase)
+        session.check_valid!
+        @environment.authorize_session!(session.info, request, phase)
+        session.check_valid!
+      rescue Session::Rejected => rejection
+        session.invalidate!(location: rejection.location)
+        raise
       end
 
       def run_session_stream(request, session)
@@ -591,6 +620,8 @@ module Mayu
             @cookies.get_token_cookie_value(request)
           )
 
+        authorize_transport!(session, request, :events)
+
         Async do
           session.wait
         ensure
@@ -647,7 +678,7 @@ module Mayu
       end
 
       def response(status, *bodies, **headers)
-        Protocol::HTTP::Response[status, headers, bodies]
+        Protocol::HTTP::Response[status, headers.transform_keys(&:to_s), bodies]
       end
 
       def origin_header(request)
@@ -661,7 +692,7 @@ module Mayu
       def send_file(content, content_type, headers = {})
         Protocol::HTTP::Response[
           200,
-          {"content-type": content_type, **headers},
+          {"content-type" => content_type, **headers.transform_keys(&:to_s)},
           [content]
         ]
       end
