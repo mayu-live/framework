@@ -534,6 +534,9 @@ module Mayu
       return apply_resolved_page(resolved_page) if resolved_page
 
       missing_page(path)
+    rescue Klenod::Router::MalformedPathError
+      # The error page would route the same path and fail the same way.
+      raise
     rescue => error
       Console.logger.error(self, error)
       resolved_page = router.error(path, error:)

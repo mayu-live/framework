@@ -306,6 +306,32 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("<html></html>", response.body.join)
   end
 
+  def test_malformed_paths_are_a_400_without_starting_a_session
+    router = Module.new
+    router.const_set(:MalformedPathError, Class.new(StandardError))
+    routed = []
+    %i[match not_found error].each do |method|
+      router.define_singleton_method(method) do |path|
+        routed << [method, path]
+        raise router::MalformedPathError, "malformed"
+      end
+    end
+    exports = Module.new
+    exports.const_set(:Default, router)
+
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(:@environment, Environment.new(Provider.new(exports)))
+    request = Request.new("GET", "/users/%FF", {"accept" => "text/html"}, "")
+    response =
+      Mayu::Session.stub(:new, ->(**) { flunk "started a session" }) do
+        app.call(request)
+      end
+
+    assert_equal(400, response.status)
+    assert_equal("Bad Request", response.body.join)
+    assert_equal([[:match, "/users/%FF"]], routed)
+  end
+
   class RobotsProvider
     def initialize(robots_txt) = @robots_txt = robots_txt
 

@@ -247,7 +247,7 @@ class Mayu::Klenod::RouterTest < Minitest::Test
     end
   end
 
-  def test_decodes_dynamic_and_catch_all_params
+  def test_decodes_dynamic_and_catch_all_params_once
     Dir.mktmpdir("mayu-klenod-router-decode") do |root|
       pages = File.join(root, "app", "pages")
       FileUtils.mkdir_p(File.join(pages, "users", "[name]"))
@@ -261,23 +261,46 @@ class Mayu::Klenod::RouterTest < Minitest::Test
 
       assert_equal({name: "Ada Lovelace"}, router.match("/users/Ada%20Lovelace").params)
       assert_equal({name: "feature/x"}, router.match("/users/feature%2Fx").params)
+      assert_equal({name: "%2F"}, router.match("/users/%252F").params)
+      assert_equal({name: "%"}, router.match("/users/%25").params)
       assert_equal(
-        {path: ["a b", "café", "%"]},
-        router.match("/files/a%20b/caf%C3%A9/%25").params
+        {path: ["a b", "café", "%", "%41"]},
+        router.match("/files/a%20b/caf%C3%A9/%25/%2541").params
       )
-      assert_nil(router.match("/users/%FF"))
+      assert_equal({name: "%2F"}, router.resolve("/users/%252F").descriptor.children.descriptors.fetch(0).props[:params])
     end
   end
 
-  def test_decodes_slot_params
+  def test_malformed_paths_raise
+    Dir.mktmpdir("mayu-klenod-router-malformed") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(File.join(pages, "users", "[name]"))
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      File.write(File.join(pages, "users", "[name]", "+page.haml"), "%p User\n")
+      File.write(File.join(pages, "+not-found.haml"), "%p Not found\n")
+      File.write(File.join(pages, "+error.haml"), "%p Error\n")
+
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      router = Mayu::Klenod::Router.new(provider)
+
+      ["/users/%FF", "/users/%zz", "/users/100%"].each do |path|
+        assert_raises(Mayu::Klenod::Router::MalformedPathError, path) { router.match(path) }
+        assert_raises(Mayu::Klenod::Router::MalformedPathError, path) { router.resolve(path) }
+        assert_raises(Mayu::Klenod::Router::MalformedPathError, path) { router.not_found(path) }
+        assert_raises(Mayu::Klenod::Router::MalformedPathError, path) { router.error(path) }
+      end
+    end
+  end
+
+  def test_passes_slot_params_through_without_decoding
     slot_match =
       SlotMatch.new(Modal, {mode: "a%20b"}, SlotRoute.new("app:/pages/@modal/+page.haml", []), nil)
     match = Match.new(Page, [], {id: "4%202"}, Route.new("app:/pages/+page.haml", []), {modal: slot_match})
 
-    decoded = router(match:).match("/")
+    matched = router(match:).match("/")
 
-    assert_equal({id: "4 2"}, decoded.params)
-    assert_equal({mode: "a b"}, decoded.slots.fetch(:modal).params)
+    assert_equal({id: "4%202"}, matched.params)
+    assert_equal({mode: "a%20b"}, matched.slots.fetch(:modal).params)
   end
 
   def test_collects_route_css_in_root_layout_and_page_order

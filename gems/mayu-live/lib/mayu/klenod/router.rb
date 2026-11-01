@@ -9,7 +9,11 @@ module Mayu
       ResolvedPage =
         Data.define(:descriptor, :status, :module_ids, :stylesheets, :scripts)
 
-      class InvalidEncoding < StandardError
+      # Raised for a request path that is not a valid URI, has a malformed
+      # percent-encoding, or has an escape that does not decode to UTF-8.
+      # Klenod raises its own MalformedPathError, defined on the generated
+      # router module that HMR replaces, so it is translated to this class.
+      class MalformedPathError < StandardError
       end
 
       def initialize(
@@ -25,7 +29,7 @@ module Mayu
       def descriptor_for(path) = resolve(path)&.descriptor
 
       def resolve(path)
-        uri = URI.parse(path)
+        uri = parse(path)
         match = match(path)
         return resolved_page_for(match, uri) if match
 
@@ -33,14 +37,18 @@ module Mayu
       end
 
       def not_found(path)
-        uri = URI.parse(path)
-        resolved_page_for(router.not_found(uri.path), uri, props: {status: 404})
+        uri = parse(path)
+        resolved_page_for(
+          route(:not_found, uri.path),
+          uri,
+          props: {status: 404}
+        )
       end
 
       def error(path, error: nil)
-        uri = URI.parse(path)
+        uri = parse(path)
         resolved_page_for(
-          router.error(uri.path),
+          route(:error, uri.path),
           uri,
           props: {status: 500, error:}.compact
         )
@@ -87,37 +95,26 @@ module Mayu
         )
       end
 
-      # Klenod returns params as they appear in the URL. They are decoded
-      # here, so `[name]` gets "a b" for "a%20b" and `[...path]` gets each
-      # segment decoded. A path that does not decode to valid UTF-8 matches
-      # nothing.
-      public def match(path)
-        match = router.match(URI.parse(path).path)
-        return unless match
-
-        match = match.with(params: decode_params(match.params))
-        return match unless match.respond_to?(:slots)
-
-        match.with(
-          slots: match.slots.transform_values { it.with(params: decode_params(it.params)) }
-        )
-      rescue InvalidEncoding
-        nil
-      end
+      # Klenod decodes each path segment, so page and slot params arrive
+      # decoded exactly once: `[name]` gets "a b" for "a%20b".
+      public def match(path) = route(:match, parse(path).path)
 
       private
 
-      def decode_params(params)
-        params.transform_values do |value|
-          value.is_a?(Array) ? value.map { decode_segment(it) } : decode_segment(value)
-        end
+      def parse(path)
+        URI.parse(path)
+      rescue URI::InvalidURIError => e
+        raise MalformedPathError, e.message
       end
 
-      def decode_segment(segment)
-        decoded = URI.decode_uri_component(segment)
-        raise InvalidEncoding unless decoded.valid_encoding?
+      def route(method, path)
+        klenod_router = router
 
-        decoded
+        begin
+          klenod_router.public_send(method, path)
+        rescue klenod_router::MalformedPathError => e
+          raise MalformedPathError, e.message
+        end
       end
 
       def router

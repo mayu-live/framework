@@ -114,6 +114,11 @@ module Mayu
           "SESSION_NOT_ACCEPTING_EVENTS",
           **origin_header(request)
         )
+      rescue Klenod::Router::MalformedPathError
+        # Routing runs before a session starts, so a malformed path never
+        # reaches the session or the app's error and not-found pages, which
+        # would have to route the same path.
+        text_response(400, "Bad Request", **origin_header(request))
       rescue Errno::ENOENT
         text_response(
           404,
