@@ -393,10 +393,13 @@ module Mayu
       @engine.stop
       # The browser must receive the remaining updates before the state.
       @engine.finish_updates!
+      check_valid!
+      encrypted_state = TransferState.from_session(self).encrypt(@environment.marshaller)
+      check_valid!
       @engine.enqueue_command(
         Runtime::Commands::Transfer[
           Mayu::Server::EventStream::Blob[
-            TransferState.from_session(self).encrypt(@environment.marshaller)
+            encrypted_state
           ]
         ]
       )
