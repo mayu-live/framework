@@ -4,6 +4,10 @@ require "minitest/autorun"
 require_relative "../runtime"
 require_relative "../session"
 require "mayu/test"
+require "mayu/build"
+require_relative "../environment"
+require "tmpdir"
+require "fileutils"
 
 class Mayu::Session::ContextTest < Minitest::Test
   class Probe < Mayu::Component::Base
@@ -15,6 +19,70 @@ class Mayu::Session::ContextTest < Minitest::Test
 
     def render
       H[:span, @initial_context.fetch(:label)]
+    end
+  end
+
+  def test_context_survives_callbacks_navigation_reload_and_restoration
+    Dir.mktmpdir("mayu-context") do |root|
+      pages = File.join(root, "app", "pages")
+      FileUtils.mkdir_p(File.join(pages, "next"))
+      File.write(File.join(root, "app", "root.haml"), "%slot\n")
+      source = <<~HAML
+        :ruby
+          def initialize
+            @initial = session_context.fetch(:label)
+          end
+          def handle_click
+            @seen = session_context.fetch(:label)
+            rerender!
+          end
+        %button(onclick=handle_click)= "\#{@initial}:\#{@seen}"
+      HAML
+      ["+page.haml", "next/+page.haml", "+not-found.haml"].each do |name|
+        File.write(File.join(pages, name), source)
+      end
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      environment = Mayu::Environment.allocate
+      environment.instance_variable_set(:@module_provider, provider)
+      environment.instance_variable_set(:@metrics, Mayu::Test::FakeMetrics.new)
+      server = Object.new
+      def server.render_exceptions? = false
+      environment.instance_variable_set(:@config, Struct.new(:server).new(server))
+      session = Mayu::Session.new(environment:, request_info: Mayu::Session::RequestInfo.new(path: "/", headers: {}, http2: false), context: {label: "snapshot", secret: "hidden"})
+      assert_includes session.render, "snapshot:"
+      refute_includes session.render, "hidden"
+      engine = session.instance_variable_get(:@engine)
+      Async do
+        session.start
+        consumer = Async::Task.current.async { loop { session.dequeue_batch.complete } }
+        Async::Task.current.with_timeout(2) { engine.synchronize }
+        listener = engine.root.instance_variable_get(:@listeners).values.find { it.callback&.method_name == :handle_click }
+        completion = engine.callback(listener.id, {})
+        Async::Task.current.with_timeout(1) { completion.dequeue }
+        Async::Task.current.with_timeout(2) { engine.synchronize }
+        assert_includes session.render, "snapshot:snapshot"
+        ["/next", "/missing"].each do |path|
+          session.send(:handle_event, Mayu::Session::Events::NavigateEvent["n", path, 1])
+          Async::Task.current.with_timeout(2) { engine.synchronize }
+          assert_includes session.render, "snapshot:"
+          assert_equal({label: "snapshot", secret: "hidden"}, session.context)
+        end
+        session.send(:handle_reload_result, Mayu::HotReload::Update.success)
+        Async::Task.current.with_timeout(2) { engine.synchronize }
+        assert_includes session.render, "snapshot:"
+      ensure
+        consumer&.stop
+        session.stop
+      end.wait
+      marshaller = Mayu::EncryptedMarshal.new("context-test-secret")
+      transfer = Mayu::Session::TransferState.from_session(session)
+      restored = Mayu::Session::TransferState.decrypt(marshaller, transfer.encrypt(marshaller)).resume(environment)
+      assert_equal session.context, restored.context
+      assert restored.context[:label].frozen?
+      assert_includes restored.render, "snapshot:"
+    ensure
+      restored&.stop
+      session&.stop
     end
   end
 
