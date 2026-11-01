@@ -475,6 +475,7 @@ module Mayu
         end
         @sessions.check_valid!(session_id)
         @environment.authorize_session!(transfer.info, request, :transfer)
+        @sessions.check_valid!(session_id)
         begin
           session = transfer.resume(@environment)
         rescue => error
@@ -487,6 +488,7 @@ module Mayu
           return text_response(503, "Server is stopping")
         end
 
+        @sessions.check_valid!(session_id)
         @sessions.store(session)
 
         Console.logger.info(
