@@ -70,6 +70,8 @@ module Mayu
         )
 
       @module_provider = module_provider
+      @request_wrappers = []
+      @preparation_hook = nil
       @start_hooks = []
       @started = []
     end
@@ -99,6 +101,33 @@ module Mayu
         load_klenod_provider(config, bundle_path, source_root:, assets_dir:)
 
       new(config, module_provider:, metrics:)
+    end
+
+    def around_request(&block)
+      @request_wrappers << block
+    end
+
+    def prepare_session(&block)
+      @preparation_hook = block
+    end
+
+    def prepare_session_for(request)
+      @preparation_hook ? @preparation_hook.call(request) : Session::Preparation.new
+    end
+
+    def wrap_request(request, &app)
+      chain = @request_wrappers.reverse_each.reduce(app) do |following, wrapper|
+        lambda do |current|
+          called = false
+          next_app = lambda do |next_request|
+            raise "Request continuation already called" if called
+            called = true
+            following.call(next_request)
+          end
+          wrapper.call(current, next_app)
+        end
+      end
+      chain.call(request)
     end
 
     def use(&)

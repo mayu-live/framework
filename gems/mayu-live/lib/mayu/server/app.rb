@@ -66,6 +66,10 @@ module Mayu
       SESSION_PATH_RE = %r{\A/.mayu/session/(?<session_id>[[:alnum:]]+)\z}
 
       def call(request)
+        @environment.wrap_request(request) { dispatch(it) }
+      end
+
+      def dispatch(request)
         return text_response(503, "Server is stopping") if @stopping
 
         # puts "\e[3;33m #{request.method} #{request.path} \e[0m"
@@ -381,10 +385,16 @@ module Mayu
       # Session
 
       def handle_session_start(request)
+        preparation = @environment.prepare_session_for(request)
+        return preparation if preparation.is_a?(Protocol::HTTP::Response)
+        unless preparation.is_a?(Session::Preparation)
+          raise TypeError, "prepare_session must return Session::Preparation or a response"
+        end
         session =
           Session.new(
             request_info: Session::RequestInfo.from_request(request),
-            environment: @environment
+            environment: @environment,
+            context: preparation.context
           )
 
         if @stopping
@@ -399,7 +409,7 @@ module Mayu
 
         body = session.render
 
-        response(
+        result = response(
           session.route_status || 200,
           body,
           "content-type": "text/html; charset=utf-8",
@@ -408,6 +418,8 @@ module Mayu
           **@cookies.set_token_cookie_header(session),
           link: link_header(session)
         )
+        preparation.headers.each { |name, value| result.headers.add(name, value) }
+        result
       end
 
       def link_header(session)
