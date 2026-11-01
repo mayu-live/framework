@@ -157,6 +157,22 @@ class Mayu::Server::SessionHooksTest < Minitest::Test
     assert_equal "APPLICATION_SESSION_REJECTED", JSON.parse(result.read).fetch("code")
   end
 
+  def test_invalidation_during_transfer_authorization_prevents_restoration
+    session = new_session
+    @sessions.store(session)
+    marshaller = Mayu::EncryptedMarshal.new("test secret")
+    @environment.instance_variable_set(:@marshaller, marshaller)
+    transfer = Mayu::Session::TransferState.from_session(session).with(state: "must not deserialize")
+    @environment.authorize_session do |*|
+      @app.invalidate_session(session.id)
+      true
+    end
+    result = @app.call(request("POST", "/.mayu/session/#{session.id}", {"cookie" => "mayu-token=#{session.token}"}, [transfer.encrypt(marshaller)]))
+    assert_equal 403, result.status
+    assert_equal "APPLICATION_SESSION_REJECTED", JSON.parse(result.read).fetch("code")
+    assert_same session, @sessions.authenticate!(session.id, session.token)
+  end
+
   def test_navigation_denial_prevents_route_resolution
     session = new_session
     @environment.authorize_event { |_info, event| event.path != "/private" }
