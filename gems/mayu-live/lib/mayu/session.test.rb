@@ -914,6 +914,48 @@ class Mayu::SessionTest < Minitest::Test
     end
   end
 
+  def test_not_found_from_initializers_uses_the_nearest_view_on_start_and_navigation
+    [false, true].each do |nested|
+      with_not_found_page(initialize_failure: true, nested: nested, root_view: true) do |provider|
+        env = FakeEnvironment.new(module_provider: provider)
+        info = Mayu::Session::RequestInfo.new(path: "/things/missing", headers: {}, http2: false)
+        session = Mayu::Session.new(environment: env, request_info: info)
+        assert_equal(404, session.route_status)
+        assert_includes(session.render, "No such thing")
+        refute_includes(session.render, "Nothing here")
+
+        session = Mayu::Session.new(environment: env, request_info: info.with(path: "/"))
+        session.send(:handle_event, Mayu::Session::Events::NavigateEvent["nav-init", "/things/missing", 123])
+        assert_equal(404, session.route_status)
+        assert_includes(session.render, "No such thing")
+      end
+    end
+  end
+
+  def test_not_found_from_fallback_initialization_is_not_retried
+    with_not_found_page(initialize_failure: true, fallback_failure: true) do |provider|
+      env = FakeEnvironment.new(module_provider: provider)
+      info = Mayu::Session::RequestInfo.new(path: "/things/missing", headers: {}, http2: false)
+      failure = assert_raises(Mayu::Runtime::VNodes::VComponent::UnhandledRenderError) do
+        Mayu::Session.new(environment: env, request_info: info)
+      end
+      assert_kind_of(Mayu::NotFound, failure.error)
+      assert_includes(failure.component.tree_path.last[:path], "+not-found.haml")
+    end
+  end
+
+  def test_initializer_not_found_keeps_layout_context
+    with_not_found_page(initialize_failure: true) do |provider, root|
+      File.write(File.join(root, "app", "root.haml"), '= H.context(account: "server-account") { H[:slot] }' + "\n")
+      File.write(File.join(root, "app", "pages", "things", "+not-found.haml"), "%p= @@account\n")
+      env = FakeEnvironment.new(module_provider: provider)
+      info = Mayu::Session::RequestInfo.new(path: "/things/missing", headers: {}, http2: false)
+      session = Mayu::Session.new(environment: env, request_info: info)
+      assert_equal(404, session.route_status)
+      assert_includes(session.render, "<p>server-account</p>")
+    end
+  end
+
   def test_reload_success_emits_reload_succeeded_command
     env = FakeEnvironment.new
     request_info =
@@ -1037,7 +1079,7 @@ class Mayu::SessionTest < Minitest::Test
 
   # A start page, a dynamic page under /things that raises NotFound for
   # anything but "1", and not-found views to fall back to.
-  def with_not_found_page(things_view: true, root_view: false)
+  def with_not_found_page(things_view: true, root_view: false, initialize_failure: false, nested: false, fallback_failure: false)
     Dir.mktmpdir("mayu-klenod-not-found") do |root|
       pages = File.join(root, "app", "pages")
       things = File.join(pages, "things", "[id]")
@@ -1046,12 +1088,21 @@ class Mayu::SessionTest < Minitest::Test
       File.write(File.join(pages, "+page.haml"), "%p Start page\n")
       File.write(
         File.join(things, "+page.haml"),
-        "- raise NotFound unless $params[:id] == \"1\"\n%p the thing\n"
+        if initialize_failure
+          ":ruby\n  def initialize\n    raise Mayu::NotFound unless @__props[:params][:id] == \"1\"\n  end\n%p the thing\n"
+        else
+          "- raise NotFound unless $params[:id] == \"1\"\n%p the thing\n"
+        end
       )
+      if nested
+        FileUtils.mkdir_p(File.join(root, "app", "components"))
+        File.write(File.join(root, "app", "components", "Missing.haml"), ":ruby\n  def initialize\n    raise Mayu::NotFound\n  end\n%p unreachable\n")
+        File.write(File.join(things, "+page.haml"), ":ruby\n  Missing = import(\"/components/Missing\")\n%Missing\n")
+      end
       if things_view
         File.write(
           File.join(pages, "things", "+not-found.haml"),
-          "%p No such thing: \#{$path}\n"
+          fallback_failure ? ":ruby\n  def initialize\n    raise Mayu::NotFound\n  end\n%p unreachable\n" : "%p No such thing: \#{$path}\n"
         )
       end
       File.write(File.join(pages, "+not-found.haml"), "%p Nothing here\n") if root_view

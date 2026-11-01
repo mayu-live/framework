@@ -7,6 +7,41 @@ require_relative "test_helpers"
 class Mayu::Runtime::VNodes::ErrorBoundaryTest < Minitest::Test
   include Mayu::Runtime::VNodes::TestHelpers
 
+  class InitializerFailure < Mayu::Component::Base
+    def initialize
+      raise "initializer boom"
+    end
+
+    def mount = raise("must not mount")
+    def unmount = raise("must not unmount")
+  end
+
+  class InitializerBoundary < Mayu::Component::Base
+    def handle_error(error)
+      @message = error.message
+      true
+    end
+
+    def render
+      @message ? H[:p, @message] : H[InitializerFailure]
+    end
+  end
+
+  def test_initializer_errors_are_handled_by_the_parent_boundary
+    run_engine(H[:body, H[InitializerBoundary]]) do |engine|
+      assert_includes(render_html(engine.root), "<p>initializer boom</p>")
+    end
+  end
+
+  def test_initializer_failures_retain_the_failed_component_for_diagnostics
+    failure = assert_raises(Mayu::Runtime::VNodes::VComponent::UnhandledRenderError) do
+      Mayu::Runtime::Engine.new(H[:body, H[InitializerFailure]], metrics: NullMetrics.new)
+    end
+    assert_equal("initializer boom", failure.error.message)
+    assert_kind_of(InitializerFailure, failure.component.ref_value)
+    assert_equal(InitializerFailure.name, failure.component.tree_path.last[:name])
+  end
+
   class ErrorChild < Mayu::Component::Base
     def render
       raise "boom" if @__props[:should_fail]

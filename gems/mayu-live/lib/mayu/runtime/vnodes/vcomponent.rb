@@ -487,7 +487,14 @@ module Mayu
             :@__state,
             Mayu::Component::State.new(instance)
           )
-          instance.send(:initialize)
+          begin
+            instance.send(:initialize)
+          rescue => error
+            # Keep the allocated instance for diagnostics, including when it
+            # failed before setting up its own state. It has never mounted.
+            @instance ||= instance
+            raise UnhandledRenderError.new(error, self)
+          end
           instance
         end
 
