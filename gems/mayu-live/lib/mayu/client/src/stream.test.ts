@@ -31,6 +31,22 @@ describe("stream", () => {
     );
   });
 
+  it("preserves the application rejection destination", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          code: "APPLICATION_SESSION_REJECTED",
+          location: "/login",
+        }),
+        { status: 403 },
+      ),
+    );
+    await expect(connect("/.mayu/session/abc")).rejects.toMatchObject({
+      code: "APPLICATION_SESSION_REJECTED",
+      location: "/login",
+    });
+  });
+
   it("supports legacy error payload shape", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ error: "expired" }), {

@@ -14,7 +14,7 @@ class Mayu::Session::ContextTest < Minitest::Test
     end
 
     def render
-      H[:span, session_context.fetch(:label)]
+      H[:span, @initial_context.fetch(:label)]
     end
   end
 

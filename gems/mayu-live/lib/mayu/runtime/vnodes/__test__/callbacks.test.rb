@@ -382,6 +382,44 @@ class Mayu::Runtime::VNodes::CallbacksTest < Minitest::Test
     end
   end
 
+  def test_execution_guard_checks_coalesced_payload_immediately_before_invocation
+    SlowHandlerProbe.gate = Async::Queue.new
+    SlowHandlerProbe.received = []
+    checked = []
+    allowed = true
+    guard = ->(payload) {
+      checked << payload[:n]
+      allowed
+    }
+
+    run_engine(H[:body, H[SlowHandlerProbe]]) do |engine|
+      component = find_component(engine.root, SlowHandlerProbe)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.instance_variable_get(:@__vnode_queue) }
+      listener = engine.root.instance_variable_get(:@listeners).values.find { it.callback&.method_name == :handle_event }
+      first = engine.callback(listener.id, {eventType: "mousemove", n: 1}, execution_guard: guard)
+      wait_until { SlowHandlerProbe.received == [1] }
+      queued = engine.callback(listener.id, {eventType: "mousemove", n: 2}, execution_guard: guard)
+      latest = engine.callback(listener.id, {eventType: "mousemove", n: 3}, execution_guard: guard)
+      assert_same queued, latest
+      allowed = false
+      SlowHandlerProbe.gate.enqueue(true)
+      Async::Task.current.with_timeout(0.5) { [first, queued].each(&:dequeue) }
+      assert_equal [1, 3], checked
+      assert_equal [1], SlowHandlerProbe.received
+    end
+  end
+
+  def test_execution_guard_failure_settles_callback_without_running_handler
+    run_engine(H[:body, H[CallbackProbe]]) do |engine|
+      listener = wait_for_listener(engine, CallbackProbe)
+      engine.callback(listener.id, {}, settle_id: "s1", execution_guard: ->(_) { raise "service unavailable" })
+      commands = commands_until_settled(engine)
+      assert commands.any? { it == Mayu::Runtime::Commands::CallbackFailed["s1"] }
+      refute commands.any? { it.is_a?(Mayu::Runtime::Commands::SetTextContent) && it.content == "Click 1" }
+    end
+  end
+
   def test_queued_continuous_callbacks_run_once_with_the_latest_payload
     received = run_slow_handler("mousemove")
 

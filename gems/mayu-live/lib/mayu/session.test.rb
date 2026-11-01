@@ -78,7 +78,7 @@ class Mayu::SessionTest < Minitest::Test
       @callbacks ||= []
     end
 
-    def callback(id, payload, settle_id: nil)
+    def callback(id, payload, settle_id: nil, execution_guard: nil)
       callbacks << [id, payload, settle_id]
     end
 
@@ -557,6 +557,7 @@ class Mayu::SessionTest < Minitest::Test
   end
 
   class TransferEngine
+    def session_context = {}
     attr_reader :calls, :batches
 
     def initialize
@@ -621,7 +622,7 @@ class Mayu::SessionTest < Minitest::Test
         headers: {},
         http2: false
       )
-    session = Mayu::Session.new(environment: source_environment, request_info:)
+    session = Mayu::Session.new(environment: source_environment, request_info:, context: {account: {id: 42}})
 
     encrypted =
       Mayu::Session::TransferState.from_session(session).encrypt(marshaller)
@@ -637,6 +638,8 @@ class Mayu::SessionTest < Minitest::Test
         target_environment
       )
 
+    assert_equal({account: {id: 42}}, restored.context)
+    assert restored.context[:account].frozen?
     assert_equal(session.id, restored.id)
     assert_includes(restored.render, "Form demo")
     assert_equal(target_environment.module_provider, restored.module_provider)

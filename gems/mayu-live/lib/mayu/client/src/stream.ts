@@ -32,11 +32,17 @@ export async function initInputStream(
 
 export class StreamError extends Error {
   code: string | null;
+  location: string | null;
 
-  constructor(message: string, code: string | null = null) {
+  constructor(
+    message: string,
+    code: string | null = null,
+    location: string | null = null,
+  ) {
     super(message);
     this.name = "StreamError";
     this.code = code;
+    this.location = location;
   }
 }
 
@@ -57,6 +63,7 @@ function parseErrorResponse(payload: unknown): {
     if ("error" in payload && typeof payload.error === "string") {
       return { message: payload.error, code };
     }
+    if (code) return { message: code, code };
   }
 
   if (typeof payload === "string") {
@@ -75,9 +82,17 @@ async function streamErrorFromResponse(
     payload = await res.json();
   } catch (_error) {}
   const { message, code } = parseErrorResponse(payload);
+  const location =
+    payload &&
+    typeof payload === "object" &&
+    "location" in payload &&
+    typeof payload.location === "string"
+      ? payload.location
+      : null;
   return new StreamError(
     message === "Unknown stream error" ? fallback : message,
     code,
+    location,
   );
 }
 
@@ -128,7 +143,14 @@ export async function connect(
     } catch (_error) {}
 
     const { message, code } = parseErrorResponse(payload);
-    throw new StreamError(message, code);
+    const location =
+      payload &&
+      typeof payload === "object" &&
+      "location" in payload &&
+      typeof payload.location === "string"
+        ? payload.location
+        : null;
+    throw new StreamError(message, code, location);
   }
 
   const contentType = res.headers.get("content-type");

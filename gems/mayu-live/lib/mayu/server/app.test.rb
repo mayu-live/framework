@@ -282,7 +282,7 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(200, response.status)
     assert_equal("<html></html>", response.body.join)
-    assert_equal("Accept", response.headers.to_a.to_h.fetch(:vary))
+    assert_equal("Accept", response.headers.to_a.to_h.fetch("vary"))
     assert_empty(stored)
   end
 
@@ -290,7 +290,7 @@ class Mayu::Server::AppTest < Minitest::Test
     stored, response = start_page("/page", "text/html,*/*;q=0.8")
 
     assert_equal(200, response.status)
-    assert_equal("Accept", response.headers.to_a.to_h.fetch(:vary))
+    assert_equal("Accept", response.headers.to_a.to_h.fetch("vary"))
     assert_equal(["page-session"], stored.map(&:id))
   end
 
@@ -355,10 +355,10 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(200, response.status)
     headers = response.headers.to_a.to_h
-    assert_equal("text/plain; charset=utf-8", headers.fetch(:"content-type"))
+    assert_equal("text/plain; charset=utf-8", headers.fetch("content-type"))
     assert_equal(
       Mayu::Server::App::ROBOTS_TXT_CACHE_CONTROL,
-      headers.fetch(:"cache-control")
+      headers.fetch("cache-control")
     )
     assert_equal("User-agent: *\n", response.body.join)
   end
@@ -391,12 +391,12 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(200, response.status)
     headers = response.headers.to_a.to_h
-    assert_equal("image/x-icon", headers.fetch(:"content-type"))
+    assert_equal("image/x-icon", headers.fetch("content-type"))
     assert_equal(
       Mayu::Server::App::FAVICON_CACHE_CONTROL,
-      headers.fetch(:"cache-control")
+      headers.fetch("cache-control")
     )
-    assert_equal(%("abc123"), headers.fetch(:etag))
+    assert_equal(%("abc123"), headers.fetch("etag"))
     assert_equal(FAVICON.fetch(:body), response.body.join)
   end
 
@@ -408,7 +408,7 @@ class Mayu::Server::AppTest < Minitest::Test
       )
 
     assert_equal(304, response.status)
-    assert_equal(%("abc123"), response.headers.to_a.to_h.fetch(:etag))
+    assert_equal(%("abc123"), response.headers.to_a.to_h.fetch("etag"))
     assert_empty(response.body)
   end
 
@@ -449,8 +449,8 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(200, response.status)
     headers = response.headers.to_a.to_h
-    assert_includes(Array(headers.fetch(:"content-type")), "text/javascript")
-    assert_includes(Array(headers.fetch(:"cache-control")), "no-store")
+    assert_includes(Array(headers.fetch("content-type")), "text/javascript")
+    assert_includes(Array(headers.fetch("cache-control")), "no-store")
     assert_equal("export default null\n", Brotli.inflate(response.body.join))
   end
 
@@ -458,7 +458,7 @@ class Mayu::Server::AppTest < Minitest::Test
     response = script_response("/.mayu/runtime/main-def456.js")
 
     headers = response.headers.to_a.to_h
-    assert_includes(Array(headers.fetch(:"cache-control")), Mayu::Server::App::ASSET_CACHE_CONTROL)
+    assert_includes(Array(headers.fetch("cache-control")), Mayu::Server::App::ASSET_CACHE_CONTROL)
   end
 
   def test_link_header_keeps_klenod_asset_urls_absolute
@@ -514,6 +514,10 @@ class Mayu::Server::AppTest < Minitest::Test
       app = Mayu::Server::App.allocate
       session = Object.new
       session.define_singleton_method(:wait) {}
+      session.define_singleton_method(:check_valid!) {}
+      session.define_singleton_method(:info) { nil }
+      environment = Mayu::Environment.allocate
+      app.instance_variable_set(:@environment, environment)
       sessions = Object.new
       sessions.define_singleton_method(:authenticate!) { |_id, _token| session }
       app.instance_variable_set(:@sessions, sessions)
