@@ -765,6 +765,9 @@ Mayu.setup do |setup|
 end
 ```
 
+See [session context and application hooks](docs/session-hooks.md) for request
+wrappers, response preparation, authorization, and worker-local invalidation.
+
 `mayu.rb` is plain Ruby and is not hot reloaded; restart the server after
 changing it.
 
