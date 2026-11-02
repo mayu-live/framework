@@ -286,6 +286,12 @@ Use an HTTP handler or document navigation when an operation must set cookies or
 return an HTTP redirect. Live updates cannot change headers or status on the
 original document response.
 
+Mayu protects session transports and unsafe HTTP requests against cross-origin
+requests by default and binds each session to its starting origin. Behind a
+reverse proxy, configure `server.trusted_proxies` and forwarded scheme/host
+headers. See [session hooks and request protection](docs/session-hooks.md)
+for session context, validity checks, and explicit webhook exemptions.
+
 ## Components
 
 Components are the building blocks of a Mayu application.
@@ -649,7 +655,7 @@ packages both gems, installs the app from them, runs `mayu build` with
 repository root:
 
     podman build -f example/Dockerfile -t mayu-example .
-    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret mayu-example
+    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret -e MAYU_PUBLIC_ORIGIN=http://localhost:3333 mayu-example
 
 Mayu applications can also colocate `*.test.rb` files with components. The
 test module is evaluated by Klenod and receives Mayu's test helpers:
@@ -764,6 +770,9 @@ Mayu.setup do |setup|
   end
 end
 ```
+
+See [session context and application hooks](docs/session-hooks.md) for request
+wrappers, response preparation, authorization, and worker-local invalidation.
 
 `mayu.rb` is plain Ruby and is not hot reloaded; restart the server after
 changing it.

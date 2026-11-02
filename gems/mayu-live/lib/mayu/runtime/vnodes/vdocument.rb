@@ -146,7 +146,7 @@ module Mayu
 
         # With a settle_id, the client is answered with CallbackComplete or
         # CallbackFailed once the handler has returned or will never run.
-        def call_listener(id, payload, settle_id: nil)
+        def call_listener(id, payload, settle_id: nil, execution_guard: nil)
           listener =
             @listeners.fetch(id) do
               Console.logger.debug(self, "Ignoring stale listener #{id}")
@@ -197,6 +197,7 @@ module Mayu
                 payload = pending.payload
               end
 
+              invoke = -> { listener.call(payload) unless execution_guard && !execution_guard.call(payload) }
               if callback
                 metrics.callback_queue_duration_ms.observe(
                   Process.clock_gettime(
@@ -208,9 +209,9 @@ module Mayu
                 ok = metrics.update_summary(
                   metrics.callback_handler_duration_ms,
                   labels:
-                ) { call_listener_safely(-> { listener.call(payload) }, listener) }
+                ) { call_listener_safely(invoke, listener) }
               else
-                ok = call_listener_safely(-> { listener.call(payload) }, listener)
+                ok = call_listener_safely(invoke, listener)
               end
             ensure
               # Queued after the updates from the handler's state changes,

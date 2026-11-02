@@ -13,6 +13,7 @@ require_relative "event_stream"
 require_relative "static_files"
 
 require_relative "../environment"
+require_relative "../request_origin"
 require_relative "../runtime/engine"
 require_relative "../session"
 require_relative "../session/store"
@@ -22,18 +23,6 @@ module Mayu
   class Server
     class App
       using RequestRefinements
-
-      ALLOW_HEADERS =
-        Ractor.make_shareable(
-          {
-            "access-control-allow-methods": "GET, POST, PATCH, OPTIONS",
-            "access-control-allow-headers": %w[
-              content-type
-              accept
-              accept-encoding
-            ].join(", ")
-          }
-        )
 
       ASSET_CACHE_CONTROL = [
         "public",
@@ -66,9 +55,15 @@ module Mayu
       SESSION_PATH_RE = %r{\A/.mayu/session/(?<session_id>[[:alnum:]]+)\z}
 
       def call(request)
+        @environment.wrap_request(request) { dispatch(it) }
+      end
+
+      def dispatch(request)
         return text_response(503, "Server is stopping") if @stopping
 
-        # puts "\e[3;33m #{request.method} #{request.path} \e[0m"
+        if protected_request?(request) && !request_origin_allowed?(request)
+          return error_response(403, "REQUEST_ORIGIN_REJECTED", **{"cache-control" => "no-store"})
+        end
 
         case request
         in {path: "/favicon.ico", method: "GET" | "HEAD"}
@@ -94,36 +89,38 @@ module Mayu
         else
           handle_404(request)
         end
+      rescue RequestOrigin::Rejected
+        error_response(403, "REQUEST_ORIGIN_REJECTED", **{"cache-control" => "no-store"})
+      rescue Session::Rejected => rejection
+        json_response(403, {code: "APPLICATION_SESSION_REJECTED", location: rejection.location})
       rescue Session::Errors::SessionNotFoundError
-        error_response(403, "SESSION_NOT_FOUND", **origin_header(request))
+        error_response(403, "SESSION_NOT_FOUND")
       rescue Session::Errors::SessionIdMismatchError
-        error_response(403, "SESSION_ID_MISMATCH", **origin_header(request))
+        error_response(403, "SESSION_ID_MISMATCH")
       rescue Session::Errors::InvalidTokenError
-        error_response(403, "INVALID_TOKEN", **origin_header(request))
+        error_response(403, "INVALID_TOKEN")
       rescue Cookies::TokenCookieNotSetError
-        error_response(403, "TOKEN_COOKIE_NOT_SET", **origin_header(request))
+        error_response(403, "TOKEN_COOKIE_NOT_SET")
       rescue EventStream::MessageTooLargeError
-        error_response(413, "EVENT_MESSAGE_TOO_LARGE", **origin_header(request))
+        error_response(413, "EVENT_MESSAGE_TOO_LARGE")
       rescue EventStream::InvalidMessageError, Session::Events::InvalidEventError => e
         Console.logger.warn(self, e)
-        error_response(400, "INVALID_EVENT_MESSAGE", **origin_header(request))
+        error_response(400, "INVALID_EVENT_MESSAGE")
       rescue Session::Events::EventRejectedError => e
         Console.logger.debug(self, e)
         error_response(
           409,
-          "SESSION_NOT_ACCEPTING_EVENTS",
-          **origin_header(request)
+          "SESSION_NOT_ACCEPTING_EVENTS"
         )
       rescue Klenod::Router::MalformedPathError
         # Routing runs before a session starts, so a malformed path never
         # reaches the session or the app's error and not-found pages, which
         # would have to route the same path.
-        text_response(400, "Bad Request", **origin_header(request))
+        text_response(400, "Bad Request")
       rescue Errno::ENOENT
         text_response(
           404,
-          "Resource not found: #{request.path}",
-          **origin_header(request)
+          "Resource not found: #{request.path}"
         )
       rescue Runtime::VNodes::VComponent::UnhandledRenderError => failure
         # The session reported it, and its error page failed as well.
@@ -137,9 +134,9 @@ module Mayu
         Console.logger.error(self, report || e)
 
         if browser_navigation?(request) && @environment.config.server.render_exceptions?
-          text_response(500, report || exception_text(e), **origin_header(request))
+          text_response(500, report || exception_text(e))
         else
-          error_response(500, "INTERNAL_SERVER_ERROR", **origin_header(request))
+          error_response(500, "INTERNAL_SERVER_ERROR")
         end
       end
 
@@ -152,7 +149,7 @@ module Mayu
             "Internal Server Error"
           end
 
-        text_response(500, body, **origin_header(request))
+        text_response(500, body)
       end
 
       def exception_text(error)
@@ -176,6 +173,10 @@ module Mayu
         @body_barrier.wait
       end
 
+      def invalidate_session(id, location: nil)
+        @sessions.invalidate(id, location:)
+      end
+
       def stream_count
         @streams.size
       end
@@ -189,6 +190,32 @@ module Mayu
       end
 
       private
+
+      def protected_request?(request)
+        return true if SESSION_PATH_RE.match?(request.path.split("?", 2).first)
+        return false if %w[GET HEAD OPTIONS].include?(request.method)
+        return true if request.path.start_with?("/.mayu")
+
+        provider = @environment.module_provider
+        match = provider && Klenod::Router.new(provider).match(request.path)
+        handler = match&.handler
+        !(handler && !html_page_request?(request, match) && handler.csrf_exempt?(request.method))
+      end
+
+      def request_origin_allowed?(request)
+        RequestOrigin.allowed?(request, expected_origin: request_origin(request))
+      end
+
+      def request_origin(request)
+        config = @environment.config.server
+        RequestOrigin.resolve(request, public_origin: config.public_origin, trusted_proxies: config.trusted_proxies)
+      rescue ArgumentError
+        raise RequestOrigin::Rejected
+      end
+
+      def check_session_origin!(request, origin)
+        raise RequestOrigin::Rejected unless request_origin(request) == origin
+      end
 
       # Pages are served to any client. Paths without a page only render the
       # app's not-found page for browser navigations, so stray asset requests
@@ -262,7 +289,7 @@ module Mayu
       # Mayu
 
       def handle_options(request)
-        response(204, **ALLOW_HEADERS, **origin_header(request))
+        response(204)
       end
 
       def handle_script(request)
@@ -279,8 +306,7 @@ module Mayu
             response(
               404,
               "Resource not found: #{request.path}",
-              "content-type": "text/plain; charset=utf-8",
-              **origin_header(request)
+              "content-type": "text/plain; charset=utf-8"
             )
           )
         end
@@ -289,8 +315,7 @@ module Mayu
           200,
           file.encoded_content.content,
           "cache-control": script_cache_control(request.path),
-          **file.headers,
-          **origin_header(request)
+          **file.headers
         )
       end
 
@@ -310,12 +335,7 @@ module Mayu
         provider = @environment.module_provider
         return text_response(404, "file not found") unless provider
 
-        klenod_asset_app(provider).response_for(
-          request,
-          headers: {
-            **origin_header(request)
-          }
-        ) || text_response(404, "file not found")
+        klenod_asset_app(provider).response_for(request) || text_response(404, "file not found")
       end
 
       def klenod_asset_app(provider)
@@ -335,7 +355,6 @@ module Mayu
 
         etag = %("#{favicon.fetch(:etag)}")
         headers = {
-          **origin_header(request),
           "cache-control": FAVICON_CACHE_CONTROL,
           etag:
         }
@@ -358,7 +377,7 @@ module Mayu
         send_file(
           robots_txt,
           "text/plain; charset=utf-8",
-          {**origin_header(request), "cache-control": ROBOTS_TXT_CACHE_CONTROL}
+          {"cache-control": ROBOTS_TXT_CACHE_CONTROL}
         )
       rescue *missing_entry_errors
         handle_404(request)
@@ -381,11 +400,22 @@ module Mayu
       # Session
 
       def handle_session_start(request)
+        origin = request_origin(request)
+        preparation = @environment.prepare_session_for(request)
+        return preparation if preparation.is_a?(Protocol::HTTP::Response)
+        unless preparation.is_a?(Session::Preparation)
+          raise TypeError, "prepare_session must return a context hash, Session::Preparation, or a response"
+        end
         session =
-          Session.new(
-            request_info: Session::RequestInfo.from_request(request),
-            environment: @environment
-          )
+          begin
+            Session.new(
+              request_info: Session::RequestInfo.from_request(request, origin:),
+              environment: @environment,
+              context: preparation.context
+            ) { |info| @environment.authorize_session!(info, request:, phase: :start) }
+          rescue Session::Rejected => rejection
+            return rejected_session_start_response(request, preparation, rejection)
+          end
 
         if @stopping
           session.stop
@@ -399,7 +429,7 @@ module Mayu
 
         body = session.render
 
-        response(
+        result = response(
           session.route_status || 200,
           body,
           "content-type": "text/html; charset=utf-8",
@@ -408,6 +438,23 @@ module Mayu
           **@cookies.set_token_cookie_header(session),
           link: link_header(session)
         )
+        preparation.headers.each { |name, value| result.headers.add(name.to_s, value) }
+        result
+      end
+
+      def rejected_session_start_response(request, preparation, rejection)
+        headers = {"cache-control" => "no-store", "vary" => "Accept"}
+        result = if browser_navigation?(request)
+          if rejection.location
+            response(303, **headers, location: rejection.location)
+          else
+            text_response(403, "Forbidden", **headers)
+          end
+        else
+          json_response(403, {code: "APPLICATION_SESSION_REJECTED", location: rejection.location}, **headers)
+        end
+        preparation.headers.each { |name, value| result.headers.add(name.to_s, value) }
+        result
       end
 
       def link_header(session)
@@ -433,18 +480,32 @@ module Mayu
         state = request.read.to_s
         return text_response(503, "Server is stopping") if @stopping
 
-        transfer =
-          Session::TransferState
-            .decrypt(@environment.marshaller, state)
-            .authenticate!(
-              session_id:,
-              session_token: @cookies.get_token_cookie_value(request)
-            )
+        begin
+          transfer =
+            Session::TransferState
+              .decrypt(@environment.marshaller, state)
+              .authenticate!(
+                session_id:,
+                session_token: @cookies.get_token_cookie_value(request)
+              )
+        rescue TypeError, ArgumentError, NoMatchingPatternError
+          return error_response(422, "SESSION_RESTORE_FAILED")
+        end
 
         # Components that can not be restored start over on their own, so
         # this only fails when the session as a whole can not be loaded, such
         # as after a change to the transfer format. The client then starts a
         # new session right away instead of retrying the same state.
+        begin
+          transfer.validate_metadata!
+        rescue => error
+          Console.logger.error(self, error)
+          return error_response(422, "SESSION_RESTORE_FAILED")
+        end
+        @sessions.check_valid!(session_id)
+        check_session_origin!(request, transfer.info.origin)
+        @environment.authorize_session!(transfer.info, request:, phase: :transfer)
+        @sessions.check_valid!(session_id)
         begin
           session = transfer.resume(@environment)
         rescue => error
@@ -457,6 +518,7 @@ module Mayu
           return text_response(503, "Server is stopping")
         end
 
+        @sessions.check_valid!(session_id)
         @sessions.store(session)
 
         Console.logger.info(
@@ -479,6 +541,8 @@ module Mayu
             @cookies.get_token_cookie_value(request)
           )
 
+        authorize_transport!(session, request, :resume)
+
         Console.logger.info(
           self,
           event: Mayu::Session::Event.new(:resuming, session_id: session.id)
@@ -487,12 +551,21 @@ module Mayu
         run_session_stream(request, session)
       end
 
+      def authorize_transport!(session, request, phase)
+        check_session_origin!(request, session.origin)
+        session.check_valid!
+        @environment.authorize_session!(session.info, request:, phase:)
+        session.check_valid!
+      rescue Session::Rejected => rejection
+        session.invalidate!(location: rejection.location)
+        raise
+      end
+
       def run_session_stream(request, session)
         headers = {
           "content-type": EventStream::CONTENT_TYPE,
           "content-encoding": EventStream::CONTENT_ENCODING,
-          **@cookies.set_token_cookie_header(session),
-          **origin_header(request)
+          **@cookies.set_token_cookie_header(session)
         }
 
         if session.running?
@@ -501,8 +574,7 @@ module Mayu
           return (
             error_response(
               409,
-              "SESSION_ALREADY_RUNNING",
-              **origin_header(request)
+              "SESSION_ALREADY_RUNNING"
             )
           )
         end
@@ -579,6 +651,8 @@ module Mayu
             @cookies.get_token_cookie_value(request)
           )
 
+        authorize_transport!(session, request, :events)
+
         Async do
           session.wait
         ensure
@@ -593,8 +667,7 @@ module Mayu
         if @stopping
           return error_response(
             503,
-            "SERVER_STOPPING",
-            **origin_header(request)
+            "SERVER_STOPPING"
           )
         end
 
@@ -603,8 +676,7 @@ module Mayu
         Protocol::HTTP::Response[
           204,
           {
-            **@cookies.set_token_cookie_header(session),
-            **origin_header(request)
+            **@cookies.set_token_cookie_header(session)
           },
           nil
         ]
@@ -635,21 +707,13 @@ module Mayu
       end
 
       def response(status, *bodies, **headers)
-        Protocol::HTTP::Response[status, headers, bodies]
-      end
-
-      def origin_header(request)
-        if request.headers["origin"] in [origin]
-          {"access-control-allow-origin": origin}
-        else
-          {}
-        end
+        Protocol::HTTP::Response[status, headers.transform_keys(&:to_s), bodies]
       end
 
       def send_file(content, content_type, headers = {})
         Protocol::HTTP::Response[
           200,
-          {"content-type": content_type, **headers},
+          {"content-type" => content_type, **headers.transform_keys(&:to_s)},
           [content]
         ]
       end

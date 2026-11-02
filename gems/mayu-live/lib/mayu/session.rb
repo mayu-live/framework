@@ -8,6 +8,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 require_relative "runtime"
+require_relative "session/context"
 require_relative "session/event"
 require_relative "session/token"
 require_relative "session/error_page"
@@ -113,10 +114,15 @@ module Mayu
     end
 
     RequestInfo =
-      Data.define(:path, :headers, :http2) do
-        def self.from_request(request)
+      Data.define(:path, :headers, :http2, :origin) do
+        def initialize(path:, headers:, http2:, origin:)
+          super(path:, headers:, http2:, origin: RequestOrigin.normalize(origin))
+        end
+
+        def self.from_request(request, origin:)
           new(
             path: request.path,
+            origin:,
             headers: request.headers.to_h.freeze,
             http2: request.version == "HTTP/2"
           )
@@ -131,16 +137,19 @@ module Mayu
     attr_reader :id, :route_status, :startup_commands
     attr_reader :token
 
-    def initialize(environment:, request_info:)
+    def initialize(environment:, request_info:, context: {})
       @id = SecureRandom.alphanumeric(32)
       @token = Token.generate
       @environment = environment
       @request_info = request_info
+      @context = Context.snapshot(context)
 
       Console.logger.info(
         self,
         event: Event.new(:initializing, session_id: @id, path: @request_info.path)
       )
+
+      yield info if block_given?
 
       @startup_commands = []
       descriptor = resolve_route(@request_info.path)
@@ -158,9 +167,16 @@ module Mayu
       @incoming_events = Async::Queue.new
     end
 
+    def context = @engine ? @engine.session_context : @context
+
+    def origin = @request_info.origin
+
+    def info = Info.new(id: @id.freeze, path: @request_info.path.dup.freeze, context:, origin:)
+
     def build_engine(descriptor)
       Runtime::Engine.new(
         descriptor,
+        session_context: @context,
         runtime_js: @request_info.http2 && init_js_path,
         metrics: @environment.metrics,
         module_provider:,
@@ -255,6 +271,30 @@ module Mayu
       provider.component_resolver if provider&.respond_to?(:component_resolver)
     end
 
+    def invalidated? = !!@rejection
+
+    def check_valid!
+      raise @rejection if @rejection
+    end
+
+    def invalidate!(location: nil)
+      return false if invalidated?
+
+      @rejection = Rejected.new(location:)
+      @engine.enqueue_command(Runtime::Commands::SessionInvalidated[location])
+      true
+    end
+
+    def authorize_work(event)
+      check_valid!
+      @environment.authorize_session!(info, phase: :event, event:) if @environment.respond_to?(:authorize_session!)
+      check_valid!
+      true
+    rescue Rejected => rejection
+      invalidate!(location: rejection.location)
+      false
+    end
+
     def valid_token?(token)
       Session::Token.equal?(@token, token)
     end
@@ -265,6 +305,7 @@ module Mayu
 
     def marshal_load(a)
       @id, @token, @engine, @last_ping, @request_info = a
+      @request_info = @request_info.with(origin: @request_info.origin)
       @incoming_events = Async::Queue.new
     end
 
@@ -274,6 +315,7 @@ module Mayu
     end
 
     def enqueue_event(event)
+      check_valid!
       if @transferring
         raise Events::EventRejectedError, "Session is transferring"
       end
@@ -351,6 +393,7 @@ module Mayu
     end
 
     def transfer!
+      check_valid!
       @transferring = true
       running_task = @task
       stop
@@ -358,10 +401,13 @@ module Mayu
       @engine.stop
       # The browser must receive the remaining updates before the state.
       @engine.finish_updates!
+      check_valid!
+      encrypted_state = TransferState.from_session(self).encrypt(@environment.marshaller)
+      check_valid!
       @engine.enqueue_command(
         Runtime::Commands::Transfer[
           Mayu::Server::EventStream::Blob[
-            TransferState.from_session(self).encrypt(@environment.marshaller)
+            encrypted_state
           ]
         ]
       )
@@ -376,7 +422,7 @@ module Mayu
     # Re-resolves the route so the page picks up new module exports, or shows
     # the build errors in the overlay.
     def notify_hmr_update(update)
-      handle_reload_result(update) if running?
+      handle_reload_result(update) if running? && !invalidated?
     end
 
     private
@@ -431,6 +477,7 @@ module Mayu
     end
 
     def handle_event(event)
+      check_valid!
       if event.is_a?(Events::InspectEvent)
         # Devtools queries keep the session alive like any event, but aren't
         # answered with a Pong: the page would show them as pings.
@@ -446,7 +493,9 @@ module Mayu
       in Events::VisibilityEvent[hidden:]
         @engine.update_interval = hidden ? HIDDEN_UPDATE_INTERVAL_SECONDS : nil
       in Events::CallbackEvent[id:, payload:, settle_id:]
-        @engine.callback(id, payload, settle_id:)
+        @engine.callback(id, payload, settle_id:, execution_guard: lambda do |final_payload|
+          authorize_work(event.with(payload: final_payload))
+        end)
       in Events::InspectEvent[id:, query:]
         @engine.enqueue_command(
           Runtime::Commands::InspectResult[id, inspect_engine(query)]
@@ -457,6 +506,7 @@ module Mayu
         @environment.metrics.navigations_total.increment
 
         begin
+          return unless authorize_work(event)
           match = module_provider && Klenod::Router.new(module_provider).match(path)
           if match&.handler && !match.page
             @engine.enqueue_command(Runtime::Commands::DocumentNavigation[id, path])
@@ -475,6 +525,8 @@ module Mayu
           raise
         end
       end
+    rescue Rejected => rejection
+      Console.logger.debug(self, rejection)
     rescue => e
       Console.logger.error(self, e)
     end

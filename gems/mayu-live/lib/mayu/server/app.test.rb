@@ -70,6 +70,9 @@ class Mayu::Server::AppTest < Minitest::Test
       def read = body
 
       def version = "HTTP/1.1"
+
+      def scheme = "https"
+      def authority = "app.example"
     end
 
   class StreamSession
@@ -164,7 +167,7 @@ class Mayu::Server::AppTest < Minitest::Test
     )
 
     response =
-      app.call(
+      app.dispatch(
         Request.new("GET", "/api", {"accept" => "application/json"}, "")
       )
 
@@ -179,8 +182,12 @@ class Mayu::Server::AppTest < Minitest::Test
   ErrorConfig = Data.define(:render_exceptions) do
     def server = self
     def render_exceptions? = render_exceptions
+    def public_origin = nil
+    def trusted_proxies = []
   end
-  ErrorEnvironment = Data.define(:module_provider, :config)
+  ErrorEnvironment = Data.define(:module_provider, :config) do
+    def prepare_session_for(_) = Mayu::Session::Preparation.new
+  end
 
   # Only reached when the error page itself fails to render.
   def test_a_render_error_that_escapes_the_session_is_an_html_500
@@ -198,7 +205,7 @@ class Mayu::Server::AppTest < Minitest::Test
     request = Request.new("GET", "/", {"accept" => "text/html"}, "")
 
     response =
-      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.call(request) }
+      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.dispatch(request) }
 
     assert_equal(500, response.status)
     body = response.body.join
@@ -210,7 +217,7 @@ class Mayu::Server::AppTest < Minitest::Test
       ErrorEnvironment.new(nil, ErrorConfig.new(false))
     )
     response =
-      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.call(request) }
+      Mayu::Session.stub(:new, ->(**) { raise failure }) { app.dispatch(request) }
 
     assert_equal(500, response.status)
     assert_equal("Internal Server Error", response.body.join)
@@ -231,7 +238,7 @@ class Mayu::Server::AppTest < Minitest::Test
       ErrorEnvironment.new(BuildErrorProvider.new, ErrorConfig.new(true))
     )
 
-    response = app.call(Request.new("GET", "/", {"accept" => "text/html"}, ""))
+    response = app.dispatch(Request.new("GET", "/", {"accept" => "text/html"}, ""))
 
     assert_equal(500, response.status)
     assert_equal("Haml parse error: Invalid attribute list", response.body.join)
@@ -245,7 +252,7 @@ class Mayu::Server::AppTest < Minitest::Test
     )
 
     response =
-      app.call(Request.new("GET", "/", {"accept" => "application/json"}, ""))
+      app.dispatch(Request.new("GET", "/", {"accept" => "application/json"}, ""))
 
     assert_equal(500, response.status)
     assert_includes(response.body.join, "INTERNAL_SERVER_ERROR")
@@ -258,7 +265,7 @@ class Mayu::Server::AppTest < Minitest::Test
       ErrorEnvironment.new(BuildErrorProvider.new, ErrorConfig.new(false))
     )
 
-    response = app.call(Request.new("GET", "/", {"accept" => "text/html"}, ""))
+    response = app.dispatch(Request.new("GET", "/", {"accept" => "text/html"}, ""))
 
     assert_equal(500, response.status)
     refute_includes(response.body.join, "Invalid attribute list")
@@ -267,9 +274,17 @@ class Mayu::Server::AppTest < Minitest::Test
   PageSession = Data.define(:id, :styles, :route_status) do
     def render = "<html></html>"
   end
-  PageEnvironment = Data.define(:module_provider, :metrics)
+  PageEnvironment = Data.define(:module_provider, :metrics) do
+    def config = self
+    def server = self
+    def public_origin = nil
+    def trusted_proxies = []
+    def prepare_session_for(_) = Mayu::Session::Preparation.new
+  end
   PageRequest =
     Data.define(:method, :path, :headers, :body, :version) do
+      def scheme = "https"
+      def authority = "app.example"
       def read = body
     end
 
@@ -278,7 +293,7 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(200, response.status)
     assert_equal("<html></html>", response.body.join)
-    assert_equal("Accept", response.headers.to_a.to_h.fetch(:vary))
+    assert_equal("Accept", response.headers.to_a.to_h.fetch("vary"))
     assert_empty(stored)
   end
 
@@ -286,7 +301,7 @@ class Mayu::Server::AppTest < Minitest::Test
     stored, response = start_page("/page", "text/html,*/*;q=0.8")
 
     assert_equal(200, response.status)
-    assert_equal("Accept", response.headers.to_a.to_h.fetch(:vary))
+    assert_equal("Accept", response.headers.to_a.to_h.fetch("vary"))
     assert_equal(["page-session"], stored.map(&:id))
   end
 
@@ -324,7 +339,7 @@ class Mayu::Server::AppTest < Minitest::Test
     request = Request.new("GET", "/users/%FF", {"accept" => "text/html"}, "")
     response =
       Mayu::Session.stub(:new, ->(**) { flunk "started a session" }) do
-        app.call(request)
+        app.dispatch(request)
       end
 
     assert_equal(400, response.status)
@@ -351,10 +366,10 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(200, response.status)
     headers = response.headers.to_a.to_h
-    assert_equal("text/plain; charset=utf-8", headers.fetch(:"content-type"))
+    assert_equal("text/plain; charset=utf-8", headers.fetch("content-type"))
     assert_equal(
       Mayu::Server::App::ROBOTS_TXT_CACHE_CONTROL,
-      headers.fetch(:"cache-control")
+      headers.fetch("cache-control")
     )
     assert_equal("User-agent: *\n", response.body.join)
   end
@@ -387,12 +402,12 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(200, response.status)
     headers = response.headers.to_a.to_h
-    assert_equal("image/x-icon", headers.fetch(:"content-type"))
+    assert_equal("image/x-icon", headers.fetch("content-type"))
     assert_equal(
       Mayu::Server::App::FAVICON_CACHE_CONTROL,
-      headers.fetch(:"cache-control")
+      headers.fetch("cache-control")
     )
-    assert_equal(%("abc123"), headers.fetch(:etag))
+    assert_equal(%("abc123"), headers.fetch("etag"))
     assert_equal(FAVICON.fetch(:body), response.body.join)
   end
 
@@ -404,7 +419,7 @@ class Mayu::Server::AppTest < Minitest::Test
       )
 
     assert_equal(304, response.status)
-    assert_equal(%("abc123"), response.headers.to_a.to_h.fetch(:etag))
+    assert_equal(%("abc123"), response.headers.to_a.to_h.fetch("etag"))
     assert_empty(response.body)
   end
 
@@ -445,8 +460,8 @@ class Mayu::Server::AppTest < Minitest::Test
 
     assert_equal(200, response.status)
     headers = response.headers.to_a.to_h
-    assert_includes(Array(headers.fetch(:"content-type")), "text/javascript")
-    assert_includes(Array(headers.fetch(:"cache-control")), "no-store")
+    assert_includes(Array(headers.fetch("content-type")), "text/javascript")
+    assert_includes(Array(headers.fetch("cache-control")), "no-store")
     assert_equal("export default null\n", Brotli.inflate(response.body.join))
   end
 
@@ -454,7 +469,7 @@ class Mayu::Server::AppTest < Minitest::Test
     response = script_response("/.mayu/runtime/main-def456.js")
 
     headers = response.headers.to_a.to_h
-    assert_includes(Array(headers.fetch(:"cache-control")), Mayu::Server::App::ASSET_CACHE_CONTROL)
+    assert_includes(Array(headers.fetch("cache-control")), Mayu::Server::App::ASSET_CACHE_CONTROL)
   end
 
   def test_link_header_keeps_klenod_asset_urls_absolute
@@ -510,6 +525,12 @@ class Mayu::Server::AppTest < Minitest::Test
       app = Mayu::Server::App.allocate
       session = Object.new
       session.define_singleton_method(:wait) {}
+      session.define_singleton_method(:check_valid!) {}
+      session.define_singleton_method(:info) { nil }
+      session.define_singleton_method(:origin) { "https://app.example" }
+      environment = Mayu::Environment.allocate
+      environment.instance_variable_set(:@config, Struct.new(:server).new(Mayu::Configuration::ServerConfig.parse({})))
+      app.instance_variable_set(:@environment, environment)
       sessions = Object.new
       sessions.define_singleton_method(:authenticate!) { |_id, _token| session }
       app.instance_variable_set(:@sessions, sessions)
@@ -519,7 +540,7 @@ class Mayu::Server::AppTest < Minitest::Test
       app.instance_variable_set(:@cookies, cookies)
       body = Object.new
       body.define_singleton_method(:close) {}
-      request = Struct.new(:headers, :body).new({}, body)
+      request = Struct.new(:headers, :body, :scheme, :authority).new({}, body, "https", "app.example")
 
       response =
         Mayu::Server::EventStream.stub(:each_incoming_message, ->(_request) {}) do
@@ -606,7 +627,7 @@ class Mayu::Server::AppTest < Minitest::Test
 
     session = PageSession.new("page-session", [], route_status)
     request = PageRequest.new("GET", path, {"accept" => accept}, "", "HTTP/2")
-    response = Mayu::Session.stub(:new, ->(**) { session }) { app.call(request) }
+    response = Mayu::Session.stub(:new, ->(**) { session }) { app.dispatch(request) }
 
     [stored, response]
   end
@@ -614,13 +635,13 @@ class Mayu::Server::AppTest < Minitest::Test
   def robots_txt_response(provider)
     app = Mayu::Server::App.allocate
     app.instance_variable_set(:@environment, Environment.new(provider))
-    app.call(Request.new("GET", "/robots.txt", {}, ""))
+    app.dispatch(Request.new("GET", "/robots.txt", {}, ""))
   end
 
   def favicon_response(provider, headers: Protocol::HTTP::Headers.new)
     app = Mayu::Server::App.allocate
     app.instance_variable_set(:@environment, Environment.new(provider))
-    app.call(Request.new("GET", "/favicon.ico", headers, ""))
+    app.dispatch(Request.new("GET", "/favicon.ico", headers, ""))
   end
 
   def provider

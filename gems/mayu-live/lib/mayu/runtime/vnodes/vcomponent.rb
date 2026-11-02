@@ -379,6 +379,7 @@ module Mayu
 
           @ref = engine.canonical_ref(@descriptor.ref) if @descriptor.ref
           @context.node = self
+          @instance.instance_variable_set(:@__session_context, engine.session_context)
           restore_instance if @restore
           @instance.instance_variable_set(:@__context, @context)
           @instance.instance_variable_get(:@__state)&.bind(@instance)
@@ -499,6 +500,7 @@ module Mayu
         end
 
         def install_descriptor_state(instance, descriptor)
+          instance.instance_variable_set(:@__session_context, @engine.session_context)
           instance.instance_variable_set(:@__props, descriptor.props.freeze)
           instance.instance_variable_set(:@__context, @context)
           instance.instance_variable_set(
