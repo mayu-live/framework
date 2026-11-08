@@ -1,23 +1,37 @@
 # Session context and application hooks
 
 Most applications need two hooks: prepare the session's context, and check
-whether that session remains valid. Register them in `mayu.rb`, inside
-`setup.on_worker`:
+whether that session remains valid. Define optional named methods in
+`app/hooks.rb`:
 
 ```ruby
-Mayu.setup do |setup|
-  setup.on_worker do |environment|
-    environment.prepare_session do |request|
-      identity = Identity.from_request(request)
-      {identity_id: identity.id}
-    end
+Identity = import("./lib/Identity.rb")
 
-    environment.authorize_session do |session|
-      Identity.active?(session.context[:identity_id])
-    end
-  end
+def self.prepare_session(request)
+  identity = Identity.from_request(request)
+  {identity_id: identity.id}
+end
+
+def self.authorize_session(session)
+  Identity.active?(session.context[:identity_id])
 end
 ```
+
+Hooks are application modules, so imports use the same module graph as routes
+and components. For the default import above, `app/lib/Identity.rb` exports its
+class with `Default = Identity`. A named import can instead use
+`Identity = import("./lib/Identity.rb", :Identity)`.
+
+The hooks file and its imports are included in production bundles. In development
+with HMR enabled, edits to hooks and their imports take effect on subsequent
+calls without restarting. Existing sessions retain their immutable context;
+their next authorization check uses the updated policy. An already-running
+hook finishes with the implementation it started with. Compilation, import,
+and evaluation errors are reported through the development overlay and prevent
+hook execution from proceeding without its policy.
+Module-level code runs when hooks are evaluated and may run again during HMR.
+Keep resources requiring startup and shutdown management in process lifecycle
+hooks, described below.
 
 `Identity` belongs to the application. It owns authentication, application
 identity cookies, resource permissions, expiry policy, and durable revocation.
@@ -31,7 +45,7 @@ symbol-keyed context hash, or `Mayu::Session::Preparation` when you also need
 response headers:
 
 ```ruby
-environment.prepare_session do |request|
+def self.prepare_session(request)
   identity = Identity.prepare(request.headers)
   Mayu::Session::Preparation.new(
     context: {identity_id: identity.id},
@@ -123,7 +137,7 @@ flush.
 Policies can opt into any of these keyword arguments:
 
 ```ruby
-environment.authorize_session do |session, request: nil, phase:, event: nil|
+def self.authorize_session(session, request: nil, phase:, event: nil)
   Identity.authorized?(session.context[:identity_id], request, phase, event)
 end
 ```
@@ -267,19 +281,34 @@ switch and no additional CSRF cookie or form token to manage.
 
 `around_request` receives native Protocol HTTP request and response objects and
 wraps every request, including public handlers, assets, and session transports.
-The first registered wrapper is outermost. Each wrapper may return a response
-directly or call `next_app.call(request)` once. Add headers before the returned
+Define it in `app/hooks.rb`. It may return a response directly or call
+`next_app.call(request)` once. Add headers before the returned
 response is committed. The wrapper's scope does not extend to stream-body work
 or component callbacks running in the session task; per-request database or
 `Current` state set by a wrapper is not a callback execution context.
 
 ```ruby
-environment.around_request do |request, next_app|
+def self.around_request(request, next_app)
   response = next_app.call(request)
   response.headers["referrer-policy"] = "strict-origin"
   response
 end
 ```
+
+## Process setup and registered hooks
+
+Keep process lifecycle setup in the optional `mayu.rb` next to `mayu.toml`:
+`before_fork` runs before workers fork, `on_worker` configures each worker, and
+`environment.on_start` starts services once the app exists. Process setup is
+plain Ruby and requires a server restart after changes. See the README's
+[process hooks](../README.md#process-hooks).
+
+The existing `Environment#prepare_session`, `#authorize_session`, and
+`#around_request` block registration APIs remain available. A named preparation
+or authorization method in `app/hooks.rb` takes precedence over its registered
+counterpart. Registered request wrappers run outside the application wrapper,
+with the first registered wrapper outermost. Missing methods use registered
+hooks or Mayu's defaults; a broken hooks module raises rather than falling back.
 
 ## HTTP header values
 

@@ -20,8 +20,15 @@ class Mayu::RuntimeBoundaryTest < Minitest::Test
       FileUtils.mkdir_p(File.join(root, "app", "pages"))
       File.write(File.join(root, "app", "root.haml"), "%slot\n")
       File.write(File.join(root, "app", "pages", "+page.haml"), "%p Runtime only\n")
+      File.write(File.join(root, "app", "Identity.rb"), "class Identity; def self.id = 42; end\nDefault = Identity\n")
+      File.write(File.join(root, "app", "hooks.rb"), <<~RUBY)
+        Identity = import("./Identity.rb")
+        def self.prepare_session(request) = {identity_id: Identity.id}
+        def self.authorize_session(info) = info[:identity_id] == Identity.id
+      RUBY
       bundle = File.join(root, Mayu::Klenod::BUNDLE_FILENAME)
       Mayu::Build::Configuration.new(root:, mode: :build).build(output: bundle)
+      FileUtils.rm_rf(File.join(root, "app"))
 
       output =
         IO.popen(
@@ -33,6 +40,7 @@ class Mayu::RuntimeBoundaryTest < Minitest::Test
       report = JSON.parse(output.lines.last)
 
       assert_includes(report.fetch("html"), "Runtime only")
+      assert_equal({"identity_id" => 42}, report.fetch("prepared_context"))
       refute(report.fetch("klenod_build_defined"), "Klenod::Build was loaded")
       refute(report.fetch("mayu_build_defined"), "Mayu::Build was loaded")
       refute(report.fetch("mayu_devtools_defined"), "Mayu::Devtools was loaded")

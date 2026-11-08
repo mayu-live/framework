@@ -24,6 +24,8 @@ config =
 
 environment =
   Mayu::Environment.load_klenod_with_config(config, bundle)
+prepared_context = environment.prepare_session_for(nil).context
+environment.authorize_session!(prepared_context, phase: :start)
 request_info =
   Mayu::Session::RequestInfo.new(origin: "https://app.example", path: "/", headers: {}, http2: false)
 session = Mayu::Session.new(environment:, request_info:)
@@ -39,6 +41,7 @@ inspect_result = commands.find { it.is_a?(Mayu::Runtime::Commands::InspectResult
 
 puts JSON.generate(
   html:,
+  prepared_context:,
   klenod_build_defined: defined?(::Klenod::Build) ? true : false,
   mayu_build_defined: defined?(::Mayu::Build) ? true : false,
   mayu_devtools_defined: defined?(::Mayu::Devtools) ? true : false,

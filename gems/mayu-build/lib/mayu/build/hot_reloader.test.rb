@@ -8,6 +8,7 @@ require "stringio"
 require_relative "../build"
 require "mayu/component"
 require "mayu/runtime/vnodes/vcomponent"
+require "mayu/environment"
 
 class Mayu::Build::HotReloaderTest < Minitest::Test
   # Collects the updates the reloader would hand to the server's App.
@@ -288,6 +289,82 @@ class Mayu::Build::HotReloaderTest < Minitest::Test
     # app, so it is dropped.
     assert_empty(report.backtrace)
     assert_same(error, provider.rewritten_error)
+  end
+
+  def test_application_hooks_reload_with_dependencies_and_recover_after_errors
+    Dir.mktmpdir("mayu-hooks") do |root|
+      app_dir = File.join(root, "app")
+      FileUtils.mkdir_p(app_dir)
+      File.write(File.join(app_dir, "root.haml"), "%slot\n")
+      hooks_path = File.join(app_dir, "hooks.rb")
+      identity_path = File.join(app_dir, "Identity.rb")
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      environment = Mayu::Environment.allocate
+      environment.instance_variable_set(:@module_provider, provider)
+      environment.instance_variable_set(:@request_wrappers, [])
+      app = FakeApp.new
+
+      Async do
+        task = reloader(provider, app_dir).start(app)
+        assert_equal({}, environment.prepare_session_for(nil).context)
+
+        File.write(identity_path, "VALUE = 42\n")
+        File.write(hooks_path, <<~RUBY)
+          Identity = import("./Identity.rb")
+          def self.prepare_session(request) = {identity_id: Identity::VALUE}
+          def self.authorize_session(info, phase:) = info[:identity_id] == Identity::VALUE && phase == :event
+          def self.around_request(request, next_app) = [Identity::VALUE, next_app.call(request)]
+        RUBY
+        publish_update(provider, hooks_path, graph_version: 1)
+        assert(app.updates.dequeue(timeout: 2).success?)
+        context = Mayu::Session::Context.snapshot(environment.prepare_session_for(nil).context)
+        assert_equal({identity_id: 42}, context)
+        assert_nil(environment.authorize_session!(context, phase: :event))
+        assert_equal([42, :response], environment.wrap_request(nil) { :response })
+
+        # An in-flight invocation can retain its method while future calls
+        # resolve the new exports. Existing context remains an immutable snapshot.
+        previous = provider.application_hooks.method(:prepare_session)
+        File.write(identity_path, "VALUE = 43\n")
+        publish_update(provider, identity_path, graph_version: 2)
+        assert(app.updates.dequeue(timeout: 2).success?)
+        assert_equal({identity_id: 42}, previous.call(nil))
+        assert_equal({identity_id: 43}, environment.prepare_session_for(nil).context)
+        assert(context.frozen?)
+        assert_raises(Mayu::Session::Rejected) { environment.authorize_session!(context, phase: :event) }
+        assert_equal([43, :response], environment.wrap_request(nil) { :response })
+
+        File.write(identity_path, "VALUE = )\n")
+        publish_update(provider, identity_path, graph_version: 3)
+        refute(app.updates.dequeue(timeout: 2).success?)
+        assert_raises(::Klenod::Build::SourceError) { environment.authorize_session!(context, phase: :event) }
+
+        File.write(identity_path, "VALUE = 42\n")
+        publish_update(provider, identity_path, graph_version: 4)
+        assert(app.updates.dequeue(timeout: 2).success?)
+        assert_nil(environment.authorize_session!(context, phase: :event))
+
+        # Runtime evaluation errors in an independent hooks entrypoint must
+        # also reach the HMR overlay and cannot fall back to permissive defaults.
+        File.write(hooks_path, 'raise "broken policy"')
+        publish_update(provider, hooks_path, graph_version: 5)
+        refute(app.updates.dequeue(timeout: 2).success?)
+        assert_raises(RuntimeError) { environment.authorize_session!(context, phase: :event) }
+
+        File.write(hooks_path, "def self.prepare_session(request) = {identity_id: 44}\n")
+        publish_update(provider, hooks_path, graph_version: 6)
+        assert(app.updates.dequeue(timeout: 2).success?)
+        assert_equal({identity_id: 44}, environment.prepare_session_for(nil).context)
+
+        File.delete(hooks_path)
+        result = provider.context.invalidate_paths([], removed_paths: [hooks_path])
+        provider.context.emit_update(::Klenod::Build::UpdateEvent.new([], [hooks_path], 7, result))
+        assert(app.updates.dequeue(timeout: 2).success?)
+        assert_equal({}, environment.prepare_session_for(nil).context)
+      ensure
+        task&.stop
+      end.wait
+    end
   end
 
   def test_reports_the_import_site_of_a_resolve_failure

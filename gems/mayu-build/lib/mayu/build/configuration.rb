@@ -5,7 +5,7 @@ module Mayu
     class Configuration
       DEFAULT_ENTRYPOINTS = %w[root.haml virtual:router virtual:mayu/favicon].freeze
       # Bundled when present in the source dir. Apps without them still build.
-      OPTIONAL_ENTRYPOINTS = %w[robots.txt].freeze
+      OPTIONAL_ENTRYPOINTS = ["robots.txt", Klenod::HOOKS_ENTRY].freeze
       DEFAULT_ASSET_BASE = "/.mayu/assets/"
 
       attr_reader :root,

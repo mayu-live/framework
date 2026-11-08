@@ -102,7 +102,113 @@ class Mayu::EnvironmentTest < Minitest::Test
     assert(stoppable.stopped)
   end
 
+  def test_application_hooks_import_the_same_identity_as_other_modules
+    with_hooks(<<~RUBY) do |environment, _root, provider|
+      Identity = import("./Identity.rb")
+
+      def self.prepare_session(request)
+        {identity_id: Identity.id, request: request}
+      end
+
+      def self.authorize_session(session, phase:, request: nil)
+        session == Identity.id && phase == :event && request.nil?
+      end
+    RUBY
+      environment.prepare_session { flunk "application hook takes precedence" }
+      environment.authorize_session { flunk "application hook takes precedence" }
+      assert_equal({identity_id: 42, request: "request"}, environment.prepare_session_for("request").context)
+      assert_nil(environment.authorize_session!(42, phase: :event))
+      assert_raises(Mayu::Session::Rejected) { environment.authorize_session!(41, phase: :event) }
+      hooks = provider.application_hooks
+      assert_same(provider.exports(provider.entry("Identity.rb"))::Identity, hooks::Identity)
+    end
+  end
+
+  def test_application_authorizer_filters_keywords_and_requires_true
+    ["def self.authorize_session(session) = session", "def self.authorize_session(session, **metadata) = session && metadata[:phase] == :event"].each do |source|
+      with_hooks(source) do |environment|
+        assert_nil(environment.authorize_session!(true, phase: :event))
+        assert_raises(Mayu::Session::Rejected) { environment.authorize_session!(nil, phase: :event) }
+      end
+    end
+  end
+
+  def test_application_preparation_preserves_responses_and_headers
+    with_hooks(<<~RUBY) do |environment|
+      def self.prepare_session(request)
+        return Mayu::Session::Preparation.redirect("/login") if request == :redirect
+        Mayu::Session::Preparation.new(context: {id: 42}, headers: [["set-cookie", "identity=42"]])
+      end
+    RUBY
+      assert_equal([["set-cookie", "identity=42"]], environment.prepare_session_for(nil).headers)
+      assert_equal("/login", environment.prepare_session_for(:redirect).headers["location"])
+    end
+  end
+
+  def test_application_wrapper_runs_inside_registered_wrappers
+    with_hooks(<<~RUBY) do |environment|
+      def self.around_request(request, next_app)
+        request << :application
+        next_app.call(request).tap { request << :after_application }
+      end
+    RUBY
+      environment.around_request do |request, next_app|
+        request << :registered
+        next_app.call(request).tap { request << :after_registered }
+      end
+      calls = []
+      assert_equal(:response, environment.wrap_request(calls) {
+        calls << :dispatch
+        :response
+      })
+      assert_equal(%i[registered application dispatch after_application after_registered], calls)
+    end
+  end
+
+  def test_application_wrapper_can_short_circuit_and_cannot_call_continuation_twice
+    with_hooks(<<~RUBY) do |environment|
+      def self.around_request(request, next_app)
+        return :response if request == :short_circuit
+        next_app.call(request)
+        next_app.call(request)
+      end
+    RUBY
+      assert_equal(:response, environment.wrap_request(:short_circuit) { flunk "must not dispatch" })
+      assert_raises(RuntimeError) { environment.wrap_request(nil) { :response } }
+    end
+  end
+
+  def test_missing_application_hooks_and_methods_preserve_registered_defaults
+    [nil, "VALUE = 1"].each do |source|
+      with_hooks(source) do |environment|
+        assert_equal({}, environment.prepare_session_for(nil).context)
+        assert_nil(environment.authorize_session!(nil, phase: :start))
+        environment.prepare_session { |_| {id: 42} }
+        environment.authorize_session { |_| false }
+        assert_equal({id: 42}, environment.prepare_session_for(nil).context)
+        assert_raises(Mayu::Session::Rejected) { environment.authorize_session!(nil, phase: :start) }
+      end
+    end
+  end
+
+  def test_broken_hook_imports_fail_startup
+    assert_raises(::Klenod::Build::ResolveError) do
+      with_hooks('Identity = import("./Missing.rb")') { flunk "must not start" }
+    end
+  end
+
   private
+
+  def with_hooks(source)
+    Dir.mktmpdir("mayu-hooks") do |root|
+      FileUtils.mkdir_p(File.join(root, "app"))
+      File.write(File.join(root, "app", "hooks.rb"), source) if source
+      File.write(File.join(root, "app", "Identity.rb"), "class Identity; def self.id = 42; end\nDefault = Identity\n")
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      environment = Mayu::Environment.new(config(root), module_provider: provider, metrics: Object.new)
+      yield environment, root, provider
+    end
+  end
 
   def config(root)
     server =

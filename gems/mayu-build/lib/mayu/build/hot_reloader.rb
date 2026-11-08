@@ -33,6 +33,7 @@ module Mayu
       def start(app)
         context = @provider.context
         root_entry = @provider.entry(@root_entry)
+        @provider.application_hooks
         events = Async::Queue.new
         context.on_update { |event| events.enqueue(event) }
 
@@ -60,6 +61,9 @@ module Mayu
       def apply(event, root_entry)
         start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         update = @provider.apply_update(event, entry: root_entry)
+        # Hooks are an independent entrypoint, not a dependency of root.haml.
+        # Evaluate them too so reload errors reach the existing HMR overlay.
+        @provider.application_hooks if update.success? && @provider.respond_to?(:application_hooks)
         update.each_error { |_module_id, error| rewrite_backtrace(error) }
         @logger.log(update:, duration: elapsed_since(start_time))
         update

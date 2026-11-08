@@ -771,8 +771,10 @@ Mayu.setup do |setup|
 end
 ```
 
-See [session context and application hooks](docs/session-hooks.md) for request
-wrappers, response preparation, authorization, and worker-local invalidation.
+Define application request wrappers, session preparation, and authorization as
+optional named methods in `app/hooks.rb`, where they can import project modules
+and hot reload during development. See [session context and application hooks](docs/session-hooks.md)
+for the API and worker-local invalidation.
 
 `mayu.rb` is plain Ruby and is not hot reloaded; restart the server after
 changing it.
