@@ -1,12 +1,21 @@
-.spinner(class=$class)
+%i(class=$class)
+
 :css
-  .spinner {
+  i {
+    display: inline-block;
     aspect-ratio: 1;
-    background-size: contain;
     max-width: 10rem;
-    margin: 1em auto;
-    mask-image: url("./90-ring-with-bg.svg");
-    mask-size: contain;
-    mask-repeat: no-repeat;
-    background: currentcolor;
+    position: relative;
+    width: 1.6em;
+
+    &::after {
+      display: block;
+      content: "";
+      position: absolute;
+      inset: 0;
+      mask-image: url("./90-ring-with-bg.svg");
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      background: currentcolor;
+    }
   }

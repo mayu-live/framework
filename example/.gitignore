@@ -7,3 +7,5 @@
 .DS_store
 
 .env*
+
+!.env.example

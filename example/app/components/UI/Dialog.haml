@@ -1,0 +1,97 @@
+:ruby
+  # A modal dialog. Pure HTML dialog element, no JS: open it with a
+  # DialogButton, close it with command="close" or by submitting a form
+  # with method="dialog".
+  #
+  #   %DialogButton(dialog="confirm") Delete
+  #   %Dialog(id="confirm")
+  #     %form(method="dialog" onsubmit=handle_delete)
+  #       %p Are you sure?
+  #       %button(type="button" command="close" commandfor="confirm") Cancel
+  #       %button Delete
+  #
+  # It opens centered in the window. With the anchored prop it opens below
+  # the DialogButton instead, which publishes the anchor name --dialog-<id>.
+
+%dialog{
+  id: $id,
+  class: [$class, { anchored: $anchored }],
+  style: { position_anchor: $anchored && "--dialog-#{$id}" }
+}
+  %slot
+
+:css
+  dialog {
+    --dialog-transition-duration: 180ms;
+
+    max-width: min(28rem, calc(100vw - 2rem));
+    padding: 1.25rem;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.98);
+    transition:
+      display var(--dialog-transition-duration) ease allow-discrete,
+      overlay var(--dialog-transition-duration) ease allow-discrete,
+      opacity var(--dialog-transition-duration) ease,
+      transform var(--dialog-transition-duration) ease;
+
+    &::backdrop {
+      background: rgb(0 0 0 / 0%);
+      backdrop-filter: blur(0);
+      transition:
+        display var(--dialog-transition-duration) ease allow-discrete,
+        overlay var(--dialog-transition-duration) ease allow-discrete,
+        background-color var(--dialog-transition-duration) ease,
+        backdrop-filter var(--dialog-transition-duration) ease;
+    }
+  }
+
+  dialog[open] {
+    opacity: 1;
+    transform: none;
+
+    &::backdrop {
+      background: rgb(0 0 0 / 40%);
+      backdrop-filter: blur(2px);
+    }
+  }
+
+  @starting-style {
+    dialog[open] {
+      opacity: 0;
+      transform: translateY(-0.5rem) scale(0.98);
+
+      &::backdrop {
+        background: rgb(0 0 0 / 0%);
+        backdrop-filter: blur(0);
+      }
+    }
+  }
+
+  /* Browsers without anchor positioning keep the dialog centered. */
+  @supports (position-area: bottom) {
+    dialog.anchored {
+      /* Undo the centering from the browser's dialog styles. */
+      inset: auto;
+      margin: 0.5rem 0;
+      /* Below the button, right edges aligned. */
+      position-area: bottom span-left;
+      position-try-fallbacks: flip-block, flip-inline;
+
+      /* Dim the page, but keep the button it points at readable. */
+      &[open]::backdrop {
+        backdrop-filter: none;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    dialog,
+    dialog::backdrop {
+      transition: none;
+    }
+  }

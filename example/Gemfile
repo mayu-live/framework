@@ -8,6 +8,10 @@ path "../gems" do
   gem "mayu-devtools", groups: [:development, :test]
 end
 
+group :development, :test do
+  gem "irb"
+end
+
 # Pokemon page filter uses fuzzy matching.
 gem "fuzzy_match"
 
@@ -16,3 +20,8 @@ gem "kramdown-parser-gfm", "~> 1.1"
 
 # Syntax highlighting in app/components/UI/Highlight.haml
 gem "rouge", "~> 4.7"
+
+# app/models and the database demo. Postgres is optional: without
+# DATABASE_URL the app runs against a mock database (see mayu.rb).
+gem "sequel", "~> 5.108"
+gem "pg", "~> 1.6"

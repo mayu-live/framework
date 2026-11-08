@@ -10,6 +10,7 @@ kill_timeout = "5s"
 
 [deploy]
   strategy = "rolling"
+  release_command = "bin/db migrate"
 
 [env]
   ENABLE_YJIT = "true"

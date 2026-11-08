@@ -116,7 +116,9 @@
     resolves with no value, since an event can reach several handlers;
     handlers show their results by rendering. It resolves right away if
     no handler received the event, and rejects if a handler raised, its
-    component went away, or the connection dropped.
+    component went away, or the connection dropped. The kanban demo uses
+    it to show a moved card in its new place until the server has
+    answered.
 
     Continuous events such as `input`, `pointermove` and `scroll` are
     throttled and merged, so `settled` doesn't wait for them. Work a

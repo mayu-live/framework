@@ -55,6 +55,52 @@ jobs:
           # crashes on the StringIO that capture_io swaps in for $stderr.
           CONSOLE_OUTPUT: Text
 
+  example:
+    name: Test example app
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: mayu_example
+          POSTGRES_PASSWORD: mayu_example
+          POSTGRES_DB: mayu_example
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: example
+    env:
+      DATABASE_URL: postgres://mayu_example:mayu_example@localhost:5432/mayu_example
+      CONSOLE_OUTPUT: Text
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libmagickwand-dev
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.7"
+          bundler-cache: true
+          working-directory: example
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+          cache: npm
+      - name: Build the browser runtime
+        run: npm ci && npm run build
+        working-directory: .
+      - name: Migrate the database
+        run: bin/db migrate
+      - name: Run tests
+        run: bin/mayu test --run
+
   performance:
     name: Performance
     if: github.event_name != 'pull_request'
