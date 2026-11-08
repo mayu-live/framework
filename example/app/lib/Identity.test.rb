@@ -125,3 +125,8 @@ def test_popup_completion_is_bound_to_encrypted_transaction
   response = @identity.callback({"state" => @oidc.transaction[:state], "error" => "access_denied"}, cookie_header(login))
   assert_equal("/auth/complete?error=signin", response[1]["location"])
 end
+
+def test_login_can_force_provider_authentication_in_a_popup
+  @identity.login(popup: true, force_login: true)
+  assert_equal(true, @oidc.transaction[:force_login])
+end

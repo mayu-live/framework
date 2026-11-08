@@ -35,6 +35,8 @@ popups or browsers without BroadcastChannel use ordinary full-page navigation.
 The popup has no access to its opener, and completion messages carry no tokens.
 Errors leave the popup open with a retry link. If Duende already remembers your
 test login, the popup may complete and close immediately.
+Choose **Sign in again** to send `prompt=login` and always show Duende's login
+screen. Both choices are hidden while you are signed in; sign out to try again.
 The default callback is `https://localhost:9292/auth/callback`; use HTTPS so
 the browser accepts the Secure cookies. Restart the server after installing
 the new `jwt` dependency.

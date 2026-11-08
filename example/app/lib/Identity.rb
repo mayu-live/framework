@@ -29,9 +29,9 @@ class Identity
     @identity_box = Mayu::EncryptedMarshal.new("oidc-identity:#{secret}", ttl: IDENTITY_TTL)
   end
 
-  def login(popup: false)
+  def login(popup: false, force_login: false)
     transaction = {state: SecureRandom.hex(32), nonce: SecureRandom.hex(32), verifier: SecureRandom.urlsafe_base64(32), popup:}
-    location = @oidc.authorization_url(**transaction.slice(:state, :nonce, :verifier))
+    location = @oidc.authorization_url(**transaction.slice(:state, :nonce, :verifier), force_login:)
     redirect(location, cookie(TRANSACTION_COOKIE, encode(@transaction_box, transaction), TRANSACTION_TTL))
   end
 

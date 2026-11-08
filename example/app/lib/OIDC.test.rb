@@ -44,6 +44,12 @@ def test_authorization_uses_code_pkce_nonce_and_fixed_callback
   assert_equal(CALLBACK, query["redirect_uri"])
   assert_equal(@nonce, query["nonce"])
   assert_equal("state", query["state"])
+  refute(query.key?("prompt"))
+end
+
+def test_forced_login_adds_prompt_login
+  uri = URI(@client.authorization_url(state: "state", nonce: @nonce, verifier: "test-verifier", force_login: true))
+  assert_equal("login", URI.decode_www_form(uri.query).to_h["prompt"])
 end
 
 def test_verifies_tokens_and_fetches_matching_profile

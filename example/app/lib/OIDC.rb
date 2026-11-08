@@ -23,9 +23,9 @@ class OIDC
     @http = http
   end
 
-  def authorization_url(state:, nonce:, verifier:)
+  def authorization_url(state:, nonce:, verifier:, force_login: false)
     uri = URI(endpoint("authorization_endpoint"))
-    uri.query = URI.encode_www_form(
+    parameters = {
       client_id: CLIENT_ID,
       redirect_uri: @callback_url,
       response_type: "code",
@@ -34,7 +34,9 @@ class OIDC
       nonce:,
       code_challenge: Base64.urlsafe_encode64(Digest::SHA256.digest(verifier), padding: false),
       code_challenge_method: "S256"
-    )
+    }
+    parameters[:prompt] = "login" if force_login
+    uri.query = URI.encode_www_form(parameters)
     uri.to_s
   end
 
