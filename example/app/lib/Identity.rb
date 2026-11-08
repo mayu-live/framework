@@ -65,7 +65,7 @@ class Identity
   end
 
   def logout
-    redirect(PAGE, cookie(IDENTITY_COOKIE, "", 0), cookie(TRANSACTION_COOKIE, "", 0))
+    redirect("/auth/logout/complete", cookie(IDENTITY_COOKIE, "", 0), cookie(TRANSACTION_COOKIE, "", 0))
   end
 
   def failure(popup: false)

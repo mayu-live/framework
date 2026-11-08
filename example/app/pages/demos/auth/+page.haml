@@ -22,7 +22,7 @@
         %dd= identity[:subject]
       %form(method="post" action="/auth/logout" data-mayu-navigation="document")
         %Button(type="submit") Sign out
-    %p Signing out clears this browser’s login cookie. Other open pages can remain signed in until their next connection check, reload, or expiry.
+    %p Signing out clears this browser’s login cookie and reloads other open Mayu tabs.
   - else
     %p
       Use username

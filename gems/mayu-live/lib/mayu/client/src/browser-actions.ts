@@ -7,6 +7,7 @@ type Navigator = {
 // Actions a component can run in the browser with `browser.<name>(...)`.
 export function createBrowserActionHandler(
   navigator: Navigator,
+  reloadOtherTabs: () => void = () => {},
 ): BrowserActionHandler {
   const actions: Record<string, (...args: any[]) => void> = {
     navigate(href: string, replace: boolean, document: boolean = false) {
@@ -19,6 +20,9 @@ export function createBrowserActionHandler(
       requestAnimationFrame(() => {
         setTimeout(() => window.alert(message), 0);
       });
+    },
+    reload_other_tabs() {
+      reloadOtherTabs();
     },
   };
 

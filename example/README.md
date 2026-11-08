@@ -49,10 +49,17 @@ Provider tokens are discarded. Login transactions expire after ten minutes;
 signed-in identities expire after fifteen minutes.
 
 There is no database or server-side login store. Signing out is a same-origin
-document POST that clears the cookies and returns to an anonymous page. Existing
-signed-in sessions reject subsequent HTTP transport requests without their login
-cookie; otherwise they remain valid until expiry. Clearing a cookie cannot revoke
-a copied cookie, and this demo does not sign out of the provider itself.
+document POST that clears the cookies and redirects to a completion page. That
+page calls `browser.reload_other_tabs` before returning to the anonymous demo.
+Other open Mayu tabs reload their current pages and receive anonymous contexts,
+even when connected to different workers or servers. The client library manages
+the channel; the application has no logout message listeners.
+
+Broadcast delivery is best effort; unsupported or suspended tabs may miss it.
+Existing signed-in sessions reject subsequent HTTP transport requests without
+their login cookie; otherwise they remain valid until expiry. Clearing a cookie
+cannot revoke a copied cookie, and this demo does not sign out of the provider
+itself. Popup login completion messaging is unchanged.
 
 For another HTTPS origin, set `MAYU_PUBLIC_ORIGIN` before starting the server.
 The callback always uses that configured origin, rather than incoming Host or

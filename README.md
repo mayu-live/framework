@@ -277,6 +277,30 @@ button back into live navigation. Components can also call
 `browser.navigate("/export", document: true)` and add `replace: true` to replace
 the current history entry.
 
+Call `browser.reload_other_tabs` from a mounted component to request a full
+document reload in other Mayu tabs on the same origin. The sending tab continues
+normally. Every Mayu client listens automatically; no channel setup is needed.
+Receiving tabs reload their current URL, even in the background, and start fresh
+server sessions. Delivery uses BroadcastChannel and is best effort: unavailable
+or suspended tabs may miss messages, and unsupported browsers ignore the action.
+
+When an HTTP handler changes cookies, redirect to a completion page and trigger
+the action from its `mount` method, after the browser has received the response:
+
+```haml
+:ruby
+  def mount
+    browser.reload_other_tabs
+    browser.navigate("/", replace: true, document: true)
+  end
+
+%a(href="/" data-mayu-navigation="document") Continue
+```
+
+The broadcast precedes the sending tab's navigation. This is a general browser
+action, with no authentication state or persistent message history. It does not
+revoke credentials on other devices.
+
 A live GET navigation to a handler-only route automatically becomes a document
 request, preserving its query and fragment. Routes with both a page and a handler
 continue rendering the page live. POST submissions and downloads retain native

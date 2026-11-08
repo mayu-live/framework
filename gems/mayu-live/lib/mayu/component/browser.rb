@@ -34,6 +34,12 @@ module Mayu
       def alert(message)
         @action.call("alert", [message.to_s])
       end
+
+      # Requests a full document reload in other Mayu tabs on the same origin.
+      # The sending tab continues normally. Delivery is best effort.
+      def reload_other_tabs
+        @action.call("reload_other_tabs", [])
+      end
     end
   end
 end

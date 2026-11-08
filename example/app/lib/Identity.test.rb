@@ -111,7 +111,7 @@ end
 
 def test_logout_clears_both_cookies
   response = @identity.logout
-  assert_equal(Identity::PAGE, response[1]["location"])
+  assert_equal("/auth/logout/complete", response[1]["location"])
   assert_equal(2, response[1]["set-cookie"].length)
   assert(response[1]["set-cookie"].all? { it.include?("max-age=0") })
 end

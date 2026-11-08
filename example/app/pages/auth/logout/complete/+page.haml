@@ -1,0 +1,8 @@
+:ruby
+  def mount
+    browser.reload_other_tabs
+    browser.navigate("/demos/auth", replace: true, document: true)
+  end
+
+%p You’re signed out.
+%a(href="/demos/auth" data-mayu-navigation="document") Return to the demo
