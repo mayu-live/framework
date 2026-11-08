@@ -26,6 +26,7 @@
     "/demos/json" => "Importing JSON",
     "/demos/i18n" => "Internationalization",
     "/demos/context" => "Context",
+    "/demos/auth" => "OpenID Connect",
     "/demos/gc" => "GC stats",
     "/demos/segments" => "Route segments",
     "/demos/reordering" => "Reordering",
@@ -89,6 +90,7 @@
     %Details(open summary="Framework features")
       %Menu
         %MenuItem{href: "/demos/context", active: $path == "/demos/context"} Context
+        %MenuItem{href: "/demos/auth", active: $path == "/demos/auth"} OpenID Connect
         %MenuItem{href: "/demos/segments", active: $path == "/demos/segments"} Route segments
         %MenuItem{href: "/demos/json", active: $path == "/demos/json"} Importing JSON
         %MenuItem{href: "/demos/i18n", active: $path == "/demos/i18n"} Internationalization

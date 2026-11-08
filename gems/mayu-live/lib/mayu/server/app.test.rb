@@ -25,6 +25,10 @@ class Mayu::Server::AppTest < Minitest::Test
     def PUT(request)
       [202, {}, request.params.fetch(:id)]
     end
+
+    def POST(_request)
+      [303, {"location" => "/", "set-cookie" => ["identity=alice; Path=/", "transaction=; Max-Age=0; Path=/"]}, ""]
+    end
   end
 
   class ErroringHandler < Mayu::Route
@@ -149,7 +153,18 @@ class Mayu::Server::AppTest < Minitest::Test
     response = dispatch("DELETE", "/api/42", {"accept" => "application/json"})
 
     assert_equal(405, response.status)
-    assert_equal(%w[GET PUT], response.headers.to_h.fetch("allow"))
+    assert_equal(%w[GET POST PUT], response.headers.to_h.fetch("allow"))
+  end
+
+  def test_handler_cookie_arrays_become_separate_header_fields
+    response = dispatch("POST", "/api/42", {"accept" => "application/json"})
+
+    assert_equal(303, response.status)
+    assert_equal("/", response.headers["location"])
+    assert_equal(
+      [["set-cookie", "identity=alice; Path=/"], ["set-cookie", "transaction=; Max-Age=0; Path=/"]],
+      response.headers.to_a.select { |field| field.first == "set-cookie" }
+    )
   end
 
   def test_route_handler_errors_are_rewritten_before_the_server_logs_them

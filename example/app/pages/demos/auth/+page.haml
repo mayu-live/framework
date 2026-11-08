@@ -1,0 +1,70 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Button = import("/components/Form/Button")
+  LoginPopup = import("./LoginPopup.tsx")
+
+%article
+  %Heading(level=2) OpenID Connect
+  %p Sign in through Duende’s public demo server. No account registration is needed.
+
+  - if $query[:error] == "signin"
+    %p.error(role="alert") Sign-in could not be completed. Please try again.
+
+  - if (identity = session_context[:identity])
+    %section.profile
+      %Heading(level=3) You’re signed in
+      %dl
+        %dt Name
+        %dd= identity[:name]
+        %dt Email
+        %dd= identity[:email]
+        %dt Subject
+        %dd= identity[:subject]
+      %form(method="post" action="/auth/logout" data-mayu-navigation="document")
+        %Button(type="submit") Sign out
+    %p Signing out clears this browser’s login cookie. Other open pages can remain signed in until their next connection check, reload, or expiry.
+  - else
+    %p
+      Use username
+      %code<> alice
+      and password
+      %code<> alice
+      (or
+      %code<> bob / bob
+      ). These are shared test accounts.
+    %LoginPopup
+      %a(href="/auth/login" data-mayu-navigation="document") Sign in with Duende
+
+  %p The demo uses encrypted cookies and keeps no server-side login store. Sign-ins expire after 15 minutes.
+  %p
+    %a(href="https://demo.duendesoftware.com/" target="_blank" rel="noopener noreferrer") About the test provider
+
+:css
+  article {
+    max-width: 48rem;
+  }
+
+  .profile {
+    padding: 1.5rem;
+    border: 1px solid var(--chrome-border);
+    border-radius: var(--radius-sm);
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .5rem 1rem;
+  }
+
+  dt {
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .error {
+    color: var(--pink-soft);
+  }

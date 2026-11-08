@@ -483,6 +483,10 @@ end
 For a route that has both `+page.haml` and `+route.rb`, browser-style HTML
 requests render the page while non-HTML requests use the handler.
 
+Header values may be strings or arrays of strings. Each array entry becomes a
+separate header field, so `"set-cookie" => [cookie_a, cookie_b]` preserves both
+cookies.
+
 ## Hot reloading
 
 There is a resource system inspired by JavaScript bundlers that loads all

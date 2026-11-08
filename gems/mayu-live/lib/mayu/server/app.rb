@@ -264,7 +264,12 @@ module Mayu
             method,
             Route::Request.from_async(request, params: match.params)
           )
-        response(status, body, **headers.merge("vary" => "Accept"))
+        # Rack-style header arrays (especially Set-Cookie) represent separate
+        # fields. Protocol headers require each field's value to be a string.
+        fields = headers.merge("vary" => "Accept").flat_map do |name, value|
+          Array(value).map { |field| [name.to_s, field] }
+        end
+        Protocol::HTTP::Response[status, fields, body]
       end
 
       def html_page_request?(request, match)
