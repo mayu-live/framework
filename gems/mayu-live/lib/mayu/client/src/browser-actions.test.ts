@@ -56,4 +56,15 @@ describe("browser actions", () => {
 
     expect(warn).toHaveBeenCalledWith("Unknown browser action: teleport");
   });
+
+  it("broadcasts a reload without navigating the sending tab", () => {
+    const navigator = { navigate: vi.fn() };
+    const reloadOtherTabs = vi.fn();
+    createBrowserActionHandler(navigator, reloadOtherTabs)(
+      "reload_other_tabs",
+      [],
+    );
+    expect(reloadOtherTabs).toHaveBeenCalledOnce();
+    expect(navigator.navigate).not.toHaveBeenCalled();
+  });
 });

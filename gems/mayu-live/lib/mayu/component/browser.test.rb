@@ -45,4 +45,14 @@ class Mayu::Component::BrowserTest < Minitest::Test
     error = assert_raises(RuntimeError) { component.send(:browser).alert("hi") }
     assert_match(/browser\.alert can only be called once the component is mounted/, error.message)
   end
+
+  def test_reload_other_tabs_sends_a_browser_action_without_arguments
+    @browser.reload_other_tabs
+    assert_equal([["reload_other_tabs", []]], @actions)
+  end
+
+  def test_unmounted_components_cannot_reload_other_tabs
+    error = assert_raises(RuntimeError) { Mayu::Component::Base.new.send(:browser).reload_other_tabs }
+    assert_match(/browser\.reload_other_tabs can only be called once the component is mounted/, error.message)
+  end
 end

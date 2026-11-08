@@ -1,0 +1,11 @@
+:ruby
+  Completion = import("./Completion.tsx")
+
+%Completion{error: $query[:error] == "signin" ? "signin" : nil}
+  - if $query[:error] == "signin"
+    %h1 Sign-in could not be completed
+    %p Please try signing in again.
+    %a(href="/auth/login?popup=1" data-mayu-navigation="document") Try again
+  - else
+    %p Sign-in is complete. You can close this window.
+  %a(href="/demos/auth" data-mayu-navigation="document") Return to the demo

@@ -1,0 +1,72 @@
+:ruby
+  Icon = import("/components/UI/Icon/Icon")
+
+:ruby
+  identity = session_context[:identity]
+  return unless identity
+  username = [identity[:name], identity[:email], identity[:subject]].find { it && !it.empty? }
+
+%li.account(data-header-identity="")
+  %a.username(href="/demos/auth" title=username)= username
+  %form(method="post" action="/auth/logout" data-mayu-navigation="document")
+    %button.logout(type="submit" title="Sign out" aria-label="Sign out")
+      %Icon(name="right-from-bracket")
+
+:css
+  .account {
+    display: flex;
+    align-items: center;
+    gap: .4em;
+    margin-left: .5em;
+    padding-left: .75em;
+    border-left: 1px solid var(--chrome-border);
+  }
+
+  .username:any-link {
+    display: block;
+    min-width: 0;
+    max-width: 14ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0;
+    color: var(--header-link-color);
+    text-decoration: none;
+  }
+
+  .username:is(:hover, :focus-visible) {
+    color: var(--header-link-hover-color);
+  }
+
+  form {
+    display: flex;
+    margin: 0;
+  }
+
+  .logout {
+    display: grid;
+    place-items: center;
+    padding: .4em;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--header-link-color);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .logout:is(:hover, :focus-visible) {
+    color: var(--header-link-hover-color);
+    background: color-mix(in oklab, currentcolor 10%, transparent);
+  }
+
+  .logout:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 40rem) {
+    .username:any-link {
+      max-width: 6ch;
+    }
+  }

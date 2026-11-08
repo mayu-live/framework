@@ -22,6 +22,30 @@ class Mayu::Runtime::VNodes::BrowserActionsTest < Minitest::Test
     end
   end
 
+  class ReloadProbe < Mayu::Component::Base
+    def mount
+      browser.reload_other_tabs
+      browser.navigate("/done", replace: true, document: true)
+    end
+
+    def render = H[:p, "Complete"]
+  end
+
+  def test_mount_can_broadcast_before_navigating_the_sending_tab
+    run_engine(H[ReloadProbe]) do |engine|
+      actions = []
+      Async::Task.current.with_timeout(0.5) do
+        loop do
+          actions.concat(engine.dequeue_batch.commands.grep(Mayu::Runtime::Commands::BrowserAction))
+          break if actions.length == 2
+        end
+      end
+      assert_equal(["reload_other_tabs", "navigate"], actions.map(&:name))
+      assert_equal([], actions.first.args)
+      assert_equal(["/done", true, true], actions.last.args)
+    end
+  end
+
   def test_browser_actions_follow_the_dom_updates_queued_before_them
     run_engine(H[:body, H[AlertProbe]]) do |engine|
       component = find_component(engine.root, AlertProbe)

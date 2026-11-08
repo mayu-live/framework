@@ -31,7 +31,8 @@ module Mayu
         def terminal?
           commands.any? do |command|
             command.is_a?(Commands::Transfer) ||
-              command.is_a?(Commands::TransferFailed)
+              command.is_a?(Commands::TransferFailed) ||
+              command.is_a?(Commands::SessionInvalidated)
           end
         end
 
@@ -98,6 +99,7 @@ module Mayu
       # Answer a callback that carried a settle id, once its handler returned.
       CallbackComplete = CommandData.define(:id)
       CallbackFailed = CommandData.define(:id)
+      SessionInvalidated = CommandData.define(:location)
       RegisterCustomElement = CommandData.define(:name, :path)
       # Runs a built-in browser action, such as navigate or alert.
       BrowserAction = CommandData.define(:name, :args)

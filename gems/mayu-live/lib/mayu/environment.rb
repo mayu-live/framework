@@ -10,6 +10,7 @@
 require_relative "encrypted_marshal"
 require_relative "configuration"
 require_relative "component"
+require_relative "session/context"
 require_relative "metrics"
 require_relative "utils"
 require_relative "klenod"
@@ -70,6 +71,10 @@ module Mayu
         )
 
       @module_provider = module_provider
+      # Evaluate eagerly so invalid application hooks fail worker startup.
+      @module_provider.application_hooks if @module_provider.respond_to?(:application_hooks)
+      @request_wrappers = []
+      @preparation_hook = nil
       @start_hooks = []
       @started = []
     end
@@ -101,6 +106,57 @@ module Mayu
       new(config, module_provider:, metrics:)
     end
 
+    def authorize_session(&block)
+      @session_authorizer = block
+    end
+
+    def authorize_session!(info, phase:, request: nil, event: nil)
+      authorizer = application_hook(:authorize_session) || @session_authorizer
+      return unless authorizer
+
+      parameters = authorizer.parameters
+      keywords = if parameters.any? { |type, _| type == :keyrest }
+        %i[request phase event]
+      else
+        parameters.filter_map { |type, name| name if %i[key keyreq].include?(type) }
+      end
+      metadata = {request:, phase:, event:}.slice(*keywords)
+      if authorizer.call(info, **metadata) != true
+        raise Session::Rejected
+      end
+    end
+
+    def around_request(&block)
+      @request_wrappers << block
+    end
+
+    def prepare_session(&block)
+      @preparation_hook = block
+    end
+
+    def prepare_session_for(request)
+      hook = application_hook(:prepare_session) || @preparation_hook
+      result = hook ? hook.call(request) : {}
+      result.is_a?(Hash) ? Session::Preparation.new(context: result) : result
+    end
+
+    def wrap_request(request, &app)
+      hook = application_hook(:around_request)
+      wrappers = hook ? [*@request_wrappers, hook] : @request_wrappers
+      chain = wrappers.reverse_each.reduce(app) do |following, wrapper|
+        lambda do |current|
+          called = false
+          next_app = lambda do |next_request|
+            raise "Request continuation already called" if called
+            called = true
+            following.call(next_request)
+          end
+          wrapper.call(current, next_app)
+        end
+      end
+      chain.call(request)
+    end
+
     def use(&)
       yield self
     end
@@ -120,6 +176,16 @@ module Mayu
       started = @started
       @started = []
       started.each { it.stop if it.respond_to?(:stop) }
+    end
+
+    private
+
+    # Never retain exports or bound methods across development graph updates.
+    def application_hook(name)
+      return unless @module_provider.respond_to?(:application_hooks)
+
+      hooks = @module_provider.application_hooks
+      hooks.public_method(name) if hooks&.respond_to?(name)
     end
   end
 end

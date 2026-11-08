@@ -16,3 +16,6 @@ gem "kramdown-parser-gfm", "~> 1.1"
 
 # Syntax highlighting in app/components/UI/Highlight.haml
 gem "rouge", "~> 4.7"
+
+# Verify the demo provider's signed OpenID Connect ID tokens.
+gem "jwt", "~> 3.1"

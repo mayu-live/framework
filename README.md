@@ -277,6 +277,30 @@ button back into live navigation. Components can also call
 `browser.navigate("/export", document: true)` and add `replace: true` to replace
 the current history entry.
 
+Call `browser.reload_other_tabs` from a mounted component to request a full
+document reload in other Mayu tabs on the same origin. The sending tab continues
+normally. Every Mayu client listens automatically; no channel setup is needed.
+Receiving tabs reload their current URL, even in the background, and start fresh
+server sessions. Delivery uses BroadcastChannel and is best effort: unavailable
+or suspended tabs may miss messages, and unsupported browsers ignore the action.
+
+When an HTTP handler changes cookies, redirect to a completion page and trigger
+the action from its `mount` method, after the browser has received the response:
+
+```haml
+:ruby
+  def mount
+    browser.reload_other_tabs
+    browser.navigate("/", replace: true, document: true)
+  end
+
+%a(href="/" data-mayu-navigation="document") Continue
+```
+
+The broadcast precedes the sending tab's navigation. This is a general browser
+action, with no authentication state or persistent message history. It does not
+revoke credentials on other devices.
+
 A live GET navigation to a handler-only route automatically becomes a document
 request, preserving its query and fragment. Routes with both a page and a handler
 continue rendering the page live. POST submissions and downloads retain native
@@ -285,6 +309,12 @@ browser navigation; Mayu never replays mutations to perform this fallback.
 Use an HTTP handler or document navigation when an operation must set cookies or
 return an HTTP redirect. Live updates cannot change headers or status on the
 original document response.
+
+Mayu protects session transports and unsafe HTTP requests against cross-origin
+requests by default and binds each session to its starting origin. Behind a
+reverse proxy, configure `server.trusted_proxies` and forwarded scheme/host
+headers. See [session hooks and request protection](docs/session-hooks.md)
+for session context, validity checks, and explicit webhook exemptions.
 
 ## Components
 
@@ -477,6 +507,10 @@ end
 For a route that has both `+page.haml` and `+route.rb`, browser-style HTML
 requests render the page while non-HTML requests use the handler.
 
+Header values may be strings or arrays of strings. Each array entry becomes a
+separate header field, so `"set-cookie" => [cookie_a, cookie_b]` preserves both
+cookies.
+
 ## Hot reloading
 
 There is a resource system inspired by JavaScript bundlers that loads all
@@ -649,7 +683,7 @@ packages both gems, installs the app from them, runs `mayu build` with
 repository root:
 
     podman build -f example/Dockerfile -t mayu-example .
-    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret mayu-example
+    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret -e MAYU_PUBLIC_ORIGIN=http://localhost:3333 mayu-example
 
 Mayu applications can also colocate `*.test.rb` files with components. The
 test module is evaluated by Klenod and receives Mayu's test helpers:
@@ -764,6 +798,11 @@ Mayu.setup do |setup|
   end
 end
 ```
+
+Define application request wrappers, session preparation, and authorization as
+optional named methods in `app/hooks.rb`, where they can import project modules
+and hot reload during development. See [session context and application hooks](docs/session-hooks.md)
+for the API and worker-local invalidation.
 
 `mayu.rb` is plain Ruby and is not hot reloaded; restart the server after
 changing it.

@@ -2,6 +2,7 @@
   Icon = import("/components/UI/Icon/Icon")
   Logo = import("./logo.svg")
   ThemeSwitcher = import("./ThemeSwitcher")
+  HeaderIdentity = import("./HeaderIdentity")
 
 %header
   %h1
@@ -19,7 +20,8 @@
       %li
         %a(href="https://github.com/mayu-live/framework" target="_blank")
           %Icon(name="github")
-          GitHub
+          %span.githubLabel GitHub
+      %HeaderIdentity
       %li.switcher
         %ThemeSwitcher
 
@@ -76,6 +78,22 @@
 
   .switcher {
     margin-left: .75em;
+  }
+
+  @media (max-width: 40rem) {
+    header:has([data-header-identity]) {
+      padding-inline: .75rem;
+      gap: .5rem;
+
+      .wordmark,
+      .githubLabel {
+        display: none;
+      }
+
+      .switcher {
+        margin-left: .25em;
+      }
+    }
   }
 
   h1 {

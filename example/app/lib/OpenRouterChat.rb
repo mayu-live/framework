@@ -33,10 +33,10 @@ class OpenRouterChat
     def initialize(...)
       super
 
-      @buffer = "".b
+      @buffer = +"".b
       @offset = 0
 
-      @response = ""
+      @response = +""
     end
 
     def read

@@ -1,0 +1,101 @@
+:ruby
+  Heading = import("/components/Layout/Heading")
+  Button = import("/components/Form/Button")
+  LoginPopup = import("./LoginPopup.tsx")
+
+%article
+  %Heading(level=2) OpenID Connect
+  %p Sign in through Duende’s public demo server. No account registration is needed.
+
+  - if $query[:error] == "signin"
+    %p.error(role="alert") Sign-in could not be completed. Please try again.
+
+  - if (identity = session_context[:identity])
+    %section.profile
+      %Heading(level=3) You’re signed in
+      %dl
+        %dt Name
+        %dd= identity[:name]
+        %dt Email
+        %dd= identity[:email]
+        %dt Subject
+        %dd= identity[:subject]
+      %form(method="post" action="/auth/logout" data-mayu-navigation="document")
+        %Button(type="submit") Sign out
+    %p Signing out clears this browser’s login cookie and reloads other open Mayu tabs.
+  - else
+    %p
+      Use username
+      %code<> alice
+      and password
+      %code<> alice
+      (or
+      %code<> bob / bob
+      ). These are shared test accounts.
+
+    %LoginPopup.actions
+      %a(href="/auth/login" data-mayu-navigation="document") Sign in with Duende
+      %a(href="/auth/login?prompt=login" data-mayu-navigation="document") Sign in again
+    %p Regular sign-in can reuse your Duende login. “Sign in again” always asks for your credentials.
+
+  %p The demo uses encrypted cookies and keeps no server-side login store. Sign-ins expire after 15 minutes.
+  %p
+    %a(href="https://demo.duendesoftware.com/" target="_blank" rel="noopener noreferrer") About the test provider
+
+:css
+  article {
+    max-width: 48rem;
+  }
+
+  .profile {
+    padding: 1.5rem;
+    border: 1px solid var(--chrome-border);
+    border-radius: var(--radius-sm);
+  }
+
+  dl {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .5rem 1rem;
+  }
+
+  dt {
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .error {
+    color: var(--pink-soft);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-block: 1rem;
+
+    a {
+      display: inline-flex;
+      padding: .6em 1.2em;
+      border-radius: var(--radius-sm);
+      background: var(--button-background);
+      color: var(--button-text);
+      font-family: var(--font-heading);
+      font-weight: 500;
+      text-decoration: none;
+      box-shadow: var(--shadow);
+    }
+
+    a:hover {
+      filter: brightness(108%);
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }

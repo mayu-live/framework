@@ -4,12 +4,16 @@ import Mayu from "./mayu.js";
 import { createBrowserActionHandler } from "./browser-actions.js";
 import Devtools from "./devtools.js";
 import SessionConnection from "./session-connection.js";
+import TabReloader from "./tab-reload.js";
 
 let initialized = false;
 
 export default function init(sessionId: string) {
   if (initialized) throw new Error("Mayu is already initialized");
   initialized = true;
+
+  const tabs = new TabReloader();
+  tabs.start();
 
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(`
@@ -30,7 +34,9 @@ export default function init(sessionId: string) {
       onNavigationComplete: (id) => mayu.completeNavigation(id),
       onNavigationFailed: (id) => mayu.failNavigation(id),
       onDocumentNavigation: (id, href) => mayu.documentNavigation(id, href),
-      onBrowserAction: createBrowserActionHandler(mayu),
+      onBrowserAction: createBrowserActionHandler(mayu, () =>
+        tabs.reloadOtherTabs(),
+      ),
       onBatchApplied: (batch, durationMs) => {
         mayu.recordCommandApply(batch.length, durationMs);
         devtools.batchApplied(batch, durationMs);
