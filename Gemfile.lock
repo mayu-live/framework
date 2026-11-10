@@ -237,7 +237,7 @@ GEM
       method_source (~> 1.0)
       reline (>= 0.6.0)
     racc (1.8.1)
-    rack (3.2.7)
+    rack (3.2.8)
     rainbow (3.1.1)
     rake (13.4.2)
     rb-fsevent (0.11.2)
