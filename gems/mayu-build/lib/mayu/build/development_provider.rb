@@ -12,6 +12,14 @@ module Mayu
         source
       end
 
+      # Only absence is optional. Compilation, evaluation, and import errors
+      # must propagate so a broken policy cannot silently allow work.
+      def application_hooks
+        return unless File.file?(File.join(context.graph.source_dir, Klenod::HOOKS_ENTRY))
+
+        exports(entry(Klenod::HOOKS_ENTRY))
+      end
+
       def apply_update(event, entry:)
         source.apply_update(event, entry:, assets_dir:)
       end

@@ -286,6 +286,12 @@ Use an HTTP handler or document navigation when an operation must set cookies or
 return an HTTP redirect. Live updates cannot change headers or status on the
 original document response.
 
+Mayu protects session transports and unsafe HTTP requests against cross-origin
+requests by default and binds each session to its starting origin. Behind a
+reverse proxy, configure `server.trusted_proxies` and forwarded scheme/host
+headers. See [session hooks and request protection](docs/session-hooks.md)
+for session context, validity checks, and explicit webhook exemptions.
+
 ## Components
 
 Components are the building blocks of a Mayu application.
@@ -477,6 +483,10 @@ end
 For a route that has both `+page.haml` and `+route.rb`, browser-style HTML
 requests render the page while non-HTML requests use the handler.
 
+Header values may be strings or arrays of strings. Each array entry becomes a
+separate header field, so `"set-cookie" => [cookie_a, cookie_b]` preserves both
+cookies.
+
 ## Hot reloading
 
 There is a resource system inspired by JavaScript bundlers that loads all
@@ -649,7 +659,7 @@ packages both gems, installs the app from them, runs `mayu build` with
 repository root:
 
     podman build -f example/Dockerfile -t mayu-example .
-    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret mayu-example
+    podman run --rm -p 3333:3333 -e MAYU_SECRET_KEY=secret -e MAYU_PUBLIC_ORIGIN=http://localhost:3333 mayu-example
 
 Mayu applications can also colocate `*.test.rb` files with components. The
 test module is evaluated by Klenod and receives Mayu's test helpers:
@@ -748,25 +758,47 @@ the same secret and a compatible application bundle to resume the state.
 
 ### Process hooks
 
-An optional `mayu.rb` next to `mayu.toml` can hook into the server's process
-lifecycle, for resources such as database connections that forked workers must
-not share. `mayu start` and `mayu dev` load it once in the parent process:
+Mayu separates application behavior from process resource management:
+
+| File                           | Purpose                                                      | Loading                                                                                                       |
+| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `app/hooks.rb`                 | `prepare_session`, `authorize_session`, and `around_request` | Application module with project imports, included in the bundle and hot reloaded in development               |
+| `mayu.rb`, next to `mayu.toml` | Database setup, fork cleanup, and worker services            | Plain Ruby using `require` / `require_relative`, loaded once in the parent process; changes require a restart |
+
+Both files are optional. The process hooks have a concrete use in a Sequel
+application: configure the database before model definitions read table schemas,
+disconnect any connections opened during bundle loading before workers fork,
+and start a PostgreSQL LISTEN/NOTIFY listener separately in each worker.
+
+With an application-owned `Database` helper, setup can look like this:
 
 ```ruby
+# mayu.rb
+require_relative "db/database"
+
+Database.connect
+
 Mayu.setup do |setup|
   # After the bundle is loaded, before workers fork, on start and on restart.
-  setup.before_fork { DB.disconnect }
+  setup.before_fork { Database.disconnect }
 
-  # In each worker, with its environment. An `on_start` hook may return
-  # something responding to `stop`, which runs when the worker drains.
+  # Configure each worker; start the listener once its App exists.
   setup.on_worker do |environment|
-    environment.on_start { Listener.start }
+    environment.on_start { Database.start_listener }
   end
 end
 ```
 
-`mayu.rb` is plain Ruby and is not hot reloaded; restart the server after
-changing it.
+The listener returned by `Database.start_listener` should respond to `stop`.
+Mayu calls it when the worker drains, so it can close its listener connection
+and clean up the worker's database connections. The same worker lifecycle is
+used internally to start and stop the development hot reloader.
+
+Request and session policies belong in `app/hooks.rb`. They may use the database
+configured by process setup, but their module evaluation can repeat during HMR,
+so persistent services should be started through the process lifecycle above.
+See [session context and application hooks](docs/session-hooks.md) for the API
+and worker-local invalidation.
 
 # Contributing
 

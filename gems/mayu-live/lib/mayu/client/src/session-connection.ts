@@ -3,7 +3,11 @@ import { decodeMultiStream, ExtensionCodec } from "@msgpack/msgpack";
 import Runtime from "./runtime.js";
 import { initInputStream, initCallbackStream, StreamError } from "./stream.js";
 import { ClientEventEncoderStream } from "./client-event-codec.js";
-import { SESSION_MIME_TYPE } from "./constants";
+import {
+  APPLICATION_SESSION_REJECTED,
+  REQUEST_ORIGIN_REJECTED,
+  SESSION_MIME_TYPE,
+} from "./constants";
 import { updateConnectionStatus, updateReconnectStatus } from "./ping";
 import type { Batch, ClientEvent } from "./protocol";
 import { getTransferState, setTransferState } from "./transfer";
@@ -135,6 +139,16 @@ export default class SessionConnection {
               );
             }
 
+            const invalidation = batch.find(
+              (command) => command[0] === "SessionInvalidated",
+            );
+            if (invalidation) {
+              throw new StreamError(
+                "Session expired",
+                APPLICATION_SESSION_REJECTED,
+                invalidation[1] as string | null,
+              );
+            }
             await this.#runtime.applyBatch(batch);
           }
 
@@ -156,6 +170,7 @@ export default class SessionConnection {
         retryDelay = Math.min(10_000, 1000 * Math.max(0, consecutiveEofs - 1));
         reportDisconnected();
       } catch (error: unknown) {
+        if (this.#handleRejection(error)) return;
         consecutiveEofs = 0;
         failures += 1;
         reportDisconnected();
@@ -175,6 +190,7 @@ export default class SessionConnection {
             failures = 0;
             continue;
           } catch (resetError) {
+            if (this.#handleRejection(resetError)) return;
             console.error("Session reset failed", resetError);
           }
         }
@@ -205,5 +221,37 @@ export default class SessionConnection {
         await this.#sleep(retryDelay);
       }
     }
+  }
+
+  #handleRejection(error: unknown): boolean {
+    if (
+      !(error instanceof StreamError) ||
+      (error.code !== APPLICATION_SESSION_REJECTED &&
+        error.code !== REQUEST_ORIGIN_REJECTED)
+    )
+      return false;
+    setTransferState(null);
+    updateConnectionStatus("expired");
+    updateReconnectStatus(null);
+    this.#mayu.dispose();
+    if (error.location) {
+      window.location.replace(error.location);
+    } else {
+      const notice = document.createElement("div");
+      notice.setAttribute("role", "alert");
+      notice.style.cssText =
+        "position:fixed;bottom:1rem;left:1rem;padding:1rem;background:white;color:black;border:1px solid;z-index:2147483647";
+      notice.append(
+        error.code === REQUEST_ORIGIN_REJECTED
+          ? "The server rejected this connection. "
+          : "Your session has expired. ",
+      );
+      const reload = document.createElement("button");
+      reload.textContent = "Reload";
+      reload.onclick = () => window.location.reload();
+      notice.append(reload);
+      document.body.append(notice);
+    }
+    return true;
   }
 }

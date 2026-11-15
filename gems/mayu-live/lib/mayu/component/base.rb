@@ -37,11 +37,13 @@ module Mayu
         path.delete_prefix("#{Dir.pwd}/")
       end
 
+      def session_context = @__session_context || {}.freeze
+
       def marshal_dump
         instance_variables
           .reject do |ivar|
             ivar in
-              :@__props | :@__context | :@__children | :@__vnode_id |
+              :@__props | :@__context | :@__session_context | :@__children | :@__vnode_id |
                 :@__vnode_task | :@__vnode_queue
           end
           .map { |ivar| [ivar, instance_variable_get(ivar)] }

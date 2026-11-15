@@ -16,6 +16,7 @@ require_relative "vnodes/updater"
 require_relative "vnodes/command_collector"
 require_relative "commands"
 require_relative "marshalling"
+require_relative "../session/context"
 require_relative "ref"
 require_relative "restore_report"
 require_relative "state_update_warning_event"
@@ -73,8 +74,10 @@ module Mayu
         render_exceptions: true,
         validate_dom_nesting: false,
         stylesheets: [],
-        scripts: []
+        scripts: [],
+        session_context: {}
       )
+        @session_context = Session::Context.snapshot(session_context)
         @runtime_js = runtime_js
         @metrics = metrics
         @update_budget = update_budget
@@ -107,17 +110,21 @@ module Mayu
         @root.rebuild_listener_index!
       end
 
+      attr_reader :session_context
+
       def marshal_dump
         [
           @runtime_js,
           @root,
           @update_budget,
           @render_exceptions,
-          @vnode_id_sequence
+          @vnode_id_sequence,
+          @session_context
         ]
       end
 
       def marshal_load(a)
+        @session_context = Session::Context.snapshot((a.length == 6) ? a.pop : {})
         case a
         in [runtime_js, root, update_budget, render_exceptions, vnode_id_sequence]
           @runtime_js = runtime_js
@@ -325,8 +332,8 @@ module Mayu
         Console.logger.warn(component || self, event:)
       end
 
-      def callback(id, payload, settle_id: nil)
-        @root.call_listener(id, payload, settle_id:)
+      def callback(id, payload, settle_id: nil, execution_guard: nil)
+        @root.call_listener(id, payload, settle_id:, execution_guard:)
       end
 
       # Answers a callback that carried a settle id. Like browser actions, the

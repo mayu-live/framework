@@ -10,6 +10,7 @@
 require_relative "encrypted_marshal"
 require_relative "configuration"
 require_relative "component"
+require_relative "session/context"
 require_relative "metrics"
 require_relative "utils"
 require_relative "klenod"
@@ -70,6 +71,8 @@ module Mayu
         )
 
       @module_provider = module_provider
+      # Evaluate eagerly so invalid application hooks fail worker startup.
+      @module_provider.application_hooks if @module_provider.respond_to?(:application_hooks)
       @start_hooks = []
       @started = []
     end
@@ -101,13 +104,49 @@ module Mayu
       new(config, module_provider:, metrics:)
     end
 
+    def authorize_session!(info, phase:, request: nil, event: nil)
+      authorizer = application_hook(:authorize_session)
+      return unless authorizer
+
+      parameters = authorizer.parameters
+      keywords = if parameters.any? { |type, _| type == :keyrest }
+        %i[request phase event]
+      else
+        parameters.filter_map { |type, name| name if %i[key keyreq].include?(type) }
+      end
+      metadata = {request:, phase:, event:}.slice(*keywords)
+      if authorizer.call(info, **metadata) != true
+        raise Session::Rejected
+      end
+    end
+
+    def prepare_session_for(request)
+      hook = application_hook(:prepare_session)
+      result = hook ? hook.call(request) : {}
+      result.is_a?(Hash) ? Session::Preparation.new(context: result) : result
+    end
+
+    def wrap_request(request, &app)
+      hook = application_hook(:around_request)
+      return app.call(request) unless hook
+
+      called = false
+      next_app = lambda do |next_request|
+        raise "Request continuation already called" if called
+        called = true
+        app.call(next_request)
+      end
+      hook.call(request, next_app)
+    end
+
     def use(&)
       yield self
     end
 
-    # Registers work to run in the worker once its App exists. A hook may
-    # return something responding to `stop`, which `stop` then calls when the
-    # worker drains.
+    # Process lifecycle registration, used from mayu.rb's setup.on_worker and
+    # internally by HMR. Runs once the worker's App exists; a returned object's
+    # `stop` is called when the worker drains. Request/session policies are
+    # instead defined as named methods in app/hooks.rb.
     def on_start(&block)
       @start_hooks << block
     end
@@ -120,6 +159,16 @@ module Mayu
       started = @started
       @started = []
       started.each { it.stop if it.respond_to?(:stop) }
+    end
+
+    private
+
+    # Never retain exports or bound methods across development graph updates.
+    def application_hook(name)
+      return unless @module_provider.respond_to?(:application_hooks)
+
+      hooks = @module_provider.application_hooks
+      hooks.public_method(name) if hooks&.respond_to?(name)
     end
   end
 end

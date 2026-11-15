@@ -224,6 +224,13 @@ module Mayu
         source.preload
       end
 
+      # Discover hooks from the bundle, never from deployment source files.
+      def application_hooks
+        return unless source.modules.key?("app:/#{Klenod::HOOKS_ENTRY}")
+
+        exports("app:/#{Klenod::HOOKS_ENTRY}")
+      end
+
       def module_id_for(reference)
         # Runtime component classes use their evaluation path, while bundle
         # lookups use source-relative paths or canonical module IDs.

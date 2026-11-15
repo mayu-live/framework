@@ -7,6 +7,17 @@ module Mayu
   # Base class for Klenod `+route.rb` handlers. It is intentionally small: the
   # router owns matching while Mayu owns HTTP dispatch and the request wrapper.
   class Route
+    def self.csrf_exempt(*methods)
+      unless !methods.empty? && methods.all? { %w[POST PUT PATCH DELETE].include?(it) }
+        raise ArgumentError, "csrf_exempt requires uppercase unsafe HTTP method names"
+      end
+      @csrf_exempt_methods = [*(@csrf_exempt_methods || []), *methods].uniq.freeze
+    end
+
+    def self.csrf_exempt?(method)
+      (@csrf_exempt_methods || []).include?(method)
+    end
+
     Request =
       Data.define(:method, :path, :headers, :body, :params, :query) do
         def self.from_async(request, params: {})

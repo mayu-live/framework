@@ -13,14 +13,15 @@ kill_timeout = "5s"
 
 [env]
   ENABLE_YJIT = "true"
+  MAYU_PUBLIC_ORIGIN = "https://mayu.live"
 
 [http_service]
   internal_port = 3333
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = "stop"
   auto_start_machines = true
   min_machines_running = 0
-  processes = ['app']
+  processes = ["app"]
 
   # Fly's http handler normally downgrades to HTTP/1.1 towards the app.
   # h2_backend makes it speak h2c (prior knowledge) instead, which server.rb supports.
