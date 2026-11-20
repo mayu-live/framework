@@ -27,6 +27,14 @@
     self_signed_cert = false
     h2c = true
 
+    # The Fly deployment supplies its external origin after TLS termination.
+    public_origin = "$MAYU_PUBLIC_ORIGIN"
+
+    # If a proxy terminates HTTPS or rewrites Host, list its IPs or CIDRs here.
+    # Mayu trusts its X-Forwarded-Proto and X-Forwarded-Host for origin checks;
+    # the proxy must overwrite both headers. No proxies are trusted by default.
+    # trusted_proxies = ["127.0.0.1/32", "::1/128"]
+
     hmr = false
 
     render_exceptions = false

@@ -457,6 +457,22 @@ class Mayu::Build::ConfigurationTest < Minitest::Test
     end
   end
 
+  def test_route_handlers_can_declare_csrf_exemptions
+    Dir.mktmpdir("mayu-klenod") do |root|
+      FileUtils.mkdir_p(File.join(root, "app", "pages", "webhook"))
+      File.write(
+        File.join(root, "app", "pages", "webhook", "+route.rb"),
+        "csrf_exempt \"POST\"\ndef POST(request) = [204, {}, nil]\n"
+      )
+      provider = Mayu::Build::Configuration.new(root:).development_provider
+      router = provider.exports(provider.entry("virtual:router"))::Default
+      handler = router.match("/webhook").handler
+      assert handler.csrf_exempt?("POST")
+      refute handler.csrf_exempt?("PUT")
+      assert_equal [204, {}, nil], handler.new.POST(nil)
+    end
+  end
+
   def test_example_includes_a_klenod_route_handler
     provider =
       Mayu::Build::Configuration.new(

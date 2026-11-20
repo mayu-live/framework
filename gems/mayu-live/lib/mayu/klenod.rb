@@ -22,5 +22,6 @@ module Mayu
     BUNDLE_FILENAME = "app.mayu-bundle"
     ASSETS_DIR = ".mayu/assets"
     SOURCE_DIR = "app"
+    HOOKS_ENTRY = "hooks.rb"
   end
 end

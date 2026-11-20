@@ -2,7 +2,8 @@ import type MayuPing from "./custom-elements/mayu-ping";
 
 import("./custom-elements/mayu-ping");
 
-export type ConnectionStatus = "disconnected" | "connected" | "transferring";
+export type ConnectionStatus =
+  "disconnected" | "connected" | "transferring" | "expired";
 export type NavigationProgressState = "pending" | "complete";
 export type ReconnectStatus = {
   attempt: number;

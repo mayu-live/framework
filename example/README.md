@@ -36,8 +36,10 @@ bin/mayu build
 
 ## Start
 
-Set `MAYU_SECRET_KEY`, then load the production bundle and start the server in
-production mode.
+Set `MAYU_SECRET_KEY` and `MAYU_PUBLIC_ORIGIN` (the external origin, such as
+`https://mayu.live`), then start the production bundle. The Fly configuration
+sets the origin explicitly so session checks do not depend on the proxy's
+backend scheme. Change it when deploying this example under another domain.
 
 ```bash
 bin/mayu start

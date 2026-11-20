@@ -18,7 +18,7 @@ module Mayu
       end
 
       def get_token_cookie_value(request)
-        Array(request.headers["cookie"]).each do |str|
+        Array(request.headers["cookie"]).flat_map { it.split(/;\s*/) }.each do |str|
           if (match = str.match(/^mayu-token=(\w+)/))
             return match[1].to_s.tap { Session::Token.validate!(it) }
           end

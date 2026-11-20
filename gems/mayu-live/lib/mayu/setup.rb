@@ -8,17 +8,24 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 module Mayu
-  # Lets an app hook into the server's process lifecycle from a `mayu.rb`
-  # next to `mayu.toml`, for things like database connections that must not
-  # be shared between forked workers:
+  # Process resource setup in `mayu.rb`, next to `mayu.toml`. A Sequel app
+  # configures its database before model definitions read table schemas,
+  # disconnects the parent's connections before forking, and starts a
+  # PostgreSQL listener in each worker:
+  #
+  #   require_relative "db/database"
+  #   Database.connect
   #
   #   Mayu.setup do |setup|
-  #     setup.before_fork { DB.disconnect }
-  #     setup.on_worker { |environment| environment.on_start { Listener.start } }
+  #     setup.before_fork { Database.disconnect }
+  #     setup.on_worker do |environment|
+  #       environment.on_start { Database.start_listener }
+  #     end
   #   end
   #
   # The file is plain Ruby, loaded once in the server's parent process, and is
-  # not hot reloaded.
+  # not hot reloaded. Request/session policies belong in `app/hooks.rb`, which
+  # supports project imports and HMR; process setup uses require/require_relative.
   class Setup
     FILENAME = "mayu.rb"
 

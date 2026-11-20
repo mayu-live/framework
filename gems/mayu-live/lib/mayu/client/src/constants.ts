@@ -4,6 +4,9 @@ export const STREAM_CONTENT_ENCODING = "deflate-raw";
 export const SESSION_MIME_TYPE = "application/vnd.mayu.session";
 export const SESSION_PATH = "/.mayu/session";
 
+export const REQUEST_ORIGIN_REJECTED = "REQUEST_ORIGIN_REJECTED";
+export const APPLICATION_SESSION_REJECTED = "APPLICATION_SESSION_REJECTED";
+
 export const PING_INTERVAL = 4_000;
 
 // Continuous events like scroll and pointermove are sent at most this often

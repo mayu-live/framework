@@ -1,5 +1,6 @@
 import { SESSION_PATH } from "./constants";
 import { setTransferState } from "./transfer";
+import { streamErrorFromResponse } from "./stream";
 import withViewTransition, { type ViewTransitionRoot } from "./view-transition";
 
 const RESET_SESSION_ERROR_CODES = new Set([
@@ -44,23 +45,26 @@ export function shouldResetSession(error: unknown): boolean {
 }
 
 export async function resetSessionEntirely() {
-  const [morphdom, res] = await Promise.all([
-    import("morphdom"),
-    fetch(location.pathname + location.search, {
-      method: "GET",
-      credentials: "include",
-      headers: new Headers({
-        accept: "text/html",
-      }),
+  const res = await fetch(location.pathname + location.search, {
+    method: "GET",
+    credentials: "include",
+    headers: new Headers({
+      accept: "text/html",
+      "x-mayu-session-recovery": "1",
     }),
-  ]);
+  });
+  if (!res.ok) {
+    throw await streamErrorFromResponse(res, "Session reset failed");
+  }
 
-  const html = (await res.text()).replace(/^<!DOCTYPE html>\n/, "");
   const sessionId = res.headers.get("x-mayu-session-id");
 
   if (!sessionId) {
     throw new Error("Missing x-mayu-session-id header during session reset");
   }
+
+  const [morphdom, body] = await Promise.all([import("morphdom"), res.text()]);
+  const html = body.replace(/^<!DOCTYPE html>\n/, "");
 
   console.warn(
     `%cmorphing dom`,

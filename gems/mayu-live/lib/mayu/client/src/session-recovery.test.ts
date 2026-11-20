@@ -6,10 +6,12 @@ import {
   resetSessionEntirely,
   shouldResetSession,
 } from "./session-recovery";
+import { getTransferState, setTransferState } from "./transfer";
 
 describe("session-recovery", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    setTransferState(null);
   });
 
   it("extracts error messages from string and Error values", () => {
@@ -71,5 +73,64 @@ describe("session-recovery", () => {
     await expect(resetSessionEntirely()).rejects.toThrow(
       "Missing x-mayu-session-id header during session reset",
     );
+  });
+
+  it.each([null, "/login?expired=1"])(
+    "preserves authorization rejection with destination %s without changing the page",
+    async (location) => {
+      const html = document.documentElement.outerHTML;
+      const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(
+          JSON.stringify({ code: "APPLICATION_SESSION_REJECTED", location }),
+          {
+            status: 403,
+            headers: { "content-type": "application/json" },
+          },
+        ),
+      );
+      await expect(resetSessionEntirely()).rejects.toEqual(
+        expect.objectContaining({
+          name: "StreamError",
+          code: "APPLICATION_SESSION_REJECTED",
+          location,
+        }),
+      );
+      const options = fetch.mock.calls[0][1]!;
+      const headers = new Headers(options.headers);
+      expect(headers.get("accept")).toBe("text/html");
+      expect(headers.get("x-mayu-session-recovery")).toBe("1");
+      expect(document.documentElement.outerHTML).toBe(html);
+    },
+  );
+
+  it("keeps ordinary HTTP failures distinct from authorization rejection", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("Unavailable", { status: 503 }),
+    );
+    await expect(resetSessionEntirely()).rejects.toEqual(
+      expect.objectContaining({
+        name: "StreamError",
+        message: "Session reset failed",
+        code: null,
+        location: null,
+      }),
+    );
+  });
+
+  it("still restores an authorized replacement session", async () => {
+    setTransferState(new Blob(["old transfer"]));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(document.documentElement.outerHTML, {
+        headers: {
+          "content-type": "text/html",
+          "x-mayu-session-id": "replacement",
+        },
+      }),
+    );
+    await expect(resetSessionEntirely()).resolves.toBe(
+      "/.mayu/session/replacement",
+    );
+    expect(getTransferState()).toBeNull();
   });
 });

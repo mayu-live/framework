@@ -7,6 +7,7 @@ config = Mayu::Configuration::Config.parse(root, {
   "secret_key" => "shutdown-test-secret",
   "server" => {
     "listen" => "http://127.0.0.1:0",
+    "trusted_proxies" => (ENV["TEST_TRUSTED_PROXY"] == "true") ? ["127.0.0.1/32"] : [],
     "shutdown_timeout_seconds" => ENV.fetch("TEST_DRAIN_TIMEOUT", "10"),
     "transfer_timeout_seconds" => 60,
     "session_timeout_seconds" => 60
