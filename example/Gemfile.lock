@@ -117,6 +117,9 @@ GEM
     klenod-lsp (0.0.33)
       klenod-build (= 0.0.33)
       language_server-protocol (~> 3.17)
+    klenod-plugin-css (0.0.33)
+      klenod-build (= 0.0.33)
+      rb_sys (~> 0.9.124)
     klenod-plugin-css (0.0.33-aarch64-linux-gnu)
       klenod-build (= 0.0.33)
     klenod-plugin-css (0.0.33-arm64-darwin)
@@ -125,6 +128,9 @@ GEM
       klenod-build (= 0.0.33)
     klenod-plugin-css (0.0.33-x86_64-linux-gnu)
       klenod-build (= 0.0.33)
+    klenod-plugin-javascript (0.0.33)
+      klenod-build (= 0.0.33)
+      rb_sys (~> 0.9.124)
     klenod-plugin-javascript (0.0.33-aarch64-linux-gnu)
       klenod-build (= 0.0.33)
     klenod-plugin-javascript (0.0.33-arm64-darwin)
@@ -160,7 +166,8 @@ GEM
     minitest (6.0.6)
       drb (~> 2.0)
       prism (~> 1.5)
-    msgpack (1.8.5)
+    msgpack (1.8.7)
+    nokolexbor (0.8.0)
     nokolexbor (0.8.0-aarch64-linux)
     nokolexbor (0.8.0-arm64-darwin)
     nokolexbor (0.8.0-x86_64-darwin)
@@ -181,9 +188,12 @@ GEM
       protocol-http (~> 0.62)
     protocol-url (0.19.0)
     rack (3.2.8)
+    rake-compiler-dock (1.12.0)
     rb-fsevent (0.11.2)
     rb-inotify (0.11.1)
       ffi (~> 1.0)
+    rb_sys (0.9.130)
+      rake-compiler-dock (= 1.12.0)
     rbnacl (7.1.2)
       ffi (~> 1)
     reline (0.7.0)
@@ -259,10 +269,12 @@ CHECKSUMS
   json (3.0.2) sha256=8e6d7e7b11384c21230430cef90b71f14849a34a1f4452796670f7c981bd19df
   klenod-build (0.0.33) sha256=687463634dc25af04c9c7bd2b22c2f04fc5da7d72045c9de56906a92866bcbde
   klenod-lsp (0.0.33) sha256=b8b964b5a2002c4a4cbd45dbffa5c7616d5d57ea1824dee9b938f2571762d5f7
+  klenod-plugin-css (0.0.33) sha256=e10a35c74923b471725d93ad173bc8db94d589f42ed5d4d141f91a7065219ce5
   klenod-plugin-css (0.0.33-aarch64-linux-gnu) sha256=ded66b869bdbdb31f81b7593b3298bc7965172f6393bf1fa610da685a7d2fcad
   klenod-plugin-css (0.0.33-arm64-darwin) sha256=7b31be784998dc0b482d896bbf2d34888a8711cd08b2fa7d62300d71ffa3d6db
   klenod-plugin-css (0.0.33-x86_64-darwin) sha256=8e70d5958012160edfdfa3f7e95bb6cb19330032aa6a8f3de41f5b8b0b459d70
   klenod-plugin-css (0.0.33-x86_64-linux-gnu) sha256=a4173eb4d725f484e33893f126b7454a15b0477bbb85db9911277dc90c2e8d3a
+  klenod-plugin-javascript (0.0.33) sha256=7bd293bafeb6ab00c695c7d246a9967b31ceeab350b2a5742fef493c0706721e
   klenod-plugin-javascript (0.0.33-aarch64-linux-gnu) sha256=89a326b28c47258010d232c25359716294fa97fe2ea46a1463bbf6b5113f7d95
   klenod-plugin-javascript (0.0.33-arm64-darwin) sha256=ec97ee7a6da063469c5c3b3ee9f0e22d2918285864718090450935d82ccbff02
   klenod-plugin-javascript (0.0.33-x86_64-darwin) sha256=f667376de5fd07f84cad56eeae805b0302f9d06fcb746bb16392880acb80962b
@@ -282,7 +294,8 @@ CHECKSUMS
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2026.0929) sha256=3632d6a08f6ff832ef1181365b24cfe365b82a97c47ff76d5ae363d6d695aedc
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
-  msgpack (1.8.5) sha256=97419eaa7b35dfe3e462c0e6c1a3dfdcbfc8756605c09e46e4c6daef127517ba
+  msgpack (1.8.7) sha256=dfefec761b5f9047e6e8d95d2c7f8af4b3725d984a01942adc533aa819a2df33
+  nokolexbor (0.8.0) sha256=efaba9f5e1d30f464f4c826cc507a2ca2f754daf99bd4a0261ec22ebfddded32
   nokolexbor (0.8.0-aarch64-linux) sha256=6c514beeed469f0cf6aec92829f98ae7a17aacb977917ee12f76de1c19fd66fc
   nokolexbor (0.8.0-arm64-darwin) sha256=bf450ff93f8564325f70988c23bca7ddd2d68b1e34543ed2c7806b994a6ab6d5
   nokolexbor (0.8.0-x86_64-darwin) sha256=38b04e7bf077b41dfd7cc210deaed39a154ce408f7f4c2b41d2190720db3c135
@@ -299,8 +312,10 @@ CHECKSUMS
   protocol-http2 (0.29.1) sha256=3f4ee667b5730b7d05c70d3771bd5d5cdbb31beedaa9d05f2bdac68c9c984d19
   protocol-url (0.19.0) sha256=3f6b9f6aa742a259a0b3610fbbd9685dcd9506adf6734f428ff96259faabfb21
   rack (3.2.8) sha256=1fecc85e463ebc7a2a945fff829ffcd549babeb1556384796fad946c28dc4ec7
+  rake-compiler-dock (1.12.0) sha256=f13205c2738f3d2053afcd03491a9e4541b22a59a0bfc53fc8bc883bd8188023
   rb-fsevent (0.11.2) sha256=43900b972e7301d6570f64b850a5aa67833ee7d87b458ee92805d56b7318aefe
   rb-inotify (0.11.1) sha256=a0a700441239b0ff18eb65e3866236cd78613d6b9f78fea1f9ac47a85e47be6e
+  rb_sys (0.9.130) sha256=7d486d99c1da02635515deaf9860fc5aea90bb4ab2589b2deec7fdc7d3548615
   rbnacl (7.1.2) sha256=c58433e93b390a7b8c03a9da9e54f2de67e6cc3d6731553265299c6aac889a60
   reline (0.7.0) sha256=5b012d8e55dbf9d450f12bde2cf7d15ff546ae80b3f8f3b30e570d431815583d
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
