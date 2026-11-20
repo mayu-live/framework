@@ -28,7 +28,6 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "4.0.7"
           bundler-cache: true
       - name: Set up Node
         uses: actions/setup-node@v7
@@ -79,8 +78,6 @@ jobs:
           persist-credentials: false
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "4.0.7"
       - name: Download gems
         uses: actions/download-artifact@v8
         with:
