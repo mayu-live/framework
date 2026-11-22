@@ -32,6 +32,7 @@
     h2c = true
 
     generate_assets = false
+    command_stream_compression = false
     session_timeout_seconds = 21
     transfer_timeout_seconds = 22
     cookie_timeout_seconds = 23

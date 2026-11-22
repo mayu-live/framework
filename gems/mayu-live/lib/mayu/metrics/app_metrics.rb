@@ -124,7 +124,7 @@ module Mayu
             command_batch_compressed_bytes_total:
               registry.counter(
                 :mayu_command_batch_compressed_bytes_total,
-                docstring: "Total compressed bytes in command batches written to session streams",
+                docstring: "Total payload bytes in command batches written to session streams",
                 labels: [*preset_labels.keys],
                 preset_labels:
               ),

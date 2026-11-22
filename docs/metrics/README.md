@@ -43,7 +43,7 @@ different problem from a cheap component called thousands of times per minute.
 | `mayu_command_batches_total`                  | Command batches written to open session streams.                                        | Per-second rate.                                                      |
 | `mayu_command_batch_commands_total`           | Individual commands in those batches.                                                   | Commands per batch: `rate(commands) / rate(batches)`.                 |
 | `mayu_command_batch_uncompressed_bytes_total` | MessagePack bytes before stream compression.                                            | Byte rate and compression ratio.                                      |
-| `mayu_command_batch_compressed_bytes_total`   | Deflate bytes written to the session stream.                                            | Actual server-to-browser payload byte rate.                           |
+| `mayu_command_batch_compressed_bytes_total`   | Payload bytes written to the session stream, with or without deflate.                   | Actual server-to-browser payload byte rate.                           |
 
 Callback queue duration covers time from receiving an event until its component
 starts handling it; handler duration excludes later rendering and reconciliation.

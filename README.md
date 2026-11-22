@@ -746,6 +746,15 @@ encrypted transfer payload remains valid. Transfers are best effort: the server
 waits for HTTP output, not browser acknowledgments. A replacement server needs
 the same secret and a compatible application bundle to resume the state.
 
+### Command stream compression
+
+Mayu uses raw deflate for the server-to-browser MessagePack command stream by
+default. To send raw MessagePack, add `command_stream_compression = false` to
+the existing `[development.server]` or `[production.server]` section in
+`mayu.toml` and restart Mayu. Use the same workload in both modes and compare
+server CPU usage and the rate of `mayu_command_batch_compressed_bytes_total`,
+which counts the command payload bytes sent in either mode.
+
 ### Process hooks
 
 An optional `mayu.rb` next to `mayu.toml` can hook into the server's process

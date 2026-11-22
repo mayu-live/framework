@@ -68,12 +68,20 @@ module Mayu
         :session_timeout_seconds,
         :transfer_timeout_seconds,
         :shutdown_timeout_seconds,
-        :cookie_timeout_seconds
+        :cookie_timeout_seconds,
+        :command_stream_compression?
       ) do
+        def initialize(**options) = super(command_stream_compression?: true, **options)
+
         def self.parse(config)
           shutdown_timeout = Float(config.fetch("shutdown_timeout_seconds", 10))
           unless shutdown_timeout.finite? && shutdown_timeout.positive?
             raise ArgumentError, "shutdown_timeout_seconds must be a positive finite number"
+          end
+
+          command_stream_compression = config.fetch("command_stream_compression", true)
+          unless command_stream_compression == true || command_stream_compression == false
+            raise ArgumentError, "command_stream_compression must be a boolean"
           end
 
           new(
@@ -86,6 +94,7 @@ module Mayu
             self_signed_cert?: config.fetch("self_signed_cert", false),
             h2c?: config.fetch("h2c", false),
             generate_assets?: config.fetch("generate_assets", false),
+            command_stream_compression?: command_stream_compression,
             session_timeout_seconds:
               config.fetch("session_timeout_seconds", 10).to_i,
             transfer_timeout_seconds:

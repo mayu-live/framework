@@ -488,12 +488,13 @@ module Mayu
       end
 
       def run_session_stream(request, session)
+        compress = @environment.config.server.command_stream_compression?
         headers = {
           "content-type": EventStream::CONTENT_TYPE,
-          "content-encoding": EventStream::CONTENT_ENCODING,
           **@cookies.set_token_cookie_header(session),
           **origin_header(request)
         }
+        headers[:"content-encoding"] = EventStream::CONTENT_ENCODING if compress
 
         if session.running?
           Console.logger.error(self, "already running")
@@ -507,7 +508,7 @@ module Mayu
           )
         end
 
-        body = EventStream::Writer.new(metrics: @environment&.metrics)
+        body = EventStream::Writer.new(compress:, metrics: @environment.metrics)
         @streams[session.id] = body
 
         body.write_batch(

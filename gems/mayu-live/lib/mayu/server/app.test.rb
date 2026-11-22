@@ -532,8 +532,22 @@ class Mayu::Server::AppTest < Minitest::Test
   end
 
   def test_stopping_a_session_closes_its_patch_stream
+    assert_session_stream_closes("deflate-raw")
+  end
+
+  def test_stopping_a_session_closes_an_uncompressed_patch_stream
+    assert_session_stream_closes(nil)
+  end
+
+  private
+
+  def assert_session_stream_closes(encoding)
     Async do |task|
       app = Mayu::Server::App.allocate
+      options = encoding ? {} : {"command_stream_compression" => false}
+      server = Mayu::Configuration::ServerConfig.parse(options)
+      config = Struct.new(:server).new(server)
+      app.instance_variable_set(:@environment, Struct.new(:config, :metrics).new(config, nil))
       app.instance_variable_set(:@body_barrier, Async::Barrier.new(parent: task))
       app.instance_variable_set(:@streams, {})
       cookies = Object.new
@@ -543,6 +557,13 @@ class Mayu::Server::AppTest < Minitest::Test
       session = StreamSession.new
       request = Struct.new(:headers).new({})
       response = app.send(:run_session_stream, request, session)
+      assert_equal(200, response.status)
+      headers = response.headers.to_a.to_h
+      if encoding
+        assert_equal(encoding, headers.fetch(:"content-encoding"))
+      else
+        refute(headers.key?(:"content-encoding"))
+      end
 
       session.wait_until_started
       session.stop
@@ -555,8 +576,12 @@ class Mayu::Server::AppTest < Minitest::Test
       end
       refute_empty(chunks)
 
-      inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
-      bootstrap = MessagePack.unpack(inflater.inflate(chunks.join))
+      payload = chunks.join
+      if encoding
+        inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
+        payload = inflater.inflate(payload)
+      end
+      bootstrap = MessagePack.unpack(payload)
       assert_equal(%w[Initialize SetListener], bootstrap.map(&:first))
       refute_includes(bootstrap.map(&:first), "Batch")
     ensure
@@ -565,8 +590,6 @@ class Mayu::Server::AppTest < Minitest::Test
       app&.instance_variable_get(:@body_barrier)&.stop
     end.wait
   end
-
-  private
 
   def dispatch(method, path, headers)
     app = Mayu::Server::App.allocate

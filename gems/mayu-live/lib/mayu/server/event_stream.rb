@@ -41,16 +41,17 @@ module Mayu
       end
 
       class Writer < Async::HTTP::Body::Writable
-        def initialize(*args, metrics: nil, **kwargs, &block)
+        def initialize(*args, compress: true, metrics: nil, **kwargs, &block)
           super(*args, **kwargs, &block)
           @metrics = metrics
-          @deflate =
-            Zlib::Deflate.new(
+          if compress
+            @deflate = Zlib::Deflate.new(
               Zlib::BEST_COMPRESSION,
               -Zlib::MAX_WBITS,
               Zlib::MAX_MEM_LEVEL,
               Zlib::HUFFMAN_ONLY
             )
+          end
           @wrapper = MsgPackWrapper.new
           @on_close = Async::Promise.new
           @write_closed = false
@@ -86,16 +87,16 @@ module Mayu
           end
 
           packed = @wrapper.pack(batch)
-          compressed = deflate_chunk(packed)
-          record_batch(batch, packed, compressed)
-          write(compressed)
+          payload = @deflate ? deflate_chunk(packed) : packed
+          record_batch(batch, packed, payload)
+          write(payload)
         end
 
         def close_write(reason = nil)
           return if @write_closed || @consumer_closed
           @write_closed = true
-          @queue.push(@deflate.finish) unless reason
-          @deflate.close
+          @queue.push(@deflate.finish) if @deflate && !reason
+          @deflate&.close
           super
         end
 
@@ -103,14 +104,14 @@ module Mayu
           return if @consumer_closed
           flushed = @write_closed && @queue.empty? && reason.nil?
           @consumer_closed = true
-          @deflate.close unless @deflate.closed?
+          @deflate.close if @deflate && !@deflate.closed?
           super
           @on_close.resolve(flushed)
         end
 
         private
 
-        def record_batch(batch, packed, compressed)
+        def record_batch(batch, packed, payload)
           return unless @metrics
 
           @metrics.command_batches_total.increment
@@ -119,7 +120,7 @@ module Mayu
             by: packed.bytesize
           )
           @metrics.command_batch_compressed_bytes_total.increment(
-            by: compressed.bytesize
+            by: payload.bytesize
           )
         end
 

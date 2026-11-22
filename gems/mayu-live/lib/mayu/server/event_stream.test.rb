@@ -199,6 +199,26 @@ class Mayu::Server::EventStreamTest < Minitest::Test
     writer&.close
   end
 
+  def test_counts_raw_messagepack_as_sent_bytes_when_compression_is_disabled
+    metrics = Metrics.new(Counter.new, Counter.new, Counter.new, Counter.new)
+    writer = Writer.new(compress: false, metrics:)
+    batch = Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Transfer["state"]]]
+
+    2.times { writer.write_batch(batch) }
+    writer.close_write
+
+    chunks = [writer.read, writer.read]
+    assert_equal([[["Transfer", "state"]]] * 2, chunks.map { MessagePack.unpack(it) })
+    assert_nil(writer.read)
+    bytes = chunks.sum(&:bytesize)
+    assert_equal(bytes, metrics.command_batch_uncompressed_bytes_total.value)
+    assert_equal(bytes, metrics.command_batch_compressed_bytes_total.value)
+    writer.close
+    assert(writer.wait)
+  ensure
+    writer&.close
+  end
+
   def test_wait_after_consumer_disconnect_is_not_lost
     writer = Writer.new
     batch =
