@@ -6,10 +6,11 @@
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { gzipSync } from "node:zlib";
+import { brotliCompressSync } from "node:zlib";
 
-// Gzipped bytes of the chunks every page loads: init and main.
-const EAGER_BUDGET = 11_100;
+// Bytes of the chunks every page loads, init and main, compressed with
+// Brotli the way Mayu::Server::StaticFiles sends them.
+const EAGER_BUDGET = 9_950;
 const EAGER_CHUNKS = /^(init|main)-/;
 
 const dist = new URL("../dist/", import.meta.url).pathname;
@@ -26,17 +27,17 @@ let eager = 0;
 
 for (const path of chunks(dist).sort()) {
   const source = readFileSync(path);
-  const gzip = gzipSync(source).byteLength;
+  const brotli = brotliCompressSync(source).byteLength;
   const name = relative(dist, path);
   const isEager = EAGER_CHUNKS.test(name);
-  if (isEager) eager += gzip;
+  if (isEager) eager += brotli;
 
   console.log(
-    `${String(source.byteLength).padStart(7)} B ${String(gzip).padStart(6)} B gzip  ${name}${isEager ? "  (eager)" : ""}`,
+    `${String(source.byteLength).padStart(7)} B ${String(brotli).padStart(6)} B brotli  ${name}${isEager ? "  (eager)" : ""}`,
   );
 }
 
-console.log(`eager: ${eager} B gzip, budget ${EAGER_BUDGET} B`);
+console.log(`eager: ${eager} B brotli, budget ${EAGER_BUDGET} B`);
 
 if (eager > EAGER_BUDGET) {
   console.error(`The eager chunks are ${eager - EAGER_BUDGET} B over budget.`);

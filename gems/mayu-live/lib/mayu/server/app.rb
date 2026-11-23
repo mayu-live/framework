@@ -292,11 +292,14 @@ module Mayu
           )
         end
 
+        representation =
+          file.representation(request.headers["accept-encoding"])
+
         response(
           200,
-          file.encoded_content.content,
+          representation.content,
           "cache-control": script_cache_control(request.path),
-          **file.headers,
+          **file.headers(representation),
           **origin_header(request)
         )
       end

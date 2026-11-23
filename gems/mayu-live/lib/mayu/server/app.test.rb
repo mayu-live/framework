@@ -440,7 +440,7 @@ class Mayu::Server::AppTest < Minitest::Test
 
   RuntimeEnvironment = Data.define(:runtime_init_js_path)
 
-  def script_response(path)
+  def script_response(path, headers: {"accept-encoding" => %w[gzip br]})
     Dir.mktmpdir("mayu-client") do |root|
       File.write(File.join(root, "init-abc123.js"), "export default null\n")
       File.write(File.join(root, "main-def456.js"), "export default null\n")
@@ -448,7 +448,7 @@ class Mayu::Server::AppTest < Minitest::Test
       app.instance_variable_set(:@client_files, Mayu::Server::StaticFiles.new(root))
       app.instance_variable_set(:@environment, RuntimeEnvironment.new("/.mayu/runtime/init-abc123.js"))
 
-      app.send(:handle_script, Request.new("GET", path, {}, ""))
+      app.send(:handle_script, Request.new("GET", path, headers, ""))
     end
   end
 
@@ -462,6 +462,15 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_includes(Array(headers.fetch(:"content-type")), "text/javascript")
     assert_includes(Array(headers.fetch(:"cache-control")), "no-store")
     assert_equal("export default null\n", Brotli.inflate(response.body.join))
+  end
+
+  def test_serves_a_script_as_it_is_to_a_client_that_does_not_read_brotli
+    response = script_response("/.mayu/runtime/main-def456.js", headers: {})
+
+    headers = response.headers.to_a.to_h
+    refute(headers.key?(:"content-encoding"))
+    assert_includes(Array(headers.fetch(:vary)), "accept-encoding")
+    assert_equal("export default null\n", response.body.join)
   end
 
   def test_serves_other_runtime_scripts_with_immutable_caching
