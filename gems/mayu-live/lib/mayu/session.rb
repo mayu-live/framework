@@ -59,36 +59,32 @@ module Mayu
           end
         end
 
+      # Every event is `[name, ping, telemetry, *arguments]`. `ping` is the
+      # browser's clock when it sent the event, and `telemetry` is nil or the
+      # time it spent applying commands since its last event.
       def self.parse(message)
         case message
-        in ["Callback", String => id, Hash => event, Numeric => ping] unless id.empty?
-          CallbackEvent[id, event, ping]
-        in ["Callback", String => id, Hash => event, Numeric => ping, String => settle_id] unless id.empty? || invalid_settle_id?(settle_id)
-          CallbackEvent[id, event, ping, settle_id:]
-        in ["Callback", String => id, Hash => event, Numeric => ping, String => settle_id, telemetry] unless id.empty? || invalid_settle_id?(settle_id)
-          CallbackEvent[id, event, ping, parse_client_command_apply_metrics(telemetry), settle_id:]
-        in ["Callback", String => id, Hash => event, Numeric => ping, Hash => telemetry] unless id.empty?
-          CallbackEvent[id, event, ping, parse_client_command_apply_metrics(telemetry)]
-        in ["Navigate", String => id, String => href, Numeric => ping] unless id.empty?
-          NavigateEvent[id, href, ping]
-        in ["Navigate", String => id, String => href, Numeric => ping, telemetry] unless id.empty?
-          NavigateEvent[id, href, ping, parse_client_command_apply_metrics(telemetry)]
-        in ["Ping", Numeric => ping]
-          PingEvent[ping]
+        in ["Callback", Numeric => ping, telemetry, String => id, Hash => event] unless id.empty?
+          CallbackEvent[id, event, ping, parse_telemetry(telemetry)]
+        in ["Callback", Numeric => ping, telemetry, String => id, Hash => event, String => settle_id] unless id.empty? || invalid_settle_id?(settle_id)
+          CallbackEvent[id, event, ping, parse_telemetry(telemetry), settle_id:]
+        in ["Navigate", Numeric => ping, telemetry, String => id, String => href] unless id.empty?
+          NavigateEvent[id, href, ping, parse_telemetry(telemetry)]
         in ["Ping", Numeric => ping, telemetry]
-          PingEvent[ping, parse_client_command_apply_metrics(telemetry)]
-        in ["Visibility", true | false => hidden, Numeric => ping]
-          VisibilityEvent[hidden, ping]
-        in ["Visibility", true | false => hidden, Numeric => ping, telemetry]
-          VisibilityEvent[hidden, ping, parse_client_command_apply_metrics(telemetry)]
-        in ["Inspect", String => id, Hash => query, Numeric => ping] unless id.empty?
-          InspectEvent[id, query, ping]
-        in ["Inspect", String => id, Hash => query, Numeric => ping, telemetry] unless id.empty?
-          InspectEvent[id, query, ping, parse_client_command_apply_metrics(telemetry)]
+          PingEvent[ping, parse_telemetry(telemetry)]
+        in ["Visibility", Numeric => ping, telemetry, true | false => hidden]
+          VisibilityEvent[hidden, ping, parse_telemetry(telemetry)]
+        in ["Inspect", Numeric => ping, telemetry, String => id, Hash => query] unless id.empty?
+          InspectEvent[id, query, ping, parse_telemetry(telemetry)]
         else
           raise InvalidEventError, "Invalid event message: #{message.inspect}"
         end
       end
+
+      def self.parse_telemetry(telemetry)
+        telemetry.nil? ? nil : parse_client_command_apply_metrics(telemetry)
+      end
+      private_class_method :parse_telemetry
 
       def self.parse_client_command_apply_metrics(telemetry)
         case telemetry

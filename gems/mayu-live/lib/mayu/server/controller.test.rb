@@ -250,10 +250,10 @@ class Mayu::Server::ControllerTest < Minitest::Test
 
   def decode(bytes)
     inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
-    unpacker = Mayu::Server::EventStream::MsgPackWrapper.new.unpacker
-    unpacker.feed(inflater.inflate(bytes))
+    wrapper = Mayu::Server::EventStream::MsgPackWrapper.new
+    frames = Mayu::Server::EventStream.command_frames(inflater.inflate(bytes))
     assert(inflater.finished?, "Missing compression trailer")
-    unpacker.each.to_a.flatten(1)
+    frames.flat_map { wrapper.unpacker.feed(it).read }
   ensure
     inflater&.close
   end

@@ -293,23 +293,8 @@ module Mayu
         in Mayu::Runtime::Commands::CreateTree[html:, tree:]
           nodes = parse_tree_roots(html)
           nodes.zip(tree).each { |node, id_node| setup_tree(node, id_node) }
-        in Mayu::Runtime::Commands::CreateElement[id:, type:]
-          @nodes[id] = @doc.create_element(type.to_s)
-        in Mayu::Runtime::Commands::CreateTextNode[id:, content:]
-          @nodes[id] = Nokolexbor::Text.new(content.to_s, @doc)
-        in Mayu::Runtime::Commands::CreateComment[id:, content:]
-          @nodes[id] = Nokolexbor::Comment.new(content.to_s, @doc)
         in Mayu::Runtime::Commands::SetTextContent[id:, content:]
           fetch_node!(id).content = content.to_s
-        in Mayu::Runtime::Commands::ReplaceData[id:, offset:, count:, data:]
-          node = fetch_node!(id)
-          node.content = node.content.dup.tap { it[offset, count] = data }
-        in Mayu::Runtime::Commands::InsertData[id:, offset:, data:]
-          node = fetch_node!(id)
-          node.content = node.content.dup.insert(offset, data)
-        in Mayu::Runtime::Commands::DeleteData[id:, offset:, count:]
-          node = fetch_node!(id)
-          node.content = node.content.dup.tap { it.slice!(offset, count) }
         in Mayu::Runtime::Commands::SetAttribute[id:, name:, value:]
           fetch_node!(id)[normalize_attribute_name(name)] = value.to_s
         in Mayu::Runtime::Commands::RemoveAttribute[id:, name:]
@@ -319,8 +304,6 @@ module Mayu
         in Mayu::Runtime::Commands::RemoveListener[id:, name:, listener_id:]
           key = [id, name.to_s]
           @listener_bindings.delete(key) if @listener_bindings[key] == listener_id
-        in Mayu::Runtime::Commands::SetClassName[id:, class_name:]
-          fetch_node!(id)["class"] = class_name.to_s
         in Mayu::Runtime::Commands::AddClass[id:, classes:]
           node = fetch_node!(id)
           node["class"] = (node["class"].to_s.split | classes).join(" ")
@@ -344,9 +327,7 @@ module Mayu
       end
 
       def normalize_attribute_name(name)
-        return "value" if name.to_s == "initial_value"
-
-        name.to_s.tr("_", "-")
+        (name.to_s == "initial_value") ? "value" : name.to_s
       end
 
       def set_css_property(node, name, value)

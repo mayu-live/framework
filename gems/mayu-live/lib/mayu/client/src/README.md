@@ -1,195 +1,173 @@
 # Mayu Client Runtime (`lib/mayu/client/src`)
 
-This directory contains the browser-side runtime that:
+The browser side of a Mayu session. It:
 
-- opens a server command stream,
-- applies incoming command batches,
-- sends user callbacks, navigations, and pings back to the server,
-- reconnects and restores state when possible.
+- opens a stream of command batches from the server and applies them to the DOM,
+- sends callbacks, navigations, visibility changes and pings back,
+- reconnects, resumes a transferred session, or replaces a lost one.
 
-## High-Level Flow
+## Layout
 
-1. `init(sessionId)` in `main.ts`:
-   - installs a default view-transition stylesheet,
-   - creates `Runtime`,
-   - creates a `Mayu` instance for callbacks, navigation, and pings,
-   - creates `SessionConnection`,
-   - starts session connection loop at `/.mayu/session/:sessionId`.
-2. `SessionConnection.run()` loop:
-   - opens input stream (`GET` or `POST` with transfer state),
-   - opens callback output stream (`PATCH`),
-   - applies the `Initialize` + `SetListener` bootstrap batch,
-   - decodes MessagePack command batches,
-   - applies batches through `runtime.applyBatch(...)`,
-   - on failure: reset session or reconnect with backoff.
-3. `Runtime` in `runtime.ts`:
-   - keeps an `id -> Node` map (`NodeSet`),
-   - executes commands sequentially within each `Batch`,
-   - supports DOM creation/update/remove, history, transfer, errors, etc.
+Each directory owns one concern. `main.ts` is the only file that knows about
+all of them.
 
-## Module Map
+```
+init.ts                  loads main.ts once the document is parsed
+main.ts                  builds every module and wires them together
+dispatch.ts              CommandDispatcher: batch → handler per command
+protocol/
+  commands.ts            the typed commands (server → browser) and handler types
+  events.ts              the typed events (browser → server)
+  constants.ts           MIME types, session path, intervals
+  batch-codec.ts         reads the frames of the command stream
+  event-codec.ts         encodes, frames and optionally compresses events
+  msgpack.ts             the MessagePack subset the protocol uses
+connection/
+  session-connection.ts  the retry loop; holds the transfer state
+  attempt.ts             one connection: both streams, until either ends
+  backoff.ts             retry delays and attempt numbers
+  command-stream.ts      GET (or POST with transfer state) → batches
+  event-stream.ts        streaming PATCH, or one PATCH per event
+  outbox.ts              the single way events leave the browser
+  recovery.ts            which errors replace the session, and how
+  stream-error.ts        StreamError and the server's error payload
+dom/
+  node-registry.ts       id ↔ node, and the listeners on each node
+  hydrate.ts             binds server ids to existing or freshly parsed DOM
+  children.ts            ReplaceChildren, <head> reordering, autofocus
+  attributes.ts          attributes that need a property set as well
+  handlers.ts            the DOM commands
+  element-calls.ts       the element methods `ref.current` may call
+features/
+  callbacks.ts           DOM event → Callback; throttling; settlement
+  navigation.ts          Navigation API interception; document navigation
+  heartbeat.ts           pings, Pong, tab visibility
+  inspect.ts             devtools queries (loaded with the devtools)
+  browser-actions.ts     `browser.navigate`, `browser.alert`
+  serialize-event.ts     what the server sees of an event
+  settled.ts, throttle.ts
+ui/
+  status.ts              connection status, ping and progress on <mayu-ping>
+  error-overlay.ts       RenderError / ReloadSucceeded
+  render-error.ts        the overlay itself (loaded on the first error)
+  view-transition.ts     startViewTransition with a fallback
+  custom-elements/       <mayu-ping>, <mayu-exception>
+devtools.ts              the devtools extension hook (loaded when present)
+```
 
-- `main.ts`: minimal bootstrap and wiring.
-- `mayu.ts`: client session state and event transport (`callback`, navigation, pings, writer accessors).
-- `session-connection.ts`: stream loop, batch decode/apply, reconnect/backoff.
-- `session-recovery.ts`: reset policy (`shouldResetSession`) and full session reset (`resetSessionEntirely`).
-- `view-transition.ts`: shared transition wrapper with fallback when View Transitions API is unavailable.
-- `stream.ts`: HTTP stream connect logic + callback stream transport.
-- `runtime.ts`: command dispatcher and DOM mutation engine.
-- `protocol.ts`: shared `Command`, `Batch`, and command-error policy types.
-- `client-event-codec.ts`: MessagePack encoding, framing, and optional
-  per-event compression.
-- `serializeEvent.ts`: serializes event/currentTarget/target payloads.
-- `throttle.ts`: per-target callback throttling (~30 FPS).
-- `transfer.ts`: in-memory session transfer blob between reconnects.
-- `ping.ts`: updates `<mayu-ping>` status, RTT label, and navigation progress.
-- `constants.ts`: shared MIME types, endpoint path, ping interval.
+`features/test-client.ts` and `test-runtime.ts` are test support. They wire
+modules the way `main.ts` does so a test can drive them through one object.
 
-## Data Paths
+## How a command gets handled
 
-### Server -> Client (command stream)
+1. `connection/attempt.ts` reads a batch from the command stream. Each batch
+   is a frame: four bytes of payload length, then the batch as MessagePack.
+   A stream that ends inside a frame fails the attempt.
+2. `CommandDispatcher.applyBatch` walks it in order and calls the handler
+   registered for each command, waiting for handlers that return a promise.
+3. The handler lives in the module that owns the command:
 
-- `SessionConnection.run` calls `initInputStream(endpoint, transferState)`.
-- `connect(...)` validates:
-  - HTTP success,
-  - `content-type === application/vnd.mayu.event-stream`.
-- Input stream is optionally decompressed based on `content-encoding`.
-- `decodeMultiStream` yields batches directly. A batch is `Command[]`; a command
-  is a compact `[name, ...arguments]` tuple.
-- Each batch is applied with `runtime.applyBatch(...)`.
-- There is no `Batch` command or extra transport wrapper. `ViewTransition`
-  intentionally carries a nested batch as its argument.
+   | Commands                                                       | Module                                              |
+   | -------------------------------------------------------------- | --------------------------------------------------- |
+   | `Initialize`, `CreateTree`, `ReplaceChildren`, `Set*`, …       | `dom/handlers.ts`                                   |
+   | `CallbackComplete`, `CallbackFailed`                           | `features/callbacks.ts`                             |
+   | `NavigationComplete`, `NavigationFailed`, `DocumentNavigation` | `features/navigation.ts`                            |
+   | `Pong`                                                         | `features/heartbeat.ts`                             |
+   | `BrowserAction`                                                | `features/browser-actions.ts`                       |
+   | `InspectResult`                                                | `features/inspect.ts`                               |
+   | `RenderError`, `ReloadSucceeded`                               | `ui/error-overlay.ts`                               |
+   | `Transfer`                                                     | `connection/session-connection.ts`                  |
+   | `ViewTransition`                                               | `dispatch.ts` (it carries a batch)                  |
+   | `TransferFailed`                                               | `connection/session-connection.ts`, before dispatch |
 
-### Client -> Server (callback stream)
+`main.ts` merges these into one table typed as
+`CommandHandlers<DispatchedCommandName>`, so a command without a handler, or a
+handler with the wrong arguments, does not compile.
 
-- The runtime calls `mayu.callback(event, id)` to serialize and write:
-  - `["Callback", id, event, ping]`.
-- Mayu uses the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API)
-  to intercept same-origin navigations in one place. Hash changes, downloads,
-  reloads, and form submissions retain browser behavior. The Navigation API is
-  required for client-side routing; browsers without it perform normal document
-  navigations.
-- `mayu.navigate(href, pushState)` uses `navigation.navigate()` and the
-  intercepted navigation writes `["Navigate", id, href, ping]`. Its
-  `pushState` argument is retained for compatibility and maps to native push or
-  replace history behavior. The interception remains pending until the server
-  streams `NavigationComplete(id)` after the route commands have been applied;
-  `NavigationFailed(id)`, aborts, and connection loss reject it instead.
-- `mayu.ping()` writes `["Ping", ping]` after `PING_INTERVAL` of idle
-  outbound traffic. Each callback, navigation, visibility, or ping frame resets
-  that deadline. The scheduler uses a dedicated worker when possible because
-  hidden tabs throttle page timers far beyond the server's session timeout.
-- `["Visibility", hidden, ping]` is written on every `visibilitychange` and once
-  on connect from a hidden tab. The server slows that session's updates down
-  while it is hidden.
-- writes made without a live callback transport are dropped and are never
-  replayed after reconnect.
-- Writes go through:
-  - `TransformStream` -> `ClientEventEncoderStream` -> output writable.
-- The encoder creates one frame per event:
-  - one byte identifying raw MessagePack or `deflate-raw`,
-  - four bytes containing the payload length,
-  - one complete MessagePack event payload.
-- Events of at least 512 bytes are independently compressed when doing so
-  makes the frame smaller. Closing a compressor per event avoids buffering
-  interactive events in the long-lived request.
-- Output writable is:
-  - streaming `PATCH` request when request streams are supported,
-  - per-message fetch fallback otherwise; both send identical frame bytes.
-- failures from either transport terminate the entire connection attempt so
-  both stream directions reconnect together.
+A failed command is logged with its name and index, and the rest of the batch
+is applied (`COMMAND_ERROR_POLICY` in `dispatch.ts`; tests use `"throw"`).
 
-## Runtime/Command Behavior Notes
+## How an event gets sent
 
-- `Batch` runs commands in order, awaiting async commands.
-- Command failures are logged with their name and index within the batch. The default
-  `COMMAND_ERROR_POLICY` continues the batch; strict mode throws.
-- `ViewTransition` wraps a nested batch in `document.startViewTransition(...)` when available, and falls back to immediate apply when not available.
-- `Transfer` stores transfer blob for reconnect handoff.
-- `Pong` updates measured ping in `<mayu-ping>`.
-- `NavigationComplete` and `NavigationFailed` settle the corresponding
-  Navigation API interception after prior commands in the stream have run.
-- `RenderError` renders server-side exception UI.
+1. A feature calls `outbox.send([name, ...arguments])`, for example
+   `callbacks.dispatch` from a DOM listener that `dom/node-registry.ts`
+   installed.
+2. The outbox puts the header in: `[name, ping, telemetry, ...arguments]`.
+   `ping` is `performance.now()`, which the server echoes in a `Pong`.
+   `telemetry` is `null`, or the time spent applying commands since the
+   last event.
+3. `protocol/event-codec.ts` frames it: one byte for raw MessagePack or
+   `deflate-raw`, four bytes of payload length, then the payload. Events of 512
+   bytes or more are compressed when that makes the frame smaller.
+4. `connection/event-stream.ts` sends the frame in a streaming `PATCH`, or in
+   a `PATCH` of its own where request streams are unsupported.
 
-## Reconnect and Recovery (Current)
+With no connection, `send` resolves to `false` and the event is dropped.
+Events are never replayed. Features that wait for an answer subscribe to
+`outbox.onDisconnect` and reject what they were waiting for.
 
-In `SessionConnection.run(...)`:
+The events, without their header:
 
-- `failures` resets to `0` on successful connection.
-- each loop iteration creates one `AbortController` for input/callback requests.
-- On error:
-  - if `shouldResetSession(error)` is true:
-    - checks structured `error.code` first (e.g. `SESSION_EXPIRED`, `SESSION_CIPHER_ERROR`, `SESSION_NOT_FOUND`, `TOKEN_COOKIE_NOT_SET`),
-    - falls back to normalized message matching (`"expired"`, `"cipher error"`, `"Session not found"`, `"Token cookie not set"`, and SCREAMING_SNAKE_CASE variants),
-    - call `resetSessionEntirely()`,
-    - fetch full HTML page + `x-mayu-session-id`,
-    - morph DOM with `morphdom`,
-    - clear transfer state,
-    - continue with new endpoint,
-    - if reset fails, log the reset failure and continue with normal backoff/retry.
-  - otherwise:
-    - wait with linear backoff (`1s .. 10s`),
-    - retry same endpoint.
-- at iteration teardown (`finally`):
-  - abort active requests/streams,
-  - abort/release callback writer,
-  - clear the `Mayu` instance's writer reference.
+- `["Callback", listenerId, event]` for continuous events (input,
+  pointermove, scroll, …), at most 30 a second per listener, and
+  `["Callback", listenerId, event, settleId]` for the rest, answered by
+  `CallbackComplete` or `CallbackFailed`.
+- `["Navigate", id, href]` for an intercepted same-origin navigation, which
+  stays pending until `NavigationComplete(id)`.
+- `["Ping"]` after `PING_INTERVAL` without outbound traffic. The timer runs
+  in a worker where possible, because hidden tabs throttle page timers
+  beyond the server's session timeout.
+- `["Visibility", hidden]` on `visibilitychange`, and on connecting from a
+  hidden tab.
+- `["Inspect", id, query]` from the devtools.
 
-## Structured Stream Errors
+## Connecting and recovering
 
-Server stream errors now return JSON with:
+`SessionConnection.run` loops forever:
 
-- `code` (stable machine-readable error code),
-- `message` (human-readable message),
-- `error` (legacy field kept for backward compatibility).
+1. `runAttempt` opens the command stream (`GET`, or `POST` with the transfer
+   state), attaches a writer to the outbox, opens the event stream, and applies
+   batches. It resolves when the command stream ends cleanly and rejects when
+   either stream fails. Either way it aborts both requests and detaches the
+   outbox, so both directions always reconnect together.
+2. After a clean end the loop reconnects at once, then a second later each
+   time the server keeps closing new streams.
+3. After a failure it checks the error code. For `SESSION_NOT_FOUND`,
+   `SESSION_EXPIRED`, `SESSION_CIPHER_ERROR`, `SESSION_RESTORE_FAILED`,
+   `TOKEN_COOKIE_NOT_SET` and `TRANSFER_FAILED` it fetches the page again,
+   morphs the document into it (`morphdom`, loaded on demand) and connects to
+   the new session. Otherwise, or if that fails, it waits one second more per
+   failure in a row, up to ten.
 
-Client parsing in `stream.ts` supports both new and legacy payload shapes.
+A `Transfer` command hands the browser the encrypted session of a server that
+is stopping. The connection keeps it until another server has resumed it, and
+reports "transferring" rather than "disconnected" meanwhile.
 
-## Client Tests
+## Keeping it small
 
-- test runner: Vitest (`jsdom` environment).
-- config: `lib/mayu/client/vitest.config.ts`.
-- test files:
-  - `lib/mayu/client/src/session-recovery.test.ts`
-  - `lib/mayu/client/src/session-connection.test.ts`
-  - `lib/mayu/client/src/stream.test.ts`
+Every page loads `init` and `main`. Anything a healthy production session
+does not need on every page is a separate chunk behind `import()`: the error
+overlay, both custom elements, `morphdom`, and the devtools with
+`features/inspect.ts`.
 
-Run:
+`protocol/msgpack.ts` is a codec for the part of MessagePack the protocol
+uses, in place of a general-purpose library that was two fifths of the
+bundle. `@msgpack/msgpack` remains a dev dependency: `msgpack.test.ts`
+compares the two on random values, and decodes bytes packed by Ruby.
 
-- `npm run test --workspace lib/mayu/client`
-- `npm run test:watch --workspace lib/mayu/client`
+`npm run size` builds and prints every chunk, and fails when the eager chunks
+outgrow the budget in `scripts/check-size.js`. Lower the budget when a change
+shrinks them.
 
-## Refactor Plan
+## The protocol, defined once
 
-1. Split `main.ts` into focused modules. (Done)
-   - Extract `SessionConnection` (connect/decode/apply/retry loop).
-   - Extract `SessionRecovery` (`shouldResetSession`, `resetSessionEntirely`).
-   - Keep `Mayu` as a small client API surface (`callback`, `navigate`, `ping`).
-2. Unify view-transition handling in a shared helper. (Done)
-   - Use the same helper from both `session-recovery.ts` (full session reset morph) and `runtime.ts` (`ViewTransition` command).
-3. Move from message matching to structured stream error codes. (Done)
-   - Server returns `{ code, message }` and also keeps legacy `error`.
-   - Client reset/retry policy checks `code` first, then falls back to messages.
-4. Add explicit connection teardown/cancellation. (Done)
-   - Each connection attempt now has an `AbortController`.
-   - Teardown aborts stream requests and clears callback writer resources.
-5. Isolate retry/backoff policy.
-   - Extract backoff calculation so reconnect timing is easy to test and tune.
-6. Tighten command typing.
-   - Replace broad tuples/`any` with stronger command payload types so runtime dispatch is type-safe.
-7. Gate debug logging.
-   - Route noisy `console.*` calls through a debug logger flag to keep production output clean.
-8. Add targeted tests for critical recovery behavior. (Done)
-   - `shouldResetSession` cases.
-   - missing `x-mayu-session-id` during reset.
-   - reset failure falls back to reconnect backoff.
+`../protocol.json` lists the commands, events, error codes, continuous event
+types and element methods. `protocol-manifest.test.ts` checks this runtime
+against it, and `lib/mayu/protocol.test.rb` checks the server.
 
-### Suggested Order
+## Tests
 
-1. Step 1 (split responsibilities).
-2. Step 2 (shared view transition helper).
-3. Step 5 (retry policy extraction).
-4. Step 4 (connection teardown model).
-5. Step 8 (tests around current behavior).
-6. Step 6 (typing hardening).
-7. Step 7 (logging cleanup).
+Vitest with jsdom; tests sit next to the module they cover.
+
+- `npm test -w gems/mayu-live/lib/mayu/client` runs the tests and the size check.
+- `npm run typecheck -w gems/mayu-live/lib/mayu/client`

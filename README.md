@@ -191,7 +191,7 @@ and private APIs directly in your callback handlers.
 Mayu detects changes in components and sends instructions
 on how to patch the DOM to the browser using the
 [Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
-[Client stream implementation](https://github.com/mayu-live/framework/blob/main/gems/mayu-live/lib/mayu/client/src/stream.ts).
+[Client stream implementation](https://github.com/mayu-live/framework/blob/main/gems/mayu-live/lib/mayu/client/src/connection/command-stream.ts).
 
 Callbacks and navigation events are sent as framed MessagePack tuples over an
 authenticated `PATCH` stream. Larger events are independently compressed with

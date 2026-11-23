@@ -18,6 +18,7 @@ module Mayu
     module EventStream
       CONTENT_TYPE = "application/vnd.mayu.event-stream"
       CONTENT_ENCODING = "deflate-raw"
+      COMMAND_FRAME_HEADER_BYTES = 4
       CLIENT_EVENT_FRAME_HEADER_BYTES = 5
       CLIENT_EVENT_ENCODING_RAW = 0
       CLIENT_EVENT_ENCODING_DEFLATE_RAW = 1
@@ -86,9 +87,9 @@ module Mayu
               "Attempted to write to a closed #{self.class.name}"
           end
 
-          packed = @wrapper.pack(batch)
-          payload = @deflate ? deflate_chunk(packed) : packed
-          record_batch(batch, packed, payload)
+          frame = EventStream.command_frame(@wrapper.pack(batch))
+          payload = @deflate ? deflate_chunk(frame) : frame
+          record_batch(batch, frame, payload)
           write(payload)
         end
 
@@ -136,6 +137,39 @@ module Mayu
           raise unless output.end_with?("\x00\x00\xff\xff".b)
           output
         end
+      end
+
+      # A batch on the command stream is a frame: four bytes holding the
+      # length of the payload, big-endian, then the batch as MessagePack. The
+      # browser decodes one whole frame at a time, and a stream that ends in
+      # the middle of one was cut off.
+      def self.command_frame(packed)
+        [packed.bytesize].pack("N") << packed
+      end
+
+      # The MessagePack payload of every frame in the bytes of a command
+      # stream, after decompression.
+      def self.command_frames(bytes)
+        frames = []
+        offset = 0
+
+        while offset < bytes.bytesize
+          header = bytes.byteslice(offset, COMMAND_FRAME_HEADER_BYTES)
+          unless header.bytesize == COMMAND_FRAME_HEADER_BYTES
+            raise InvalidMessageError, "Truncated command frame header"
+          end
+
+          length = header.unpack1("N")
+          payload = bytes.byteslice(offset + COMMAND_FRAME_HEADER_BYTES, length)
+          unless payload.bytesize == length
+            raise InvalidMessageError, "Truncated command frame"
+          end
+
+          frames << payload
+          offset += COMMAND_FRAME_HEADER_BYTES + length
+        end
+
+        frames
       end
 
       Blob =

@@ -184,7 +184,7 @@ at `/.mayu/assets/`.
 
 - App HTML route (new session): `GET /...` with `Accept: text/html`
 - Runtime JS: `GET /.mayu/runtime/...`
-- Init JS shim: `GET /.mayu/init.js`
+- Init JS shim: `GET /.mayu/runtime/init-<hash>.js#<session id>`
 - Assets: `GET /.mayu/assets/...`
 - Session stream resume: `GET /.mayu/session/:id`
 - Session transfer resume: `POST /.mayu/session/:id`
@@ -214,32 +214,44 @@ On shutdown or an explicit transfer command:
 ### Main pieces
 
 - `init.ts`: bundled initializer that loads the runtime on DOM readiness.
-- `main.ts`: runtime entrypoint called by the initializer.
-- `session-connection.ts`: reconnect loop, stream setup, batch decoding, callback stream setup.
-- `stream.ts`: HTTP stream connect helpers for command stream + outgoing event stream/fallback.
-- `runtime.ts`: command dispatcher against real DOM + node ID registry.
-- `mayu.ts`: client session state and event transport for callbacks/navigation/pings.
-- `serializeEvent.ts`: serializes DOM event payloads.
-- `client-event-codec.ts`: encodes, frames, and optionally compresses
-  client-to-server event tuples.
-- `session-recovery.ts`: full-session reset fallback (re-fetch page + morph DOM) for unrecoverable session errors.
+- `main.ts`: the one place where the modules are wired together.
+- `protocol/`: the typed commands and events, MIME types, and the codecs for
+  both directions.
+- `connection/`: the command stream, the event stream, one connection
+  attempt, the retry loop with its backoff, session reset, and the outbox
+  every event leaves through.
+- `dispatch.ts`: applies a batch by calling the handler that owns each command.
+- `dom/`: the node ID registry, hydration, and the handlers that patch the DOM.
+- `features/`: callbacks, navigation, heartbeat, devtools inspect, and event
+  serialization.
+- `ui/`: the status indicator, the error overlay, and view transitions.
+
+See `gems/mayu-live/lib/mayu/client/src/README.md` for the full module map.
 
 ### Command protocol boundary
 
-Ruby command types in `gems/mayu-live/lib/mayu/runtime/commands.rb` must stay in sync with
-command handlers in `gems/mayu-live/lib/mayu/client/src/runtime.ts`.
+`gems/mayu-live/lib/mayu/client/protocol.json` lists the commands, events, error
+codes and other names both sides share. `gems/mayu-live/lib/mayu/protocol.test.rb`
+checks the Ruby side against it (`runtime/commands.rb`, `session.rb`), and
+`client/src/protocol-manifest.test.ts` checks the browser side
+(`client/src/protocol/commands.ts` and the handlers `main.ts` registers).
 
-Every decoded MessagePack value is a batch (`Command[]`), and every command is
-a compact `[name, ...arguments]` tuple. There is no `Batch` command or extra
-transport wrapper. `ViewTransition` is the only command that intentionally
-contains a nested batch.
+The command stream is a sequence of frames: four bytes of payload length,
+big-endian, then one batch as MessagePack. A batch is `Command[]`, and every
+command is a compact `[name, ...arguments]` tuple. There is no `Batch` command.
+`ViewTransition` is the only command that intentionally contains a nested
+batch.
+
+Events from the browser are `[name, ping, telemetry, ...arguments]`, framed
+with one byte of encoding and four bytes of length (`Session::Events.parse`,
+`Server::EventStream.each_incoming_message`).
 
 Notable command categories:
 
 - tree creation/removal (`CreateTree`, `RemoveNode`)
 - child replacement (`ReplaceChildren`)
 - attributes/classes/styles/text
-- navigation (`HistoryPushState`)
+- navigation (`NavigationComplete`, `NavigationFailed`, `DocumentNavigation`)
 - head/error/custom elements
 - transfer blob
 - view-transition batches (`ViewTransition`)
@@ -322,10 +334,13 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
   - `gems/mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb`
 - Change diffing/command emission:
   - `gems/mayu-live/lib/mayu/runtime/vnodes/*`
-  - `gems/mayu-live/lib/mayu/runtime/commands.rb` (wire commands; also update TS handlers)
-  - `gems/mayu-live/lib/mayu/client/src/runtime.ts`
+  - `gems/mayu-live/lib/mayu/runtime/commands.rb` (wire commands)
+  - `gems/mayu-live/lib/mayu/client/protocol.json` (the shared list)
+  - `gems/mayu-live/lib/mayu/client/src/protocol/commands.ts`
+  - `gems/mayu-live/lib/mayu/client/src/dom/handlers.ts`
 - Change event serialization or callback semantics:
-  - `gems/mayu-live/lib/mayu/client/src/serializeEvent.ts`
+  - `gems/mayu-live/lib/mayu/client/src/features/serialize-event.ts`
+  - `gems/mayu-live/lib/mayu/client/src/features/callbacks.ts`
   - `gems/mayu-live/lib/mayu/runtime/vnodes/vattributes.rb`
   - `gems/mayu-live/lib/mayu/session.rb` (`Events.parse`)
 - Change route/file conventions:
@@ -347,8 +362,8 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
   - `gems/mayu-live/lib/mayu/server/cookies.rb`
   - `gems/mayu-live/lib/mayu/session/*`
   - `gems/mayu-live/lib/mayu/encrypted_marshal.rb`
-  - `gems/mayu-live/lib/mayu/client/src/session-connection.ts`
-  - `gems/mayu-live/lib/mayu/client/src/session-recovery.ts`
+  - `gems/mayu-live/lib/mayu/client/src/connection/session-connection.ts`
+  - `gems/mayu-live/lib/mayu/client/src/connection/recovery.ts`
 
 ## Sharp Edges / Agent Notes
 
@@ -367,5 +382,6 @@ In multi-process mode, worker reporters push metrics to a collector server, whic
 - `gems/mayu-live/lib/mayu/runtime/vnodes/vchildren.rb`
 - `gems/mayu-live/lib/mayu/modules/system.rb`
 - `gems/mayu-live/lib/mayu/modules/README.md`
-- `gems/mayu-live/lib/mayu/client/src/session-connection.ts`
-- `gems/mayu-live/lib/mayu/client/src/runtime.ts`
+- `gems/mayu-live/lib/mayu/client/src/connection/session-connection.ts`
+- `gems/mayu-live/lib/mayu/client/src/dispatch.ts`
+- `gems/mayu-live/lib/mayu/client/src/dom/handlers.ts`

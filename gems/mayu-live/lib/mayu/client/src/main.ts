@@ -1,13 +1,22 @@
-import Runtime from "./runtime.js";
-import { SESSION_PATH } from "./constants";
-import Mayu from "./mayu.js";
-import { createBrowserActionHandler } from "./browser-actions.js";
-import Devtools from "./devtools.js";
-import SessionConnection from "./session-connection.js";
+import Outbox from "./connection/outbox";
+import SessionConnection from "./connection/session-connection";
+import CommandDispatcher from "./dispatch";
+import domHandlers from "./dom/handlers";
+import NodeRegistry from "./dom/node-registry";
+import { createBrowserActionHandler } from "./features/browser-actions";
+import Callbacks from "./features/callbacks";
+import Heartbeat from "./features/heartbeat";
+import type Inspect from "./features/inspect";
+import Navigation from "./features/navigation";
+import { SESSION_PATH } from "./protocol/constants";
+import { errorOverlayHandlers } from "./ui/error-overlay";
 
 let initialized = false;
 
-export default function init(sessionId: string) {
+// Builds the runtime and connects it to the session. This is the only place
+// where the modules are wired together: every command is handled by the
+// module that owns it, and every event leaves through the outbox.
+export default async function init(sessionId: string) {
   if (initialized) throw new Error("Mayu is already initialized");
   initialized = true;
 
@@ -20,29 +29,57 @@ export default function init(sessionId: string) {
   `);
   document.adoptedStyleSheets.push(sheet);
 
-  const mayu = new Mayu();
-  const devtools = new Devtools();
-  const runtime = new Runtime(
-    (event, listenerId) => {
-      mayu.callback(event, listenerId);
-    },
-    {
-      onNavigationComplete: (id) => mayu.completeNavigation(id),
-      onNavigationFailed: (id) => mayu.failNavigation(id),
-      onDocumentNavigation: (id, href) => mayu.documentNavigation(id, href),
-      onBrowserAction: createBrowserActionHandler(mayu),
-      onBatchApplied: (batch, durationMs) => {
-        mayu.recordCommandApply(batch.length, durationMs);
-        devtools.batchApplied(batch, durationMs);
-      },
-      onInspectResult: (id, result) => mayu.resolveInspect(id, result),
-      onCallbackComplete: (id) => mayu.completeCallback(id),
-      onCallbackFailed: (id) => mayu.failCallback(id),
-    },
-  );
-  devtools.register(runtime, mayu);
+  const outbox = new Outbox();
+  const callbacks = new Callbacks(outbox);
+  const heartbeat = new Heartbeat(outbox);
+  const navigation = new Navigation(outbox);
+  const registry = new NodeRegistry((event, listenerId) => {
+    callbacks.dispatch(event, listenerId);
+  });
+  let inspect: Inspect | undefined;
 
-  const endpoint = `${SESSION_PATH}/${sessionId}`;
-  const connection = new SessionConnection({ runtime, mayu, endpoint });
+  const connection = new SessionConnection({
+    endpoint: `${SESSION_PATH}/${sessionId}`,
+    outbox,
+    applyBatch: (batch) => dispatcher.applyBatch(batch),
+  });
+
+  const dispatcher = new CommandDispatcher({
+    ...domHandlers(registry),
+    ...callbacks.handlers,
+    ...heartbeat.handlers,
+    ...navigation.handlers,
+    ...connection.handlers,
+    ...errorOverlayHandlers,
+    BrowserAction: createBrowserActionHandler(navigation),
+    InspectResult: (id, result) => inspect?.resolve(id, result),
+  });
+
+  dispatcher.onBatchApplied((batch, durationMs) => {
+    outbox.recordCommandApply(batch.length, durationMs);
+  });
+
+  // The devtools extension defines its hook before the page loads. Without
+  // it, none of the devtools code is fetched.
+  if (window.__MAYU_DEVTOOLS_HOOK__) {
+    const [{ default: Devtools }, { default: Inspect }] = await Promise.all([
+      import("./devtools"),
+      import("./features/inspect"),
+    ]);
+    const inspector = new Inspect(outbox);
+    inspect = inspector;
+    const devtools = new Devtools();
+    dispatcher.onBatchApplied((batch, durationMs) => {
+      devtools.batchApplied(batch, durationMs);
+    });
+    devtools.register(
+      {
+        node: (id) => registry.findNode(id),
+        nodeId: (node) => registry.getNodeInfo(node)?.id,
+      },
+      inspector,
+    );
+  }
+
   void connection.run();
 }

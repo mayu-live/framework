@@ -5,6 +5,7 @@ require "minitest/autorun"
 require "async"
 require "delegate"
 require_relative "event_stream"
+require_relative "../session"
 
 class Mayu::Server::EventStreamTest < Minitest::Test
   Writer = Mayu::Server::EventStream::Writer
@@ -40,14 +41,15 @@ class Mayu::Server::EventStreamTest < Minitest::Test
             0x00,
             0x00,
             0x00,
-            0x07,
-            0x92,
+            0x08,
+            0x93,
             0xa4,
             0x50,
             0x69,
             0x6e,
             0x67,
-            0x7b
+            0x7b,
+            0xc0
           ].pack("C*")
         ]
       )
@@ -57,7 +59,11 @@ class Mayu::Server::EventStreamTest < Minitest::Test
       messages << message
     end
 
-    assert_equal([["Ping", 123]], messages)
+    assert_equal([["Ping", 123, nil]], messages)
+    assert_equal(
+      Mayu::Session::Events::PingEvent[123],
+      Mayu::Session::Events.parse(messages.first)
+    )
   end
 
   def test_reads_every_message_from_a_single_chunk
@@ -161,21 +167,46 @@ class Mayu::Server::EventStreamTest < Minitest::Test
       bytes << chunk
     end
     inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
-    unpacker = MessagePack::Unpacker.new
-    unpacker.feed(inflater.inflate(bytes))
+    frames = Mayu::Server::EventStream.command_frames(inflater.inflate(bytes))
     assert(inflater.finished?)
     assert_equal(
       [
         [["Initialize", {}]],
         [["Transfer", "encrypted state"]]
       ],
-      unpacker.each.to_a
+      frames.map { MessagePack.unpack(it) }
     )
     writer.close
     assert(writer.wait)
   ensure
     writer&.close
     inflater&.close
+  end
+
+  def test_a_command_frame_is_its_length_and_then_the_batch
+    writer = Writer.new(compress: false)
+    writer.write_batch(
+      Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Pong[1]]]
+    )
+    writer.close_write
+
+    # [["Pong", 1]] is 91 92 a4 "Pong" 01: eight bytes.
+    assert_equal(
+      [0, 0, 0, 8, 0x91, 0x92, 0xa4, 0x50, 0x6f, 0x6e, 0x67, 0x01],
+      writer.read.bytes
+    )
+  ensure
+    writer&.close
+  end
+
+  def test_a_cut_off_command_frame_is_rejected
+    frame = Mayu::Server::EventStream.command_frame(MessagePack.pack([["Pong", 1]]))
+
+    [frame[0, 2], frame[0, frame.bytesize - 1]].each do |bytes|
+      assert_raises(Mayu::Server::EventStream::InvalidMessageError) do
+        Mayu::Server::EventStream.command_frames(bytes)
+      end
+    end
   end
 
   def test_records_command_batch_counts_and_stream_bytes
@@ -208,7 +239,10 @@ class Mayu::Server::EventStreamTest < Minitest::Test
     writer.close_write
 
     chunks = [writer.read, writer.read]
-    assert_equal([[["Transfer", "state"]]] * 2, chunks.map { MessagePack.unpack(it) })
+    assert_equal(
+      [[["Transfer", "state"]]] * 2,
+      Mayu::Server::EventStream.command_frames(chunks.join).map { MessagePack.unpack(it) }
+    )
     assert_nil(writer.read)
     bytes = chunks.sum(&:bytesize)
     assert_equal(bytes, metrics.command_batch_uncompressed_bytes_total.value)
@@ -275,8 +309,8 @@ class Mayu::Server::EventStreamTest < Minitest::Test
     inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
     bytes = writer.read + writer.read
     assert_equal(
-      [["Transfer", "state"]],
-      MessagePack.unpack(inflater.inflate(bytes))
+      [[["Transfer", "state"]]],
+      Mayu::Server::EventStream.command_frames(inflater.inflate(bytes)).map { MessagePack.unpack(it) }
     )
     assert(inflater.finished?)
   ensure

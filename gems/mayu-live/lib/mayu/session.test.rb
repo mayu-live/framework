@@ -192,8 +192,23 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_invalid_event_messages_are_rejected
     assert_raises(Mayu::Session::Events::InvalidEventError) do
-      Mayu::Session::Events.parse(["Callback", "", {}, 1])
+      Mayu::Session::Events.parse(["Callback", 1, nil, "", {}])
     end
+  end
+
+  def test_events_without_a_telemetry_slot_are_rejected
+    [["Ping", 1], ["Visibility", 5, true], ["Navigate", "nav-1", "/next", 1]].each do |message|
+      assert_raises(Mayu::Session::Events::InvalidEventError) do
+        Mayu::Session::Events.parse(message)
+      end
+    end
+  end
+
+  def test_ping_message_without_telemetry_has_none
+    assert_equal(
+      Mayu::Session::Events::PingEvent[123],
+      Mayu::Session::Events.parse(["Ping", 123, nil])
+    )
   end
 
   def test_legacy_json_event_objects_are_rejected
@@ -205,7 +220,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_callback_message_parses_to_one_typed_event
     event =
       Mayu::Session::Events.parse(
-        ["Callback", "listener", {type: "click"}, 123]
+        ["Callback", 123, nil, "listener", {type: "click"}]
       )
 
     assert_equal(
@@ -221,7 +236,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_callback_message_parses_a_settle_id
     event =
       Mayu::Session::Events.parse(
-        ["Callback", "listener", {type: "click"}, 123, "s1"]
+        ["Callback", 123, nil, "listener", {type: "click"}, "s1"]
       )
 
     assert_equal("s1", event.settle_id)
@@ -233,11 +248,11 @@ class Mayu::SessionTest < Minitest::Test
       Mayu::Session::Events.parse(
         [
           "Callback",
+          123,
+          {batches: 1, commands: 2, duration_ms: 0.5},
           "listener",
           {type: "click"},
-          123,
-          "s1",
-          {batches: 1, commands: 2, duration_ms: 0.5}
+          "s1"
         ]
       )
 
@@ -250,10 +265,10 @@ class Mayu::SessionTest < Minitest::Test
       Mayu::Session::Events.parse(
         [
           "Callback",
-          "listener",
-          {type: "click"},
           123,
-          {batches: 1, commands: 2, duration_ms: 0.5}
+          {batches: 1, commands: 2, duration_ms: 0.5},
+          "listener",
+          {type: "click"}
         ]
       )
 
@@ -265,14 +280,14 @@ class Mayu::SessionTest < Minitest::Test
     ["", "x" * 33, 5].each do |settle_id|
       assert_raises(Mayu::Session::Events::InvalidEventError) do
         Mayu::Session::Events.parse(
-          ["Callback", "listener", {type: "click"}, 123, settle_id]
+          ["Callback", 123, nil, "listener", {type: "click"}, settle_id]
         )
       end
     end
   end
 
   def test_visibility_message_parses_to_a_typed_event
-    event = Mayu::Session::Events.parse(["Visibility", true, 5])
+    event = Mayu::Session::Events.parse(["Visibility", 5, nil, true])
 
     assert_equal(Mayu::Session::Events::VisibilityEvent[true, 5], event)
   end
@@ -334,7 +349,7 @@ class Mayu::SessionTest < Minitest::Test
   end
 
   def test_inspect_message_parses_to_a_typed_event
-    event = Mayu::Session::Events.parse(["Inspect", "req-1", {type: "tree"}, 5])
+    event = Mayu::Session::Events.parse(["Inspect", 5, nil, "req-1", {type: "tree"}])
 
     assert_equal(
       Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 5],
@@ -429,7 +444,7 @@ class Mayu::SessionTest < Minitest::Test
     session = Mayu::Session.new(environment: env, request_info: request_info)
     queue = session.instance_variable_get(:@incoming_events)
 
-    session.receive_message(["Navigate", "nav-1", "/next", 123])
+    session.receive_message(["Navigate", 123, nil, "nav-1", "/next"])
 
     Async do
       event = Async::Task.current.with_timeout(0.5) { queue.dequeue }

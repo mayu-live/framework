@@ -60,10 +60,6 @@ module Mayu
 
       CreateTree = CommandData.define(:html, :tree)
 
-      CreateElement = CommandData.define(:id, :type)
-      CreateTextNode = CommandData.define(:id, :content)
-      CreateComment = CommandData.define(:id, :content)
-
       ReplaceChildren = CommandData.define(:id, :child_ids)
 
       RemoveNode = CommandData.define(:id)
@@ -71,7 +67,6 @@ module Mayu
       SetAttribute = CommandData.define(:id, :name, :value)
       RemoveAttribute = CommandData.define(:id, :name)
 
-      SetClassName = CommandData.define(:id, :class_name)
       AddClass = CommandData.define(:id, :classes)
       RemoveClass = CommandData.define(:id, :classes)
 
@@ -82,9 +77,6 @@ module Mayu
       RemoveCSSProperty = CommandData.define(:id, :name)
 
       SetTextContent = CommandData.define(:id, :content)
-      ReplaceData = CommandData.define(:id, :offset, :count, :data)
-      InsertData = CommandData.define(:id, :offset, :data)
-      DeleteData = CommandData.define(:id, :offset, :count)
 
       Transfer = CommandData.define(:payload)
       TransferFailed = CommandData.define
@@ -102,7 +94,7 @@ module Mayu
       # Runs a built-in browser action, such as navigate or alert.
       BrowserAction = CommandData.define(:name, :args)
       # Calls a method on an element, through `ref.current`. The method is
-      # the snake_case name that client/src/element-calls.ts maps.
+      # the snake_case name that client/src/dom/element-calls.ts maps.
       ElementCall = CommandData.define(:id, :method, :args)
       InspectResult = CommandData.define(:request_id, :result)
 

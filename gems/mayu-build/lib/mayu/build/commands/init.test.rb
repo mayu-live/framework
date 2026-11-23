@@ -9,7 +9,7 @@ require_relative "init"
 class Mayu::Build::Commands::InitTest < Minitest::Test
   TEMPLATE_SETTLED = File.join(__dir__, "init", "template", "app", "lib", "settled.ts")
   RUNTIME_SETTLED =
-    File.expand_path("../../../../../mayu-live/lib/mayu/client/src/settled.ts", __dir__)
+    File.expand_path("../../../../../mayu-live/lib/mayu/client/src/features/settled.ts", __dir__)
 
   # The app's `settled` helper finds the runtime's promises through a global
   # symbol, so both have to name the same one.

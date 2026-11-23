@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./ping", () => ({ updatePing: vi.fn() }));
+vi.mock("./ui/status", () => ({ updatePing: vi.fn() }));
 
-import Runtime from "./runtime";
-import { updatePing } from "./ping";
+import Runtime from "./test-runtime";
+import { updatePing } from "./ui/status";
 
 function tree() {
   return {
@@ -448,22 +448,22 @@ describe("runtime attributes", () => {
     document.documentElement.innerHTML = "<head></head><body></body>";
   });
 
-  it("maps Ruby-style attribute underscores to HTML hyphens", async () => {
+  it("sets and removes attributes by the name the server sends", async () => {
     document.body.innerHTML = "<button>Go</button>";
     const runtime = new Runtime(vi.fn());
     const button = document.querySelector("button")!;
 
     await runtime.applyBatch([
       ["Initialize", tree()],
-      ["SetAttribute", "button", "data_role", "user"],
-      ["SetAttribute", "button", "aria_label", "Send message"],
+      ["SetAttribute", "button", "data-role", "user"],
+      ["SetAttribute", "button", "aria-label", "Send message"],
     ]);
 
     expect(button.getAttribute("data-role")).toBe("user");
     expect(button.getAttribute("aria-label")).toBe("Send message");
     expect(button.hasAttribute("datarole")).toBe(false);
 
-    await runtime.applyBatch([["RemoveAttribute", "button", "data_role"]]);
+    await runtime.applyBatch([["RemoveAttribute", "button", "data-role"]]);
 
     expect(button.hasAttribute("data-role")).toBe(false);
   });
@@ -591,7 +591,7 @@ describe("runtime command errors", () => {
       .mockImplementation(() => undefined);
     const runtime = new Runtime(vi.fn());
 
-    await runtime.applyBatch([["UnknownCommand"], ["Pong", 10]]);
+    await runtime.applyBatch([["UnknownCommand"] as any, ["Pong", 10]]);
 
     expect(error).toHaveBeenCalledWith(
       "Command 0 (UnknownCommand) failed",
@@ -605,7 +605,7 @@ describe("runtime command errors", () => {
     const runtime = new Runtime(vi.fn(), { commandErrorPolicy: "throw" });
 
     await expect(
-      runtime.applyBatch([["UnknownCommand"], ["Pong", 10]]),
+      runtime.applyBatch([["UnknownCommand"] as any, ["Pong", 10]]),
     ).rejects.toThrow("Unknown command: UnknownCommand");
     expect(updatePing).not.toHaveBeenCalled();
   });

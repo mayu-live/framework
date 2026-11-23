@@ -17,7 +17,8 @@
     "watch": "npm run build -- --watch",
     "build": "rolldown -c rolldown.config.js",
     "build:production": "npm run build",
-    "test": "vitest run",
+    "test": "vitest run && npm run size",
+    "size": "npm run build && node scripts/check-size.js",
     "test:watch": "vitest",
     "typecheck": "tsc -p ."
   },

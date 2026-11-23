@@ -66,7 +66,7 @@ module Mayu
       SESSION_PATH_RE = %r{\A/.mayu/session/(?<session_id>[[:alnum:]]+)\z}
 
       def call(request)
-        return text_response(503, "Server is stopping") if @stopping
+        return stopping_response(request) if @stopping
 
         # puts "\e[3;33m #{request.method} #{request.path} \e[0m"
 
@@ -431,7 +431,7 @@ module Mayu
 
       def handle_session_transfer(request, session_id)
         state = request.read.to_s
-        return text_response(503, "Server is stopping") if @stopping
+        return session_stopping_response(request) if @stopping
 
         transfer =
           Session::TransferState
@@ -449,12 +449,16 @@ module Mayu
           session = transfer.resume(@environment)
         rescue => error
           Console.logger.error(self, "Could not restore transferred session #{session_id}", error)
-          return error_response(422, "SESSION_RESTORE_FAILED")
+          return error_response(
+            422,
+            "SESSION_RESTORE_FAILED",
+            **origin_header(request)
+          )
         end
 
         if @stopping
           session.stop
-          return text_response(503, "Server is stopping")
+          return session_stopping_response(request)
         end
 
         @sessions.store(session)
@@ -465,11 +469,14 @@ module Mayu
         )
 
         run_session_stream(request, session)
-      rescue Mayu::EncryptedMarshal::ExpiredError
-        error_response(403, "SESSION_EXPIRED")
+      rescue Mayu::EncryptedMarshal::ExpiredError,
+        Mayu::EncryptedMarshal::IssuedInTheFutureError
+        # A state from the future means the two servers' clocks disagree.
+        # Either way this state can not be resumed, so the client starts over.
+        error_response(403, "SESSION_EXPIRED", **origin_header(request))
       rescue Mayu::EncryptedMarshal::DecryptError => e
         Console.logger.error(self, e)
-        error_response(403, "SESSION_CIPHER_ERROR")
+        error_response(403, "SESSION_CIPHER_ERROR", **origin_header(request))
       end
 
       def handle_session_resume(request, session_id)
@@ -591,13 +598,7 @@ module Mayu
           session.receive_message(message)
         end
 
-        if @stopping
-          return error_response(
-            503,
-            "SERVER_STOPPING",
-            **origin_header(request)
-          )
-        end
+        return session_stopping_response(request) if @stopping
 
         # A 204 has no body. A body would make the server send content-length,
         # which HTTP/2 clients reject on a 204.
@@ -617,13 +618,33 @@ module Mayu
         response(
           status,
           *bodies,
-          "content-type": "text/plain; charset-utf-8",
+          "content-type": "text/plain; charset=utf-8",
           **headers
         )
       end
 
+      # The runtime acts on `code`; client/protocol.json lists the codes.
       def error_response(status, code, message: code, **headers)
-        json_response(status, {code:, message:, error: code}, **headers)
+        json_response(status, {code:, message:}, **headers)
+      end
+
+      # Session requests come from the runtime, which reads the code. Any
+      # other request may be a person's, who gets a sentence.
+      def stopping_response(request)
+        if request.path.match?(SESSION_PATH_RE)
+          session_stopping_response(request)
+        else
+          text_response(503, "Server is stopping")
+        end
+      end
+
+      def session_stopping_response(request)
+        error_response(
+          503,
+          "SERVER_STOPPING",
+          message: "Server is stopping",
+          **origin_header(request)
+        )
       end
 
       def json_response(status, json, **headers)

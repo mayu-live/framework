@@ -185,13 +185,16 @@ module Mayu
                 end
               elsif new_value.nil?
                 if old_value
-                  collector << Commands::RemoveAttribute[@parent.dom_id, key]
+                  collector << Commands::RemoveAttribute[
+                    @parent.dom_id,
+                    attribute_name(key)
+                  ]
                 end
                 updated_attributes.delete(key)
               elsif old_value != new_value
                 collector << Commands::SetAttribute[
                   @parent.dom_id,
-                  key,
+                  attribute_name(key),
                   new_value.to_s
                 ]
                 updated_attributes[key] = new_value
@@ -201,6 +204,17 @@ module Mayu
 
           @attributes = updated_attributes
           @parent.mark_listeners_dirty if listeners_changed
+        end
+
+        # The name an attribute command carries is the attribute's real
+        # name, so `aria_label` goes out as "aria-label". `initial_value` is
+        # the one name that is not an attribute: it asks the browser to set
+        # the `value` attribute and leave the current value alone.
+        def attribute_name(key)
+          return key if key == :initial_value
+
+          name = key.to_s
+          name.include?("_") ? name.tr("_", "-") : key
         end
 
         def write_html(out)

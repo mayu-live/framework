@@ -7,7 +7,7 @@
 import type {
   Batch,
   Command,
-} from "../../../mayu-live/lib/mayu/client/src/protocol";
+} from "../../../mayu-live/lib/mayu/client/src/protocol/commands";
 
 // A batch the page applied, as the Batches tab lists it. Only command names
 // and node ids leave the page, not the commands' arguments.
@@ -21,14 +21,10 @@ export type BatchEntry = {
 // Commands whose first argument is the id of the DOM node they change. See
 // gems/mayu-live/lib/mayu/runtime/commands.rb.
 const NODE_COMMANDS = new Set([
-  "CreateElement",
-  "CreateTextNode",
-  "CreateComment",
   "ReplaceChildren",
   "RemoveNode",
   "SetAttribute",
   "RemoveAttribute",
-  "SetClassName",
   "AddClass",
   "RemoveClass",
   "SetListener",
@@ -36,9 +32,6 @@ const NODE_COMMANDS = new Set([
   "SetCSSProperty",
   "RemoveCSSProperty",
   "SetTextContent",
-  "ReplaceData",
-  "InsertData",
-  "DeleteData",
 ]);
 
 type IdNode = { id: string; children?: IdNode[] };

@@ -6,7 +6,7 @@ if (!sessionId) {
 
 const startRuntime = async () => {
   const { default: init } = await import("./main");
-  init(sessionId);
+  await init(sessionId);
 };
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", startRuntime, { once: true });
