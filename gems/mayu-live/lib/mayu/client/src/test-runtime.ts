@@ -15,6 +15,8 @@ type TestRuntimeOptions = {
   onInspectResult?: (id: string, result: unknown) => void;
   onCallbackComplete?: (id: string) => void;
   onCallbackFailed?: (id: string) => void;
+  onCommandFailed?: (name: string, error: unknown) => void;
+  onResynced?: () => void;
 };
 
 // Test support, not part of the runtime: a dispatcher with the DOM handlers
@@ -31,7 +33,7 @@ export default class TestRuntime {
     this.#registry = new NodeRegistry(onEvent);
     this.#dispatcher = new CommandDispatcher(
       {
-        ...domHandlers(this.#registry),
+        ...domHandlers(this.#registry, { onResynced: options.onResynced }),
         ...errorOverlayHandlers,
         NavigationComplete: (id) => options.onNavigationComplete?.(id),
         NavigationFailed: (id) => options.onNavigationFailed?.(id),
@@ -44,7 +46,10 @@ export default class TestRuntime {
         Pong: (timestamp) => updatePing(performance.now() - timestamp),
         Transfer: () => undefined,
       },
-      { errorPolicy: options.commandErrorPolicy },
+      {
+        errorPolicy: options.commandErrorPolicy,
+        onCommandFailed: options.onCommandFailed,
+      },
     );
 
     if (options.onBatchApplied) {

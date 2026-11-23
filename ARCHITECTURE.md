@@ -237,14 +237,35 @@ checks the Ruby side against it (`runtime/commands.rb`, `session.rb`), and
 (`client/src/protocol/commands.ts` and the handlers `main.ts` registers).
 
 The command stream is a sequence of frames: four bytes of payload length,
-big-endian, then one batch as MessagePack. A batch is `Command[]`, and every
-command is a compact `[name, ...arguments]` tuple. There is no `Batch` command.
+big-endian, then `[seq, batch]` as MessagePack. `seq` counts the batches of
+a session. A batch is `Command[]`, and every command is a compact
+`[name, ...arguments]` tuple. There is no `Batch` command.
 `ViewTransition` is the only command that intentionally contains a nested
 batch.
 
-Events from the browser are `[name, ping, telemetry, ...arguments]`, framed
-with one byte of encoding and four bytes of length (`Session::Events.parse`,
-`Server::EventStream.each_incoming_message`).
+Events from the browser are `[name, ping, ack, telemetry, ...arguments]`,
+framed with one byte of encoding and four bytes of length
+(`Session::Events.parse`, `Server::EventStream.each_incoming_message`). `ack`
+is the `seq` of the last batch the browser applied.
+
+### Reconnecting without losing updates
+
+`Session#stamp_batch` numbers every batch and keeps it until the browser
+acknowledges it, up to `MAX_UNACKED_BATCHES` and `MAX_UNACKED_BYTES`. A
+reconnecting browser names the last batch it applied in a `mayu-last-batch`
+header, and `App#run_session_stream` opens the stream in one of three ways:
+
+- with the batches it missed (`Session#batches_after`),
+- with `Initialize` when it names none, because its DOM is as the server left
+  it: fresh from the page response, or carried over by a transfer,
+- with `Resync` when the missed batches are gone: the whole page, rendered
+  from the vnode tree as it is (`Engine#resync_commands`).
+
+The browser also asks for a `Resync` with a `Resync` event when a DOM command
+fails. `Updater` then sends the page in place of that pass's DOM commands,
+so every later batch builds on it. The session and its component state stay.
+
+A new stream for a session that still has one takes over from it.
 
 Notable command categories:
 

@@ -34,6 +34,7 @@ describe("navigation", () => {
       "Navigate",
       expect.any(Number),
       null,
+      null,
       "1",
       "/next?tab=details",
     ]);

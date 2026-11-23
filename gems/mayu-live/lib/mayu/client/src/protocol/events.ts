@@ -1,8 +1,9 @@
 // The events the browser sends to the server.
 //
-// On the wire every event is `[name, ping, telemetry, ...arguments]`. `ping`
-// is performance.now() at the time of sending, which the server echoes back
-// in a Pong. `telemetry` is null, or how long the browser spent applying
+// On the wire every event is `[name, ping, ack, telemetry, ...arguments]`.
+// `ping` is performance.now() at the time of sending, which the server echoes
+// back in a Pong. `ack` is null, or the number of the last batch the browser
+// applied. `telemetry` is null, or how long the browser spent applying
 // command batches since its last event.
 
 export type CommandApplyTelemetry = {
@@ -25,12 +26,15 @@ export type OutboundEvent =
   | [name: "Navigate", id: string, href: string]
   | [name: "Ping"]
   | [name: "Visibility", hidden: boolean]
-  | [name: "Inspect", id: string, query: Record<string, unknown>];
+  | [name: "Inspect", id: string, query: Record<string, unknown>]
+  // Asks for the whole page, after a command could not be applied.
+  | [name: "Resync", reason: string];
 
 type Framed<Event> = Event extends [infer Name, ...infer Arguments]
   ? [
       name: Name,
       ping: number,
+      ack: number | null,
       telemetry: CommandApplyTelemetry | null,
       ...args: Arguments,
     ]

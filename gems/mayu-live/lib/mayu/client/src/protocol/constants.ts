@@ -2,6 +2,8 @@ export const STREAM_MIME_TYPE = "application/vnd.mayu.event-stream";
 
 export const SESSION_MIME_TYPE = "application/vnd.mayu.session";
 export const SESSION_PATH = "/.mayu/session";
+// Names the last batch a reconnecting page applied.
+export const LAST_BATCH_HEADER = "mayu-last-batch";
 
 export const PING_INTERVAL = 4_000;
 

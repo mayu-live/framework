@@ -46,7 +46,12 @@ describe("pings", () => {
     FakeWorker.instances[0].onmessage!(new MessageEvent("message"));
     await Promise.resolve();
 
-    expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number), null]);
+    expect(write).toHaveBeenCalledWith([
+      "Ping",
+      expect.any(Number),
+      null,
+      null,
+    ]);
     expect(FakeWorker.instances[0].messages).toEqual([4_000, 4_000]);
     mayu.dispose();
     expect(FakeWorker.instances[0].messages).toContain(null);
@@ -79,6 +84,7 @@ describe("pings", () => {
       "Navigate",
       expect.any(Number),
       null,
+      null,
       "1",
       "/next?tab=details",
     ]);
@@ -86,7 +92,12 @@ describe("pings", () => {
     await vi.advanceTimersByTimeAsync(1_000);
 
     expect(write).toHaveBeenCalledTimes(2);
-    expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number), null]);
+    expect(write).toHaveBeenCalledWith([
+      "Ping",
+      expect.any(Number),
+      null,
+      null,
+    ]);
     mayu.dispose();
     await vi.advanceTimersByTimeAsync(5_000);
     expect(write).toHaveBeenCalledTimes(2);
@@ -103,9 +114,15 @@ describe("pings", () => {
       "Visibility",
       expect.any(Number),
       null,
+      null,
       true,
     ]);
-    expect(write).not.toHaveBeenCalledWith(["Ping", expect.any(Number), null]);
+    expect(write).not.toHaveBeenCalledWith([
+      "Ping",
+      expect.any(Number),
+      null,
+      null,
+    ]);
 
     setVisibility("visible");
     document.dispatchEvent(new Event("visibilitychange"));
@@ -113,9 +130,15 @@ describe("pings", () => {
       "Visibility",
       expect.any(Number),
       null,
+      null,
       false,
     ]);
-    expect(write).toHaveBeenCalledWith(["Ping", expect.any(Number), null]);
+    expect(write).toHaveBeenCalledWith([
+      "Ping",
+      expect.any(Number),
+      null,
+      null,
+    ]);
     mayu.dispose();
   });
 
@@ -129,6 +152,7 @@ describe("pings", () => {
     expect(write).toHaveBeenCalledWith([
       "Visibility",
       expect.any(Number),
+      null,
       null,
       true,
     ]);

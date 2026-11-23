@@ -53,7 +53,6 @@ module Mayu
               Zlib::HUFFMAN_ONLY
             )
           end
-          @wrapper = MsgPackWrapper.new
           @on_close = Async::Promise.new
           @write_closed = false
           @consumer_closed = false
@@ -76,20 +75,23 @@ module Mayu
           flushed
         end
 
-        def write_batch(batch)
-          unless batch.is_a?(Runtime::Batch)
-            raise ArgumentError, "Expected #{Runtime::Batch}, got #{batch.class}"
-          end
-          batch.validate!
+        def write_batch(batch, seq:)
+          write_packed(
+            EventStream.pack_batch(batch, seq),
+            commands: batch.commands.size
+          )
+        end
 
+        # Writes a batch that EventStream.pack_batch already packed.
+        def write_packed(packed, commands:)
           if @write_closed || @consumer_closed
             raise ClosedStreamError,
               "Attempted to write to a closed #{self.class.name}"
           end
 
-          frame = EventStream.command_frame(@wrapper.pack(batch))
+          frame = EventStream.command_frame(packed)
           payload = @deflate ? deflate_chunk(frame) : frame
-          record_batch(batch, frame, payload)
+          record_batch(commands, frame, payload)
           write(payload)
         end
 
@@ -112,11 +114,11 @@ module Mayu
 
         private
 
-        def record_batch(batch, packed, payload)
+        def record_batch(commands, packed, payload)
           return unless @metrics
 
           @metrics.command_batches_total.increment
-          @metrics.command_batch_commands_total.increment(by: batch.commands.size)
+          @metrics.command_batch_commands_total.increment(by: commands)
           @metrics.command_batch_uncompressed_bytes_total.increment(
             by: packed.bytesize
           )
@@ -138,6 +140,21 @@ module Mayu
           output
         end
       end
+
+      # A batch as MessagePack: `[seq, commands]`. The sequence number counts
+      # the batches of one session, so the browser can say which one it
+      # applied last.
+      def self.pack_batch(batch, seq)
+        unless batch.is_a?(Runtime::Batch)
+          raise ArgumentError, "Expected #{Runtime::Batch}, got #{batch.class}"
+        end
+        batch.validate!
+
+        packer.pack([seq, batch.commands])
+      end
+
+      def self.packer = @packer ||= MsgPackWrapper.new
+      private_class_method :packer
 
       # A batch on the command stream is a frame: four bytes holding the
       # length of the payload, big-endian, then the batch as MessagePack. The

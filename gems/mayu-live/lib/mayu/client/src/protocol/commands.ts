@@ -17,6 +17,8 @@ export type TreePathEntry = { name: string; path?: string };
 
 export type CommandArguments = {
   Initialize: [tree: IdNode];
+  // The whole page as the server has it, to replace the document with.
+  Resync: [html: string, tree: IdNode];
   CreateTree: [html: string, trees: IdNode[]];
   ReplaceChildren: [id: string, childIds: string[]];
   RemoveNode: [id: string];
@@ -64,6 +66,10 @@ export type Command = {
 }[CommandName];
 
 export type Batch = Command[];
+
+// A batch as it arrives: numbered, so the browser can say which batch it
+// applied last.
+export type NumberedBatch = [seq: number, batch: Batch];
 
 export type CommandHandler<Name extends CommandName> = (
   ...args: CommandArguments[Name]

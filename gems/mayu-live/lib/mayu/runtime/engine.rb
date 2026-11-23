@@ -389,6 +389,32 @@ module Mayu
         @root.dom_id_tree
       end
 
+      # The page as the vnode tree has it now, without updating anything, and
+      # what the browser needs to adopt it: the ids and the listeners.
+      def resync_commands
+        out = StringIO.new
+        @root.write_current_html(out)
+
+        [Commands::Resync[out.string, dom_id_tree], *listener_commands]
+      end
+
+      # Sends the browser the whole page, after the updates queued before
+      # this and in place of their DOM commands.
+      def resync
+        if @updater&.task
+          @updater.enqueue(VNodes::Updater::Resync.new)
+        else
+          enqueue_batch(Batch[resync_commands])
+        end
+      end
+
+      # Every batch that is waiting to be sent, which nobody will dequeue.
+      def take_queued_batches
+        batches = []
+        batches << @output_queue.dequeue until @output_queue.empty?
+        batches
+      end
+
       # Yields every vnode, parents before their children.
       def traverse(&)
         @root.traverse(&)

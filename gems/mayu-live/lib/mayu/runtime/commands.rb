@@ -57,6 +57,9 @@ module Mayu
       end
 
       Initialize = CommandData.define(:id_tree)
+      # Replaces the browser's document with the server's: the HTML of the
+      # whole page as the server has it now, and the ids of its nodes.
+      Resync = CommandData.define(:html, :id_tree)
 
       CreateTree = CommandData.define(:html, :tree)
 
@@ -151,6 +154,26 @@ module Mayu
       end
 
       ViewTransition = CommandData.define(:batch, :types, :scope)
+
+      # Commands that only change the DOM. A Resync carries the whole DOM,
+      # so it makes the ones queued before it redundant.
+      DOM_COMMANDS = [
+        Initialize,
+        Resync,
+        CreateTree,
+        ReplaceChildren,
+        RemoveNode,
+        SetAttribute,
+        RemoveAttribute,
+        AddClass,
+        RemoveClass,
+        SetListener,
+        RemoveListener,
+        SetCSSProperty,
+        RemoveCSSProperty,
+        SetTextContent,
+        ViewTransition
+      ].freeze
     end
   end
 end

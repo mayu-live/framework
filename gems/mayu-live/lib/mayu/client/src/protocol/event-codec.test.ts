@@ -34,15 +34,15 @@ function unframe(frame: Uint8Array<ArrayBuffer>) {
 
 describe("client event codec", () => {
   it("encodes small events directly as compact MessagePack tuples", async () => {
-    const event: ClientEvent = ["Ping", 123, null];
+    const event: ClientEvent = ["Ping", 123, null, null];
     const encoded = await encodeClientEvent(event);
     const frame = unframe(encoded);
 
     expect(frame.encoding).toBe(CLIENT_EVENT_ENCODING_RAW);
     expect(decode(frame.payload)).toEqual(event);
     expect(Array.from(encoded)).toEqual([
-      0x00, 0x00, 0x00, 0x00, 0x08, 0x93, 0xa4, 0x50, 0x69, 0x6e, 0x67, 0x7b,
-      0xc0,
+      0x00, 0x00, 0x00, 0x00, 0x09, 0x94, 0xa4, 0x50, 0x69, 0x6e, 0x67, 0x7b,
+      0xc0, 0xc0,
     ]);
   });
 
@@ -50,6 +50,7 @@ describe("client event codec", () => {
     const event: ClientEvent = [
       "Callback",
       123,
+      7,
       null,
       "listener",
       { target: { value: "Mayu ".repeat(1_000) } },

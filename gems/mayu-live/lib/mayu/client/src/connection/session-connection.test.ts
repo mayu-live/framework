@@ -49,8 +49,8 @@ import { encode as pack } from "../protocol/msgpack";
 import SessionConnection from "./session-connection";
 
 // One batch as a frame of the command stream.
-function encode(batch: unknown[]) {
-  const payload = pack(batch);
+function encode(batch: unknown[], seq = 1) {
+  const payload = pack([seq, batch]);
   const frame = new Uint8Array(4 + payload.length);
   new DataView(frame.buffer).setUint32(0, payload.length);
   frame.set(payload, 4);
@@ -67,6 +67,7 @@ type Collaborators = {
 // The transfer state the next connection starts out holding.
 let initialTransferState: Blob | null = null;
 let lastConnection: SessionConnection | null = null;
+const acknowledgeMock = vi.fn();
 
 function setTransferState(state: Blob | null) {
   initialTransferState = state;
@@ -84,7 +85,11 @@ function createConnection({ runtime, mayu, endpoint, sleep }: Collaborators) {
     applyBatch: async (batch) => {
       await runtime.applyBatch(batch);
     },
-    outbox: { attach: mayu.setWriter, detach: mayu.clearWriter },
+    outbox: {
+      attach: mayu.setWriter,
+      detach: mayu.clearWriter,
+      acknowledge: acknowledgeMock,
+    },
   });
   return lastConnection;
 }
@@ -503,5 +508,129 @@ describe("session-connection", () => {
     await expect(connection.run()).rejects.toBe(stop);
     expect(sleepMock).toHaveBeenCalledWith(1000);
     expect(initInputStreamMock).toHaveBeenCalledTimes(2);
+  });
+
+  function streamOf(...chunks: Uint8Array[]) {
+    return new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(chunk);
+        controller.close();
+      },
+    });
+  }
+
+  function connectionThatStopsAfter(sleeps: number, overrides = {}) {
+    const stop = new Error("stop test loop");
+    const sleepMock = vi.fn();
+    for (let i = 1; i < sleeps; i++) sleepMock.mockResolvedValueOnce(undefined);
+    sleepMock.mockRejectedValueOnce(stop);
+    const runtime = { applyBatch: vi.fn(async () => undefined) };
+    const connection = createConnection({
+      runtime,
+      mayu: { setWriter: vi.fn(), clearWriter: vi.fn() },
+      endpoint: "/.mayu/session/test",
+      sleep: sleepMock,
+      ...overrides,
+    });
+    return { connection, stop, runtime };
+  }
+
+  it("names the last batch it applied when it reconnects", async () => {
+    initInputStreamMock
+      .mockResolvedValueOnce(streamOf(encode([], 1), encode([], 2)))
+      .mockRejectedValue(new Error("stream down"));
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+    const { connection, stop } = connectionThatStopsAfter(1);
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(initInputStreamMock.mock.calls.map((call) => call[3])).toEqual([
+      null,
+      2,
+    ]);
+    expect(acknowledgeMock.mock.calls).toEqual([[1], [2]]);
+  });
+
+  it("does not count a batch that was not applied", async () => {
+    initInputStreamMock
+      .mockResolvedValueOnce(streamOf(encode([], 1), encode([], 2)))
+      .mockRejectedValue(new Error("stream down"));
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+    const failure = new Error("could not apply");
+    const { connection, stop, runtime } = connectionThatStopsAfter(2);
+    runtime.applyBatch
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(failure);
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(initInputStreamMock.mock.calls.map((call) => call[3])).toEqual([
+      null,
+      1,
+    ]);
+  });
+
+  it("names no batch when it resumes a transferred session", async () => {
+    const state = new Blob(["encrypted state"]);
+    initInputStreamMock
+      .mockResolvedValueOnce(streamOf(encode([], 8)))
+      .mockResolvedValueOnce(streamOf(encode([], 1)))
+      .mockRejectedValue(new Error("stream down"));
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+    const { connection, stop, runtime } = connectionThatStopsAfter(2);
+    // The first batch hands the session over.
+    runtime.applyBatch.mockImplementationOnce(async () => {
+      void connection.handlers.Transfer(state);
+    });
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(
+      initInputStreamMock.mock.calls.map((call) => [call[1], call[3]]),
+    ).toEqual([
+      [null, null],
+      [state, null],
+      [null, 1],
+    ]);
+    expect(acknowledgeMock.mock.calls).toEqual([[8], [null], [1]]);
+  });
+
+  it("names no batch for the session that replaces a lost one", async () => {
+    const lost = Object.assign(new Error("gone"), {
+      code: "SESSION_NOT_FOUND",
+    });
+    initInputStreamMock
+      .mockResolvedValueOnce(streamOf(encode([], 5)))
+      .mockRejectedValueOnce(lost)
+      .mockRejectedValue(new Error("stream down"));
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    shouldResetSessionMock.mockImplementation((error) => error === lost);
+    resetSessionEntirelyMock.mockResolvedValue("/.mayu/session/new");
+    const { connection, stop } = connectionThatStopsAfter(1);
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(
+      initInputStreamMock.mock.calls.map((call) => [call[0], call[3]]),
+    ).toEqual([
+      ["/.mayu/session/test", null],
+      ["/.mayu/session/test", 5],
+      ["/.mayu/session/new", null],
+    ]);
   });
 });

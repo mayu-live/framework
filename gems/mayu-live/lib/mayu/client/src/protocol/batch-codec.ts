@@ -1,4 +1,4 @@
-import type { Batch } from "./commands";
+import type { NumberedBatch } from "./commands";
 import { decode } from "./msgpack";
 
 const FRAME_HEADER_BYTES = 4;
@@ -16,12 +16,12 @@ function concat(chunks: Uint8Array[], size: number) {
 }
 
 // The command stream is a sequence of frames: four bytes holding the length
-// of the payload, big-endian, then one batch as MessagePack. Yields each
-// batch once its whole frame has arrived, and throws if the stream ends in
-// the middle of one.
+// of the payload, big-endian, then `[seq, batch]` as MessagePack. Yields
+// each one once its whole frame has arrived, and throws if the stream ends
+// in the middle of one.
 export async function* decodeBatches(
   stream: ReadableStream<Uint8Array>,
-): AsyncGenerator<Batch> {
+): AsyncGenerator<NumberedBatch> {
   const reader = stream.getReader();
   // The chunks not yet decoded, and how many bytes it takes to go on.
   let pending: Uint8Array[] = [];
@@ -55,7 +55,7 @@ export async function* decodeBatches(
 
         const start = offset + FRAME_HEADER_BYTES;
         offset += needed;
-        yield decode(bytes.subarray(start, offset)) as Batch;
+        yield decode(bytes.subarray(start, offset)) as NumberedBatch;
       }
 
       pending = offset < size ? [bytes.subarray(offset)] : [];

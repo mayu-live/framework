@@ -9,7 +9,7 @@ import { join, relative } from "node:path";
 import { gzipSync } from "node:zlib";
 
 // Gzipped bytes of the chunks every page loads: init and main.
-const EAGER_BUDGET = 10_800;
+const EAGER_BUDGET = 11_100;
 const EAGER_CHUNKS = /^(init|main)-/;
 
 const dist = new URL("../dist/", import.meta.url).pathname;

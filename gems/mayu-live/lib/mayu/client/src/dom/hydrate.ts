@@ -85,16 +85,33 @@ export function createTreeRootNodes(html: string, trees: IdNode[]): Node[] {
 }
 
 // Registers a DOM subtree under the ids the server gave its nodes, by
-// walking both trees in parallel.
-export function setupTree(
+// walking both trees in parallel. Where the two disagree it registers what
+// it can and goes on, and then throws: commands for the nodes it could not
+// find would fail later, so the caller asks the server for the page.
+export function setupTree(registry: NodeRegistry, domNode: Node, tree: IdNode) {
+  const mismatches: string[] = [];
+  bind(registry, domNode, tree, mismatches);
+
+  if (mismatches.length > 0) {
+    throw new Error(
+      `${mismatches.length} nodes differ from the server's tree. ${mismatches[0]}`,
+    );
+  }
+}
+
+function bind(
   registry: NodeRegistry,
-  domNode: Node,
+  domNode: Node | undefined,
   idNode: IdNode,
+  mismatches: string[],
 ) {
-  if (!domNode) return;
+  if (!domNode) {
+    mismatches.push(`Node ${idNode.id} (${idNode.name}) is missing`);
+    return;
+  }
 
   if (domNode.nodeName.toUpperCase() !== idNode.name.toUpperCase()) {
-    console.error(
+    mismatches.push(
       `Node ${idNode.id} should be ${idNode.name}, but found ${domNode.nodeName}`,
     );
   }
@@ -118,6 +135,6 @@ export function setupTree(
   nodeInfo.childIds = idNode.children.map((child) => child.id);
 
   idNode.children.forEach((child, i) => {
-    setupTree(registry, childNodes[i], child);
+    bind(registry, childNodes[i], child, mismatches);
   });
 }

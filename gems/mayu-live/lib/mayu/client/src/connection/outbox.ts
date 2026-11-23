@@ -13,6 +13,7 @@ type Listener = () => void;
 export default class Outbox {
   #writer: WritableStreamDefaultWriter<ClientEvent> | null = null;
   #telemetry: CommandApplyTelemetry = emptyTelemetry();
+  #ack: number | null = null;
   #connectListeners = new Set<Listener>();
   #disconnectListeners = new Set<Listener>();
   #sendListeners = new Set<Listener>();
@@ -45,6 +46,12 @@ export default class Outbox {
     for (const listener of this.#disconnectListeners) listener();
   }
 
+  // The last batch this page applied, which every event tells the server.
+  // Null when the stream's next batch starts a new count.
+  acknowledge(seq: number | null) {
+    this.#ack = seq;
+  }
+
   // The time spent applying commands rides along with the next event.
   recordCommandApply(commands: number, durationMs: number) {
     this.#telemetry.batches += 1;
@@ -63,7 +70,13 @@ export default class Outbox {
 
     const [name, ...args] = message;
     const telemetry = this.#takeTelemetry();
-    const event = [name, performance.now(), telemetry, ...args] as ClientEvent;
+    const event = [
+      name,
+      performance.now(),
+      this.#ack,
+      telemetry,
+      ...args,
+    ] as ClientEvent;
 
     try {
       await writer.write(event);

@@ -17,6 +17,7 @@ import type { ClientEvent } from "./protocol/events";
 // each of them has a handler.
 const COMMAND_NAMES: Record<CommandName, true> = {
   Initialize: true,
+  Resync: true,
   CreateTree: true,
   ReplaceChildren: true,
   RemoveNode: true,
@@ -53,6 +54,7 @@ const EVENT_NAMES: Record<ClientEvent[0], true> = {
   Ping: true,
   Visibility: true,
   Inspect: true,
+  Resync: true,
 };
 
 // Raised by the client itself, when a TransferFailed command arrives.

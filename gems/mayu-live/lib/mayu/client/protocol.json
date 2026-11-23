@@ -2,6 +2,7 @@
   "streamContentType": "application/vnd.mayu.event-stream",
   "commands": {
     "Initialize": ["id_tree"],
+    "Resync": ["html", "id_tree"],
     "CreateTree": ["html", "tree"],
     "ReplaceChildren": ["id", "child_ids"],
     "RemoveNode": ["id"],
@@ -40,7 +41,7 @@
     ],
     "ViewTransition": ["batch", "types", "scope"]
   },
-  "events": ["Callback", "Navigate", "Ping", "Visibility", "Inspect"],
+  "events": ["Callback", "Navigate", "Ping", "Visibility", "Inspect", "Resync"],
   "errorCodes": {
     "SESSION_NOT_FOUND": { "reset": true },
     "SESSION_ID_MISMATCH": { "reset": false },
@@ -53,7 +54,6 @@
     "SESSION_RESTORE_FAILED": { "reset": true },
     "SESSION_EXPIRED": { "reset": true },
     "SESSION_CIPHER_ERROR": { "reset": true },
-    "SESSION_ALREADY_RUNNING": { "reset": false },
     "SERVER_STOPPING": { "reset": false }
   },
   "continuousEvents": [

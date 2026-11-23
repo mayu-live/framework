@@ -146,12 +146,18 @@ describe("callbacks", () => {
     expect(write).toHaveBeenCalledWith([
       "Ping",
       expect.any(Number),
+      null,
       { batches: 2, commands: 5, duration_ms: 3.75 },
     ]);
 
     mayu.ping();
     await Promise.resolve();
-    expect(write).toHaveBeenLastCalledWith(["Ping", expect.any(Number), null]);
+    expect(write).toHaveBeenLastCalledWith([
+      "Ping",
+      expect.any(Number),
+      null,
+      null,
+    ]);
     mayu.dispose();
   });
 
@@ -201,7 +207,7 @@ describe("callbacks", () => {
 
     expect(write).toHaveBeenCalledTimes(2);
     const message = write.mock.calls[1]?.[0];
-    expect((message?.[4] as any).target.value).toBe("abc");
+    expect((message?.[5] as any).target.value).toBe("abc");
     mayu.dispose();
   });
 
@@ -226,7 +232,7 @@ describe("callbacks", () => {
     expect(write.mock.calls.length).toBeGreaterThanOrEqual(29);
     expect(write.mock.calls.length).toBeLessThanOrEqual(32);
     const last = write.mock.calls.at(-1)?.[0];
-    expect((last?.[4] as any).clientX).toBe(59);
+    expect((last?.[5] as any).clientX).toBe(59);
     mayu.dispose();
   });
 
@@ -272,8 +278,8 @@ describe("callbacks", () => {
     await vi.runAllTimersAsync();
 
     const sent = write.mock.calls.map(([message]) => [
-      message[3],
-      (message[4] as any).target?.value,
+      message[4],
+      (message[5] as any).target?.value,
     ]);
     expect(sent).toEqual([
       ["input-listener", "a"],
@@ -299,7 +305,7 @@ describe("callback settlement", () => {
       write.mock.calls
         .map(([message]) => message)
         .filter((message) => message[0] === "Callback")
-        .map((message) => message[5] as string | undefined);
+        .map((message) => message[6] as string | undefined);
     return { mayu, write, settleIds };
   }
 

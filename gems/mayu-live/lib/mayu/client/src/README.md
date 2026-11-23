@@ -43,6 +43,7 @@ features/
   navigation.ts          Navigation API interception; document navigation
   heartbeat.ts           pings, Pong, tab visibility
   inspect.ts             devtools queries (loaded with the devtools)
+  resync.ts              asks for the page when a command can't be applied
   browser-actions.ts     `browser.navigate`, `browser.alert`
   serialize-event.ts     what the server sees of an event
   settled.ts, throttle.ts
@@ -51,6 +52,7 @@ ui/
   error-overlay.ts       RenderError / ReloadSucceeded
   render-error.ts        the overlay itself (loaded on the first error)
   view-transition.ts     startViewTransition with a fallback
+  morph-document.ts      morphs the document into another page's HTML
   custom-elements/       <mayu-ping>, <mayu-exception>
 devtools.ts              the devtools extension hook (loaded when present)
 ```
@@ -61,24 +63,25 @@ modules the way `main.ts` does so a test can drive them through one object.
 ## How a command gets handled
 
 1. `connection/attempt.ts` reads a batch from the command stream. Each batch
-   is a frame: four bytes of payload length, then the batch as MessagePack.
-   A stream that ends inside a frame fails the attempt.
+   is a frame: four bytes of payload length, then `[seq, commands]` as
+   MessagePack. `seq` counts the batches of the session. A stream that ends
+   inside a frame fails the attempt.
 2. `CommandDispatcher.applyBatch` walks it in order and calls the handler
    registered for each command, waiting for handlers that return a promise.
 3. The handler lives in the module that owns the command:
 
-   | Commands                                                       | Module                                              |
-   | -------------------------------------------------------------- | --------------------------------------------------- |
-   | `Initialize`, `CreateTree`, `ReplaceChildren`, `Set*`, …       | `dom/handlers.ts`                                   |
-   | `CallbackComplete`, `CallbackFailed`                           | `features/callbacks.ts`                             |
-   | `NavigationComplete`, `NavigationFailed`, `DocumentNavigation` | `features/navigation.ts`                            |
-   | `Pong`                                                         | `features/heartbeat.ts`                             |
-   | `BrowserAction`                                                | `features/browser-actions.ts`                       |
-   | `InspectResult`                                                | `features/inspect.ts`                               |
-   | `RenderError`, `ReloadSucceeded`                               | `ui/error-overlay.ts`                               |
-   | `Transfer`                                                     | `connection/session-connection.ts`                  |
-   | `ViewTransition`                                               | `dispatch.ts` (it carries a batch)                  |
-   | `TransferFailed`                                               | `connection/session-connection.ts`, before dispatch |
+   | Commands                                                           | Module                                              |
+   | ------------------------------------------------------------------ | --------------------------------------------------- |
+   | `Initialize`, `Resync`, `CreateTree`, `ReplaceChildren`, `Set*`, … | `dom/handlers.ts`                                   |
+   | `CallbackComplete`, `CallbackFailed`                               | `features/callbacks.ts`                             |
+   | `NavigationComplete`, `NavigationFailed`, `DocumentNavigation`     | `features/navigation.ts`                            |
+   | `Pong`                                                             | `features/heartbeat.ts`                             |
+   | `BrowserAction`                                                    | `features/browser-actions.ts`                       |
+   | `InspectResult`                                                    | `features/inspect.ts`                               |
+   | `RenderError`, `ReloadSucceeded`                                   | `ui/error-overlay.ts`                               |
+   | `Transfer`                                                         | `connection/session-connection.ts`                  |
+   | `ViewTransition`                                                   | `dispatch.ts` (it carries a batch)                  |
+   | `TransferFailed`                                                   | `connection/session-connection.ts`, before dispatch |
 
 `main.ts` merges these into one table typed as
 `CommandHandlers<DispatchedCommandName>`, so a command without a handler, or a
@@ -87,15 +90,31 @@ handler with the wrong arguments, does not compile.
 A failed command is logged with its name and index, and the rest of the batch
 is applied (`COMMAND_ERROR_POLICY` in `dispatch.ts`; tests use `"throw"`).
 
+## When the page and the server disagree
+
+A DOM command fails when the page is not what the server thinks it is: a
+node it names is not there, or the ids it sent don't line up with the
+document. `main.ts` then loads `features/resync.ts`, which sends a `Resync`
+event with the reason. The server answers with a `Resync` command: the whole
+page as its vnode tree has it now, and the ids of its nodes.
+`dom/handlers.ts` morphs the document into that page, so nodes the two share
+keep their focus and scroll position, and binds the ids again. The session
+and its component state are untouched.
+
+One request is in flight at a time. If the page still differs right after a
+resync, the difference is one the server can't repair, such as markup the
+browser corrects while parsing, so it is logged once and left alone.
+
 ## How an event gets sent
 
 1. A feature calls `outbox.send([name, ...arguments])`, for example
    `callbacks.dispatch` from a DOM listener that `dom/node-registry.ts`
    installed.
-2. The outbox puts the header in: `[name, ping, telemetry, ...arguments]`.
-   `ping` is `performance.now()`, which the server echoes in a `Pong`.
-   `telemetry` is `null`, or the time spent applying commands since the
-   last event.
+2. The outbox puts the header in:
+   `[name, ping, ack, telemetry, ...arguments]`. `ping` is
+   `performance.now()`, which the server echoes in a `Pong`. `ack` is `null`,
+   or the `seq` of the last batch the page applied. `telemetry` is `null`, or
+   the time spent applying commands since the last event.
 3. `protocol/event-codec.ts` frames it: one byte for raw MessagePack or
    `deflate-raw`, four bytes of payload length, then the payload. Events of 512
    bytes or more are compressed when that makes the frame smaller.
@@ -120,16 +139,17 @@ The events, without their header:
 - `["Visibility", hidden]` on `visibilitychange`, and on connecting from a
   hidden tab.
 - `["Inspect", id, query]` from the devtools.
+- `["Resync", reason]` when a DOM command could not be applied.
 
 ## Connecting and recovering
 
 `SessionConnection.run` loops forever:
 
-1. `runAttempt` opens the command stream (`GET`, or `POST` with the transfer
-   state), attaches a writer to the outbox, opens the event stream, and applies
-   batches. It resolves when the command stream ends cleanly and rejects when
-   either stream fails. Either way it aborts both requests and detaches the
-   outbox, so both directions always reconnect together.
+1. `runAttempt` opens the command stream, attaches a writer to the outbox,
+   opens the event stream, and applies batches. It resolves when the command
+   stream ends cleanly and rejects when either stream fails. Either way it
+   aborts both requests and detaches the outbox, so both directions always
+   reconnect together.
 2. After a clean end the loop reconnects at once, then a second later each
    time the server keeps closing new streams.
 3. After a failure it checks the error code. For `SESSION_NOT_FOUND`,
@@ -138,6 +158,23 @@ The events, without their header:
    morphs the document into it (`morphdom`, loaded on demand) and connects to
    the new session. Otherwise, or if that fails, it waits one second more per
    failure in a row, up to ten.
+
+What the stream starts with depends on what the page can tell the server:
+
+- The first connection is a plain `GET`. The page is fresh from the HTML
+  response, so the server sends `Initialize` with the ids of its nodes.
+- A reconnect sends `mayu-last-batch: <seq>`, the last batch the page
+  applied. The server keeps the batches the page has not acknowledged, and
+  sends the ones after `seq`. The page keeps its nodes and listeners, and
+  nothing is lost with the old stream.
+- If the server no longer has those batches, the stream starts with
+  `Resync` and the page is morphed into the server's.
+- With a transfer state the request is a `POST` that names no batch. The
+  server that resumes the session starts counting from one and sends
+  `Initialize`.
+
+A second stream for a session takes over from the first: the server closes
+the old one rather than refusing the new one.
 
 A `Transfer` command hands the browser the encrypted session of a server that
 is stopping. The connection keeps it until another server has resumed it, and

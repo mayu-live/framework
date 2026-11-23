@@ -11,11 +11,14 @@ type AttemptOptions = {
   endpoint: string;
   // Encrypted session state to resume from, after a transfer.
   transferState: Blob | null;
+  // The last batch this page applied, when the server can pick up from it.
+  lastBatch: number | null;
   outbox: Pick<Outbox, "attach" | "detach">;
   // Called once the command stream is open.
   onOpen: () => void;
-  // Called with every batch, in order. The next batch waits for it.
-  onBatch: (batch: Batch) => Promise<void>;
+  // Called with every batch and its number, in order. The next batch
+  // waits for it.
+  onBatch: (batch: Batch, seq: number) => Promise<void>;
 };
 
 // One connection to the server: opens the command stream and the event
@@ -25,6 +28,7 @@ type AttemptOptions = {
 export default async function runAttempt({
   endpoint,
   transferState,
+  lastBatch,
   outbox,
   onOpen,
   onBatch,
@@ -38,6 +42,7 @@ export default async function runAttempt({
       endpoint,
       transferState,
       abortController.signal,
+      lastBatch,
     );
     onOpen();
 
@@ -52,8 +57,8 @@ export default async function runAttempt({
     void eventPipeline.catch(() => undefined);
 
     const consumeInput = async () => {
-      for await (const batch of decodeBatches(input)) {
-        await onBatch(batch);
+      for await (const [seq, batch] of decodeBatches(input)) {
+        await onBatch(batch, seq);
       }
 
       return "eof" as const;

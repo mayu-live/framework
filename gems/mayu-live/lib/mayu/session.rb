@@ -59,27 +59,42 @@ module Mayu
           end
         end
 
-      # Every event is `[name, ping, telemetry, *arguments]`. `ping` is the
-      # browser's clock when it sent the event, and `telemetry` is nil or the
-      # time it spent applying commands since its last event.
+      # Every event is `[name, ping, ack, telemetry, *arguments]`. `ping` is
+      # the browser's clock when it sent the event, `ack` is nil or the
+      # sequence number of the last batch it applied, and `telemetry` is nil
+      # or the time it spent applying commands since its last event.
+      # The browser found its DOM out of step with the commands it was sent,
+      # and asks for the page as the server has it.
+      ResyncEvent =
+        Data.define(:reason, :ping, :client_command_apply_metrics) do
+          def self.[](reason, ping, metrics = nil)
+            new(reason, ping, metrics)
+          end
+        end
+
       def self.parse(message)
         case message
-        in ["Callback", Numeric => ping, telemetry, String => id, Hash => event] unless id.empty?
+        in ["Callback", Numeric => ping, nil | Integer, telemetry, String => id, Hash => event] unless id.empty?
           CallbackEvent[id, event, ping, parse_telemetry(telemetry)]
-        in ["Callback", Numeric => ping, telemetry, String => id, Hash => event, String => settle_id] unless id.empty? || invalid_settle_id?(settle_id)
+        in ["Callback", Numeric => ping, nil | Integer, telemetry, String => id, Hash => event, String => settle_id] unless id.empty? || invalid_settle_id?(settle_id)
           CallbackEvent[id, event, ping, parse_telemetry(telemetry), settle_id:]
-        in ["Navigate", Numeric => ping, telemetry, String => id, String => href] unless id.empty?
+        in ["Navigate", Numeric => ping, nil | Integer, telemetry, String => id, String => href] unless id.empty?
           NavigateEvent[id, href, ping, parse_telemetry(telemetry)]
-        in ["Ping", Numeric => ping, telemetry]
+        in ["Ping", Numeric => ping, nil | Integer, telemetry]
           PingEvent[ping, parse_telemetry(telemetry)]
-        in ["Visibility", Numeric => ping, telemetry, true | false => hidden]
+        in ["Visibility", Numeric => ping, nil | Integer, telemetry, true | false => hidden]
           VisibilityEvent[hidden, ping, parse_telemetry(telemetry)]
-        in ["Inspect", Numeric => ping, telemetry, String => id, Hash => query] unless id.empty?
+        in ["Inspect", Numeric => ping, nil | Integer, telemetry, String => id, Hash => query] unless id.empty?
           InspectEvent[id, query, ping, parse_telemetry(telemetry)]
+        in ["Resync", Numeric => ping, nil | Integer, telemetry, String => reason]
+          ResyncEvent[reason, ping, parse_telemetry(telemetry)]
         else
           raise InvalidEventError, "Invalid event message: #{message.inspect}"
         end
       end
+
+      # The sequence number a parsed message acknowledges, if any.
+      def self.ack(message) = message[2]
 
       def self.parse_telemetry(telemetry)
         telemetry.nil? ? nil : parse_client_command_apply_metrics(telemetry)
@@ -124,7 +139,15 @@ module Mayu
     # into one render and one batch per second; the latest state still wins.
     HIDDEN_UPDATE_INTERVAL_SECONDS = 1
 
-    attr_reader :id, :route_status, :startup_commands
+    # Batches the browser has not acknowledged are kept, so that a stream
+    # that reconnects can be sent the ones it missed. A browser that falls
+    # further behind than this gets the whole page again instead.
+    MAX_UNACKED_BATCHES = 256
+    MAX_UNACKED_BYTES = 1024 * 1024
+
+    SentBatch = Data.define(:seq, :packed, :commands)
+
+    attr_reader :id, :route_status, :startup_commands, :batch_seq
     attr_reader :token
 
     def initialize(environment:, request_info:)
@@ -152,6 +175,7 @@ module Mayu
 
       @last_ping = Async::Clock.now
       @incoming_events = Async::Queue.new
+      reset_sent_batches
     end
 
     def build_engine(descriptor)
@@ -251,6 +275,12 @@ module Mayu
       provider.component_resolver if provider&.respond_to?(:component_resolver)
     end
 
+    # Answers for the batches a resync folded into itself.
+    Completions =
+      Data.define(:completions) do
+        def enqueue(value) = completions.each { it.enqueue(value) }
+      end
+
     def valid_token?(token)
       Session::Token.equal?(@token, token)
     end
@@ -262,6 +292,9 @@ module Mayu
     def marshal_load(a)
       @id, @token, @engine, @last_ping, @request_info = a
       @incoming_events = Async::Queue.new
+      # Sequence numbers start over on the server that resumes a session.
+      # The browser is told by the Initialize its new stream starts with.
+      reset_sent_batches
     end
 
     def timed_out?(timeout_seconds = 5)
@@ -278,11 +311,83 @@ module Mayu
     end
 
     def receive_message(message)
-      enqueue_event(Events.parse(message))
+      event = Events.parse(message)
+      acknowledge(Events.ack(message))
+      enqueue_event(event)
     end
 
     def dequeue_batch
       @engine.dequeue_batch
+    end
+
+    # Gives a batch the next sequence number, packs it for the command
+    # stream, and keeps it until the browser acknowledges it. This happens
+    # before the batch is written, so a batch is never lost with the stream
+    # it was meant for.
+    def stamp_batch(batch)
+      @batch_seq += 1
+      packed = Mayu::Server::EventStream.pack_batch(batch, @batch_seq)
+      sent = SentBatch[@batch_seq, packed, batch.commands.size]
+
+      @unacked << sent
+      @unacked_bytes += packed.bytesize
+      while @unacked.size > MAX_UNACKED_BATCHES ||
+          (@unacked_bytes > MAX_UNACKED_BYTES && @unacked.size > 1)
+        @unacked_bytes -= @unacked.shift.packed.bytesize
+      end
+
+      sent
+    end
+
+    # The browser applied every batch up to and including this one.
+    def acknowledge(seq)
+      return unless seq
+
+      while (sent = @unacked.first) && sent.seq <= seq
+        @unacked_bytes -= @unacked.shift.packed.bytesize
+      end
+    end
+
+    # The batches sent after the given one, for a browser that reconnects
+    # and applied that one last. Nil when they are not all here any more, or
+    # when the number is not one this session gave out.
+    def batches_after(seq)
+      return nil unless seq.is_a?(Integer) && seq.between?(0, @batch_seq)
+
+      missed = @unacked.select { it.seq > seq }
+      (missed.size == @batch_seq - seq) ? missed : nil
+    end
+
+    # The batch a new stream starts with when the browser's DOM can be
+    # trusted: the ids of the nodes it already has.
+    def initialize_batch
+      forget_sent_batches
+      Runtime::Batch[
+        [
+          Runtime::Commands::Initialize[dom_id_tree],
+          *listener_commands,
+          *startup_commands
+        ]
+      ]
+    end
+
+    # The batch a new stream starts with when it can't: the whole page.
+    # Batches still waiting to be sent are folded into it. Their DOM
+    # commands are already part of the page, and the rest follow it.
+    def resync_batch
+      forget_sent_batches
+      overtaken = @engine.take_queued_batches
+      commands = @engine.resync_commands
+      overtaken.each do |batch|
+        commands.concat(
+          batch.commands.reject { Runtime::Commands::DOM_COMMANDS.include?(it.class) }
+        )
+      end
+
+      Runtime::Batch[
+        [*commands, *startup_commands],
+        completion: overtaken.filter_map(&:completion).then { Completions[it] unless it.empty? }
+      ]
     end
 
     def start
@@ -439,6 +544,12 @@ module Mayu
       case event
       in Events::PingEvent
         nil
+      in Events::ResyncEvent[reason:]
+        Console.logger.warn(
+          self,
+          "Session #{@id}: the browser asked for a resync: #{reason[0, 500]}"
+        )
+        @engine.resync
       in Events::VisibilityEvent[hidden:]
         @engine.update_interval = hidden ? HIDDEN_UPDATE_INTERVAL_SECONDS : nil
       in Events::CallbackEvent[id:, payload:, settle_id:]
@@ -519,6 +630,16 @@ module Mayu
         report.column,
         report.hints
       ]
+    end
+
+    def reset_sent_batches
+      @batch_seq = 0
+      forget_sent_batches
+    end
+
+    def forget_sent_batches
+      @unacked = []
+      @unacked_bytes = 0
     end
 
     def record_ping(timestamp)

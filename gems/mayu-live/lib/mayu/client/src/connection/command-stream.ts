@@ -4,17 +4,24 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import { SESSION_MIME_TYPE, STREAM_MIME_TYPE } from "../protocol/constants";
+import {
+  LAST_BATCH_HEADER,
+  SESSION_MIME_TYPE,
+  STREAM_MIME_TYPE,
+} from "../protocol/constants";
 import { StreamError, streamErrorFromResponse } from "./stream-error";
 
 // Opens the stream of command batches from the server. With a transfer
 // state, the session is first restored from it on the server that answers.
+// Otherwise `lastBatch` names the last batch this page applied, if any, and
+// the server sends what came after it.
 export async function openCommandStream(
   endpoint: string,
   state: Blob | null = null,
   signal?: AbortSignal,
+  lastBatch: number | null = null,
 ): Promise<ReadableStream<Uint8Array>> {
-  const res = await connect(endpoint, state, signal);
+  const res = await connect(endpoint, state, signal, lastBatch);
 
   if (!res.body) throw new Error("No body");
 
@@ -27,10 +34,14 @@ export async function openCommandStream(
   );
 }
 
+// The stream is never cached. Saying so also keeps the browser from making
+// this request wait for an earlier one to the same URL, which Chrome does
+// for up to twenty seconds while that one is still open.
 export async function connect(
   endpoint: string,
   state: Blob | null = null,
   signal?: AbortSignal,
+  lastBatch: number | null = null,
 ): Promise<Response> {
   console.info("🟡 Connecting to", endpoint);
 
@@ -41,6 +52,7 @@ export async function connect(
       ? await fetch(endpoint, {
           method: "POST",
           credentials: "include",
+          cache: "no-store",
           signal,
           headers: new Headers({
             accept: STREAM_MIME_TYPE,
@@ -51,9 +63,13 @@ export async function connect(
       : await fetch(endpoint, {
           method: "GET",
           credentials: "include",
+          cache: "no-store",
           signal,
           headers: new Headers({
             accept: STREAM_MIME_TYPE,
+            ...(lastBatch === null
+              ? {}
+              : { [LAST_BATCH_HEADER]: String(lastBatch) }),
           }),
         });
   } catch (e) {

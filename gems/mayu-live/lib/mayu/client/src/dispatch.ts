@@ -20,6 +20,8 @@ type BatchListener = (batch: Batch, durationMs: number) => void;
 
 type CommandDispatcherOptions = {
   errorPolicy?: CommandErrorPolicy;
+  // Called for every command that could not be applied.
+  onCommandFailed?: (name: string, error: unknown) => void;
 };
 
 // Applies command batches by calling the handler registered for each
@@ -27,14 +29,19 @@ type CommandDispatcherOptions = {
 export default class CommandDispatcher {
   #handlers: Record<string, (...args: any[]) => void | Promise<void>>;
   #errorPolicy: CommandErrorPolicy;
+  #onCommandFailed?: (name: string, error: unknown) => void;
   #batchListeners = new Set<BatchListener>();
 
   constructor(
     handlers: CommandHandlers<DispatchedCommandName>,
-    { errorPolicy = COMMAND_ERROR_POLICY }: CommandDispatcherOptions = {},
+    {
+      errorPolicy = COMMAND_ERROR_POLICY,
+      onCommandFailed,
+    }: CommandDispatcherOptions = {},
   ) {
     this.#handlers = handlers;
     this.#errorPolicy = errorPolicy;
+    this.#onCommandFailed = onCommandFailed;
   }
 
   // Calls the listener after every batch, with the time it took to apply.
@@ -71,6 +78,7 @@ export default class CommandDispatcher {
         if (result instanceof Promise) await result;
       } catch (error) {
         console.error(`Command ${index} (${name}) failed`, error);
+        this.#onCommandFailed?.(name, error);
         if (this.#errorPolicy === "throw") throw error;
       }
     }

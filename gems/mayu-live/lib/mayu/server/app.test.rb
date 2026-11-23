@@ -93,6 +93,20 @@ class Mayu::Server::AppTest < Minitest::Test
       [Mayu::Runtime::Commands::SetListener["button", "click", "listener"]]
     end
 
+    def initialize_batch
+      Mayu::Runtime::Batch[
+        [Mayu::Runtime::Commands::Initialize[dom_id_tree], *listener_commands]
+      ]
+    end
+
+    def stamp_batch(batch)
+      Mayu::Session::SentBatch[
+        1,
+        Mayu::Server::EventStream.pack_batch(batch, 1),
+        batch.commands.size
+      ]
+    end
+
     def start
       @started.resolve(true)
     end
@@ -612,7 +626,8 @@ class Mayu::Server::AppTest < Minitest::Test
       end
       frames = Mayu::Server::EventStream.command_frames(payload)
       assert_equal(1, frames.size)
-      bootstrap = MessagePack.unpack(frames.first)
+      seq, bootstrap = MessagePack.unpack(frames.first)
+      assert_equal(1, seq)
       assert_equal(%w[Initialize SetListener], bootstrap.map(&:first))
       refute_includes(bootstrap.map(&:first), "Batch")
     ensure

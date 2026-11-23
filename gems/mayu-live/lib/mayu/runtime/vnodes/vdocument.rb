@@ -294,6 +294,11 @@ module Mayu
 
         def write_html(out)
           update(NullCommandCollector.new)
+          write_current_html(out)
+        end
+
+        # The document as it is, for a browser that is already showing it.
+        def write_current_html(out)
           out << "<!DOCTYPE html>\n"
           @html.write_html(out)
           out << "\n"

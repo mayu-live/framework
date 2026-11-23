@@ -32,8 +32,8 @@ export function shouldResetSession(error: unknown): boolean {
 }
 
 export async function resetSessionEntirely() {
-  const [morphdom, res] = await Promise.all([
-    import("morphdom"),
+  const [{ default: morphDocument }, res] = await Promise.all([
+    import("../ui/morph-document"),
     fetch(location.pathname + location.search, {
       method: "GET",
       credentials: "include",
@@ -43,7 +43,7 @@ export async function resetSessionEntirely() {
     }),
   ]);
 
-  const html = (await res.text()).replace(/^<!DOCTYPE html>\n/, "");
+  const html = await res.text();
   const sessionId = res.headers.get("x-mayu-session-id");
 
   if (!sessionId) {
@@ -52,9 +52,7 @@ export async function resetSessionEntirely() {
 
   await withViewTransition(
     document as unknown as ViewTransitionRoot,
-    async () => {
-      morphdom.default(document.documentElement, html);
-    },
+    () => morphDocument(html),
     ["session-recovery"],
   );
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { decodeBatches } from "./batch-codec";
-import type { Batch } from "./commands";
+import type { NumberedBatch } from "./commands";
 import { encode } from "./msgpack";
 
-function frame(batch: Batch) {
+function frame(batch: NumberedBatch) {
   const payload = encode(batch);
   const framed = new Uint8Array(4 + payload.length);
   new DataView(framed.buffer).setUint32(0, payload.length);
@@ -34,19 +34,25 @@ function streamOf(...chunks: Uint8Array[]) {
 }
 
 async function collect(stream: ReadableStream<Uint8Array>) {
-  const batches: Batch[] = [];
+  const batches: NumberedBatch[] = [];
   for await (const batch of decodeBatches(stream)) batches.push(batch);
   return batches;
 }
 
-const BATCHES: Batch[] = [
-  [["Pong", 1]],
-  [],
+const BATCHES: NumberedBatch[] = [
+  [1, [["Pong", 1]]],
+  [2, []],
   [
-    ["SetTextContent", "v1", "Smörgåsbord ✓"],
-    ["AddClass", "v2", ["a", "b"]],
+    3,
+    [
+      ["SetTextContent", "v1", "Smörgåsbord ✓"],
+      ["AddClass", "v2", ["a", "b"]],
+    ],
   ],
-  [["CreateTree", `<p>${"x".repeat(500)}</p>`, [{ id: "v3", name: "P" }]]],
+  [
+    70_000,
+    [["CreateTree", `<p>${"x".repeat(500)}</p>`, [{ id: "v3", name: "P" }]]],
+  ],
 ];
 
 describe("decodeBatches", () => {

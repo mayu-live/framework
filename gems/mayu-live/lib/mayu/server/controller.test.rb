@@ -253,7 +253,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
     wrapper = Mayu::Server::EventStream::MsgPackWrapper.new
     frames = Mayu::Server::EventStream.command_frames(inflater.inflate(bytes))
     assert(inflater.finished?, "Missing compression trailer")
-    frames.flat_map { wrapper.unpacker.feed(it).read }
+    frames.flat_map { wrapper.unpacker.feed(it).read.last }
   ensure
     inflater&.close
   end

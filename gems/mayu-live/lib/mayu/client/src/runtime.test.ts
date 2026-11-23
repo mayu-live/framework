@@ -754,3 +754,160 @@ describe("document navigation results", () => {
     expect(onDocumentNavigation).toHaveBeenCalledWith("nav-1", "/handler?q=1");
   });
 });
+
+describe("runtime resync", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    document.documentElement.innerHTML = "<head></head><body></body>";
+    vi.restoreAllMocks();
+  });
+
+  const page = (body: string) =>
+    `<!DOCTYPE html>\n<html><head></head><body>${body}</body></html>\n`;
+
+  it("reports a command for a node the page does not have, and applies the rest", async () => {
+    document.body.innerHTML = "<button>Go</button>";
+    const onCommandFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed });
+
+    await runtime.applyBatch([
+      ["Initialize", tree()],
+      ["SetTextContent", "gone", "text"],
+      ["AddClass", "button", ["applied"]],
+    ]);
+
+    expect(onCommandFailed).toHaveBeenCalledOnce();
+    expect(onCommandFailed).toHaveBeenCalledWith(
+      "SetTextContent",
+      expect.objectContaining({ message: "Node not found: gone" }),
+    );
+    expect(document.querySelector("button")!.className).toBe("applied");
+  });
+
+  it("reports a page that differs from the server's tree, and binds what it can", async () => {
+    document.body.innerHTML = "<a>Go</a>";
+    const onCommandFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed });
+
+    await runtime.applyBatch([["Initialize", tree()]]);
+
+    expect(onCommandFailed).toHaveBeenCalledWith(
+      "Initialize",
+      expect.objectContaining({
+        message:
+          "1 nodes differ from the server's tree. Node button should be BUTTON, but found A",
+      }),
+    );
+    expect(runtime.node("button")).toBe(document.querySelector("a"));
+    expect(runtime.node("body")).toBe(document.body);
+  });
+
+  it("reports a node the page is missing", async () => {
+    const onCommandFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed });
+
+    await runtime.applyBatch([["Initialize", tree()]]);
+
+    expect(onCommandFailed).toHaveBeenCalledWith(
+      "Initialize",
+      expect.objectContaining({
+        message:
+          "1 nodes differ from the server's tree. Node button (BUTTON) is missing",
+      }),
+    );
+  });
+
+  it("replaces the document with the server's page and binds its ids", async () => {
+    document.body.innerHTML = "<p>stale</p><a>Go</a>";
+    const onCommandFailed = vi.fn();
+    const onResynced = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed, onResynced });
+
+    await runtime.applyBatch([
+      ["Resync", page('<button class="fresh">Go</button>'), tree()],
+      ["SetAttribute", "button", "title", "after"],
+    ]);
+
+    // The newline that ends the page lands in the body, as it does when a
+    // browser parses the first response.
+    expect(document.body.innerHTML).toBe(
+      '<button class="fresh" title="after">Go</button>\n',
+    );
+    expect(runtime.node("button")).toBe(document.querySelector("button"));
+    expect(onResynced).toHaveBeenCalledOnce();
+    expect(onCommandFailed).not.toHaveBeenCalled();
+  });
+
+  it("forgets the listeners of the page it replaces", async () => {
+    document.body.innerHTML = "<button>Go</button>";
+    const onEvent = vi.fn();
+    const runtime = new Runtime(onEvent);
+
+    await runtime.applyBatch([
+      ["Initialize", tree()],
+      ["SetListener", "button", "click", "old"],
+      ["Resync", page("<button>Go</button>"), tree()],
+    ]);
+    document.querySelector("button")!.click();
+    expect(onEvent).not.toHaveBeenCalled();
+
+    await runtime.applyBatch([["SetListener", "button", "click", "new"]]);
+    document.querySelector("button")!.click();
+    expect(onEvent).toHaveBeenCalledOnce();
+    expect(onEvent.mock.calls[0][1]).toBe("new");
+  });
+
+  it("keeps a node the two pages share, with what the user typed elsewhere", async () => {
+    document.body.innerHTML = "<button>Go</button>";
+    const button = document.querySelector("button")!;
+    const runtime = new Runtime(vi.fn());
+
+    await runtime.applyBatch([
+      ["Resync", page("<button>Went</button>"), tree()],
+    ]);
+
+    expect(document.querySelector("button")).toBe(button);
+    expect(button.textContent).toBe("Went");
+  });
+
+  it("leaves the status indicator and the error overlay alone", async () => {
+    document.body.innerHTML =
+      '<button>Go</button><mayu-ping status="connected" ping="5ms"></mayu-ping><mayu-exception></mayu-exception>';
+    const withPing = tree();
+    withPing.children[0].children[1].children.push({
+      id: "ping",
+      name: "MAYU-PING",
+      children: [],
+    });
+    const onCommandFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed });
+
+    await runtime.applyBatch([
+      [
+        "Resync",
+        page('<button>Go</button><mayu-ping ping="N/A"></mayu-ping>'),
+        withPing,
+      ],
+    ]);
+
+    const ping = document.querySelector("mayu-ping")!;
+    expect(ping.getAttribute("status")).toBe("connected");
+    expect(ping.getAttribute("ping")).toBe("5ms");
+    expect(document.querySelector("mayu-exception")).not.toBeNull();
+    expect(onCommandFailed).not.toHaveBeenCalled();
+  });
+
+  it("reports a page that still differs after the resync", async () => {
+    const onCommandFailed = vi.fn();
+    const onResynced = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed, onResynced });
+
+    await runtime.applyBatch([["Resync", page("<a>Go</a>"), tree()]]);
+
+    expect(onResynced).toHaveBeenCalledOnce();
+    expect(onCommandFailed).toHaveBeenCalledWith("Resync", expect.any(Error));
+  });
+});

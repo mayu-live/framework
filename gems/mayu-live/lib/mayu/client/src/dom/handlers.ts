@@ -7,6 +7,7 @@ import type NodeRegistry from "./node-registry";
 
 export type DomCommandName =
   | "Initialize"
+  | "Resync"
   | "CreateTree"
   | "ReplaceChildren"
   | "RemoveNode"
@@ -22,13 +23,29 @@ export type DomCommandName =
   | "ElementCall"
   | "RegisterCustomElement";
 
+type DomHandlerOptions = {
+  // Called once a Resync has replaced the document.
+  onResynced?: () => void;
+};
+
 // The commands that create, change and remove DOM nodes.
 export default function domHandlers(
   registry: NodeRegistry,
+  { onResynced }: DomHandlerOptions = {},
 ): CommandHandlers<DomCommandName> {
   return {
     Initialize(tree) {
       registry.clear();
+      setupTree(registry, document, tree);
+    },
+    // The document is morphed into the server's page rather than replaced,
+    // so focus, scroll positions and running media survive where the two
+    // already agree.
+    async Resync(html, tree) {
+      const { default: morphDocument } = await import("../ui/morph-document");
+      await morphDocument(html);
+      registry.clear();
+      onResynced?.();
       setupTree(registry, document, tree);
     },
     CreateTree(html, trees) {

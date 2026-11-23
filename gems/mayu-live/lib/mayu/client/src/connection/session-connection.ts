@@ -16,7 +16,7 @@ async function sleep(milliseconds: number) {
 
 type SessionConnectionOptions = {
   endpoint: string;
-  outbox: Pick<Outbox, "attach" | "detach">;
+  outbox: Pick<Outbox, "attach" | "detach" | "acknowledge">;
   applyBatch: (batch: Batch) => Promise<void>;
   transferState?: Blob | null;
   sleep?: (milliseconds: number) => Promise<void>;
@@ -27,12 +27,17 @@ type SessionConnectionOptions = {
 // replaces the session with a new one when the server no longer has it.
 export default class SessionConnection {
   #endpoint: string;
-  #outbox: Pick<Outbox, "attach" | "detach">;
+  #outbox: Pick<Outbox, "attach" | "detach" | "acknowledge">;
   #applyBatch: (batch: Batch) => Promise<void>;
   #sleep: (milliseconds: number) => Promise<void>;
   // The encrypted session a stopping server handed over, held until another
   // server has resumed it.
   #transferState: Blob | null;
+  // The number of the last batch applied, which the server resumes from
+  // when the stream reconnects. Null when its numbers no longer mean
+  // anything: before the first batch, and for a session that was replaced
+  // or moved to another server.
+  #lastBatch: number | null = null;
 
   readonly handlers: CommandHandlers<"Transfer"> = {
     Transfer: (state) => {
@@ -74,14 +79,19 @@ export default class SessionConnection {
         }
         updateReconnectStatus({ attempt, retryAt: null });
 
+        // The server that resumes a transferred session starts counting
+        // from the beginning.
+        if (this.#transferState) this.#applied(null);
+
         await runAttempt({
           endpoint: this.#endpoint,
           transferState: this.#transferState,
+          lastBatch: this.#lastBatch,
           outbox: this.#outbox,
           onOpen: () => {
             this.#transferState = null;
           },
-          onBatch: async (batch) => {
+          onBatch: async (batch, seq) => {
             updateConnectionStatus("connected");
             updateReconnectStatus(null);
             hasConnected = true;
@@ -97,6 +107,7 @@ export default class SessionConnection {
             }
 
             await this.#applyBatch(batch);
+            this.#applied(seq);
           },
         });
 
@@ -118,6 +129,7 @@ export default class SessionConnection {
           try {
             this.#endpoint = await resetSessionEntirely();
             this.#transferState = null;
+            this.#applied(null);
             backoff.sessionReset();
             continue;
           } catch (resetError) {
@@ -134,6 +146,11 @@ export default class SessionConnection {
         await this.#sleep(retryDelay);
       }
     }
+  }
+
+  #applied(seq: number | null) {
+    this.#lastBatch = seq;
+    this.#outbox.acknowledge(seq);
   }
 
   // A held transfer state means the session is waiting to resume on another

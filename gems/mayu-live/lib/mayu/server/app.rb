@@ -31,6 +31,7 @@ module Mayu
               content-type
               accept
               accept-encoding
+              mayu-last-batch
             ].join(", ")
           }
         )
@@ -62,6 +63,12 @@ module Mayu
           environment.config.server.session_timeout_seconds
         )
       end
+
+      LAST_BATCH_HEADER = "mayu-last-batch"
+      MAX_TAKEOVER_ATTEMPTS = 20
+
+      # An open command stream and the task that feeds it.
+      Stream = Struct.new(:body, :batch_task)
 
       SESSION_PATH_RE = %r{\A/.mayu/session/(?<session_id>[[:alnum:]]+)\z}
 
@@ -182,7 +189,7 @@ module Mayu
 
       def abort
         begin_shutdown
-        @streams.values.each(&:close)
+        @streams.values.each { it.body.close }
         @body_barrier.stop
       ensure
         @sessions.abort
@@ -491,10 +498,28 @@ module Mayu
           event: Mayu::Session::Event.new(:resuming, session_id: session.id)
         )
 
-        run_session_stream(request, session)
+        run_session_stream(request, session, after: last_batch(request))
       end
 
-      def run_session_stream(request, session)
+      # The sequence number of the last batch a reconnecting browser applied.
+      # A browser that has none to name, on its first connection, sends no
+      # header.
+      def last_batch(request)
+        case request.headers[LAST_BATCH_HEADER]
+        in [/\A\d{1,15}\z/ => value]
+          value.to_i
+        in nil | []
+          nil
+        else
+          # Not a number this server gave out, so nothing can be replayed.
+          -1
+        end
+      end
+
+      # Opens the command stream of a session. `after` is the last batch the
+      # browser says it applied, or nil when its DOM is as the server left
+      # it: fresh from the page response, or carried over by a transfer.
+      def run_session_stream(request, session, after: nil)
         compress = @environment.config.server.command_stream_compression?
         headers = {
           "content-type": EventStream::CONTENT_TYPE,
@@ -503,43 +528,77 @@ module Mayu
         }
         headers[:"content-encoding"] = EventStream::CONTENT_ENCODING if compress
 
-        if session.running?
-          Console.logger.error(self, "already running")
+        # A browser only opens a second stream when it has given up on the
+        # first, which this server may not have noticed yet. The new one
+        # takes over. Waiting for the old one lets other requests in, and
+        # one of them may be a third stream doing the same, so look again
+        # until there is nothing left to wait for.
+        attempts = 0
+        while (current = @streams[session.id]) || session.running?
+          # Nothing above should need more than a few rounds. Failing this
+          # request beats spinning: the browser tries again.
+          if (attempts += 1) > MAX_TAKEOVER_ATTEMPTS
+            raise "Could not take over the stream of session #{session.id}"
+          end
 
-          return (
-            error_response(
-              409,
-              "SESSION_ALREADY_RUNNING",
-              **origin_header(request)
-            )
-          )
+          if current
+            current.body.close
+            # Its loop may be holding a batch it just took. Let it put that
+            # away before deciding what this stream has to send.
+            current.batch_task&.stop
+            current.batch_task&.wait
+            @streams.delete(session.id) if @streams[session.id].equal?(current)
+          end
+          if session.running?
+            session.stop
+            session.wait
+          end
         end
 
         body = EventStream::Writer.new(compress:, metrics: @environment.metrics)
-        @streams[session.id] = body
+        stream = Stream.new(body, nil)
+        @streams[session.id] = stream
 
-        body.write_batch(
-          Runtime::Batch[
-            [
-              Runtime::Commands::Initialize[session.dom_id_tree],
-              *session.listener_commands,
-              *session.startup_commands
-            ]
-          ]
-        )
+        # Three ways to start. The browser missed batches that are still
+        # here: send those. Its DOM is as the server left it: tell it the ids.
+        # Otherwise the two can't be reconciled batch by batch, and the
+        # browser gets the whole page.
+        begin
+          if after && (missed = session.batches_after(after))
+            missed.each { body.write_packed(it.packed, commands: it.commands) }
+          else
+            opening = after ? session.resync_batch : session.initialize_batch
+            sent = session.stamp_batch(opening)
+            body.write_packed(sent.packed, commands: sent.commands)
+            opening.complete
+          end
+        rescue EventStream::ClosedStreamError
+          # Another stream took over while this one was being written to.
+          # The browser finds this one ended and has already moved on.
+        end
 
         @body_barrier.async do |task|
+          # Taken over before it got to run.
+          next unless @streams[session.id].equal?(stream)
+
           session.start
 
-          batch_task = task.async do
+          batch_task = stream.batch_task = task.async do
             loop do
               batch = session.dequeue_batch
 
+              if batch.nil? || batch.empty?
+                break if body.closed?
+                batch&.complete
+                next
+              end
+
+              # Numbered and kept before anything can go wrong with the
+              # stream, so the next stream can still deliver it.
+              sent = session.stamp_batch(batch)
               break if body.closed?
 
-              next unless batch
-
-              body.write_batch(batch) unless batch.empty?
+              body.write_packed(sent.packed, commands: sent.commands)
               batch.complete
 
               break if batch.terminal?
@@ -560,7 +619,8 @@ module Mayu
           ensure
             close_task.stop
             session_task.stop
-            session.stop
+            # A stream that took over runs the session now.
+            session.stop if @streams[session.id].equal?(stream)
             body.close_write
           end
 
@@ -573,8 +633,12 @@ module Mayu
           Console.logger.error(self, e)
           body.close(e)
         ensure
-          session.stop
-          @streams.delete(session.id)
+          # A stream that took over has its own entry, and its own session
+          # run to stop.
+          if @streams[session.id].equal?(stream)
+            session.stop
+            @streams.delete(session.id)
+          end
         end
 
         Protocol::HTTP::Response[200, headers, body]

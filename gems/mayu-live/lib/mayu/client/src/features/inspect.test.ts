@@ -19,6 +19,7 @@ describe("inspect", () => {
       "Inspect",
       expect.any(Number),
       null,
+      null,
       "1",
       { type: "tree" },
     ]);

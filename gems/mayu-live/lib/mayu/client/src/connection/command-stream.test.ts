@@ -47,4 +47,42 @@ describe("command stream", () => {
     expect((thrown as StreamError).message).toBe("Unknown stream error");
     expect((thrown as StreamError).code).toBeNull();
   });
+
+  it("names the last applied batch when it has one", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () =>
+        new Response("", {
+          status: 200,
+          headers: { "content-type": "application/vnd.mayu.event-stream" },
+        }),
+    );
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await connect("/.mayu/session/abc");
+    await connect("/.mayu/session/abc", null, undefined, 0);
+    await connect("/.mayu/session/abc", null, undefined, 12);
+
+    const sent = fetchMock.mock.calls.map(([, init]) =>
+      (init!.headers as Headers).get("mayu-last-batch"),
+    );
+    expect(sent).toEqual([null, "0", "12"]);
+  });
+
+  it("resumes a transfer with a POST that names no batch", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("", {
+        status: 200,
+        headers: { "content-type": "application/vnd.mayu.event-stream" },
+      }),
+    );
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const state = new Blob(["state"]);
+
+    await connect("/.mayu/session/abc", state, undefined, 12);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init!.method).toBe("POST");
+    expect(init!.body).toBe(state);
+    expect((init!.headers as Headers).has("mayu-last-batch")).toBe(false);
+  });
 });
