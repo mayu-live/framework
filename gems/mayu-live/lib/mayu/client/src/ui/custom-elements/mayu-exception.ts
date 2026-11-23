@@ -1,85 +1,132 @@
+import type { ErrorReport, SourceLine, TreeNode } from "../error-report";
+import h from "../h";
 import html from "./mayu-exception.html";
+import { part, shadowTemplate } from "./shadow";
 
-const template = document.createElement("template");
-template.innerHTML = html;
+const stamp = shadowTemplate(html);
 
+// The error overlay: a modal dialog that shows one ErrorReport. Everything
+// it draws lives in its shadow root, out of reach of the page's styles.
+// Closing the dialog removes the element.
 export default class MayuException extends HTMLElement {
-  dialog?: HTMLDialogElement;
-  closeButton?: HTMLButtonElement;
+  #root = stamp(this);
+  #dialog = part<HTMLDialogElement>(this.#root, "dialog");
+  #backtrace = part<HTMLUListElement>(this.#root, "backtrace");
 
-  connectedCallback() {
-    if (!this.shadowRoot) {
-      this.attachShadow({ mode: "open" });
-    }
+  constructor() {
+    super();
 
-    this.shadowRoot!.appendChild(template.content.cloneNode(true));
+    part(this.#root, "close").addEventListener("click", () =>
+      this.#dialog.close(),
+    );
+    this.#dialog.addEventListener("close", () => this.remove());
 
-    this.dialog = this.shadowRoot!.querySelector<HTMLDialogElement>("dialog")!;
-    this.closeButton =
-      this.shadowRoot!.querySelector<HTMLButtonElement>(
-        "[data-action='close']",
-      ) || undefined;
-
-    this.closeButton?.addEventListener("click", () => this.dialog?.close());
-    this.dialog!.addEventListener("close", () => this.remove());
-
-    this.hideEmptySections();
-    this.setupFrameworkFrames();
-
-    if (!this.dialog!.open) {
-      this.dialog!.showModal();
-    }
+    // The frames through Mayu are hidden until the checkbox asks for them.
+    const checkbox = part<HTMLInputElement>(this.#root, "framework-checkbox");
+    checkbox.addEventListener("change", () => {
+      this.#backtrace.classList.toggle("show-framework", checkbox.checked);
+    });
   }
 
-  // The frames through Mayu are hidden until the checkbox asks for them;
-  // its label says how many there are.
-  private setupFrameworkFrames() {
-    const root = this.shadowRoot!;
-    const toggle = root.querySelector<HTMLElement>("[data-framework-toggle]");
-    const checkbox = root.querySelector<HTMLInputElement>(
-      "[data-action='toggle-framework-frames']",
+  set report(report: ErrorReport) {
+    part(this.#root, "type").textContent = report.type;
+    part(this.#root, "location").textContent = report.location;
+    part(this.#root, "message").textContent = report.message;
+
+    this.#list(
+      "hints",
+      report.hints.map((hint) => h("li", [hint], { class: "hint-item" })),
     );
-    const count = root.querySelector<HTMLElement>("[data-framework-count]");
-    const slot = root.querySelector<HTMLSlotElement>("slot[name='backtrace']");
-    if (!toggle || !checkbox || !count || !slot) return;
+    this.#list("source", sourceItems(report.source));
+    this.#list(
+      "tree",
+      report.tree.map((nodes, depth) => {
+        const item = h("li", treeLine(nodes), { class: "tree-item" });
+        item.style.setProperty("--depth", String(depth));
+        return item;
+      }),
+    );
+    this.#list(
+      "backtrace",
+      report.backtrace.map((frame) =>
+        h("li", [frame.text], { class: TRACE_CLASS[frame.kind] }),
+      ),
+    );
 
-    checkbox.addEventListener("change", () => {
-      this.toggleAttribute("show-framework-frames", checkbox.checked);
-    });
+    // The label says how many frames the checkbox would add.
+    const frames = report.backtrace.filter(
+      (frame) => frame.kind === "framework",
+    ).length;
+    part<HTMLElement>(this.#root, "framework-toggle").hidden = frames === 0;
+    part(this.#root, "framework-count").textContent =
+      `Show ${frames} more frames through Mayu`;
+  }
 
-    const sync = () => {
-      const frames = slot
-        .assignedElements()
-        .filter((item) => item.classList.contains("is-framework")).length;
-      toggle.hidden = frames === 0;
-      count.textContent = `Show ${frames} more frames through Mayu`;
-    };
+  connectedCallback() {
+    if (!this.#dialog.open) this.#dialog.showModal();
 
-    slot.addEventListener("slotchange", sync);
-    sync();
+    // Long files would otherwise open scrolled to the top, away from the
+    // error. Not every environment implements scrollIntoView.
+    this.#root
+      .querySelector(".source-line.is-interesting")
+      ?.scrollIntoView?.({ block: "center" });
   }
 
   disconnectedCallback() {
-    this.dialog?.close();
+    this.#dialog.close();
   }
 
-  // A build error has no backtrace or tree path worth showing, and often no
-  // hints. Empty panels would just be noise.
-  private hideEmptySections() {
-    this.shadowRoot
-      ?.querySelectorAll<HTMLElement>("[data-section]")
-      .forEach((section) => {
-        const slot = section.querySelector("slot");
-        if (!slot) return;
-
-        const sync = () => {
-          section.hidden = slot.assignedNodes().length === 0;
-        };
-
-        slot.addEventListener("slotchange", sync);
-        sync();
-      });
+  // Fills one list of the report. A build error has no backtrace or tree
+  // path, and often no hints; an empty section would just be noise.
+  #list(id: string, items: HTMLElement[]) {
+    const list = part<HTMLElement>(this.#root, id);
+    list.replaceChildren(...items);
+    list.closest("section")!.hidden = items.length === 0;
   }
 }
 
-window.customElements.define("mayu-exception", MayuException);
+const TRACE_CLASS = {
+  module: "trace-item is-interesting",
+  app: "trace-item",
+  framework: "trace-item is-framework",
+};
+
+// Every line carries its own number. The line the error names is followed
+// by a caret under the offending column.
+function sourceItems(lines: SourceLine[]) {
+  const gutter = String(lines.length).length;
+
+  return lines.flatMap((line) => {
+    const number = String(line.number).padStart(gutter, " ");
+    const items = [
+      h("li", [`${number}  ${line.text}`], {
+        class: line.marked ? "source-line is-interesting" : "source-line",
+      }),
+    ];
+
+    if (line.caret !== null) {
+      const indent = " ".repeat(gutter + 2 + Math.max(line.caret - 1, 0));
+      items.push(h("li", [`${indent}^`], { class: "source-caret" }));
+    }
+
+    return items;
+  });
+}
+
+// "%body > %main > %Page (app:/pages/+page.haml)"
+function treeLine(nodes: TreeNode[]) {
+  return nodes.flatMap((node, index) => {
+    const kind = node.path ? "component" : "tag";
+
+    return [
+      index > 0 && h("span", [" > "], { class: "tree-path" }),
+      // Only tags get the sigil; names like "#text" do not.
+      !node.name.startsWith("#") &&
+        h("span", ["%"], { class: `tree-${kind}-sigil` }),
+      h("span", [node.name], { class: `tree-${kind}` }),
+      node.path && h("span", [` (${node.path})`], { class: "tree-path" }),
+    ];
+  });
+}
+
+customElements.define("mayu-exception", MayuException);

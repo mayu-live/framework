@@ -1,197 +1,230 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { RenderErrorInfo } from "./error-report";
 import renderError from "./render-error";
 
+function error(overrides: Partial<RenderErrorInfo>): RenderErrorInfo {
+  return {
+    file: "app:/pages/+page.haml",
+    type: "RuntimeError",
+    message: "boom",
+    backtrace: [],
+    source: null,
+    treePath: [],
+    line: null,
+    column: null,
+    hints: [],
+    ...overrides,
+  };
+}
+
+// The overlay draws in its shadow root.
+function overlay() {
+  return document.querySelector("mayu-exception")!.shadowRoot!;
+}
+
+function sectionHidden(listId: string) {
+  return overlay().getElementById(listId)!.closest("section")!.hidden;
+}
+
 describe("renderError", () => {
-  beforeAll(() => {
-    // jsdom does not implement the dialog element's modal methods.
-    HTMLDialogElement.prototype.showModal = function () {
-      this.open = true;
-    };
-    HTMLDialogElement.prototype.close = function () {
-      if (!this.open) return;
-      this.open = false;
-      this.dispatchEvent(new Event("close"));
-    };
-  });
-
-  afterEach(() => {
-    document.querySelectorAll("mayu-exception").forEach((element) => {
-      element.remove();
-    });
-    vi.restoreAllMocks();
-  });
-
-  it("renders listener errors without source code", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-
-    await renderError(
-      "/app/pages/demos/exceptions/+page.haml",
-      "NoMatchingPatternError",
-      "The callback failed",
-      ["/app/pages/demos/exceptions/+page.haml:13:in 'handle_click'"],
-      null,
-      [{ name: "Page", path: "/app/pages/demos/exceptions/+page.haml" }],
-    );
-
-    const exception = document.querySelector("mayu-exception");
-    expect(exception).not.toBeNull();
-    expect(exception?.textContent).toContain("NoMatchingPatternError");
-    expect(exception?.textContent).toContain("The callback failed");
-    expect(exception?.textContent).toContain("%Page");
-  });
-
-  it("highlights the source line named by a module id backtrace frame", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-
-    await renderError(
-      "app:/CustomElement.tsx",
-      "SyntaxError",
-      "Expected an element",
-      ["app:/CustomElement.tsx:2:24", "app:/other.tsx:9"],
-      "const a = 1;\nconst b = 2;\nconst c = 3;\n",
-      [],
-    );
-
-    const lines = document.querySelectorAll("mayu-exception li.source-line");
-    const highlighted = document.querySelectorAll(
-      "mayu-exception li.source-line.is-interesting",
-    );
-
-    expect(lines).toHaveLength(3);
-    expect(highlighted).toHaveLength(1);
-    expect(highlighted[0]?.textContent).toContain("const b = 2;");
-  });
-
-  it("highlights the line a build error reports without a backtrace", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-
-    await renderError(
-      "app:/CustomElement.tsx",
-      "Module not found",
-      'Could not resolve "./colors.toml"',
-      [],
-      'import a from "./a";\nimport colors from "./colors.toml";\n',
-      [],
-      2,
-      21,
-      ["Did you mean ./colors.json?"],
-    );
-
-    const highlighted = document.querySelectorAll(
-      "mayu-exception li.source-line.is-interesting",
-    );
-
-    expect(highlighted).toHaveLength(1);
-    expect(highlighted[0]?.textContent).toContain("./colors.toml");
-
-    const caret = document.querySelector("mayu-exception li.source-caret");
-    expect(caret).not.toBeNull();
-    // Gutter is one digit wide plus two spaces, then column 21.
-    expect(caret?.textContent).toBe(" ".repeat(1 + 2 + 20) + "^");
-
-    const hints = document.querySelectorAll("mayu-exception li.hint-item");
-    expect(hints).toHaveLength(1);
-    expect(hints[0]?.textContent).toContain("./colors.json");
-  });
-
-  it("hides panels that have no content", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    await import("./custom-elements/mayu-exception");
-
-    await renderError(
-      "app:/broken.haml",
-      "Haml parse error",
-      'Invalid tag: "%@$O".',
-      [],
-      "%article\n  %@$O\n",
-      [],
-      2,
-      null,
-      [],
-    );
-
-    const root = document.querySelector("mayu-exception")?.shadowRoot;
-    const hidden = (name: string) =>
-      root?.querySelector(`slot[name="${name}"]`)?.closest("section")?.hidden;
-
-    expect(hidden("backtrace")).toBe(true);
-    expect(hidden("tree-path")).toBe(true);
-    expect(hidden("hints")).toBe(true);
-    expect(hidden("source")).toBe(false);
-  });
-});
-
-describe("renderError backtrace", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     vi.restoreAllMocks();
   });
 
-  it("highlights the frames of the module and dims the ones through Mayu", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    await import("./custom-elements/mayu-exception");
+  it("shows the error in a modal dialog and logs it", () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    await renderError(
-      "app:/pages/+page.haml",
-      "RuntimeError",
-      "boom",
-      [
-        "app:/pages/+page.haml:2:in 'render'",
-        "mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb:1:in 'update'",
-      ],
-      "%p hello\n= raise\n",
-      [],
-      2,
-      null,
-      [],
+    renderError(
+      error({
+        file: "/app/pages/demos/exceptions/+page.haml",
+        type: "NoMatchingPatternError",
+        message: "The callback failed",
+        backtrace: [
+          "/app/pages/demos/exceptions/+page.haml:13:in 'handle_click'",
+        ],
+        treePath: [
+          { name: "body" },
+          { name: "Page", path: "/app/pages/demos/exceptions/+page.haml" },
+        ],
+      }),
     );
 
-    const element = document.querySelector("mayu-exception")!;
-    const items = [...element.querySelectorAll(".trace-item")];
-    expect(items[0].classList.contains("is-interesting")).toBe(true);
-    expect(items[1].classList.contains("is-framework")).toBe(true);
+    const root = overlay();
+    expect(root.querySelector("dialog")!.open).toBe(true);
+    expect(root.getElementById("type")!.textContent).toBe(
+      "NoMatchingPatternError",
+    );
+    expect(root.getElementById("location")!.textContent).toBe(
+      "/app/pages/demos/exceptions/+page.haml",
+    );
+    expect(root.getElementById("message")!.textContent).toBe(
+      "The callback failed",
+    );
     expect(
-      element.querySelector(".source-line.is-interesting")?.textContent,
-    ).toContain("= raise");
+      [...root.querySelectorAll(".tree-item")].map((item) => item.textContent),
+    ).toEqual(["%body", "%Page (/app/pages/demos/exceptions/+page.haml)"]);
+    expect(log).toHaveBeenCalledOnce();
   });
 
-  it("hides frames through Mayu until the checkbox asks for them", async () => {
+  it("keeps what it draws out of the page", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    await import("./custom-elements/mayu-exception");
 
-    await renderError(
-      "app:/pages/+page.haml",
-      "RuntimeError",
-      "boom",
-      [
-        "app:/pages/+page.haml:2:in 'render'",
-        "mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb:1:in 'update'",
-        "<internal:kernel>:187:in 'Kernel#loop'",
-      ],
-      null,
-      [],
-      null,
-      null,
-      [],
+    renderError(error({ source: "%p\n", line: 1 }));
+
+    expect(document.querySelector("mayu-exception")!.childNodes).toHaveLength(
+      0,
+    );
+  });
+
+  it("replaces the overlay of an earlier error", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderError(error({ message: "first" }));
+    renderError(error({ message: "second" }));
+
+    expect(document.querySelectorAll("mayu-exception")).toHaveLength(1);
+    expect(overlay().getElementById("message")!.textContent).toBe("second");
+  });
+
+  it("goes away when its dialog is closed", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderError(error({}));
+    overlay().getElementById("close")!.click();
+
+    expect(document.querySelector("mayu-exception")).toBeNull();
+  });
+
+  it("highlights the source line named by a backtrace frame", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderError(
+      error({
+        file: "app:/CustomElement.tsx",
+        backtrace: ["app:/CustomElement.tsx:2:24", "app:/other.tsx:9"],
+        source: "const a = 1;\nconst b = 2;\nconst c = 3;\n",
+      }),
     );
 
-    const element = document.querySelector("mayu-exception")!;
-    const root = element.shadowRoot!;
-    const label = root.querySelector<HTMLElement>("[data-framework-toggle]")!;
-    const checkbox = root.querySelector<HTMLInputElement>(
-      "[data-action='toggle-framework-frames']",
-    )!;
+    const lines = overlay().querySelectorAll(".source-line");
+    const highlighted = overlay().querySelectorAll(
+      ".source-line.is-interesting",
+    );
 
-    expect(label.hidden).toBe(false);
-    expect(root.querySelector("[data-framework-count]")?.textContent).toBe(
+    expect(lines).toHaveLength(3);
+    expect(highlighted).toHaveLength(1);
+    expect(highlighted[0].textContent).toBe("2  const b = 2;");
+  });
+
+  it("points at the column a build error reports and shows its hints", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderError(
+      error({
+        file: "app:/CustomElement.tsx",
+        type: "Module not found",
+        message: 'Could not resolve "./colors.toml"',
+        source: 'import a from "./a";\nimport colors from "./colors.toml";\n',
+        line: 2,
+        column: 21,
+        hints: ["Did you mean ./colors.json?"],
+      }),
+    );
+
+    const items = [...overlay().querySelectorAll("#source li")];
+    expect(items.map((item) => item.className)).toEqual([
+      "source-line",
+      "source-line is-interesting",
+      "source-caret",
+    ]);
+    // Gutter is one digit wide plus two spaces, then column 21.
+    expect(items[2].textContent).toBe(" ".repeat(1 + 2 + 20) + "^");
+
+    const hints = overlay().querySelectorAll(".hint-item");
+    expect(hints).toHaveLength(1);
+    expect(hints[0].textContent).toBe("Did you mean ./colors.json?");
+  });
+
+  it("hides the sections that have no content", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderError(
+      error({
+        file: "app:/broken.haml",
+        type: "Haml parse error",
+        message: 'Invalid tag: "%@$O".',
+        source: "%article\n  %@$O\n",
+        line: 2,
+      }),
+    );
+
+    expect(sectionHidden("backtrace")).toBe(true);
+    expect(sectionHidden("tree")).toBe(true);
+    expect(sectionHidden("hints")).toBe(true);
+    expect(sectionHidden("source")).toBe(false);
+  });
+
+  it("highlights the frames of the module and dims the ones through Mayu", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderError(
+      error({
+        backtrace: [
+          "app:/pages/+page.haml:2:in 'render'",
+          "app:/components/Card.haml:4:in 'render'",
+          "mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb:1:in 'update'",
+        ],
+        source: "%p hello\n= raise\n",
+        line: 2,
+      }),
+    );
+
+    const items = [...overlay().querySelectorAll(".trace-item")];
+    expect(items.map((item) => item.className)).toEqual([
+      "trace-item is-interesting",
+      "trace-item",
+      "trace-item is-framework",
+    ]);
+  });
+
+  it("hides frames through Mayu until the checkbox asks for them", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderError(
+      error({
+        backtrace: [
+          "app:/pages/+page.haml:2:in 'render'",
+          "mayu-live/lib/mayu/runtime/vnodes/vcomponent.rb:1:in 'update'",
+          "<internal:kernel>:187:in 'Kernel#loop'",
+        ],
+      }),
+    );
+
+    const root = overlay();
+    const backtrace = root.getElementById("backtrace")!;
+    const checkbox = root.getElementById(
+      "framework-checkbox",
+    ) as HTMLInputElement;
+
+    expect(root.getElementById("framework-toggle")!.hidden).toBe(false);
+    expect(root.getElementById("framework-count")!.textContent).toBe(
       "Show 2 more frames through Mayu",
     );
-    expect(element.hasAttribute("show-framework-frames")).toBe(false);
+    expect(backtrace.classList.contains("show-framework")).toBe(false);
 
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event("change"));
 
-    expect(element.hasAttribute("show-framework-frames")).toBe(true);
+    expect(backtrace.classList.contains("show-framework")).toBe(true);
+  });
+
+  it("offers no checkbox when no frame runs through Mayu", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    renderError(error({ backtrace: ["app:/pages/+page.haml:2:in 'render'"] }));
+
+    expect(overlay().getElementById("framework-toggle")!.hidden).toBe(true);
   });
 });

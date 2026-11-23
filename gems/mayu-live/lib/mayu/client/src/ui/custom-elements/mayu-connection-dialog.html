@@ -1,0 +1,219 @@
+<style>
+  :host {
+    --dialog-color: light-dark(#000c, #fffc);
+    --dialog-background: light-dark(#ffffffee, #0f1218ee);
+    --dialog-border: light-dark(#0000001a, #fff1);
+    --dialog-shadow: light-dark(#0003, #0008);
+    --dialog-accent: light-dark(#d6204a, #ff90a3);
+    --dialog-text: light-dark(#2a3140, #d7deee);
+    --dialog-muted: light-dark(#2a314099, #d7deee99);
+    --countdown-track: light-dark(#d6204a33, #ff90a366);
+    --dialog-backdrop: light-dark(
+      rgb(240 243 248 / 0.52),
+      rgb(10 14 20 / 0.52)
+    );
+  }
+
+  #dialog {
+    --spring-easing: linear(
+      0,
+      0.0014 0.3%,
+      0.0088 0.74%,
+      0.0409,
+      0.0932 2.51%,
+      0.1753 3.54%,
+      0.3533 5.31%,
+      0.853 9.74%,
+      0.9831,
+      1.0937,
+      1.182 13.73%,
+      1.2406,
+      1.2807 16.09%,
+      1.294 16.68%,
+      1.3046,
+      1.309 18.16%,
+      1.3067,
+      1.2971 19.93%,
+      1.278 20.96%,
+      1.2255 22.88%,
+      1.0563 27.75%,
+      0.9864 30.11%,
+      0.9557,
+      0.9323,
+      0.9161 34.1%,
+      0.9065 35.57%,
+      0.9045,
+      0.9051,
+      0.908 38.23%,
+      0.9138 39.27%,
+      0.9314 41.33%,
+      0.9822 46.06%,
+      1.0039 48.42%,
+      1.0201 50.93%,
+      1.0254,
+      1.0285 53.58%,
+      1.0294 55.5%,
+      1.0267 57.57%,
+      0.9993 66.57%,
+      0.9941,
+      0.9914 71.59%,
+      0.9917 75.87%,
+      0.9998 84.43%,
+      1.0024 88.72%,
+      1.0009 99.93%
+    );
+    --spring-duration: 500ms;
+
+    font: inherit;
+    border: 1px solid var(--dialog-border);
+    border-radius: 12px;
+    background: var(--dialog-background);
+    color: var(--dialog-color);
+    padding: 1rem;
+    min-width: 16rem;
+    box-shadow: 0 1rem 2rem var(--dialog-shadow);
+    user-select: none;
+
+    opacity: 0;
+    scale: 0;
+    transition:
+      opacity 200ms ease-out,
+      scale 200ms ease-out;
+  }
+
+  #dialog:open.is-visible {
+    opacity: 1;
+    scale: 1;
+    transition:
+      opacity 200ms ease-out,
+      scale var(--spring-duration) var(--spring-easing);
+  }
+
+  #dialog::backdrop {
+    background: transparent;
+    backdrop-filter: blur(0);
+    transition:
+      background-color 200ms ease-out,
+      backdrop-filter 200ms ease-out;
+  }
+
+  #dialog:open.is-visible::backdrop {
+    background: var(--dialog-backdrop);
+    backdrop-filter: blur(5px);
+  }
+
+  #title {
+    margin: 0;
+    font-weight: 700;
+    color: var(--dialog-accent);
+  }
+
+  #text {
+    margin: 0.55rem 0 0;
+    color: var(--dialog-text);
+  }
+
+  #attempt {
+    margin: 0.35rem 0 0;
+    color: var(--dialog-muted);
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .body {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  #countdown {
+    position: relative;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  #countdown[hidden] {
+    display: none;
+  }
+
+  #countdown svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    rotate: -90deg;
+  }
+
+  .track,
+  .arc {
+    fill: none;
+    stroke-width: 3;
+  }
+
+  .track {
+    stroke: var(--countdown-track);
+  }
+
+  .arc {
+    stroke: var(--dialog-accent);
+    stroke-linecap: round;
+    stroke-dasharray: 1 1;
+  }
+
+  #countdown.is-waiting .arc {
+    animation: reconnect-countdown var(--retry-duration, 0ms) linear forwards;
+  }
+
+  #countdown.is-connecting .arc {
+    stroke-dasharray: 0.25 0.75;
+  }
+
+  #countdown.is-connecting svg {
+    animation: reconnect-spin 1s linear infinite;
+  }
+
+  #seconds {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--dialog-text);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @keyframes reconnect-countdown {
+    from {
+      stroke-dashoffset: 0;
+    }
+    to {
+      stroke-dashoffset: 1;
+    }
+  }
+
+  @keyframes reconnect-spin {
+    from {
+      rotate: -90deg;
+    }
+    to {
+      rotate: 270deg;
+    }
+  }
+</style>
+<dialog id="dialog" closedby="none" aria-label="Connection lost">
+  <div class="body">
+    <div id="countdown" hidden aria-hidden="true">
+      <svg viewBox="0 0 36 36">
+        <circle class="track" cx="18" cy="18" r="16" />
+        <circle class="arc" cx="18" cy="18" r="16" pathLength="1" />
+      </svg>
+      <span id="seconds"></span>
+    </div>
+    <div>
+      <p id="title">Disconnected</p>
+      <p id="text">Trying to reconnect…</p>
+      <p id="attempt" hidden></p>
+    </div>
+  </div>
+</dialog>

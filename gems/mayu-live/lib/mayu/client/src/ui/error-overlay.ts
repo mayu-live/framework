@@ -7,8 +7,9 @@ export const errorOverlayHandlers: CommandHandlers<
   "RenderError" | "ReloadSucceeded"
 > = {
   async RenderError(...args) {
-    const { default: renderError } = await import("./render-error");
-    await renderError(...args);
+    const { default: renderError, fromCommand } =
+      await import("./render-error");
+    renderError(fromCommand(args));
   },
   ReloadSucceeded() {
     document.querySelectorAll("mayu-exception").forEach((e) => e.remove());

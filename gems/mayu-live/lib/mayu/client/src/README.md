@@ -50,10 +50,12 @@ features/
 ui/
   status.ts              connection status, ping and progress on <mayu-ping>
   error-overlay.ts       RenderError / ReloadSucceeded
-  render-error.ts        the overlay itself (loaded on the first error)
+  render-error.ts        shows an error (loaded on the first one)
+  error-report.ts        works an error out for display
+  error-console.ts       draws the report in the console
   view-transition.ts     startViewTransition with a fallback
   morph-document.ts      morphs the document into another page's HTML
-  custom-elements/       <mayu-ping>, <mayu-exception>
+  custom-elements/       one .html and one .ts per element, see below
 devtools.ts              the devtools extension hook (loaded when present)
 ```
 
@@ -104,6 +106,27 @@ and its component state are untouched.
 One request is in flight at a time. If the page still differs right after a
 resync, the difference is one the server can't repair, such as markup the
 browser corrects while parsing, so it is logged once and left alone.
+
+## Custom elements
+
+The runtime draws its own UI in custom elements, so the page's styles can't
+reach it and it can't disturb the page.
+
+- `<mayu-ping>` is the status badge in the corner. The server renders one at
+  the end of every body. `ui/status.ts` sets its attributes, which works
+  before the element has loaded.
+- `<mayu-navigation-progress>` and `<mayu-connection-dialog>` live in the
+  shadow root of `<mayu-ping>`, which passes its attributes on to them.
+- `<mayu-exception>` is the error overlay. `ui/render-error.ts` gives it an
+  `ErrorReport` and adds it to the body.
+
+Each element is two files in `ui/custom-elements/`: `name.html` holds the
+markup and the styles, `name.ts` the behaviour. `shadow.ts` connects them:
+`shadowTemplate(html)` parses the HTML once and fills an element's shadow
+root with it, and `part(root, id)` returns the element with that id, or
+throws when the template has none. An element fills its shadow root in a
+field initialiser, so its parts exist from the start. What can only happen
+in the document, such as opening a dialog, waits for `connectedCallback`.
 
 ## How an event gets sent
 
@@ -184,7 +207,7 @@ reports "transferring" rather than "disconnected" meanwhile.
 
 Every page loads `init` and `main`. Anything a healthy production session
 does not need on every page is a separate chunk behind `import()`: the error
-overlay, both custom elements, `morphdom`, and the devtools with
+overlay, the custom elements, `morphdom`, and the devtools with
 `features/inspect.ts`.
 
 `protocol/msgpack.ts` is a codec for the part of MessagePack the protocol

@@ -1,27 +1,20 @@
-export default function h(
-  type: string,
-  children: any[] = [],
-  attrs: Record<string, any> = {},
-) {
-  const el = document.createElement(type);
+type Child = Node | string | null | false;
 
-  for (const [key, value] of Object.entries(attrs)) {
-    if (value) {
-      if (value === true) {
-        el.setAttribute(key, key);
-      } else {
-        el.setAttribute(key, value);
-      }
-    }
+// Creates an element: h("li", ["text", h("b", ["bold"])], { class: "item" }).
+export default function h(
+  tag: string,
+  children: Child[] = [],
+  attributes: Record<string, string> = {},
+) {
+  const element = document.createElement(tag);
+
+  for (const [name, value] of Object.entries(attributes)) {
+    element.setAttribute(name, value);
   }
 
-  children.forEach((child) => {
-    if ((child as any) instanceof Node) {
-      el.appendChild(child);
-    } else if (child) {
-      el.appendChild(document.createTextNode(String(child)));
-    }
-  });
+  element.append(
+    ...children.filter((child) => child !== null && child !== false),
+  );
 
-  return el;
+  return element;
 }
