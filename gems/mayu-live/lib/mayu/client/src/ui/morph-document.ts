@@ -1,9 +1,9 @@
-// Changes the document into the one the HTML describes, keeping the nodes
-// the two have in common. Loaded on demand, with morphdom: a healthy session
-// never needs it.
-export default async function morphDocument(html: string) {
-  const { default: morphdom } = await import("morphdom");
+import morphdom from "morphdom";
 
+// Changes the document into the one the HTML describes, keeping the nodes
+// the two have in common. This module is loaded on demand, and morphdom with
+// it: a healthy session never needs either.
+export default function morphDocument(html: string) {
   morphdom(document.documentElement, html.replace(/^<!DOCTYPE html>\n/, ""), {
     // The status indicator shows the state of this page's connection, which
     // the server's copy knows nothing about.
