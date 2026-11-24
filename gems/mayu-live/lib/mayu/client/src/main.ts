@@ -36,10 +36,16 @@ export default async function init(sessionId: string) {
   const navigation = new Navigation(outbox);
   // Loaded when a command first fails, which a healthy page never sees.
   let resync: Promise<Resync> | undefined;
-  const loadResync = () =>
-    (resync ??= import("./features/resync").then(
+  const withResync = (use: (resync: Resync) => void) => {
+    resync ??= import("./features/resync").then(
       ({ default: Resync }) => new Resync(outbox),
-    ));
+    );
+    resync.then(use, (error) => {
+      // Try the import again the next time.
+      resync = undefined;
+      console.error(error);
+    });
+  };
   const registry = new NodeRegistry((event, listenerId) => {
     callbacks.dispatch(event, listenerId);
   });
@@ -54,7 +60,7 @@ export default async function init(sessionId: string) {
   const dom = domHandlers(registry, {
     // Noted even when the page never asked, so that a page which still
     // differs after it does not ask for it over and over.
-    onResynced: () => void loadResync().then((resync) => resync.completed()),
+    onResynced: () => withResync((resync) => resync.completed()),
   });
 
   const dispatcher = new CommandDispatcher(
@@ -76,9 +82,7 @@ export default async function init(sessionId: string) {
         if (Object.hasOwn(dom, name)) {
           const message =
             error instanceof Error ? error.message : String(error);
-          void loadResync().then((resync) =>
-            resync.request(`${name}: ${message}`),
-          );
+          withResync((resync) => resync.request(`${name}: ${message}`));
         }
       },
     },
@@ -91,6 +95,13 @@ export default async function init(sessionId: string) {
   // The devtools extension defines its hook before the page loads. Without
   // it, none of the devtools code is fetched.
   if (window.__MAYU_DEVTOOLS_HOOK__) {
+    // The page works without them.
+    await connectDevtools().catch(console.error);
+  }
+
+  void connection.run();
+
+  async function connectDevtools() {
     const [{ default: Devtools }, { default: Inspect }] = await Promise.all([
       import("./devtools"),
       import("./features/inspect"),
@@ -109,6 +120,4 @@ export default async function init(sessionId: string) {
       inspector,
     );
   }
-
-  void connection.run();
 }

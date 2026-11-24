@@ -88,6 +88,7 @@ class Mayu::Server::AppTest < Minitest::Test
 
     def running? = false
     def transferring? = false
+    def batch_seq = 0
 
     def listener_commands
       [Mayu::Runtime::Commands::SetListener["button", "click", "listener"]]

@@ -63,6 +63,7 @@ module Mayu
       # the browser's clock when it sent the event, `ack` is nil or the
       # sequence number of the last batch it applied, and `telemetry` is nil
       # or the time it spent applying commands since its last event.
+
       # The browser found its DOM out of step with the commands it was sent,
       # and asks for the page as the server has it.
       ResyncEvent =
@@ -325,9 +326,12 @@ module Mayu
     # before the batch is written, so a batch is never lost with the stream
     # it was meant for.
     def stamp_batch(batch)
-      @batch_seq += 1
-      packed = Mayu::Server::EventStream.pack_batch(batch, @batch_seq)
-      sent = SentBatch[@batch_seq, packed, batch.commands.size]
+      # A batch that can't be packed must not use up a number: the gap would
+      # look like a lost batch to every later reconnect.
+      seq = @batch_seq + 1
+      packed = Mayu::Server::EventStream.pack_batch(batch, seq)
+      sent = SentBatch[seq, packed, batch.commands.size]
+      @batch_seq = seq
 
       @unacked << sent
       @unacked_bytes += packed.bytesize

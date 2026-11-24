@@ -2,15 +2,17 @@
 // fraction of the size of a general-purpose library. msgpack.test.ts checks
 // it against @msgpack/msgpack and against bytes packed by Ruby.
 //
-// Decoding handles every MessagePack type. Maps become plain objects, binary
-// strings become a Uint8Array, and extension type 1 becomes a Blob holding a
-// transferred session. Encoding handles null, booleans, numbers, strings,
+// Decoding handles every MessagePack type but the extensions. Maps become
+// plain objects, binary strings become a Uint8Array, and extension type 1
+// becomes a Blob holding a transferred session; any other extension throws. Encoding handles null, booleans, numbers, strings,
 // arrays, plain objects and byte arrays, which is what an event can hold.
 
 import { SESSION_MIME_TYPE } from "./constants";
 
 const BLOB_EXTENSION = 1;
-const MAX_DEPTH = 100;
+// How deep an event may nest. An event is a few levels deep, so anything
+// beyond this is a value that contains itself.
+const MAX_ENCODE_DEPTH = 100;
 
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
@@ -44,23 +46,23 @@ export function decode(bytes: Uint8Array): unknown {
     return bytes.slice(start, start + length);
   }
 
-  function readArray(length: number, depth: number) {
+  function readArray(length: number) {
     const array = new Array<unknown>(length);
-    for (let i = 0; i < length; i++) array[i] = read(depth + 1);
+    for (let i = 0; i < length; i++) array[i] = read();
     return array;
   }
 
-  function readMap(length: number, depth: number) {
+  function readMap(length: number) {
     const map: Record<string, unknown> = {};
     for (let i = 0; i < length; i++) {
-      const key = read(depth + 1);
+      const key = read();
       if (typeof key !== "string" && typeof key !== "number") {
         throw new Error("MessagePack: unsupported map key");
       }
       if (key === "__proto__") {
         throw new Error("MessagePack: __proto__ is not allowed as a key");
       }
-      map[key] = read(depth + 1);
+      map[key] = read();
     }
     return map;
   }
@@ -74,14 +76,12 @@ export function decode(bytes: Uint8Array): unknown {
     return new Blob([data], { type: SESSION_MIME_TYPE });
   }
 
-  function read(depth: number): unknown {
-    if (depth > MAX_DEPTH) throw new Error("MessagePack: nested too deep");
-
+  function read(): unknown {
     const byte = view.getUint8(take(1));
 
     if (byte < 0x80) return byte;
-    if (byte < 0x90) return readMap(byte & 0x0f, depth);
-    if (byte < 0xa0) return readArray(byte & 0x0f, depth);
+    if (byte < 0x90) return readMap(byte & 0x0f);
+    if (byte < 0xa0) return readArray(byte & 0x0f);
     if (byte < 0xc0) return readString(byte & 0x1f);
     if (byte >= 0xe0) return byte - 0x100;
 
@@ -131,19 +131,19 @@ export function decode(bytes: Uint8Array): unknown {
       case 0xdb:
         return readString(readLength(1 << (byte - 0xd9)));
       case 0xdc:
-        return readArray(readLength(2), depth);
+        return readArray(readLength(2));
       case 0xdd:
-        return readArray(readLength(4), depth);
+        return readArray(readLength(4));
       case 0xde:
-        return readMap(readLength(2), depth);
+        return readMap(readLength(2));
       case 0xdf:
-        return readMap(readLength(4), depth);
+        return readMap(readLength(4));
       default:
         throw new Error(`MessagePack: unknown type 0x${byte.toString(16)}`);
     }
   }
 
-  const value = read(0);
+  const value = read();
   if (offset !== bytes.length) throw new Error("MessagePack: trailing bytes");
   return value;
 }
@@ -246,7 +246,8 @@ export function encode(value: unknown): Uint8Array<ArrayBuffer> {
     }
   }
   function write(value: unknown, depth: number) {
-    if (depth > MAX_DEPTH) throw new Error("MessagePack: nested too deep");
+    if (depth > MAX_ENCODE_DEPTH)
+      throw new Error("MessagePack: nested too deep");
 
     if (value === null || value === undefined) {
       writeByte(0xc0);

@@ -459,6 +459,17 @@ class Mayu::SessionTest < Minitest::Test
     assert_equal(1, second.commands)
   end
 
+  def test_a_batch_that_can_not_be_packed_uses_up_no_number
+    session = missing_page_session
+    unpackable = Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Pong[Object.new]]]
+
+    assert_raises { session.stamp_batch(unpackable) }
+    sent = session.stamp_batch(pong(10))
+
+    assert_equal(1, sent.seq)
+    assert_equal([1], session.batches_after(0).map(&:seq))
+  end
+
   def test_a_reconnecting_browser_gets_the_batches_it_missed
     session = missing_page_session
     4.times { session.stamp_batch(pong(it)) }

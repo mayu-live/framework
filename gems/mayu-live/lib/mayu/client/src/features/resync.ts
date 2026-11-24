@@ -1,9 +1,9 @@
 import type Outbox from "../connection/outbox";
 
-// How soon after one resync another may be asked for. A page that still
-// can't apply its commands right after getting the server's copy has a
-// difference the server can't repair, such as markup the browser corrects
-// while parsing, and asking again would only repeat it.
+// A page that still can't apply its commands this soon after getting the
+// server's copy has a difference the server can't repair, such as markup
+// the browser corrects while parsing. Asking again would only repeat it,
+// so from then on the page is left as it is.
 const MIN_INTERVAL = 5_000;
 
 // Asks the server for the whole page when a command for the DOM could not
@@ -26,15 +26,13 @@ export default class Resync {
   }
 
   request(reason: string) {
-    if (this.#pending) return;
+    if (this.#pending || this.#declined) return;
 
     if (performance.now() - this.#completedAt < MIN_INTERVAL) {
-      if (!this.#declined) {
-        console.warn(
-          "The page still differs from the server right after a resync, so it is left as it is.",
-          reason,
-        );
-      }
+      console.warn(
+        "The page still differs from the server right after a resync, so it is left as it is.",
+        reason,
+      );
       this.#declined = true;
       return;
     }
@@ -50,7 +48,6 @@ export default class Resync {
   // The server's page has replaced the document.
   completed() {
     this.#pending = false;
-    this.#declined = false;
     this.#completedAt = performance.now();
   }
 }

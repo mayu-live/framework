@@ -43,7 +43,7 @@ export default function domHandlers(
     // already agree.
     async Resync(html, tree) {
       const { default: morphDocument } = await import("../ui/morph-document");
-      morphDocument(html);
+      morphDocument(html, true);
       registry.clear();
       onResynced?.();
       setupTree(registry, document, tree);

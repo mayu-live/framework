@@ -31,6 +31,7 @@ connection/
   outbox.ts              the single way events leave the browser
   recovery.ts            which errors replace the session, and how
   stream-error.ts        StreamError and the server's error payload
+  supports-request-streams.ts  whether fetch can stream a request body
 dom/
   node-registry.ts       id ↔ node, and the listeners on each node
   hydrate.ts             binds server ids to existing or freshly parsed DOM
@@ -54,6 +55,7 @@ ui/
   error-report.ts        works an error out for display
   error-console.ts       draws the report in the console
   view-transition.ts     startViewTransition with a fallback
+  h.ts                   creates an element with children and attributes
   morph-document.ts      morphs the document into another page's HTML
   custom-elements/       one .html and one .ts per element, see below
 devtools.ts              the devtools extension hook (loaded when present)
@@ -100,12 +102,14 @@ document. `main.ts` then loads `features/resync.ts`, which sends a `Resync`
 event with the reason. The server answers with a `Resync` command: the whole
 page as its vnode tree has it now, and the ids of its nodes.
 `dom/handlers.ts` morphs the document into that page, so nodes the two share
-keep their focus and scroll position, and binds the ids again. The session
-and its component state are untouched.
+keep their focus and scroll position, and binds the ids again. Form fields
+take the values the server's page has, so text typed into a field the server
+does not follow is lost. The session and its component state are untouched.
 
-One request is in flight at a time. If the page still differs right after a
-resync, the difference is one the server can't repair, such as markup the
-browser corrects while parsing, so it is logged once and left alone.
+One request is in flight at a time. If the page still differs within five
+seconds of a resync, the difference is one the server can't repair, such as
+markup the browser corrects while parsing. It is logged once, and the page
+asks for no more resyncs.
 
 ## Custom elements
 
@@ -172,7 +176,8 @@ The events, without their header:
    opens the event stream, and applies batches. It resolves when the command
    stream ends cleanly and rejects when either stream fails. Either way it
    aborts both requests and detaches the outbox, so both directions always
-   reconnect together.
+   reconnect together. It returns once the batch it was applying is done,
+   and applies no batch after that.
 2. After a clean end the loop reconnects at once, then a second later each
    time the server keeps closing new streams.
 3. After a failure it checks the error code. For `SESSION_NOT_FOUND`,
@@ -191,7 +196,10 @@ What the stream starts with depends on what the page can tell the server:
   sends the ones after `seq`. The page keeps its nodes and listeners, and
   nothing is lost with the old stream.
 - If the server no longer has those batches, the stream starts with
-  `Resync` and the page is morphed into the server's.
+  `Resync` and the page is morphed into the server's. The same happens when
+  a reconnect names no batch although the server sent some, and after a
+  batch the page could not decode, when it sends `mayu-last-batch: -1`
+  rather than be sent that batch again.
 - With a transfer state the request is a `POST` that names no batch. The
   server that resumes the session starts counting from one and sends
   `Initialize`.

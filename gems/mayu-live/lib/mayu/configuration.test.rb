@@ -55,7 +55,6 @@ class Mayu::Configuration::Test < Minitest::Test
     assert_equal true, config.server.command_stream_compression?
     assert_equal 11, config.server.session_timeout_seconds
     assert_equal 12, config.server.transfer_timeout_seconds
-    assert_equal 13, config.server.cookie_timeout_seconds
 
     assert_equal true, config.metrics.enabled?
     assert_equal "http://localhost:9293", config.metrics.listen
@@ -79,7 +78,6 @@ class Mayu::Configuration::Test < Minitest::Test
     assert_equal false, config.server.command_stream_compression?
     assert_equal 21, config.server.session_timeout_seconds
     assert_equal 22, config.server.transfer_timeout_seconds
-    assert_equal 23, config.server.cookie_timeout_seconds
     assert_nil config.log_file
   ensure
     ENV.delete("SECRET_KEY")

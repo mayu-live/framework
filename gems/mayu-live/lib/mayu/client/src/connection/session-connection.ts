@@ -1,3 +1,4 @@
+import { UnreadableBatchError } from "../protocol/batch-codec";
 import type { Batch, CommandHandlers } from "../protocol/commands";
 import { updateConnectionStatus, updateReconnectStatus } from "../ui/status";
 import runAttempt from "./attempt";
@@ -9,6 +10,10 @@ import {
   shouldResetSession,
 } from "./recovery";
 import { StreamError } from "./stream-error";
+
+// Sent as the last batch when the page can't say where it is. It is no
+// number the server gave out, so the server answers with the whole page.
+const LOST_TRACK = -1;
 
 async function sleep(milliseconds: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
@@ -122,6 +127,10 @@ export default class SessionConnection {
         } else {
           console.error(error);
         }
+
+        // The server would send the same batch again. The whole page has
+        // what that batch held.
+        if (error instanceof UnreadableBatchError) this.#lastBatch = LOST_TRACK;
 
         if (shouldResetSession(error)) {
           console.warn("Resetting session because of:", getErrorMessage(error));

@@ -54,10 +54,7 @@ module Mayu
         @sessions = Session::Store.new(metrics: @environment.metrics)
         @body_barrier = Async::Barrier.new(parent: Async::Task.current)
         @streams = {}
-        @cookies =
-          Cookies.new(
-            timeout_seconds: environment.config.server.cookie_timeout_seconds
-          )
+        @cookies = Cookies.new
         @client_files = StaticFiles.new(@environment.client_path)
         @sessions.start_cleanup_task(
           environment.config.server.session_timeout_seconds
@@ -68,7 +65,7 @@ module Mayu
       MAX_TAKEOVER_ATTEMPTS = 20
 
       # An open command stream and the task that feeds it.
-      Stream = Struct.new(:body, :batch_task)
+      Stream = Struct.new(:body, :batch_task, :session)
 
       SESSION_PATH_RE = %r{\A/.mayu/session/(?<session_id>[[:alnum:]]+)\z}
 
@@ -515,13 +512,13 @@ module Mayu
           nil
         else
           # Not a number this server gave out, so nothing can be replayed.
+          # A browser that lost track of where it is sends -1.
           -1
         end
       end
 
       # Opens the command stream of a session. `after` is the last batch the
-      # browser says it applied, or nil when its DOM is as the server left
-      # it: fresh from the page response, or carried over by a transfer.
+      # browser says it applied, or nil when it has applied none.
       def run_session_stream(request, session, after: nil)
         compress = @environment.config.server.command_stream_compression?
         headers = {
@@ -551,6 +548,15 @@ module Mayu
             current.batch_task&.stop
             current.batch_task&.wait
             @streams.delete(session.id) if @streams[session.id].equal?(current)
+
+            # A transfer that was posted twice restores the session twice.
+            # The first copy is no longer in the store, so nothing else
+            # would stop it.
+            replaced = current.session
+            if !replaced.equal?(session) && replaced.running?
+              replaced.stop
+              replaced.wait
+            end
           end
           if session.running?
             session.stop
@@ -559,18 +565,21 @@ module Mayu
         end
 
         body = EventStream::Writer.new(compress:, metrics: @environment.metrics)
-        stream = Stream.new(body, nil)
+        stream = Stream.new(body, nil, session)
         @streams[session.id] = stream
 
         # Three ways to start. The browser missed batches that are still
         # here: send those. Its DOM is as the server left it: tell it the ids.
         # Otherwise the two can't be reconciled batch by batch, and the
-        # browser gets the whole page.
+        # browser gets the whole page. That includes a browser that names no
+        # batch although some were sent: they changed the page on this side
+        # and never reached it.
         begin
           if after && (missed = session.batches_after(after))
             missed.each { body.write_packed(it.packed, commands: it.commands) }
           else
-            opening = after ? session.resync_batch : session.initialize_batch
+            untouched = after.nil? && session.batch_seq.zero?
+            opening = untouched ? session.initialize_batch : session.resync_batch
             sent = session.stamp_batch(opening)
             body.write_packed(sent.packed, commands: sent.commands)
             opening.complete

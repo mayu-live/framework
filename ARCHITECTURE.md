@@ -194,7 +194,7 @@ at `/.mayu/assets/`.
 ### Session state and security
 
 - Session IDs are opaque random IDs.
-- Session token is separate cookie-scoped secret (`mayu-token`) used to authorize session endpoints.
+- Session token is separate cookie-scoped secret (`mayu-token`) used to authorize session endpoints. It is a session cookie: a page must still have it when it reconnects, however long it has been open.
 - `Session::Token.equal?` uses constant-time compare (`RbNaCl::Util.verify64`).
 - Session transfer payloads are encrypted + time-limited via `EncryptedMarshal`.
 
@@ -287,13 +287,15 @@ Notable command categories:
 - request streaming and the per-request fallback use the same frame format
 - server parses frames in `Server::EventStream.each_incoming_message`
 - `Session#receive_message` turns each tuple into exactly one typed event
-  (`CallbackEvent`, `NavigateEvent`, `PingEvent`, `VisibilityEvent`, or
-  `InspectEvent`)
+  (`CallbackEvent`, `NavigateEvent`, `PingEvent`, `VisibilityEvent`,
+  `InspectEvent`, or `ResyncEvent`)
 - callbacks are serialized per component while different components can run
   concurrently
 - server-to-client: `VDOM -> CommandCollector -> Batch -> Engine queue -> stream -> applyBatch -> DOM`
 - client-to-server: `browser event -> tuple -> MessagePack frame -> receive_message -> session event -> callback/navigation -> VDOM`
-- command batches are streamed as deflate-raw compressed MessagePack arrays
+- command batches are streamed as frames: a 32-bit payload length, then
+  `[seq, commands]` as MessagePack; the stream as a whole is `deflate-raw`
+  compressed unless `command_stream_compression` is off
 
 ### Devtools
 

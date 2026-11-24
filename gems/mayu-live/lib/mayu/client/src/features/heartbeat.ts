@@ -62,7 +62,7 @@ export default class Heartbeat {
 // server-side liveness timestamp, so the next ping is delayed until there has
 // been no traffic for the interval. A dedicated worker avoids hidden-tab timer
 // throttling and only holds one timeout at a time.
-export class PingScheduler {
+class PingScheduler {
   #interval: number;
   #tick: () => void;
   #worker: Worker | null = null;

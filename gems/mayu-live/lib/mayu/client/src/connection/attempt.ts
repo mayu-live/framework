@@ -23,6 +23,7 @@ type AttemptOptions = {
 
 // One connection to the server: opens the command stream and the event
 // stream, applies batches until either stream ends, and tears both down.
+// No batch is applied after it has returned.
 // Resolves when the command stream ends cleanly and rejects on any failure,
 // so that both directions always reconnect together.
 export default async function runAttempt({
@@ -36,6 +37,9 @@ export default async function runAttempt({
   const abortController = new AbortController();
   let eventWriter: WritableStreamDefaultWriter<ClientEvent> | null = null;
   let eventPipeline: Promise<void> | null = null;
+  // The batch being applied right now.
+  let applying = null as Promise<void> | null;
+  let ended = false;
 
   try {
     const input = await openCommandStream(
@@ -58,14 +62,22 @@ export default async function runAttempt({
 
     const consumeInput = async () => {
       for await (const [seq, batch] of decodeBatches(input)) {
-        await onBatch(batch, seq);
+        // The attempt is over. Batches that arrived with the last one
+        // applied are left for the next stream, which gets them again.
+        if (ended) break;
+        applying = onBatch(batch, seq);
+        await applying;
+        applying = null;
       }
 
       return "eof" as const;
     };
 
+    const consuming = consumeInput();
+    void consuming.catch(() => undefined);
+
     const result = await Promise.race([
-      consumeInput(),
+      consuming,
       output.failure ?? new Promise<never>(() => undefined),
       eventPipeline.then(() => "event-eof" as const),
     ]);
@@ -74,8 +86,13 @@ export default async function runAttempt({
       throw new StreamError("Callback pipeline ended");
     }
   } finally {
+    ended = true;
     abortController.abort();
     outbox.detach();
+
+    // A batch may still be on its way into the page. The next attempt tells
+    // the server what this one applied, so it waits for that.
+    await applying?.catch(() => undefined);
 
     if (eventWriter) {
       try {

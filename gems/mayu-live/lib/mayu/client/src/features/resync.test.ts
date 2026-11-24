@@ -69,6 +69,19 @@ describe("Resync", () => {
     ).toHaveLength(1);
   });
 
+  it("keeps leaving such a page alone", async () => {
+    const { resync, requests } = setup();
+
+    resync.request("first");
+    resync.completed();
+    resync.request("still wrong");
+    await vi.advanceTimersByTimeAsync(60_000);
+    resync.request("still wrong, later");
+    await vi.runAllTicks();
+
+    expect(requests()).toEqual(["first"]);
+  });
+
   it("asks again for a difference that shows up later", async () => {
     const { resync, requests } = setup();
 

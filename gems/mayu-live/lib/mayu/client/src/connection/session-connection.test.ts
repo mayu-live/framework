@@ -578,6 +578,65 @@ describe("session-connection", () => {
     ]);
   });
 
+  it("asks for the whole page after a batch it could not read", async () => {
+    // 0xc1 is the one byte MessagePack never uses.
+    const unreadable = new Uint8Array([0, 0, 0, 1, 0xc1]);
+    initInputStreamMock
+      .mockResolvedValueOnce(streamOf(encode([], 1), unreadable))
+      .mockRejectedValue(new Error("stream down"));
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+    const { connection, stop } = connectionThatStopsAfter(2);
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(initInputStreamMock.mock.calls.map((call) => call[3])).toEqual([
+      null,
+      -1,
+    ]);
+    expect(acknowledgeMock.mock.calls).toEqual([[1]]);
+  });
+
+  it("finishes the batch it is applying before it reconnects, and applies no more", async () => {
+    let failEvents = (_error: Error) => {};
+    let finishApplying = () => {};
+    initInputStreamMock
+      .mockResolvedValueOnce(streamOf(encode([], 1), encode([], 2)))
+      .mockRejectedValue(new Error("stream down"));
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: new Promise<never>((_resolve, reject) => {
+        failEvents = reject;
+      }),
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+    const { connection, stop, runtime } = connectionThatStopsAfter(2);
+    runtime.applyBatch.mockImplementationOnce(async () => {
+      failEvents(new Error("event stream failed"));
+      await new Promise<void>((resolve) => {
+        finishApplying = resolve;
+      });
+    });
+
+    const running = connection.run();
+    await vi.waitFor(() => expect(runtime.applyBatch).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    // Still applying, so it has not tried to connect again.
+    expect(initInputStreamMock).toHaveBeenCalledTimes(1);
+    finishApplying();
+
+    await expect(running).rejects.toBe(stop);
+
+    expect(runtime.applyBatch).toHaveBeenCalledTimes(1);
+    expect(initInputStreamMock.mock.calls.map((call) => call[3])).toEqual([
+      null,
+      1,
+    ]);
+  });
+
   it("names no batch when it resumes a transferred session", async () => {
     const state = new Blob(["encrypted state"]);
     initInputStreamMock

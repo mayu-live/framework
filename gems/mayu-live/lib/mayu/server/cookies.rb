@@ -13,10 +13,6 @@ module Mayu
       class TokenCookieNotSetError < StandardError
       end
 
-      def initialize(timeout_seconds: 60)
-        @timeout_seconds = timeout_seconds
-      end
-
       def get_token_cookie_value(request)
         Array(request.headers["cookie"]).each do |str|
           if (match = str.match(/^mayu-token=(\w+)/))
@@ -31,13 +27,14 @@ module Mayu
         {"set-cookie": set_token_cookie_value(session)}
       end
 
+      # A session cookie, with no expiry of its own. The browser must still
+      # have it when the page reconnects, however long the page has been
+      # open, and it is worth nothing once the server has dropped the
+      # session.
       def set_token_cookie_value(session)
-        expires = Time.now.utc + @timeout_seconds
-
         [
           "mayu-token=#{session.token}",
           "path=/.mayu/session/#{session.id}",
-          "expires=#{expires.httpdate}",
           "secure",
           "HttpOnly",
           "SameSite=Strict"

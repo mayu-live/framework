@@ -206,6 +206,50 @@ class Mayu::Server::SessionStreamTest < Minitest::Test
     end
   end
 
+  # The batches of the first stream changed the page on this side. A browser
+  # that lost that stream before applying any of them still has the page it
+  # loaded, which the ids alone would not bring up to date.
+  def test_a_browser_that_names_no_batch_after_some_were_sent_is_sent_the_page
+    with_app do |app, session, task|
+      first = open_stream(app, session)
+      read_batch(task, first)
+      wait_until_running(task, session)
+      first.close
+      task.with_timeout(1) { task.sleep(0) while session.running? }
+
+      second = open_stream(app, session)
+
+      assert_equal("Resync", read_batch(task, second)[1].first)
+    end
+  end
+
+  # A transfer that is posted twice restores the session twice, under one id.
+  def test_a_stream_for_another_copy_of_the_session_stops_the_first_copy
+    with_app do |app, session, task|
+      first = open_stream(app, session)
+      read_batch(task, first)
+      wait_until_running(task, session)
+
+      copy =
+        Mayu::Session.new(
+          environment: app.instance_variable_get(:@environment),
+          request_info: Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+        )
+      id = session.id
+      copy.define_singleton_method(:id) { id }
+
+      second = open_stream(app, copy)
+
+      assert(first.closed?)
+      refute(session.running?)
+      assert_equal("Initialize", read_batch(task, second)[1].first)
+      wait_until_running(task, copy)
+      assert_equal(1, app.stream_count)
+    ensure
+      copy&.stop
+    end
+  end
+
   def test_a_second_stream_takes_over_from_one_that_is_still_open
     with_app do |app, session, task|
       first = open_stream(app, session)

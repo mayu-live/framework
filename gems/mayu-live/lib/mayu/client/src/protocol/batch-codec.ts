@@ -15,6 +15,18 @@ function concat(chunks: Uint8Array[], size: number) {
   return bytes;
 }
 
+// A whole frame arrived, and what it holds is not a batch this page can
+// read. Asking for it again would get the same bytes.
+export class UnreadableBatchError extends Error {}
+
+function decodeFrame(bytes: Uint8Array) {
+  try {
+    return decode(bytes) as NumberedBatch;
+  } catch (cause) {
+    throw new UnreadableBatchError("Unreadable batch", { cause });
+  }
+}
+
 // The command stream is a sequence of frames: four bytes holding the length
 // of the payload, big-endian, then `[seq, batch]` as MessagePack. Yields
 // each one once its whole frame has arrived, and throws if the stream ends
@@ -55,7 +67,7 @@ export async function* decodeBatches(
 
         const start = offset + FRAME_HEADER_BYTES;
         offset += needed;
-        yield decode(bytes.subarray(start, offset)) as NumberedBatch;
+        yield decodeFrame(bytes.subarray(start, offset));
       }
 
       pending = offset < size ? [bytes.subarray(offset)] : [];

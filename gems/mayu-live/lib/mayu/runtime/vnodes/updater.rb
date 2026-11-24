@@ -146,11 +146,14 @@ module Mayu
 
           if resync
             # The page carries everything this pass changed, so its DOM
-            # commands are not sent, and nothing is left to transition.
+            # commands are not sent, and nothing is left to transition. Its
+            # other commands, such as an error to show, still are.
             updates.keys.each do |node|
               node.instance_variable_set(:@__view_transition_pending, nil)
             end
-            commands = @engine.resync_commands
+            commands =
+              @engine.resync_commands +
+              commands.reject { Commands::DOM_COMMANDS.include?(it.class) }
             commands << navigation_completion if navigation_completion
             commands.concat(trailing_commands)
             @engine.enqueue_batch(Batch[commands])

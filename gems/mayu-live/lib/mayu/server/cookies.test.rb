@@ -10,13 +10,15 @@ require_relative "cookies"
 class Mayu::Server::CookiesTest < Minitest::Test
   Session = Data.define(:id, :token)
 
-  def test_cookie_expiration_uses_the_configured_timeout
-    now = Time.utc(2026, 9, 10, 12, 0, 0)
-    cookies = Mayu::Server::Cookies.new(timeout_seconds: 17)
-    session = Session.new("session", "token")
+  # An expiry would run out while the page is open: the cookie is only set
+  # again when a stream opens, and a page that reconnects without it loses
+  # its session.
+  def test_the_token_cookie_lasts_as_long_as_the_browser_session
+    value = Mayu::Server::Cookies.new.set_token_cookie_value(Session.new("session", "token"))
 
-    value = Time.stub(:now, now) { cookies.set_token_cookie_value(session) }
-
-    assert_includes(value, "expires=#{(now + 17).httpdate}")
+    assert_equal(
+      "mayu-token=token; path=/.mayu/session/session; secure; HttpOnly; SameSite=Strict",
+      value
+    )
   end
 end

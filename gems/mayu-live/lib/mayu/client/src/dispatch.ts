@@ -7,7 +7,7 @@ import withViewTransition, {
 // anyway, or the batch is abandoned.
 export type CommandErrorPolicy = "continue" | "throw";
 
-export const COMMAND_ERROR_POLICY: CommandErrorPolicy = "continue";
+const COMMAND_ERROR_POLICY: CommandErrorPolicy = "continue";
 
 // ViewTransition is applied by the dispatcher itself, since it carries a
 // batch. TransferFailed never reaches it: the connection ends on it.
@@ -56,7 +56,15 @@ export default class CommandDispatcher {
       await this.#apply(batch);
     } finally {
       const durationMs = performance.now() - startedAt;
-      for (const listener of this.#batchListeners) listener(batch, durationMs);
+      for (const listener of this.#batchListeners) {
+        // The batch is applied. A listener that fails must not make it look
+        // as if it wasn't.
+        try {
+          listener(batch, durationMs);
+        } catch (error) {
+          console.error(error);
+        }
+      }
     }
   }
 

@@ -290,6 +290,11 @@ module Mayu
           @nodes.clear
           @listener_bindings.clear
           setup_tree(@doc, id_tree)
+        in Mayu::Runtime::Commands::Resync[html:, id_tree:]
+          @nodes.clear
+          @listener_bindings.clear
+          @doc = Nokolexbor::HTML(html)
+          setup_tree(@doc, id_tree)
         in Mayu::Runtime::Commands::CreateTree[html:, tree:]
           nodes = parse_tree_roots(html)
           nodes.zip(tree).each { |node, id_node| setup_tree(node, id_node) }

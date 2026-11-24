@@ -56,12 +56,26 @@ describe("session-recovery", () => {
   it("does not match unrelated errors", () => {
     expect(shouldResetSession(new Error("random network error"))).toBe(false);
     expect(shouldResetSession("Unknown error")).toBe(false);
-    expect(shouldResetSession({ code: "SESSION_ALREADY_RUNNING" })).toBe(false);
+    expect(shouldResetSession({ code: "SERVER_STOPPING" })).toBe(false);
   });
 
   it("matches on the code, not on the message", () => {
     expect(shouldResetSession(new Error("SESSION_NOT_FOUND"))).toBe(false);
     expect(shouldResetSession(new Error("Session not found"))).toBe(false);
+  });
+
+  it("replaces the page, and the old session's error with it", async () => {
+    document.body.innerHTML = "<p>old</p><mayu-exception></mayu-exception>";
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        "<!DOCTYPE html>\n<html><head></head><body><p>new</p></body></html>",
+        { status: 200, headers: { "x-mayu-session-id": "next" } },
+      ),
+    );
+
+    await expect(resetSessionEntirely()).resolves.toBe("/.mayu/session/next");
+
+    expect(document.body.innerHTML).toBe("<p>new</p>");
   });
 
   it("raises when reset response is missing x-mayu-session-id", async () => {

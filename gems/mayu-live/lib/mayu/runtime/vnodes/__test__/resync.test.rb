@@ -29,6 +29,23 @@ class Mayu::Runtime::VNodes::ResyncTest < Minitest::Test
     end
   end
 
+  CLOCK = Mayu::Runtime::Descriptors::CustomElement["my-clock", "my-clock.js"]
+
+  class Loader < Mayu::Component::Base
+    def initialize
+      @loaded = false
+    end
+
+    def handle_load
+      @loaded = true
+      rerender!
+    end
+
+    def render
+      H[:div, (H[CLOCK] if @loaded)]
+    end
+  end
+
   def counter(engine)
     component = find_component(engine.root, Counter)
     instance = component.instance_variable_get(:@instance)
@@ -82,6 +99,28 @@ class Mayu::Runtime::VNodes::ResyncTest < Minitest::Test
       assert_equal([Commands::SetListener], classes[1...-1].uniq)
 
       assert_no_patches(engine)
+    end
+  end
+
+  # The page has the element, but only the command tells the browser where
+  # its module is.
+  def test_a_resync_keeps_what_its_pass_sends_besides_dom_updates
+    run_engine(H[:body, H[Loader]]) do |engine|
+      component = find_component(engine.root, Loader)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.handle_load
+      engine.resync
+
+      batch = next_batch(engine)
+      classes = batch.commands.map(&:class)
+
+      assert_equal(Commands::Resync, classes.first)
+      assert_includes(batch.commands.first.html, "<my-clock>")
+      assert_includes(classes, Commands::RegisterCustomElement)
+      refute_includes(classes, Commands::CreateTree)
+      refute_includes(classes, Commands::ReplaceChildren)
     end
   end
 

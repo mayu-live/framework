@@ -287,12 +287,21 @@ describe("msgpack", () => {
     expect(() => encode(Symbol("x"))).toThrow(/can't encode/);
   });
 
-  it("stops at a depth no real message reaches", () => {
+  it("refuses to encode a value that contains itself", () => {
     const cyclic: unknown[] = [];
     cyclic.push(cyclic);
     expect(() => encode(cyclic)).toThrow(/too deep/);
+  });
 
-    const deep = new Uint8Array(200).fill(0x91);
-    expect(() => decode(deep)).toThrow(/too deep/);
+  // Every level of the DOM is two levels of an id tree.
+  it("decodes a tree as deep as a deep page", () => {
+    const depth = 2_000;
+    const bytes = new Uint8Array(depth + 1).fill(0x91);
+    bytes[depth] = 0xc0;
+
+    let value = decode(bytes);
+    for (let i = 0; i < depth; i++) value = (value as unknown[])[0];
+
+    expect(value).toBeNull();
   });
 });

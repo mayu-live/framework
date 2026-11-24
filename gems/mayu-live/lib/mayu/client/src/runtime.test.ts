@@ -67,6 +67,19 @@ describe("runtime listeners", () => {
     expect(onBatchApplied).toHaveBeenCalledWith(batch, expect.any(Number));
   });
 
+  it("applies a batch whose listener fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const runtime = new Runtime(vi.fn(), {
+      onBatchApplied: () => {
+        throw new Error("listener failed");
+      },
+    });
+
+    await expect(
+      runtime.applyBatch([["Initialize", tree()]] as any),
+    ).resolves.toBeUndefined();
+  });
+
   it("maps ids to nodes and back for devtools", async () => {
     document.body.innerHTML = "<button>Go</button>";
     const runtime = new Runtime(vi.fn());
