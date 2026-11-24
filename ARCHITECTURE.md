@@ -230,6 +230,8 @@ See `gems/mayu-live/lib/mayu/client/src/README.md` for the full module map.
 
 ### Command protocol boundary
 
+`docs/protocol.md` describes the wire protocol as a whole, with diagrams.
+
 `gems/mayu-live/lib/mayu/client/protocol.json` lists the commands, events, error
 codes and other names both sides share. `gems/mayu-live/lib/mayu/protocol.test.rb`
 checks the Ruby side against it (`runtime/commands.rb`, `session.rb`), and

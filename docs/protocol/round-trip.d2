@@ -1,0 +1,13 @@
+shape: sequence_diagram
+user: User
+browser: Browser
+server: Server
+
+user -> browser: click
+browser -> server: "[Callback, ping, ack 7, telemetry, listener id, event, settle id]"
+server -> server: "run the handler,\nrerender, diff"
+server -> browser: "batch 8: SetTextContent, CallbackComplete"
+browser -> browser: "apply batch 8"
+browser -> server: "[Ping, ping, ack 8, telemetry]"
+server -> server: "drop batches ≤ 8\nfrom the buffer"
+server -> browser: "batch 9: Pong"

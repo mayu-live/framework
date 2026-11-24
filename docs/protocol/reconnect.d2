@@ -1,0 +1,21 @@
+shape: sequence_diagram
+browser: Browser
+server: Server
+
+server -> browser: "batch 7"
+browser -> server: "event with ack 7"
+server -> browser: "batch 8" {
+  style.stroke-dash: 3
+}
+server -> browser: "batch 9" {
+  style.stroke-dash: 3
+}
+lost: "connection lost: batches 8 and 9 never arrive" {
+  browser -> browser: "wait, with backoff"
+}
+browser -> server: "GET /.mayu/session/:id\nmayu-last-batch: 7"
+server -> server: "still has 8 and 9"
+server -> browser: "batch 8"
+server -> browser: "batch 9"
+browser -> server: "PATCH /.mayu/session/:id"
+browser -> server: "Ping, ack 9"

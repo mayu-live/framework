@@ -1,0 +1,12 @@
+shape: sequence_diagram
+a: Server A (stopping)
+browser: Browser
+b: Server B
+
+a -> browser: "Transfer[encrypted session]"
+a -> browser: "stream ends"
+browser -> b: "POST /.mayu/session/:id\nbody: the encrypted session"
+b -> b: "decrypt, check id and token,\nrestore the session"
+b -> browser: "batch 1: Initialize, SetListener…"
+browser -> b: "PATCH /.mayu/session/:id"
+browser -> b: "Ping, ack 1"

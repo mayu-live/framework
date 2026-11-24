@@ -229,6 +229,9 @@ shrinks them.
 
 ## The protocol, defined once
 
+`docs/protocol.md` at the root of the repository describes the wire
+protocol: the requests, both streams, and what happens on a reconnect.
+
 `../protocol.json` lists the commands, events, error codes, continuous event
 types and element methods. `protocol-manifest.test.ts` checks this runtime
 against it, and `lib/mayu/protocol.test.rb` checks the server.

@@ -1,0 +1,17 @@
+shape: sequence_diagram
+browser: Browser
+server: Server
+
+server -> browser: "batch 12: SetAttribute v9 …"
+browser -> browser: "node v9 not found:\nthe command fails"
+browser -> server: "[Resync, ping, ack 12, telemetry, reason]"
+server -> server: "render the vnode tree\nto HTML"
+server -> browser: "batch 13: Resync[html, id tree], SetListener…"
+browser -> browser: "morph the document,\nbind ids, set listeners"
+browser -> server: "Ping, ack 13"
+
+again: "a stream that can not be replayed opens the same way" {
+  browser -> server: "GET /.mayu/session/:id\nmayu-last-batch: 3"
+  server -> server: "batch 4 is no longer\nin the buffer"
+  server -> browser: "Resync[html, id tree], SetListener…"
+}
