@@ -6,6 +6,8 @@
 
 import {
   LAST_BATCH_HEADER,
+  PROTOCOL_HEADER,
+  PROTOCOL_VERSION,
   SESSION_MIME_TYPE,
   STREAM_MIME_TYPE,
 } from "../protocol/constants";
@@ -56,6 +58,7 @@ export async function connect(
           signal,
           headers: new Headers({
             accept: STREAM_MIME_TYPE,
+            [PROTOCOL_HEADER]: PROTOCOL_VERSION,
             "content-type": SESSION_MIME_TYPE,
           }),
           body: state,
@@ -67,6 +70,7 @@ export async function connect(
           signal,
           headers: new Headers({
             accept: STREAM_MIME_TYPE,
+            [PROTOCOL_HEADER]: PROTOCOL_VERSION,
             ...(lastBatch === null
               ? {}
               : { [LAST_BATCH_HEADER]: String(lastBatch) }),
@@ -88,6 +92,11 @@ export async function connect(
 
   if (contentType !== STREAM_MIME_TYPE) {
     throw new StreamError(`Unexpected content type: ${contentType}`);
+  }
+
+  // A server from before the protocol had a version names none.
+  if (res.headers.get(PROTOCOL_HEADER) !== PROTOCOL_VERSION) {
+    throw new StreamError("Protocol mismatch", "PROTOCOL_MISMATCH");
   }
 
   console.info("🟢 Connected to", endpoint);

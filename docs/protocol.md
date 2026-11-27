@@ -43,6 +43,22 @@ The page response carries two things the runtime needs:
 
 A session request without the right cookie is refused.
 
+### The version
+
+The protocol has a version, which `protocol.json` holds. The runtime names
+it in a `mayu-protocol` header on every session request, and the server
+names its own on the command stream.
+
+A page can outlive the server it was loaded from: a deploy replaces the
+server, and the open page still runs the old runtime. When the two versions
+differ, the page reloads, and the new page comes with the runtime of the
+server that sent it:
+
+- The server answers a request in another version, or in none, with
+  `PROTOCOL_MISMATCH`.
+- The runtime treats a command stream in another version, or in none, the
+  same way.
+
 ## Loading a page
 
 ![Loading a page](protocol/page-load.svg)
@@ -203,7 +219,9 @@ header. What the stream starts with depends on that:
 | `mayu-last-batch: -1` |                                         | `Resync`               |
 
 The browser sends `-1` after a batch it could not decode, so that it is not
-sent the same bytes again.
+sent the same bytes again. It also sends `-1` when a command failed and no
+`Resync` has arrived since: the request for one may have been lost with the
+connection.
 
 A replay loses nothing and changes nothing else: the page keeps its nodes
 and listeners. A second stream for a session takes over from the first,
@@ -221,6 +239,10 @@ document. The browser then asks for the whole page.
 morphs its document into that, so nodes the two share stay where they are
 and keep their focus and scroll position. Form fields take the server's
 values. The session and its state are untouched.
+
+The batch also has a `RegisterCustomElement` for every custom element the
+page has used and a `SetListener` for every listener, since the batches
+that first sent them may be among those the page never applied.
 
 If the page still differs within five seconds of a resync, the difference
 is one the server can't repair, such as markup the browser corrects while
@@ -253,7 +275,8 @@ A session request that fails is answered with JSON:
 The browser acts on `code`. For some codes the session is gone for good,
 and the browser starts a new one: it fetches the page again, morphs the
 document into it, and connects to the session of that response. Component
-state is lost. For the others it tries again after a delay.
+state is lost. For `PROTOCOL_MISMATCH` it reloads the page. For the others
+it tries again after a delay.
 
 | Code                           | Status | The browser          |
 | ------------------------------ | ------ | -------------------- |
@@ -269,6 +292,7 @@ state is lost. For the others it tries again after a delay.
 | `EVENT_MESSAGE_TOO_LARGE`      | 413    | tries again          |
 | `SERVER_STOPPING`              | 503    | tries again          |
 | `INTERNAL_SERVER_ERROR`        | 500    | tries again          |
+| `PROTOCOL_MISMATCH`            | 400    | reloads the page     |
 
 `TransferFailed` on the command stream also starts a new session.
 

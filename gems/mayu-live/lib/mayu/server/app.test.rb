@@ -558,6 +558,23 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal("SESSION_EXPIRED", JSON.parse(response.read).fetch("code"))
   end
 
+  def session_request(method, headers = {})
+    Request.new(method:, path: "/.mayu/session/abc123", headers:, body: nil)
+  end
+
+  def test_a_session_request_in_another_version_of_the_protocol_is_refused
+    app = Mayu::Server::App.allocate
+
+    [{"mayu-protocol" => ["1"]}, {}].each do |headers|
+      %w[GET POST PATCH].each do |method|
+        response = app.call(session_request(method, headers))
+
+        assert_equal(400, response.status)
+        assert_equal("PROTOCOL_MISMATCH", JSON.parse(response.read).fetch("code"))
+      end
+    end
+  end
+
   def test_session_events_are_acknowledged_with_an_empty_204
     Async do
       app = Mayu::Server::App.allocate

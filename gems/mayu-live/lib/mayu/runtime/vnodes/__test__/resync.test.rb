@@ -124,6 +124,24 @@ class Mayu::Runtime::VNodes::ResyncTest < Minitest::Test
     end
   end
 
+  # The command that named the module went out in an earlier batch, which
+  # the browser may never have seen.
+  def test_resync_commands_name_the_modules_of_the_custom_elements
+    run_engine(H[:body, H[Loader]]) do |engine|
+      component = find_component(engine.root, Loader)
+      instance = component.instance_variable_get(:@instance)
+      wait_until { instance.respond_to?(:rerender!) }
+
+      instance.handle_load
+      next_batch(engine)
+
+      assert_includes(
+        engine.resync_commands,
+        Commands::RegisterCustomElement[CLOCK.name, CLOCK.path]
+      )
+    end
+  end
+
   def test_updates_after_a_resync_are_ordinary_patches
     run_engine(H[:body, H[Counter]]) do |engine|
       instance = counter(engine)

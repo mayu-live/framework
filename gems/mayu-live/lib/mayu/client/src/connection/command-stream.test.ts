@@ -53,7 +53,10 @@ describe("command stream", () => {
       async () =>
         new Response("", {
           status: 200,
-          headers: { "content-type": "application/vnd.mayu.event-stream" },
+          headers: {
+            "content-type": "application/vnd.mayu.event-stream",
+            "mayu-protocol": "2",
+          },
         }),
     );
     vi.spyOn(console, "info").mockImplementation(() => undefined);
@@ -68,11 +71,32 @@ describe("command stream", () => {
     expect(sent).toEqual([null, "0", "12"]);
   });
 
+  it("names its version, and refuses a server that names another or none", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () =>
+        new Response("", {
+          status: 200,
+          headers: { "content-type": "application/vnd.mayu.event-stream" },
+        }),
+    );
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    await expect(connect("/.mayu/session/abc")).rejects.toEqual(
+      expect.objectContaining({ code: "PROTOCOL_MISMATCH" }),
+    );
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect((init!.headers as Headers).get("mayu-protocol")).toBe("2");
+  });
+
   it("resumes a transfer with a POST that names no batch", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("", {
         status: 200,
-        headers: { "content-type": "application/vnd.mayu.event-stream" },
+        headers: {
+          "content-type": "application/vnd.mayu.event-stream",
+          "mayu-protocol": "2",
+        },
       }),
     );
     vi.spyOn(console, "info").mockImplementation(() => undefined);

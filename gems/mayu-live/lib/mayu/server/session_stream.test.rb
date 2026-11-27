@@ -67,6 +67,7 @@ class Mayu::Server::SessionStreamTest < Minitest::Test
   def open_stream(app, session, after: nil)
     response = app.send(:run_session_stream, Struct.new(:headers).new({}), session, after:)
     assert_equal(200, response.status)
+    assert_equal(["2"], response.headers["mayu-protocol"])
     response.body
   end
 

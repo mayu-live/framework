@@ -47,6 +47,7 @@ vi.mock("../ui/status", () => ({
 
 import { encode as pack } from "../protocol/msgpack";
 import SessionConnection from "./session-connection";
+import { StreamError } from "./stream-error";
 
 // One batch as a frame of the command stream.
 function encode(batch: unknown[], seq = 1) {
@@ -62,6 +63,7 @@ type Collaborators = {
   mayu: { setWriter: (writer: any) => void; clearWriter: () => void };
   endpoint: string;
   sleep?: (milliseconds: number) => Promise<void>;
+  reload?: () => void;
 };
 
 // The transfer state the next connection starts out holding.
@@ -77,10 +79,17 @@ function getTransferState() {
   return lastConnection!.transferState;
 }
 
-function createConnection({ runtime, mayu, endpoint, sleep }: Collaborators) {
+function createConnection({
+  runtime,
+  mayu,
+  endpoint,
+  sleep,
+  reload,
+}: Collaborators) {
   lastConnection = new SessionConnection({
     endpoint,
     sleep,
+    reload,
     transferState: initialTransferState,
     applyBatch: async (batch) => {
       await runtime.applyBatch(batch);
@@ -598,6 +607,50 @@ describe("session-connection", () => {
       -1,
     ]);
     expect(acknowledgeMock.mock.calls).toEqual([[1]]);
+  });
+
+  it("asks for the whole page when a command failed and the request for it was lost", async () => {
+    initInputStreamMock
+      .mockResolvedValueOnce(streamOf(encode([], 1)))
+      .mockResolvedValueOnce(streamOf(encode([], 2)))
+      .mockRejectedValue(new Error("stream down"));
+    initCallbackStreamMock.mockReturnValue({
+      writable: new WritableStream(),
+      failure: null,
+    });
+    shouldResetSessionMock.mockReturnValue(false);
+    const { connection, stop, runtime } = connectionThatStopsAfter(2);
+    // The dispatcher reports the failure and carries on, so the batch
+    // still counts as applied.
+    runtime.applyBatch
+      .mockImplementationOnce(async () => {
+        connection.lostTrack();
+      })
+      .mockImplementationOnce(async () => {
+        connection.resynced();
+      });
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(initInputStreamMock.mock.calls.map((call) => call[3])).toEqual([
+      null,
+      -1,
+      2,
+    ]);
+  });
+
+  it("reloads the page when the server speaks another version", async () => {
+    initInputStreamMock.mockRejectedValue(
+      new StreamError("Protocol mismatch", "PROTOCOL_MISMATCH"),
+    );
+    shouldResetSessionMock.mockReturnValue(false);
+    const reload = vi.fn();
+    const { connection } = connectionThatStopsAfter(1, { reload });
+
+    await connection.run();
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(initInputStreamMock).toHaveBeenCalledTimes(1);
   });
 
   it("finishes the batch it is applying before it reconnects, and applies no more", async () => {

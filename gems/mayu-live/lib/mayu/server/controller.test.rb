@@ -62,7 +62,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
           session_id = page.headers["x-mayu-session-id"]
           cookie = page.headers["set-cookie"].to_s.split(";").first
           page.read
-          stream = client.get("/.mayu/session/#{session_id}", {"cookie" => cookie})
+          stream = client.get("/.mayu/session/#{session_id}", {"cookie" => cookie, "mayu-protocol" => "2"})
           assert_equal(200, stream.status)
           streams[pid] = stream
         end
@@ -174,7 +174,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
         cookie = page.headers["set-cookie"].to_s.split(";").first
         page.read
         stalled_client = new_client(window: 0)
-        response = stalled_client.get("/.mayu/session/#{id}", {"cookie" => cookie})
+        response = stalled_client.get("/.mayu/session/#{id}", {"cookie" => cookie, "mayu-protocol" => "2"})
         assert_equal(200, response.status)
         Process.kill(:TERM, @pid)
         assert_parent_exits(timeout: 2)
@@ -207,7 +207,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
         id = page.headers["x-mayu-session-id"]
         cookie = page.headers["set-cookie"].to_s.split(";").first
         page.read
-        response = client.get("/.mayu/session/#{id}", {"cookie" => cookie})
+        response = client.get("/.mayu/session/#{id}", {"cookie" => cookie, "mayu-protocol" => "2"})
         Process.kill(:INT, @pid)
         patches = decode(response.read)
         assert_equal(["TransferFailed"], patches.last)

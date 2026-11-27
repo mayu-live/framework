@@ -61,5 +61,6 @@ describe("event stream", () => {
     expect((request?.headers as Headers).get("content-type")).toBe(
       STREAM_MIME_TYPE,
     );
+    expect((request?.headers as Headers).get("mayu-protocol")).toBe("2");
   });
 });

@@ -20,4 +20,9 @@ export default function morphDocument(html: string, keepErrorOverlay = false) {
         node.localName === "mayu-exception"
       ),
   });
+
+  // Only the property shows, and morphdom brings over only the attribute.
+  for (const input of document.querySelectorAll("input")) {
+    input.indeterminate = input.hasAttribute("indeterminate");
+  }
 }

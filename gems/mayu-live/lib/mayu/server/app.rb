@@ -32,6 +32,7 @@ module Mayu
               accept
               accept-encoding
               mayu-last-batch
+              mayu-protocol
             ].join(", ")
           }
         )
@@ -62,6 +63,10 @@ module Mayu
       end
 
       LAST_BATCH_HEADER = "mayu-last-batch"
+      # The version of the wire protocol, which the runtime names in every
+      # session request. client/protocol.json has the number.
+      PROTOCOL_HEADER = "mayu-protocol"
+      PROTOCOL_VERSION = "2"
       MAX_TAKEOVER_ATTEMPTS = 20
 
       # An open command stream and the task that feeds it.
@@ -85,6 +90,8 @@ module Mayu
           handle_script(request)
         in {path: %r{\A/\.mayu/assets/(.+)\z}, method: "GET"}
           handle_asset(request)
+        in {path: SESSION_PATH_RE} unless speaks_protocol?(request)
+          protocol_mismatch_response(request)
         in {method: "GET", path: SESSION_PATH_RE}
           handle_session_resume(request, $~[:session_id])
         in {method: "POST", path: SESSION_PATH_RE}
@@ -486,6 +493,17 @@ module Mayu
         error_response(403, "SESSION_CIPHER_ERROR", **origin_header(request))
       end
 
+      def speaks_protocol?(request)
+        request.headers[PROTOCOL_HEADER] in [PROTOCOL_VERSION]
+      end
+
+      # The page was loaded from a server that spoke another version, and
+      # stayed open across a deploy. Its runtime reloads the page on this
+      # answer, and gets the runtime this server serves.
+      def protocol_mismatch_response(request)
+        error_response(400, "PROTOCOL_MISMATCH", **origin_header(request))
+      end
+
       def handle_session_resume(request, session_id)
         session =
           @sessions.authenticate!(
@@ -526,6 +544,7 @@ module Mayu
           **@cookies.set_token_cookie_header(session),
           **origin_header(request)
         }
+        headers[PROTOCOL_HEADER] = PROTOCOL_VERSION
         headers[:"content-encoding"] = EventStream::CONTENT_ENCODING if compress
 
         # A browser only opens a second stream when it has given up on the

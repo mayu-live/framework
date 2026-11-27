@@ -4,7 +4,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import { STREAM_MIME_TYPE } from "../protocol/constants";
+import {
+  PROTOCOL_HEADER,
+  PROTOCOL_VERSION,
+  STREAM_MIME_TYPE,
+} from "../protocol/constants";
 import {
   isAbortError,
   StreamError,
@@ -44,6 +48,7 @@ export function openEventStream(
     credentials: "include",
     headers: new Headers({
       "content-type": STREAM_MIME_TYPE,
+      [PROTOCOL_HEADER]: PROTOCOL_VERSION,
     }),
     duplex: "half",
     mode: "cors",
@@ -77,6 +82,7 @@ function openEventStreamFallback(
             credentials: "include",
             headers: new Headers({
               "content-type": STREAM_MIME_TYPE,
+              [PROTOCOL_HEADER]: PROTOCOL_VERSION,
             }),
             mode: "cors",
             signal,

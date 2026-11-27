@@ -13,6 +13,7 @@ require "json"
 require_relative "session"
 require_relative "runtime/engine"
 require_relative "server/event_stream"
+require_relative "server/app"
 
 # client/protocol.json describes the wire protocol once. This test holds the
 # server to it, and client/src/protocol-manifest.test.ts holds the browser
@@ -20,6 +21,13 @@ require_relative "server/event_stream"
 class Mayu::ProtocolTest < Minitest::Test
   MANIFEST =
     JSON.parse(File.read(File.join(__dir__, "client", "protocol.json"))).freeze
+
+  def test_version
+    assert_equal(
+      MANIFEST.fetch("version"),
+      Mayu::Server::App::PROTOCOL_VERSION
+    )
+  end
 
   def test_stream_content_type
     assert_equal(

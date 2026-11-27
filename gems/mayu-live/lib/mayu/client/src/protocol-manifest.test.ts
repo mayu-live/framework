@@ -5,7 +5,7 @@ import { RESET_SESSION_ERROR_CODES } from "./connection/recovery";
 import { ELEMENT_METHODS } from "./dom/element-calls";
 import { CONTINUOUS_EVENTS } from "./features/callbacks";
 import type { CommandName } from "./protocol/commands";
-import { STREAM_MIME_TYPE } from "./protocol/constants";
+import { PROTOCOL_VERSION, STREAM_MIME_TYPE } from "./protocol/constants";
 import type { ClientEvent } from "./protocol/events";
 
 // protocol.json describes the wire protocol once. This test holds the
@@ -61,6 +61,10 @@ const EVENT_NAMES: Record<ClientEvent[0], true> = {
 const CLIENT_ERROR_CODES = ["TRANSFER_FAILED"];
 
 describe("protocol manifest", () => {
+  it("speaks the version", () => {
+    expect(PROTOCOL_VERSION).toBe(manifest.version);
+  });
+
   it("has the stream content type", () => {
     expect(STREAM_MIME_TYPE).toBe(manifest.streamContentType);
   });

@@ -60,7 +60,10 @@ export default async function init(sessionId: string) {
   const dom = domHandlers(registry, {
     // Noted even when the page never asked, so that a page which still
     // differs after it does not ask for it over and over.
-    onResynced: () => withResync((resync) => resync.completed()),
+    onResynced: () => {
+      connection.resynced();
+      withResync((resync) => resync.completed());
+    },
   });
 
   const dispatcher = new CommandDispatcher(
@@ -80,6 +83,7 @@ export default async function init(sessionId: string) {
       // server's copy of the page replaces whatever that leaves behind.
       onCommandFailed: (name, error) => {
         if (Object.hasOwn(dom, name)) {
+          connection.lostTrack();
           const message =
             error instanceof Error ? error.message : String(error);
           withResync((resync) => resync.request(`${name}: ${message}`));

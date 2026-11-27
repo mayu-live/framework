@@ -25,6 +25,7 @@ type SessionConnectionOptions = {
   applyBatch: (batch: Batch) => Promise<void>;
   transferState?: Blob | null;
   sleep?: (milliseconds: number) => Promise<void>;
+  reload?: () => void;
 };
 
 // Keeps the session connected: runs one connection attempt after another,
@@ -35,6 +36,7 @@ export default class SessionConnection {
   #outbox: Pick<Outbox, "attach" | "detach" | "acknowledge">;
   #applyBatch: (batch: Batch) => Promise<void>;
   #sleep: (milliseconds: number) => Promise<void>;
+  #reload: () => void;
   // The encrypted session a stopping server handed over, held until another
   // server has resumed it.
   #transferState: Blob | null;
@@ -43,6 +45,9 @@ export default class SessionConnection {
   // anything: before the first batch, and for a session that was replaced
   // or moved to another server.
   #lastBatch: number | null = null;
+  // Set while the page may differ from what the server believes it shows.
+  // A stream opened in that state asks for the whole page.
+  #lostTrack = false;
 
   readonly handlers: CommandHandlers<"Transfer"> = {
     Transfer: (state) => {
@@ -56,7 +61,9 @@ export default class SessionConnection {
     applyBatch,
     transferState = null,
     sleep: sleepFn,
+    reload = () => location.reload(),
   }: SessionConnectionOptions) {
+    this.#reload = reload;
     this.#endpoint = endpoint;
     this.#outbox = outbox;
     this.#applyBatch = applyBatch;
@@ -91,7 +98,7 @@ export default class SessionConnection {
         await runAttempt({
           endpoint: this.#endpoint,
           transferState: this.#transferState,
-          lastBatch: this.#lastBatch,
+          lastBatch: this.#lostTrack ? LOST_TRACK : this.#lastBatch,
           outbox: this.#outbox,
           onOpen: () => {
             this.#transferState = null;
@@ -130,7 +137,18 @@ export default class SessionConnection {
 
         // The server would send the same batch again. The whole page has
         // what that batch held.
-        if (error instanceof UnreadableBatchError) this.#lastBatch = LOST_TRACK;
+        if (error instanceof UnreadableBatchError) this.#lostTrack = true;
+
+        // This runtime and the server speak different versions, as when a
+        // deploy replaced the server under an open page. The page that
+        // server sends comes with a runtime it understands.
+        if (
+          error instanceof StreamError &&
+          error.code === "PROTOCOL_MISMATCH"
+        ) {
+          this.#reload();
+          return;
+        }
 
         if (shouldResetSession(error)) {
           console.warn("Resetting session because of:", getErrorMessage(error));
@@ -138,6 +156,7 @@ export default class SessionConnection {
           try {
             this.#endpoint = await resetSessionEntirely();
             this.#transferState = null;
+            this.#lostTrack = false;
             this.#applied(null);
             backoff.sessionReset();
             continue;
@@ -155,6 +174,17 @@ export default class SessionConnection {
         await this.#sleep(retryDelay);
       }
     }
+  }
+
+  // A command could not be applied. If the request for the page is lost
+  // with the connection, the next stream asks again.
+  lostTrack() {
+    this.#lostTrack = true;
+  }
+
+  // The server's page has replaced the document.
+  resynced() {
+    this.#lostTrack = false;
   }
 
   #applied(seq: number | null) {

@@ -390,12 +390,25 @@ module Mayu
       end
 
       # The page as the vnode tree has it now, without updating anything, and
-      # what the browser needs to adopt it: the ids and the listeners.
+      # what the browser needs to adopt it: the ids, the listeners, and the
+      # modules of its custom elements. A script the browser gets this way
+      # does not run, and the command that named the module may be among the
+      # batches this page stands in for.
       def resync_commands
         out = StringIO.new
         @root.write_current_html(out)
 
-        [Commands::Resync[out.string, dom_id_tree], *listener_commands]
+        [
+          Commands::Resync[out.string, dom_id_tree],
+          *custom_element_commands,
+          *listener_commands
+        ]
+      end
+
+      def custom_element_commands
+        @root.custom_elements.map do
+          Commands::RegisterCustomElement[it.name, it.path]
+        end
       end
 
       # Sends the browser the whole page, after the updates queued before
