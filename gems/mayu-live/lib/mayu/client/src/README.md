@@ -12,7 +12,7 @@ Each directory owns one concern. `main.ts` is the only file that knows about
 all of them.
 
 ```
-init.ts                  loads main.ts once the document is parsed
+init.ts                  asks for the command stream, loads main.ts once the document is parsed
 main.ts                  builds every module and wires them together
 dispatch.ts              CommandDispatcher: batch → handler per command
 protocol/

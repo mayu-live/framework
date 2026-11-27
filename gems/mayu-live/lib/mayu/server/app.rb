@@ -420,12 +420,20 @@ module Mayu
           vary: "Accept",
           "x-mayu-session-id": session.id,
           **@cookies.set_token_cookie_header(session),
-          link: link_header(session)
+          link: link_header(session, runtime: request.version == "HTTP/2")
         )
       end
 
-      def link_header(session)
+      # `runtime` is whether the page loads the runtime. Its initializer
+      # imports the rest, which the browser would only learn once it has
+      # run it. Named here, the two are fetched side by side.
+      def link_header(session, runtime: false)
         [
+          *(
+            if runtime
+              ["<%s>; rel=modulepreload" % @environment.runtime_main_js_path]
+            end
+          ),
           *session.styles.map do
             "<%s>; rel=preload; as=style" %
               escape_link_header_path(asset_url(it))

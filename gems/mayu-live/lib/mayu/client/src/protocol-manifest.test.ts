@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import manifest from "../protocol.json";
+import init from "./init.ts?raw";
 import { RESET_SESSION_ERROR_CODES } from "./connection/recovery";
 import { ELEMENT_METHODS } from "./dom/element-calls";
 import { CONTINUOUS_EVENTS } from "./features/callbacks";
 import type { CommandName } from "./protocol/commands";
-import { PROTOCOL_VERSION, STREAM_MIME_TYPE } from "./protocol/constants";
+import {
+  PROTOCOL_HEADER,
+  PROTOCOL_VERSION,
+  SESSION_PATH,
+  STREAM_MIME_TYPE,
+} from "./protocol/constants";
 import type { ClientEvent } from "./protocol/events";
 
 // protocol.json describes the wire protocol once. This test holds the
@@ -63,6 +69,13 @@ const CLIENT_ERROR_CODES = ["TRANSFER_FAILED"];
 describe("protocol manifest", () => {
   it("speaks the version", () => {
     expect(PROTOCOL_VERSION).toBe(manifest.version);
+  });
+
+  // init.ts can't import the constants, so it spells them out.
+  it("opens the first stream the way the rest of the runtime would", () => {
+    expect(init).toContain(`fetch(\`${SESSION_PATH}/\${sessionId}\``);
+    expect(init).toContain(`accept: "${STREAM_MIME_TYPE}"`);
+    expect(init).toContain(`"${PROTOCOL_HEADER}": "${PROTOCOL_VERSION}"`);
   });
 
   it("has the stream content type", () => {

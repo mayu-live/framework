@@ -13,17 +13,26 @@ import {
 } from "../protocol/constants";
 import { StreamError, streamErrorFromResponse } from "./stream-error";
 
+// A request for the command stream that init.ts sent before this code had
+// loaded, and what cancels it.
+export type EarlyStream = {
+  response: Promise<Response>;
+  controller: AbortController;
+};
+
 // Opens the stream of command batches from the server. With a transfer
 // state, the session is first restored from it on the server that answers.
 // Otherwise `lastBatch` names the last batch this page applied, if any, and
-// the server sends what came after it.
+// the server sends what came after it. With `early`, the request is already
+// on its way and its response is the one that is read.
 export async function openCommandStream(
   endpoint: string,
   state: Blob | null = null,
   signal?: AbortSignal,
   lastBatch: number | null = null,
+  early: EarlyStream | null = null,
 ): Promise<ReadableStream<Uint8Array>> {
-  const res = await connect(endpoint, state, signal, lastBatch);
+  const res = await connect(endpoint, state, signal, lastBatch, early);
 
   if (!res.body) throw new Error("No body");
 
@@ -44,38 +53,43 @@ export async function connect(
   state: Blob | null = null,
   signal?: AbortSignal,
   lastBatch: number | null = null,
+  early: EarlyStream | null = null,
 ): Promise<Response> {
   console.info("🟡 Connecting to", endpoint);
 
   let res: Response | null = null;
 
+  signal?.addEventListener("abort", () => early?.controller.abort());
+
   try {
-    res = state
-      ? await fetch(endpoint, {
-          method: "POST",
-          credentials: "include",
-          cache: "no-store",
-          signal,
-          headers: new Headers({
-            accept: STREAM_MIME_TYPE,
-            [PROTOCOL_HEADER]: PROTOCOL_VERSION,
-            "content-type": SESSION_MIME_TYPE,
-          }),
-          body: state,
-        })
-      : await fetch(endpoint, {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-          signal,
-          headers: new Headers({
-            accept: STREAM_MIME_TYPE,
-            [PROTOCOL_HEADER]: PROTOCOL_VERSION,
-            ...(lastBatch === null
-              ? {}
-              : { [LAST_BATCH_HEADER]: String(lastBatch) }),
-          }),
-        });
+    res = early
+      ? await early.response
+      : state
+        ? await fetch(endpoint, {
+            method: "POST",
+            credentials: "include",
+            cache: "no-store",
+            signal,
+            headers: new Headers({
+              accept: STREAM_MIME_TYPE,
+              [PROTOCOL_HEADER]: PROTOCOL_VERSION,
+              "content-type": SESSION_MIME_TYPE,
+            }),
+            body: state,
+          })
+        : await fetch(endpoint, {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+            signal,
+            headers: new Headers({
+              accept: STREAM_MIME_TYPE,
+              [PROTOCOL_HEADER]: PROTOCOL_VERSION,
+              ...(lastBatch === null
+                ? {}
+                : { [LAST_BATCH_HEADER]: String(lastBatch) }),
+            }),
+          });
   } catch (e) {
     if (e instanceof Error) {
       throw new StreamError(e.message);

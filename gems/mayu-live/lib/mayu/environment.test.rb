@@ -26,11 +26,12 @@ class Mayu::EnvironmentTest < Minitest::Test
   def test_client_runtime_manifest_identifies_the_hashed_initializer
     Dir.mktmpdir("mayu-runtime") do |root|
       entries_path = File.join(root, "entries.json")
-      File.write(entries_path, '{"init":"init-abc123.js"}')
+      File.write(entries_path, '{"init":"init-abc123.js","main":"main-def456.js"}')
       File.write(File.join(root, "init-abc123.js"), "")
 
       Mayu::Environment.stub(:client_runtime_entries_path, entries_path) do
         assert_equal("init-abc123.js", Mayu::Environment.ensure_client_runtime!)
+        assert_equal("main-def456.js", Mayu::Environment.client_runtime_main)
       end
     end
   end

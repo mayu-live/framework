@@ -21,6 +21,8 @@ module Mayu
     attr_reader :app_dir
     attr_reader :client_path
     attr_reader :runtime_init_js_path
+    # The chunk the initializer loads next, which a page preloads.
+    attr_reader :runtime_main_js_path
     attr_reader :module_provider
     attr_reader :marshaller
     attr_reader :metrics
@@ -48,6 +50,10 @@ module Mayu
       filename
     end
 
+    def self.client_runtime_main
+      JSON.parse(File.read(client_runtime_entries_path)).fetch("main")
+    end
+
     # Set by `mayu dev`. Turns on checks that only help while developing.
     def development? = @development
 
@@ -59,6 +65,8 @@ module Mayu
 
       @runtime_init_js_path =
         File.join("/.mayu/runtime", self.class.ensure_client_runtime!)
+      @runtime_main_js_path =
+        File.join("/.mayu/runtime", self.class.client_runtime_main)
 
       @metrics =
         metrics || Metrics::AppMetrics.setup(Prometheus::Client.registry)

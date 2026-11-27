@@ -7,7 +7,13 @@ function entriesJSON() {
     generateBundle(_outputOptions, bundle) {
       const entries = Object.fromEntries(
         Object.values(bundle)
-          .filter((chunk) => chunk.type === "chunk" && chunk.isEntry)
+          // init is what a page loads, and main is what init loads next,
+          // which the server tells the browser to fetch ahead of time.
+          .filter(
+            (chunk) =>
+              chunk.type === "chunk" &&
+              (chunk.isEntry || chunk.name === "main"),
+          )
           .map((chunk) => [chunk.name, chunk.fileName]),
       );
 

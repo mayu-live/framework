@@ -2,7 +2,7 @@ import { decodeBatches } from "../protocol/batch-codec";
 import type { Batch } from "../protocol/commands";
 import { ClientEventEncoderStream } from "../protocol/event-codec";
 import type { ClientEvent } from "../protocol/events";
-import { openCommandStream } from "./command-stream";
+import { type EarlyStream, openCommandStream } from "./command-stream";
 import { openEventStream } from "./event-stream";
 import type Outbox from "./outbox";
 import { StreamError } from "./stream-error";
@@ -13,6 +13,8 @@ type AttemptOptions = {
   transferState: Blob | null;
   // The last batch this page applied, when the server can pick up from it.
   lastBatch: number | null;
+  // The request for the command stream, when it has been sent already.
+  early?: EarlyStream | null;
   outbox: Pick<Outbox, "attach" | "detach">;
   // Called once the command stream is open.
   onOpen: () => void;
@@ -30,6 +32,7 @@ export default async function runAttempt({
   endpoint,
   transferState,
   lastBatch,
+  early = null,
   outbox,
   onOpen,
   onBatch,
@@ -47,6 +50,7 @@ export default async function runAttempt({
       transferState,
       abortController.signal,
       lastBatch,
+      early,
     );
     onOpen();
 

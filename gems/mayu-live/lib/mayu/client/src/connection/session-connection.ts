@@ -2,6 +2,7 @@ import { UnreadableBatchError } from "../protocol/batch-codec";
 import type { Batch, CommandHandlers } from "../protocol/commands";
 import { updateConnectionStatus, updateReconnectStatus } from "../ui/status";
 import runAttempt from "./attempt";
+import type { EarlyStream } from "./command-stream";
 import Backoff from "./backoff";
 import type Outbox from "./outbox";
 import {
@@ -24,6 +25,8 @@ type SessionConnectionOptions = {
   outbox: Pick<Outbox, "attach" | "detach" | "acknowledge">;
   applyBatch: (batch: Batch) => Promise<void>;
   transferState?: Blob | null;
+  // The request init.ts sent for the command stream, for the first attempt.
+  early?: EarlyStream | null;
   sleep?: (milliseconds: number) => Promise<void>;
   reload?: () => void;
 };
@@ -48,6 +51,7 @@ export default class SessionConnection {
   // Set while the page may differ from what the server believes it shows.
   // A stream opened in that state asks for the whole page.
   #lostTrack = false;
+  #early: EarlyStream | null;
 
   readonly handlers: CommandHandlers<"Transfer"> = {
     Transfer: (state) => {
@@ -60,10 +64,12 @@ export default class SessionConnection {
     outbox,
     applyBatch,
     transferState = null,
+    early = null,
     sleep: sleepFn,
     reload = () => location.reload(),
   }: SessionConnectionOptions) {
     this.#reload = reload;
+    this.#early = early;
     this.#endpoint = endpoint;
     this.#outbox = outbox;
     this.#applyBatch = applyBatch;
@@ -95,7 +101,11 @@ export default class SessionConnection {
         // from the beginning.
         if (this.#transferState) this.#applied(null);
 
+        const early = this.#early;
+        this.#early = null;
+
         await runAttempt({
+          early,
           endpoint: this.#endpoint,
           transferState: this.#transferState,
           lastBatch: this.#lostTrack ? LOST_TRACK : this.#lastBatch,

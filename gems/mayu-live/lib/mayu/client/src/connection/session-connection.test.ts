@@ -64,6 +64,7 @@ type Collaborators = {
   endpoint: string;
   sleep?: (milliseconds: number) => Promise<void>;
   reload?: () => void;
+  early?: any;
 };
 
 // The transfer state the next connection starts out holding.
@@ -85,11 +86,13 @@ function createConnection({
   endpoint,
   sleep,
   reload,
+  early,
 }: Collaborators) {
   lastConnection = new SessionConnection({
     endpoint,
     sleep,
     reload,
+    early,
     transferState: initialTransferState,
     applyBatch: async (batch) => {
       await runtime.applyBatch(batch);
@@ -636,6 +639,20 @@ describe("session-connection", () => {
       null,
       -1,
       2,
+    ]);
+  });
+
+  it("uses the request that was sent ahead for its first attempt only", async () => {
+    initInputStreamMock.mockRejectedValue(new Error("stream down"));
+    shouldResetSessionMock.mockReturnValue(false);
+    const early = {};
+    const { connection, stop } = connectionThatStopsAfter(2, { early });
+
+    await expect(connection.run()).rejects.toBe(stop);
+
+    expect(initInputStreamMock.mock.calls.map((call) => call[4])).toEqual([
+      early,
+      null,
     ]);
   });
 

@@ -67,6 +67,12 @@ The HTML is complete: the page is readable before the runtime has loaded.
 The first batch, `Initialize`, gives the browser the id of every node the
 server rendered. From then on commands name nodes by id.
 
+The runtime is two files. `init` is small and holds the session id. It
+sends the request for the command stream at once and then loads `main`,
+which is everything else. The page's `link` header names `main` as a
+`modulepreload`, so the browser fetches the two side by side and does not
+wait for `init` to ask for it. `main` reads the response `init` asked for.
+
 The session starts running when its command stream opens. Until then
 nothing in it changes, so the HTML and the ids agree.
 

@@ -213,7 +213,7 @@ On shutdown or an explicit transfer command:
 
 ### Main pieces
 
-- `init.ts`: bundled initializer that loads the runtime on DOM readiness.
+- `init.ts`: bundled initializer that requests the command stream and loads the runtime on DOM readiness.
 - `main.ts`: the one place where the modules are wired together.
 - `protocol/`: the typed commands and events, MIME types, and the codecs for
   both directions.

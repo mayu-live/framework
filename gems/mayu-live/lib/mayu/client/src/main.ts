@@ -1,4 +1,5 @@
 import Outbox from "./connection/outbox";
+import type { EarlyStream } from "./connection/command-stream";
 import SessionConnection from "./connection/session-connection";
 import CommandDispatcher from "./dispatch";
 import domHandlers from "./dom/handlers";
@@ -17,7 +18,7 @@ let initialized = false;
 // Builds the runtime and connects it to the session. This is the only place
 // where the modules are wired together: every command is handled by the
 // module that owns it, and every event leaves through the outbox.
-export default async function init(sessionId: string) {
+export default async function init(sessionId: string, early?: EarlyStream) {
   if (initialized) throw new Error("Mayu is already initialized");
   initialized = true;
 
@@ -53,6 +54,7 @@ export default async function init(sessionId: string) {
 
   const connection = new SessionConnection({
     endpoint: `${SESSION_PATH}/${sessionId}`,
+    early,
     outbox,
     applyBatch: (batch) => dispatcher.applyBatch(batch),
   });

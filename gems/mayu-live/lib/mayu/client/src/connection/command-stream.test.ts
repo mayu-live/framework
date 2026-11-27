@@ -89,6 +89,31 @@ describe("command stream", () => {
     expect((init!.headers as Headers).get("mayu-protocol")).toBe("2");
   });
 
+  it("reads the response of a request that was sent ahead, and cancels it with the attempt", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const response = new Response("", {
+      status: 200,
+      headers: {
+        "content-type": "application/vnd.mayu.event-stream",
+        "mayu-protocol": "2",
+      },
+    });
+    const early = {
+      response: Promise.resolve(response),
+      controller: new AbortController(),
+    };
+    const attempt = new AbortController();
+
+    await expect(
+      connect("/.mayu/session/abc", null, attempt.signal, null, early),
+    ).resolves.toBe(response);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    attempt.abort();
+    expect(early.controller.signal.aborted).toBe(true);
+  });
+
   it("resumes a transfer with a POST that names no batch", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("", {

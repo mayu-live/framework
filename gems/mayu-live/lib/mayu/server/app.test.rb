@@ -282,7 +282,10 @@ class Mayu::Server::AppTest < Minitest::Test
   PageSession = Data.define(:id, :styles, :route_status) do
     def render = "<html></html>"
   end
-  PageEnvironment = Data.define(:module_provider, :metrics)
+  PageEnvironment =
+    Data.define(:module_provider, :metrics) do
+      def runtime_main_js_path = "/.mayu/runtime/main-testhash.js"
+    end
   PageRequest =
     Data.define(:method, :path, :headers, :body, :version) do
       def read = body
@@ -439,7 +442,29 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal(404, response.status)
   end
 
-  RuntimeEnvironment = Data.define(:runtime_init_js_path)
+  RuntimeEnvironment =
+    Data.define(:runtime_init_js_path, :runtime_main_js_path) do
+      def initialize(runtime_init_js_path:, runtime_main_js_path: nil) = super
+    end
+
+  def test_a_page_that_loads_the_runtime_preloads_its_main_chunk
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      RuntimeEnvironment.new(
+        runtime_init_js_path: "/.mayu/runtime/init-abc123.js",
+        runtime_main_js_path: "/.mayu/runtime/main-def456.js"
+      )
+    )
+    session = Session.new(%w[page.css])
+
+    assert_equal(
+      "</.mayu/runtime/main-def456.js>; rel=modulepreload, " \
+        "</.mayu/assets/page.css>; rel=preload; as=style",
+      app.send(:link_header, session, runtime: true)
+    )
+    refute_includes(app.send(:link_header, session), "modulepreload")
+  end
 
   def script_response(path, headers: {"accept-encoding" => %w[gzip br]})
     Dir.mktmpdir("mayu-client") do |root|
@@ -447,7 +472,7 @@ class Mayu::Server::AppTest < Minitest::Test
       File.write(File.join(root, "main-def456.js"), "export default null\n")
       app = Mayu::Server::App.allocate
       app.instance_variable_set(:@client_files, Mayu::Server::StaticFiles.new(root))
-      app.instance_variable_set(:@environment, RuntimeEnvironment.new("/.mayu/runtime/init-abc123.js"))
+      app.instance_variable_set(:@environment, RuntimeEnvironment.new(runtime_init_js_path: "/.mayu/runtime/init-abc123.js"))
 
       app.send(:handle_script, Request.new("GET", path, headers, ""))
     end
