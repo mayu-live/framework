@@ -38,6 +38,12 @@ class Mayu::Runtime::VNodes::AttributeNamesTest < Minitest::Test
     assert_includes(render_html(engine.root), %(<button aria-label="Send message">))
   end
 
+  def test_initial_value_is_the_value_attribute_in_html
+    engine = build(H[:input, initial_value: "a"])
+
+    assert_includes(render_html(engine.root), %(<input value="a">))
+  end
+
   def test_initial_value_keeps_its_name
     engine = build(H[:input, initial_value: "a"])
     input = find_element(engine.root, :input)

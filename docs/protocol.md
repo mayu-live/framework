@@ -237,8 +237,12 @@ document. The browser then asks for the whole page.
 
 `Resync` carries the page as the server's tree has it now. The browser
 morphs its document into that, so nodes the two share stay where they are
-and keep their focus and scroll position. Form fields take the server's
-values. The session and its state are untouched.
+and keep their focus and scroll position. The session and its state are
+untouched.
+
+A form field keeps what the user typed, ticked or chose, unless the
+server's page has another default for it than the page had: then the
+server has something new to say about the field, and its value is used.
 
 The batch also has a `RegisterCustomElement` for every custom element the
 page has used and a `SetListener` for every listener, since the batches

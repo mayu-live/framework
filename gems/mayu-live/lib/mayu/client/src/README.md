@@ -102,9 +102,9 @@ document. `main.ts` then loads `features/resync.ts`, which sends a `Resync`
 event with the reason. The server answers with a `Resync` command: the whole
 page as its vnode tree has it now, and the ids of its nodes.
 `dom/handlers.ts` morphs the document into that page, so nodes the two share
-keep their focus and scroll position, and binds the ids again. Form fields
-take the values the server's page has, so text typed into a field the server
-does not follow is lost. The session and its component state are untouched.
+keep their focus and scroll position, and binds the ids again. A form field
+keeps what the user entered unless the server's page has another default for
+it than the page had. The session and its component state are untouched.
 
 One request is in flight at a time. If the page still differs within five
 seconds of a resync, the difference is one the server can't repair, such as

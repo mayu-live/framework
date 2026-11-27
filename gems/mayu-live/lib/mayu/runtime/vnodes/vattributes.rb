@@ -243,6 +243,10 @@ module Mayu
                   CGI.escape_html(value.to_s)
                 end
 
+              # In HTML the value attribute is the default, which is all
+              # that initial_value sets.
+              attr = :value if attr == :initial_value
+
               name = CGI.escape_html(attr.to_s.tr("_", "-"))
               out << format(' %s="%s"', name, rendered_value)
             end
