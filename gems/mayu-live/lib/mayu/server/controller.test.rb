@@ -62,7 +62,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
           session_id = page.headers["x-mayu-session-id"]
           cookie = page.headers["set-cookie"].to_s.split(";").first
           page.read
-          stream = client.get("/.mayu/session/#{session_id}", {"cookie" => cookie})
+          stream = client.get("/.mayu/session/#{session_id}", {"cookie" => cookie, "mayu-protocol" => "2"})
           assert_equal(200, stream.status)
           streams[pid] = stream
         end
@@ -174,7 +174,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
         cookie = page.headers["set-cookie"].to_s.split(";").first
         page.read
         stalled_client = new_client(window: 0)
-        response = stalled_client.get("/.mayu/session/#{id}", {"cookie" => cookie})
+        response = stalled_client.get("/.mayu/session/#{id}", {"cookie" => cookie, "mayu-protocol" => "2"})
         assert_equal(200, response.status)
         Process.kill(:TERM, @pid)
         assert_parent_exits(timeout: 2)
@@ -207,7 +207,7 @@ class Mayu::Server::ControllerTest < Minitest::Test
         id = page.headers["x-mayu-session-id"]
         cookie = page.headers["set-cookie"].to_s.split(";").first
         page.read
-        response = client.get("/.mayu/session/#{id}", {"cookie" => cookie})
+        response = client.get("/.mayu/session/#{id}", {"cookie" => cookie, "mayu-protocol" => "2"})
         Process.kill(:INT, @pid)
         patches = decode(response.read)
         assert_equal(["TransferFailed"], patches.last)
@@ -250,10 +250,10 @@ class Mayu::Server::ControllerTest < Minitest::Test
 
   def decode(bytes)
     inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
-    unpacker = Mayu::Server::EventStream::MsgPackWrapper.new.unpacker
-    unpacker.feed(inflater.inflate(bytes))
+    wrapper = Mayu::Server::EventStream::MsgPackWrapper.new
+    frames = Mayu::Server::EventStream.command_frames(inflater.inflate(bytes))
     assert(inflater.finished?, "Missing compression trailer")
-    unpacker.each.to_a.flatten(1)
+    frames.flat_map { wrapper.unpacker.feed(it).read.last }
   ensure
     inflater&.close
   end

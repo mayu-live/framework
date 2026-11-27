@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import type { Batch } from "./protocol";
+import type { Batch } from "./protocol/commands";
 
 // The API a devtools extension receives. The extension defines
 // window.__MAYU_DEVTOOLS_HOOK__ before the page loads, and Mayu registers

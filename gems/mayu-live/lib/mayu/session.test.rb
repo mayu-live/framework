@@ -192,8 +192,23 @@ class Mayu::SessionTest < Minitest::Test
 
   def test_invalid_event_messages_are_rejected
     assert_raises(Mayu::Session::Events::InvalidEventError) do
-      Mayu::Session::Events.parse(["Callback", "", {}, 1])
+      Mayu::Session::Events.parse(["Callback", 1, nil, nil, "", {}])
     end
+  end
+
+  def test_events_without_a_telemetry_slot_are_rejected
+    [["Ping", 1], ["Visibility", 5, nil, true], ["Navigate", "nav-1", "/next", 1]].each do |message|
+      assert_raises(Mayu::Session::Events::InvalidEventError) do
+        Mayu::Session::Events.parse(message)
+      end
+    end
+  end
+
+  def test_ping_message_without_telemetry_has_none
+    assert_equal(
+      Mayu::Session::Events::PingEvent[123],
+      Mayu::Session::Events.parse(["Ping", 123, nil, nil])
+    )
   end
 
   def test_legacy_json_event_objects_are_rejected
@@ -205,7 +220,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_callback_message_parses_to_one_typed_event
     event =
       Mayu::Session::Events.parse(
-        ["Callback", "listener", {type: "click"}, 123]
+        ["Callback", 123, nil, nil, "listener", {type: "click"}]
       )
 
     assert_equal(
@@ -221,7 +236,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_callback_message_parses_a_settle_id
     event =
       Mayu::Session::Events.parse(
-        ["Callback", "listener", {type: "click"}, 123, "s1"]
+        ["Callback", 123, nil, nil, "listener", {type: "click"}, "s1"]
       )
 
     assert_equal("s1", event.settle_id)
@@ -233,11 +248,12 @@ class Mayu::SessionTest < Minitest::Test
       Mayu::Session::Events.parse(
         [
           "Callback",
+          123,
+          nil,
+          {batches: 1, commands: 2, duration_ms: 0.5},
           "listener",
           {type: "click"},
-          123,
-          "s1",
-          {batches: 1, commands: 2, duration_ms: 0.5}
+          "s1"
         ]
       )
 
@@ -250,10 +266,11 @@ class Mayu::SessionTest < Minitest::Test
       Mayu::Session::Events.parse(
         [
           "Callback",
-          "listener",
-          {type: "click"},
           123,
-          {batches: 1, commands: 2, duration_ms: 0.5}
+          nil,
+          {batches: 1, commands: 2, duration_ms: 0.5},
+          "listener",
+          {type: "click"}
         ]
       )
 
@@ -265,14 +282,14 @@ class Mayu::SessionTest < Minitest::Test
     ["", "x" * 33, 5].each do |settle_id|
       assert_raises(Mayu::Session::Events::InvalidEventError) do
         Mayu::Session::Events.parse(
-          ["Callback", "listener", {type: "click"}, 123, settle_id]
+          ["Callback", 123, nil, nil, "listener", {type: "click"}, settle_id]
         )
       end
     end
   end
 
   def test_visibility_message_parses_to_a_typed_event
-    event = Mayu::Session::Events.parse(["Visibility", true, 5])
+    event = Mayu::Session::Events.parse(["Visibility", 5, nil, nil, true])
 
     assert_equal(Mayu::Session::Events::VisibilityEvent[true, 5], event)
   end
@@ -283,6 +300,7 @@ class Mayu::SessionTest < Minitest::Test
         [
           "Ping",
           123,
+          nil,
           {batches: 2, commands: 5, duration_ms: 3.25}
         ]
       )
@@ -299,7 +317,7 @@ class Mayu::SessionTest < Minitest::Test
   def test_invalid_client_command_apply_telemetry_is_rejected
     assert_raises(Mayu::Session::Events::InvalidEventError) do
       Mayu::Session::Events.parse(
-        ["Ping", 123, {batches: 2, commands: 1, duration_ms: 3.25}]
+        ["Ping", 123, nil, {batches: 2, commands: 1, duration_ms: 3.25}]
       )
     end
   end
@@ -334,7 +352,7 @@ class Mayu::SessionTest < Minitest::Test
   end
 
   def test_inspect_message_parses_to_a_typed_event
-    event = Mayu::Session::Events.parse(["Inspect", "req-1", {type: "tree"}, 5])
+    event = Mayu::Session::Events.parse(["Inspect", 5, nil, nil, "req-1", {type: "tree"}])
 
     assert_equal(
       Mayu::Session::Events::InspectEvent["req-1", {type: "tree"}, 5],
@@ -418,6 +436,197 @@ class Mayu::SessionTest < Minitest::Test
     )
   end
 
+  def missing_page_session
+    Mayu::Session.new(
+      environment: FakeEnvironment.new,
+      request_info: Mayu::Session::RequestInfo.new(path: "/missing", headers: {}, http2: false)
+    )
+  end
+
+  def pong(timestamp)
+    Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Pong[timestamp]]]
+  end
+
+  def test_batches_are_numbered_and_packed_with_their_number
+    session = missing_page_session
+
+    first = session.stamp_batch(pong(10))
+    second = session.stamp_batch(pong(20))
+
+    assert_equal([1, 2], [first.seq, second.seq])
+    assert_equal(2, session.batch_seq)
+    assert_equal([2, [["Pong", 20]]], MessagePack.unpack(second.packed))
+    assert_equal(1, second.commands)
+  end
+
+  def test_a_batch_that_can_not_be_packed_uses_up_no_number
+    session = missing_page_session
+    unpackable = Mayu::Runtime::Batch[[Mayu::Runtime::Commands::Pong[Object.new]]]
+
+    assert_raises { session.stamp_batch(unpackable) }
+    sent = session.stamp_batch(pong(10))
+
+    assert_equal(1, sent.seq)
+    assert_equal([1], session.batches_after(0).map(&:seq))
+  end
+
+  def test_a_reconnecting_browser_gets_the_batches_it_missed
+    session = missing_page_session
+    4.times { session.stamp_batch(pong(it)) }
+
+    assert_equal([3, 4], session.batches_after(2).map(&:seq))
+    assert_equal([1, 2, 3, 4], session.batches_after(0).map(&:seq))
+    assert_empty(session.batches_after(4))
+  end
+
+  def test_acknowledged_batches_are_dropped
+    session = missing_page_session
+    4.times { session.stamp_batch(pong(it)) }
+
+    session.acknowledge(2)
+    session.acknowledge(nil)
+    session.acknowledge(1)
+
+    assert_equal([3, 4], session.batches_after(2).map(&:seq))
+    assert_nil(session.batches_after(1))
+  end
+
+  def test_numbers_this_session_never_gave_out_can_not_be_replayed_from
+    session = missing_page_session
+    2.times { session.stamp_batch(pong(it)) }
+
+    assert_nil(session.batches_after(3))
+    assert_nil(session.batches_after(-1))
+    assert_nil(session.batches_after("1"))
+    assert_nil(session.batches_after(nil))
+  end
+
+  def test_a_browser_that_falls_too_far_behind_can_not_be_replayed_to
+    session = missing_page_session
+    count = Mayu::Session::MAX_UNACKED_BATCHES + 5
+    count.times { session.stamp_batch(pong(it)) }
+
+    assert_nil(session.batches_after(0))
+    assert_nil(session.batches_after(4))
+    assert_equal(
+      Mayu::Session::MAX_UNACKED_BATCHES,
+      session.batches_after(5).size
+    )
+  end
+
+  def test_the_kept_batches_are_bounded_by_size_but_the_latest_is_always_kept
+    session = missing_page_session
+    big = "x" * (Mayu::Session::MAX_UNACKED_BYTES / 2 + 1)
+    3.times do
+      session.stamp_batch(
+        Mayu::Runtime::Batch[[Mayu::Runtime::Commands::SetTextContent["v1", big]]]
+      )
+    end
+
+    assert_nil(session.batches_after(1))
+    assert_equal([3], session.batches_after(2).map(&:seq))
+
+    huge = "x" * (Mayu::Session::MAX_UNACKED_BYTES * 2)
+    session.stamp_batch(
+      Mayu::Runtime::Batch[[Mayu::Runtime::Commands::SetTextContent["v1", huge]]]
+    )
+    assert_equal([4], session.batches_after(3).map(&:seq))
+  end
+
+  def test_an_event_acknowledges_the_batches_its_header_names
+    session = missing_page_session
+    3.times { session.stamp_batch(pong(it)) }
+
+    session.receive_message(["Ping", 1, 2, nil])
+
+    assert_nil(session.batches_after(1))
+    assert_equal([3], session.batches_after(2).map(&:seq))
+  end
+
+  def test_an_invalid_event_acknowledges_nothing
+    session = missing_page_session
+    2.times { session.stamp_batch(pong(it)) }
+
+    assert_raises(Mayu::Session::Events::InvalidEventError) do
+      session.receive_message(["Ping", 1, "2", nil])
+    end
+    assert_raises(Mayu::Session::Events::InvalidEventError) do
+      session.receive_message(["Nope", 1, 2, nil])
+    end
+
+    assert_equal([1, 2], session.batches_after(0).map(&:seq))
+  end
+
+  def test_the_initialize_batch_names_the_ids_and_forgets_earlier_batches
+    session = missing_page_session
+    2.times { session.stamp_batch(pong(it)) }
+
+    batch = session.initialize_batch
+
+    assert_equal(
+      Mayu::Runtime::Commands::Initialize[session.dom_id_tree],
+      batch.commands.first
+    )
+    assert_equal(3, session.stamp_batch(batch).seq)
+    assert_nil(session.batches_after(1))
+    assert_empty(session.batches_after(3))
+  end
+
+  def test_the_resync_batch_carries_the_page_and_what_it_overtook
+    session = missing_page_session
+    engine = session.instance_variable_get(:@engine)
+    completion = Async::Queue.new
+    engine.enqueue_batch(
+      Mayu::Runtime::Batch[
+        [
+          Mayu::Runtime::Commands::SetTextContent["v1", "stale"],
+          Mayu::Runtime::Commands::CallbackComplete["7"]
+        ]
+      ]
+    )
+    engine.enqueue_batch(Mayu::Runtime::Batch[[], completion:])
+    engine.enqueue_command(Mayu::Runtime::Commands::Pong[5])
+
+    batch = session.resync_batch
+    classes = batch.commands.map(&:class)
+
+    assert_equal(Mayu::Runtime::Commands::Resync, classes.first)
+    assert_includes(batch.commands.first.html, "<!DOCTYPE html>")
+    assert_equal(session.dom_id_tree, batch.commands.first.id_tree)
+    refute_includes(classes, Mayu::Runtime::Commands::SetTextContent)
+    assert_equal(
+      [Mayu::Runtime::Commands::CallbackComplete["7"], Mayu::Runtime::Commands::Pong[5]],
+      batch.commands.last(2)
+    )
+    assert_empty(engine.take_queued_batches)
+
+    Async do
+      batch.complete
+      assert_equal(true, Async::Task.current.with_timeout(0.5) { completion.dequeue })
+    end.wait
+  end
+
+  def test_a_resync_event_parses_and_asks_the_engine_for_the_page
+    event = Mayu::Session::Events.parse(["Resync", 5, 3, nil, "Node not found: v9"])
+    assert_equal(Mayu::Session::Events::ResyncEvent["Node not found: v9", 5], event)
+
+    session = missing_page_session
+    fake_engine = FakeEngine.new
+    resyncs = 0
+    fake_engine.define_singleton_method(:resync) { resyncs += 1 }
+    session.instance_variable_set(:@engine, fake_engine)
+
+    previous_logger = Console.logger
+    Console.logger = Console::Logger.new(Console::Output::Null.new)
+    begin
+      session.send(:handle_event, event)
+    ensure
+      Console.logger = previous_logger
+    end
+
+    assert_equal(1, resyncs)
+  end
+
   def test_receive_message_queues_exactly_one_event
     env = FakeEnvironment.new
     request_info =
@@ -429,7 +638,7 @@ class Mayu::SessionTest < Minitest::Test
     session = Mayu::Session.new(environment: env, request_info: request_info)
     queue = session.instance_variable_get(:@incoming_events)
 
-    session.receive_message(["Navigate", "nav-1", "/next", 123])
+    session.receive_message(["Navigate", 123, nil, nil, "nav-1", "/next"])
 
     Async do
       event = Async::Task.current.with_timeout(0.5) { queue.dequeue }

@@ -389,6 +389,45 @@ module Mayu
         @root.dom_id_tree
       end
 
+      # The page as the vnode tree has it now, without updating anything, and
+      # what the browser needs to adopt it: the ids, the listeners, and the
+      # modules of its custom elements. A script the browser gets this way
+      # does not run, and the command that named the module may be among the
+      # batches this page stands in for.
+      def resync_commands
+        out = StringIO.new
+        @root.write_current_html(out)
+
+        [
+          Commands::Resync[out.string, dom_id_tree],
+          *custom_element_commands,
+          *listener_commands
+        ]
+      end
+
+      def custom_element_commands
+        @root.custom_elements.map do
+          Commands::RegisterCustomElement[it.name, it.path]
+        end
+      end
+
+      # Sends the browser the whole page, after the updates queued before
+      # this and in place of their DOM commands.
+      def resync
+        if @updater&.task
+          @updater.enqueue(VNodes::Updater::Resync.new)
+        else
+          enqueue_batch(Batch[resync_commands])
+        end
+      end
+
+      # Every batch that is waiting to be sent, which nobody will dequeue.
+      def take_queued_batches
+        batches = []
+        batches << @output_queue.dequeue until @output_queue.empty?
+        batches
+      end
+
       # Yields every vnode, parents before their children.
       def traverse(&)
         @root.traverse(&)

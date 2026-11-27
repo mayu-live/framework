@@ -68,7 +68,6 @@ module Mayu
         :session_timeout_seconds,
         :transfer_timeout_seconds,
         :shutdown_timeout_seconds,
-        :cookie_timeout_seconds,
         :command_stream_compression?
       ) do
         def initialize(**options) = super(command_stream_compression?: true, **options)
@@ -99,9 +98,7 @@ module Mayu
               config.fetch("session_timeout_seconds", 10).to_i,
             transfer_timeout_seconds:
               config.fetch("transfer_timeout_seconds", 10).to_i,
-            shutdown_timeout_seconds: shutdown_timeout,
-            cookie_timeout_seconds:
-              config.fetch("cookie_timeout_seconds", 10).to_i
+            shutdown_timeout_seconds: shutdown_timeout
           )
         end
       end

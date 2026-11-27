@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("./ping", () => ({ updatePing: vi.fn() }));
+vi.mock("./ui/status", () => ({ updatePing: vi.fn() }));
 
-import Runtime from "./runtime";
-import { updatePing } from "./ping";
+import Runtime from "./test-runtime";
+import { updatePing } from "./ui/status";
 
 function tree() {
   return {
@@ -65,6 +65,44 @@ describe("runtime listeners", () => {
     await runtime.applyBatch(batch as any);
 
     expect(onBatchApplied).toHaveBeenCalledWith(batch, expect.any(Number));
+  });
+
+  it("applies a batch whose listener fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const runtime = new Runtime(vi.fn(), {
+      onBatchApplied: () => {
+        throw new Error("listener failed");
+      },
+    });
+
+    await expect(
+      runtime.applyBatch([["Initialize", tree()]] as any),
+    ).resolves.toBeUndefined();
+  });
+
+  it("shows a checkbox as indeterminate when the page's HTML says so", async () => {
+    document.body.innerHTML = `<input type="checkbox" indeterminate="true">`;
+    const runtime = new Runtime(vi.fn());
+    const page = tree();
+    page.children[0].children[1].children[0].name = "INPUT";
+
+    await runtime.applyBatch([
+      ["Initialize", page],
+      [
+        "CreateTree",
+        `<input type="checkbox" indeterminate="true"><input type="checkbox">`,
+        [
+          { id: "new", name: "INPUT", children: [] },
+          { id: "plain", name: "INPUT", children: [] },
+        ],
+      ],
+      ["ReplaceChildren", "body", ["button", "new", "plain"]],
+    ]);
+
+    const [first, created, plain] = document.querySelectorAll("input");
+    expect(first.indeterminate).toBe(true);
+    expect(created.indeterminate).toBe(true);
+    expect(plain.indeterminate).toBe(false);
   });
 
   it("maps ids to nodes and back for devtools", async () => {
@@ -448,22 +486,22 @@ describe("runtime attributes", () => {
     document.documentElement.innerHTML = "<head></head><body></body>";
   });
 
-  it("maps Ruby-style attribute underscores to HTML hyphens", async () => {
+  it("sets and removes attributes by the name the server sends", async () => {
     document.body.innerHTML = "<button>Go</button>";
     const runtime = new Runtime(vi.fn());
     const button = document.querySelector("button")!;
 
     await runtime.applyBatch([
       ["Initialize", tree()],
-      ["SetAttribute", "button", "data_role", "user"],
-      ["SetAttribute", "button", "aria_label", "Send message"],
+      ["SetAttribute", "button", "data-role", "user"],
+      ["SetAttribute", "button", "aria-label", "Send message"],
     ]);
 
     expect(button.getAttribute("data-role")).toBe("user");
     expect(button.getAttribute("aria-label")).toBe("Send message");
     expect(button.hasAttribute("datarole")).toBe(false);
 
-    await runtime.applyBatch([["RemoveAttribute", "button", "data_role"]]);
+    await runtime.applyBatch([["RemoveAttribute", "button", "data-role"]]);
 
     expect(button.hasAttribute("data-role")).toBe(false);
   });
@@ -591,7 +629,7 @@ describe("runtime command errors", () => {
       .mockImplementation(() => undefined);
     const runtime = new Runtime(vi.fn());
 
-    await runtime.applyBatch([["UnknownCommand"], ["Pong", 10]]);
+    await runtime.applyBatch([["UnknownCommand"] as any, ["Pong", 10]]);
 
     expect(error).toHaveBeenCalledWith(
       "Command 0 (UnknownCommand) failed",
@@ -605,7 +643,7 @@ describe("runtime command errors", () => {
     const runtime = new Runtime(vi.fn(), { commandErrorPolicy: "throw" });
 
     await expect(
-      runtime.applyBatch([["UnknownCommand"], ["Pong", 10]]),
+      runtime.applyBatch([["UnknownCommand"] as any, ["Pong", 10]]),
     ).rejects.toThrow("Unknown command: UnknownCommand");
     expect(updatePing).not.toHaveBeenCalled();
   });
@@ -752,5 +790,162 @@ describe("document navigation results", () => {
     const runtime = new Runtime(vi.fn(), { onDocumentNavigation });
     await runtime.applyBatch([["DocumentNavigation", "nav-1", "/handler?q=1"]]);
     expect(onDocumentNavigation).toHaveBeenCalledWith("nav-1", "/handler?q=1");
+  });
+});
+
+describe("runtime resync", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    document.documentElement.innerHTML = "<head></head><body></body>";
+    vi.restoreAllMocks();
+  });
+
+  const page = (body: string) =>
+    `<!DOCTYPE html>\n<html><head></head><body>${body}</body></html>\n`;
+
+  it("reports a command for a node the page does not have, and applies the rest", async () => {
+    document.body.innerHTML = "<button>Go</button>";
+    const onCommandFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed });
+
+    await runtime.applyBatch([
+      ["Initialize", tree()],
+      ["SetTextContent", "gone", "text"],
+      ["AddClass", "button", ["applied"]],
+    ]);
+
+    expect(onCommandFailed).toHaveBeenCalledOnce();
+    expect(onCommandFailed).toHaveBeenCalledWith(
+      "SetTextContent",
+      expect.objectContaining({ message: "Node not found: gone" }),
+    );
+    expect(document.querySelector("button")!.className).toBe("applied");
+  });
+
+  it("reports a page that differs from the server's tree, and binds what it can", async () => {
+    document.body.innerHTML = "<a>Go</a>";
+    const onCommandFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed });
+
+    await runtime.applyBatch([["Initialize", tree()]]);
+
+    expect(onCommandFailed).toHaveBeenCalledWith(
+      "Initialize",
+      expect.objectContaining({
+        message:
+          "1 nodes differ from the server's tree. Node button should be BUTTON, but found A",
+      }),
+    );
+    expect(runtime.node("button")).toBe(document.querySelector("a"));
+    expect(runtime.node("body")).toBe(document.body);
+  });
+
+  it("reports a node the page is missing", async () => {
+    const onCommandFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed });
+
+    await runtime.applyBatch([["Initialize", tree()]]);
+
+    expect(onCommandFailed).toHaveBeenCalledWith(
+      "Initialize",
+      expect.objectContaining({
+        message:
+          "1 nodes differ from the server's tree. Node button (BUTTON) is missing",
+      }),
+    );
+  });
+
+  it("replaces the document with the server's page and binds its ids", async () => {
+    document.body.innerHTML = "<p>stale</p><a>Go</a>";
+    const onCommandFailed = vi.fn();
+    const onResynced = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed, onResynced });
+
+    await runtime.applyBatch([
+      ["Resync", page('<button class="fresh">Go</button>'), tree()],
+      ["SetAttribute", "button", "title", "after"],
+    ]);
+
+    // The newline that ends the page lands in the body, as it does when a
+    // browser parses the first response.
+    expect(document.body.innerHTML).toBe(
+      '<button class="fresh" title="after">Go</button>\n',
+    );
+    expect(runtime.node("button")).toBe(document.querySelector("button"));
+    expect(onResynced).toHaveBeenCalledOnce();
+    expect(onCommandFailed).not.toHaveBeenCalled();
+  });
+
+  it("forgets the listeners of the page it replaces", async () => {
+    document.body.innerHTML = "<button>Go</button>";
+    const onEvent = vi.fn();
+    const runtime = new Runtime(onEvent);
+
+    await runtime.applyBatch([
+      ["Initialize", tree()],
+      ["SetListener", "button", "click", "old"],
+      ["Resync", page("<button>Go</button>"), tree()],
+    ]);
+    document.querySelector("button")!.click();
+    expect(onEvent).not.toHaveBeenCalled();
+
+    await runtime.applyBatch([["SetListener", "button", "click", "new"]]);
+    document.querySelector("button")!.click();
+    expect(onEvent).toHaveBeenCalledOnce();
+    expect(onEvent.mock.calls[0][1]).toBe("new");
+  });
+
+  it("keeps a node the two pages share, with what the user typed elsewhere", async () => {
+    document.body.innerHTML = "<button>Go</button>";
+    const button = document.querySelector("button")!;
+    const runtime = new Runtime(vi.fn());
+
+    await runtime.applyBatch([
+      ["Resync", page("<button>Went</button>"), tree()],
+    ]);
+
+    expect(document.querySelector("button")).toBe(button);
+    expect(button.textContent).toBe("Went");
+  });
+
+  it("leaves the status indicator and the error overlay alone", async () => {
+    document.body.innerHTML =
+      '<button>Go</button><mayu-ping status="connected" ping="5ms"></mayu-ping><mayu-exception></mayu-exception>';
+    const withPing = tree();
+    withPing.children[0].children[1].children.push({
+      id: "ping",
+      name: "MAYU-PING",
+      children: [],
+    });
+    const onCommandFailed = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed });
+
+    await runtime.applyBatch([
+      [
+        "Resync",
+        page('<button>Go</button><mayu-ping ping="N/A"></mayu-ping>'),
+        withPing,
+      ],
+    ]);
+
+    const ping = document.querySelector("mayu-ping")!;
+    expect(ping.getAttribute("status")).toBe("connected");
+    expect(ping.getAttribute("ping")).toBe("5ms");
+    expect(document.querySelector("mayu-exception")).not.toBeNull();
+    expect(onCommandFailed).not.toHaveBeenCalled();
+  });
+
+  it("reports a page that still differs after the resync", async () => {
+    const onCommandFailed = vi.fn();
+    const onResynced = vi.fn();
+    const runtime = new Runtime(vi.fn(), { onCommandFailed, onResynced });
+
+    await runtime.applyBatch([["Resync", page("<a>Go</a>"), tree()]]);
+
+    expect(onResynced).toHaveBeenCalledOnce();
+    expect(onCommandFailed).toHaveBeenCalledWith("Resync", expect.any(Error));
   });
 });

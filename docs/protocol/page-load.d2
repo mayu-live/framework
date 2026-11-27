@@ -1,0 +1,13 @@
+shape: sequence_diagram
+browser: Browser
+server: Server
+
+browser -> server: "GET /some/page"
+server -> browser: "200 HTML\nx-mayu-session-id, set-cookie: mayu-token\nlink: main-<hash>.js; rel=modulepreload"
+browser -> server: "GET /.mayu/runtime/init-<hash>.js#<session id>"
+browser -> server: "GET /.mayu/runtime/main-<hash>.js"
+browser -> server: "GET /.mayu/session/:id   (command stream)"
+server -> browser: "batch 1: Initialize, SetListener…"
+browser -> server: "PATCH /.mayu/session/:id   (event stream)"
+browser -> server: "Ping, ack 1"
+server -> browser: "batch 2: Pong"

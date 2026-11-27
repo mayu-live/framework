@@ -32,7 +32,7 @@ html = session.render
 # Devtools queries must go unanswered in production: only `mayu dev` installs
 # an inspector.
 engine = session.instance_variable_get(:@engine)
-session.send(:handle_event, Mayu::Session::Events.parse(["Inspect", "1", {type: "tree"}, 0]))
+session.send(:handle_event, Mayu::Session::Events.parse(["Inspect", 0, nil, nil, "1", {type: "tree"}]))
 commands = []
 commands.concat(engine.dequeue_batch.commands) until engine.output_queue.empty?
 inspect_result = commands.find { it.is_a?(Mayu::Runtime::Commands::InspectResult) }

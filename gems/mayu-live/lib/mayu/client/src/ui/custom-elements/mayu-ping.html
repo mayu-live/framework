@@ -1,0 +1,55 @@
+<style>
+  :host {
+    /* light-dark() follows the color-scheme inherited from the page. A page
+       that declares none gets the light colors. */
+    --ping-color: light-dark(#1b2430, #fff);
+    --ping-background: light-dark(#ffffffa6, #17202ba6);
+    --ping-border: light-dark(#0000001f, #ffffff4d);
+    --ping-shadow: light-dark(#0003, #0008);
+    --ping-text-shadow: light-dark(#fff, #000);
+    --ping-disconnected: light-dark(#fca5a5a6, #a61b1ba6);
+    --ping-connected: light-dark(#bbf7d0a6, #2f6b18a6);
+    --ping-transferring: light-dark(#bfdbfea6, #0b5caba6);
+  }
+
+  #badge {
+    box-sizing: border-box;
+    position: fixed;
+    top: 0;
+    right: auto;
+    bottom: auto;
+    left: 0;
+    margin: 0;
+    padding: 0 2px;
+    z-index: 2147483647;
+
+    pointer-events: none;
+
+    color: var(--ping-color);
+    font-size: 9px;
+    font-weight: 100;
+    font-family: monospace;
+    font-variant-numeric: tabular-nums;
+    background: var(--ping-background);
+    backdrop-filter: blur(3px);
+
+    border: 1px solid var(--ping-border);
+    border-radius: 2px 0 0 0;
+    border-width: 1px 0 0 1px;
+
+    box-shadow: 0 0 0.5rem var(--ping-shadow);
+    text-shadow: 0 1px 1px var(--ping-text-shadow);
+    width: max-content;
+  }
+
+  :host([status="disconnected"]) #badge {
+    background-color: var(--ping-disconnected);
+  }
+  :host([status="connected"]) #badge {
+    background-color: var(--ping-connected);
+  }
+  :host([status="transferring"]) #badge {
+    background-color: var(--ping-transferring);
+  }
+</style>
+<div id="badge">N/A</div>

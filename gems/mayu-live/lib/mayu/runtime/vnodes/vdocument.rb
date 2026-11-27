@@ -24,8 +24,8 @@ module Mayu
         Html = InternalComponents::Html
         Head = InternalComponents::Head
 
-        # High-frequency events where only the latest one matters. Keep in
-        # sync with CONTINUOUS_EVENTS in client/src/mayu.ts.
+        # High-frequency events where only the latest one matters. Listed in
+        # client/protocol.json, which protocol.test.rb checks this against.
         CONTINUOUS_EVENT_TYPES = Set[
           "input",
           "mousemove",
@@ -294,6 +294,11 @@ module Mayu
 
         def write_html(out)
           update(NullCommandCollector.new)
+          write_current_html(out)
+        end
+
+        # The document as it is, for a browser that is already showing it.
+        def write_current_html(out)
           out << "<!DOCTYPE html>\n"
           @html.write_html(out)
           out << "\n"

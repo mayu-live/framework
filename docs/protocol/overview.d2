@@ -1,0 +1,28 @@
+direction: right
+
+browser: Browser {
+  dom: DOM
+  runtime: Mayu runtime
+  runtime -> dom: applies commands
+  dom -> runtime: DOM events
+}
+
+server: Server {
+  app: Server::App
+  session: Session
+  engine: Runtime::Engine\n(vnode tree)
+  app -> session: events
+  session -> engine: callbacks,\nnavigation
+  engine -> session: command batches
+  session -> app: numbered batches
+}
+
+browser.runtime -> server.app: "GET /page\n(HTML, session id, token cookie)" {
+  style.stroke-dash: 3
+}
+server.app -> browser.runtime: "command stream\nGET /.mayu/session/:id" {
+  style.stroke-width: 3
+}
+browser.runtime -> server.app: "event stream\nPATCH /.mayu/session/:id" {
+  style.stroke-width: 3
+}

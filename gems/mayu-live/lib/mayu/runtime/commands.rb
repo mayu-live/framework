@@ -57,12 +57,11 @@ module Mayu
       end
 
       Initialize = CommandData.define(:id_tree)
+      # Replaces the browser's document with the server's: the HTML of the
+      # whole page as the server has it now, and the ids of its nodes.
+      Resync = CommandData.define(:html, :id_tree)
 
       CreateTree = CommandData.define(:html, :tree)
-
-      CreateElement = CommandData.define(:id, :type)
-      CreateTextNode = CommandData.define(:id, :content)
-      CreateComment = CommandData.define(:id, :content)
 
       ReplaceChildren = CommandData.define(:id, :child_ids)
 
@@ -71,7 +70,6 @@ module Mayu
       SetAttribute = CommandData.define(:id, :name, :value)
       RemoveAttribute = CommandData.define(:id, :name)
 
-      SetClassName = CommandData.define(:id, :class_name)
       AddClass = CommandData.define(:id, :classes)
       RemoveClass = CommandData.define(:id, :classes)
 
@@ -82,9 +80,6 @@ module Mayu
       RemoveCSSProperty = CommandData.define(:id, :name)
 
       SetTextContent = CommandData.define(:id, :content)
-      ReplaceData = CommandData.define(:id, :offset, :count, :data)
-      InsertData = CommandData.define(:id, :offset, :data)
-      DeleteData = CommandData.define(:id, :offset, :count)
 
       Transfer = CommandData.define(:payload)
       TransferFailed = CommandData.define
@@ -102,7 +97,7 @@ module Mayu
       # Runs a built-in browser action, such as navigate or alert.
       BrowserAction = CommandData.define(:name, :args)
       # Calls a method on an element, through `ref.current`. The method is
-      # the snake_case name that client/src/element-calls.ts maps.
+      # the snake_case name that client/src/dom/element-calls.ts maps.
       ElementCall = CommandData.define(:id, :method, :args)
       InspectResult = CommandData.define(:request_id, :result)
 
@@ -159,6 +154,26 @@ module Mayu
       end
 
       ViewTransition = CommandData.define(:batch, :types, :scope)
+
+      # Commands that only change the DOM. A Resync carries the whole DOM,
+      # so it makes the ones queued before it redundant.
+      DOM_COMMANDS = [
+        Initialize,
+        Resync,
+        CreateTree,
+        ReplaceChildren,
+        RemoveNode,
+        SetAttribute,
+        RemoveAttribute,
+        AddClass,
+        RemoveClass,
+        SetListener,
+        RemoveListener,
+        SetCSSProperty,
+        RemoveCSSProperty,
+        SetTextContent,
+        ViewTransition
+      ].freeze
     end
   end
 end

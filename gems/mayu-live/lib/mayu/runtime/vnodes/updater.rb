@@ -20,6 +20,8 @@ module Mayu
         # A command that must reach the client after the DOM updates queued
         # before it, such as a browser action from a callback.
         Command = Data.define(:command)
+        # Sends the browser the whole page, as it is after this pass.
+        Resync = Data.define
 
         attr_reader :queue, :task, :output_queue
 
@@ -38,7 +40,11 @@ module Mayu
                 work_items = [@queue.dequeue]
                 work_items << @queue.dequeue until @queue.empty?
 
-                process(work_items)
+                # A pass changes the tree as it goes and queues its commands
+                # at the end. Stopped in between, where a render waits for
+                # something, it would leave the tree ahead of what the
+                # browser is ever sent. So a pass that has begun finishes.
+                Async::Task.current.defer_cancel { process(work_items) }
 
                 # Work queued during the pause is coalesced into the next pass.
                 if (interval = @engine&.update_interval)
@@ -50,9 +56,15 @@ module Mayu
             end
         end
 
+        # Returns once the pass that was running, if any, has queued its
+        # commands.
         def stop
-          @task&.stop
+          task = @task
           @task = nil
+          return unless task
+
+          task.stop
+          task.wait unless task.current?
         end
 
         # Processes queued work in the current fiber until the queue is
@@ -84,6 +96,7 @@ module Mayu
           navigations = []
           trailing_commands = []
           synchronizations = []
+          resync = false
           updates = {}
 
           work_items.each do |item|
@@ -93,6 +106,8 @@ module Mayu
               navigations << item
             elsif item.is_a?(Command)
               trailing_commands << item.command
+            elsif item.is_a?(Resync)
+              resync = true
             else
               updates[item] ||= nil
             end
@@ -139,7 +154,20 @@ module Mayu
               !node.instance_variable_get(:@__view_transition_pending).nil?
             end
 
-          if transition_nodes.any?
+          if resync
+            # The page carries everything this pass changed, so its DOM
+            # commands are not sent, and nothing is left to transition. Its
+            # other commands, such as an error to show, still are.
+            updates.keys.each do |node|
+              node.instance_variable_set(:@__view_transition_pending, nil)
+            end
+            commands =
+              @engine.resync_commands +
+              commands.reject { Commands::DOM_COMMANDS.include?(it.class) }
+            commands << navigation_completion if navigation_completion
+            commands.concat(trailing_commands)
+            @engine.enqueue_batch(Batch[commands])
+          elsif transition_nodes.any?
             # A head update can replace the stylesheet that styles the
             # transition pseudo-elements. Apply it before the browser
             # captures the old state, rather than inside the callback.

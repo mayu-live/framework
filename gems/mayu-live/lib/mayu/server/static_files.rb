@@ -20,6 +20,7 @@ module Mayu
         Data.define(
           :content_type,
           :content_hash,
+          :content,
           :encoded_content,
           :filename
         ) do
@@ -42,13 +43,35 @@ module Mayu
                 Base64.urlsafe_encode64(content_hash, padding: false)
               )
 
-            new(content_type:, content_hash:, encoded_content:, filename:)
+            new(
+              content_type:,
+              content_hash:,
+              content:,
+              encoded_content:,
+              filename:
+            )
           end
 
-          def headers
+          # What to send to a client with this accept-encoding header: the
+          # compressed content if it can read it, the file as it is
+          # otherwise.
+          def representation(accept_encoding)
+            encoding = encoded_content.encoding
+
+            if encoding.nil? || StaticFiles.accepts?(encoding, accept_encoding)
+              encoded_content
+            else
+              EncodedContent.none(content)
+            end
+          end
+
+          # A file that can be sent in two ways says what the choice
+          # depends on, so a cache keeps them apart.
+          def headers(representation = encoded_content)
             {
               "content-type": content_type,
-              **encoded_content.headers
+              **representation.headers,
+              **(encoded_content.encoding ? {vary: "accept-encoding"} : {})
             }
           end
         end
@@ -56,11 +79,15 @@ module Mayu
       EncodedContent =
         Data.define(:encoding, :content) do
           def self.for_mime_type_and_content(mime_type, content) =
-            if mime_type.media_type == "text"
+            if compressible?(mime_type)
               brotli(content)
             else
               none(content)
             end
+
+          # Text, and JSON, which the source maps are.
+          def self.compressible?(mime_type) =
+            mime_type.media_type == "text" || mime_type.sub_type == "json"
 
           def self.none(content) = new(nil, content)
 
@@ -74,6 +101,22 @@ module Mayu
             end
           end
         end
+
+      # Whether an accept-encoding header such as "gzip, br;q=0.8" allows a
+      # content coding. A header that does not name the coding leaves it to
+      # "*", and no header at all allows nothing but the file as it is.
+      def self.accepts?(encoding, accept_encoding)
+        qualities =
+          Array(accept_encoding)
+            .flat_map { it.to_s.split(",") }
+            .to_h do |entry|
+              coding, *parameters = entry.strip.downcase.split(/\s*;\s*/)
+              quality = parameters.find { it.start_with?("q=") }
+              [coding, quality ? quality.delete_prefix("q=").to_f : 1.0]
+            end
+
+        qualities.fetch(encoding.to_s) { qualities.fetch("*", 0.0) }.positive?
+      end
 
       def initialize(root)
         @root = File.expand_path(root)

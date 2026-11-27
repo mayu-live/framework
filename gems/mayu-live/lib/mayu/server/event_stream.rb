@@ -18,6 +18,7 @@ module Mayu
     module EventStream
       CONTENT_TYPE = "application/vnd.mayu.event-stream"
       CONTENT_ENCODING = "deflate-raw"
+      COMMAND_FRAME_HEADER_BYTES = 4
       CLIENT_EVENT_FRAME_HEADER_BYTES = 5
       CLIENT_EVENT_ENCODING_RAW = 0
       CLIENT_EVENT_ENCODING_DEFLATE_RAW = 1
@@ -52,7 +53,6 @@ module Mayu
               Zlib::HUFFMAN_ONLY
             )
           end
-          @wrapper = MsgPackWrapper.new
           @on_close = Async::Promise.new
           @write_closed = false
           @consumer_closed = false
@@ -75,20 +75,23 @@ module Mayu
           flushed
         end
 
-        def write_batch(batch)
-          unless batch.is_a?(Runtime::Batch)
-            raise ArgumentError, "Expected #{Runtime::Batch}, got #{batch.class}"
-          end
-          batch.validate!
+        def write_batch(batch, seq:)
+          write_packed(
+            EventStream.pack_batch(batch, seq),
+            commands: batch.commands.size
+          )
+        end
 
+        # Writes a batch that EventStream.pack_batch already packed.
+        def write_packed(packed, commands:)
           if @write_closed || @consumer_closed
             raise ClosedStreamError,
               "Attempted to write to a closed #{self.class.name}"
           end
 
-          packed = @wrapper.pack(batch)
-          payload = @deflate ? deflate_chunk(packed) : packed
-          record_batch(batch, packed, payload)
+          frame = EventStream.command_frame(packed)
+          payload = @deflate ? deflate_chunk(frame) : frame
+          record_batch(commands, frame, payload)
           write(payload)
         end
 
@@ -111,11 +114,11 @@ module Mayu
 
         private
 
-        def record_batch(batch, packed, payload)
+        def record_batch(commands, packed, payload)
           return unless @metrics
 
           @metrics.command_batches_total.increment
-          @metrics.command_batch_commands_total.increment(by: batch.commands.size)
+          @metrics.command_batch_commands_total.increment(by: commands)
           @metrics.command_batch_uncompressed_bytes_total.increment(
             by: packed.bytesize
           )
@@ -136,6 +139,54 @@ module Mayu
           raise unless output.end_with?("\x00\x00\xff\xff".b)
           output
         end
+      end
+
+      # A batch as MessagePack: `[seq, commands]`. The sequence number counts
+      # the batches of one session, so the browser can say which one it
+      # applied last.
+      def self.pack_batch(batch, seq)
+        unless batch.is_a?(Runtime::Batch)
+          raise ArgumentError, "Expected #{Runtime::Batch}, got #{batch.class}"
+        end
+        batch.validate!
+
+        packer.pack([seq, batch.commands])
+      end
+
+      def self.packer = @packer ||= MsgPackWrapper.new
+      private_class_method :packer
+
+      # A batch on the command stream is a frame: four bytes holding the
+      # length of the payload, big-endian, then the batch as MessagePack. The
+      # browser decodes one whole frame at a time, and a stream that ends in
+      # the middle of one was cut off.
+      def self.command_frame(packed)
+        [packed.bytesize].pack("N") << packed
+      end
+
+      # The MessagePack payload of every frame in the bytes of a command
+      # stream, after decompression.
+      def self.command_frames(bytes)
+        frames = []
+        offset = 0
+
+        while offset < bytes.bytesize
+          header = bytes.byteslice(offset, COMMAND_FRAME_HEADER_BYTES)
+          unless header.bytesize == COMMAND_FRAME_HEADER_BYTES
+            raise InvalidMessageError, "Truncated command frame header"
+          end
+
+          length = header.unpack1("N")
+          payload = bytes.byteslice(offset + COMMAND_FRAME_HEADER_BYTES, length)
+          unless payload.bytesize == length
+            raise InvalidMessageError, "Truncated command frame"
+          end
+
+          frames << payload
+          offset += COMMAND_FRAME_HEADER_BYTES + length
+        end
+
+        frames
       end
 
       Blob =

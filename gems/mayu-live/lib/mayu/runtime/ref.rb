@@ -72,7 +72,7 @@ module Mayu
     # What `ref.current` returns for an element. Each method calls the DOM
     # method of the same name in the browser, after the DOM updates queued
     # before it, and returns nil. The browser only calls the methods listed
-    # in client/src/element-calls.ts.
+    # in client/src/dom/element-calls.ts.
     class ElementHandle
       def initialize(vnode)
         @vnode = vnode

@@ -68,8 +68,76 @@ class Mayu::Server::StaticFiles::StaticFile::Test < Minitest::Test
       Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.js", "content")
 
     assert_equal(
-      {"content-type": "text/javascript", "content-encoding": "br"},
+      {
+        "content-type": "text/javascript",
+        "content-encoding": "br",
+        vary: "accept-encoding"
+      },
       asset.headers
     )
+  end
+
+  def test_a_client_that_reads_brotli_is_sent_brotli
+    asset =
+      Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.js", "content")
+
+    representation = asset.representation(["gzip", "br"])
+
+    assert_equal(:br, representation.encoding)
+    assert_equal("content", Brotli.inflate(representation.content))
+  end
+
+  def test_a_client_that_does_not_read_brotli_is_sent_the_file_as_it_is
+    asset =
+      Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.js", "content")
+
+    [nil, [], ["gzip", "deflate"], ["br;q=0"], "gzip, br;q=0.0"].each do |header|
+      representation = asset.representation(header)
+
+      assert_nil(representation.encoding, header.inspect)
+      assert_equal("content", representation.content)
+      assert_equal(
+        {"content-type": "text/javascript", vary: "accept-encoding"},
+        asset.headers(representation)
+      )
+    end
+  end
+
+  def test_a_file_that_is_not_compressed_does_not_vary
+    asset =
+      Mayu::Server::StaticFiles::StaticFile.build("/path/to/foo.png", "content")
+
+    assert_equal("content", asset.representation(["br"]).content)
+    assert_equal({"content-type": "image/png"}, asset.headers)
+  end
+
+  def test_source_maps_are_compressed
+    asset =
+      Mayu::Server::StaticFiles::StaticFile.build(
+        "/path/to/main.js.map",
+        "{\"version\":3}"
+      )
+
+    assert_equal("application/json", asset.content_type)
+    assert_equal(:br, asset.encoded_content.encoding)
+    assert_equal(
+      "{\"version\":3}",
+      Brotli.inflate(asset.encoded_content.content)
+    )
+  end
+
+  def test_accept_encoding
+    accepts = ->(header) { Mayu::Server::StaticFiles.accepts?(:br, header) }
+
+    assert(accepts.call(["gzip", "deflate", "br", "zstd"]))
+    assert(accepts.call("gzip, deflate, br"))
+    assert(accepts.call(["gzip;q=1.0", "BR; q=0.5"]))
+    assert(accepts.call(["*"]))
+    assert(accepts.call(["gzip", "*;q=0.1"]))
+    refute(accepts.call(nil))
+    refute(accepts.call(["gzip"]))
+    refute(accepts.call(["br;q=0"]))
+    refute(accepts.call(["*", "br;q=0"]))
+    refute(accepts.call(["*;q=0"]))
   end
 end

@@ -88,9 +88,24 @@ class Mayu::Server::AppTest < Minitest::Test
 
     def running? = false
     def transferring? = false
+    def batch_seq = 0
 
     def listener_commands
       [Mayu::Runtime::Commands::SetListener["button", "click", "listener"]]
+    end
+
+    def initialize_batch
+      Mayu::Runtime::Batch[
+        [Mayu::Runtime::Commands::Initialize[dom_id_tree], *listener_commands]
+      ]
+    end
+
+    def stamp_batch(batch)
+      Mayu::Session::SentBatch[
+        1,
+        Mayu::Server::EventStream.pack_batch(batch, 1),
+        batch.commands.size
+      ]
     end
 
     def start
@@ -267,7 +282,10 @@ class Mayu::Server::AppTest < Minitest::Test
   PageSession = Data.define(:id, :styles, :route_status) do
     def render = "<html></html>"
   end
-  PageEnvironment = Data.define(:module_provider, :metrics)
+  PageEnvironment =
+    Data.define(:module_provider, :metrics) do
+      def runtime_main_js_path = "/.mayu/runtime/main-testhash.js"
+    end
   PageRequest =
     Data.define(:method, :path, :headers, :body, :version) do
       def read = body
@@ -424,17 +442,39 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_equal(404, response.status)
   end
 
-  RuntimeEnvironment = Data.define(:runtime_init_js_path)
+  RuntimeEnvironment =
+    Data.define(:runtime_init_js_path, :runtime_main_js_path) do
+      def initialize(runtime_init_js_path:, runtime_main_js_path: nil) = super
+    end
 
-  def script_response(path)
+  def test_a_page_that_loads_the_runtime_preloads_its_main_chunk
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(
+      :@environment,
+      RuntimeEnvironment.new(
+        runtime_init_js_path: "/.mayu/runtime/init-abc123.js",
+        runtime_main_js_path: "/.mayu/runtime/main-def456.js"
+      )
+    )
+    session = Session.new(%w[page.css])
+
+    assert_equal(
+      "</.mayu/runtime/main-def456.js>; rel=modulepreload, " \
+        "</.mayu/assets/page.css>; rel=preload; as=style",
+      app.send(:link_header, session, runtime: true)
+    )
+    refute_includes(app.send(:link_header, session), "modulepreload")
+  end
+
+  def script_response(path, headers: {"accept-encoding" => %w[gzip br]})
     Dir.mktmpdir("mayu-client") do |root|
       File.write(File.join(root, "init-abc123.js"), "export default null\n")
       File.write(File.join(root, "main-def456.js"), "export default null\n")
       app = Mayu::Server::App.allocate
       app.instance_variable_set(:@client_files, Mayu::Server::StaticFiles.new(root))
-      app.instance_variable_set(:@environment, RuntimeEnvironment.new("/.mayu/runtime/init-abc123.js"))
+      app.instance_variable_set(:@environment, RuntimeEnvironment.new(runtime_init_js_path: "/.mayu/runtime/init-abc123.js"))
 
-      app.send(:handle_script, Request.new("GET", path, {}, ""))
+      app.send(:handle_script, Request.new("GET", path, headers, ""))
     end
   end
 
@@ -448,6 +488,15 @@ class Mayu::Server::AppTest < Minitest::Test
     assert_includes(Array(headers.fetch(:"content-type")), "text/javascript")
     assert_includes(Array(headers.fetch(:"cache-control")), "no-store")
     assert_equal("export default null\n", Brotli.inflate(response.body.join))
+  end
+
+  def test_serves_a_script_as_it_is_to_a_client_that_does_not_read_brotli
+    response = script_response("/.mayu/runtime/main-def456.js", headers: {})
+
+    headers = response.headers.to_a.to_h
+    refute(headers.key?(:"content-encoding"))
+    assert_includes(Array(headers.fetch(:vary)), "accept-encoding")
+    assert_equal("export default null\n", response.body.join)
   end
 
   def test_serves_other_runtime_scripts_with_immutable_caching
@@ -479,9 +528,13 @@ class Mayu::Server::AppTest < Minitest::Test
       app.instance_variable_set(:@stopping, true)
       "not decrypted because shutdown started"
     end
+    request.define_singleton_method(:headers) { {} }
     response = app.send(:handle_session_transfer, request, "session")
     assert_equal(503, response.status)
-    assert_equal("Server is stopping", response.read)
+    assert_equal(
+      {"code" => "SERVER_STOPPING", "message" => "Server is stopping"},
+      JSON.parse(response.read)
+    )
   end
 
   def test_a_transfer_that_can_not_be_restored_asks_the_client_to_start_over
@@ -492,6 +545,7 @@ class Mayu::Server::AppTest < Minitest::Test
     app.instance_variable_set(:@cookies, cookies)
     request = Object.new
     request.define_singleton_method(:read) { "state" }
+    request.define_singleton_method(:headers) { {"origin" => ["https://app.test"]} }
     transfer = Object.new
     transfer.define_singleton_method(:authenticate!) { |**| self }
     transfer.define_singleton_method(:resume) { |_environment| raise ArgumentError, "undefined class" }
@@ -502,7 +556,48 @@ class Mayu::Server::AppTest < Minitest::Test
       end
 
     assert_equal(422, response.status)
-    assert_includes(response.read, "SESSION_RESTORE_FAILED")
+    assert_equal(
+      "https://app.test",
+      response.headers.to_a.to_h.fetch(:"access-control-allow-origin")
+    )
+    assert_equal(
+      {"code" => "SESSION_RESTORE_FAILED", "message" => "SESSION_RESTORE_FAILED"},
+      JSON.parse(response.read)
+    )
+  end
+
+  def test_a_transfer_from_a_server_with_a_faster_clock_asks_the_client_to_start_over
+    app = Mayu::Server::App.allocate
+    app.instance_variable_set(:@environment, Struct.new(:marshaller).new(nil))
+    request = Object.new
+    request.define_singleton_method(:read) { "state" }
+    request.define_singleton_method(:headers) { {} }
+    decrypt = ->(*) { raise Mayu::EncryptedMarshal::IssuedInTheFutureError }
+
+    response =
+      Mayu::Session::TransferState.stub(:decrypt, decrypt) do
+        app.send(:handle_session_transfer, request, "session")
+      end
+
+    assert_equal(403, response.status)
+    assert_equal("SESSION_EXPIRED", JSON.parse(response.read).fetch("code"))
+  end
+
+  def session_request(method, headers = {})
+    Request.new(method:, path: "/.mayu/session/abc123", headers:, body: nil)
+  end
+
+  def test_a_session_request_in_another_version_of_the_protocol_is_refused
+    app = Mayu::Server::App.allocate
+
+    [{"mayu-protocol" => ["1"]}, {}].each do |headers|
+      %w[GET POST PATCH].each do |method|
+        response = app.call(session_request(method, headers))
+
+        assert_equal(400, response.status)
+        assert_equal("PROTOCOL_MISMATCH", JSON.parse(response.read).fetch("code"))
+      end
+    end
   end
 
   def test_session_events_are_acknowledged_with_an_empty_204
@@ -581,7 +676,10 @@ class Mayu::Server::AppTest < Minitest::Test
         inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
         payload = inflater.inflate(payload)
       end
-      bootstrap = MessagePack.unpack(payload)
+      frames = Mayu::Server::EventStream.command_frames(payload)
+      assert_equal(1, frames.size)
+      seq, bootstrap = MessagePack.unpack(frames.first)
+      assert_equal(1, seq)
       assert_equal(%w[Initialize SetListener], bootstrap.map(&:first))
       refute_includes(bootstrap.map(&:first), "Batch")
     ensure

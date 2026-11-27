@@ -31,6 +31,8 @@ module Mayu
               content-type
               accept
               accept-encoding
+              mayu-last-batch
+              mayu-protocol
             ].join(", ")
           }
         )
@@ -53,20 +55,27 @@ module Mayu
         @sessions = Session::Store.new(metrics: @environment.metrics)
         @body_barrier = Async::Barrier.new(parent: Async::Task.current)
         @streams = {}
-        @cookies =
-          Cookies.new(
-            timeout_seconds: environment.config.server.cookie_timeout_seconds
-          )
+        @cookies = Cookies.new
         @client_files = StaticFiles.new(@environment.client_path)
         @sessions.start_cleanup_task(
           environment.config.server.session_timeout_seconds
         )
       end
 
+      LAST_BATCH_HEADER = "mayu-last-batch"
+      # The version of the wire protocol, which the runtime names in every
+      # session request. client/protocol.json has the number.
+      PROTOCOL_HEADER = "mayu-protocol"
+      PROTOCOL_VERSION = "2"
+      MAX_TAKEOVER_ATTEMPTS = 20
+
+      # An open command stream and the task that feeds it.
+      Stream = Struct.new(:body, :batch_task, :session)
+
       SESSION_PATH_RE = %r{\A/.mayu/session/(?<session_id>[[:alnum:]]+)\z}
 
       def call(request)
-        return text_response(503, "Server is stopping") if @stopping
+        return stopping_response(request) if @stopping
 
         # puts "\e[3;33m #{request.method} #{request.path} \e[0m"
 
@@ -81,6 +90,8 @@ module Mayu
           handle_script(request)
         in {path: %r{\A/\.mayu/assets/(.+)\z}, method: "GET"}
           handle_asset(request)
+        in {path: SESSION_PATH_RE} unless speaks_protocol?(request)
+          protocol_mismatch_response(request)
         in {method: "GET", path: SESSION_PATH_RE}
           handle_session_resume(request, $~[:session_id])
         in {method: "POST", path: SESSION_PATH_RE}
@@ -182,7 +193,7 @@ module Mayu
 
       def abort
         begin_shutdown
-        @streams.values.each(&:close)
+        @streams.values.each { it.body.close }
         @body_barrier.stop
       ensure
         @sessions.abort
@@ -285,11 +296,14 @@ module Mayu
           )
         end
 
+        representation =
+          file.representation(request.headers["accept-encoding"])
+
         response(
           200,
-          file.encoded_content.content,
+          representation.content,
           "cache-control": script_cache_control(request.path),
-          **file.headers,
+          **file.headers(representation),
           **origin_header(request)
         )
       end
@@ -406,12 +420,20 @@ module Mayu
           vary: "Accept",
           "x-mayu-session-id": session.id,
           **@cookies.set_token_cookie_header(session),
-          link: link_header(session)
+          link: link_header(session, runtime: request.version == "HTTP/2")
         )
       end
 
-      def link_header(session)
+      # `runtime` is whether the page loads the runtime. Its initializer
+      # imports the rest, which the browser would only learn once it has
+      # run it. Named here, the two are fetched side by side.
+      def link_header(session, runtime: false)
         [
+          *(
+            if runtime
+              ["<%s>; rel=modulepreload" % @environment.runtime_main_js_path]
+            end
+          ),
           *session.styles.map do
             "<%s>; rel=preload; as=style" %
               escape_link_header_path(asset_url(it))
@@ -431,7 +453,7 @@ module Mayu
 
       def handle_session_transfer(request, session_id)
         state = request.read.to_s
-        return text_response(503, "Server is stopping") if @stopping
+        return session_stopping_response(request) if @stopping
 
         transfer =
           Session::TransferState
@@ -449,12 +471,16 @@ module Mayu
           session = transfer.resume(@environment)
         rescue => error
           Console.logger.error(self, "Could not restore transferred session #{session_id}", error)
-          return error_response(422, "SESSION_RESTORE_FAILED")
+          return error_response(
+            422,
+            "SESSION_RESTORE_FAILED",
+            **origin_header(request)
+          )
         end
 
         if @stopping
           session.stop
-          return text_response(503, "Server is stopping")
+          return session_stopping_response(request)
         end
 
         @sessions.store(session)
@@ -465,11 +491,25 @@ module Mayu
         )
 
         run_session_stream(request, session)
-      rescue Mayu::EncryptedMarshal::ExpiredError
-        error_response(403, "SESSION_EXPIRED")
+      rescue Mayu::EncryptedMarshal::ExpiredError,
+        Mayu::EncryptedMarshal::IssuedInTheFutureError
+        # A state from the future means the two servers' clocks disagree.
+        # Either way this state can not be resumed, so the client starts over.
+        error_response(403, "SESSION_EXPIRED", **origin_header(request))
       rescue Mayu::EncryptedMarshal::DecryptError => e
         Console.logger.error(self, e)
-        error_response(403, "SESSION_CIPHER_ERROR")
+        error_response(403, "SESSION_CIPHER_ERROR", **origin_header(request))
+      end
+
+      def speaks_protocol?(request)
+        request.headers[PROTOCOL_HEADER] in [PROTOCOL_VERSION]
+      end
+
+      # The page was loaded from a server that spoke another version, and
+      # stayed open across a deploy. Its runtime reloads the page on this
+      # answer, and gets the runtime this server serves.
+      def protocol_mismatch_response(request)
+        error_response(400, "PROTOCOL_MISMATCH", **origin_header(request))
       end
 
       def handle_session_resume(request, session_id)
@@ -484,55 +524,120 @@ module Mayu
           event: Mayu::Session::Event.new(:resuming, session_id: session.id)
         )
 
-        run_session_stream(request, session)
+        run_session_stream(request, session, after: last_batch(request))
       end
 
-      def run_session_stream(request, session)
+      # The sequence number of the last batch a reconnecting browser applied.
+      # A browser that has none to name, on its first connection, sends no
+      # header.
+      def last_batch(request)
+        case request.headers[LAST_BATCH_HEADER]
+        in [/\A\d{1,15}\z/ => value]
+          value.to_i
+        in nil | []
+          nil
+        else
+          # Not a number this server gave out, so nothing can be replayed.
+          # A browser that lost track of where it is sends -1.
+          -1
+        end
+      end
+
+      # Opens the command stream of a session. `after` is the last batch the
+      # browser says it applied, or nil when it has applied none.
+      def run_session_stream(request, session, after: nil)
         compress = @environment.config.server.command_stream_compression?
         headers = {
           "content-type": EventStream::CONTENT_TYPE,
           **@cookies.set_token_cookie_header(session),
           **origin_header(request)
         }
+        headers[PROTOCOL_HEADER] = PROTOCOL_VERSION
         headers[:"content-encoding"] = EventStream::CONTENT_ENCODING if compress
 
-        if session.running?
-          Console.logger.error(self, "already running")
+        # A browser only opens a second stream when it has given up on the
+        # first, which this server may not have noticed yet. The new one
+        # takes over. Waiting for the old one lets other requests in, and
+        # one of them may be a third stream doing the same, so look again
+        # until there is nothing left to wait for.
+        attempts = 0
+        while (current = @streams[session.id]) || session.running?
+          # Nothing above should need more than a few rounds. Failing this
+          # request beats spinning: the browser tries again.
+          if (attempts += 1) > MAX_TAKEOVER_ATTEMPTS
+            raise "Could not take over the stream of session #{session.id}"
+          end
 
-          return (
-            error_response(
-              409,
-              "SESSION_ALREADY_RUNNING",
-              **origin_header(request)
-            )
-          )
+          if current
+            current.body.close
+            # Its loop may be holding a batch it just took. Let it put that
+            # away before deciding what this stream has to send.
+            current.batch_task&.stop
+            current.batch_task&.wait
+            @streams.delete(session.id) if @streams[session.id].equal?(current)
+
+            # A transfer that was posted twice restores the session twice.
+            # The first copy is no longer in the store, so nothing else
+            # would stop it.
+            replaced = current.session
+            if !replaced.equal?(session) && replaced.running?
+              replaced.stop
+              replaced.wait
+            end
+          end
+          if session.running?
+            session.stop
+            session.wait
+          end
         end
 
         body = EventStream::Writer.new(compress:, metrics: @environment.metrics)
-        @streams[session.id] = body
+        stream = Stream.new(body, nil, session)
+        @streams[session.id] = stream
 
-        body.write_batch(
-          Runtime::Batch[
-            [
-              Runtime::Commands::Initialize[session.dom_id_tree],
-              *session.listener_commands,
-              *session.startup_commands
-            ]
-          ]
-        )
+        # Three ways to start. The browser missed batches that are still
+        # here: send those. Its DOM is as the server left it: tell it the ids.
+        # Otherwise the two can't be reconciled batch by batch, and the
+        # browser gets the whole page. That includes a browser that names no
+        # batch although some were sent: they changed the page on this side
+        # and never reached it.
+        begin
+          if after && (missed = session.batches_after(after))
+            missed.each { body.write_packed(it.packed, commands: it.commands) }
+          else
+            untouched = after.nil? && session.batch_seq.zero?
+            opening = untouched ? session.initialize_batch : session.resync_batch
+            sent = session.stamp_batch(opening)
+            body.write_packed(sent.packed, commands: sent.commands)
+            opening.complete
+          end
+        rescue EventStream::ClosedStreamError
+          # Another stream took over while this one was being written to.
+          # The browser finds this one ended and has already moved on.
+        end
 
         @body_barrier.async do |task|
+          # Taken over before it got to run.
+          next unless @streams[session.id].equal?(stream)
+
           session.start
 
-          batch_task = task.async do
+          batch_task = stream.batch_task = task.async do
             loop do
               batch = session.dequeue_batch
 
+              if batch.nil? || batch.empty?
+                break if body.closed?
+                batch&.complete
+                next
+              end
+
+              # Numbered and kept before anything can go wrong with the
+              # stream, so the next stream can still deliver it.
+              sent = session.stamp_batch(batch)
               break if body.closed?
 
-              next unless batch
-
-              body.write_batch(batch) unless batch.empty?
+              body.write_packed(sent.packed, commands: sent.commands)
               batch.complete
 
               break if batch.terminal?
@@ -553,7 +658,8 @@ module Mayu
           ensure
             close_task.stop
             session_task.stop
-            session.stop
+            # A stream that took over runs the session now.
+            session.stop if @streams[session.id].equal?(stream)
             body.close_write
           end
 
@@ -566,8 +672,12 @@ module Mayu
           Console.logger.error(self, e)
           body.close(e)
         ensure
-          session.stop
-          @streams.delete(session.id)
+          # A stream that took over has its own entry, and its own session
+          # run to stop.
+          if @streams[session.id].equal?(stream)
+            session.stop
+            @streams.delete(session.id)
+          end
         end
 
         Protocol::HTTP::Response[200, headers, body]
@@ -591,13 +701,7 @@ module Mayu
           session.receive_message(message)
         end
 
-        if @stopping
-          return error_response(
-            503,
-            "SERVER_STOPPING",
-            **origin_header(request)
-          )
-        end
+        return session_stopping_response(request) if @stopping
 
         # A 204 has no body. A body would make the server send content-length,
         # which HTTP/2 clients reject on a 204.
@@ -617,13 +721,33 @@ module Mayu
         response(
           status,
           *bodies,
-          "content-type": "text/plain; charset-utf-8",
+          "content-type": "text/plain; charset=utf-8",
           **headers
         )
       end
 
+      # The runtime acts on `code`; client/protocol.json lists the codes.
       def error_response(status, code, message: code, **headers)
-        json_response(status, {code:, message:, error: code}, **headers)
+        json_response(status, {code:, message:}, **headers)
+      end
+
+      # Session requests come from the runtime, which reads the code. Any
+      # other request may be a person's, who gets a sentence.
+      def stopping_response(request)
+        if request.path.match?(SESSION_PATH_RE)
+          session_stopping_response(request)
+        else
+          text_response(503, "Server is stopping")
+        end
+      end
+
+      def session_stopping_response(request)
+        error_response(
+          503,
+          "SERVER_STOPPING",
+          message: "Server is stopping",
+          **origin_header(request)
+        )
       end
 
       def json_response(status, json, **headers)
