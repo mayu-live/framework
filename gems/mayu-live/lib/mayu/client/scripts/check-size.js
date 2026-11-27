@@ -10,7 +10,7 @@ import { brotliCompressSync } from "node:zlib";
 
 // Bytes of the chunks every page loads, init and main, compressed with
 // Brotli the way Mayu::Server::StaticFiles sends them.
-const EAGER_BUDGET = 10_160;
+const EAGER_BUDGET = 10_170;
 const EAGER_CHUNKS = /^(init|main)-/;
 
 const dist = new URL("../dist/", import.meta.url).pathname;

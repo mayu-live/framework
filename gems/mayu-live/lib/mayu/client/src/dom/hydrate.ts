@@ -118,6 +118,15 @@ function bind(
 
   const nodeInfo = registry.setNode(idNode.id, domNode);
 
+  // HTML can only set the attribute, and only the property shows. One that
+  // a patch set has no attribute, and stays as it is.
+  if (
+    domNode instanceof HTMLInputElement &&
+    domNode.hasAttribute("indeterminate")
+  ) {
+    domNode.indeterminate = true;
+  }
+
   if (!idNode.children) return;
 
   if (

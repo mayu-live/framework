@@ -80,6 +80,31 @@ describe("runtime listeners", () => {
     ).resolves.toBeUndefined();
   });
 
+  it("shows a checkbox as indeterminate when the page's HTML says so", async () => {
+    document.body.innerHTML = `<input type="checkbox" indeterminate="true">`;
+    const runtime = new Runtime(vi.fn());
+    const page = tree();
+    page.children[0].children[1].children[0].name = "INPUT";
+
+    await runtime.applyBatch([
+      ["Initialize", page],
+      [
+        "CreateTree",
+        `<input type="checkbox" indeterminate="true"><input type="checkbox">`,
+        [
+          { id: "new", name: "INPUT", children: [] },
+          { id: "plain", name: "INPUT", children: [] },
+        ],
+      ],
+      ["ReplaceChildren", "body", ["button", "new", "plain"]],
+    ]);
+
+    const [first, created, plain] = document.querySelectorAll("input");
+    expect(first.indeterminate).toBe(true);
+    expect(created.indeterminate).toBe(true);
+    expect(plain.indeterminate).toBe(false);
+  });
+
   it("maps ids to nodes and back for devtools", async () => {
     document.body.innerHTML = "<button>Go</button>";
     const runtime = new Runtime(vi.fn());

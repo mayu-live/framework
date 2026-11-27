@@ -40,7 +40,11 @@ module Mayu
                 work_items = [@queue.dequeue]
                 work_items << @queue.dequeue until @queue.empty?
 
-                process(work_items)
+                # A pass changes the tree as it goes and queues its commands
+                # at the end. Stopped in between, where a render waits for
+                # something, it would leave the tree ahead of what the
+                # browser is ever sent. So a pass that has begun finishes.
+                Async::Task.current.defer_cancel { process(work_items) }
 
                 # Work queued during the pause is coalesced into the next pass.
                 if (interval = @engine&.update_interval)
@@ -52,9 +56,15 @@ module Mayu
             end
         end
 
+        # Returns once the pass that was running, if any, has queued its
+        # commands.
         def stop
-          @task&.stop
+          task = @task
           @task = nil
+          return unless task
+
+          task.stop
+          task.wait unless task.current?
         end
 
         # Processes queued work in the current fiber until the queue is
